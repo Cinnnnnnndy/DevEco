@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>11 · 意图确认：问你的时候，它不停</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="../../deveco-intui-kit/src/tokens.css">
+<link rel="stylesheet" href="../../deveco-intui-kit/src/components.css">
+<link rel="stylesheet" href="../_shared/frame.css">
+<script src="../../deveco-intui-kit/src/icons.js"></script>
+<script src="../_shared/frame.js"></script>
+<style>
+  .ide[data-ide-theme]{--ai-w:clamp(440px,38vw,580px)}
+  .ai-thread{gap:8px}
+  .umsg .bubble{padding:6px 10px}
+  .amsg .step.ok svg.i{color:var(--ui-success)}
+  .amsg .step .dm-muted{margin-left:2px}
+  /* 确认卡：左边是它理解的意思，右边它还在读 */
+  .ic-grid{display:grid;grid-template-columns:minmax(0,1fr) 150px;gap:10px;align-items:stretch}
+  .ic-main{display:flex;flex-direction:column;gap:8px;min-width:0}
+  .ic-main .dm-edit{min-height:68px}
+  .ic-opts{display:flex;flex-direction:column;gap:6px}
+  .ic-opts .dm-opt > div{min-width:0}
+  .ic-opts .dm-opt b{font-size:var(--fs-sm);line-height:var(--lh-sm)}
+  .ic-opts .dm-opt span{font-size:11px;line-height:14px}
+  .ic-opts .dm-opt.warn span{color:color-mix(in srgb,var(--ui-warning) 80%,var(--ui-fg))}
+  .ic-side{background:var(--ui-code-bg);border-radius:6px;padding:8px;gap:6px;min-width:0}
+  .ic-side .dm-h{display:flex;align-items:center;gap:4px;color:var(--ui-fg)}
+  .ic-side .dm-progress{flex:none}
+  .ic-list{display:flex;flex-direction:column;gap:5px}
+  .ic-row{display:flex;align-items:flex-start;gap:5px;font-size:11px;line-height:15px;color:var(--ui-fg);animation:icin .3s ease-out}
+  .ic-row > span:last-child{min-width:0;overflow-wrap:anywhere}
+  .ic-row svg{width:12px;height:12px;flex:none;margin-top:1.5px;color:var(--ui-success)}
+  .ic-row .spin{width:11px;height:11px;margin:2px 0.5px 0}
+  .ic-row.run{color:var(--ui-fg)}
+  .ic-row code{font-family:var(--font-code);font-size:10.5px;background:var(--ui-tag-bg);padding:0 3px;border-radius:3px}
+  .ic-row.last{font-weight:600}
+  @keyframes icin{from{opacity:0;transform:translateY(3px)}}
+  .ic-foot{display:flex;align-items:center;gap:6px;padding-top:2px}
+  .ic-foot .btn.primary svg{color:var(--ui-accent-fg)}
+  .ic-foot .btn svg{width:12px;height:12px}
+  .dm-card.accent{box-shadow:0 0 0 2px color-mix(in srgb,var(--ui-accent) 18%,transparent)}
+  .diffcard .dh .abtn{width:20px;height:20px}
+  .diffcard .dh .abtn svg.i{width:13px;height:13px}
+  @media (prefers-reduced-motion:reduce){.ic-row{animation:none}}
+</style>
+</head>
+<body>
+<div class="ide" id="ide" data-ide-theme="dark" data-left="project" data-right="agent" data-bottom="none" role="application" aria-label="DevEco Studio">
+  <div class="body">
+    <div class="tw tw-left">
+      <div class="pane on" data-pane="project">
+        <div class="tw-hdr"><span class="title">Project <svg class="i"><use href="#i-chevD"/></svg></span><span class="grow"></span>
+          <button class="abtn" title="Select Opened File"><svg class="i"><use href="#i-locate"/></svg></button>
+          <button class="abtn" title="Expand All"><svg class="i"><use href="#i-expandAll"/></svg></button>
+          <button class="abtn" title="Collapse All"><svg class="i"><use href="#i-collapseAll"/></svg></button>
+          <button class="abtn" title="Options"><svg class="i"><use href="#i-moreV"/></svg></button>
+          <button class="abtn" title="Hide|Shift+Esc" data-act="hide-left"><svg class="i"><use href="#i-hide"/></svg></button></div>
+        <div class="tw-body" id="tree-slot"></div>
+      </div>
+    </div>
+
+    <div class="editor">
+      <div class="tabs" id="tabs"><span class="grow"></span><span class="tab-tools"><button class="abtn" title="Editor Options"><svg class="i"><use href="#i-moreV"/></svg></button></span></div>
+      <div class="code-wrap"><div class="code" id="code"></div><span class="ok" title="No problems found"><svg><use href="#i-check"/></svg></span></div>
+      <div class="breadcrumbs" id="crumbs"></div>
+    </div>
+
+    <div class="tw tw-right">
+      <div class="pane on" data-pane="agent">
+        <div class="tw-hdr"><span class="title">CodeGenie</span><span class="grow"></span>
+          <button class="abtn" title="New Chat"><svg class="i"><use href="#i-add"/></svg></button>
+          <button class="abtn" title="History"><svg class="i"><use href="#i-history"/></svg></button>
+          <button class="abtn" title="Account"><svg class="i"><use href="#i-user-sync"/></svg></button>
+          <button class="abtn" title="Knowledge Base"><svg class="i"><use href="#i-kb"/></svg></button>
+          <button class="abtn" title="Export Chat"><svg class="i"><use href="#i-export"/></svg></button>
+          <button class="abtn" title="MCP"><svg class="i"><use href="#i-cube"/></svg></button>
+          <button class="abtn" title="Skills"><svg class="i"><use href="#i-skills"/></svg></button>
+          <button class="abtn" title="Settings"><svg class="i"><use href="#i-settings"/></svg></button>
+          <button class="abtn" title="Options"><svg class="i"><use href="#i-moreV"/></svg></button>
+          <button class="abtn" title="Hide|Shift+Esc" data-act="hide-right"><svg class="i"><use href="#i-hide"/></svg></button></div>
+        <div class="tw-body"><div class="ai">
+          <div class="ai-scroll" id="ai-scroll">
+            <div class="ai-thread" id="ai-thread">
+              <div class="umsg"><span class="time">2026/9/14 10:24</span><div class="bubble">把登录页的错误提示改友好一点</div></div>
+
+              <div class="amsg" id="amsg">
+                <div class="step"><svg class="i"><use href="#i-tw-project"/></svg>先说我理解的意思，你确认；这期间我接着读文件</div>
+
+                <div class="dm-card accent" id="ic-card">
+                  <div class="dm-card-hd"><svg class="i"><use href="#i-question"/></svg>确认一下我的理解<span class="grow"></span><span class="dm-small dm-muted">不会等你等到停</span></div>
+                  <div class="dm-card-bd">
+                    <div class="ic-grid">
+                      <div class="ic-main">
+                        <textarea class="dm-edit" id="ic-edit" rows="3" aria-label="它理解的意思，可直接改" title="可以直接在这里改">把 LoginPage 里直接展示给用户的错误码（如 ERR_AUTH_401）换成人话，只改文案与映射表，不重构错误处理流程。</textarea>
+                        <div class="ic-opts" id="ic-opts" role="radiogroup" aria-label="改法">
+                          <div class="dm-opt on" role="radio" aria-checked="true" tabindex="0"><span class="rd"></span><div><b>只改文案与映射（推荐）</b><span>改 1 个文件</span></div></div>
+                          <div class="dm-opt" role="radio" aria-checked="false" tabindex="0"><span class="rd"></span><div><b>顺便统一所有页面的错误提示</b><span>改 4 个文件</span></div></div>
+                          <div class="dm-opt warn" role="radio" aria-checked="false" tabindex="0"><span class="rd"></span><div><b>重构错误处理模块</b><span>改 9 个文件 · 风险高</span></div></div>
+                        </div>
+                        <div class="dm-row ic-foot"><button class="btn primary" id="btn-go"><svg class="i"><use href="#i-checkS"/></svg>就这么做</button><button class="btn" id="btn-no">不对，我说一下</button></div>
+                      </div>
+                      <div class="dm-col ic-side">
+                        <div class="dm-small dm-h"><svg class="i" style="width:12px;height:12px;color:var(--ui-info)"><use href="#i-bolt"/></svg>等你的时候没停</div>
+                        <div class="dm-progress indet" id="ic-prog"><i></i></div>
+                        <div class="ic-list" id="ic-list"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="ai-input">
+            <div class="top"><button class="ctx"><svg class="i" style="width:12px;height:12px"><use href="#i-at"/></svg>Add Context</button><span class="ctx" id="ctx-file"><svg class="i" style="width:12px;height:12px"><use href="#i-ets"/></svg>LoginPage.ets</span><span class="grow"></span><button class="toggle" id="deep"><svg class="i" style="width:12px;height:12px"><use href="#i-think"/></svg>Deep Thinking</button></div>
+            <textarea id="ai-text" rows="2" placeholder="Type @ to add context. Type / to switch between functions." aria-label="Message"></textarea>
+            <div class="bot"><button class="mode" id="mode-btn" data-pop="mode" aria-expanded="false"><svg class="i" style="width:12px;height:12px"><use href="#i-tw-agent"/></svg><span id="mode-label">HarmonyOS Act</span><svg class="i" style="width:12px;height:12px"><use href="#i-chevD"/></svg>
+                <div class="popup" hidden style="top:auto;bottom:28px;left:0"><div class="mi"><svg class="i"><use href="#i-chat"/></svg>HarmonyOS Ask<span class="sc">Q&amp;A · explain · snippets</span></div><div class="mi"><svg class="i"><use href="#i-tw-agent"/></svg>HarmonyOS Act<span class="sc">multi-file edits · build · review</span></div></div></button>
+              <button class="mode" id="model-btn" data-pop="model" aria-expanded="false"><span id="model-label">deepseek-v4-pro</span><svg class="i" style="width:12px;height:12px"><use href="#i-chevD"/></svg>
+                <div class="popup" hidden style="top:auto;bottom:28px;left:0"><div class="mi">deepseek-v4-flash<span class="sc">fast</span></div><div class="mi">deepseek-v4-pro<span class="sc">reasoning</span></div><div class="mi">pangu-5.5</div></div></button>
+              <span class="grow"></span><span class="ring" id="counter" title="0 / 30000"></span><button class="send" id="send" title="Send|Enter"><svg><use href="#i-send-o"/></svg></button></div>
+          </div>
+          <div class="ai-foot">The content is generated by AI and may not be entirely accurate or complete. It is for reference only | <a href="#">Terms of Use</a>&nbsp;&nbsp;<a href="#">Privacy Policy</a></div>
+        </div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var $=DemoFrame.$, $$=DemoFrame.$$;
+  document.getElementById('tree-slot').innerHTML=DemoFrame.tree({sel:'LoginPage.ets'});
+  document.getElementById('tabs').insertAdjacentHTML('afterbegin',DemoFrame.tabs([{file:'LoginPage.ets',on:true}]));
+  document.getElementById('code').innerHTML=DemoFrame.code('LoginPage.ets',{cur:28,hl:[28]});
+  DemoFrame.init({device:'HUAWEI Mate 70 Pro',deviceIcon:'#i-phone',pos:'28:31',onReady:function(){
+    $('#status-slot').innerHTML='<span class="dm-capsule wait" id="cap"><span class="dm-dot info pulse" id="cap-dot"></span><span id="cap-t">等你确认 · 改错误提示</span><span class="bar"><i id="cap-bar" style="--v:20%"></i></span></span>';
+  }});
+
+  /* ---- 右栏：等你回答的时候，它接着读文件，每 1.2 秒追加一条 ---- */
+  var ITEMS=['LoginPage.ets','ErrorMap.ets','resources/base/element/string.json','搜索 <code>ERR_AUTH_</code> 的引用 · 4 处','已准备好 3 处改动，等你确认就落'];
+  var list=$('#ic-list'),n=0,tm=null;
+  function row(html,run,last){return '<div class="ic-row'+(run?' run':'')+(last?' last':'')+'">'+(run?'<span class="spin"></span>':'<svg><use href="#i-checkS"/></svg>')+'<span>'+html+'</span></div>'}
+  function push(){
+    if(n>=ITEMS.length)return;
+    var prev=$('.ic-row.run',list);if(prev){prev.classList.remove('run');$('.spin',prev).outerHTML='<svg><use href="#i-checkS"/></svg>'}
+    var last=n===ITEMS.length-1;
+    list.insertAdjacentHTML('beforeend',row(ITEMS[n],!last,last));n++;
+    var bar=$('#cap-bar');if(bar)bar.style.setProperty('--v',Math.round(n/ITEMS.length*100)+'%');
+    if(last){var p=$('#ic-prog');p.classList.remove('indet');$('i',p).style.setProperty('--v','100%');clearInterval(tm);tm=null}
+  }
+  push();push();
+  tm=setInterval(push,1200);
+
+  /* ---- 选项：给选项也能自己写 ---- */
+  $('#ic-opts').addEventListener('click',function(e){
+    var o=e.target.closest('.dm-opt');if(!o)return;
+    $$('.dm-opt',$('#ic-opts')).forEach(function(x){var on=x===o;x.classList.toggle('on',on);x.setAttribute('aria-checked',on?'true':'false')});
+  });
+  $('#ic-opts').addEventListener('keydown',function(e){if(e.key===' '||e.key==='Enter'){var o=e.target.closest('.dm-opt');if(o){e.preventDefault();o.click()}}});
+
+  /* ---- 就这么做：卡片收成一行，改动直接落 ---- */
+  $('#btn-go').addEventListener('click',function(){
+    var title=$('#ic-opts .dm-opt.on b').textContent.replace(/（[^）]*）/g,'');
+    clearInterval(tm);tm=null;
+    var html='<div class="step ok" id="ic-confirmed"><svg class="i"><use href="#i-checkS"/></svg>已确认：'+DemoFrame.esc(title)+'<span class="dm-muted">· 等你的这会儿文件已读完，直接落改动</span></div>'
+      +'<div class="diffcard" id="ic-diff"><div class="dh"><svg class="i"><use href="#i-ets"/></svg><span class="fn">LoginPage.ets</span><span class="cnt"><span class="add">+2</span> <span class="del">−1</span></span><span class="grow"></span><button class="abtn" title="Open diff in editor"><svg class="i"><use href="#i-split"/></svg></button></div>'
+      +'<pre><span class="l">    } <span class="k">catch</span> (e) {</span>'
+      +'<span class="l del">-     <span class="k">this</span>.error = <span class="s">\'ERR_AUTH_401\'</span>;</span>'
+      +'<span class="l add">+     <span class="k">this</span>.error = <span class="f">errText</span>(e.code);</span>'
+      +'<span class="l add">+     <span class="c">// errText: ERR_AUTH_401 → \'验证码错误，请重新输入\'</span></span>'
+      +'<span class="l">    }</span></pre></div>'
+      +'<div class="steps" id="ic-steps">'
+      +'<div class="stp"><span class="st done"><svg><use href="#i-checkS"/></svg></span><span class="txt">改 LoginPage.ets 的错误文案</span><span class="file">LoginPage.ets</span></div>'
+      +'<div class="stp"><span class="st run"></span><span class="txt">补 ErrorMap.ets 的映射表 · 4 个错误码</span><span class="file">ErrorMap.ets</span></div>'
+      +'<div class="stp"><span class="st todo"></span><span class="txt">hvigor 编译校验</span><span class="file">entry:assembleHap</span></div>'
+      +'</div>';
+    $('#ic-card').outerHTML=html;
+    var sc=$('#ai-scroll');sc.scrollTop=sc.scrollHeight;
+    /* 编辑器第 27 行：改动已落 */
+    var ln=$('#code .ln[data-ln="28"]');if(ln){ln.classList.remove('hl');ln.classList.add('hl-ok');$('.t',ln).innerHTML='      <span class="k">this</span>.<span class="p">error</span> = <span class="f">errText</span>(<span class="p">e</span>.<span class="p">code</span>);'}
+    /* 状态栏胶囊：从“等你”变成“在干” */
+    var cap=$('#cap');if(cap){cap.classList.remove('wait');$('#cap-dot').outerHTML='<span class="spin" style="width:10px;height:10px"></span>';$('#cap-t').textContent='改错误提示 · 第 2 / 3 步';$('#cap-bar').style.setProperty('--v','55%')}
+    setTimeout(function(){
+      var st=$$('#ic-steps .stp .st');if(!st.length)return;
+      st[1].className='st done';st[1].innerHTML='<svg><use href="#i-checkS"/></svg>';st[2].className='st run';
+      if($('#cap-t')){$('#cap-t').textContent='改错误提示 · 第 3 / 3 步';$('#cap-bar').style.setProperty('--v','85%')}
+    },1500);
+  });
+
+  /* ---- 不对，我说一下：直接在输入框里接着说 ---- */
+  $('#btn-no').addEventListener('click',function(){
+    var ta=$('#ai-text');ta.value='不对，';ta.focus();
+    try{ta.setSelectionRange(ta.value.length,ta.value.length)}catch(e){}
+    $('#send').classList.add('ready');
+  });
+  $('#ai-text').addEventListener('input',function(){$('#send').classList.toggle('ready',!!this.value.trim())});
+})();
+</script>
+</body>
+</html>

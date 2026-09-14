@@ -121,14 +121,14 @@ window.DEVECO_CATALOG = {
         {
           no: '11', title: '互动式意图确认：问你的时候它不停', subtitle: 'Confirm Without Stopping', mark: '补齐',
           desc: '动手前把理解的意思摆出来让人确认或直接改，问题给选项也能自己写；关键是确认的时候它不停下来——边等回答边继续读文件。Cursor 是问了不停，我们现在是停了不说。',
-          view: 'sketch',
-          tags: ['审阅与回退'], note: '补齐，并进日常迭代；与 07 是同一个题',
+          view: 'ready', date: '2026-09-14', href: 'demos/11-intent-confirm/index.html',
+          tags: ['审阅与回退'], note: '补齐，并进日常迭代；与 07 是同一个题', thumb: { type: 'image', src: 'site/thumbs/11-intent-confirm.jpg' },
         },
         {
           no: '12', title: '自动化 Workflow：不用你想起来要固化', subtitle: 'Proactive Workflow Capture', mark: '半投',
           desc: '工具自己看出重复，主动问「这串动作你这周跑了三次，存成一个命令？」；存的是整串编排，随代码仓库分发给团队；鸿蒙开发里的高频动作由官方先存好一批。',
-          view: 'sketch',
-          tags: ['步数与切换次数'],
+          view: 'ready', date: '2026-09-14', href: 'demos/12-auto-workflow/index.html',
+          tags: ['步数与切换次数'], thumb: { type: 'image', src: 'site/thumbs/12-auto-workflow.jpg' },
         },
         {
           no: '13', title: 'UI & Code 二次编辑：预览上改，写回源码', subtitle: 'Preview-to-Source Round Trip', mark: '投',
