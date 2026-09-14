@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>10 · 可视化调优：从图上一处异常，直接落到代码行</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="../../deveco-intui-kit/src/tokens.css">
+<link rel="stylesheet" href="../../deveco-intui-kit/src/components.css">
+<link rel="stylesheet" href="../_shared/frame.css">
+<script src="../../deveco-intui-kit/src/icons.js"></script>
+<script src="../_shared/frame.js"></script>
+<style>
+  .ide[data-ide-theme]{--ai-w:clamp(360px,28vw,440px)}
+  .ai-thread{gap:8px}
+  /* 编辑区上下分：上代码、下 Profiler */
+  .dm-split.v.prof-split{grid-template-rows:minmax(0,1fr) 320px}
+  .ed-top{display:flex;flex-direction:column;min-height:0}
+  .ed-top .code-wrap{flex:1;min-height:0}
+  .code-wrap .dm-pill.loc-pill{position:absolute;right:16px;top:8px;z-index:3;box-shadow:var(--ui-shadow);display:inline-flex;width:auto;height:18px}
+  .loc-pill svg{width:12px;height:12px}
+  /* Profiler 视图区 */
+  .prof{display:flex;flex-direction:column;min-height:0;background:var(--ui-editor-bg)}
+  .prof-body{flex:1;display:flex;min-height:0}
+  .prof-l{flex:1.5;min-width:0;display:flex;flex-direction:column;gap:8px;padding:10px 12px;border-right:1px solid var(--ui-border);overflow:hidden}
+  .prof-r{flex:1;min-width:0;display:flex;flex-direction:column;gap:8px;padding:10px 12px;overflow:hidden}
+  .prof-r .dm-chart{flex:1;min-height:0;overflow:hidden}
+  .prof-l .dm-chart{flex:1;min-height:0;overflow:hidden}
+  .dm-pane-hd .dm-seg{align-self:center;margin-left:6px}
+  .dm-pane-hd .dm-seg button{height:20px;padding:0 10px;font-size:11px}
+  .dm-pane-hd .dm-pill svg{width:12px;height:12px}
+  .flame-ft{display:block;font-size:var(--fs-sm);line-height:var(--lh-sm);color:var(--ui-fg-info);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .flame-ft svg.i{display:inline-block;vertical-align:-3px;margin-right:4px}
+  .flame-ft code{font-family:var(--font-code);font-size:11px;background:var(--ui-tag-bg);padding:1px 4px;border-radius:4px;color:var(--ui-fg)}
+  .dm-flame{margin:auto 0}
+  .dm-flame .fr{height:26px}
+  .dm-flame .fr span{font-size:11px;cursor:default}
+  .dm-flame .fr span[data-line]{cursor:pointer}
+  .dm-flame .fr span[data-line]:hover{filter:brightness(1.18)}
+  .dm-flame .fr span.sel{box-shadow:0 0 0 2px var(--ui-editor-bg),0 0 0 4px var(--ui-accent)}
+  .dm-flame .fr span.ok{background:color-mix(in srgb,var(--ui-success) 42%,transparent);outline:1.5px solid var(--ui-success);outline-offset:-1px}
+  .dm-chart .anom{cursor:pointer;pointer-events:all}
+  .dm-chart .anom-dot{fill:var(--ui-error)}
+  .dm-chart .lbl.err{fill:var(--ui-error);font-weight:600}
+  .dm-chart .lbl.ok{fill:var(--ui-success);font-weight:600}
+  .dm-chart .lbl.warn{fill:var(--ui-warning)}
+  .dm-chart .band{fill:color-mix(in srgb,var(--ui-success) 12%,transparent);stroke:color-mix(in srgb,var(--ui-success) 50%,transparent);stroke-dasharray:3 3}
+  .dm-chart .line.after{stroke:var(--ui-success)}
+  .dm-legend i.after{background:var(--ui-success)}
+  .dm-legend{margin-top:auto}
+  /* Agent 面板 */
+  .amsg .step.ok svg.i{color:var(--ui-success)}
+  .amsg .step.run svg.i{color:var(--ui-accent)}
+  .chips-row{display:flex;gap:6px;flex-wrap:wrap}
+  .chips-row .chip.on{background:var(--ui-selection);border-color:var(--ui-accent)}
+  .chips-row .chip[disabled]{opacity:.5}
+  .md code{color:var(--ui-fg)}
+</style>
+</head>
+<body>
+<div class="ide" id="ide" data-ide-theme="dark" data-left="project" data-right="agent" data-bottom="none" role="application" aria-label="DevEco Studio">
+  <div class="body">
+    <div class="tw tw-left">
+      <div class="pane on" data-pane="project">
+        <div class="tw-hdr"><span class="title">Project <svg class="i"><use href="#i-chevD"/></svg></span><span class="grow"></span>
+          <button class="abtn" title="Select Opened File"><svg class="i"><use href="#i-locate"/></svg></button>
+          <button class="abtn" title="Expand All"><svg class="i"><use href="#i-expandAll"/></svg></button>
+          <button class="abtn" title="Collapse All"><svg class="i"><use href="#i-collapseAll"/></svg></button>
+          <button class="abtn" title="Options"><svg class="i"><use href="#i-moreV"/></svg></button>
+          <button class="abtn" title="Hide|Shift+Esc" data-act="hide-left"><svg class="i"><use href="#i-hide"/></svg></button></div>
+        <div class="tw-body" id="tree-slot"></div>
+      </div>
+    </div>
+
+    <div class="editor">
+      <div class="tabs" id="tabs"><span class="grow"></span><span class="tab-tools"><span class="toggle on" title="图上选中什么，代码就跳到哪一行"><svg class="i"><use href="#i-link"/></svg>图 ↔ 代码联动</span><button class="abtn" title="Editor Options"><svg class="i"><use href="#i-moreV"/></svg></button></span></div>
+      <div class="dm-split v prof-split">
+        <div class="ed-top">
+          <div class="code-wrap"><div class="code" id="code"></div><span class="dm-pill err loc-pill" id="loc-pill"><svg><use href="#i-locate"/></svg><span id="loc-text">ListPage.ets:28 · 38 ms / 帧</span></span></div>
+          <div class="breadcrumbs" id="crumbs"></div>
+        </div>
+        <div class="prof">
+          <div class="dm-pane-hd"><b>Profiler</b>
+            <span class="dm-seg" id="seg"><button class="on" data-v="cpu">CPU</button><button data-v="mem">内存</button><button data-v="pow">电量</button></span>
+            <span class="dm-pill muted" style="margin-left:6px"><svg><use href="#i-phone"/></svg>Mate 70 Pro · 记录 #12</span>
+            <span class="grow"></span>
+            <span class="dm-pill ok" id="re-state"><svg><use href="#i-sync"/></svg>复测就绪 · 会用同一条记录</span>
+          </div>
+          <div class="prof-body">
+            <div class="prof-l">
+              <div class="dm-chart" id="flame-box">
+                <div class="ch-t"><b>火焰图</b><span id="flame-sub">· 第 27 帧 · 42 ms · 记录 #12</span><span class="grow"></span><span class="dm-muted">点一格，落到代码行</span></div>
+                <div class="dm-flame" id="flame"></div>
+                <div class="flame-ft" id="flame-ft"><svg class="i" style="width:14px;height:14px;color:var(--ui-error)"><use href="#i-err"/></svg>第 23–31 帧那 9 帧都停在这一格 · 每帧 34–42 ms</div>
+              </div>
+              <div class="dm-callout info" id="mem-note" hidden><svg><use href="#i-info"/></svg><div>内存的异常在右图 <b>12 s</b> 处（+42 MB），是同一处同步解码把整张封面读进了内存。点那个圈，同样落到 <b>ListPage.ets:28</b>。</div></div>
+              <div class="dm-callout" id="pow-note" hidden><svg><use href="#i-info"/></svg><div>这条记录里电流平稳（均值 312 mA），没有需要处理的地方。切回 <b>CPU</b> 看火焰图。</div></div>
+            </div>
+            <div class="prof-r">
+              <div class="dm-chart" id="ch-mem">
+                <div class="ch-t"><b>内存</b><span>· MB · 记录 #12</span><span class="grow"></span><span class="dm-pill err" id="mem-pill">12 s · +42 MB</span></div>
+                <svg id="svg-mem"></svg>
+              </div>
+              <div class="dm-chart" id="ch-re" hidden>
+                <div class="ch-t"><b>复测</b><span>· 帧耗时 · #12 → #13</span><span class="grow"></span><span class="dm-pill ok" id="re-pill">掉帧 9 → 0</span></div>
+                <svg id="svg-re"></svg>
+                <div class="dm-legend"><span><i class="before"></i>before · #12</span><span><i class="after"></i>after · #13 自动复测</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tw tw-right">
+      <div class="pane on" data-pane="agent">
+        <div class="tw-hdr"><span class="title">CodeGenie</span><span class="grow"></span>
+          <button class="abtn" title="New Chat"><svg class="i"><use href="#i-add"/></svg></button>
+          <button class="abtn" title="History"><svg class="i"><use href="#i-history"/></svg></button>
+          <button class="abtn" title="MCP"><svg class="i"><use href="#i-cube"/></svg></button>
+          <button class="abtn" title="Skills"><svg class="i"><use href="#i-skills"/></svg></button>
+          <button class="abtn" title="Settings"><svg class="i"><use href="#i-settings"/></svg></button>
+          <button class="abtn" title="Options"><svg class="i"><use href="#i-moreV"/></svg></button>
+          <button class="abtn" title="Hide|Shift+Esc" data-act="hide-right"><svg class="i"><use href="#i-hide"/></svg></button></div>
+        <div class="tw-body"><div class="ai">
+          <div class="ai-scroll"><div class="ai-thread">
+            <div class="amsg" id="amsg">
+              <div class="step ok"><svg class="i"><use href="#i-locate"/></svg>已看过记录 #12 的火焰图与内存曲线</div>
+              <div class="md"><p>图上圈出的那 9 帧都落在 <code>loadCover</code> 上（<b>ListPage.ets:28</b>，同步解码，每帧 38 ms）。要我按上次「列表滑起来卡」的方案（异步解码 + 占位图）出补丁吗？</p></div>
+              <div class="chips-row" id="chips"><button class="chip" id="chip-patch"><svg class="i"><use href="#i-wrench"/></svg>出补丁并自动复测</button><button class="chip" id="chip-stack"><svg class="i"><use href="#i-tw-structure"/></svg>先看调用栈</button></div>
+            </div>
+          </div></div>
+          <div class="ai-input">
+            <div class="top"><button class="ctx"><svg class="i" style="width:12px;height:12px"><use href="#i-at"/></svg>Add Context</button><span class="ctx"><svg class="i" style="width:12px;height:12px"><use href="#i-gauge"/></svg>记录 #12</span><span class="ctx"><svg class="i" style="width:12px;height:12px"><use href="#i-ets"/></svg>ListPage.ets:28</span><span class="grow"></span></div>
+            <textarea rows="2" placeholder="Type @ to add context. Type / to switch between functions." aria-label="Message"></textarea>
+            <div class="bot"><span class="mode"><svg class="i" style="width:12px;height:12px"><use href="#i-tw-agent"/></svg><span>HarmonyOS Act</span><svg class="i" style="width:12px;height:12px"><use href="#i-chevD"/></svg></span><span class="mode"><span id="model-label">deepseek-v4-pro</span><svg class="i" style="width:12px;height:12px"><use href="#i-chevD"/></svg></span><span class="grow"></span><span class="ring" title="0 / 30000"></span><button class="send" title="Send|Enter"><svg><use href="#i-send-o"/></svg></button></div>
+          </div>
+          <div class="ai-foot">The content is generated by AI and may not be entirely accurate or complete. It is for reference only | <a href="#">Terms of Use</a>&nbsp;&nbsp;<a href="#">Privacy Policy</a></div>
+        </div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var $=DemoFrame.$, $$=DemoFrame.$$, esc=DemoFrame.esc;
+  document.getElementById('tree-slot').innerHTML=DemoFrame.tree({sel:'ListPage.ets'});
+  document.getElementById('tabs').insertAdjacentHTML('afterbegin',DemoFrame.tabs([{file:'ListPage.ets',on:true}]));
+  DemoFrame.init({device:'HUAWEI Mate 70 Pro',deviceIcon:'#i-phone',pos:'28:12',onReady:function(){
+    $('#status-slot').innerHTML='<span class="dm-capsule" id="cap"><span class="dm-dot err"></span>记录 #12 · 掉帧 9 · Mate 70 Pro</span>';
+  }});
+
+  /* ---------- 火焰图：每格带 data-line，点了就落到那一行 ---------- */
+  var FLAME_BEFORE=
+    '<div class="fr"><span style="--w:100" data-line="10" data-ms="42" data-name="ListPage.build">ListPage.build · 100%</span></div>'
+   +'<div class="fr"><span style="--w:16" data-line="11" data-ms="2.1" data-name="Column">Column</span><span style="--w:84" data-line="14" data-ms="40" data-name="List">List</span></div>'
+   +'<div class="fr"><span style="--w:12" data-line="12" data-ms="0.6" data-name="Search">Search</span><span class="dim" style="--w:4"></span><span style="--w:84" data-line="15" data-ms="39.5" data-name="ForEach">ForEach</span></div>'
+   +'<div class="fr"><span class="dim" style="--w:16"></span><span style="--w:76" data-line="17" data-ms="39" data-name="ItemCard">ItemCard</span><span class="dim" style="--w:8">key</span></div>'
+   +'<div class="fr"><span class="dim" style="--w:20"></span><span class="hot" style="--w:64" data-line="28" data-ms="38" data-name="image.createPixelMapSync" data-hot="1">image.createPixelMapSync · 38 ms</span><span class="dim" style="--w:16">Image.draw</span></div>';
+  var FLAME_AFTER=
+    '<div class="fr"><span style="--w:100" data-line="10" data-ms="9.8" data-name="ListPage.build">ListPage.build · 100%</span></div>'
+   +'<div class="fr"><span style="--w:20" data-line="11" data-ms="1.9" data-name="Column">Column</span><span style="--w:80" data-line="14" data-ms="7.6" data-name="List">List</span></div>'
+   +'<div class="fr"><span style="--w:14" data-line="12" data-ms="0.6" data-name="Search">Search</span><span class="dim" style="--w:6"></span><span style="--w:80" data-line="15" data-ms="7.2" data-name="ForEach">ForEach</span></div>'
+   +'<div class="fr"><span class="dim" style="--w:20"></span><span style="--w:72" data-line="17" data-ms="6.8" data-name="ItemCard">ItemCard</span><span class="dim" style="--w:8">key</span></div>'
+   +'<div class="fr"><span class="dim" style="--w:22"></span><span class="ok" style="--w:28" data-line="28" data-ms="0.4" data-name="coverCache.get" data-hot="1">coverCache.get</span><span class="dim" style="--w:30">Image.draw</span><span class="dim" style="--w:20"></span></div>';
+
+  var state={patched:false,retested:false,view:'cpu',timer:null};
+
+  function renderCode(){$('#code').innerHTML=DemoFrame.code('ListPage.ets',{cur:28,hl:[28],marks:{28:'warn'}});}
+  function locate(line){
+    $$('#code .ln').forEach(function(l){var on=+l.dataset.ln===line;l.classList.toggle('cur',on);l.classList.toggle('hl',on)});
+    var code=$('#code'),ln=$('#code .ln[data-ln="'+line+'"]');if(ln)code.scrollTop=Math.max(0,ln.offsetTop-code.clientHeight/2+40);
+    var p=$('#status-pos');if(p)p.textContent=line+':12';
+  }
+  function setPill(cls,text){var pl=$('#loc-pill');pl.className='dm-pill loc-pill '+cls;$('#loc-text').textContent=text;}
+  function selectSpan(sp){
+    $$('#flame span').forEach(function(x){x.classList.toggle('sel',x===sp)});
+    var line=+sp.dataset.line,name=sp.dataset.name,ms=sp.dataset.ms;
+    locate(line);
+    if(sp.dataset.hot){
+      if(state.patched)setPill('ok','ListPage.ets:28 · 已改为异步 · '+ms+' ms / 帧');
+      else setPill('err','ListPage.ets:28 · '+ms+' ms / 帧');
+    }else setPill('info','ListPage.ets:'+line+' · '+name+' · '+ms+' ms / 帧');
+  }
+  function renderFlame(){
+    $('#flame').innerHTML=state.retested?FLAME_AFTER:FLAME_BEFORE;
+    $('#flame-sub').textContent=state.retested?'· 第 27 帧 · 9.8 ms · 记录 #13（复测）':'· 第 27 帧 · 42 ms · 记录 #12';
+    var ft=$('#flame-ft');
+    if(state.retested)ft.innerHTML='<svg class="i" style="width:14px;height:14px;color:var(--ui-success)"><use href="#i-checkS"/></svg>复测后这一格只剩 <code>coverCache.get</code> 0.4 ms · 解码已挪到后台';
+    else ft.innerHTML='<svg class="i" style="width:14px;height:14px;color:var(--ui-error)"><use href="#i-err"/></svg>第 23–31 帧那 9 帧都停在这一格 · 每帧 34–42 ms';
+  }
+  $('#flame').addEventListener('click',function(e){var sp=e.target.closest('span[data-line]');if(sp)selectSpan(sp)});
+
+  /* ---------- 图表：内联 SVG，按容器实际尺寸画 ---------- */
+  function fit(svg){
+    var ch=svg.closest('.dm-chart'),used=0,kids=Array.prototype.slice.call(ch.children);
+    kids.forEach(function(k){if(k!==svg)used+=k.offsetHeight});
+    var H=ch.clientHeight-14-used-4*(kids.length-1),W=ch.clientWidth-20;
+    return [Math.max(120,Math.round(W)),Math.max(70,Math.round(H))];
+  }
+  var seed=11;function rnd(){seed=(seed*9301+49297)%233280;return seed/233280}
+  var MEM=[];for(var t=0;t<=40;t++){var s=t/2,v=168+s*0.45+Math.round(rnd()*3);if(s===12)v=214;else if(s===12.5)v=207;else if(s===13)v=186;else if(s===13.5)v=179;MEM.push([s,v])}
+  var BEFORE=[],AFTER=[];seed=7;
+  for(var i=1;i<=60;i++){if(i>=23&&i<=31)BEFORE.push(34+Math.round(rnd()*8));else BEFORE.push(9+Math.round(rnd()*6));AFTER.push(7+Math.round(rnd()*5));}
+
+  function drawMem(){
+    var svg=$('#svg-mem');if($('#ch-mem').hidden)return;var d=fit(svg),W=d[0],H=d[1];
+    var padL=36,padR=14,padT=14,padB=18,pw=W-padL-padR,ph=H-padT-padB,lo=150,hi=240;
+    var x=function(s){return padL+s/20*pw},y=function(v){return padT+ph-(v-lo)/(hi-lo)*ph};
+    var s='';
+    [160,180,200,220].forEach(function(v){s+='<line class="grid" x1="'+padL+'" x2="'+(W-padR)+'" y1="'+y(v).toFixed(1)+'" y2="'+y(v).toFixed(1)+'"/><text class="lbl" x="'+(padL-6)+'" y="'+(y(v)+3).toFixed(1)+'" text-anchor="end">'+v+'</text>'});
+    s+='<text class="lbl" x="'+(padL-6)+'" y="'+(padT-4)+'" text-anchor="end">MB</text>';
+    var pts=MEM.map(function(p){return x(p[0]).toFixed(1)+','+y(p[1]).toFixed(1)});
+    s+='<path class="area" d="M'+pts.join(' L')+' L'+x(20).toFixed(1)+','+(padT+ph)+' L'+padL+','+(padT+ph)+' Z"/>';
+    s+='<path class="line" d="M'+pts.join(' L')+'"/>';
+    s+='<line class="grid" x1="'+padL+'" x2="'+(W-padR)+'" y1="'+(padT+ph)+'" y2="'+(padT+ph)+'"/>';
+    [0,5,10,15,20].forEach(function(t){s+='<text class="lbl" x="'+x(t).toFixed(1)+'" y="'+(H-5)+'" text-anchor="middle">'+t+(t===20?' s':'')+'</text>'});
+    var ax=x(12),ay=y(214);
+    s+='<circle class="anom-dot" cx="'+ax.toFixed(1)+'" cy="'+ay.toFixed(1)+'" r="2.5"/>';
+    s+='<circle class="anom" data-anom="1" cx="'+ax.toFixed(1)+'" cy="'+ay.toFixed(1)+'" r="11"><title>12 s · +42 MB · 点一下落到代码行</title></circle>';
+    s+='<text class="lbl err" x="'+(ax+16).toFixed(1)+'" y="'+(ay+4).toFixed(1)+'">+42 MB</text>';
+    svg.setAttribute('viewBox','0 0 '+W+' '+H);svg.style.height=H+'px';svg.innerHTML=s;
+  }
+  function drawRe(){
+    var svg=$('#svg-re');if($('#ch-re').hidden)return;var d=fit(svg),W=d[0],H=d[1];
+    var padL=30,padR=12,padT=14,padB=18,pw=W-padL-padR,ph=H-padT-padB,max=48,lim=16.7,n=60;
+    var x=function(i){return padL+(i-1)/(n-1)*pw},y=function(v){return padT+ph-v/max*ph};
+    var s='';
+    [10,20,30,40].forEach(function(v){s+='<line class="grid" x1="'+padL+'" x2="'+(W-padR)+'" y1="'+y(v).toFixed(1)+'" y2="'+y(v).toFixed(1)+'"/><text class="lbl" x="'+(padL-6)+'" y="'+(y(v)+3).toFixed(1)+'" text-anchor="end">'+v+'</text>'});
+    s+='<text class="lbl" x="'+(padL-6)+'" y="'+(padT-4)+'" text-anchor="end">ms</text>';
+    var b1=x(23)-4,b2=x(31)+4;
+    s+='<rect class="band" x="'+b1.toFixed(1)+'" y="'+padT+'" width="'+(b2-b1).toFixed(1)+'" height="'+ph+'" rx="4"/>';
+    s+='<path class="line before" d="M'+BEFORE.map(function(v,i){return x(i+1).toFixed(1)+','+y(v).toFixed(1)}).join(' L')+'"/>';
+    s+='<path class="line after" d="M'+AFTER.map(function(v,i){return x(i+1).toFixed(1)+','+y(v).toFixed(1)}).join(' L')+'"/>';
+    s+='<line class="lim" x1="'+padL+'" x2="'+(W-padR)+'" y1="'+y(lim).toFixed(1)+'" y2="'+y(lim).toFixed(1)+'"/>';
+    s+='<text class="lbl warn" x="'+(W-padR)+'" y="'+(y(lim)+11).toFixed(1)+'" text-anchor="end">16.7 ms</text>';
+    s+='<text class="lbl ok" x="'+(b2+8).toFixed(1)+'" y="'+(padT+11)+'">掉帧 9 → 0</text>';
+    s+='<line class="grid" x1="'+padL+'" x2="'+(W-padR)+'" y1="'+(padT+ph)+'" y2="'+(padT+ph)+'"/>';
+    [1,20,40,60].forEach(function(f){s+='<text class="lbl" x="'+x(f).toFixed(1)+'" y="'+(H-5)+'" text-anchor="middle">'+f+(f===60?' 帧':'')+'</text>'});
+    svg.setAttribute('viewBox','0 0 '+W+' '+H);svg.style.height=H+'px';svg.innerHTML=s;
+  }
+  function drawAll(){drawMem();drawRe();}
+  $('#prof-body,#ch-mem')&&$('#ch-mem').addEventListener('click',function(e){
+    if(!e.target.closest('.anom'))return;
+    var hot=$('#flame span[data-hot]');if(hot)selectSpan(hot);
+    if(state.view!=='cpu')switchView('cpu');
+  });
+
+  /* ---------- CPU / 内存 / 电量 ---------- */
+  function switchView(v){
+    state.view=v;if(state.retested){$('#ch-mem').hidden=v!=='mem';$('#ch-re').hidden=v==='mem';drawAll();}$$('#seg button').forEach(function(b){b.classList.toggle('on',b.dataset.v===v)});
+    $('#flame-box').hidden=v!=='cpu';$('#mem-note').hidden=v!=='mem';$('#pow-note').hidden=v!=='pow';
+  }
+  $('#seg').addEventListener('click',function(e){var b=e.target.closest('button');if(b)switchView(b.dataset.v)});
+
+  /* ---------- 出补丁：应用到编辑器 + 自动复测 ---------- */
+  var NEW28=[
+    '    <span class="c">// 解码挪到后台，帧里只查缓存</span>',
+    '    <span class="k">const</span> <span class="p">hit</span> = <span class="k">this</span>.<span class="p">coverCache</span>.<span class="f">get</span>(<span class="p">id</span>);',
+    '    <span class="k">if</span> (<span class="p">hit</span>) { <span class="k">return</span> <span class="p">hit</span>; }',
+    '    <span class="p">image</span>.<span class="f">createPixelMap</span>(<span class="k">this</span>.<span class="p">source</span>.<span class="f">rawCover</span>(<span class="p">id</span>))',
+    '      .<span class="f">then</span>((<span class="p">pm</span>: <span class="ty">PixelMap</span>) =&gt; <span class="k">this</span>.<span class="p">coverCache</span>.<span class="f">set</span>(<span class="p">id</span>, <span class="p">pm</span>));',
+    '    <span class="k">return</span> <span class="k">this</span>.<span class="p">placeholder</span>;'
+  ];
+  function applyToEditor(){
+    var ln=$('#code .ln[data-ln="28"]');if(!ln)return;
+    var h=NEW28.map(function(t){return '<div class="ln hl-ok"><span class="g"><span class="n"></span><span class="m"></span><span class="fold"></span></span><span class="t">'+t+'</span></div>'}).join('');
+    ln.insertAdjacentHTML('afterend',h);ln.remove();
+    $$('#code .ln').forEach(function(l,i){l.dataset.ln=i+1;$('.g .n',l).textContent=i+1});
+  }
+  function stepHTML(cls,txt,file){return '<div class="stp"><span class="st '+cls+'">'+(cls==='done'?'<svg><use href="#i-checkS"/></svg>':'')+'</span><span class="txt">'+txt+'</span><span class="file">'+file+'</span></div>'}
+  $('#chip-patch').addEventListener('click',function(){
+    if(state.patched)return;state.patched=true;
+    var cp=$('#chip-patch'),cs=$('#chip-stack');cp.classList.add('on');cp.disabled=true;cs.disabled=true;
+    $('#amsg').insertAdjacentHTML('beforeend','<div class="steps" id="steps">'
+      +stepHTML('done','出补丁：<code>loadCover</code> 同步解码 → 异步 + 占位图','ListPage.ets:28')
+      +stepHTML('done','已应用到工作区（可退回）','+6 −1')
+      +stepHTML('run','在 Mate 70 Pro 上重跑同一条记录 #12…','复测')
+      +'</div>');
+    applyToEditor();locate(28);setPill('ok','ListPage.ets:28 · 已改为异步 · 等复测');
+    var rs=$('#re-state');rs.className='dm-pill info';rs.innerHTML='<span class="spin" style="width:10px;height:10px"></span>复测中 · 同一条记录 #12';
+    $('#cap').innerHTML='<span class="spin" style="width:10px;height:10px"></span>自动复测中 · Mate 70 Pro';
+    state.timer=setTimeout(function(){
+      state.retested=true;
+      var st=$$('#steps .stp')[2];$('.st',st).className='st done';$('.st',st).innerHTML='<svg><use href="#i-checkS"/></svg>';$('.txt',st).innerHTML='复测完成：记录 #12 → #13，<b>掉帧 9 → 0</b>';$('.file',st).textContent='1.4 s';
+      $('#amsg').insertAdjacentHTML('beforeend','<div class="step ok"><svg class="i"><use href="#i-checkS"/></svg>前后对比已画在 Profiler 里：平均帧耗时 21.4 → 9.8 ms，内存尖峰消失</div>');
+      rs.className='dm-pill ok';rs.innerHTML='<svg><use href="#i-checkS"/></svg>已复测 · 记录 #13 · 掉帧 0';
+      $('#cap').innerHTML='<span class="dm-dot ok"></span>记录 #13 · 掉帧 0 · 已复测';
+      $('#ch-mem').hidden=true;$('#ch-re').hidden=false;drawAll();
+      renderFlame();var hot=$('#flame span[data-hot]');if(hot)selectSpan(hot);
+    },1500);
+  });
+  $('#chip-stack').addEventListener('click',function(){
+    var cs=$('#chip-stack');if(cs.dataset.done)return;cs.dataset.done='1';cs.classList.add('on');
+    $('#amsg').insertAdjacentHTML('beforeend','<div class="md"><p>第 27 帧的调用栈，已在火焰图里高亮最底下那一格：</p><ul><li><code>ListPage.build</code> → <code>Column</code> → <code>List</code> → <code>ForEach</code></li><li>→ <code>ItemCard</code>（ListPage.ets:17）</li><li>→ <code>loadCover</code> → <code>image.createPixelMapSync</code>（ListPage.ets:28）· <b>38 ms</b></li></ul></div>');
+    switchView('cpu');var hot=$('#flame span[data-hot]');if(hot)selectSpan(hot);
+    var sc=$('.ai-scroll');sc.scrollTop=sc.scrollHeight;
+  });
+
+  /* ---------- 初始：火焰图最热的一格已选中，代码已跳到 28 行 ---------- */
+  renderCode();renderFlame();drawAll();
+  var hot0=$('#flame span[data-hot]');if(hot0)selectSpan(hot0);
+  window.addEventListener('resize',drawAll);
+})();
+</script>
+</body>
+</html>

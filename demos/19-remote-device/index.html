@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>19 · 远端调试：手边没有的那台，加进画布</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="../../deveco-intui-kit/src/tokens.css">
+<link rel="stylesheet" href="../../deveco-intui-kit/src/components.css">
+<link rel="stylesheet" href="../_shared/frame.css">
+<script src="../../deveco-intui-kit/src/icons.js"></script>
+<script src="../_shared/frame.js"></script>
+<style>
+  /* 用 [data-ide-theme] 提高优先级：tokens.css 在主题块里定义了 --ai-w */
+  .ide[data-ide-theme]{--ai-w:clamp(400px,34vw,520px)}
+  /* 编辑区左右分：左代码，右同屏画布（照 17 的写法） */
+  .dm-split.mdc{grid-template-columns:minmax(0,1fr) minmax(0,1.5fr)}
+  .prev-tools{flex:none;background:var(--ui-bg)}
+  .prev-tools b{color:var(--ui-fg);font-weight:600;display:inline-flex;align-items:center;gap:6px}
+  .prev-tools .grow{flex:1}
+  .dm-canvas .stage{flex-wrap:wrap;gap:28px 24px;padding:28px 20px 32px;align-content:flex-start}
+  .dm-device .tag{white-space:nowrap}
+  /* 右侧 Device Manager 加宽后画布变窄，设备外框用紧凑尺寸 */
+  .dm-device.phone{width:150px;height:300px;border-radius:22px}
+  .dm-device.fold{width:250px;height:270px}
+  .dm-device.car{width:320px;height:136px}
+  .dm-device .sync{position:absolute;left:0;right:0;top:0;height:3px;z-index:6;border-radius:0}
+  .dm-device .scr{transition:opacity .25s}
+  .dm-device.refreshing .scr{opacity:.55}
+  @keyframes dmjoin{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  .dm-device.new{animation:dmjoin .35s ease-out}
+  @media (prefers-reduced-motion:reduce){.dm-device.new{animation:none}}
+  /* 折叠屏两栏 / 手机底栏 / 手表 / 车机 */
+  .mapp .cols{flex:1;display:flex;min-height:0}
+  .mapp .col{flex:1;min-width:0;display:flex;flex-direction:column}
+  .mapp .detail{padding:10px;display:flex;flex-direction:column;gap:5px}
+  .mapp .detail .pic{height:72px;border-radius:8px;background:linear-gradient(135deg,#dfe7ff,#b9c9ff)}
+  .mapp .detail b{font-size:12px;font-weight:600}
+  .mapp .detail span{font-size:9px;color:#8a8f99;line-height:1.4}
+  .mapp .detail .price{font-size:14px;font-weight:600;color:#DB3B4B}
+  .mapp .detail .btn{margin:2px 0 0;height:26px;border-radius:13px}
+  .mapp .nav{height:28px;border-top:1px solid #f0f0f0;display:flex;align-items:center;justify-content:space-around;font-size:8px;color:#8a8f99}
+  .mapp .nav b{color:#3574F0;font-weight:600}
+  .mapp .ring .ws{display:inline-block;margin-top:6px;padding:1px 8px;border-radius:8px;background:#f0f1f3;color:#888;font-size:8px}
+  .mapp.dark .hd{font-size:13px;gap:10px}
+  .mapp.dark .hd .search{flex:1;margin:0;height:20px;background:#22252c;color:#8a8f99}
+  .mapp.dark .cards{display:flex;gap:8px;padding:2px 10px 0}
+  .mapp.dark .cards .cd{flex:1;min-width:0;border-radius:8px;background:#1b1e26;padding:7px}
+  .mapp.dark .cards .cd .th{height:32px;border-radius:6px;background:linear-gradient(135deg,#3b4a7a,#5a6fb0);margin-bottom:5px}
+  .mapp.dark .cards .cd b{display:block;font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .mapp.dark .cards .cd span{display:block;font-size:9px;color:#8a8f99}
+  /* Device Manager · 远端真机列表 */
+  .devices .seg span{cursor:default}
+  .devices .pool{display:flex;align-items:center;gap:6px}
+  .devices .pool svg{width:14px;height:14px;color:var(--ui-icon)}
+  .devices .pool .grow{flex:1}
+  .rd .dm-card-hd{border-bottom:0;padding:9px 12px}
+  .rd .dm-card-hd .name{white-space:nowrap}
+  .rd .dm-card-hd .dm-pill{white-space:nowrap}
+  .rd .dm-progress{height:3px;border-radius:0}
+  .btn[disabled]{opacity:.5}
+  .btn svg.i{width:12px;height:12px}
+  .btn.primary svg.i{color:inherit}
+  .cap-list .dm-item{padding:4px 12px}
+  .cap-list .dm-item svg{width:14px;height:14px;flex:none}
+  .cap-list .dm-item.ok svg{color:var(--ui-success)}
+  .cap-list .dm-item.todo{color:var(--ui-fg-info)}
+  .cap-list .dm-item.todo svg{color:var(--ui-fg-info)}
+  .cap-list code{font-family:var(--font-code);font-size:11px;background:var(--ui-tag-bg);padding:1px 4px;border-radius:4px}
+</style>
+</head>
+<body>
+<div class="ide" id="ide" data-ide-theme="dark" data-left="project" data-right="devices" data-bottom="none" role="application" aria-label="DevEco Studio">
+  <div class="body">
+    <div class="tw tw-left">
+      <div class="pane on" data-pane="project">
+        <div class="tw-hdr"><span class="title">Project <svg class="i"><use href="#i-chevD"/></svg></span><span class="grow"></span>
+          <button class="abtn" title="Select Opened File"><svg class="i"><use href="#i-locate"/></svg></button>
+          <button class="abtn" title="Expand All"><svg class="i"><use href="#i-expandAll"/></svg></button>
+          <button class="abtn" title="Collapse All"><svg class="i"><use href="#i-collapseAll"/></svg></button>
+          <button class="abtn" title="Options"><svg class="i"><use href="#i-moreV"/></svg></button>
+          <button class="abtn" title="Hide|Shift+Esc" data-act="hide-left"><svg class="i"><use href="#i-hide"/></svg></button></div>
+        <div class="tw-body" id="tree-slot"></div>
+      </div>
+    </div>
+
+    <div class="editor">
+      <div class="tabs" id="tabs"><span class="grow"></span><span class="tab-tools"><button class="abtn" title="Split Right"><svg class="i"><use href="#i-split"/></svg></button><button class="abtn" title="Editor Options"><svg class="i"><use href="#i-moreV"/></svg></button></span></div>
+      <div class="dm-split mdc">
+        <div class="code-wrap"><div class="code" id="code"></div></div>
+        <div class="prev">
+          <div class="prev-tools">
+            <b><svg class="i"><use href="#i-layout"/></svg>Multi-device · <span id="cnt">2</span> 块屏</b>
+            <span class="grow"></span>
+            <span class="dm-pill muted" id="remote-pill">远端 0 台</span>
+            <button class="abtn" title="Refresh All"><svg class="i"><use href="#i-refresh"/></svg></button>
+          </div>
+          <div class="dm-canvas" id="canvas">
+            <div class="stage" id="stage">
+
+              <div class="dm-device phone" id="dev-phone" data-name="Mate 70 Pro · 本机">
+                <span class="tag">Mate 70 Pro · 本机</span>
+                <div class="scr">
+                  <div class="mapp">
+                    <div class="st"><span>9:41</span><span>5G ▮▮▮</span></div>
+                    <div class="hd">商品</div>
+                    <div class="search">搜索</div>
+                    <div class="row"><span class="th"></span><div class="tx"><b>无线降噪耳机 Pro</b><span>¥899 · 已售 1.2 万</span></div></div>
+                    <div class="row"><span class="th"></span><div class="tx"><b>智能手表 5 · 46mm</b><span>¥2199 · 已售 8600</span></div></div>
+                    <div class="row"><span class="th"></span><div class="tx"><b>便携充电宝 20000</b><span>¥199 · 已售 3.4 万</span></div></div>
+                    <div class="fill"></div>
+                    <div class="nav"><b>首页</b><span>分类</span><span>购物车</span><span>我的</span></div>
+                  </div>
+                </div>
+                <span class="cap">1080×2340 · USB</span>
+              </div>
+
+              <div class="dm-device fold" data-name="Mate X6 · 本机">
+                <span class="tag">Mate X6 · 本机</span>
+                <div class="scr">
+                  <div class="mapp">
+                    <div class="st"><span>9:41</span><span>5G ▮▮▮</span></div>
+                    <div class="cols">
+                      <div class="col">
+                        <div class="hd">商品</div>
+                        <div class="search">搜索</div>
+                        <div class="row"><span class="th"></span><div class="tx"><b>无线降噪耳机 Pro</b><span>¥899</span></div></div>
+                        <div class="row"><span class="th"></span><div class="tx"><b>智能手表 5</b><span>¥2199</span></div></div>
+                        <div class="row"><span class="th"></span><div class="tx"><b>便携充电宝</b><span>¥199</span></div></div>
+                      </div>
+                      <div class="col">
+                        <div class="detail">
+                          <div class="pic"></div>
+                          <b>无线降噪耳机 Pro</b>
+                          <span>主动降噪 · 40 小时续航</span>
+                          <span class="price">¥899</span>
+                          <div class="btn">加入购物车</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <span class="cap">2200×2480 · Wi-Fi</span>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="breadcrumbs" id="crumbs"></div>
+    </div>
+
+    <div class="tw tw-right">
+      <div class="pane on" data-pane="devices">
+        <div class="tw-hdr"><span class="title">Device Manager</span><span class="grow"></span>
+          <button class="abtn" title="Refresh"><svg class="i"><use href="#i-refresh"/></svg></button>
+          <button class="abtn" title="Pair Devices Using Wi-Fi"><svg class="i"><use href="#i-wifi"/></svg></button>
+          <button class="abtn" title="Options"><svg class="i"><use href="#i-moreV"/></svg></button>
+          <button class="abtn" title="Hide|Shift+Esc" data-act="hide-right"><svg class="i"><use href="#i-hide"/></svg></button></div>
+        <div class="tw-body"><div class="devices">
+          <div class="seg"><span>Local Emulator</span><span>Remote Emulator</span><span class="on">Remote Device</span><span>Local Device</span></div>
+          <div class="pool dm-small dm-muted"><svg><use href="#i-cloud"/></svg>远端真机池 · 本季度免费额度剩 112 分钟<span class="grow"></span><span>4 台</span></div>
+
+          <div class="dm-card rd" id="rd-watch">
+            <div class="dm-card-hd"><svg class="i"><use href="#i-watch"/></svg><span class="name">HUAWEI WATCH 5</span><span class="dm-pill muted">HarmonyOS 6.0 · 深圳</span><span class="grow"></span><span class="dm-pill ok" data-state>空闲</span><button class="btn primary" data-add="watch"><svg class="i"><use href="#i-plus-box"/></svg>加进画布</button></div>
+            <div class="dm-progress indet" hidden><i></i></div>
+          </div>
+          <div class="dm-card rd" id="rd-car">
+            <div class="dm-card-hd"><svg class="i"><use href="#i-car"/></svg><span class="name">HiCar 车机</span><span class="dm-pill muted">HarmonyOS 6.0 · 东莞</span><span class="grow"></span><span class="dm-pill ok" data-state>空闲</span><button class="btn primary" data-add="car"><svg class="i"><use href="#i-plus-box"/></svg>加进画布</button></div>
+            <div class="dm-progress indet" hidden><i></i></div>
+          </div>
+          <div class="dm-card rd" id="rd-tv">
+            <div class="dm-card-hd"><svg class="i"><use href="#i-tv"/></svg><span class="name">智慧屏 V5</span><span class="dm-pill muted">HarmonyOS 6.0 · 深圳</span><span class="grow"></span><span class="dm-pill warn" data-state>使用中 · 排队 1</span><button class="btn" id="btn-queue"><svg class="i"><use href="#i-hourglass"/></svg>排队</button></div>
+          </div>
+          <div class="dm-card rd" id="rd-fold">
+            <div class="dm-card-hd"><svg class="i"><use href="#i-fold"/></svg><span class="name">Mate X6</span><span class="dm-pill muted">HarmonyOS 6.0 · Wi-Fi</span><span class="grow"></span><span class="dm-pill muted" data-state>本机已有</span><button class="btn" disabled>画布里</button></div>
+          </div>
+
+          <div class="dm-card cap-list">
+            <div class="dm-card-hd"><svg class="i"><use href="#i-bolt"/></svg>拿过来之后能做的</div>
+            <div class="dm-list">
+              <div class="dm-item ok"><svg><use href="#i-checkS"/></svg><span class="grow">进同屏画布并排看</span></div>
+              <div class="dm-item ok"><svg><use href="#i-checkS"/></svg><span class="grow">和本机 Mate 70 Pro 做分布式联调</span></div>
+              <div class="dm-item todo"><svg><use href="#i-clock"/></svg><span class="grow">给 CI 远程调用 · <code>hdc -t remote://…</code></span><span class="dm-pill muted">下一步</span></div>
+            </div>
+          </div>
+        </div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var $=DemoFrame.$, $$=DemoFrame.$$;
+  document.getElementById('tree-slot').innerHTML=DemoFrame.tree({sel:'ListPage.ets'});
+  document.getElementById('tabs').insertAdjacentHTML('afterbegin',DemoFrame.tabs([{file:'ListPage.ets',on:true},{file:'ItemCard.ets'}]));
+  document.getElementById('code').innerHTML=DemoFrame.code('ListPage.ets',{cur:12});
+  DemoFrame.init({device:'Multi-device (2)',deviceIcon:'#i-layout',onReady:function(){
+    $('#status-slot').innerHTML='<span class="dm-capsule" id="cap"><span class="dm-dot ok"></span><span id="cap-txt">2 块屏 · 本机 2</span></span>';
+  }});
+
+  /* 远端设备模板：加进画布后长什么样 */
+  var TPL={
+    watch:'<div class="dm-device watch new" data-name="WATCH 5 · 远端"><span class="tag remote">WATCH 5 · 远端 · 深圳</span><div class="scr"><div class="dm-progress indet sync"><i></i></div>'
+      +'<div class="mapp"><div class="ring"><div><b>¥899</b>无线降噪耳机 Pro<br><span class="ws">RTT 38 ms</span></div></div></div></div><span class="cap">466×466 · 深圳机房</span></div>',
+    car:'<div class="dm-device car new" data-name="HiCar · 远端"><span class="tag remote">HiCar · 远端 · 东莞</span><div class="scr"><div class="dm-progress indet sync"><i></i></div>'
+      +'<div class="mapp dark"><div class="hd">商品<div class="search">搜索</div></div><div class="cards">'
+      +'<div class="cd"><div class="th"></div><b>无线降噪耳机 Pro</b><span>¥899</span></div><div class="cd"><div class="th"></div><b>智能手表 5</b><span>¥2199</span></div><div class="cd"><div class="th"></div><b>车载支架 · 磁吸</b><span>¥69</span></div>'
+      +'</div></div></div><span class="cap">1920×720 · 东莞机房</span></div>'
+  };
+  var remote=0;
+  function recount(){
+    var n=$$('#stage .dm-device').length;
+    $('#cnt').textContent=n;
+    var hd=$('#hdr-device span');if(hd)hd.textContent='Multi-device ('+n+')';
+    var cap=$('#cap-txt');if(cap)cap.textContent=n+' 块屏 · 本机 2'+(remote?' · 远端 '+remote:'');
+    var rp=$('#remote-pill');rp.className=remote?'dm-pill info':'dm-pill muted';rp.textContent='远端 '+remote+' 台';
+  }
+
+  /* 加进画布：卡片上走一条进度，0.6 秒后设备直接出现在同屏画布里 */
+  $('.devices').addEventListener('click',function(e){
+    var b=e.target.closest('[data-add]');if(!b||b.disabled)return;
+    var kind=b.dataset.add,card=b.closest('.dm-card'),st=$('[data-state]',card);
+    b.className='btn';b.disabled=true;b.textContent='画布里';
+    st.className='dm-pill info';st.innerHTML='<span class="spin" style="width:10px;height:10px"></span>接入中';
+    $('.dm-progress',card).hidden=false;
+    setTimeout(function(){
+      $('.dm-progress',card).hidden=true;
+      st.className='dm-pill ok';st.textContent='已在画布';
+      if(kind==='watch')$('#dev-phone').insertAdjacentHTML('afterend',TPL.watch);
+      else $('#stage').insertAdjacentHTML('beforeend',TPL[kind]);
+      var d=$('#stage .dm-device.'+kind);d.classList.add('refreshing');
+      setTimeout(function(){d.classList.remove('refreshing');$('.sync',d).hidden=true;d.classList.remove('new')},800);
+      remote++;recount();
+      d.scrollIntoView({block:'nearest'});
+    },600);
+  });
+
+  /* 智慧屏在用：排队 */
+  $('#btn-queue').addEventListener('click',function(){
+    this.disabled=true;this.textContent='已排队';
+    var st=$('#rd-tv [data-state]');st.className='dm-pill warn';st.textContent='排队中 · 第 2 位';
+  });
+})();
+</script>
+</body>
+</html>

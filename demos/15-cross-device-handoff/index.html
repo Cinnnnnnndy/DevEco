@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>15 · 任务状态跟着人走：PC 写，平板审，手表按</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="../../deveco-intui-kit/src/tokens.css">
+<link rel="stylesheet" href="../../deveco-intui-kit/src/components.css">
+<link rel="stylesheet" href="../_shared/frame.css">
+<script src="../../deveco-intui-kit/src/icons.js"></script>
+<script src="../_shared/frame.js"></script>
+<style>
+  .ide[data-ide-theme]{--ai-w:clamp(400px,30vw,460px)}
+  /* 编辑区上下分：上代码，下画布（另外两端） */
+  .dm-split.v.hand{grid-template-rows:minmax(0,1fr) 300px}
+  .hand .dm-canvas{overflow:auto}
+  .hand .stage{padding:32px 32px 28px;gap:52px;align-items:center}
+  .cv-lbl{position:absolute;top:8px;left:12px;z-index:2;display:inline-flex;align-items:center;gap:6px}
+  .cv-lbl svg{width:12px;height:12px}
+  /* 手表外框表带需要自己的层叠上下文才看得见 */
+  .dm-device.watch{z-index:0}
+  .dm-device.watch .cap{bottom:-34px}
+  .dm-device.tablet .scr,.dm-device.watch .scr{transition:box-shadow .2s}
+  .dm-device.live .scr{box-shadow:inset 0 0 0 2px var(--ui-accent)}
+  /* 平板屏：断点 + diff + 审批 */
+  .mapp .hd.ell{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;line-height:30px}
+  .mapp .sub{padding:0 12px 4px;font-size:9px;color:#8a8f99;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .mapp .diff{margin:2px 10px 0;border:1px solid #e6e8ee;border-radius:6px;overflow:hidden;font-family:var(--font-code);font-size:10px;line-height:16px;color:#1a1a1a}
+  .mapp .diff div{padding:0 6px;white-space:pre;overflow:hidden}
+  /* 各端最近的动作 */
+  .acts-card .dm-item{min-height:26px;font-size:var(--fs-sm)}
+  .acts-card .dm-item .t{font-family:var(--font-code);font-size:11px;color:var(--ui-fg-disabled);width:38px;flex:none}
+  .acts-card .dm-item svg{width:14px;height:14px;color:var(--ui-icon);flex:none}
+  .acts-card .dm-item .who{font-weight:600;flex:none}
+  .acts-card .dm-item.new{background:color-mix(in srgb,var(--ui-accent) 12%,transparent)}
+  .mapp .diff .add{background:#E3F7E7}
+  .mapp .diff .del{background:#FFEBEC}
+  .mapp .tb{display:flex;gap:8px;padding:8px 12px 10px}
+  .mapp .tb div{flex:1;height:26px;border-radius:13px;border:1px solid #d9dce3;display:grid;place-items:center;font-size:10px;font-weight:600;color:#3574F0;background:#fff;transition:background .2s,color .2s}
+  .mapp .tb div.sec{color:#666}
+  .mapp .tb.lit div:first-child{background:#3574F0;border-color:#3574F0;color:#fff}
+  .mapp .tb.lit div.sec{background:#f0f1f3}
+  .mapp .tb.done div:first-child{background:#E3F7E7;border-color:#E3F7E7;color:#208A3C}
+  .mapp .tb.done div.sec{opacity:.45}
+  /* 手表屏：进度 + 三个小圆钮 */
+  .mapp .ring > div{display:flex;flex-direction:column;align-items:center;gap:2px}
+  .mapp .ring b{font-size:18px;line-height:20px}
+  .mapp .ring .ws{font-size:9px;color:#666}
+  .mapp .ring .wb{display:flex;gap:6px;margin-top:5px}
+  .mapp .ring .wb i{width:18px;height:18px;border-radius:50%;background:#f0f1f3;color:#333;font-style:normal;font-size:7px;line-height:1;display:grid;place-items:center;font-weight:600;transition:background .2s,color .2s}
+  .mapp .ring .wb i.lit{background:#3574F0;color:#fff}
+  .mapp .ring .wb i.stop{color:#DB3B4B}
+  /* 右侧：三端卡片 */
+  .ai-scroll{padding-top:10px}
+  .dm-card .dm-item[data-end]{min-height:30px}
+  .dm-card .dm-item[data-end] .grow{font-weight:400}
+  .dm-card .dm-item.here{background:color-mix(in srgb,var(--ui-accent) 10%,transparent)}
+  .dm-card-ft .dm-small{white-space:normal;line-height:var(--lh-sm)}
+  .dm-card-ft .dm-small b{font-weight:600;color:var(--ui-fg)}
+  .stp .st.done svg{width:10px;height:10px}
+  .amsg .md p{color:var(--ui-fg)}
+  .ai-input .top .ctx svg{width:12px;height:12px}
+</style>
+</head>
+<body>
+<div class="ide" id="ide" data-ide-theme="dark" data-left="project" data-right="agent" data-bottom="none" role="application" aria-label="DevEco Studio">
+  <div class="body">
+    <div class="tw tw-left">
+      <div class="pane on" data-pane="project">
+        <div class="tw-hdr"><span class="title">Project <svg class="i"><use href="#i-chevD"/></svg></span><span class="grow"></span>
+          <button class="abtn" title="Select Opened File"><svg class="i"><use href="#i-locate"/></svg></button>
+          <button class="abtn" title="Expand All"><svg class="i"><use href="#i-expandAll"/></svg></button>
+          <button class="abtn" title="Collapse All"><svg class="i"><use href="#i-collapseAll"/></svg></button>
+          <button class="abtn" title="Options"><svg class="i"><use href="#i-moreV"/></svg></button>
+          <button class="abtn" title="Hide|Shift+Esc" data-act="hide-left"><svg class="i"><use href="#i-hide"/></svg></button></div>
+        <div class="tw-body" id="tree-slot"></div>
+      </div>
+    </div>
+
+    <div class="editor">
+      <div class="tabs" id="tabs"><span class="grow"></span><span class="tab-tools"><button class="abtn" title="Split Right"><svg class="i"><use href="#i-split"/></svg></button><button class="abtn" title="Editor Options"><svg class="i"><use href="#i-moreV"/></svg></button></span></div>
+      <div class="dm-split v hand">
+        <div class="code-wrap"><div class="code" id="code"></div></div>
+        <div class="dm-canvas" id="canvas">
+          <span class="dm-small dm-muted cv-lbl"><svg><use href="#i-sync"/></svg>同一个任务在另外两端</span>
+          <div class="stage">
+
+            <div class="dm-device tablet" id="dev-tablet" data-end="tablet">
+              <div class="scr">
+                <div class="mapp">
+                  <div class="st"><span>9:41</span><span>Wi-Fi ▮▮▮</span></div>
+                  <div class="hd ell">ListPage.ets · 断点 28 · Mate 70 Pro</div>
+                  <div class="sub" id="tab-sub">第 4 步 · 把 loadCover 改成异步 · 等你审</div>
+                  <div class="diff">
+                    <div>  loadCover(id: number): PixelMap {</div>
+                    <div class="del">- return image.createPixelMapSync(raw(id));</div>
+                    <div class="add">+ return await image.createPixelMap(raw(id));</div>
+                  </div>
+                  <div class="fill"></div>
+                  <div class="tb" id="tab-tb"><div id="tab-ok" title="在平板上批准这一步">批准第 4 步</div><div class="sec">打回</div></div>
+                </div>
+              </div>
+              <span class="cap">MatePad · 看和审</span>
+            </div>
+
+            <div class="dm-device watch" id="dev-watch" data-end="watch">
+              <div class="scr">
+                <div class="mapp">
+                  <div class="ring"><div><b id="w-big">4 / 5</b><span class="ws" id="w-small">等你确认</span><div class="wb"><i id="w-go" title="在手表上按「继续」">继续</i><i class="stop">停</i><i>看</i></div></div></div>
+                </div>
+              </div>
+              <span class="cap">WATCH 5 · 继续 / 停 / 看结果</span>
+            </div>
+
+          </div>
+        </div>
+      </div>
+      <div class="breadcrumbs" id="crumbs"></div>
+    </div>
+
+    <div class="tw tw-right">
+      <div class="pane on" data-pane="agent">
+        <div class="tw-hdr"><span class="title">CodeGenie <span class="cnt">跨端</span></span><span class="grow"></span>
+          <button class="abtn" title="New Chat"><svg class="i"><use href="#i-add"/></svg></button>
+          <button class="abtn" title="History"><svg class="i"><use href="#i-history"/></svg></button>
+          <button class="abtn" title="MCP"><svg class="i"><use href="#i-cube"/></svg></button>
+          <button class="abtn" title="Settings"><svg class="i"><use href="#i-settings"/></svg></button>
+          <button class="abtn" title="Options"><svg class="i"><use href="#i-moreV"/></svg></button>
+          <button class="abtn" title="Hide|Shift+Esc" data-act="hide-right"><svg class="i"><use href="#i-hide"/></svg></button></div>
+        <div class="tw-body"><div class="ai">
+          <div class="ai-scroll">
+
+            <div class="dm-card accent" id="ends">
+              <div class="dm-card-hd"><svg class="i"><use href="#i-sync"/></svg>这个任务也在另外 2 端<span class="grow"></span><span class="dm-small dm-muted" style="font-weight:400" id="ends-when">状态一致 · 2 s 前</span></div>
+              <div class="dm-list">
+                <div class="dm-item here" data-end="pc"><svg class="i"><use href="#i-tw-project"/></svg><span class="grow">PC · 写和改</span><span class="dm-pill ok" data-pill>这里</span><button class="btn sm" data-take="pc" hidden>交给它</button></div>
+                <div class="dm-item" data-end="tablet"><svg class="i"><use href="#i-tablet"/></svg><span class="grow">MatePad · 看和审</span><span class="dm-pill info" data-pill>已同步 · 2 s 前</span><button class="btn sm" data-take="tablet">交给它</button></div>
+                <div class="dm-item" data-end="watch"><svg class="i"><use href="#i-watch"/></svg><span class="grow">WATCH 5 · 继续 / 停 / 看结果</span><span class="dm-pill info" data-pill>已同步</span><button class="btn sm" data-take="watch">交给它</button></div>
+              </div>
+              <div class="dm-card-ft"><div class="dm-small dm-muted">同步的是任务状态：连着 <b>Mate 70 Pro</b> · 断点 <b>ListPage.ets:28</b> · 日志看到第 <b>412</b> 行 · AI 第 <b id="step-now">4</b> / 5 步</div></div>
+            </div>
+
+            <div class="ai-thread">
+              <div class="umsg"><span class="time">14:02</span><div class="bubble">把 loadCover 改成异步，在 Mate 70 Pro 上跑到断点看一眼。改动我一会儿在平板上审。</div></div>
+              <div class="amsg">
+                <div class="md"><p>分 5 步。第 4 步的改动等你审——在平板上点「批准」、在手表上按「继续」、或在这里点，都是同一份状态。</p></div>
+                <div class="steps" id="steps">
+                  <div class="stp" data-step="1"><span class="st done"><svg><use href="#i-checkS"/></svg></span><span class="txt">读取 ListPage.ets、ItemCard.ets</span><span class="file">只读</span></div>
+                  <div class="stp" data-step="2"><span class="st done"><svg><use href="#i-checkS"/></svg></span><span class="txt">把 loadCover 改成异步</span><span class="file">ListPage.ets</span></div>
+                  <div class="stp" data-step="3"><span class="st done"><svg><use href="#i-checkS"/></svg></span><span class="txt">在 Mate 70 Pro 上跑到断点 28</span><span class="file">日志 412 行</span></div>
+                  <div class="stp" data-step="4"><span class="st run"></span><span class="txt">等你确认第 2 步的改动</span><span class="file" id="s4-file">平板可审</span></div>
+                  <div class="stp" data-step="5"><span class="st todo"></span><span class="txt">继续跑完，收集滑动帧率</span><span class="file" id="s5-file">手表可按</span></div>
+                </div>
+                <div class="ans-foot"><span id="foot-txt">在等你 · 任一端确认即可</span><span class="grow"></span><button class="abtn" title="Copy"><svg class="i"><use href="#i-copy"/></svg></button><button class="abtn" title="Good"><svg class="i"><use href="#i-like"/></svg></button><button class="abtn" title="Bad"><svg class="i"><use href="#i-dislike"/></svg></button></div>
+              </div>
+
+              <div class="dm-card acts-card" id="acts">
+                <div class="dm-card-hd"><svg class="i"><use href="#i-history"/></svg>各端最近的动作<span class="cnt dm-mono dm-muted" style="font-weight:400" id="acts-cnt">4</span><span class="grow"></span><span class="dm-small dm-muted" style="font-weight:400">同一个任务</span></div>
+                <div class="dm-list" id="acts-list">
+                  <div class="dm-item"><span class="t">14:02</span><svg><use href="#i-tw-project"/></svg><span class="who">PC</span><span class="grow">打断点 ListPage.ets:28，改 loadCover</span></div>
+                  <div class="dm-item"><span class="t">14:03</span><svg><use href="#i-phone"/></svg><span class="who">Mate 70 Pro</span><span class="grow">跑到断点，日志停在第 412 行</span></div>
+                  <div class="dm-item"><span class="t">14:04</span><svg><use href="#i-tablet"/></svg><span class="who">MatePad</span><span class="grow">看了第 2 步的 diff，还没批</span></div>
+                  <div class="dm-item"><span class="t">14:04</span><svg><use href="#i-watch"/></svg><span class="who">WATCH 5</span><span class="grow">看结果：帧率 58，等你确认</span></div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+          <div class="ai-input">
+            <div class="top"><span class="ctx"><svg><use href="#i-at"/></svg>ListPage.ets:28</span><span class="ctx"><svg><use href="#i-phone"/></svg>Mate 70 Pro</span><span class="grow"></span></div>
+            <textarea rows="2" placeholder="换一端接着说，状态跟着走…"></textarea>
+            <div class="bot"><button class="mode"><svg class="i"><use href="#i-genie"/></svg>Agent<svg class="i"><use href="#i-chevD"/></svg></button><span id="model-label">DeepSeek-V3</span><span class="grow"></span><button class="send"><svg><use href="#i-send"/></svg></button></div>
+          </div>
+          <div class="ai-foot">内容由 AI 生成，请注意甄别</div>
+        </div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var $=DemoFrame.$, $$=DemoFrame.$$;
+  document.getElementById('tree-slot').innerHTML=DemoFrame.tree({sel:'ListPage.ets'});
+  document.getElementById('tabs').insertAdjacentHTML('afterbegin',DemoFrame.tabs([{file:'ListPage.ets',on:true},{file:'ItemCard.ets'}]));
+  document.getElementById('code').innerHTML=DemoFrame.code('ListPage.ets',{cur:28,marks:{28:'bp'}});
+  DemoFrame.init({device:'HUAWEI Mate 70 Pro',deviceIcon:'#i-phone',onReady:function(){
+    $('#status-slot').innerHTML='<span class="dm-capsule" id="cap"><span class="dm-dot ok" id="cap-dot"></span><span id="cap-txt">任务在 PC · 另外 2 端已同步</span></span>';
+    var code=$('#code');code.scrollTop=code.scrollHeight;   /* 断点在第 28 行，滚到底让它露出来 */
+  }});
+
+  var NAMES={pc:'PC',tablet:'MatePad',watch:'WATCH 5'};
+  var ICONS={pc:'#i-tw-project',tablet:'#i-tablet',watch:'#i-watch'};
+  var active='pc', continued=false;
+
+  function logAct(who,txt){
+    var list=$('#acts-list');
+    $$('.dm-item.new',list).forEach(function(x){x.classList.remove('new')});
+    list.insertAdjacentHTML('beforeend','<div class="dm-item new"><span class="t">14:05</span><svg><use href="'+ICONS[who]+'"/></svg><span class="who">'+NAMES[who]+'</span><span class="grow">'+txt+'</span></div>');
+    $('#acts-cnt').textContent=$$('.dm-item',list).length;
+  }
+
+  function capsule(txt,wait){
+    var cap=$('#cap');if(!cap)return;
+    cap.className='dm-capsule'+(wait?' wait':'');
+    $('#cap-dot').className='dm-dot ok'+(wait?' pulse':'');
+    $('#cap-txt').textContent=txt;
+  }
+
+  /* 把任务交给某一端：pill 与按钮跟着切，画布上对应设备亮边 */
+  function setActive(id){
+    active=id;
+    $$('#ends .dm-item[data-end]').forEach(function(it){
+      var e=it.dataset.end,pill=$('[data-pill]',it),btn=$('[data-take]',it);
+      it.classList.toggle('here',e===id);
+      if(e===id){pill.className='dm-pill ok';pill.textContent='这里';btn.hidden=true;}
+      else if(e==='pc'){pill.className='dm-pill muted';pill.textContent='跟随';btn.hidden=false;}
+      else{pill.className='dm-pill info';pill.textContent='已同步';btn.hidden=false;}
+    });
+    $$('#canvas .dm-device').forEach(function(d){d.classList.toggle('live',d.dataset.end===id)});
+    $('#ends-when').textContent='状态一致 · 刚刚';
+    capsule(id==='pc'?'任务回到 PC · 状态同步':'任务已交给 '+NAMES[id]+' · 状态同步',id!=='pc');
+    logAct(id,id==='pc'?'接回任务：断点 28、日志 412 行、AI 第 '+$('#step-now').textContent+' 步都还在':'接过任务：断点、日志位置、AI 步骤原样接上');
+  }
+
+  /* 第 4 步确认、第 5 步开跑：不管从哪一端按的，三端看到的都是这份状态 */
+  function continueTask(from){
+    if(continued)return;continued=true;
+    var s4=$('#steps .stp[data-step="4"] .st'),s5=$('#steps .stp[data-step="5"] .st');
+    s4.className='st done';s4.innerHTML='<svg><use href="#i-checkS"/></svg>';
+    s5.className='st run';s5.innerHTML='';
+    $('#s4-file').textContent=from==='watch'?'手表上按的':(from==='tablet'?'平板上批的':'这里点的');
+    $('#s5-file').textContent='进行中';
+    $('#step-now').textContent='5';
+    $('#foot-txt').textContent='第 5 / 5 步进行中 · 从 '+NAMES[from]+' 继续';
+    /* 手表 */
+    $('#w-big').textContent='5 / 5';$('#w-small').textContent='继续中';$('#w-go').classList.add('lit');
+    /* 平板 */
+    $('#tab-sub').textContent='第 5 步 · 继续跑完，收集滑动帧率 · '+NAMES[from]+' 已确认第 4 步';
+    var tb=$('#tab-tb');tb.classList.remove('lit');tb.classList.add('done');$('#tab-ok').textContent='第 4 步已批准';
+    logAct(from,from==='watch'?'按了「继续」：第 4 步确认，第 5 步开跑':(from==='tablet'?'批准了第 4 步，第 5 步开跑':'确认了第 4 步，第 5 步开跑'));
+  }
+
+  /* 右侧卡片：交给它 */
+  $('#ends').addEventListener('click',function(e){
+    var b=e.target.closest('[data-take]');if(!b)return;
+    var id=b.dataset.take;
+    setActive(id);
+    if(id==='watch')continueTask('watch');
+    else if(id==='tablet'&&!continued)$('#tab-tb').classList.add('lit');
+  });
+
+  /* 画布上的两端也能发指令：手表按「继续」、平板点「批准」 */
+  $('#w-go').addEventListener('click',function(e){e.stopPropagation();setActive('watch');continueTask('watch')});
+  $('#tab-ok').addEventListener('click',function(e){e.stopPropagation();setActive('tablet');continueTask('tablet')});
+  $('#canvas').addEventListener('click',function(e){
+    var d=e.target.closest('.dm-device[data-end]');if(!d)return;
+    setActive(d.dataset.end);
+    if(d.dataset.end==='tablet'&&!continued)$('#tab-tb').classList.add('lit');
+  });
+})();
+</script>
+</body>
+</html>

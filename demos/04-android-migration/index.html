@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>04 · 安卓应用转化：一键之后的活才是活</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="../../deveco-intui-kit/src/tokens.css">
+<link rel="stylesheet" href="../../deveco-intui-kit/src/components.css">
+<link rel="stylesheet" href="../_shared/frame.css">
+<script src="../../deveco-intui-kit/src/icons.js"></script>
+<script src="../_shared/frame.js"></script>
+<style>
+  .ide[data-ide-theme]{--ai-w:clamp(380px,32vw,520px)} /* 带属性选择器，压过 tokens.css 里按主题写的默认值 */
+  code{font-family:var(--font-code);font-size:11px;background:var(--ui-tag-bg);padding:1px 4px;border-radius:4px;color:var(--ui-fg)}
+  /* 树标题栏里的进度 pill */
+  #tree-prog{margin-left:2px}
+  /* 编辑器顶部的转化提示条 */
+  #callout-wrap{padding:8px 12px 0;flex:none;display:flex;flex-direction:column;gap:6px}
+  #callout-wrap:empty{display:none}
+  .dm-callout .txt{flex:1;min-width:0}
+  .dm-callout .acts{display:flex;flex-direction:column;gap:4px;flex:none;align-self:center;align-items:stretch}
+  .dm-callout .acts .btn{justify-content:center;white-space:nowrap}
+  .dm-callout .who{font-size:var(--fs-sm);color:var(--ui-fg-info);margin-top:2px}
+  .code .ln.hl-warn .g,.code .ln.hl-ok .g{background:transparent}
+  /* 右侧 Migration 面板 */
+  .mg-body{display:flex;flex-direction:column;padding-bottom:12px}
+  .mg-top{display:flex;flex-direction:column;gap:8px;padding:10px 12px 8px}
+  .mg-top .dm-row{font-size:var(--fs-sm);line-height:var(--lh-sm)}
+  .mg-list .dm-item{align-items:flex-start;padding:6px 12px;white-space:normal;cursor:default}
+  .mg-list .dm-item .num{width:18px;height:18px;border-radius:50%;background:var(--ui-tag-bg);color:var(--ui-tag-fg);font-family:var(--font-code);font-size:11px;font-weight:600;display:grid;place-items:center;flex:none;margin-top:1px}
+  .mg-list .dm-item.sel .num{background:var(--ui-accent);color:var(--ui-accent-fg)}
+  .mg-list .dm-item .grow{display:flex;flex-direction:column;gap:1px;overflow:visible}
+  .mg-list .dm-item .t{display:flex;align-items:center;gap:6px;white-space:nowrap}
+  .mg-list .dm-item .t b{font-weight:600}
+  .mg-list .dm-item .t .f{font-family:var(--font-code);font-size:11px;color:var(--ui-link)}
+  .mg-list .dm-item .t .f.dead{color:var(--ui-fg-info)}
+  .mg-list .dm-item .r{font-size:var(--fs-sm);line-height:var(--lh-sm);color:var(--ui-fg-info);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .mg-list .dm-item .side{display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex:none;margin-top:1px}
+  .mg-list .dm-item .est{font-family:var(--font-code);font-size:11px;color:var(--ui-fg-info);white-space:nowrap}
+  .mg-list .dm-item.new{animation:mgin .5s ease-out}
+  @keyframes mgin{from{background:color-mix(in srgb,var(--ui-accent) 20%,transparent)}to{background:transparent}}
+  /* 安卓提交卡片 */
+  .cm{display:flex;align-items:center;gap:8px;min-height:28px}
+  .cm .sha{font-family:var(--font-code);font-size:11px;color:var(--ui-link);flex:none;width:48px}
+  .cm .grow{flex:1;min-width:0;display:flex;flex-direction:column}
+  .cm .grow .m{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .cm .grow .s{font-size:var(--fs-sm);line-height:var(--lh-sm);color:var(--ui-fg-info);white-space:nowrap}
+  .cm .btn,.cm .dm-pill{flex:none}
+  .dm-card-bd .cm + .cm{border-top:1px solid var(--ui-border);padding-top:8px}
+</style>
+</head>
+<body>
+<div class="ide" id="ide" data-ide-theme="dark" data-left="project" data-right="inspector" data-bottom="none" role="application" aria-label="DevEco Studio">
+  <div class="body">
+    <div class="tw tw-left">
+      <div class="pane on" data-pane="project">
+        <div class="tw-hdr"><span class="title">Project <svg class="i"><use href="#i-chevD"/></svg></span><span class="dm-pill info" id="tree-prog">转化 4 / 6</span><span class="grow"></span>
+          <button class="abtn" title="Select Opened File"><svg class="i"><use href="#i-locate"/></svg></button>
+          <button class="abtn" title="Collapse All"><svg class="i"><use href="#i-collapseAll"/></svg></button>
+          <button class="abtn" title="Options"><svg class="i"><use href="#i-moreV"/></svg></button>
+          <button class="abtn" title="Hide|Shift+Esc" data-act="hide-left"><svg class="i"><use href="#i-hide"/></svg></button></div>
+        <div class="tw-body" id="tree-slot"></div>
+      </div>
+    </div>
+
+    <div class="editor">
+      <div class="tabs" id="tabs"><span class="grow"></span><span class="tab-tools"><button class="abtn" title="Editor Options"><svg class="i"><use href="#i-moreV"/></svg></button></span></div>
+      <div id="callout-wrap"></div>
+      <div class="code-wrap"><div class="code" id="code"></div></div>
+      <div class="breadcrumbs" id="crumbs"></div>
+    </div>
+
+    <div class="tw tw-right">
+      <div class="pane on" data-pane="inspector">
+        <div class="tw-hdr"><span class="title">Migration <span class="cnt" id="mg-cnt">4</span></span><span class="grow"></span>
+          <button class="abtn" title="Rescan Android Project"><svg class="i"><use href="#i-refresh"/></svg></button>
+          <button class="abtn" title="Options"><svg class="i"><use href="#i-moreV"/></svg></button>
+          <button class="abtn" title="Hide|Shift+Esc" data-act="hide-right"><svg class="i"><use href="#i-hide"/></svg></button></div>
+        <div class="tw-body"><div class="mg-body">
+          <div class="mg-top">
+            <div class="dm-row"><svg class="i" style="width:14px;height:14px"><use href="#i-translate"/></svg><span>Android <code>app/</code> → HarmonyOS <code>entry/</code></span><span class="grow"></span><span class="dm-pill muted">原生 ArkTS · 无兼容层</span></div>
+            <div class="dm-progress"><i id="prog-bar" style="--v:67%"></i></div>
+            <div class="dm-row"><span id="prog-txt">按屏迁移 · 4 / 6 屏已转 · 2 屏需人工</span><span class="grow"></span><span class="dm-muted" id="prog-sub">上次同步安卓仓 · 今天 09:40</span></div>
+            <div class="dm-seg" id="seg"><button class="on" data-mode="screen">按屏</button><button data-mode="module">按模块</button></div>
+          </div>
+          <div class="dm-group">剩余清单 · 建议顺序<span class="cnt" id="list-cnt">4</span><span class="grow"></span><span class="dm-small dm-muted" style="font-weight:400">先做卡住别人的，再做只差一步的</span></div>
+          <div class="dm-list mg-list" id="mg-list"></div>
+          <div class="dm-pad" style="padding-top:12px">
+            <div class="dm-card" id="sync-card">
+              <div class="dm-card-hd"><svg class="i"><use href="#i-branch"/></svg>安卓版改了，鸿蒙版还没跟上<span class="grow"></span><span class="dm-pill warn" id="sync-cnt">3 条</span></div>
+              <div class="dm-card-bd" id="commits"></div>
+            </div>
+          </div>
+        </div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var $=DemoFrame.$, $$=DemoFrame.$$, FILES=DemoFrame.FILES;
+
+  /* ---------- 工程树上每个文件的转化状态 ---------- */
+  var LABEL={ok:'已转',warn:'待查',err:'需人工',info:'待同步'};
+  var FSTATE={'ItemCard.ets':'ok','Index.ets':'ok','ListPage.ets':'warn','LoginPage.ets':'err','EntryAbility.ets':'ok'};
+  function pill(st){return '<span class="dm-pill '+st+'">'+LABEL[st]+'</span>'}
+
+  /* 机器转出来的代码段：哪个安卓文件转的、还没人看过的范围、差异说明 */
+  var NOTES={
+    'LoginPage.ets':{range:[24,30],from:'LoginActivity.kt',
+      text:'这段由 Android <code>LoginActivity.kt</code> 转出，还没人看过。安卓端用 <code>SharedPreferences</code> 存 token，鸿蒙侧已按等价写法改用 <code>preferences</code> Kit，请核对。',
+      explain:'安卓 <code>prefs.edit().putString(\'token\', t).apply()</code> 是异步落盘、不阻塞；鸿蒙 <code>preferences.put(\'token\', t)</code> 只写内存，还要 <code>await prefs.flush()</code> 才落盘，转出的代码已经补上这一行。另外安卓的 <code>SmsRetriever</code> 短信自动填充没有对应 Kit，第 12 行的验证码框需要人工改成 <code>inputMethod</code> 监听或保留手动输入。'},
+    'ListPage.ets':{range:[14,21],from:'ItemListFragment.kt',
+      text:'这段由 Android <code>ItemListFragment.kt</code> 转出，还没人看过。<code>RecyclerView</code> + <code>Adapter</code> 已按等价写法换成 <code>List</code> + <code>ForEach</code>，但安卓侧的 <code>setItemViewCacheSize(4)</code> 没有对应过来，<code>cachedCount</code> 目前是 0，请核对。',
+      explain:'<code>RecyclerView</code> 只画可见项并复用 ViewHolder；ArkTS 的 <code>List</code> + <code>ForEach</code> 会把 2000 项全建好，等价写法应是 <code>LazyForEach</code> + <code>IDataSource</code>；<code>setItemViewCacheSize(4)</code> 对应 <code>.cachedCount(4)</code>。'},
+    'Index.ets':{range:null,from:'MainActivity.kt',reviewed:'李婷 · 昨天 18:20',
+      text:'由 Android <code>MainActivity.kt</code> 转出，李婷已查。原生 ArkTS，没有兼容层。'}
+  };
+
+  /* ---------- 剩余清单 ---------- */
+  var SCREENS=[
+    {name:'登录页',file:'LoginPage.ets',why:'用了 Android 专有的短信自动填充',st:'err',est:'~2h'},
+    {name:'列表页',file:'ListPage.ets',why:'RecyclerView 已转 List，缺 cachedCount',st:'warn',est:'~20min'},
+    {name:'设置页',file:'SettingsPage.ets',why:'PreferenceScreen 无对应，需重画',st:'err',est:'~3h'},
+    {name:'详情页',file:'DetailPage.ets',why:'已转，等真机跑一次',st:'warn',est:'~10min'}
+  ];
+  var MODULES=[
+    {name:'自定义控件',why:'4 个自定义 View 没有对应，需重画',st:'err',est:'~4h'},
+    {name:'推送',why:'FCM 无对应，改接 Push Kit',st:'err',est:'~2h'},
+    {name:'网络层',why:'OkHttp 拦截器已转 rcp 拦截器，缺重试',st:'warn',est:'~30min'},
+    {name:'本地存储',why:'SharedPreferences 已转 preferences Kit',st:'warn',est:'~10min'}
+  ];
+  var COMMITS=[
+    {sha:'a3f9c1',msg:'登录失败改为提示"验证码错误"',screen:'登录页',file:'LoginPage.ets',when:'2 小时前',who:'王磊',est:'~15min'},
+    {sha:'7d02be',msg:'列表加下拉刷新',screen:'列表页',file:'ListPage.ets',when:'昨天',who:'李婷',est:'~40min'},
+    {sha:'c41e77',msg:'隐私声明新增设备标识',screen:'设置页',file:'SettingsPage.ets',when:'前天',who:'张伟',est:'~10min'}
+  ];
+  var prog={total:6,done:4,manual:2},mode='screen',curFile='LoginPage.ets',selIdx=0,explainOpen=false;
+
+  /* ---------- 编辑器 ---------- */
+  function openFile(file){
+    if(!FILES[file])return false;
+    curFile=file;explainOpen=false;
+    var n=NOTES[file],st=FSTATE[file]||'ok';
+    var tabs=$('#tabs');$$('.tab',tabs).forEach(function(t){t.remove()});
+    tabs.insertAdjacentHTML('afterbegin',DemoFrame.tabs([{file:file,on:true}]));
+    var cur=n&&n.range?n.range[0]:1,marks={};
+    if(n&&n.range&&!n.reviewed)marks[cur]='warn';
+    $('#code').innerHTML=DemoFrame.code(file,{cur:cur,marks:marks});
+    if(n&&n.range)$$('#code .ln').forEach(function(ln){var k=+ln.dataset.ln;if(k>=n.range[0]&&k<=n.range[1])ln.classList.add(n.reviewed?'hl-ok':'hl-warn')});
+    $('#crumbs').innerHTML=DemoFrame.crumbs(file);
+    $$('#tree .row.sel').forEach(function(x){x.classList.remove('sel')});
+    var r=$('#tree .row[data-file="'+file+'"]');if(r)r.classList.add('sel');
+    var p=$('#status-pos');if(p)p.textContent=cur+':1';
+    renderCallout();
+    return true;
+  }
+  function renderCallout(){
+    var n=NOTES[curFile],w=$('#callout-wrap');
+    if(!n){w.innerHTML='';return;}
+    var h;
+    if(n.reviewed){
+      h='<div class="dm-callout ok"><svg><use href="#i-checkS"/></svg><div class="txt">'+n.text+'<div class="who">已查 · '+n.reviewed+'</div></div><div class="acts"><span class="dm-pill ok">已查</span></div></div>';
+    }else{
+      h='<div class="dm-callout warn"><svg><use href="#i-warn"/></svg><div class="txt">'+n.text+'<div class="who">第 '+n.range[0]+'–'+n.range[1]+' 行 · 机器转出 · 今天 09:41</div></div>'
+       +'<div class="acts"><button class="btn sm primary" id="btn-reviewed"><svg class="i" style="width:12px;height:12px;color:#fff"><use href="#i-checkS"/></svg>标记为已查</button><button class="btn sm" id="btn-explain"><svg class="i" style="width:12px;height:12px"><use href="#i-genie"/></svg>'+(explainOpen?'收起解释':'让 CodeGenie 解释差异')+'</button></div></div>';
+      if(explainOpen)h+='<div class="dm-callout info"><svg><use href="#i-genie"/></svg><div class="txt"><b>差异在哪</b>：'+n.explain+'</div></div>';
+    }
+    w.innerHTML=h;
+  }
+  function markReviewed(){
+    var n=NOTES[curFile];if(!n||n.reviewed)return;
+    n.reviewed='我 · 刚刚';
+    var st=FSTATE[curFile];
+    if(st==='err'){FSTATE[curFile]='warn';prog.done++;prog.manual--;}
+    else if(st==='warn'){FSTATE[curFile]='ok';}
+    var tp=$('#tree .row[data-file="'+curFile+'"] .dm-pill');if(tp)tp.outerHTML=pill(FSTATE[curFile]);
+    SCREENS.forEach(function(s){if(s.file===curFile&&s.st==='err'){s.st='warn';s.why='已按等价写法核对，等真机跑一次'}});
+    $$('#code .ln.hl-warn').forEach(function(ln){ln.classList.remove('hl-warn');ln.classList.add('hl-ok')});
+    var mk=$('#code .ln[data-ln="'+n.range[0]+'"] .g .m');if(mk)mk.innerHTML='<svg class="i" style="width:14px;height:14px;color:var(--ui-success)"><use href="#i-checkS"/></svg>';
+    renderCallout();renderProgress();renderList();
+  }
+
+  /* ---------- 右侧面板 ---------- */
+  function renderProgress(){
+    var pct,txt;
+    if(mode==='screen'){pct=Math.round(prog.done/prog.total*100);txt='按屏迁移 · '+prog.done+' / '+prog.total+' 屏已转 · '+prog.manual+' 屏需人工';}
+    else{pct=60;txt='按模块迁移 · 3 / 5 模块已转 · 2 模块需人工';}
+    $('#prog-bar').style.setProperty('--v',pct+'%');$('#prog-txt').textContent=txt;
+    $('#tree-prog').textContent='转化 '+prog.done+' / '+prog.total;
+    var slot=$('#status-slot');if(slot)slot.innerHTML='<span class="dm-capsule" title="Android → HarmonyOS Migration"><svg class="i" style="width:12px;height:12px"><use href="#i-translate"/></svg>安卓转化 · '+prog.done+' / '+prog.total+' 屏'+(prog.manual?' · '+prog.manual+' 屏需人工':'')+'</span>';
+  }
+  function renderList(){
+    var list=mode==='screen'?SCREENS:MODULES;
+    $('#mg-list').innerHTML=list.map(function(it,i){
+      var has=!!(it.file&&FILES[it.file]);
+      return '<div class="dm-item'+(mode==='screen'&&i===selIdx?' sel':'')+(it.fresh?' new':'')+'" data-i="'+i+'" role="button" tabindex="0"><span class="num">'+(i+1)+'</span>'
+        +'<span class="grow"><span class="t"><b>'+it.name+'</b>'+(it.file?'<span class="f'+(has?'':' dead')+'">'+it.file+'</span>':'')+'</span><span class="r">'+it.why+'</span></span>'
+        +'<span class="side">'+pill(it.st)+'<span class="est">'+it.est+'</span></span></div>';
+    }).join('');
+    list.forEach(function(it){it.fresh=false});
+    $('#list-cnt').textContent=list.length;$('#mg-cnt').textContent=list.length;
+  }
+  function renderCommits(){
+    var left=0;
+    $('#commits').innerHTML=COMMITS.map(function(c,i){
+      if(!c.queued)left++;
+      return '<div class="cm"><span class="sha">'+c.sha+'</span><span class="grow"><span class="m">'+c.msg+'</span><span class="s">'+c.screen+' · '+c.when+' · '+c.who+'</span></span>'
+        +(c.queued?'<span class="dm-pill muted"><svg><use href="#i-checkS"/></svg>已排进清单</span>':'<button class="btn sm" data-sync="'+i+'"><svg class="i" style="width:12px;height:12px"><use href="#i-sync"/></svg>同步到鸿蒙版</button>')+'</div>';
+    }).join('');
+    var sc=$('#sync-cnt');sc.className='dm-pill '+(left?'warn':'ok');sc.textContent=left?left+' 条':'都跟上了';
+  }
+  function syncCommit(i){
+    var c=COMMITS[i];if(c.queued)return;c.queued=true;
+    SCREENS.push({name:c.screen,file:c.file,why:'同步安卓提交 '+c.sha+'：'+c.msg,st:'info',est:c.est,fresh:true});
+    renderCommits();
+    if(mode!=='screen'){mode='screen';$$('#seg button').forEach(function(b){b.classList.toggle('on',b.dataset.mode==='screen')});renderProgress();}
+    renderList();
+    var last=$('#mg-list .dm-item:last-child');if(last)last.scrollIntoView({block:'nearest'});
+  }
+
+  /* ---------- 初始 ---------- */
+  document.getElementById('tree-slot').innerHTML=DemoFrame.tree({sel:'LoginPage.ets',decorate:function(name){return FSTATE[name]?pill(FSTATE[name]):''}});
+  document.getElementById('tabs').insertAdjacentHTML('afterbegin',DemoFrame.tabs([{file:'LoginPage.ets',on:true}]));
+  document.getElementById('code').innerHTML=DemoFrame.code('LoginPage.ets',{cur:24,marks:{24:'warn'}});
+  /* 让 entryability 目录展开，EntryAbility.ets 的「已转」标记露出来 */
+  (function(){var r=$$('#tree .row[data-dir]').filter(function(x){return /entryability/.test(x.textContent)})[0];if(r&&r.dataset.open==='0'){r.dataset.open='1';var k=r.nextElementSibling;if(k)k.hidden=false;var u=$('.tg use',r);if(u)u.setAttribute('href','#i-chevD')}})();
+
+  DemoFrame.init({device:'HUAWEI Mate 70 Pro',deviceIcon:'#i-phone',pos:'24:1',onReady:function(){
+    openFile('LoginPage.ets');renderProgress();renderList();renderCommits();
+    $('#callout-wrap').addEventListener('click',function(e){
+      if(e.target.closest('#btn-reviewed'))markReviewed();
+      else if(e.target.closest('#btn-explain')){explainOpen=!explainOpen;renderCallout();}
+    });
+    $('#seg').addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;mode=b.dataset.mode;$$('#seg button').forEach(function(x){x.classList.toggle('on',x===b)});renderProgress();renderList();});
+    $('#mg-list').addEventListener('click',function(e){
+      var r=e.target.closest('.dm-item');if(!r)return;
+      if(mode!=='screen')return;
+      selIdx=+r.dataset.i;renderList();
+      var it=SCREENS[selIdx];if(it&&it.file&&FILES[it.file])openFile(it.file);
+    });
+    $('#commits').addEventListener('click',function(e){var b=e.target.closest('[data-sync]');if(b)syncCommit(+b.dataset.sync)});
+    /* 树里点有代码的文件：切编辑器 */
+    $('#ide').addEventListener('click',function(e){
+      var r=e.target.closest('#tree .row[data-file]');if(!r)return;
+      var f=r.dataset.file;if(FILES[f]&&f!==curFile)openFile(f);
+    });
+  }});
+})();
+</script>
+</body>
+</html>
