@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>21 · 智慧胶囊：状态栏上常驻的一小块</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="../../deveco-intui-kit/src/tokens.css">
+<link rel="stylesheet" href="../../deveco-intui-kit/src/components.css">
+<link rel="stylesheet" href="../_shared/frame.css">
+<script src="../../deveco-intui-kit/src/icons.js"></script>
+<script src="../_shared/frame.js"></script>
+<style>
+  .cap-pop{padding:10px 12px;display:flex;flex-direction:column;gap:8px;font-size:var(--fs-para);line-height:var(--lh-para);text-align:left;white-space:normal;color:var(--ui-fg)}
+  .cap-pop .ph{display:flex;align-items:center;gap:6px;font-weight:600}
+  .cap-pop .ph .grow{flex:1}
+  .cap-pop .ph .when{font-size:11px;font-weight:400;color:var(--ui-fg-info)}
+  .cap-pop p{margin:0}
+  .cap-pop code{font-family:var(--font-code);font-size:11px;background:var(--ui-tag-bg);padding:1px 4px;border-radius:4px}
+  .cap-pop .pf{display:flex;gap:6px;align-items:center}
+  .cap-pop .pf .grow{flex:1}
+  .cap-pop .pf a{color:var(--ui-link);font-size:var(--fs-sm)}
+  .cap-pop .queue{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--ui-fg-info)}
+  .cap-pop .queue i{width:22px;height:6px;border-radius:3px;background:var(--ui-progress-track)}
+  .cap-pop .queue i.me{background:var(--ui-accent)}
+  .cap-pop .queue i.run{background:var(--ui-success)}
+  .dm-capsule[aria-expanded="true"]{border-color:var(--ui-component-border);background:var(--ui-hover)}
+</style>
+</head>
+<body>
+<div class="ide" id="ide" data-ide-theme="dark" data-left="project" data-right="none" data-bottom="build" role="application" aria-label="DevEco Studio">
+  <div class="body">
+    <div class="tw tw-left">
+      <div class="pane on" data-pane="project">
+        <div class="tw-hdr"><span class="title">Project <svg class="i"><use href="#i-chevD"/></svg></span><span class="grow"></span>
+          <button class="abtn" title="Select Opened File"><svg class="i"><use href="#i-locate"/></svg></button>
+          <button class="abtn" title="Expand All"><svg class="i"><use href="#i-expandAll"/></svg></button>
+          <button class="abtn" title="Collapse All"><svg class="i"><use href="#i-collapseAll"/></svg></button>
+          <button class="abtn" title="Options"><svg class="i"><use href="#i-moreV"/></svg></button>
+          <button class="abtn" title="Hide|Shift+Esc" data-act="hide-left"><svg class="i"><use href="#i-hide"/></svg></button></div>
+        <div class="tw-body" id="tree-slot"></div>
+      </div>
+    </div>
+
+    <div class="editor">
+      <div class="tabs" id="tabs"><span class="grow"></span><span class="tab-tools"><button class="abtn" title="Editor Options"><svg class="i"><use href="#i-moreV"/></svg></button></span></div>
+      <div class="code-wrap"><div class="code" id="code"></div><span class="ok" title="No problems found"><svg><use href="#i-check"/></svg></span></div>
+      <div class="breadcrumbs" id="crumbs"></div>
+    </div>
+
+    <div class="tw tw-bottom">
+      <div class="tw-hdr"><span class="title">Build</span><span class="tabbar"><button class="btab on">Sync<span class="x"><svg class="i"><use href="#i-closeS"/></svg></span></button></span><span class="grow"></span><button class="abtn" title="Options"><svg class="i"><use href="#i-moreV"/></svg></button><button class="abtn" title="Hide|Shift+Esc" data-act="hide-bottom"><svg class="i"><use href="#i-hide"/></svg></button></div>
+      <div class="tw-body">
+        <div class="pane on" data-pane="build"><div class="build">
+          <div class="side"><button class="abtn" title="Show Warnings"><svg class="i"><use href="#i-tw-problems"/></svg></button><button class="abtn" title="Pin"><svg class="i"><use href="#i-pin"/></svg></button></div>
+          <div class="list">
+            <div class="row"><svg><use href="#i-check"/></svg><b>MyApplication [Ohpm Install]:</b>&nbsp;successful <span class="when">At 2026/9/14 10:12</span></div>
+            <div class="row sel"><svg><use href="#i-check"/></svg><b>MyApplication [Build Init]:</b>&nbsp;successful <span class="when">At 2026/9/14 10:12</span></div>
+          </div>
+          <div class="out">&gt; hvigor <span class="ok">Finished :entry:clean... after 2 ms</span>
+&gt; hvigor <span class="ok">Finished ::clean... after 1 ms</span>
+&gt; hvigor <span class="ok">Finished :entry:init... after 1 ms</span>
+&gt; hvigor <span class="ok">Finished ::init... after 1 ms</span>
+
+Process finished with exit code 0</div>
+        </div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var $=DemoFrame.$;
+  document.getElementById('tree-slot').innerHTML=DemoFrame.tree({sel:'Index.ets'});
+  document.getElementById('tabs').insertAdjacentHTML('afterbegin',DemoFrame.tabs([{file:'Index.ets',on:true}]));
+  document.getElementById('code').innerHTML=DemoFrame.code('Index.ets',{cur:17});
+
+  /* 状态栏：最多两枚胶囊，“在等你”的排前面带蓝点；点开才展开面板 */
+  DemoFrame.init({device:'HUAWEI Mate 70 Pro',deviceIcon:'#i-phone',onReady:function(){
+    $('#status-slot').innerHTML=
+      '<span role="button" tabindex="0" class="dm-capsule wait" data-pop aria-expanded="false"><span class="dm-dot info pulse"></span>等你确认 · 修复 ListPage 滑动卡顿'
+      +'<div class="popup" hidden><div class="cap-pop">'
+      +'<div class="ph"><svg class="i"><use href="#i-genie"/></svg>修复 ListPage 滑动卡顿<span class="grow"></span><span class="when">等了 58 分钟</span></div>'
+      +'<p>它打算把 <code>loadCover</code> 的同步解码改成异步加占位图，会改 <code>ListPage.ets</code> 与 <code>ItemCard.ets</code>，不动数据层。</p>'
+      +'<div class="pf"><a href="#">在面板里看完整计划</a><span class="grow"></span><button class="btn sm">拒绝</button><button class="btn sm primary">批准</button></div>'
+      +'</div></div></span>'
+      +'<span role="button" tabindex="0" class="dm-capsule" data-pop aria-expanded="false"><span class="spin" style="width:10px;height:10px"></span>生成上架材料 · 排第 3<span class="bar"><i style="--v:30%"></i></span>'
+      +'<div class="popup" hidden><div class="cap-pop">'
+      +'<div class="ph"><svg class="i"><use href="#i-hourglass"/></svg>生成上架材料<span class="grow"></span><span class="when">排队中</span></div>'
+      +'<p>服务端并发排队 · <b>排第 3 位</b> · 预计还要 <b>2 分钟</b>。排到之后自动开始，不用盯着。</p>'
+      +'<div class="queue"><i class="run"></i><i></i><i></i><i class="me"></i><span>前面还有 2 个</span></div>'
+      +'<div class="pf"><a href="#">为什么要排队</a><span class="grow"></span><button class="btn sm">取消</button><button class="btn sm">排到了提醒我</button></div>'
+      +'</div></div></span>';
+    /* 胶囊自己的弹层：复用 frame 的 data-pop 机制（init 时已绑定，这里对新节点再绑一次） */
+    Array.prototype.forEach.call(document.querySelectorAll('#status-slot [data-pop]'),function(b){
+      b.addEventListener('click',function(e){
+        if(e.target.closest('.popup'))return;
+        var open=b.getAttribute('aria-expanded')==='true';
+        Array.prototype.forEach.call(document.querySelectorAll('#status-slot [data-pop]'),function(x){x.setAttribute('aria-expanded','false');x.querySelector('.popup').hidden=true});
+        if(!open){b.setAttribute('aria-expanded','true');b.querySelector('.popup').hidden=false}
+        e.stopPropagation();
+      });
+    });
+    document.addEventListener('click',function(e){if(!e.target.closest('#status-slot'))Array.prototype.forEach.call(document.querySelectorAll('#status-slot [data-pop]'),function(x){x.setAttribute('aria-expanded','false');x.querySelector('.popup').hidden=true})});
+    /* 默认把第一枚打开，方便一眼看到面板长什么样 */
+    document.querySelector('#status-slot [data-pop]').click();
+  }});
+})();
+</script>
+</body>
+</html>
