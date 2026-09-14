@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>17 · 单屏多设备：一块画布，几种形态一起刷</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="../../deveco-intui-kit/src/tokens.css">
+<link rel="stylesheet" href="../../deveco-intui-kit/src/components.css">
+<link rel="stylesheet" href="../_shared/frame.css">
+<script src="../../deveco-intui-kit/src/icons.js"></script>
+<script src="../_shared/frame.js"></script>
+<style>
+  /* 菜单栏隐藏时 .body 拿 1fr 行，状态栏贴底 */
+  .ide:not([data-menu="bar"]){grid-template-rows:var(--hdr-h) minmax(0,1fr) var(--status-h)}
+  /* 编辑区左右分：左代码，右 Previewer 画布 */
+  .dm-split.mdc{grid-template-columns:minmax(0,1fr) minmax(0,1.6fr)}
+  .prev-tools{flex:none;background:var(--ui-bg)}
+  .prev-tools b{color:var(--ui-fg);font-weight:600;display:inline-flex;align-items:center;gap:6px}
+  .prev-tools .grow{flex:1}
+  .prev-tools .sel-lbl{display:inline-flex;align-items:center;gap:4px;color:var(--ui-fg);padding:0 6px;height:20px;border-radius:4px;background:color-mix(in srgb,var(--ui-accent) 14%,transparent)}
+  .prev-tools .sel-lbl svg{width:12px;height:12px;color:var(--ui-accent)}
+  .dm-canvas .stage{flex-wrap:wrap;gap:44px}
+  /* 设备可点选 */
+  .dm-device{cursor:default;transition:box-shadow .15s}
+  .dm-device.sel{outline:2px solid var(--ui-accent);outline-offset:3px}
+  .dm-device .scr{transition:opacity .25s}
+  .dm-device.refreshing .scr{opacity:.55}
+  /* 同步刷新的进度条：贴在每块屏顶上 */
+  .dm-device .sync{position:absolute;left:0;right:0;top:0;height:3px;z-index:6;border-radius:0}
+  /* 折叠屏两栏 */
+  .mapp .cols{flex:1;display:flex;min-height:0}
+  .mapp .col{flex:1;min-width:0;display:flex;flex-direction:column}
+  .mapp .detail{padding:10px;display:flex;flex-direction:column;gap:5px}
+  .mapp .detail .pic{height:88px;border-radius:8px;background:linear-gradient(135deg,#dfe7ff,#b9c9ff)}
+  .mapp .detail b{font-size:12px;font-weight:600}
+  .mapp .detail span{font-size:9px;color:#8a8f99;line-height:1.4}
+  .mapp .detail .price{font-size:14px;font-weight:600;color:#DB3B4B}
+  .mapp .detail .btn{margin:2px 0 0;height:26px;border-radius:13px}
+  /* 手机底栏 */
+  .mapp .nav{height:28px;border-top:1px solid #f0f0f0;display:flex;align-items:center;justify-content:space-around;font-size:8px;color:#8a8f99}
+  .mapp .nav b{color:#3574F0;font-weight:600}
+  /* 手表 */
+  .mapp .ring .ws{display:inline-block;margin-top:6px;padding:1px 8px;border-radius:8px;background:#f0f1f3;color:#888;font-size:8px}
+  /* 车机：大字横排三个卡片 */
+  .mapp.dark .hd{font-size:13px;gap:10px}
+  .mapp.dark .hd .search{flex:1;margin:0;height:20px;background:#22252c;color:#8a8f99}
+  .mapp.dark .cards{display:flex;gap:8px;padding:2px 10px 0}
+  .mapp.dark .cards .cd{flex:1;min-width:0;border-radius:8px;background:#1b1e26;padding:8px}
+  .mapp.dark .cards .cd .th{height:40px;border-radius:6px;background:linear-gradient(135deg,#3b4a7a,#5a6fb0);margin-bottom:5px}
+  .mapp.dark .cards .cd b{display:block;font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .mapp.dark .cards .cd span{display:block;font-size:9px;color:#8a8f99}
+  /* 代码：第 12 行可点 */
+  .code .ln[data-ln="12"]{cursor:pointer}
+  .code .ln[data-ln="12"]:hover .t{text-decoration:underline dotted var(--ui-fg-info)}
+</style>
+</head>
+<body>
+<div class="ide" id="ide" data-ide-theme="dark" data-left="project" data-right="none" data-bottom="none" role="application" aria-label="DevEco Studio">
+  <div class="body">
+    <div class="tw tw-left">
+      <div class="pane on" data-pane="project">
+        <div class="tw-hdr"><span class="title">Project <svg class="i"><use href="#i-chevD"/></svg></span><span class="grow"></span>
+          <button class="abtn" title="Select Opened File"><svg class="i"><use href="#i-locate"/></svg></button>
+          <button class="abtn" title="Expand All"><svg class="i"><use href="#i-expandAll"/></svg></button>
+          <button class="abtn" title="Collapse All"><svg class="i"><use href="#i-collapseAll"/></svg></button>
+          <button class="abtn" title="Options"><svg class="i"><use href="#i-moreV"/></svg></button>
+          <button class="abtn" title="Hide|Shift+Esc" data-act="hide-left"><svg class="i"><use href="#i-hide"/></svg></button></div>
+        <div class="tw-body" id="tree-slot"></div>
+      </div>
+    </div>
+
+    <div class="editor">
+      <div class="tabs" id="tabs"><span class="grow"></span><span class="tab-tools"><button class="abtn" title="Split Right"><svg class="i"><use href="#i-split"/></svg></button><button class="abtn" title="Editor Options"><svg class="i"><use href="#i-moreV"/></svg></button></span></div>
+      <div class="dm-split mdc">
+        <div class="code-wrap"><div class="code" id="code"></div></div>
+        <div class="prev">
+          <div class="prev-tools">
+            <b><svg class="i"><use href="#i-layout"/></svg>Multi-device · <span id="cnt">4</span> 块屏</b>
+            <span class="grow"></span>
+            <span class="dm-pill ok" id="sync-pill"><svg><use href="#i-sync"/></svg>改一次一起刷 · 上次 0.8 s</span>
+            <span class="sel-lbl" id="sel-lbl" hidden><svg><use href="#i-checkS"/></svg><span id="sel-txt"></span></span>
+            <button class="abtn" id="btn-refresh" title="Refresh All"><svg class="i"><use href="#i-refresh"/></svg></button>
+            <button class="abtn" id="btn-add" title="加设备"><svg class="i"><use href="#i-add"/></svg></button>
+          </div>
+          <div class="dm-canvas" id="canvas">
+            <div class="stage" id="stage">
+
+              <div class="dm-device phone" data-name="Mate 70 Pro · 本机">
+                <span class="tag">Mate 70 Pro · 本机</span>
+                <div class="scr">
+                  <div class="dm-progress indet sync" hidden><i></i></div>
+                  <div class="mapp">
+                    <div class="st"><span>9:41</span><span>5G ▮▮▮</span></div>
+                    <div class="hd">商品</div>
+                    <div class="search" data-search>搜索</div>
+                    <div class="row"><span class="th"></span><div class="tx"><b>无线降噪耳机 Pro</b><span>¥899 · 已售 1.2 万</span></div></div>
+                    <div class="row"><span class="th"></span><div class="tx"><b>智能手表 5 · 46mm</b><span>¥2199 · 已售 8600</span></div></div>
+                    <div class="row"><span class="th"></span><div class="tx"><b>便携充电宝 20000</b><span>¥199 · 已售 3.4 万</span></div></div>
+                    <div class="row"><span class="th"></span><div class="tx"><b>折叠键盘 · 蓝牙</b><span>¥329 · 已售 5200</span></div></div>
+                    <div class="row"><span class="th"></span><div class="tx"><b>车载支架 · 磁吸</b><span>¥69 · 已售 2.1 万</span></div></div>
+                    <div class="fill"></div>
+                    <div class="nav"><b>首页</b><span>分类</span><span>购物车</span><span>我的</span></div>
+                  </div>
+                </div>
+                <span class="cap">1080×2340 · API 20</span>
+              </div>
+
+              <div class="dm-device fold" data-name="Mate X6 · 展开">
+                <span class="tag">Mate X6 · 展开</span>
+                <div class="scr">
+                  <div class="dm-progress indet sync" hidden><i></i></div>
+                  <div class="mapp">
+                    <div class="st"><span>9:41</span><span>5G ▮▮▮</span></div>
+                    <div class="cols">
+                      <div class="col">
+                        <div class="hd">商品</div>
+                        <div class="search" data-search>搜索</div>
+                        <div class="row"><span class="th"></span><div class="tx"><b>无线降噪耳机 Pro</b><span>¥899</span></div></div>
+                        <div class="row"><span class="th"></span><div class="tx"><b>智能手表 5</b><span>¥2199</span></div></div>
+                        <div class="row"><span class="th"></span><div class="tx"><b>便携充电宝</b><span>¥199</span></div></div>
+                        <div class="row"><span class="th"></span><div class="tx"><b>折叠键盘</b><span>¥329</span></div></div>
+                      </div>
+                      <div class="col">
+                        <div class="detail">
+                          <div class="pic"></div>
+                          <b>无线降噪耳机 Pro</b>
+                          <span>主动降噪 · 40 小时续航 · 双设备连接</span>
+                          <span class="price">¥899</span>
+                          <div class="btn">加入购物车</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <span class="cap">2200×2480 · API 20</span>
+              </div>
+
+              <div class="dm-device watch" data-name="WATCH 5 · 远端">
+                <span class="tag remote">WATCH 5 · 远端</span>
+                <div class="scr">
+                  <div class="dm-progress indet sync" hidden><i></i></div>
+                  <div class="mapp">
+                    <div class="ring"><div><b>3</b>条新消息<br><span class="ws" data-search>搜索</span></div></div>
+                  </div>
+                </div>
+                <span class="cap">466×466 · API 20</span>
+              </div>
+
+              <div class="dm-device car" data-name="HiCar · 远端">
+                <span class="tag remote">HiCar · 远端</span>
+                <div class="scr">
+                  <div class="dm-progress indet sync" hidden><i></i></div>
+                  <div class="mapp dark">
+                    <div class="hd">商品<div class="search" data-search>搜索</div></div>
+                    <div class="cards">
+                      <div class="cd"><div class="th"></div><b>无线降噪耳机 Pro</b><span>¥899</span></div>
+                      <div class="cd"><div class="th"></div><b>智能手表 5</b><span>¥2199</span></div>
+                      <div class="cd"><div class="th"></div><b>车载支架 · 磁吸</b><span>¥69</span></div>
+                    </div>
+                  </div>
+                </div>
+                <span class="cap">1920×720 · API 20</span>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="breadcrumbs" id="crumbs"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var $=DemoFrame.$, $$=DemoFrame.$$;
+  document.getElementById('tree-slot').innerHTML=DemoFrame.tree({sel:'ListPage.ets'});
+  document.getElementById('tabs').insertAdjacentHTML('afterbegin',DemoFrame.tabs([{file:'ListPage.ets',on:true},{file:'ItemCard.ets'}]));
+  document.getElementById('code').innerHTML=DemoFrame.code('ListPage.ets',{cur:12,marks:{12:'bulb'}});
+  DemoFrame.init({device:'Multi-device (4)',deviceIcon:'#i-layout',onReady:function(){
+    $('#status-slot').innerHTML='<span class="dm-capsule" id="cap"><span class="dm-dot ok"></span><span id="cap-txt">4 块屏 · 已同步</span></span>';
+  }});
+
+  /* 第 12 行：点一下 = 改了一处（占位文字 搜索 ⇄ 搜索商品），四块屏一起刷 */
+  var LINE_A='      <span class="f">Search</span>({ <span class="p">value</span>: <span class="k">this</span>.<span class="p">keyword</span> })';
+  var LINE_B='      <span class="f">Search</span>({ <span class="p">value</span>: <span class="k">this</span>.<span class="p">keyword</span>, <span class="p">placeholder</span>: <span class="s">\'搜索商品\'</span> })';
+  var edited=false, busy=false;
+  var ln12=$('.code .ln[data-ln="12"]');
+  ln12.setAttribute('title','改这一行：画布上 4 块屏一起刷');
+
+  function sync(text){
+    if(busy)return;busy=true;
+    var devs=$$('#stage .dm-device');
+    devs.forEach(function(d){d.classList.add('refreshing');$('.sync',d).hidden=false});
+    $('#sync-pill').className='dm-pill info';$('#sync-pill').innerHTML='<span class="spin" style="width:10px;height:10px"></span>'+devs.length+' 块屏刷新中…';
+    var cap=$('#cap');if(cap){cap.className='dm-capsule wait';$('#cap-txt').textContent=devs.length+' 块屏 · 刷新中';$('.dm-dot',cap).className='dm-dot info pulse'}
+    setTimeout(function(){
+      $$('#stage [data-search]').forEach(function(s){s.textContent=text});
+      devs.forEach(function(d){d.classList.remove('refreshing');$('.sync',d).hidden=true});
+      $('#sync-pill').className='dm-pill ok';$('#sync-pill').innerHTML='<svg><use href="#i-sync"/></svg>改一次一起刷 · 刚刚 0.8 s';
+      if(cap){cap.className='dm-capsule';$('#cap-txt').textContent=devs.length+' 块屏 · 已同步';$('.dm-dot',cap).className='dm-dot ok'}
+      busy=false;
+    },800);
+  }
+  ln12.addEventListener('click',function(){
+    if(busy)return;
+    edited=!edited;
+    $('.t',ln12).innerHTML=edited?LINE_B:LINE_A;
+    ln12.classList.remove('hl-ok');void ln12.offsetWidth;ln12.classList.add('hl-ok');
+    setTimeout(function(){ln12.classList.remove('hl-ok')},1600);
+    sync(edited?'搜索商品':'搜索');
+  });
+  $('#btn-refresh').addEventListener('click',function(){sync(edited?'搜索商品':'搜索')});
+
+  /* 画布上任一设备可点选 */
+  $('#canvas').addEventListener('click',function(e){
+    var d=e.target.closest('.dm-device');
+    $$('#stage .dm-device').forEach(function(x){x.classList.toggle('sel',x===d)});
+    var lbl=$('#sel-lbl');
+    if(d){$('#sel-txt').textContent='已选 · '+d.dataset.name;lbl.hidden=false}else lbl.hidden=true;
+  });
+
+  /* 加设备：往画布追加一块大屏 */
+  $('#btn-add').addEventListener('click',function(){
+    if($('#stage .dm-device.tv'))return;
+    $('#stage').insertAdjacentHTML('beforeend',
+      '<div class="dm-device tv" data-name="智慧屏 V5 · 远端"><span class="tag remote">智慧屏 V5 · 远端</span><div class="scr"><div class="dm-progress indet sync"><i></i></div>'
+      +'<div class="mapp dark"><div class="hd">商品<div class="search" data-search>'+(edited?'搜索商品':'搜索')+'</div></div><div class="cards">'
+      +'<div class="cd"><div class="th"></div><b>无线降噪耳机 Pro</b><span>¥899</span></div><div class="cd"><div class="th"></div><b>智能手表 5</b><span>¥2199</span></div><div class="cd"><div class="th"></div><b>便携充电宝</b><span>¥199</span></div><div class="cd"><div class="th"></div><b>折叠键盘</b><span>¥329</span></div>'
+      +'</div></div></div><span class="cap">3840×2160 · API 20</span></div>');
+    var tv=$('#stage .dm-device.tv');tv.classList.add('refreshing');
+    setTimeout(function(){tv.classList.remove('refreshing');$('.sync',tv).hidden=true},800);
+    var n=$$('#stage .dm-device').length;$('#cnt').textContent=n;
+    var hd=$('#hdr-device span');if(hd)hd.textContent='Multi-device ('+n+')';
+    var cap=$('#cap-txt');if(cap)cap.textContent=n+' 块屏 · 已同步';
+    tv.scrollIntoView({block:'nearest'});
+  });
+})();
+</script>
+</body>
+</html>
