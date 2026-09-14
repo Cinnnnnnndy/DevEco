@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>12 · 自动化 Workflow：不用你想起来要固化</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="../../deveco-intui-kit/src/tokens.css">
+<link rel="stylesheet" href="../../deveco-intui-kit/src/components.css">
+<link rel="stylesheet" href="../_shared/frame.css">
+<script src="../../deveco-intui-kit/src/icons.js"></script>
+<script src="../_shared/frame.js"></script>
+<style>
+  .ide[data-ide-theme]{--ai-w:clamp(400px,32vw,520px)}
+  #wf-saved .dm-flow .fn{font-size:11px;padding:0 8px;gap:5px;height:24px}
+  #wf-saved .dm-flow .fa{width:14px}
+  .ai-thread{gap:8px}
+  .umsg .bubble{padding:6px 10px}
+  /* 官方存好的高频动作 */
+  .wf-list .dm-item{padding-right:8px}
+  .wf-list .cmd{width:112px;flex:none;color:var(--ui-fg)}
+  .wf-list .grow{color:var(--ui-fg-info)}
+  .wf-list .dm-pill{flex:none}
+  .dm-card-hd .dm-small{font-weight:400}
+  .dm-card-hd .dm-mono{font-weight:600}
+  .dm-card-hd svg.ok{color:var(--ui-success)}
+  .amsg .step svg.i.ok{color:var(--ui-success)}
+  /* 已存卡片 */
+  .wf-next{display:flex;align-items:center;gap:6px;flex-wrap:wrap;color:var(--ui-fg-info);font-size:var(--fs-sm);line-height:var(--lh-sm)}
+  .wf-next code{font-family:var(--font-code);font-size:11px;background:var(--ui-tag-bg);padding:1px 5px;border-radius:4px;color:var(--ui-fg)}
+  /* 右下角通知：挂在 .body 上，贴着状态栏 */
+  .body{position:relative}
+  .dm-toast{width:540px;bottom:10px}
+  .dm-toast .th .abtn svg{color:var(--ui-icon)}
+  .dm-toast .tb .dm-col{gap:8px}
+  .dm-toast .tb .dm-row{margin-top:2px}
+  .dm-toast .tb .ctx{height:24px;padding:0 8px;font-weight:600}
+  .dm-toast .tb .toggle svg.i{width:12px;height:12px}
+  .dm-toast .tf{align-items:center}
+  .dm-toast .tf .grow{flex:1}
+  .dm-toast .tf a{font-size:var(--fs-sm)}
+  .dm-toast.out{opacity:0;transform:translateY(6px);transition:opacity .2s,transform .2s;pointer-events:none}
+  .dm-flow .fn.hot{border-color:var(--ui-accent);background:color-mix(in srgb,var(--ui-accent) 10%,transparent)}
+  @media (prefers-reduced-motion:reduce){.dm-toast.out{transition:none}}
+</style>
+</head>
+<body>
+<div class="ide" id="ide" data-ide-theme="dark" data-left="project" data-right="agent" data-bottom="none" role="application" aria-label="DevEco Studio">
+  <div class="body">
+    <div class="tw tw-left">
+      <div class="pane on" data-pane="project">
+        <div class="tw-hdr"><span class="title">Project <svg class="i"><use href="#i-chevD"/></svg></span><span class="grow"></span>
+          <button class="abtn" title="Select Opened File"><svg class="i"><use href="#i-locate"/></svg></button>
+          <button class="abtn" title="Expand All"><svg class="i"><use href="#i-expandAll"/></svg></button>
+          <button class="abtn" title="Collapse All"><svg class="i"><use href="#i-collapseAll"/></svg></button>
+          <button class="abtn" title="Options"><svg class="i"><use href="#i-moreV"/></svg></button>
+          <button class="abtn" title="Hide|Shift+Esc" data-act="hide-left"><svg class="i"><use href="#i-hide"/></svg></button></div>
+        <div class="tw-body" id="tree-slot"></div>
+      </div>
+    </div>
+
+    <div class="editor">
+      <div class="tabs" id="tabs"><span class="grow"></span><span class="tab-tools"><button class="abtn" title="Editor Options"><svg class="i"><use href="#i-moreV"/></svg></button></span></div>
+      <div class="code-wrap"><div class="code" id="code"></div><span class="ok" title="No problems found"><svg><use href="#i-check"/></svg></span></div>
+      <div class="breadcrumbs" id="crumbs"></div>
+    </div>
+
+    <div class="tw tw-right">
+      <div class="pane on" data-pane="agent">
+        <div class="tw-hdr"><span class="title">CodeGenie</span><span class="grow"></span>
+          <button class="abtn" title="New Chat"><svg class="i"><use href="#i-add"/></svg></button>
+          <button class="abtn" title="History"><svg class="i"><use href="#i-history"/></svg></button>
+          <button class="abtn" title="Account"><svg class="i"><use href="#i-user-sync"/></svg></button>
+          <button class="abtn" title="Knowledge Base"><svg class="i"><use href="#i-kb"/></svg></button>
+          <button class="abtn" title="Export Chat"><svg class="i"><use href="#i-export"/></svg></button>
+          <button class="abtn" title="MCP"><svg class="i"><use href="#i-cube"/></svg></button>
+          <button class="abtn" title="Skills"><svg class="i"><use href="#i-skills"/></svg></button>
+          <button class="abtn" title="Settings"><svg class="i"><use href="#i-settings"/></svg></button>
+          <button class="abtn" title="Options"><svg class="i"><use href="#i-moreV"/></svg></button>
+          <button class="abtn" title="Hide|Shift+Esc" data-act="hide-right"><svg class="i"><use href="#i-hide"/></svg></button></div>
+        <div class="tw-body"><div class="ai">
+          <div class="ai-scroll" id="ai-scroll">
+            <div class="ai-thread" id="ai-thread">
+              <div class="amsg">
+                <div class="dm-card" id="wf-official">
+                  <div class="dm-card-hd"><svg class="i"><use href="#i-skills"/></svg>官方存好的高频动作<span class="grow"></span><span class="dm-small dm-muted">HarmonyOS 官方 · 3 条</span></div>
+                  <div class="dm-list wf-list" id="wf-list">
+                    <div class="dm-item"><span class="dm-mono cmd">/pre-release</span><span class="grow">上架前全套自检</span><button class="btn sm" data-install>装上</button></div>
+                    <div class="dm-item"><span class="dm-mono cmd">/multi-device</span><span class="grow">一次改动跑三种真机</span><button class="btn sm" data-install>装上</button></div>
+                    <div class="dm-item"><span class="dm-mono cmd">/migrate-screen</span><span class="grow">按屏迁移安卓页面</span><button class="btn sm" data-install>装上</button></div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="umsg"><span class="time">2026/9/14 09:12</span><div class="bubble">跑一遍上架自检</div></div>
+              <div class="amsg">
+                <div class="step"><svg class="i ok"><use href="#i-tw-problems"/></svg>体检 47 项 · 12 s · 报告已生成</div>
+                <div class="md"><p>上架自检跑完：3 条问题，已修 2 条，剩 1 条在 <code>module.json5:18</code></p></div>
+              </div>
+
+              <div class="umsg"><span class="time">2026/9/14 09:31</span><div class="bubble">导出上架材料到 release/</div></div>
+              <div class="amsg">
+                <div class="step"><svg class="i ok"><use href="#i-export"/></svg>release/ · 截图 ×2 · 隐私说明 · 版本记录</div>
+                <div class="md"><p>已导出 4 个文件到 <code>release/</code></p></div>
+              </div>
+            </div>
+          </div>
+          <div class="ai-input">
+            <div class="top"><button class="ctx"><svg class="i" style="width:12px;height:12px"><use href="#i-at"/></svg>Add Context</button><span class="ctx" id="ctx-file"><svg class="i" style="width:12px;height:12px"><use href="#i-ets"/></svg>ListPage.ets</span><span class="grow"></span><button class="toggle" id="deep"><svg class="i" style="width:12px;height:12px"><use href="#i-think"/></svg>Deep Thinking</button></div>
+            <textarea id="ai-text" rows="2" placeholder="Type @ to add context. Type / to switch between functions." aria-label="Message"></textarea>
+            <div class="bot"><button class="mode" id="mode-btn" data-pop="mode" aria-expanded="false"><svg class="i" style="width:12px;height:12px"><use href="#i-tw-agent"/></svg><span id="mode-label">HarmonyOS Act</span><svg class="i" style="width:12px;height:12px"><use href="#i-chevD"/></svg>
+                <div class="popup" hidden style="top:auto;bottom:28px;left:0"><div class="mi"><svg class="i"><use href="#i-chat"/></svg>HarmonyOS Ask<span class="sc">Q&amp;A · explain · snippets</span></div><div class="mi"><svg class="i"><use href="#i-tw-agent"/></svg>HarmonyOS Act<span class="sc">multi-file edits · build · review</span></div></div></button>
+              <button class="mode" id="model-btn" data-pop="model" aria-expanded="false"><span id="model-label">deepseek-v4-pro</span><svg class="i" style="width:12px;height:12px"><use href="#i-chevD"/></svg>
+                <div class="popup" hidden style="top:auto;bottom:28px;left:0"><div class="mi">deepseek-v4-flash<span class="sc">fast</span></div><div class="mi">deepseek-v4-pro<span class="sc">reasoning</span></div><div class="mi">pangu-5.5</div></div></button>
+              <span class="grow"></span><span class="ring" id="counter" title="0 / 30000"></span><button class="send" id="send" title="Send|Enter"><svg><use href="#i-send-o"/></svg></button></div>
+          </div>
+          <div class="ai-foot">The content is generated by AI and may not be entirely accurate or complete. It is for reference only | <a href="#">Terms of Use</a>&nbsp;&nbsp;<a href="#">Privacy Policy</a></div>
+        </div></div>
+      </div>
+    </div>
+
+    <!-- 右下角：工具自己看出重复，主动问要不要存 -->
+    <div class="dm-toast" id="wf-toast" role="dialog" aria-label="存成命令">
+      <div class="th"><svg><use href="#i-sparkle"/></svg>这串动作你这周跑了 3 次<span class="grow"></span><button class="abtn" id="toast-x" title="Close"><svg class="i"><use href="#i-close"/></svg></button></div>
+      <div class="tb"><div class="dm-col">
+        <div>周二、周四、今天都是同一串：</div>
+        <div class="dm-flow" id="wf-flow">
+          <span class="fn"><svg><use href="#i-tw-problems"/></svg>跑体检</span><span class="fa"></span>
+          <span class="fn"><svg><use href="#i-text"/></svg>看报告</span><span class="fa"></span>
+          <span class="fn"><svg><use href="#i-wrench"/></svg>改问题</span><span class="fa"></span>
+          <span class="fn"><svg><use href="#i-refresh"/></svg>再跑一遍</span><span class="fa"></span>
+          <span class="fn"><svg><use href="#i-export"/></svg>导出上架材料</span>
+        </div>
+        <div class="dm-row"><span class="ctx dm-mono">/release-check</span><button class="toggle on" id="wf-share" aria-pressed="true"><svg class="i"><use href="#i-vcs"/></svg>随仓库分发给团队</button><span class="grow"></span><span class="dm-small dm-muted">存的是整串编排，不是一段说明</span></div>
+      </div></div>
+      <div class="tf"><a href="#" id="toast-never">以后别问了</a><span class="grow"></span><button class="btn" id="toast-later">稍后</button><button class="btn primary" id="toast-save">存成 /release-check</button></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var $=DemoFrame.$, $$=DemoFrame.$$;
+  document.getElementById('tree-slot').innerHTML=DemoFrame.tree({sel:'ListPage.ets'});
+  document.getElementById('tabs').insertAdjacentHTML('afterbegin',DemoFrame.tabs([{file:'ListPage.ets',on:true}]));
+  document.getElementById('code').innerHTML=DemoFrame.code('ListPage.ets',{cur:10});
+  var counts={official:0,own:0};
+  DemoFrame.init({device:'HUAWEI Mate 70 Pro',deviceIcon:'#i-phone',pos:'10:3',onReady:function(){
+    $('#status-slot').innerHTML='<span class="dm-capsule" id="cap-wf"><svg class="i" style="width:12px;height:12px"><use href="#i-skills"/></svg>Workflow · 官方 <b id="cap-off">0</b> · 自定义 <b id="cap-own">0</b></span>';
+  }});
+  function recount(){var a=$('#cap-off'),b=$('#cap-own');if(a)a.textContent=counts.official;if(b)b.textContent=counts.own}
+
+  /* ---- 官方的：装上 ---- */
+  $('#wf-list').addEventListener('click',function(e){
+    var b=e.target.closest('[data-install]');if(!b)return;
+    b.outerHTML='<span class="dm-pill ok"><svg><use href="#i-checkS"/></svg>已装</span>';
+    counts.official++;recount();
+  });
+
+  /* ---- toast：存 / 稍后 / 关 ---- */
+  var toast=$('#wf-toast');
+  function closeToast(){toast.classList.add('out');setTimeout(function(){toast.hidden=true},220)}
+  $('#toast-x').addEventListener('click',closeToast);
+  $('#toast-later').addEventListener('click',closeToast);
+  $('#toast-never').addEventListener('click',function(e){e.preventDefault();closeToast()});
+  $('#wf-share').addEventListener('click',function(){var on=!this.classList.contains('on');this.classList.toggle('on',on);this.setAttribute('aria-pressed',on?'true':'false')});
+
+  $('#toast-save').addEventListener('click',function(){
+    var share=$('#wf-share').classList.contains('on');
+    closeToast();
+    var flow=$('#wf-flow').outerHTML.replace('id="wf-flow"','');
+    var html='<div class="amsg" id="wf-saved">'
+      +'<div class="dm-card"><div class="dm-card-hd"><svg class="i ok"><use href="#i-checkS"/></svg>已存：<span class="dm-mono">/release-check</span><span class="grow"></span>'
+      +(share?'<span class="dm-pill ok"><svg><use href="#i-vcs"/></svg>随仓库分发</span>':'<span class="dm-pill muted">仅本机</span>')+'</div>'
+      +'<div class="dm-card-bd">'+flow
+      +'<div class="wf-next">下次一句话：<code>/release-check</code>'+(share?'<span>· 团队拉了仓库就有</span>':'')+'</div>'
+      +'</div></div></div>';
+    $('#ai-thread').insertAdjacentHTML('beforeend',html);
+    var sc=$('#ai-scroll');sc.scrollTop=sc.scrollHeight;
+    var ta=$('#ai-text');ta.value='/release-check';$('#send').classList.add('ready');
+    counts.own++;recount();
+  });
+  $('#ai-text').addEventListener('input',function(){$('#send').classList.toggle('ready',!!this.value.trim())});
+})();
+</script>
+</body>
+</html>
