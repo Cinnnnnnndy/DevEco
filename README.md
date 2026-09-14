@@ -2,7 +2,9 @@
 
 围绕 DevEco Studio / DevEco Code / DevEco CLI 的体验设计工作仓：21 条创新点各一个可点的界面稿 demo，加上设计系统、分析与汇报材料。
 
-**从 [`index.html`](index.html) 进。** 这是仓库的工作台首页：左侧按分类导航，右侧一条创新点一张卡，双击打开即可，不需要构建、不需要服务器。
+### 🚀 [打开启动页 →](index.html)
+
+仓库的工作台首页：左侧按分类导航，右侧一条创新点一张卡。目前还没有配 GitHub Pages，点上面这个链接会在 GitHub 上打开源码而不是渲染页面——要看真正能点的效果，把仓库拉到本地（或者在这个分支下）直接双击 `index.html`，不需要构建、不需要服务器。下面「发布」一节写了怎么配出一个能直接点开的线上地址。
 
 ## 里面有什么
 
@@ -55,4 +57,12 @@
 
 ## 发布
 
-开启 GitHub Pages（Settings → Pages → 分支 `main`、目录 `/`）后，仓库根目录的 `index.html` 就是站点首页，所有相对链接照常可用。
+这个仓库现在没有配 GitHub Pages（`main` 分支根目录还没有 `index.html`，这一批 demo 都在 `claude/nifty-pasteur-16rj0g` 分支上，也没有 `gh-pages` 分支），所以还没有一个可以直接点开的线上地址——这一步需要仓库管理员在 GitHub 网页上操作，我这边的工具够不到仓库设置。
+
+配置方法（在 `https://github.com/Cinnnnnnndy/DevEco/settings/pages`）：
+
+1. **Source** 选 `Deploy from a branch`。
+2. **Branch** 选要发布的分支（比如先选这个分支 `claude/nifty-pasteur-16rj0g`，或者先把它合到 `main` 再选 `main`），目录选 `/`（root）。
+3. 保存后几分钟内会在同一个设置页顶部出现地址，通常是 `https://cinnnnnnndy.github.io/DevEco/`（仓库名里没有大小写变化的话）——那就是启动页的线上链接，把它贴回这里的「🚀 打开启动页」一行即可。
+
+配好之后所有相对链接（demo、分析页、pptx 等）照常可用，不用改任何路径。
