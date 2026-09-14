@@ -39,6 +39,7 @@
    ```
    页面只写 `.body` 里自己的面板（`.tw-left` / `.editor` / `.tw-right` / `.tw-bottom`），末尾 `DemoFrame.init({...})`，外壳由 frame 注入。`DemoFrame.tree()` / `code('ListPage.ets')` / `tabs()` 给项目树、示例代码与标签页；用法见 `demos/_shared/frame.js` 文件头。
 2. 颜色只用 `--ui-*` 语义变量，字号用 `--fs-*` / `--lh-*`，规范见 [`deveco-intui-kit/docs/index.html`](deveco-intui-kit/docs/index.html)。IDE 外壳保持英文，新功能面板用中文。页面里不放 IDE 之外的说明性 UI。
+   要改面板宽高，写 `.ide[data-ide-theme]{--ai-w:…;--bottom-h:…}`（不能只写 `.ide{…}`，会被 `tokens.css` 里按主题声明的同名变量盖掉）。`<button>` 里不要再套按钮或链接。
 3. 出缩略图：`python3 site/tools/thumb.py <slug>`（需要 Pillow 与本机 Chromium，脚本头部有说明）。
 4. 在 `site/catalog.js` 对应分类里登记或更新那条：`view:'ready'`、`href`、`thumb`。刷新首页即可看到。
 

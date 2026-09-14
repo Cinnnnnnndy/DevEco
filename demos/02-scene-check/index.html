@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>02 · 场景化应用体检：上架会被打回的，写代码时就暴露</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="../../deveco-intui-kit/src/tokens.css">
+<link rel="stylesheet" href="../../deveco-intui-kit/src/components.css">
+<link rel="stylesheet" href="../_shared/frame.css">
+<script src="../../deveco-intui-kit/src/icons.js"></script>
+<script src="../_shared/frame.js"></script>
+<style>
+  .ide[data-ide-theme]{--bottom-h:clamp(300px,40vh,400px)} /* 带属性选择器，压过 tokens.css 里按主题写的默认值 */
+  /* 底部体检面板标题栏 */
+  .tw-bottom .tw-hdr .title{margin-right:4px}
+  .btab .cnt{font-family:var(--font-code);font-size:11px;font-weight:400;color:var(--ui-fg-info);margin-left:2px}
+  .btab.on .cnt{color:var(--ui-fg-info)}
+  .btab svg.i{width:14px;height:14px}
+  .btab.on svg.i{color:var(--ui-fg)}
+  #auto-pill{margin-right:6px}
+  #auto-pill .spin{width:10px;height:10px;border-width:1.5px}
+  /* 面板主体：左列表 + 右详情 */
+  .chk{flex:1;display:grid;grid-template-columns:minmax(0,1fr) 360px;min-height:0;height:100%}
+  .chk-list{overflow:auto;min-height:0;border-right:1px solid var(--ui-border);padding:4px 0}
+  .chk-list .dm-item{cursor:default}
+  .chk-list .dm-item svg.i{width:14px;height:14px}
+  .chk-list .dm-item.err svg.i{color:var(--ui-error)}
+  .chk-list .dm-item.warn svg.i{color:var(--ui-warning)}
+  .chk-list .dm-item .msg{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis}
+  .chk-list .dm-item .loc{flex:none}
+  .chk-list .dm-item .loc.dead{color:var(--ui-fg-info)}
+  .chk-list .dm-item .dm-pill{flex:none}
+  .chk-list .dm-item .dm-pill .spin{width:9px;height:9px;border-width:1.5px}
+  .chk-list .empty-ok{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:40px 0;color:var(--ui-fg-info);font-size:var(--fs-sm)}
+  .chk-list .empty-ok svg{width:24px;height:24px;color:var(--ui-success)}
+  code{font-family:var(--font-code);font-size:11px;background:var(--ui-tag-bg);padding:1px 4px;border-radius:4px;color:var(--ui-fg)}
+  .chk-detail{overflow:auto;min-height:0;display:flex;flex-direction:column;gap:10px;padding:10px 14px 10px;font-size:var(--fs-para);line-height:var(--lh-para)}
+  .chk-detail .dt-head{display:flex;align-items:flex-start;gap:8px;font-weight:600}
+  .chk-detail .dt-head svg{width:16px;height:16px;flex:none;margin-top:1px}
+  .chk-detail .dt-head.err svg{color:var(--ui-error)}
+  .chk-detail .dt-head.warn svg{color:var(--ui-warning)}
+  .chk-detail .dt-loc{display:flex;align-items:center;gap:6px;font-size:var(--fs-sm);color:var(--ui-fg-info)}
+  .chk-detail .dt-loc .loc{font-family:var(--font-code);font-size:11px;color:var(--ui-link)}
+  .chk-detail .dt-loc svg{width:14px;height:14px}
+  .chk-detail .dt-h{font-size:var(--fs-sm);line-height:var(--lh-sm);font-weight:600;color:var(--ui-fg-info);margin-bottom:3px}
+  .chk-detail ul{margin:0;padding-left:16px}
+  .chk-detail li{margin:1px 0}
+  .chk-detail p{margin:0}
+  .chk-detail .grow{flex:1}
+  .chk-detail .dt-acts{display:flex;gap:6px;flex:none;padding-top:2px}
+  .chk-detail .dt-acts .grow{flex:1}
+  .chk-detail .dt-acts .dm-muted{font-size:var(--fs-sm)}
+</style>
+</head>
+<body>
+<div class="ide" id="ide" data-ide-theme="dark" data-left="project" data-right="none" data-bottom="problems" role="application" aria-label="DevEco Studio">
+  <div class="body">
+    <div class="tw tw-left">
+      <div class="pane on" data-pane="project">
+        <div class="tw-hdr"><span class="title">Project <svg class="i"><use href="#i-chevD"/></svg></span><span class="grow"></span>
+          <button class="abtn" title="Select Opened File"><svg class="i"><use href="#i-locate"/></svg></button>
+          <button class="abtn" title="Expand All"><svg class="i"><use href="#i-expandAll"/></svg></button>
+          <button class="abtn" title="Collapse All"><svg class="i"><use href="#i-collapseAll"/></svg></button>
+          <button class="abtn" title="Options"><svg class="i"><use href="#i-moreV"/></svg></button>
+          <button class="abtn" title="Hide|Shift+Esc" data-act="hide-left"><svg class="i"><use href="#i-hide"/></svg></button></div>
+        <div class="tw-body" id="tree-slot"></div>
+      </div>
+    </div>
+
+    <div class="editor">
+      <div class="tabs" id="tabs"><span class="grow"></span><span class="tab-tools"><button class="abtn" title="Editor Options"><svg class="i"><use href="#i-moreV"/></svg></button></span></div>
+      <div class="code-wrap"><div class="code" id="code"></div></div>
+      <div class="breadcrumbs" id="crumbs"></div>
+    </div>
+
+    <div class="tw tw-bottom">
+      <div class="tw-hdr"><span class="title">App Check</span>
+        <span class="tabbar" id="scene-tabs"></span>
+        <span class="grow"></span>
+        <span class="dm-pill ok" id="auto-pill"><svg><use href="#i-check"/></svg><span id="auto-txt">改动后自动跑 · 2 秒前</span></span>
+        <button class="abtn" id="i-refresh-btn" title="Run App Check Now"><svg class="i"><use href="#i-refresh"/></svg></button>
+        <button class="abtn" title="Options"><svg class="i"><use href="#i-moreV"/></svg></button>
+        <button class="abtn" title="Hide|Shift+Esc" data-act="hide-bottom"><svg class="i"><use href="#i-hide"/></svg></button></div>
+      <div class="tw-body">
+        <div class="pane on" data-pane="problems"><div class="chk">
+          <div class="chk-list dm-list" id="chk-list"></div>
+          <div class="chk-detail" id="chk-detail"></div>
+        </div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var $=DemoFrame.$, $$=DemoFrame.$$, FILES=DemoFrame.FILES;
+
+  /* ---------- 体检结果：按场景分组，每条都带文件与行号 ---------- */
+  var SCENES=[
+    {id:'publish',name:'上架自检',icon:'#i-flag',whyTitle:'为什么会被打回',lv:{err:'审核必打回',warn:'审核会提意见'},items:[
+      {lv:'err',msg:'验证码输入框没有无障碍描述，上架审核会打回',file:'LoginPage.ets',line:12,
+        why:['审核用读屏工具走一遍登录流程，读到这个输入框只念「编辑框」，不知道要填什么。','无障碍是上架必检项，任何一个输入控件缺描述都会整单打回。'],
+        fix:'给第 12 行的 <code>TextInput</code> 加 <code>.accessibilityText(\'验证码，6 位数字\')</code>；第 11 行的手机号输入框同样补一句。'},
+      {lv:'err',msg:'隐私声明少了「设备标识」一条',file:'module.json5',line:18,
+        why:['工程里 <code>EntryAbility</code> 调了 <code>deviceInfo.udid</code>，属于收集设备标识。','隐私声明列出的收集项没有这一条，审核按「声明与实际不符」打回。'],
+        fix:'在 module.json5 第 18 行的 <code>privacyStatement.collected</code> 数组里追加 <code>"deviceIdentifier"</code>，并在声明文案里补一句用途（登录风控）。'},
+      {lv:'warn',msg:'应用图标在手表上会被裁掉一圈',file:'app.json5',line:6,
+        why:['手表端把图标裁成圆形显示，现在的图标四角有内容，圆形裁切后会缺一块。','上架材料勾了「手表」设备，审核会在手表上实际看一遍。'],
+        fix:'app.json5 第 6 行的 <code>icon</code> 换成安全区内的版本：主体控制在中间 66% 的圆内；或者单独给 wearable 配一张 <code>$media:app_icon_watch</code>。'},
+      {lv:'err',msg:'登录失败直接把错误码 <code>ERR_AUTH_401</code> 给用户看',file:'LoginPage.ets',line:27,
+        why:['用户看到 <code>ERR_AUTH_401</code> 不知道该做什么，审核按「错误提示不可理解」打回。','README 里已经写了这个码的含义是「验证码错误」，只是没用上。'],
+        fix:'第 27 行改成 <code>this.error = e.code === \'ERR_AUTH_401\' ? \'验证码错误，请重新输入\' : \'登录失败，请稍后再试\'</code>，错误码留在日志里。'},
+      {lv:'warn',msg:'首页大图未做深色适配',file:'Index.ets',line:10,
+        why:['工程开了跟随系统深色模式，首页大图是浅色底，切到深色后整块发白。','审核会在深色模式下截图对比，明显不协调的会要求整改。'],
+        fix:'把 Index.ets 第 10 行引用的资源在 <code>resources/dark/media</code> 下放一张深色版本，文件名保持一致，系统会按模式自动选。'}
+    ]},
+    {id:'cold',name:'首次启动',icon:'#i-bolt',whyTitle:'为什么会有问题',lv:{err:'不达标',warn:'建议优化'},items:[
+      {lv:'err',msg:'冷启动 1.8 s，超过 1.2 s 门槛',file:'EntryAbility.ets',line:22,
+        why:['<code>onCreate</code> 里同步初始化了三个 SDK，共占 0.6 s，都在首屏渲染之前。','冷启动超过 1.2 s 会在应用市场的体验评分里扣分，用户第一次打开就会觉得慢。'],
+        fix:'把第 22 行的 <code>initSdks()</code> 挪到 <code>onWindowStageCreate</code> 之后用 <code>taskpool</code> 异步跑；登录态校验不阻塞首屏。'},
+      {lv:'warn',msg:'首屏还没画完就弹定位权限，挡住内容',file:'EntryAbility.ets',line:16,
+        why:['权限弹窗在首屏渲染前就弹出来，用户第一眼看到的是弹窗不是内容。','首次启动就要权限，拒绝率明显更高。'],
+        fix:'把第 16 行的 <code>requestPermissions</code> 挪到真正用到定位的页面（列表页「附近」筛选）里按需申请。'},
+      {lv:'warn',msg:'列表 2000 条在页面构造时一次性建好，首屏多画 1992 项',file:'ListPage.ets',line:7,
+        why:['<code>new ItemSource(2000)</code> 在页面构造时就把 2000 条数据全部建好并触发布局。','首屏只显示 8 条，其余的工作全部落在启动路径上。'],
+        fix:'改成 <code>LazyForEach</code> + <code>IDataSource</code>，首屏只建可见项；数据源改成按需分页。'}
+    ]},
+    {id:'lowend',name:'低端机',icon:'#i-gauge',whyTitle:'为什么会有问题',lv:{err:'会掉帧',warn:'建议优化'},items:[
+      {lv:'err',msg:'列表封面同步解码，每帧都在做',file:'ListPage.ets',line:28,
+        why:['<code>createPixelMapSync</code> 在 <code>ForEach</code> 每一项里都跑，每帧都要解码一张图。','低端机单核解码一张封面要 30 ms 以上，直接掉到 20 帧以下。'],
+        fix:'第 28 行改成 <code>image.createPixelMap()</code> 异步版本，先给 ItemCard 一张占位图，解码完成再回填；解码结果按 id 做 LRU 缓存。'},
+      {lv:'warn',msg:'List 没开缓存，快速滑动会露白块',file:'ListPage.ets',line:21,
+        why:['<code>cachedCount(0)</code> 意味着滑出屏幕的项立刻销毁，滑回来重新建。','低端机上快速滑动时新项来不及建好，就会露出白块。'],
+        fix:'第 21 行改成 <code>.cachedCount(4)</code>，屏幕上下各预留 4 项；配合上一条的异步解码效果最好。'},
+      {lv:'warn',msg:'搜索框带模糊背景，低端机 GPU 每帧都在算',file:'ListPage.ets',line:12,
+        why:['<code>Search</code> 默认带模糊背景，GPU 每一帧都要重算一次模糊。','叠在列表上滑动时掉帧最明显。'],
+        fix:'给第 12 行的 <code>Search</code> 加 <code>.backgroundBlurStyle(BlurStyle.NONE)</code>，用纯色背景；或者只在旗舰机型上开模糊。'}
+    ]},
+    {id:'offline',name:'无网弱网',icon:'#i-wifi',whyTitle:'为什么会有问题',lv:{err:'页面不可用',warn:'建议优化'},items:[
+      {lv:'err',msg:'没有断网占位，请求失败后页面空白',file:'ListPage.ets',line:15,
+        why:['<code>this.source.all()</code> 在请求失败时返回空数组，<code>ForEach</code> 什么都不画，页面就是一片空白。','用户分不清是没数据还是没网，只会以为应用坏了。'],
+        fix:'在第 15 行前加一个 <code>if (this.source.error)</code> 分支，画一个「网络不可用，点击重试」的占位；<code>ItemSource</code> 把失败状态暴露出来。'},
+      {lv:'warn',msg:'登录请求没有超时，弱网下按钮一直转',file:'LoginPage.ets',line:26,
+        why:['<code>auth.login</code> 用默认网络配置，弱网下会一直等到系统超时（60 s）。','期间按钮没有任何反馈，用户会连点好几次，触发多次登录。'],
+        fix:'第 26 行给请求加 <code>{ connectTimeout: 5000, readTimeout: 8000 }</code>；点击后按钮置灰显示「登录中…」，超时后提示「网络不佳，请重试」。'},
+      {lv:'warn',msg:'封面原图 2 MB 直接加载，弱网下几十秒才出图',file:'ItemCard.ets',line:9,
+        why:['列表封面用的是原图地址，弱网下每张都要几十秒。','没有 <code>alt</code> 占位，出图前是一块空白。'],
+        fix:'ItemCard.ets 第 9 行的 <code>Image</code> 换成缩略图地址（<code>?w=320</code>），原图在详情页再拉；给 Image 设 <code>.alt($r(\'app.media.cover_placeholder\'))</code>。'}
+    ]}
+  ];
+  var cur='publish',selIdx=0,ideRoot;
+
+  /* ---------- 编辑器：切到某文件某行 ---------- */
+  function openFile(file,line,lv){
+    if(!FILES[file])return false;
+    var tabs=$('#tabs');$$('.tab',tabs).forEach(function(t){t.remove()});
+    tabs.insertAdjacentHTML('afterbegin',DemoFrame.tabs([{file:file,on:true}]));
+    var marks={};if(line&&lv)marks[line]=lv;
+    $('#code').innerHTML=DemoFrame.code(file,{cur:line,hl:line?[line]:[],marks:marks});
+    $('#crumbs').innerHTML=DemoFrame.crumbs(file);
+    $$('#tree .row.sel').forEach(function(x){x.classList.remove('sel')});
+    var r=$('#tree .row[data-file="'+file+'"]');if(r)r.classList.add('sel');
+    var p=$('#status-pos');if(p)p.textContent=(line||1)+':1';
+    var ln=$('#code .ln[data-ln="'+line+'"]');if(ln)ln.scrollIntoView({block:'center'});
+    return true;
+  }
+
+  /* ---------- 场景 tab ---------- */
+  function uniqFiles(s){var m={},n=0;s.items.forEach(function(it){if(!m[it.file]){m[it.file]=1;n++}});return n}
+  function scene(id){for(var i=0;i<SCENES.length;i++)if(SCENES[i].id===id)return SCENES[i];return SCENES[0]}
+  function renderTabs(){
+    $('#scene-tabs').innerHTML=SCENES.map(function(s){
+      return '<button class="btab'+(s.id===cur?' on':'')+'" data-scene="'+s.id+'"><svg class="i"><use href="'+s.icon+'"/></svg>'+s.name+'<span class="cnt">'+s.items.length+'</span></button>';
+    }).join('');
+    var total=0;SCENES.forEach(function(s){total+=s.items.length});
+    var slot=$('#status-slot');if(slot)slot.innerHTML='<span class="dm-capsule" title="App Check"><svg class="i" style="width:12px;height:12px"><use href="#i-tw-problems"/></svg>体检 · '+total+' 条待处理</span>';
+  }
+  function renderList(){
+    var s=scene(cur),h='',ne=0,nw=0;
+    s.items.forEach(function(it){if(it.lv==='err')ne++;else nw++});
+    h+='<div class="dm-group">'+s.name+'<span class="cnt">'+s.items.length+'</span><span class="grow"></span><span class="dm-small dm-muted" style="font-weight:400">'+(s.items.length?(ne?ne+' 条'+s.lv.err:'')+(ne&&nw?' · ':'')+(nw?nw+' 条'+s.lv.warn:''):'全部通过')+' · 覆盖 '+uniqFiles(s)+' 个文件</span></div>';
+    if(!s.items.length){
+      h='<div class="empty-ok"><svg><use href="#i-check"/></svg>'+s.name+'场景没有待处理的问题</div>';
+    }else s.items.forEach(function(it,i){
+      var dead=!FILES[it.file];
+      h+='<div class="dm-item '+it.lv+(i===selIdx?' sel':'')+'" data-i="'+i+'" role="button" tabindex="0">'
+        +'<svg class="i"><use href="#'+(it.lv==='err'?'i-err':'i-warn')+'"/></svg>'
+        +'<span class="msg">'+it.msg+'</span>'
+        +(it.state==='fixing'?'<span class="dm-pill info"><span class="spin"></span>CodeGenie 在改</span>':'')
+        +'<span class="loc'+(dead?' dead':'')+'" title="'+(dead?'点击定位（示例工程里没有这个文件的代码）':'点击定位到这一行')+'">'+it.file+':'+it.line+'</span></div>';
+    });
+    $('#chk-list').innerHTML=h;
+  }
+  function renderDetail(){
+    var s=scene(cur),it=s.items[selIdx],d=$('#chk-detail');
+    if(!it){d.innerHTML='<div class="empty-ok" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;height:100%;color:var(--ui-fg-info);font-size:var(--fs-sm)"><svg style="width:24px;height:24px;color:var(--ui-success)"><use href="#i-check"/></svg>这个场景已经过了</div>';return;}
+    var dead=!FILES[it.file];
+    d.innerHTML='<div class="dt-head '+it.lv+'"><svg><use href="#'+(it.lv==='err'?'i-err':'i-warn')+'"/></svg><span>'+it.msg+'</span></div>'
+      +'<div class="dt-loc"><svg class="i"><use href="#'+(/\.json5$/.test(it.file)?'i-json':'i-ets')+'"/></svg><span class="loc" id="dt-loc" role="button" tabindex="0">'+it.file+':'+it.line+'</span><span class="dm-pill '+it.lv+'">'+s.lv[it.lv]+'</span><span class="grow"></span><span>'+s.name+'</span></div>'
+      +'<div><div class="dt-h">'+s.whyTitle+'</div><ul>'+it.why.map(function(w){return '<li>'+w+'</li>'}).join('')+'</ul></div>'
+      +'<div><div class="dt-h">怎么改</div><p>'+it.fix+'</p></div>'
+      +(it.state==='fixing'
+        ?'<div class="dt-acts"><span class="dm-pill info"><span class="spin" style="width:9px;height:9px;border-width:1.5px"></span>CodeGenie 正在改 '+it.file+'</span><span class="grow"></span><span class="dm-muted">改完自动重跑</span></div>'
+        :'<div class="dt-acts"><button class="btn primary" id="btn-fix"><svg class="i" style="width:12px;height:12px;color:#fff"><use href="#i-genie"/></svg>让 CodeGenie 改</button><button class="btn" id="btn-ignore">忽略这条</button></div>');
+  }
+  function select(i,jump){
+    var s=scene(cur);selIdx=Math.max(0,Math.min(i,s.items.length-1));
+    renderList();renderDetail();
+    var it=s.items[selIdx];
+    if(it&&jump!==false)openFile(it.file,it.line,it.lv);
+  }
+  function switchScene(id){cur=id;selIdx=0;renderTabs();select(0)}
+
+  /* 「改完当场跑一遍」：CodeGenie 改完 → 自动重跑 → 这条从列表里消失 */
+  function autoRun(after){
+    var pill=$('#auto-pill'),t=$('#auto-txt');
+    pill.className='dm-pill info';pill.innerHTML='<span class="spin"></span><span id="auto-txt">检测到改动，正在重跑…</span>';
+    setTimeout(function(){
+      pill.className='dm-pill ok';pill.innerHTML='<svg><use href="#i-check"/></svg><span id="auto-txt">改动后自动跑 · 刚刚</span>';
+      if(after)after();
+    },900);
+  }
+  function fixCurrent(){
+    var s=scene(cur),it=s.items[selIdx];if(!it||it.state)return;
+    it.state='fixing';renderList();renderDetail();
+    setTimeout(function(){
+      autoRun(function(){
+        var idx=s.items.indexOf(it);if(idx>=0)s.items.splice(idx,1);
+        renderTabs();select(Math.min(idx,s.items.length-1));
+      });
+    },900);
+  }
+  function ignoreCurrent(){
+    var s=scene(cur);if(!s.items[selIdx])return;
+    s.items.splice(selIdx,1);renderTabs();select(Math.min(selIdx,s.items.length-1));
+  }
+
+  /* ---------- 初始：上架自检第一条，编辑器停在 LoginPage.ets:12 ---------- */
+  document.getElementById('tree-slot').innerHTML=DemoFrame.tree({sel:'LoginPage.ets'});
+  document.getElementById('tabs').insertAdjacentHTML('afterbegin',DemoFrame.tabs([{file:'LoginPage.ets',on:true}]));
+  document.getElementById('code').innerHTML=DemoFrame.code('LoginPage.ets',{cur:12,hl:[12],marks:{12:'err'}});
+
+  DemoFrame.init({device:'HUAWEI Mate 70 Pro',deviceIcon:'#i-phone',pos:'12:1',onReady:function(){
+    ideRoot=$('#ide');
+    renderTabs();renderList();renderDetail();
+    $('#scene-tabs').addEventListener('click',function(e){var b=e.target.closest('.btab');if(b)switchScene(b.dataset.scene)});
+    $('#chk-list').addEventListener('click',function(e){var r=e.target.closest('.dm-item');if(r)select(+r.dataset.i)});
+    $('#chk-detail').addEventListener('click',function(e){
+      if(e.target.closest('#btn-fix'))fixCurrent();
+      else if(e.target.closest('#btn-ignore'))ignoreCurrent();
+      else if(e.target.closest('#dt-loc')){var it=scene(cur).items[selIdx];if(it)openFile(it.file,it.line,it.lv)}
+    });
+    $('#i-refresh-btn').addEventListener('click',function(){autoRun()});
+    /* 树里点有代码的文件：切编辑器（不带高亮） */
+    ideRoot.addEventListener('click',function(e){
+      var r=e.target.closest('#tree .row[data-file]');if(!r)return;
+      var f=r.dataset.file;if(!$('.tab[data-file="'+f+'"]')&&FILES[f])openFile(f,1,null);
+    });
+  }});
+})();
+</script>
+</body>
+</html>

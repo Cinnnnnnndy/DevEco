@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>18 · 分布式调试：两端日志对齐在一条时间轴上</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="../../deveco-intui-kit/src/tokens.css">
+<link rel="stylesheet" href="../../deveco-intui-kit/src/components.css">
+<link rel="stylesheet" href="../_shared/frame.css">
+<script src="../../deveco-intui-kit/src/icons.js"></script>
+<script src="../_shared/frame.js"></script>
+<style>
+  /* 用 [data-ide-theme] 提高优先级：tokens.css 在主题块里定义了 --bottom-h */
+  .ide[data-ide-theme]{--bottom-h:clamp(340px,44vh,440px)}
+  /* 底部 Distributed Debug 面板主体：纵向滚动 */
+  .dbg{flex:1;min-height:0;overflow:auto;display:flex;flex-direction:column;gap:8px;padding:10px 12px}
+  .dbg > *{flex:none}
+  /* 判断结论条：文字占满，按钮靠右居中 */
+  .dm-callout .cb{flex:1;min-width:0}
+  .dm-callout .cb code{font-family:var(--font-code);font-size:11px;background:var(--ui-tag-bg);padding:1px 4px;border-radius:4px}
+  .dm-callout > .btn{flex:none;align-self:center;white-space:nowrap}
+  /* 时间轴：泳道加高，事件下移，让标记的文字标签有地方放 */
+  .dm-tl .lane{min-height:58px}
+  .dm-tl .ev{top:20px;cursor:pointer;transition:box-shadow .15s}
+  .dm-tl .ev:hover{box-shadow:0 0 0 2px color-mix(in srgb,var(--ui-accent) 35%,transparent)}
+  .dm-tl .ev.sel{outline:2px solid var(--ui-accent);outline-offset:1px;z-index:2}
+  .dm-tl .ev.miss{border-style:dashed;background:transparent;color:var(--ui-error);font-style:italic}
+  .dm-tl .ev.pause{background:color-mix(in srgb,var(--ui-error) 16%,transparent);border-color:var(--ui-error);color:var(--ui-error)}
+  .dm-tl .ev svg{width:12px;height:12px;flex:none}
+  .dm-tl .ev.ok svg{color:var(--ui-success)}
+  .dm-tl .ev.info svg{color:var(--ui-info)}
+  .dm-tl .mark{transition:left .4s}
+  .dm-tl .mark b{top:2px}
+  .dm-tl{grid-template-columns:130px minmax(0,1fr)}
+  .dm-tl .ruler span{white-space:nowrap}
+  .dm-tl .ruler span:first-child{transform:none}
+  .dm-tl .ruler span:last-child{transform:translateX(-100%)}
+  .dm-tl .lane-h .dm-dot{margin-left:auto}
+  /* 两栏 hilog：行数相同，时间戳左对齐 */
+  .logs{flex:none;border:1px solid var(--ui-border);border-radius:var(--arc);overflow:hidden;background:var(--ui-editor-bg)}
+  .logs > div{min-width:0}
+  .log{padding:4px 0}
+  .log .r{display:flex;align-items:center;gap:8px;height:22px;padding:0 10px;white-space:nowrap;user-select:text;transition:background .15s}
+  .log .r .lt{flex:none;width:56px;color:var(--ui-fg-info)}
+  .log .r .ltag{flex:none;color:var(--ui-info)}
+  .log .r .lmsg{min-width:0;overflow:hidden;text-overflow:ellipsis;color:var(--ui-fg)}
+  .log .r.hl{background:color-mix(in srgb,var(--ui-accent) 14%,transparent)}
+  .log .r.miss .lmsg,.log .r.miss .ltag{color:var(--ui-fg-info);font-style:italic}
+  .log .r.miss .lt{color:var(--ui-error)}
+  .log .r.pause .ltag,.log .r.pause .lmsg{color:var(--ui-error)}
+  .abtn.done{opacity:.45}
+</style>
+</head>
+<body>
+<div class="ide" id="ide" data-ide-theme="dark" data-left="project" data-right="none" data-bottom="debug" role="application" aria-label="DevEco Studio">
+  <div class="body">
+    <div class="tw tw-left">
+      <div class="pane on" data-pane="project">
+        <div class="tw-hdr"><span class="title">Project <svg class="i"><use href="#i-chevD"/></svg></span><span class="grow"></span>
+          <button class="abtn" title="Select Opened File"><svg class="i"><use href="#i-locate"/></svg></button>
+          <button class="abtn" title="Expand All"><svg class="i"><use href="#i-expandAll"/></svg></button>
+          <button class="abtn" title="Collapse All"><svg class="i"><use href="#i-collapseAll"/></svg></button>
+          <button class="abtn" title="Options"><svg class="i"><use href="#i-moreV"/></svg></button>
+          <button class="abtn" title="Hide|Shift+Esc" data-act="hide-left"><svg class="i"><use href="#i-hide"/></svg></button></div>
+        <div class="tw-body" id="tree-slot"></div>
+      </div>
+    </div>
+
+    <div class="editor">
+      <div class="tabs" id="tabs"><span class="grow"></span><span class="tab-tools"><button class="abtn" title="Split Right"><svg class="i"><use href="#i-split"/></svg></button><button class="abtn" title="Editor Options"><svg class="i"><use href="#i-moreV"/></svg></button></span></div>
+      <div class="code-wrap"><div class="code" id="code"></div></div>
+      <div class="breadcrumbs" id="crumbs"></div>
+    </div>
+
+    <div class="tw tw-bottom">
+      <div class="tw-hdr"><span class="title">Distributed Debug</span>
+        <span class="tabbar"><button class="btab on"><svg class="i"><use href="#i-link"/></svg>Mate 70 Pro ⇄ WATCH 5<span class="x"><svg class="i"><use href="#i-closeS"/></svg></span></button></span>
+        <span class="grow"></span>
+        <span class="dm-pill info" id="clock-pill"><svg><use href="#i-clock"/></svg>两端时钟已对齐 · 偏差 3 ms</span>
+        <button class="abtn" id="btn-pause" title="两端一起停"><svg class="i"><use href="#i-pause"/></svg></button>
+        <button class="abtn" title="Resume Program|F9"><svg class="i"><use href="#i-play"/></svg></button>
+        <button class="abtn" title="Options"><svg class="i"><use href="#i-moreV"/></svg></button>
+        <button class="abtn" title="Hide|Shift+Esc" data-act="hide-bottom"><svg class="i"><use href="#i-hide"/></svg></button></div>
+      <div class="tw-body">
+        <div class="pane on" data-pane="debug">
+          <div class="dbg">
+
+            <div class="dm-callout err" id="verdict">
+              <svg><use href="#i-err"/></svg>
+              <div class="cb"><b>断在交接的第 2 步：手表端没收到 continuation 数据。</b>手机端 <code>sendData</code> 在 1.240 s 已发出，手表端 1.243 s 收到握手，但到 1.31 s 都没有 <code>onReceive</code> 日志。</div>
+              <button class="btn sm" id="btn-jump"><svg class="i" style="width:12px;height:12px"><use href="#i-watch"/></svg>跳到手表端断点</button>
+            </div>
+
+            <div class="dm-tl" id="tl">
+              <div class="ruler-h"></div>
+              <div class="ruler"><span style="--x:0%">0</span><span style="--x:25%">0.5 s</span><span style="--x:50%">1.0 s</span><span style="--x:75%">1.5 s</span><span style="--x:100%">2.0 s</span></div>
+
+              <div class="lane-h"><svg><use href="#i-phone"/></svg>Mate 70 Pro<span class="dm-dot err" title="已停"></span></div>
+              <div class="lane" data-lane="phone">
+                <span class="ev" data-t="0.082" data-side="phone" style="--x:4%">startAbility</span>
+                <span class="ev info" data-t="0.560" data-side="phone" style="--x:28%"><svg><use href="#i-link"/></svg>connect</span>
+                <span class="ev ok" data-t="1.240" data-side="phone" style="--x:56%"><svg><use href="#i-checkS"/></svg>sendData 1.240s</span>
+                <span class="ev" data-t="1.262" data-side="phone" style="--x:66%;--w:14%"><svg><use href="#i-hourglass"/></svg>waitAck…</span>
+                <span class="mark accent" style="--x:57%"><b>交接 · 第 2 步</b></span>
+                <span class="mark" data-mark="pause" style="--x:72%"><b>两端同时停 1.31 s</b></span>
+              </div>
+
+              <div class="lane-h"><svg><use href="#i-watch"/></svg>WATCH 5<span class="dm-dot err" title="已停"></span></div>
+              <div class="lane" data-lane="watch">
+                <span class="ev info" data-t="0.610" data-side="watch" style="--x:30%"><svg><use href="#i-link"/></svg>onConnect 0.61s</span>
+                <span class="ev ok" data-t="1.243" data-side="watch" style="--x:58%"><svg><use href="#i-checkS"/></svg>handshake 1.243s</span>
+                <span class="ev err miss" data-t="1.262" data-side="watch" style="--x:68%" id="ev-miss"><svg><use href="#i-err"/></svg>onReceive 未出现</span>
+                <span class="mark accent" style="--x:57%"></span>
+                <span class="mark" data-mark="pause" style="--x:72%"></span>
+              </div>
+            </div>
+
+            <div class="dm-split logs">
+              <div>
+                <div class="dm-pane-hd"><svg class="i" style="width:14px;height:14px"><use href="#i-phone"/></svg><b>手机端 hilog</b><span class="grow"></span><span class="dm-mono dm-muted">ListPage.ets</span></div>
+                <div class="log dm-mono" data-log="phone">
+                  <div class="r" data-t="0.082"><span class="lt">[0.082]</span><span class="ltag">Ability:</span><span class="lmsg">startAbility ListPage · continuation=true</span></div>
+                  <div class="r" data-t="0.560"><span class="lt">[0.560]</span><span class="ltag">DistConn:</span><span class="lmsg">connect → WATCH 5 · session 7</span></div>
+                  <div class="r" data-t="0.610"><span class="lt">[0.610]</span><span class="ltag">DistConn:</span><span class="lmsg">通道就绪 · RTT 38 ms</span></div>
+                  <div class="r" data-t="1.240"><span class="lt">[1.240]</span><span class="ltag">Continuation:</span><span class="lmsg">sendData 2.1 KB · seq 2 已发出</span></div>
+                  <div class="r" data-t="1.243"><span class="lt">[1.243]</span><span class="ltag">Continuation:</span><span class="lmsg">对端握手 OK · seq 2</span></div>
+                  <div class="r hl" data-t="1.262"><span class="lt">[1.262]</span><span class="ltag">Continuation:</span><span class="lmsg">waitAck… 200 ms 内没有回包</span></div>
+                </div>
+              </div>
+              <div>
+                <div class="dm-pane-hd"><svg class="i" style="width:14px;height:14px"><use href="#i-watch"/></svg><b>手表端 hilog</b><span class="grow"></span><span class="dm-mono dm-muted">WatchPage.ets</span></div>
+                <div class="log dm-mono" data-log="watch">
+                  <div class="r" data-t="0.082"><span class="lt">[0.082]</span><span class="ltag">Ability:</span><span class="lmsg">WatchPage 后台待命</span></div>
+                  <div class="r" data-t="0.560"><span class="lt">[0.560]</span><span class="ltag">DistConn:</span><span class="lmsg">收到连接请求 · session 7</span></div>
+                  <div class="r" data-t="0.610"><span class="lt">[0.610]</span><span class="ltag">DistConn:</span><span class="lmsg">onConnect Mate 70 Pro</span></div>
+                  <div class="r" data-t="1.240"><span class="lt">[1.240]</span><span class="ltag">DistConn:</span><span class="lmsg">会话 7 保活 · 距上次收包 630 ms</span></div>
+                  <div class="r" data-t="1.243"><span class="lt">[1.243]</span><span class="ltag">Continuation:</span><span class="lmsg">handshake 回复 OK · seq 2</span></div>
+                  <div class="r hl miss" data-t="1.262"><span class="lt">[1.262]</span><span class="lmsg">（这里应有 onReceive · 没出现）</span></div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var $=DemoFrame.$, $$=DemoFrame.$$;
+  document.getElementById('tree-slot').innerHTML=DemoFrame.tree({sel:'ListPage.ets'});
+  document.getElementById('tabs').insertAdjacentHTML('afterbegin',DemoFrame.tabs([{file:'ListPage.ets',on:true},{file:'ItemCard.ets'}]));
+  DemoFrame.init({device:'Mate 70 Pro ⇄ WATCH 5',deviceIcon:'#i-link',onReady:function(){
+    $('#status-slot').innerHTML='<span class="dm-capsule" id="cap"><span class="dm-dot err"></span><span id="cap-txt">两端同停 · 1.31 s</span></span>';
+  }});
+
+  /* 编辑器：默认停在第 15 行（断点）；手机端事件 → 15 行，手表端事件 → 21 行 */
+  function showLine(n){
+    $('#code').innerHTML=DemoFrame.code('ListPage.ets',{cur:n,hl:[n],marks:{15:'bp'}});
+    var cur=$('#code .ln.cur');if(cur)cur.scrollIntoView({block:'center'});
+    var p=$('#status-pos');if(p)p.textContent=n+':1';
+  }
+  showLine(15);
+
+  /* 点时间轴上任一事件：两栏日志里同一时间戳的行一起亮，编辑器跳到对应行 */
+  function pick(ev){
+    $$('#tl .ev').forEach(function(x){x.classList.toggle('sel',x===ev)});
+    var t=ev.dataset.t;
+    $$('.log .r').forEach(function(r){r.classList.toggle('hl',r.dataset.t===t)});
+    showLine(ev.dataset.side==='watch'?21:15);
+  }
+  $('#tl').addEventListener('click',function(e){var ev=e.target.closest('.ev');if(ev)pick(ev)});
+  $('#btn-jump').addEventListener('click',function(){pick($('#ev-miss'))});
+
+  /* 两端一起停：断点线一起挪到 1.60 s，两条泳道各多一个「已暂停」，两栏日志各多一行 */
+  var paused=false;
+  $('#btn-pause').addEventListener('click',function(){
+    if(paused)return;paused=true;
+    $$('#tl .mark[data-mark="pause"]').forEach(function(m){m.style.setProperty('--x','80%');var b=$('b',m);if(b)b.textContent='两端同时停 1.60 s'});
+    setTimeout(function(){
+      $$('#tl .lane').forEach(function(l){
+        l.insertAdjacentHTML('beforeend','<span class="ev pause" data-t="1.600" data-side="'+l.dataset.lane+'" style="--x:81%"><svg><use href="#i-pause"/></svg>已暂停</span>');
+      });
+      $('.log[data-log="phone"]').insertAdjacentHTML('beforeend','<div class="r pause" data-t="1.600"><span class="lt">[1.600]</span><span class="ltag">Debugger:</span><span class="lmsg">两端同时停 · ListPage.ets:15</span></div>');
+      $('.log[data-log="watch"]').insertAdjacentHTML('beforeend','<div class="r pause" data-t="1.600"><span class="lt">[1.600]</span><span class="ltag">Debugger:</span><span class="lmsg">两端同时停 · WatchPage.ets:21</span></div>');
+      pick($('#tl .lane[data-lane="phone"] .ev.pause'));
+      var c=$('#cap-txt');if(c)c.textContent='两端同停 · 1.60 s';
+    },400);
+    this.classList.add('done');this.setAttribute('title','已在 1.60 s 两端同停');
+  });
+})();
+</script>
+</body>
+</html>

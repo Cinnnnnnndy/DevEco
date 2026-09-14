@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>16 · 真机多设备：差异并排，哪些是适配哪些是缺陷替你圈出来</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="../../deveco-intui-kit/src/tokens.css">
+<link rel="stylesheet" href="../../deveco-intui-kit/src/components.css">
+<link rel="stylesheet" href="../_shared/frame.css">
+<script src="../../deveco-intui-kit/src/icons.js"></script>
+<script src="../_shared/frame.js"></script>
+<style>
+  .ide[data-ide-theme]{--bottom-h:clamp(400px,52vh,520px)}
+  .tw-bottom .tw-hdr .dm-pill{margin-left:10px;align-self:center}
+  .btn{white-space:nowrap}
+  /* 底部工具窗主体：左画布，右判断 */
+  .dv{flex:1;display:grid;grid-template-columns:minmax(0,1fr) 340px;min-height:0;height:100%}
+  .dv > *{min-width:0;min-height:0}
+  .dv .dm-canvas{overflow:auto}
+  .dv .stage{padding:22px 28px 30px;gap:56px;align-items:center;justify-content:center;min-height:100%}
+  .dv-side{border-left:1px solid var(--ui-border);overflow:auto;padding:10px 12px;display:flex;flex-direction:column;gap:10px;background:var(--ui-bg)}
+  /* 设备可点：点设备 = 选中对应那条判断 */
+  .dm-device{cursor:default}
+  .dm-device.watch{z-index:0}
+  .dm-device.watch .cap{bottom:-34px}
+  .dm-device.sel .scr{box-shadow:inset 0 0 0 2px var(--ui-accent)}
+  /* 热区：颜色跟边框走，选中时外发光 */
+  .dm-hot{color:var(--ui-error);transition:box-shadow .15s}
+  .dm-hot.ok{color:var(--ui-success)}
+  .dm-hot.on{box-shadow:0 0 0 3px color-mix(in srgb,currentColor 35%,transparent)}
+  .dm-hot .lb.r{left:auto;right:6px}
+  .dm-hot .lb.c{left:50%;transform:translateX(-50%)}
+  /* 迷你应用补充：折叠屏两栏、手表标题溢出 */
+  .mapp .search.sq{border-radius:6px}
+  .mapp .cols{flex:1;display:flex;min-height:0}
+  .mapp .col{flex:1;min-width:0;display:flex;flex-direction:column}
+  .mapp .col.blank{background:#fff}
+  .mapp .nav{height:28px;border-top:1px solid #f0f0f0;display:flex;align-items:center;justify-content:space-around;font-size:8px;color:#8a8f99}
+  .mapp .nav b{color:#3574F0;font-weight:600}
+  .mapp .ring.ovf{display:flex;flex-direction:column;justify-content:center;align-items:flex-start;padding-left:12px;text-align:left}
+  .mapp .ring.ovf b{font-size:12px;white-space:nowrap;line-height:16px}
+  .mapp .ring.ovf span{font-size:9px;color:#8a8f99}
+  .mapp .ring.ovf .price{font-size:13px;font-weight:600;color:#DB3B4B;margin-top:4px}
+  /* 判断列表：每条两行，第二行放动作 */
+  .dv-ent{padding:5px 12px 6px;display:flex;flex-direction:column;gap:4px;border-top:1px solid var(--ui-border);cursor:default}
+  .dv-ent:first-child{border-top:0}
+  .dv-ent:hover{background:var(--ui-hover-list)}
+  .dv-ent.sel{background:var(--ui-selection)}
+  .dv-ent .r1{display:flex;align-items:center;gap:8px;min-height:22px;white-space:nowrap}
+  .dv-ent .r1 svg{width:16px;height:16px;flex:none}
+  .dv-ent .r1 svg.ok{color:var(--ui-success)}
+  .dv-ent .r1 svg.err{color:var(--ui-error)}
+  .dv-ent .r1 .grow{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis}
+  .dv-ent .r2{display:flex;align-items:center;gap:6px;padding-left:24px}
+  .dv-ent .r2 .dev{font-size:11px;color:var(--ui-fg-info);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .dv-ent .r2 .btn.sm{font-size:11px;padding:0 7px}
+  .why{padding:8px 12px;border-top:1px solid var(--ui-border);background:var(--ui-bg);font-size:var(--fs-sm);line-height:var(--lh-sm);display:flex;gap:6px}
+  .why svg{width:14px;height:14px;flex:none;margin-top:1px;color:var(--ui-info)}
+  .why b{font-weight:600}
+  .why code{font-family:var(--font-code);font-size:11px;background:var(--ui-tag-bg);padding:0 4px;border-radius:4px}
+  /* 规则卡 */
+  .rule{display:flex;align-items:flex-start;gap:8px;font-size:var(--fs-sm);line-height:var(--lh-sm)}
+  .rule .id{font-family:var(--font-code);font-size:11px;font-weight:600;color:var(--ui-link);width:22px;flex:none;padding-top:1px}
+  .rule .grow{flex:1;min-width:0}
+  .rule .dm-pill{flex:none}
+  .rule.added{color:var(--ui-fg);background:color-mix(in srgb,var(--ui-accent) 12%,transparent);border-radius:6px;padding:4px 6px;margin:0 -6px}
+  .rule.added svg{width:14px;height:14px;flex:none;color:var(--ui-info);margin-top:1px}
+  .code .ln.hl-ok{cursor:default}
+</style>
+</head>
+<body>
+<div class="ide" id="ide" data-ide-theme="dark" data-left="project" data-right="none" data-bottom="run" role="application" aria-label="DevEco Studio">
+  <div class="body">
+    <div class="tw tw-left">
+      <div class="pane on" data-pane="project">
+        <div class="tw-hdr"><span class="title">Project <svg class="i"><use href="#i-chevD"/></svg></span><span class="grow"></span>
+          <button class="abtn" title="Select Opened File"><svg class="i"><use href="#i-locate"/></svg></button>
+          <button class="abtn" title="Expand All"><svg class="i"><use href="#i-expandAll"/></svg></button>
+          <button class="abtn" title="Collapse All"><svg class="i"><use href="#i-collapseAll"/></svg></button>
+          <button class="abtn" title="Options"><svg class="i"><use href="#i-moreV"/></svg></button>
+          <button class="abtn" title="Hide|Shift+Esc" data-act="hide-left"><svg class="i"><use href="#i-hide"/></svg></button></div>
+        <div class="tw-body" id="tree-slot"></div>
+      </div>
+    </div>
+
+    <div class="editor">
+      <div class="tabs" id="tabs"><span class="grow"></span><span class="tab-tools"><button class="abtn" title="Editor Options"><svg class="i"><use href="#i-moreV"/></svg></button></span></div>
+      <div class="code-wrap"><div class="code" id="code"></div><span class="ok" title="No problems found"><svg><use href="#i-check"/></svg></span></div>
+      <div class="breadcrumbs" id="crumbs"></div>
+    </div>
+
+    <div class="tw tw-bottom">
+      <div class="tw-hdr"><span class="title">Device Verify</span>
+        <span class="tabbar">
+          <button class="btab on">改动 #41 · ListPage 搜索框<span class="x"><svg class="i"><use href="#i-closeS"/></svg></span></button>
+          <button class="btab">改动 #40</button>
+        </span>
+        <span class="dm-pill ok" id="run-pill"><svg><use href="#i-checkS"/></svg>3 台真机已跑完 · 2.1 s</span>
+        <span class="grow"></span>
+        <button class="abtn" title="Rerun on all devices"><svg class="i"><use href="#i-rerun"/></svg></button>
+        <button class="abtn" title="Options"><svg class="i"><use href="#i-moreV"/></svg></button>
+        <button class="abtn" title="Hide|Shift+Esc" data-act="hide-bottom"><svg class="i"><use href="#i-hide"/></svg></button></div>
+      <div class="tw-body">
+        <div class="pane on" data-pane="run"><div class="dv">
+
+          <div class="dm-canvas" id="canvas">
+            <div class="stage">
+
+              <div class="dm-device phone" data-hot="h1">
+                <div class="scr">
+                  <div class="mapp">
+                    <div class="st"><span>9:41</span><span>5G ▮▮▮</span></div>
+                    <div class="hd">商品</div>
+                    <div class="search">搜索商品</div>
+                    <div class="row"><span class="th"></span><div class="tx"><b>无线降噪耳机 Pro</b><span>¥899 · 已售 1.2 万</span></div></div>
+                    <div class="row"><span class="th"></span><div class="tx"><b>智能手表 5 · 46mm</b><span>¥2199 · 已售 8600</span></div></div>
+                    <div class="row"><span class="th"></span><div class="tx"><b>便携充电宝 20000</b><span>¥199 · 已售 3.4 万</span></div></div>
+                    <div class="row"><span class="th"></span><div class="tx"><b>折叠键盘 · 蓝牙</b><span>¥329 · 已售 5200</span></div></div>
+                    <div class="row"><span class="th"></span><div class="tx"><b>车载支架 · 磁吸</b><span>¥69 · 已售 2.1 万</span></div></div>
+                    <div class="fill"></div>
+                    <div class="nav"><b>首页</b><span>分类</span><span>购物车</span><span>我的</span></div>
+                  </div>
+                  <div class="dm-hot ok" id="h1" style="left:3%;top:12.5%;width:94%;height:8.5%"><span class="lb r">适配 · 圆角随形态</span></div>
+                </div>
+                <span class="cap">Mate 70 Pro</span>
+              </div>
+
+              <div class="dm-device fold" data-hot="h2">
+                <div class="scr">
+                  <div class="mapp">
+                    <div class="st"><span>9:41</span><span>5G ▮▮▮</span></div>
+                    <div class="cols">
+                      <div class="col">
+                        <div class="hd">商品</div>
+                        <div class="search sq">搜索商品</div>
+                        <div class="row"><span class="th"></span><div class="tx"><b>无线降噪耳机 Pro</b><span>¥899</span></div></div>
+                        <div class="row"><span class="th"></span><div class="tx"><b>智能手表 5</b><span>¥2199</span></div></div>
+                        <div class="row"><span class="th"></span><div class="tx"><b>便携充电宝</b><span>¥199</span></div></div>
+                        <div class="row"><span class="th"></span><div class="tx"><b>折叠键盘</b><span>¥329</span></div></div>
+                      </div>
+                      <div class="col blank"></div>
+                    </div>
+                  </div>
+                  <div class="dm-hot" id="h2" style="left:52.5%;top:7%;width:44.5%;height:88%"><span class="lb">疑似缺陷 · 详情栏未渲染</span></div>
+                </div>
+                <span class="cap">Mate X6 · 展开</span>
+              </div>
+
+              <div class="dm-device watch" data-hot="h3">
+                <div class="scr">
+                  <div class="mapp">
+                    <div class="ring ovf"><b>无线降噪耳机 Pro · 限时特惠</b><span>已售 1.2 万</span><span class="price">¥899</span></div>
+                  </div>
+                </div>
+                <div class="dm-hot" id="h3" style="left:6%;top:28%;width:90%;height:17%"><span class="lb c">疑似缺陷 · 标题溢出</span></div>
+                <span class="cap">WATCH 5</span>
+              </div>
+
+            </div>
+          </div>
+
+          <div class="dv-side">
+            <div class="dm-card" id="judge">
+              <div class="dm-card-hd"><svg class="i"><use href="#i-diff"/></svg>这次的 3 处差异<span class="grow"></span><span class="dm-small dm-muted" style="font-weight:400" id="judge-sum">1 适配 · 2 疑似缺陷</span></div>
+              <div class="dm-list" id="judge-list">
+                <div class="dv-ent" data-hot="h1" data-kind="ok" data-why="规则 <b>R2</b>：搜索框圆角按形态取值（手机 <code>22vp</code> / 折叠屏 <code>12vp</code>），两台都取到了各自的值，是一多适配的正常结果。" data-rule="手机搜索框圆角 22vp 属适配">
+                  <div class="r1"><svg class="ok"><use href="#i-checkS"/></svg><span class="grow">手机：搜索框圆角变了</span><span class="dm-pill ok" data-pill>适配</span></div>
+                  <div class="r2"><span class="dev">Mate 70 Pro · 直板</span><button class="btn sm" data-act="bug">确认缺陷</button><button class="btn sm" data-act="ok">其实是适配</button></div>
+                </div>
+                <div class="dv-ent" data-hot="h2" data-kind="err" data-why="规则 <b>R3</b>：一多断点 <code>≥ 840vp</code> 时详情栏必须出现，这次没出现，1.6 s 后右栏仍是空白。" data-rule="折叠屏展开态右栏允许延迟渲染">
+                  <div class="r1"><svg class="err"><use href="#i-err"/></svg><span class="grow">折叠屏：右栏详情没出来</span><span class="dm-pill err" data-pill>疑似缺陷</span></div>
+                  <div class="r2"><span class="dev">Mate X6 · 展开态</span><button class="btn sm" data-act="bug">确认缺陷</button><button class="btn sm" data-act="ok">其实是适配</button></div>
+                </div>
+                <div class="dv-ent" data-hot="h3" data-kind="err" data-why="规则 <b>R7</b>：手表上文字不得超出安全区，标题没设 <code>maxLines</code>，超出圆屏被裁掉了，是溢出不是隐藏。" data-rule="手表标题允许两行截断">
+                  <div class="r1"><svg class="err"><use href="#i-err"/></svg><span class="grow">手表：标题被截断</span><span class="dm-pill err" data-pill>疑似缺陷</span></div>
+                  <div class="r2"><span class="dev">WATCH 5 · 圆屏</span><button class="btn sm" data-act="bug">确认缺陷</button><button class="btn sm" data-act="ok">其实是适配</button></div>
+                </div>
+              </div>
+              <div class="why" id="why" hidden><svg><use href="#i-info"/></svg><div><b>为什么这么判：</b><span id="why-txt"></span></div></div>
+            </div>
+
+            <div class="dm-card" id="rules">
+              <div class="dm-card-hd"><svg class="i"><use href="#i-scene"/></svg>规则集<span class="cnt dm-mono dm-muted" style="font-weight:400" id="rule-cnt">12 条</span><span class="grow"></span><span class="dm-small dm-muted" style="font-weight:400">本方维护</span></div>
+              <div class="dm-card-bd" id="rule-bd">
+                <div class="rule"><span class="id">R1</span><span class="grow">手表隐藏搜索框</span><span class="dm-pill ok">适配</span></div>
+                <div class="rule"><span class="id">R3</span><span class="grow">≥ 840vp 必须出现详情栏，否则</span><span class="dm-pill err">缺陷</span></div>
+              </div>
+              <div class="dm-card-ft"><span class="dm-small dm-muted">你改的判法会回流成规则</span><span class="grow"></span><button class="btn sm"><svg class="i" style="width:12px;height:12px"><use href="#i-pen"/></svg>编辑规则</button></div>
+            </div>
+          </div>
+
+        </div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var $=DemoFrame.$, $$=DemoFrame.$$;
+  document.getElementById('tree-slot').innerHTML=DemoFrame.tree({sel:'ListPage.ets'});
+  document.getElementById('tabs').insertAdjacentHTML('afterbegin',DemoFrame.tabs([{file:'ListPage.ets',on:true},{file:'ItemCard.ets'}]));
+  document.getElementById('code').innerHTML=DemoFrame.code('ListPage.ets',{cur:12});
+  $('.code .ln[data-ln="12"]').classList.add('hl-ok');
+  $('.code .ln[data-ln="12"]').setAttribute('title','改动 #41：这一行改了搜索框');
+  DemoFrame.init({device:'Multi-device (3)',deviceIcon:'#i-layout',onReady:function(){
+    $('#status-slot').innerHTML='<span class="dm-capsule" id="cap"><span class="dm-dot ok"></span><span id="cap-txt">Device Verify · 3 台真机 · 1 适配 · 2 疑似缺陷</span></span>';
+  }});
+
+  var list=$('#judge-list');
+  function recount(){
+    var ents=$$('.dv-ent',list),ok=0,err=0;
+    ents.forEach(function(e){if(e.dataset.kind==='ok')ok++;else err++});
+    $('#judge-sum').textContent=ok+' 适配 · '+err+' 疑似缺陷';
+    var c=$('#cap-txt');if(c)c.textContent='Device Verify · 3 台真机 · '+ok+' 适配 · '+err+' 疑似缺陷';
+  }
+  /* 选中一条：对应热区加 on，设备亮边，卡片底部展开「为什么这么判」 */
+  function select(ent){
+    $$('.dv-ent',list).forEach(function(e){e.classList.toggle('sel',e===ent)});
+    $$('.dm-hot').forEach(function(h){h.classList.toggle('on',ent&&h.id===ent.dataset.hot)});
+    $$('#canvas .dm-device').forEach(function(d){d.classList.toggle('sel',ent&&d.dataset.hot===ent.dataset.hot)});
+    var why=$('#why');
+    if(!ent){why.hidden=true;return}
+    $('#why-txt').innerHTML=ent.dataset.why;why.hidden=false;
+  }
+  /* 其实是适配：热区变绿、pill 变适配、标签写「你标的」，规则卡记一条 */
+  function markOk(ent){
+    var hot=$('#'+ent.dataset.hot),pill=$('[data-pill]',ent),ico=$('.r1 svg',ent);
+    hot.classList.add('ok');$('.lb',hot).textContent='适配 · 你标的';
+    pill.className='dm-pill ok';pill.textContent='适配 · 你标的';
+    ico.setAttribute('class','ok');$('use',ico).setAttribute('href','#i-checkS');
+    ent.dataset.kind='ok';
+    ent.dataset.why='你标为适配，已记一条待入规则集：<b>'+ent.dataset.rule+'</b>。下次同样的差异不再报疑似缺陷。';
+    if(!$('.rule.added[data-for="'+ent.dataset.hot+'"]')){
+      $('#rule-bd').insertAdjacentHTML('beforeend','<div class="rule added dm-small" data-for="'+ent.dataset.hot+'"><svg><use href="#i-plus-box"/></svg><span class="grow">已记一条：'+ent.dataset.rule+'（待入规则集）</span></div>');
+      $('#rule-cnt').textContent='12 条 · 待入 '+$$('.rule.added').length;
+    }
+    recount();select(ent);
+  }
+  /* 确认缺陷：热区变红、pill 变缺陷 */
+  function markBug(ent){
+    var hot=$('#'+ent.dataset.hot),pill=$('[data-pill]',ent),ico=$('.r1 svg',ent);
+    hot.classList.remove('ok');$('.lb',hot).textContent='缺陷 · 已确认';
+    pill.className='dm-pill err';pill.textContent='缺陷 · 已确认';
+    ico.setAttribute('class','err');$('use',ico).setAttribute('href','#i-err');
+    ent.dataset.kind='err';
+    ent.dataset.why='你确认为缺陷，已连同三端截图进 Problems，指向 <code>ListPage.ets:12</code> 这次改动。';
+    var added=$('.rule.added[data-for="'+ent.dataset.hot+'"]');if(added){added.remove();var n=$$('.rule.added').length;$('#rule-cnt').textContent=n?'12 条 · 待入 '+n:'12 条'}
+    recount();select(ent);
+  }
+
+  list.addEventListener('click',function(e){
+    var ent=e.target.closest('.dv-ent');if(!ent)return;
+    var b=e.target.closest('[data-act]');
+    if(b){if(b.dataset.act==='ok')markOk(ent);else markBug(ent);return}
+    select(ent.classList.contains('sel')?null:ent);
+  });
+  /* 画布上点设备 = 选中它那条 */
+  $('#canvas').addEventListener('click',function(e){
+    var d=e.target.closest('.dm-device[data-hot]');if(!d)return;
+    select($('.dv-ent[data-hot="'+d.dataset.hot+'"]',list));
+  });
+
+  /* 默认选中折叠屏那条，一眼看到「为什么这么判」 */
+  select($('.dv-ent[data-hot="h2"]',list));
+  recount();
+})();
+</script>
+</body>
+</html>

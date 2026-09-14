@@ -57,8 +57,8 @@ window.DEVECO_CATALOG = {
         {
           no: '02', title: '场景化应用体检', subtitle: 'Scenario App Check', mark: '投',
           desc: '按场景跑检查（上架自检 / 首次启动 / 低端机 / 无网弱网），改完代码当场跑；每条结论给到文件和行号，点一下落到那一行。把上架会被打回的问题提前到写代码的时候。',
-          view: 'sketch',
-          tags: ['步数与切换次数'], note: '第二批：上架问题提前暴露',
+          view: 'ready', date: '2026-09-14', href: 'demos/02-scene-check/index.html',
+          tags: ['步数与切换次数'], note: '第二批：上架问题提前暴露', thumb: { type: 'image', src: 'site/thumbs/02-scene-check.jpg' },
         },
         {
           no: '03', title: '调优：从「症状」进入，AI 修复闭环', subtitle: 'Symptom-first Tuning Loop', mark: '投',
@@ -69,8 +69,8 @@ window.DEVECO_CATALOG = {
         {
           no: '04', title: '安卓应用一键转化', subtitle: 'Android → ArkTS Migration', mark: '投',
           desc: '按屏、按模块一块一块迁，产出原生 ArkTS 不做兼容层；转出来的代码在工程树上标「已转 / 待查 / 需人工」；安卓版改了需求，列出鸿蒙版还差哪些没跟上。真空位在一键之后。',
-          view: 'sketch',
-          tags: ['步数与切换次数'], note: '连着产品线一起排',
+          view: 'ready', date: '2026-09-14', href: 'demos/04-android-migration/index.html',
+          tags: ['步数与切换次数'], note: '连着产品线一起排', thumb: { type: 'image', src: 'site/thumbs/04-android-migration.jpg' },
         },
       ],
     },
@@ -115,8 +115,8 @@ window.DEVECO_CATALOG = {
         {
           no: '10', title: '可视化调优：图上一处异常，直接落到代码行', subtitle: 'Visual Profiling', mark: '半投',
           desc: '把指标画成看得懂的图，点进去直接落到代码行；和 03 连成闭环：症状进入 → 看图定位 → AI 出补丁 → 自动复测前后对比。看图这一半是补齐，价值在于它是 03 的前半段。',
-          view: 'sketch',
-          tags: ['步数与切换次数'],
+          view: 'ready', date: '2026-09-14', href: 'demos/10-visual-profiling/index.html',
+          tags: ['步数与切换次数'], thumb: { type: 'image', src: 'site/thumbs/10-visual-profiling.jpg' },
         },
         {
           no: '11', title: '互动式意图确认：问你的时候它不停', subtitle: 'Confirm Without Stopping', mark: '补齐',
@@ -133,8 +133,8 @@ window.DEVECO_CATALOG = {
         {
           no: '13', title: 'UI & Code 二次编辑：预览上改，写回源码', subtitle: 'Preview-to-Source Round Trip', mark: '投',
           desc: '在预览上直接拖、直接改，改动确定写回源码，不让 AI 去猜；改代码预览立刻跟着变这一半已有，补的是反方向；改动落到源码哪一行人能看见。声明式界面这一代全行业空着。',
-          view: 'sketch',
-          tags: ['步数与切换次数'],
+          view: 'ready', date: '2026-09-14', href: 'demos/13-ui-code-roundtrip/index.html',
+          tags: ['步数与切换次数'], thumb: { type: 'image', src: 'site/thumbs/13-ui-code-roundtrip.jpg' },
         },
         {
           no: '14', title: 'AI 协作时间轴：刻度是执行步骤，能挑着退', subtitle: 'Step-level Timeline & Rewind', mark: '补齐',
@@ -155,14 +155,14 @@ window.DEVECO_CATALOG = {
         {
           no: '15', title: '一多联动＋跨端开发：任务状态跟着人走', subtitle: 'Task State Follows You', mark: '投',
           desc: '任务状态在 PC、平板、手表、手机之间同步：连着哪几台、断点在哪、日志看到哪、AI 执行到第几步，换一端接上就是原样；每一端只承担适合的那部分，手表和手机也是能发指令的开发端。',
-          view: 'sketch',
-          tags: ['步数与切换次数', '等待可见'], note: '连着产品线一起排',
+          view: 'ready', date: '2026-09-14', href: 'demos/15-cross-device-handoff/index.html',
+          tags: ['步数与切换次数', '等待可见'], note: '连着产品线一起排', thumb: { type: 'image', src: 'site/thumbs/15-cross-device-handoff.jpg' },
         },
         {
           no: '16', title: '真机多设备：差异并排，替你圈出来', subtitle: 'Multi-device Diff Verdict', mark: '投',
           desc: '一次改动自动在几种真机形态上各跑一遍，差异截图并排；核心在「判断」：哪些差异是一多适配的正常结果、哪些是缺陷，这套规则要我们自己定。并排的是不同真机，不是一台的几种状态。',
-          view: 'sketch',
-          tags: ['步数与切换次数', '审阅与回退'], note: '第二批：差异化最高',
+          view: 'ready', date: '2026-09-14', href: 'demos/16-multi-device-verify/index.html',
+          tags: ['步数与切换次数', '审阅与回退'], note: '第二批：差异化最高', thumb: { type: 'image', src: 'site/thumbs/16-multi-device-verify.jpg' },
         },
         {
           no: '17', title: '模拟器 · 单屏多设备切换', subtitle: 'Multi-device Canvas', mark: '投',
@@ -173,14 +173,14 @@ window.DEVECO_CATALOG = {
         {
           no: '18', title: '模拟器 · 分布式调试', subtitle: 'Distributed Debug Timeline', mark: '投',
           desc: '两端日志按同一条时间轴对齐，交接那一下画出来；断点同时管住两端，一端停另一端也停在对应位置；给出判断：这一次是哪一端出的问题、卡在交接的第几步。',
-          view: 'sketch',
-          tags: ['步数与切换次数', '审阅与回退'], note: '对齐两端时钟有技术前提，需与调试服务侧确认',
+          view: 'ready', date: '2026-09-14', href: 'demos/18-distributed-debug/index.html',
+          tags: ['步数与切换次数', '审阅与回退'], note: '对齐两端时钟有技术前提，需与调试服务侧确认', thumb: { type: 'image', src: 'site/thumbs/18-distributed-debug.jpg' },
         },
         {
           no: '19', title: '模拟器 · 远端调试', subtitle: 'Remote Device into Canvas', mark: '搭车',
           desc: '手边没有的手表、车机也能拿过来调：远端设备直接进同屏画布，按钮是「加进画布」不是「连接」；拿过来之后能接着做分布式联调；再往后是 CI 与第三方工具可远程调用的服务。',
-          view: 'sketch',
-          tags: ['步数与切换次数'], note: '跟着 17 一起做；对我们是追平不是首发',
+          view: 'ready', date: '2026-09-14', href: 'demos/19-remote-device/index.html',
+          tags: ['步数与切换次数'], note: '跟着 17 一起做；对我们是追平不是首发', thumb: { type: 'image', src: 'site/thumbs/19-remote-device.jpg' },
         },
         {
           no: '20', title: '模拟器 · 连接状态体验创新', subtitle: 'Connection as Five Visible Steps', mark: '投',
