@@ -91,8 +91,8 @@ window.DEVECO_CATALOG = {
         {
           no: '06', title: 'Voice coding：语音开发模式', subtitle: 'Voice Coding Loop', mark: '补齐',
           desc: '先做「把需求说出来」，按编程词汇调优识别，把项目名、分支名、符号名加进识别提示；更远是语音闭环：AI 把结果读回来，用嘴确认或纠偏，全程手不离设备。',
-          view: 'sketch',
-          tags: ['步数与切换次数'], note: '补齐，并进日常迭代',
+          view: 'ready', date: '2026-09-14', href: 'demos/06-voice-coding/index.html',
+          tags: ['步数与切换次数'], note: '补齐，并进日常迭代', thumb: { type: 'image', src: 'site/thumbs/06-voice-coding.jpg' },
         },
         {
           no: '07', title: 'Agent Team：在干 / 在等你 / 干完了', subtitle: 'Agent Task Tiers', mark: '投',
@@ -103,8 +103,8 @@ window.DEVECO_CATALOG = {
         {
           no: '08', title: 'AI 输出内容压缩：结论先行', subtitle: 'Conclusion-first Replies', mark: '半投',
           desc: '回复先说结论，过程收起来可展开；报错、安全警告、危险操作确认永远完整显示不压；历史侧自动摘要与手动压缩，并让人看得到是谁占了空间。',
-          view: 'sketch',
-          tags: ['审阅与回退'],
+          view: 'ready', date: '2026-09-14', href: 'demos/08-answer-compression/index.html',
+          tags: ['审阅与回退'], thumb: { type: 'image', src: 'site/thumbs/08-answer-compression.jpg' },
         },
         {
           no: '09', title: '可视化编程：画布与代码并排', subtitle: 'Canvas ⇄ Code', mark: '投',
