@@ -1,0 +1,110 @@
+# -*- coding: utf-8 -*-
+# 全部取自 DevEco Studio 6.0.2 安装包 lib/app.jar!/themes/expUI/*.theme.json（2026-09-08 提取）
+DARK = {
+ 'Gray':  ['#1E1F22','#2B2D30','#393B40','#43454A','#4E5157','#5A5D63','#6F737A','#868A91','#9DA0A8','#B4B8BF','#CED0D6','#DFE1E5','#F0F1F2','#FFFFFF'],
+ 'Blue':  ['#25324D','#2E436E','#35538F','#375FAD','#366ACE','#3574F0','#467FF2','#548AF7','#6B9BFA','#83ACFC','#99BBFF','#B5CEFF','#D1E0FF'],
+ 'Green': ['#253627','#273828','#375239','#436946','#4E8052','#57965C','#5FAD65','#73BD79','#89CC8E','#A0DBA5','#B9EBBD','#D4FAD7'],
+ 'Yellow':['#3D3223','#5E4D33','#826A41','#9E814A','#BA9752','#D6AE58','#F2C55C','#F5D273','#F7DE8B','#FCEBA4','#FFF6BD'],
+ 'Red':   ['#402929','#472B2B','#5E3838','#7A4343','#9C4E4E','#BD5757','#DB5C5C','#E37774','#EB938D','#F2B1AA','#F7CCC6','#FAE3DE'],
+ 'Orange':['#45322B','#614438','#825845','#A36B4E','#C27A53','#E08855','#E5986C','#F0AC81','#F5BD98','#FACEAF','#FFDFC7'],
+ 'Purple':['#2F2936','#3B3147','#433358','#583D7A','#6C469C','#8150BE','#955AE0','#A571E6','#B589EC','#C4A0F3','#D4B8F9','#E4CEFF'],
+ 'Teal':  ['#1D3838','#1D3D3B','#1E4D4A','#20635D','#21786F','#238E82','#24A394','#42B1A4','#60C0B5','#7DCEC5','#9BDDD6','#B9EBE6'],
+}
+LIGHT = {
+ 'Gray':  ['#000000','#27282E','#383A42','#494B57','#5A5D6B','#6C707E','#818594','#A8ADBD','#C9CCD6','#D3D5DB','#DFE1E5','#EBECF0','#F7F8FA','#FFFFFF'],
+ 'Blue':  ['#2E55A3','#315FBD','#3369D6','#3574F0','#4682FA','#588CF3','#709CF5','#88ADF7','#A0BDF8','#C2D6FC','#D4E2FF','#EDF3FF','#F5F8FE'],
+ 'Green': ['#1E6B33','#1F7536','#1F8039','#208A3C','#369650','#55A76A','#89C398','#AFDBB8','#C5E5CC','#E3F7E7','#F2FCF3'],
+ 'Yellow':['#A46704','#C27D04','#DF9303','#FFAF0F','#FDBD3D','#FED277','#FEE6B1','#FFF1D1','#FFF5DB','#FFFAEB'],
+ 'Red':   ['#AD2B38','#BC303E','#CC3645','#DB3B4B','#E55765','#E46A76','#ED99A1','#F2B6BB','#FAD4D8','#FFEBEC','#FFF2F3','#FFF7F7'],
+ 'Orange':['#A14916','#B85516','#CE6117','#E56D17','#EC8F4C','#F2B181','#F9D2B6','#FFEFE3','#FFF4EB'],
+ 'Purple':['#55339C','#643CB8','#7444D4','#834DF0','#A177F4','#BFA1F8','#DCCBFB','#EFE5FF','#F5EDFF','#FAF5FF'],
+ 'Teal':  ['#096A6E','#077A7F','#058B90','#039BA1','#3FB3B8','#7BCCCF','#B6E4E5','#DAF4F5','#F2FCFC'],
+}
+EXTRA_LIGHT = [('windowsPopupBorder','#B9BDC9','Windows 弹层描边')]
+
+# (分组, 用途, dark 值, light 值, 来源 key)
+SEMANTIC = [
+ ('表面','面板 / 工具窗 / 状态栏底','Gray2 #2B2D30','Gray13 #F7F8FA','*.background'),
+ ('表面','编辑器与编辑器标签底','Gray1 #1E1F22','Gray14 #FFFFFF','EditorTabs.background'),
+ ('表面','输入框底','Gray2','Gray14','TextField.background'),
+ ('表面','弹层底','Gray2','Gray14','Popup.background'),
+ ('表面','标签 / Tag 底','Gray3','Gray12','Tag.background'),
+ ('表面','主工具栏 Header 底','Gray2 #2B2D30','<b>Gray2 #27282E（深色）</b>','MainToolbar.background'),
+ ('文字','正文','Gray12 #DFE1E5','Gray1 #000000','*.foreground'),
+ ('文字','次要文字','Gray7 #6F737A','Gray7 #818594','*.infoForeground'),
+ ('文字','禁用','Gray6','Gray8','*.disabledForeground'),
+ ('文字','链接','Blue9 #6B9BFA','Blue2 #315FBD','Link.activeForeground'),
+ ('文字','已修改文件名','Blue9','Blue3','*.modifiedItemForeground'),
+ ('交互','悬停（按钮 / 标签）','Gray3','Gray12','ToolWindow.Button.hoverBackground'),
+ ('交互','悬停（树 / 列表行）','Gray3','Blue12 #EDF3FF','*.hoverBackground'),
+ ('交互','选中行','Blue2 #2E436E','Blue11 #D4E2FF','*.selectionBackground'),
+ ('交互','失焦选中','Gray4','Gray11','*.selectionInactiveBackground'),
+ ('交互','图标按钮悬停 / 按下','#FFFFFF16 / #FFFFFF26','#00000012 / #0000001D','ActionButton.*'),
+ ('交互','Header 悬停','#FFFFFF1A','#FFFFFF1A','MainToolbar.Dropdown.transparentHoverBackground'),
+ ('边框','边框 / 分隔线','Gray1（分隔线 Gray3）','Gray12 #EBECF0','*.borderColor · OnePixelDivider'),
+ ('边框','输入框 / 控件描边','Gray5 #4E5157','Gray9 #C9CCD6','Component.borderColor'),
+ ('边框','弹层描边','Gray4','windowsPopupBorder #B9BDC9','Popup.borderColor'),
+ ('边框','Header 分隔','Gray4','Gray4','MainToolbar.separatorColor'),
+ ('强调','强调 / 焦点 / 主按钮 / 选中侧栏图标','<b>#3574F0</b>（Blue6）','<b>#3574F0</b>（Blue4）','*.focusColor · Button.default'),
+ ('强调','编辑器标签下划线（编辑器失焦）','Gray6','Gray8','*.inactiveUnderlineColor'),
+ ('强调','进度条 / 轨道','Blue7 / Gray4','Blue4 / Gray11','ProgressBar.*'),
+ ('状态','成功','#57965C','#208A3C','status/success.svg'),
+ ('状态','警告','#F2C55C','#FFAF0F','status/warning.svg'),
+ ('状态','错误','#DB5C5C','#DB3B4B','status/error.svg'),
+ ('状态','信息','#548AF7','#3574F0','status/info.svg'),
+ ('其他','图标描边','#CED0D6','#6C707E','expui/*.svg 默认描边'),
+ ('其他','Tooltip 底 / 字','Gray3 / Gray13','Gray2 / Gray14','ToolTip.*'),
+ ('其他','文件夹底色 Yellow / Gray','#3D3223 / #35363B','#FFF5DB / #F0F1F2','FileColor.*（.hvigor、oh_modules）'),
+ ('其他','项目头像渐变','#24A394 → #279CCD','同左','RecentProject.Color8.Avatar'),
+]
+
+# (角色, 字重, 字号, 行高, 用在哪)
+TYPE = [
+ ('H1','Semibold 600','20','24','面板欢迎标题'),
+ ('H2','Semibold 600','16','20','回答里的小标题'),
+ ('Default','Regular 400','13','16','绝大多数 UI 文字：树、标签、菜单、按钮'),
+ ('Default semibold','Semibold 600','13','16','加粗的项目名、任务名'),
+ ('Paragraph','Regular 400','13','18','成段正文：AI 回答、说明文字、输入框'),
+ ('Medium','Regular 400','12','16','小字：行号、次要说明、状态栏'),
+ ('Medium semibold','Semibold 600','12','16','小字加粗'),
+ ('Editor Default','Regular 400','13','22','编辑器代码'),
+ ('Editor Small','Regular 400','12','22','代码块、diff、终端'),
+]
+
+SIZES = [
+ ('高度','Header 主工具栏','40','Compact 模式 30'),
+ ('高度','工具窗标题栏','40',''),
+ ('高度','编辑器标签','40','选中态下划线 4px、圆角 4'),
+ ('高度','树行 / 列表行','24','Tree.rowHeight · List.rowHeight'),
+ ('高度','按钮 / 输入框','28','最小宽 72（Button.minimumSize）'),
+ ('高度','状态栏','24',''),
+ ('高度','菜单项','26','弹层内边距 6px 0'),
+ ('高度','底部工具窗标签下划线','3',''),
+ ('宽度','左右工具窗侧栏','40','侧栏按钮 32×32、圆角 6'),
+ ('宽度','Project 工具窗','≈300','可拖拽'),
+ ('宽度','右侧 AI 工具窗','360–400',''),
+ ('宽度','Windows 标题栏按钮','46','贯穿 Header 高度'),
+ ('宽度','编辑器 gutter','≈58','行号 + 断点/灯泡 16 + 折叠 16'),
+ ('圆角','控件 / 按钮','8','Component.arc · Button.arc'),
+ ('圆角','图标按钮','4–6',''),
+ ('圆角','窗口外框','8','Windows 11'),
+ ('间距','同组控件竖向','6','Int UI Kit · Spacing'),
+ ('间距','控件组之间','8',''),
+ ('间距','对话框内容区外边距','20',''),
+ ('间距','底部按钮条：按钮间 / 上下','12 / 8',''),
+ ('间距','控件与其 hint','2',''),
+ ('间距','树缩进 / 层','16','Tree.border = 4,12,4,12'),
+]
+
+SYNTAX = [
+ ('文本','#BCBEC4','#080808'),
+ ('关键字','#CF8E6D','#0033B3'),
+ ('字符串','#6AAB73','#067D17'),
+ ('数字','#2AACB8','#1750EB'),
+ ('注释','#7A7E85','#8C8C8C'),
+ ('函数','#56A8F5','#00627A'),
+ ('字段 / 属性','#C77DBB','#871094'),
+ ('装饰器 @','#B3AE60','#9E880D'),
+ ('行号','#4B5059','#AEB3C2'),
+ ('当前行底','#26282E','#FCFAED'),
+]
