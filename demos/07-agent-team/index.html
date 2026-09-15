@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>07 · Agent Team：在干 / 在等你 / 干完了</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="../../deveco-intui-kit/src/tokens.css">
+<link rel="stylesheet" href="../../deveco-intui-kit/src/components.css">
+<link rel="stylesheet" href="../_shared/frame.css">
+<script src="../../deveco-intui-kit/src/icons.js"></script>
+<script src="../_shared/frame.js"></script>
+<style>
+  .tasks{display:flex;flex-direction:column;padding:6px 0 12px}
+  .tgroup{display:flex;align-items:center;gap:6px;height:28px;padding:0 12px;font-weight:600}
+  .tgroup .cnt{font-family:var(--font-code);font-size:11px;font-weight:400;color:var(--ui-fg-info)}
+  .tgroup .grow{flex:1}
+  .tgroup.wait{color:var(--ui-fg)}
+  .task{margin:0 8px 6px;border:1px solid var(--ui-border);border-radius:var(--arc);background:var(--ui-field-bg);padding:8px 10px;display:flex;flex-direction:column;gap:6px;font-size:var(--fs-para);line-height:var(--lh-para)}
+  .task.wait{border-color:color-mix(in srgb,var(--ui-accent) 55%,transparent);background:color-mix(in srgb,var(--ui-accent) 6%,var(--ui-field-bg))}
+  .task .t1{display:flex;align-items:center;gap:6px}
+  .task .t1 b{font-weight:600;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .task .t1 .when{font-size:11px;color:var(--ui-fg-info);white-space:nowrap}
+  .task .t2{color:var(--ui-fg);font-size:var(--fs-sm);line-height:var(--lh-sm)}
+  .task .t2 code{font-family:var(--font-code);font-size:11px;background:var(--ui-tag-bg);padding:1px 4px;border-radius:4px}
+  .task .t3{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .task .t3 .grow{flex:1}
+  .task.done{opacity:.85}
+  .queue{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--ui-fg-info)}
+  .queue i{width:18px;height:6px;border-radius:3px;background:var(--ui-progress-track)}
+  .queue i.me{background:var(--ui-accent)}
+  .queue i.run{background:var(--ui-success)}
+  .task .t3 .dm-progress{flex:1;min-width:60px}
+  .empty-hint{padding:12px;color:var(--ui-fg-info);font-size:var(--fs-sm);text-align:center}
+</style>
+</head>
+<body>
+<div class="ide" id="ide" data-ide-theme="dark" data-left="project" data-right="agent" data-bottom="none" role="application" aria-label="DevEco Studio">
+  <div class="body">
+    <div class="tw tw-left">
+      <div class="pane on" data-pane="project">
+        <div class="tw-hdr"><span class="title">Project <svg class="i"><use href="#i-chevD"/></svg></span><span class="grow"></span>
+          <button class="abtn" title="Select Opened File"><svg class="i"><use href="#i-locate"/></svg></button>
+          <button class="abtn" title="Expand All"><svg class="i"><use href="#i-expandAll"/></svg></button>
+          <button class="abtn" title="Collapse All"><svg class="i"><use href="#i-collapseAll"/></svg></button>
+          <button class="abtn" title="Options"><svg class="i"><use href="#i-moreV"/></svg></button>
+          <button class="abtn" title="Hide|Shift+Esc" data-act="hide-left"><svg class="i"><use href="#i-hide"/></svg></button></div>
+        <div class="tw-body" id="tree-slot"></div>
+      </div>
+    </div>
+
+    <div class="editor">
+      <div class="tabs" id="tabs"><span class="grow"></span><span class="tab-tools"><button class="abtn" title="Editor Options"><svg class="i"><use href="#i-moreV"/></svg></button></span></div>
+      <div class="code-wrap"><div class="code" id="code"></div></div>
+      <div class="breadcrumbs" id="crumbs"></div>
+    </div>
+
+    <div class="tw tw-right">
+      <div class="pane on" data-pane="agent">
+        <div class="tw-hdr"><span class="title">CodeGenie <span class="cnt">任务 5</span></span><span class="grow"></span>
+          <button class="abtn" title="New Chat"><svg class="i"><use href="#i-add"/></svg></button>
+          <button class="abtn" title="History"><svg class="i"><use href="#i-history"/></svg></button>
+          <button class="abtn" title="MCP"><svg class="i"><use href="#i-cube"/></svg></button>
+          <button class="abtn" title="Skills"><svg class="i"><use href="#i-skills"/></svg></button>
+          <button class="abtn" title="Settings"><svg class="i"><use href="#i-settings"/></svg></button>
+          <button class="abtn" title="Options"><svg class="i"><use href="#i-moreV"/></svg></button>
+          <button class="abtn" title="Hide|Shift+Esc" data-act="hide-right"><svg class="i"><use href="#i-hide"/></svg></button></div>
+        <div class="tw-body">
+          <div class="dm-pad dm-row" style="padding-bottom:0"><div class="dm-seg"><button>会话</button><button class="on">任务</button></div><span class="grow"></span><span class="dm-small dm-muted">按状态分档</span></div>
+          <div class="tasks" id="tasks">
+
+            <div class="tgroup wait" data-g="wait"><span class="dm-dot info pulse"></span>在等你<span class="cnt" data-cnt>2</span><span class="grow"></span><span class="dm-small dm-muted" style="font-weight:400">排在最前</span></div>
+            <div class="task wait" id="t-fix">
+              <div class="t1"><b>修复 ListPage 滑动卡顿</b><span class="when">等了 58 分钟</span></div>
+              <div class="t2">要不要把封面解码改成异步加占位图？会改 <code>ListPage.ets</code>、<code>ItemCard.ets</code>，不动数据层。</div>
+              <div class="t3"><button class="btn sm">查看它的理解</button><span class="grow"></span><button class="btn sm">拒绝</button><button class="btn sm primary" data-approve="t-fix">批准</button></div>
+            </div>
+            <div class="task wait" id="t-a11y">
+              <div class="t1"><b>补齐 LoginPage 无障碍描述</b><span class="when">等了 3 分钟</span></div>
+              <div class="t2">登录失败的提示读给屏幕阅读器时，用「验证码错误」还是原错误码 <code>ERR_AUTH_401</code>？</div>
+              <div class="t3"><button class="btn sm primary" data-approve="t-a11y">用「验证码错误」</button><button class="btn sm" data-approve="t-a11y">保留错误码</button></div>
+            </div>
+
+            <div class="tgroup" data-g="run"><span class="dm-dot ok"></span>在干<span class="cnt" data-cnt>2</span></div>
+            <div class="task" id="t-deck">
+              <div class="t1"><b>生成上架材料</b><span class="when">排队中</span></div>
+              <div class="t2">服务端并发排队 · <b>排第 3 位</b> · 预计还要 <b>2 分钟</b></div>
+              <div class="t3"><span class="queue"><i class="run"></i><i></i><i></i><i class="me"></i><span>前面还有 2 个</span></span><span class="grow"></span><button class="btn sm">取消</button></div>
+            </div>
+            <div class="task" id="t-card">
+              <div class="t1"><b>把 ItemCard 抽成组件</b><span class="when">第 5 / 7 步</span></div>
+              <div class="t2">正在改 <code>ItemCard.ets</code>：把封面尺寸从写死改成参数</div>
+              <div class="t3"><div class="dm-progress"><i style="--v:71%"></i></div><button class="btn sm">中止</button></div>
+            </div>
+
+            <div class="tgroup" data-g="done"><span class="dm-dot"></span>干完了<span class="cnt" data-cnt>1</span></div>
+            <div class="task done" id="t-readme">
+              <div class="t1"><b>翻译 README 为英文</b><span class="when">12 分钟前</span></div>
+              <div class="t2">改了 1 个文件 · <span style="color:var(--ui-success)">+41</span> <span style="color:var(--ui-error)">−0</span></div>
+              <div class="t3"><button class="btn sm">查看改动</button><button class="btn sm"><svg class="i" style="width:12px;height:12px"><use href="#i-undo"/></svg>回退</button></div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var $=DemoFrame.$, $$=DemoFrame.$$;
+  document.getElementById('tree-slot').innerHTML=DemoFrame.tree({sel:'ListPage.ets'});
+  document.getElementById('tabs').insertAdjacentHTML('afterbegin',DemoFrame.tabs([{file:'ListPage.ets',on:true},{file:'ItemCard.ets'}]));
+  document.getElementById('code').innerHTML=DemoFrame.code('ListPage.ets',{cur:28,hl:[28]});
+  DemoFrame.init({device:'HUAWEI Mate 70 Pro',deviceIcon:'#i-phone'});
+
+  /* 状态栏胶囊：只放“在等你”和排队中的那两枚 */
+  $('#status-slot').innerHTML=
+    '<span class="dm-capsule wait" id="cap-wait"><span class="dm-dot info pulse"></span>等你确认 · 修复 ListPage 滑动卡顿</span>'
+   +'<span class="dm-capsule"><span class="spin" style="width:10px;height:10px"></span>生成上架材料 · 排第 3<span class="bar"><i style="--v:30%"></i></span></span>';
+
+  function recount(){
+    var g=null,n={};
+    $$('#tasks > *').forEach(function(el){if(el.classList.contains('tgroup')){g=el.dataset.g;n[g]=0}else if(g){n[g]++}});
+    $$('#tasks .tgroup').forEach(function(el){$('[data-cnt]',el).textContent=n[el.dataset.g]||0});
+    $('.tw-hdr .title .cnt').textContent='任务 '+$$('#tasks .task').length;
+    var w=$('#cap-wait');if(w){w.hidden=!n.wait;}
+  }
+  /* 批准 → 从“在等你”挪到“在干”，开始跑 */
+  $('#tasks').addEventListener('click',function(e){
+    var b=e.target.closest('[data-approve]');if(!b)return;
+    var t=$('#'+b.dataset.approve);t.classList.remove('wait');
+    $('.when',t).textContent='第 1 / 6 步';
+    $('.t2',t).innerHTML=t.id==='t-fix'?'正在读取 <code>ListPage.ets</code>，准备把 <code>loadCover</code> 改成异步':'正在给 <code>LoginPage.ets</code> 的错误提示补 accessibilityText';
+    $('.t3',t).innerHTML='<div class="dm-progress indet"><i></i></div><button class="btn sm">中止</button>';
+    var runG=$('#tasks .tgroup[data-g="run"]');runG.after(t);
+    recount();
+  });
+  recount();
+})();
+</script>
+</body>
+</html>

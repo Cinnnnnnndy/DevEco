@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>20 · 连接状态：卡在第几步，下一步做什么</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="../../deveco-intui-kit/src/tokens.css">
+<link rel="stylesheet" href="../../deveco-intui-kit/src/components.css">
+<link rel="stylesheet" href="../_shared/frame.css">
+<script src="../../deveco-intui-kit/src/icons.js"></script>
+<script src="../_shared/frame.js"></script>
+<style>
+  .ide[data-ide-theme]{--ai-w:clamp(400px,34vw,540px)}
+  .devices .seg span{cursor:default}
+  .dev-hist{display:flex;flex-direction:column;gap:2px;font-size:var(--fs-sm);line-height:var(--lh-sm)}
+  .dev-hist .r{display:flex;align-items:center;gap:8px;height:22px;padding:0 4px;color:var(--ui-fg-info)}
+  .dev-hist .r .t{font-family:var(--font-code);font-size:11px;width:44px;color:var(--ui-fg-disabled)}
+  .dev-hist .r svg{width:12px;height:12px}
+  .dev-hist .r.ok{color:var(--ui-fg)} .dev-hist .r.ok svg{color:var(--ui-success)}
+  .dev-hist .r.err svg{color:var(--ui-error)} .dev-hist .r.err{color:var(--ui-fg)}
+  .dev-hist .r.run svg{color:var(--ui-accent)}
+  .acts{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+  .other{opacity:.85}
+</style>
+</head>
+<body>
+<div class="ide" id="ide" data-ide-theme="dark" data-left="project" data-right="devices" data-bottom="none" role="application" aria-label="DevEco Studio">
+  <div class="body">
+    <div class="tw tw-left">
+      <div class="pane on" data-pane="project">
+        <div class="tw-hdr"><span class="title">Project <svg class="i"><use href="#i-chevD"/></svg></span><span class="grow"></span>
+          <button class="abtn" title="Select Opened File"><svg class="i"><use href="#i-locate"/></svg></button>
+          <button class="abtn" title="Expand All"><svg class="i"><use href="#i-expandAll"/></svg></button>
+          <button class="abtn" title="Collapse All"><svg class="i"><use href="#i-collapseAll"/></svg></button>
+          <button class="abtn" title="Options"><svg class="i"><use href="#i-moreV"/></svg></button>
+          <button class="abtn" title="Hide|Shift+Esc" data-act="hide-left"><svg class="i"><use href="#i-hide"/></svg></button></div>
+        <div class="tw-body" id="tree-slot"></div>
+      </div>
+    </div>
+
+    <div class="editor">
+      <div class="tabs" id="tabs"><span class="grow"></span><span class="tab-tools"><button class="abtn" title="Editor Options"><svg class="i"><use href="#i-moreV"/></svg></button></span></div>
+      <div class="code-wrap"><div class="code" id="code"></div><span class="ok" title="No problems found"><svg><use href="#i-check"/></svg></span></div>
+      <div class="breadcrumbs" id="crumbs"></div>
+    </div>
+
+    <div class="tw tw-right">
+      <div class="pane on" data-pane="devices">
+        <div class="tw-hdr"><span class="title">Device Manager</span><span class="grow"></span>
+          <button class="abtn" title="Refresh"><svg class="i"><use href="#i-refresh"/></svg></button>
+          <button class="abtn" title="Pair Devices Using Wi-Fi"><svg class="i"><use href="#i-wifi"/></svg></button>
+          <button class="abtn" title="Options"><svg class="i"><use href="#i-moreV"/></svg></button>
+          <button class="abtn" title="Hide|Shift+Esc" data-act="hide-right"><svg class="i"><use href="#i-hide"/></svg></button></div>
+        <div class="tw-body"><div class="devices">
+          <div class="seg"><span>Local Emulator</span><span>Remote Emulator</span><span>Remote Device</span><span class="on">Local Device</span></div>
+
+          <div class="dm-card accent" id="dev-card">
+            <div class="dm-card-hd"><svg class="i"><use href="#i-phone"/></svg>HUAWEI Mate 70 Pro<span class="dm-pill muted"><svg><use href="#i-usb"/></svg>USB</span><span class="grow"></span><span class="dm-pill warn" id="dev-state">卡在第 2 步</span></div>
+            <div class="dm-card-bd">
+              <div class="dm-steps-h" id="steps">
+                <div class="dm-step done" data-step="1"><span class="mk"><svg><use href="#i-checkS"/></svg></span><span>认出设备</span><span class="sub">0.3 s</span></div>
+                <div class="dm-step fail" data-step="2"><span class="mk">!</span><span>授权</span><span class="sub">等手机确认</span></div>
+                <div class="dm-step" data-step="3"><span class="mk">3</span><span>建立通道</span><span class="sub">hdc</span></div>
+                <div class="dm-step" data-step="4"><span class="mk">4</span><span>版本匹配</span><span class="sub">SDK API 20</span></div>
+                <div class="dm-step" data-step="5"><span class="mk">5</span><span>就绪</span><span class="sub">&nbsp;</span></div>
+              </div>
+              <div class="dm-progress" id="wait-bar"><i style="--v:34%"></i></div>
+              <div class="dm-row dm-small dm-muted"><span id="wait-text">等待手机上的授权 · 已等 <b id="wait-sec">12</b> 秒</span><span class="grow"></span><span id="wait-hint">通常 30 秒内完成</span></div>
+
+              <div class="dm-callout err" id="fail-box">
+                <svg><use href="#i-hand"/></svg>
+                <div>
+                  <b>手机上弹出了「允许 USB 调试」的确认框，还没有点允许。</b><br>
+                  在手机上点「允许」，勾选「一律允许使用这台计算机进行调试」，下次插上就不用再点。
+                  <div class="acts">
+                    <button class="btn primary" id="btn-recheck"><svg class="i" style="width:12px;height:12px;color:#fff"><use href="#i-refresh"/></svg>已在手机上点了允许，重新检测</button>
+                    <button class="btn" id="btn-wifi"><svg class="i" style="width:12px;height:12px"><use href="#i-wifi"/></svg>改用 Wi-Fi 配对</button>
+                  </div>
+                </div>
+              </div>
+              <div class="dm-callout info" id="wifi-box" hidden>
+                <svg><use href="#i-wifi"/></svg>
+                <div><b>Wi-Fi 配对</b>：手机与电脑连同一个 Wi-Fi，在手机「开发者选项 → 无线调试」里点「使用配对码配对」，把 6 位码填到这里。
+                  <div class="acts"><span class="ctx dm-mono" style="height:26px;padding:0 10px;letter-spacing:.2em">— — — — — —</span><button class="btn">配对</button></div></div>
+              </div>
+              <div class="dm-callout ok" id="ok-box" hidden>
+                <svg><use href="#i-check"/></svg>
+                <div><b>已就绪。</b>HUAWEI Mate 70 Pro · HarmonyOS 6.0 · API 20，与工程 SDK 一致。可以运行 <span class="dm-mono">entry</span> 了。
+                  <div class="acts"><button class="btn primary"><svg class="i" style="width:12px;height:12px;color:#fff"><use href="#i-run"/></svg>Run 'entry'</button><button class="btn">加进 Previewer</button></div></div>
+              </div>
+
+              <div class="dm-sep"></div>
+              <div class="dm-small dm-h">这次连接</div>
+              <div class="dev-hist" id="hist">
+                <div class="r ok"><span class="t">00.0 s</span><svg><use href="#i-checkS"/></svg>USB 上认出设备 · 序列号 7WJ…2Q</div>
+                <div class="r ok"><span class="t">00.3 s</span><svg><use href="#i-checkS"/></svg>hdc 已识别为 HarmonyOS 设备</div>
+                <div class="r err"><span class="t">00.4 s</span><svg><use href="#i-err"/></svg>授权请求已发到手机，等待确认</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="dm-card other">
+            <div class="dm-card-hd"><svg class="i"><use href="#i-phone"/></svg>Phone Emulator<span class="dm-pill muted">API 20</span><span class="grow"></span><span class="dm-pill ok">就绪</span></div>
+          </div>
+          <div class="dm-card other">
+            <div class="dm-card-hd"><svg class="i"><use href="#i-watch"/></svg>HUAWEI WATCH 5<span class="dm-pill muted"><svg><use href="#i-wifi"/></svg>Wi-Fi</span><span class="grow"></span><span class="dm-pill muted">上次 昨天 18:02</span></div>
+          </div>
+          <div class="actions-row"><button class="btn primary"><svg class="i" style="width:12px;height:12px;color:#fff"><use href="#i-add"/></svg>New Emulator</button><button class="btn">Import</button></div>
+        </div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var $=DemoFrame.$, $$=DemoFrame.$$;
+  document.getElementById('tree-slot').innerHTML=DemoFrame.tree({sel:'Index.ets'});
+  document.getElementById('tabs').insertAdjacentHTML('afterbegin',DemoFrame.tabs([{file:'Index.ets',on:true}]));
+  document.getElementById('code').innerHTML=DemoFrame.code('Index.ets',{cur:4});
+  DemoFrame.init({device:'Mate 70 Pro · 等待授权',deviceIcon:'#i-phone'});
+
+  /* 等待秒数会走：等待有进度，不是一个转圈 */
+  var sec=12,tick=setInterval(function(){sec++;var s=$('#wait-sec');if(s)s.textContent=sec;var bar=$('#wait-bar i');if(bar)bar.style.setProperty('--v',Math.min(95,34+sec*1.4)+'%')},1000);
+
+  function step(n,cls,sub){var el=$('.dm-step[data-step="'+n+'"]');el.className='dm-step '+cls;
+    var mk=$('.mk',el);mk.innerHTML=cls==='done'?'<svg><use href="#i-checkS"/></svg>':(cls==='fail'?'!':String(n));
+    if(sub!=null)$('.sub',el).innerHTML=sub||'&nbsp;'}
+  function hist(cls,t,txt){$('#hist').insertAdjacentHTML('beforeend','<div class="r '+cls+'"><span class="t">'+t+'</span><svg><use href="#'+(cls==='ok'?'i-checkS':(cls==='err'?'i-err':'i-clock'))+'"/></svg>'+txt+'</div>')}
+
+  $('#btn-wifi').addEventListener('click',function(){$('#wifi-box').hidden=!$('#wifi-box').hidden});
+  $('#btn-recheck').addEventListener('click',function(){
+    clearInterval(tick);
+    $('#fail-box').hidden=true;$('#wifi-box').hidden=true;
+    step(2,'done','已允许');step(3,'run','正在建立…');
+    $('#dev-state').className='dm-pill info';$('#dev-state').textContent='第 3 步';
+    $('#wait-bar').classList.add('indet');$('#wait-text').textContent='正在建立 hdc 通道…';$('#wait-hint').textContent='';
+    hist('ok','13.2 s','手机已授权（一律允许）');
+    setTimeout(function(){
+      step(3,'done','hdc 通道');step(4,'run','核对中…');$('#dev-state').textContent='第 4 步';$('#wait-text').textContent='核对设备系统版本与工程 SDK…';
+      hist('ok','13.9 s','hdc 通道已建立 · 端口 7035');
+    },1100);
+    setTimeout(function(){
+      step(4,'done','HarmonyOS 6.0');step(5,'done','');
+      $('#wait-bar').classList.remove('indet');$('#wait-bar i').style.setProperty('--v','100%');
+      $('#wait-text').textContent='就绪，用时 14.6 秒';
+      $('#dev-state').className='dm-pill ok';$('#dev-state').textContent='就绪';
+      $('#ok-box').hidden=false;
+      hist('ok','14.6 s','设备 API 20 与工程 SDK 一致 · 就绪');
+      var d=$('#hdr-device span');if(d)d.textContent='HUAWEI Mate 70 Pro';
+    },2200);
+  });
+})();
+</script>
+</body>
+</html>

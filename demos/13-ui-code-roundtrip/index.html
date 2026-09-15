@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>13 · 预览上直接改，写回源码不经过 AI</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="../../deveco-intui-kit/src/tokens.css">
+<link rel="stylesheet" href="../../deveco-intui-kit/src/components.css">
+<link rel="stylesheet" href="../_shared/frame.css">
+<script src="../../deveco-intui-kit/src/icons.js"></script>
+<script src="../_shared/frame.js"></script>
+<style>
+  /* 左 Previewer / 右代码 */
+  .dm-split.rt{grid-template-columns:minmax(0,1fr) minmax(0,1.15fr)}
+  .prev-tools{height:var(--tab-h);flex:none;background:var(--ui-bg);padding:0 12px;gap:6px}
+  .prev-tools b{color:var(--ui-fg);font-weight:600;display:inline-flex;align-items:center;gap:6px}
+  .prev-tools .grow{flex:1}
+  .prev-tools .sel-lbl{display:inline-flex;align-items:center;gap:4px;color:var(--ui-fg);padding:0 6px;height:20px;border-radius:4px;background:color-mix(in srgb,var(--ui-accent) 14%,transparent);font-family:var(--font-code);font-size:11px}
+  .prev-tools .sel-lbl svg{width:12px;height:12px;color:var(--ui-accent)}
+  .prev-tools .path{font-family:var(--font-code);font-size:11px}
+  .code-col .tabs{flex:none}
+  .code-col .code-wrap{flex:1;min-height:0}
+  .code-wrap .dm-pill.loc-pill{position:absolute;right:16px;top:8px;z-index:3;box-shadow:var(--ui-shadow);display:inline-flex;width:auto;height:18px}
+  .code-wrap .dm-pill.loc-pill svg{width:12px;height:12px}
+  .tab.mod{color:var(--ui-file-modified)}
+  .tab-tools .toggle svg.i{width:12px;height:12px}
+  /* 可点的数字：代码那一侧的"把手" */
+  .code .n.num-edit{cursor:pointer;padding:0 3px;border-radius:3px;background:color-mix(in srgb,var(--ui-accent) 18%,transparent);border-bottom:1px dashed var(--ui-accent);user-select:none}
+  .code .n.num-edit:hover{background:color-mix(in srgb,var(--ui-accent) 32%,transparent)}
+  .code .ln.hl .t{position:relative}
+  /* 手机放大一点，间距才拖得动 */
+  .lp .dm-device.phone{width:270px;height:560px;display:flex;align-items:stretch;place-items:stretch}
+  .lp .dm-device .scr{width:100%}
+  .lp .dm-device .cap{bottom:-24px}
+  .lp .mapp .st{height:22px;font-size:10px;padding:0 16px;color:#333;font-weight:600}
+  .lp .mapp .title{padding:36px 20px 8px;font-size:22px}
+  .lp .mapp .inp{margin:12px 20px 0;height:40px;border-radius:10px;font-size:12px;padding:0 12px}
+  .lp .mapp .err{margin:10px 20px 0;font-size:11px;line-height:14px}
+  .lp .mapp .btn{margin:0 20px;height:42px;border-radius:21px;font-size:14px}
+  .lp .mapp .btn.anim{transition:margin-top .12s ease}
+  .lp .mapp .foot{margin-top:auto;padding:0 20px 18px;font-size:10px;color:#9aa0ab;text-align:center}
+  /* 间距把手 */
+  .lp .dm-handle{border-radius:22px}
+  .lp .dm-handle .hv{top:calc(0px - var(--gap))}
+  .lp .dm-handle .lbl{left:calc(50% + 12px);top:-8px}
+  .lp .dm-handle .knob{top:0;width:14px;height:14px;box-shadow:0 1px 4px rgba(0,0,0,.35)}
+  .lp .dm-handle .knob:hover,.lp .dm-handle.drag .knob{transform:translate(-50%,-50%) scale(1.25)}
+  .lp .dm-handle.drag{border-color:var(--ui-info)}
+  .lp .dm-handle .hname{position:absolute;right:0;bottom:-16px;font-family:var(--font-code);font-size:10px;color:var(--ui-accent);white-space:nowrap}
+  .lp.dragging{cursor:ns-resize;user-select:none}
+</style>
+</head>
+<body>
+<div class="ide" id="ide" data-ide-theme="dark" data-left="project" data-right="none" data-bottom="none" role="application" aria-label="DevEco Studio">
+  <div class="body">
+    <div class="tw tw-left">
+      <div class="pane on" data-pane="project">
+        <div class="tw-hdr"><span class="title">Project <svg class="i"><use href="#i-chevD"/></svg></span><span class="grow"></span>
+          <button class="abtn" title="Select Opened File"><svg class="i"><use href="#i-locate"/></svg></button>
+          <button class="abtn" title="Expand All"><svg class="i"><use href="#i-expandAll"/></svg></button>
+          <button class="abtn" title="Collapse All"><svg class="i"><use href="#i-collapseAll"/></svg></button>
+          <button class="abtn" title="Options"><svg class="i"><use href="#i-moreV"/></svg></button>
+          <button class="abtn" title="Hide|Shift+Esc" data-act="hide-left"><svg class="i"><use href="#i-hide"/></svg></button></div>
+        <div class="tw-body" id="tree-slot"></div>
+      </div>
+    </div>
+
+    <div class="editor">
+      <div class="dm-split rt">
+        <div class="prev-col">
+          <div class="prev-tools"><b><svg class="i" style="width:14px;height:14px"><use href="#i-phone"/></svg>Phone</b><span>· 1080×2340 · API 20</span><span class="sel-lbl" id="sel-lbl"><svg><use href="#i-cursor"/></svg>Button('登录')</span><span class="grow"></span><span class="path">pages/LoginPage</span>
+            <button class="abtn" title="Refresh"><svg class="i"><use href="#i-refresh"/></svg></button><button class="abtn" title="Rotate"><svg class="i"><use href="#i-rotate"/></svg></button></div>
+          <div class="dm-prev lp" id="prev">
+            <div class="dm-device phone"><span class="tag">Previewer</span>
+              <div class="scr" id="scr">
+                <div class="mapp">
+                  <div class="st"><span>9:41</span><span>5G · 100%</span></div>
+                  <div class="title">欢迎回来</div>
+                  <div class="inp">手机号</div>
+                  <div class="inp">验证码</div>
+                  <div class="err" id="err">ERR_AUTH_401</div>
+                  <div class="btn" id="btn" style="margin-top:12px">登录</div>
+                  <div class="foot">登录即代表同意《用户协议》</div>
+                </div>
+                <div class="dm-handle" id="handle" style="--gap:12px"><span class="hv"></span><span class="lbl" id="hlbl">margin.top 12</span><span class="knob" id="knob"></span><span class="hname">Button · 第 16–19 行</span></div>
+              </div>
+              <span class="cap">拖蓝点改间距 · 直接写回第 18 行</span>
+            </div>
+          </div>
+        </div>
+        <div class="code-col">
+          <div class="tabs" id="tabs"><span class="grow"></span><span class="tab-tools"><span class="toggle on" id="sync" title="预览改动写回源码，代码改动刷新预览"><svg class="i"><use href="#i-sync"/></svg>双向同步</span><button class="abtn" title="Editor Options"><svg class="i"><use href="#i-moreV"/></svg></button></span></div>
+          <div class="code-wrap"><div class="code" id="code"></div><span class="dm-pill info loc-pill" id="wb-pill"><svg><use href="#i-cursor"/></svg><span id="wb-text">已选中 Button('登录') · 第 16–19 行</span></span></div>
+          <div class="breadcrumbs" id="crumbs"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var $=DemoFrame.$, $$=DemoFrame.$$;
+  document.getElementById('tree-slot').innerHTML=DemoFrame.tree({sel:'LoginPage.ets'});
+  document.getElementById('tabs').insertAdjacentHTML('afterbegin',DemoFrame.tabs([{file:'LoginPage.ets',on:true}]));
+  document.getElementById('code').innerHTML=DemoFrame.code('LoginPage.ets',{cur:18,hl:[18]});
+  DemoFrame.init({device:'HUAWEI Mate 70 Pro',deviceIcon:'#i-phone',pos:'18:24',onReady:function(){
+    $('#status-slot').innerHTML='<span class="dm-capsule" id="cap"><span class="dm-dot ok"></span>双向同步 · 写回 <b id="wb-n">0</b> 次 · 刷新 <b id="rf-n">0</b> 次 · 未经 AI</span>';
+  }});
+
+  var LINE=18,MIN=0,MAX=48,margin=12,writes=0,refreshes=0;
+  var btn=$('#btn'),handle=$('#handle'),hlbl=$('#hlbl'),scr=$('#scr');
+  var clamp=function(v){return Math.max(MIN,Math.min(MAX,Math.round(v)))};
+
+  /* 代码第 18 行的 12 做成可点的数字（反方向把手） */
+  var numEl=null;
+  (function(){
+    var ln=$('#code .ln[data-ln="'+LINE+'"]');if(!ln)return;
+    var ns=$$('.t .n',ln);numEl=ns[ns.length-1];
+    if(numEl){numEl.classList.add('num-edit');numEl.setAttribute('title','点一下 +4');}
+  })();
+
+  /* 把手贴着按钮 */
+  function layout(){
+    handle.style.left=btn.offsetLeft+'px';handle.style.top=btn.offsetTop+'px';
+    handle.style.width=btn.offsetWidth+'px';handle.style.height=btn.offsetHeight+'px';
+    handle.style.setProperty('--gap',margin+'px');
+    hlbl.textContent='margin.top '+margin;
+  }
+  function setPill(cls,text){var p=$('#wb-pill');p.className='dm-pill loc-pill '+cls;$('#wb-text').textContent=text;}
+  function hlLine(){
+    $$('#code .ln').forEach(function(l){var on=+l.dataset.ln===LINE;l.classList.toggle('cur',on);l.classList.toggle('hl',on)});
+    var p=$('#status-pos');if(p)p.textContent=LINE+':24';
+  }
+  function markModified(){var t=$('.tab[data-file="LoginPage.ets"]');if(t)t.classList.add('mod');}
+
+  /* 预览 → 代码：拖动时实时写回第 18 行 */
+  function fromPreview(m){
+    margin=m;btn.style.marginTop=m+'px';layout();
+    if(numEl)numEl.textContent=m;
+    hlLine();setPill('ok','第 18 行已写回 · 未经 AI');markModified();
+  }
+  /* 代码 → 预览：改数字，预览跟着刷新 */
+  function fromCode(m){
+    margin=m;if(numEl)numEl.textContent=m;
+    btn.classList.add('anim');btn.style.marginTop=m+'px';
+    hlLine();setPill('ok','预览已刷新 · 0.1 s');markModified();
+    layout();
+    setTimeout(function(){layout();btn.classList.remove('anim')},140);
+    refreshes++;var r=$('#rf-n');if(r)r.textContent=refreshes;
+  }
+
+  /* 真的拖：mousedown 记 y，mousemove 改 margin，mouseup 结束 */
+  var drag=null;
+  $('#knob').addEventListener('mousedown',function(e){
+    e.preventDefault();drag={y:e.clientY,m:margin,moved:false};
+    handle.classList.add('drag');$('#prev').classList.add('dragging');
+  });
+  document.addEventListener('mousemove',function(e){
+    if(!drag)return;var m=clamp(drag.m+(e.clientY-drag.y));
+    if(m!==margin){drag.moved=true;fromPreview(m);}
+  });
+  document.addEventListener('mouseup',function(){
+    if(!drag)return;handle.classList.remove('drag');$('#prev').classList.remove('dragging');
+    if(drag.moved){writes++;var w=$('#wb-n');if(w)w.textContent=writes;}
+    drag=null;
+  });
+  /* 键盘也能改：把手聚焦后上下键 */
+  $('#knob').setAttribute('tabindex','0');
+  $('#knob').addEventListener('keydown',function(e){
+    if(e.key==='ArrowUp'||e.key==='ArrowDown'){e.preventDefault();fromPreview(clamp(margin+(e.key==='ArrowDown'?1:-1)));writes++;var w=$('#wb-n');if(w)w.textContent=writes;}
+  });
+
+  /* 反方向：点代码里的数字 +4 */
+  document.addEventListener('click',function(e){
+    var n=e.target.closest('.num-edit');if(!n)return;
+    fromCode(clamp(margin+4));
+  });
+
+  /* 双向同步开关：关掉时把手只动预览，不写回（演示用） */
+  $('#sync').addEventListener('click',function(){
+    var on=this.classList.toggle('on');
+    var cap=$('#cap');if(cap)cap.innerHTML=on?'<span class="dm-dot ok"></span>双向同步 · 写回 <b id="wb-n">'+writes+'</b> 次 · 刷新 <b id="rf-n">'+refreshes+'</b> 次 · 未经 AI':'<span class="dm-dot"></span>双向同步已关 · 预览改动不写回';
+    if(!on)setPill('muted','双向同步已关');else setPill('info','已选中 Button(\'登录\') · 第 16–19 行');
+  });
+
+  layout();
+  window.addEventListener('load',layout);
+  window.addEventListener('resize',layout);
+  if(document.fonts&&document.fonts.ready)document.fonts.ready.then(layout);
+})();
+</script>
+</body>
+</html>

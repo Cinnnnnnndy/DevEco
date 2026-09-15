@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>14 · AI 协作时间轴：刻度是它的执行步骤，能挑着退</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="../../deveco-intui-kit/src/tokens.css">
+<link rel="stylesheet" href="../../deveco-intui-kit/src/components.css">
+<link rel="stylesheet" href="../_shared/frame.css">
+<script src="../../deveco-intui-kit/src/icons.js"></script>
+<script src="../_shared/frame.js"></script>
+<style>
+  .ide[data-ide-theme]{--ai-w:clamp(420px,36vw,560px)}
+  /* 外壳菜单栏行为空时，把主体钉在 1fr 行、状态栏钉在最后一行 */
+  .ide > .body{grid-row:3}.ide > .status{grid-row:4}
+  .tw-hdr .dm-seg{align-self:center;margin-left:6px}
+  .tl-wrap{display:flex;flex-direction:column;gap:8px;padding:10px 12px 12px}
+  .pno{font-family:var(--font-code);font-size:11px;font-weight:600;color:var(--ui-fg-info);width:22px;flex:none}
+  .dm-item[data-plan]{cursor:default}
+  .dm-vstep{cursor:default}
+  .dm-vstep .body-t .t{font-family:var(--font-code);font-size:11px;color:var(--ui-fg-info);white-space:nowrap;flex:none}
+  .dm-vstep .files span i{font-style:normal;font-weight:600;margin-left:4px}
+  .dm-vstep .files span i.add{color:var(--ui-success)}
+  .dm-vstep .files span i.del{color:var(--ui-error)}
+  .dm-vstep .files span.ro{color:var(--ui-fg-info);background:transparent;padding-left:0;font-family:var(--font-ui);font-size:11px}
+  .dm-vstep .plan b{color:var(--ui-fg);font-weight:600}
+  .dm-vstep .plan .pno{width:auto;color:var(--ui-link);margin-left:2px}
+  .dm-vstep .acts{display:none;align-items:center;gap:6px;flex-wrap:wrap;padding-top:4px}
+  .dm-vstep.sel .acts{display:flex}
+  .dm-vstep .acts .btn svg.i{width:12px;height:12px}
+  .dm-vstep.run .node::after{content:"";position:absolute;inset:-2px;border-radius:50%;border:2px solid var(--ui-accent);border-right-color:transparent;animation:spin 1s linear infinite}
+  .dm-vstep.reverted .files,.dm-vstep.reverted .plan{opacity:.55}
+  .dm-vstep.plan-dim{opacity:.35}
+  .dm-vstep.undo-note .node{border-color:var(--ui-accent);background:var(--ui-accent);color:#fff}
+  .dm-vstep.undo-note .node svg{width:11px;height:11px}
+  .dm-vstep.undo-note .body-t .grow{white-space:normal}
+  .code .ln.flash{animation:dmflash 1.4s ease-out}
+  @keyframes dmflash{0%{background:color-mix(in srgb,var(--ui-accent) 45%,transparent)}100%{background:transparent}}
+  @media (prefers-reduced-motion:reduce){.dm-vstep.run .node::after,.code .ln.flash{animation:none}}
+</style>
+</head>
+<body>
+<div class="ide" id="ide" data-ide-theme="dark" data-left="project" data-right="agent" data-bottom="none" role="application" aria-label="DevEco Studio">
+  <div class="body">
+    <div class="tw tw-left">
+      <div class="pane on" data-pane="project">
+        <div class="tw-hdr"><span class="title">Project <svg class="i"><use href="#i-chevD"/></svg></span><span class="grow"></span>
+          <button class="abtn" title="Select Opened File"><svg class="i"><use href="#i-locate"/></svg></button>
+          <button class="abtn" title="Expand All"><svg class="i"><use href="#i-expandAll"/></svg></button>
+          <button class="abtn" title="Collapse All"><svg class="i"><use href="#i-collapseAll"/></svg></button>
+          <button class="abtn" title="Options"><svg class="i"><use href="#i-moreV"/></svg></button>
+          <button class="abtn" title="Hide|Shift+Esc" data-act="hide-left"><svg class="i"><use href="#i-hide"/></svg></button></div>
+        <div class="tw-body" id="tree-slot"></div>
+      </div>
+    </div>
+
+    <div class="editor">
+      <div class="tabs" id="tabs"><span class="grow"></span><span class="tab-tools"><button class="abtn" title="Editor Options"><svg class="i"><use href="#i-moreV"/></svg></button></span></div>
+      <div class="code-wrap"><div class="code" id="code"></div><span class="ok" title="No problems found"><svg><use href="#i-check"/></svg></span></div>
+      <div class="breadcrumbs" id="crumbs"></div>
+    </div>
+
+    <div class="tw tw-right">
+      <div class="pane on" data-pane="agent">
+        <div class="tw-hdr"><span class="title">CodeGenie <span class="cnt">时间轴</span></span>
+          <span class="dm-seg"><button type="button">会话</button><button type="button" class="on">时间轴</button></span>
+          <span class="grow"></span>
+          <button class="abtn" title="New Chat"><svg class="i"><use href="#i-add"/></svg></button>
+          <button class="abtn" title="History"><svg class="i"><use href="#i-history"/></svg></button>
+          <button class="abtn" title="Settings"><svg class="i"><use href="#i-settings"/></svg></button>
+          <button class="abtn" title="Options"><svg class="i"><use href="#i-moreV"/></svg></button>
+          <button class="abtn" title="Hide|Shift+Esc" data-act="hide-right"><svg class="i"><use href="#i-hide"/></svg></button></div>
+        <div class="tw-body"><div class="tl-wrap">
+
+          <div class="dm-card" id="plan-card">
+            <div class="dm-card-hd"><svg class="i"><use href="#i-scene"/></svg>计划<span class="cnt dm-mono dm-muted" style="font-weight:400">3 条</span><span class="grow"></span><span class="dm-small dm-muted" style="font-weight:400">修复 ListPage 滑动卡顿</span></div>
+            <div class="dm-list">
+              <div class="dm-item" data-plan="P1"><span class="pno">P1</span><span class="grow">封面改异步解码</span><span class="dm-pill ok" data-pill="P1">2 步</span></div>
+              <div class="dm-item" data-plan="P2"><span class="pno">P2</span><span class="grow">ItemCard 加占位图</span><span class="dm-pill ok" data-pill="P2">3 步</span></div>
+              <div class="dm-item" data-plan="P3"><span class="pno">P3</span><span class="grow">补无障碍描述</span><span class="dm-pill warn" data-pill="P3">进行中</span></div>
+            </div>
+          </div>
+
+          <div class="dm-group" style="padding:0 2px"><svg class="i"><use href="#i-history"/></svg>执行步骤<span class="cnt" id="step-cnt">7</span><span class="grow"></span><span class="dm-small dm-muted" style="font-weight:400">14:02 起 · 点一步可单独退</span></div>
+
+          <div class="dm-vtl" id="vtl">
+            <div class="dm-vstep done" data-step="1" data-plan="P1" data-ro="1">
+              <span class="node">1</span>
+              <div class="body">
+                <div class="body-t"><span class="grow">读取 ListPage.ets、ItemCard.ets</span><span class="t">14:02:11</span></div>
+                <div class="files"><span class="ro">只读，无改动</span></div>
+                <div class="plan"><svg><use href="#i-link"/></svg>为了 <span class="pno">P1</span> <b>封面改异步解码</b></div>
+                <div class="acts"></div>
+              </div>
+            </div>
+            <div class="dm-vstep done" data-step="2" data-plan="P1" data-ln="28" data-files="ListPage.ets:6:3">
+              <span class="node">2</span>
+              <div class="body">
+                <div class="body-t"><span class="grow">把 loadCover 改成 async</span><span class="t">14:02:34</span></div>
+                <div class="files"><span>ListPage.ets<i class="add">+6</i><i class="del">−3</i></span></div>
+                <div class="plan"><svg><use href="#i-link"/></svg>为了 <span class="pno">P1</span> <b>封面改异步解码</b></div>
+                <div class="acts"></div>
+              </div>
+            </div>
+            <div class="dm-vstep done" data-step="3" data-plan="P2" data-ln="17" data-files="ItemCard.ets:8:2">
+              <span class="node">3</span>
+              <div class="body">
+                <div class="body-t"><span class="grow">新增 CoverPlaceholder 组件</span><span class="t">14:03:02</span></div>
+                <div class="files"><span>ItemCard.ets<i class="add">+8</i><i class="del">−2</i></span></div>
+                <div class="plan"><svg><use href="#i-link"/></svg>为了 <span class="pno">P2</span> <b>ItemCard 加占位图</b></div>
+                <div class="acts"></div>
+              </div>
+            </div>
+            <div class="dm-vstep done" data-step="4" data-plan="P2" data-ln="17" data-files="ItemCard.ets:5:1">
+              <span class="node">4</span>
+              <div class="body">
+                <div class="body-t"><span class="grow">ItemCard 接入占位图</span><span class="t">14:03:29</span></div>
+                <div class="files"><span>ItemCard.ets<i class="add">+5</i><i class="del">−1</i></span></div>
+                <div class="plan"><svg><use href="#i-link"/></svg>为了 <span class="pno">P2</span> <b>ItemCard 加占位图</b></div>
+                <div class="acts"></div>
+              </div>
+            </div>
+            <div class="dm-vstep done" data-step="5" data-plan="P2" data-ln="15" data-files="ListPage.ets:2:2">
+              <span class="node">5</span>
+              <div class="body">
+                <div class="body-t"><span class="grow">改 ListPage 的 ForEach 传参</span><span class="t">14:03:51</span></div>
+                <div class="files"><span>ListPage.ets<i class="add">+2</i><i class="del">−2</i></span></div>
+                <div class="plan"><svg><use href="#i-link"/></svg>为了 <span class="pno">P2</span> <b>ItemCard 加占位图</b></div>
+                <div class="acts"></div>
+              </div>
+            </div>
+            <div class="dm-vstep run" data-step="6" data-plan="P3" data-files="LoginPage.ets:3:0">
+              <span class="node">6</span>
+              <div class="body">
+                <div class="body-t"><span class="grow">给 TextInput 加 accessibilityText</span><span class="t">14:04:20</span></div>
+                <div class="files"><span>LoginPage.ets<i class="add">+3</i><i class="del">−0</i></span><span class="ro">进行中</span></div>
+                <div class="plan"><svg><use href="#i-link"/></svg>为了 <span class="pno">P3</span> <b>补无障碍描述</b></div>
+                <div class="acts"></div>
+              </div>
+            </div>
+            <div class="dm-vstep" data-step="7" data-plan="P1 P2 P3">
+              <span class="node">7</span>
+              <div class="body">
+                <div class="body-t"><span class="grow dm-muted">跑一遍上架自检</span><span class="t">待执行</span></div>
+                <div class="plan"><svg><use href="#i-link"/></svg>为了 <span class="pno">P1–P3</span> <b>收尾</b></div>
+                <div class="acts"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="dm-callout info dm-small"><svg><use href="#i-info"/></svg><div>追不到的改动：bash 命令改的、子 agent 改的、会话外手改的、符号链接指向的——这四类会标成灰色，不能单步退。</div></div>
+
+        </div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var $=DemoFrame.$, $$=DemoFrame.$$, esc=DemoFrame.esc;
+  document.getElementById('tree-slot').innerHTML=DemoFrame.tree({sel:'ListPage.ets'});
+  document.getElementById('tabs').insertAdjacentHTML('afterbegin',DemoFrame.tabs([{file:'ListPage.ets',on:true},{file:'ItemCard.ets'},{file:'LoginPage.ets'}]));
+  document.getElementById('code').innerHTML=DemoFrame.code('ListPage.ets',{cur:28});
+  /* 第 28 行：第 2 步已改过 */
+  $('.code .ln[data-ln="28"]').classList.add('hl-ok');
+  DemoFrame.init({device:'HUAWEI Mate 70 Pro',deviceIcon:'#i-phone',onReady:function(){
+    $('#status-slot').innerHTML='<span class="dm-capsule" id="cap-run"><span class="spin" style="width:10px;height:10px"></span>CodeGenie · 第 6 / 7 步 · 补无障碍描述</span>';
+  }});
+
+  var vtl=$('#vtl');
+  var PLAN={P1:'封面改异步解码',P2:'ItemCard 加占位图',P3:'补无障碍描述'};
+
+  /* ---- 工具 ---- */
+  function filesOf(st){return (st.dataset.files||'').split(',').filter(Boolean).map(function(x){var p=x.split(':');return {name:p[0],add:+p[1],del:+p[2]}})}
+  function flash(n,cls){var ln=$('.code .ln[data-ln="'+n+'"]');if(!ln)return;ln.classList.remove(cls);void ln.offsetWidth;ln.classList.add(cls);ln.scrollIntoView({block:'center'});setTimeout(function(){ln.classList.remove(cls)},1600)}
+  function setPill(p,cls,txt){var el=$('[data-pill="'+p+'"]');if(!el)return;el.className='dm-pill '+cls;el.textContent=txt}
+  function laterDone(n){return $$('.dm-vstep.done:not(.undo-note)',vtl).filter(function(s){return +s.dataset.step>n&&s.dataset.ro!=='1'}).map(function(s){return s.dataset.step})}
+  function stepHTML(k,text,time,files,plan,planTxt){
+    var f=files.length?files.map(function(x){return '<span>'+esc(x.name)+'<i class="del">−'+x.add+'</i><i class="add">+'+x.del+'</i></span>'}).join(''):'<span class="ro">无文件改动</span>';
+    return '<div class="dm-vstep done undo-note" data-step="'+k+'" data-plan="'+plan+'" data-ro="1"><span class="node"><svg><use href="#i-undo"/></svg></span><div class="body">'
+      +'<div class="body-t"><span class="grow">'+text+'</span><span class="t">'+time+'</span></div>'
+      +'<div class="files">'+f+'</div>'
+      +'<div class="plan"><svg><use href="#i-link"/></svg>'+planTxt+'</div><div class="acts"></div></div></div>';
+  }
+  /* 计划卡的 pill 跟着步骤状态走 */
+  function recountPlans(){
+    ['P1','P2','P3'].forEach(function(p){
+      var all=$$('.dm-vstep:not(.undo-note)[data-plan="'+p+'"]',vtl);
+      var done=all.filter(function(s){return s.classList.contains('done')}).length;
+      var rev=all.filter(function(s){return s.classList.contains('reverted')}).length;
+      var run=all.filter(function(s){return s.classList.contains('run')}).length;
+      if(rev&&rev===all.length)setPill(p,'err','已撤回');
+      else if(rev)setPill(p,'warn','少 '+rev+' 步');
+      else if(run)setPill(p,'warn','进行中');
+      else if(done)setPill(p,'ok',done+' 步');
+      else setPill(p,'muted','未开始');
+    });
+    $('#step-cnt').textContent=$$('.dm-vstep',vtl).length;
+  }
+  /* 选中某一步 → 底部出现操作行 */
+  function actsFor(st){
+    var ro=st.dataset.ro==='1';
+    if(st.classList.contains('undo-note'))return '<span class="dm-pill muted"><svg><use href="#i-undo"/></svg>撤回记录</span>';
+    if(st.classList.contains('reverted'))return '<span class="dm-pill muted"><svg><use href="#i-undo"/></svg>已撤回</span><button class="btn sm" data-act="redo"><svg class="i"><use href="#i-regen"/></svg>重做这一步</button>';
+    if(st.classList.contains('run'))return '<button class="btn sm" data-act="diff"><svg class="i"><use href="#i-diff"/></svg>查看进行中的改动</button><button class="btn sm" data-act="stop"><svg class="i"><use href="#i-stopSq"/></svg>中止这一步</button>';
+    if(st.classList.contains('done')){
+      return (ro?'<button class="btn sm" data-act="diff"><svg class="i"><use href="#i-hdoc"/></svg>看它读了什么</button><span class="dm-pill muted">只读，没有可退的改动</span>'
+        :'<button class="btn sm" data-act="diff"><svg class="i"><use href="#i-diff"/></svg>查看这一步的 diff</button><button class="btn sm" data-act="undo"><svg class="i"><use href="#i-undo"/></svg>只退这一步</button>')
+        +'<button class="btn sm" data-act="before"><svg class="i"><use href="#i-history"/></svg>退到这一步之前</button>';
+    }
+    return '<span class="dm-pill muted">还没执行</span>';
+  }
+  function select(st){
+    $$('.dm-vstep.sel',vtl).forEach(function(x){x.classList.remove('sel');$('.acts',x).innerHTML=''});
+    if(!st)return;st.classList.add('sel');$('.acts',st).innerHTML=actsFor(st);
+  }
+
+  /* ---- 只退这一步：这一步划掉，后面的保留，末尾追加一条撤回记录 ---- */
+  function undoOne(st){
+    var n=+st.dataset.step,files=filesOf(st),later=laterDone(n);
+    st.classList.remove('done');st.classList.add('reverted');
+    var fTxt=files.map(function(x){return x.name+' −'+x.add+' +'+x.del}).join('、');
+    var keep=later.length?'第 '+later.join('、')+' 步保留':'后面没有已完成的步骤';
+    var k=$$('.dm-vstep',vtl).length+1;
+    vtl.insertAdjacentHTML('beforeend',stepHTML(k,'已撤回第 '+n+' 步的改动（'+esc(fTxt)+'），'+keep,'14:05:03',files,st.dataset.plan,'撤回的是 <span class="pno">'+st.dataset.plan+'</span> <b>'+esc(PLAN[st.dataset.plan]||'')+'</b> 下的一步'));
+    recountPlans();
+    flash(+st.dataset.ln||17,'hl-del');
+    var cap=$('#cap-undo');if(cap)cap.remove();
+    $('#status-slot').insertAdjacentHTML('afterbegin','<span class="dm-capsule" id="cap-undo"><svg class="i" style="width:12px;height:12px"><use href="#i-undo"/></svg>已撤回第 '+n+' 步 · '+keep+'</span>');
+    select(st);
+    vtl.lastElementChild.scrollIntoView({block:'nearest',behavior:'smooth'});
+  }
+  /* ---- 退到这一步之前：这一步和后面的都退 ---- */
+  function undoBefore(st){
+    var n=+st.dataset.step,names=[],files=[];
+    $$('.dm-vstep:not(.undo-note)',vtl).forEach(function(s){
+      if(+s.dataset.step<n)return;
+      if(s.classList.contains('done')&&s.dataset.ro!=='1'||s.classList.contains('run')){
+        s.classList.remove('done','run');s.classList.add('reverted');names.push(s.dataset.step);files=files.concat(filesOf(s));
+      }
+    });
+    var k=$$('.dm-vstep',vtl).length+1;
+    vtl.insertAdjacentHTML('beforeend',stepHTML(k,'已退到第 '+n+' 步之前，第 '+names.join('、')+' 步全部撤回','14:05:03',files,'','回到第 '+(n-1)+' 步结束时的状态'));
+    recountPlans();
+    var cap=$('#cap-undo');if(cap)cap.remove();
+    var run=$('#cap-run');if(run)run.remove();
+    $('#status-slot').insertAdjacentHTML('afterbegin','<span class="dm-capsule" id="cap-undo"><svg class="i" style="width:12px;height:12px"><use href="#i-history"/></svg>已退到第 '+n+' 步之前</span>');
+    if(n<=2){$('.code .ln[data-ln="28"]').classList.remove('hl-ok');flash(28,'hl-del')}else flash(+st.dataset.ln||17,'hl-del');
+    select(st);
+    vtl.lastElementChild.scrollIntoView({block:'nearest',behavior:'smooth'});
+  }
+  function redo(st){
+    st.classList.remove('reverted');st.classList.add('done');
+    recountPlans();flash(+st.dataset.ln||17,'flash');
+    var cap=$('#cap-undo');if(cap)cap.remove();
+    select(st);
+  }
+  function stop(st){
+    st.classList.remove('run');$('.t',st).textContent='已中止';$('.files .ro',st).textContent='已中止，改动未落盘';
+    var run=$('#cap-run');if(run)run.remove();
+    recountPlans();select(st);
+  }
+
+  vtl.addEventListener('click',function(e){
+    var b=e.target.closest('[data-act]');var st=e.target.closest('.dm-vstep');if(!st)return;
+    if(b){
+      var a=b.dataset.act;
+      if(a==='undo')undoOne(st);else if(a==='before')undoBefore(st);else if(a==='redo')redo(st);else if(a==='stop')stop(st);
+      else if(a==='diff'){var ln=+st.dataset.ln;if(ln)flash(ln,'flash');}
+      return;
+    }
+    select(st.classList.contains('sel')?null:st);
+  });
+
+  /* 计划项 hover → 只亮它下面的步骤 */
+  $$('#plan-card .dm-item[data-plan]').forEach(function(it){
+    it.addEventListener('mouseenter',function(){var p=it.dataset.plan;$$('.dm-vstep',vtl).forEach(function(s){s.classList.toggle('plan-dim',(s.dataset.plan||'').split(' ').indexOf(p)<0)})});
+    it.addEventListener('mouseleave',function(){$$('.dm-vstep.plan-dim',vtl).forEach(function(s){s.classList.remove('plan-dim')})});
+  });
+
+  /* 默认选中第 3 步，操作行直接可见 */
+  select($('.dm-vstep[data-step="3"]',vtl));
+  recountPlans();
+})();
+</script>
+</body>
+</html>

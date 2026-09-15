@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>06 · 语音开发：说出来，读回来，用嘴确认</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="../../deveco-intui-kit/src/tokens.css">
+<link rel="stylesheet" href="../../deveco-intui-kit/src/components.css">
+<link rel="stylesheet" href="../_shared/frame.css">
+<script src="../../deveco-intui-kit/src/icons.js"></script>
+<script src="../_shared/frame.js"></script>
+<style>
+  /* 外壳的 .menubar 隐藏时 .body 会落到 auto 行，这里把行位钉死，让主体撑满 */
+  .ide > .body{grid-row:3}
+  .ide > .status{grid-row:4}
+  .ide[data-ide-theme]{--ai-w:clamp(360px,30vw,460px)}
+  /* 语音消息：录音时长 pill 替代时间戳 */
+  .umsg .dm-pill{align-self:flex-end}
+  .umsg .heard{display:flex;flex-wrap:wrap;justify-content:flex-end;align-items:center;gap:4px;max-width:92%}
+  .umsg .heard .ctx{height:20px;font-family:var(--font-code)}
+  .umsg .heard .ctx svg.i{width:11px;height:11px}
+  /* 读回 + 用嘴确认 */
+  .amsg .step svg.i.spk{color:var(--ui-info)}
+  .confirm .dm-card-hd .dm-wave{height:18px}
+  .confirm .dm-card-hd .dm-wave i{width:2.5px}
+  .confirm .dm-card-bd .dm-chips .chip svg.i{color:var(--ui-info)}
+  .confirm.decided .dm-card-bd .chip{opacity:.45}
+  .confirm.decided .dm-card-bd .chip.picked{opacity:1;background:var(--ui-selection);border-color:var(--ui-accent)}
+  .confirm .dm-card-bd .hint{font-size:11px;color:var(--ui-fg-info)}
+  .confirm .dm-card-bd .hint kbd{font-size:10px;line-height:14px}
+  /* 输入区语音态 */
+  .ai-input .bot .mode svg.i.rec{color:var(--ui-error)}
+  .send.stop.rec{animation:recpulse 1.6s ease-in-out infinite}
+  @keyframes recpulse{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--ui-error) 40%,transparent)}60%{box-shadow:0 0 0 4px transparent}}
+  @media (prefers-reduced-motion:reduce){.send.stop.rec{animation:none}}
+  .ai-input .top .toggle svg.i{width:12px;height:12px}
+  /* 状态栏胶囊里的小波形 */
+  .dm-capsule .dm-wave{height:12px;gap:1.5px}
+  .dm-capsule .dm-wave i{width:2px}
+  .dm-capsule svg.i{width:12px;height:12px;color:var(--ui-error)}
+  .dm-capsule.ok svg.i{color:var(--ui-success)}
+  .amsg.new{animation:fadein .4s ease-out}
+  .umsg.new{animation:fadein .4s ease-out}
+  @keyframes fadein{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+</style>
+</head>
+<body>
+<div class="ide" id="ide" data-ide-theme="dark" data-left="project" data-right="agent" data-bottom="none" role="application" aria-label="DevEco Studio">
+  <div class="body">
+    <div class="tw tw-left">
+      <div class="pane on" data-pane="project">
+        <div class="tw-hdr"><span class="title">Project <svg class="i"><use href="#i-chevD"/></svg></span><span class="grow"></span>
+          <button class="abtn" title="Select Opened File"><svg class="i"><use href="#i-locate"/></svg></button>
+          <button class="abtn" title="Expand All"><svg class="i"><use href="#i-expandAll"/></svg></button>
+          <button class="abtn" title="Collapse All"><svg class="i"><use href="#i-collapseAll"/></svg></button>
+          <button class="abtn" title="Options"><svg class="i"><use href="#i-moreV"/></svg></button>
+          <button class="abtn" title="Hide|Shift+Esc" data-act="hide-left"><svg class="i"><use href="#i-hide"/></svg></button></div>
+        <div class="tw-body" id="tree-slot"></div>
+      </div>
+    </div>
+
+    <div class="editor">
+      <div class="tabs" id="tabs"><span class="grow"></span><span class="tab-tools"><button class="abtn" title="Editor Options"><svg class="i"><use href="#i-moreV"/></svg></button></span></div>
+      <div class="code-wrap"><div class="code" id="code"></div></div>
+      <div class="breadcrumbs" id="crumbs"></div>
+    </div>
+
+    <div class="tw tw-right">
+      <div class="pane on" data-pane="agent">
+        <div class="tw-hdr"><span class="title">CodeGenie <span class="cnt">语音</span></span><span class="grow"></span>
+          <button class="abtn" title="New Chat"><svg class="i"><use href="#i-add"/></svg></button>
+          <button class="abtn" title="History"><svg class="i"><use href="#i-history"/></svg></button>
+          <button class="abtn" title="MCP"><svg class="i"><use href="#i-cube"/></svg></button>
+          <button class="abtn" title="Skills"><svg class="i"><use href="#i-skills"/></svg></button>
+          <button class="abtn" title="Settings"><svg class="i"><use href="#i-settings"/></svg></button>
+          <button class="abtn" title="Options"><svg class="i"><use href="#i-moreV"/></svg></button>
+          <button class="abtn" title="Hide|Shift+Esc" data-act="hide-right"><svg class="i"><use href="#i-hide"/></svg></button></div>
+        <div class="tw-body"><div class="ai">
+          <div class="ai-scroll" id="ai-scroll">
+            <div class="ai-thread" id="ai-thread">
+
+              <!-- ① 说出需求：识别提示里带着工程符号 -->
+              <div class="umsg">
+                <span class="dm-pill info"><svg><use href="#i-mic"/></svg>语音 · 2.4 s</span>
+                <div class="bubble">把 ListPage 列表滑动卡顿修一下，封面改成异步加载</div>
+                <div class="heard dm-small dm-muted"><span>识别用到了：</span>
+                  <span class="ctx"><svg class="i"><use href="#i-module"/></svg>MyApplication</span>
+                  <span class="ctx"><svg class="i"><use href="#i-branch"/></svg>feature/list-perf</span>
+                  <span class="ctx"><svg class="i"><use href="#i-struct"/></svg>ListPage</span>
+                  <span class="ctx"><svg class="i"><use href="#i-method"/></svg>loadCover</span>
+                </div>
+              </div>
+
+              <!-- ② AI 读回理解，等一句话确认 -->
+              <div class="amsg">
+                <div class="step"><svg class="i spk"><use href="#i-speaker"/></svg><span id="readback-step">已读回（3.1 s）</span></div>
+                <div class="md" id="readback"><p>我理解为：把 <code>ListPage.ets</code> 第 28 行的同步解码改成异步，并给 <code>ItemCard</code> 加占位图。会改 2 个文件，不动数据层。对吗？</p></div>
+                <div class="dm-card confirm" id="confirm">
+                  <div class="dm-card-hd">用嘴确认<span class="grow"></span>
+                    <span class="dm-wave" id="wave"><i style="--h:40%;--d:0s"></i><i style="--h:70%;--d:.1s"></i><i style="--h:100%;--d:.2s"></i><i style="--h:60%;--d:.3s"></i><i style="--h:90%;--d:.4s"></i><i style="--h:50%;--d:.5s"></i><i style="--h:30%;--d:.6s"></i></span>
+                  </div>
+                  <div class="dm-card-bd">
+                    <div class="dm-chips">
+                      <button class="chip" data-say="yes"><svg class="i"><use href="#i-mic"/></svg>对，去做</button>
+                      <button class="chip" data-say="only"><svg class="i"><use href="#i-mic"/></svg>不对，只改 ListPage</button>
+                      <button class="chip" data-say="again"><svg class="i"><use href="#i-mic"/></svg>换个说法</button>
+                    </div>
+                    <div class="hint" id="confirm-hint">直接说出任一句即可，不用碰键盘；也可以按 <kbd>Space</kbd> 后说别的</div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <div class="ai-input">
+            <div class="top"><button class="ctx"><svg class="i" style="width:12px;height:12px"><use href="#i-at"/></svg>Add Context</button><span class="ctx"><svg class="i" style="width:12px;height:12px"><use href="#i-ets"/></svg>ListPage.ets</span><span class="grow"></span><button class="toggle on" title="AI 把结果读回来"><svg class="i"><use href="#i-speaker"/></svg>读回给我听</button></div>
+            <textarea id="ai-text" rows="2" placeholder="按住空格说话，或直接说“CodeGenie”" aria-label="Message"></textarea>
+            <div class="bot"><button class="mode" id="mode-btn" data-pop="mode" aria-expanded="false"><svg class="i rec" style="width:12px;height:12px"><use href="#i-mic"/></svg><span id="mode-label">语音 · 编程词汇</span><svg class="i" style="width:12px;height:12px"><use href="#i-chevD"/></svg>
+                <div class="popup" hidden style="top:auto;bottom:28px;left:0;min-width:260px"><div class="mhead">识别词汇表</div><div class="mi"><span class="chk"><svg class="i"><use href="#i-checkS"/></svg></span>语音 · 编程词汇<span class="sc">ArkTS · 工程符号 · 分支名</span></div><div class="mi"><span class="chk"></span>语音 · 通用<span class="sc">日常口语</span></div><div class="msep"></div><div class="mi"><span class="chk"></span><svg class="i"><use href="#i-kb"/></svg>键盘输入</div></div></button>
+              <button class="mode" id="model-btn" data-pop="model" aria-expanded="false"><span id="model-label">deepseek-v4-fl…</span><svg class="i" style="width:12px;height:12px"><use href="#i-chevD"/></svg>
+                <div class="popup" hidden style="top:auto;bottom:28px;left:0"><div class="mi">deepseek-v4-flash<span class="sc">fast</span></div><div class="mi">deepseek-v4-pro<span class="sc">reasoning</span></div><div class="mi">pangu-5.5</div></div></button>
+              <span class="grow"></span><span class="ring" id="counter" title="0 / 30000"></span><button class="send stop rec" id="send" title="正在录音，点一下停|Space"><svg><use href="#i-mic"/></svg></button></div>
+          </div>
+          <div class="ai-foot">The content is generated by AI and may not be entirely accurate or complete. It is for reference only | <a href="#">Terms of Use</a>&nbsp;&nbsp;<a href="#">Privacy Policy</a></div>
+        </div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var $=DemoFrame.$, $$=DemoFrame.$$;
+  document.getElementById('tree-slot').innerHTML=DemoFrame.tree({sel:'ListPage.ets'});
+  document.getElementById('tabs').insertAdjacentHTML('afterbegin',DemoFrame.tabs([{file:'ListPage.ets',on:true},{file:'ItemCard.ets'}]));
+  document.getElementById('code').innerHTML=DemoFrame.code('ListPage.ets',{cur:28,hl:[28]});
+
+  var WAVE='<span class="dm-wave"><i style="--h:50%;--d:0s"></i><i style="--h:100%;--d:.15s"></i><i style="--h:70%;--d:.3s"></i><i style="--h:90%;--d:.45s"></i><i style="--h:40%;--d:.6s"></i></span>';
+  DemoFrame.init({device:'HUAWEI Mate 70 Pro',deviceIcon:'#i-phone',pos:'28:12',onReady:function(){
+    $('#status-slot').innerHTML='<span class="dm-capsule" id="cap-voice"><svg class="i"><use href="#i-mic"/></svg><span id="cap-text">正在听 · 手不离设备</span>'+WAVE+'</span>';
+  }});
+
+  var thread=$('#ai-thread'),scroll=$('#ai-scroll');
+  function umsg(sec,text){
+    thread.insertAdjacentHTML('beforeend','<div class="umsg new"><span class="dm-pill info"><svg><use href="#i-mic"/></svg>语音 · '+sec+' s</span><div class="bubble">'+text+'</div></div>');
+  }
+  function amsg(html){
+    thread.insertAdjacentHTML('beforeend','<div class="amsg new">'+html+'</div>');
+    scroll.scrollTop=scroll.scrollHeight;
+  }
+  function stp(cls,txt,file){
+    var mk=cls==='done'?'<svg><use href="#i-checkS"/></svg>':'';
+    return '<div class="stp"><span class="st '+cls+'">'+mk+'</span><span class="txt">'+txt+'</span><span class="file">'+file+'</span></div>';
+  }
+  function stopWave(){var w=$('#wave');if(w){$$('i',w).forEach(function(i){i.style.animation='none';i.style.transform='scaleY(.5)'});w.style.opacity='.4'}}
+  function decided(btn){
+    var c=$('#confirm');c.classList.add('decided');btn.classList.add('picked');
+    $$('.chip',c).forEach(function(b){b.disabled=true});
+    $('#confirm-hint').innerHTML='听到了，'+ (btn.dataset.say==='yes'?'开始执行':'按你说的改') +'。中途随时可以说“停”';
+    stopWave();
+  }
+  /* 确认之后，编辑器里 27–28 行真的变成异步版本 */
+  function applyAsync(){
+    var l27=$('#code .ln[data-ln="27"]'),l28=$('#code .ln[data-ln="28"]');if(!l27||!l28)return;
+    $('.t',l27).innerHTML='  <span class="k">async</span> <span class="f">loadCover</span>(<span class="p">id</span>: <span class="k">number</span>): <span class="ty">Promise</span>&lt;<span class="ty">PixelMap</span>&gt; {';
+    $('.t',l28).innerHTML='    <span class="k">return</span> <span class="k">await</span> <span class="p">image</span>.<span class="f">createPixelMap</span>(<span class="k">this</span>.<span class="p">source</span>.<span class="f">rawCover</span>(<span class="p">id</span>));  <span class="c">// 后台解码，不占主线程</span>';
+    [l27,l28].forEach(function(ln){ln.classList.remove('hl');ln.classList.add('hl-ok')});
+    setTimeout(function(){[l27,l28].forEach(function(ln){ln.classList.remove('hl-ok')})},1800);
+  }
+  function capsule(text,ok){
+    var c=$('#cap-voice');if(!c)return;$('#cap-text',c).textContent=text;
+    if(ok){c.classList.add('ok');var w=$('.dm-wave',c);if(w)w.remove();c.insertAdjacentHTML('beforeend','<span class="dm-dot ok"></span>')}
+  }
+
+  /* 用嘴确认：三句话，三条路 */
+  $('#confirm').addEventListener('click',function(e){
+    var b=e.target.closest('.chip[data-say]');if(!b||b.disabled)return;
+    var say=b.dataset.say;
+    if(say==='yes'){
+      decided(b);
+      umsg('0.8','对，去做');
+      setTimeout(function(){
+        amsg('<div class="step"><svg class="i spk"><use href="#i-speaker"/></svg>好，开始改。改完读给你听。</div>'
+          +'<div class="steps">'+stp('done','改 loadCover 为异步','ListPage.ets:28')+stp('run','给 ItemCard 加占位图','ItemCard.ets')+stp('todo','在 Mate 70 Pro 上复测','entry')+'</div>');
+        capsule('执行中 · 仍在听',true);
+        applyAsync();
+      },500);
+    }else if(say==='only'){
+      decided(b);
+      umsg('1.2','不对，只改 ListPage');
+      setTimeout(function(){
+        amsg('<div class="step"><svg class="i spk"><use href="#i-speaker"/></svg>已读回（1.6 s）</div>'
+          +'<div class="md"><p>好，只改 <code>ListPage.ets</code>，不动 <code>ItemCard</code>。</p></div>'
+          +'<div class="steps">'+stp('done','改 loadCover 为异步','ListPage.ets:28')+stp('run','在 Mate 70 Pro 上复测','entry')+'</div>');
+        capsule('执行中 · 仍在听',true);
+        applyAsync();
+      },500);
+    }else{
+      /* 换个说法：不算确认，AI 用另一种话再读一遍，波形继续 */
+      if(b.dataset.busy)return;b.dataset.busy='1';
+      umsg('0.6','换个说法');
+      var rb=$('#readback'),st=$('#readback-step');
+      st.textContent='正在换一种说法…';
+      rb.innerHTML='<p><span class="typing"><i></i><i></i><i></i></span></p>';
+      setTimeout(function(){
+        st.textContent='已重新读回（2.6 s）';
+        rb.innerHTML='<p>换句话说：现在每滑一帧都在同步解封面，我把解码挪到后台，列表先显示占位图，解好了再换上。只动 <code>ListPage.ets</code> 和 <code>ItemCard.ets</code>，数据层不碰。这样对吗？</p>';
+        b.dataset.busy='';
+        scroll.scrollTop=scroll.scrollHeight;
+      },900);
+    }
+  });
+})();
+</script>
+</body>
+</html>

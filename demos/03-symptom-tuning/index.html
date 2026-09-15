@@ -1,0 +1,324 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>03 · 从症状进入的调优：改完告诉你到底有没有改好</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="../../deveco-intui-kit/src/tokens.css">
+<link rel="stylesheet" href="../../deveco-intui-kit/src/components.css">
+<link rel="stylesheet" href="../_shared/frame.css">
+<script src="../../deveco-intui-kit/src/icons.js"></script>
+<script src="../_shared/frame.js"></script>
+<style>
+  .ide[data-ide-theme]{--bottom-h:clamp(300px,42vh,420px);--ai-w:clamp(420px,32vw,512px)}
+  .ai-thread{gap:8px}
+  .umsg .bubble{padding:6px 10px}
+  /* Profiler 面板：左列症状入口 + 主体图表 */
+  .prof{display:grid;grid-template-columns:200px minmax(0,1fr);height:100%;min-height:0}
+  .sym-col{display:flex;flex-direction:column;gap:6px;padding:10px;border-right:1px solid var(--ui-border);overflow:auto;min-height:0}
+  .sym{display:flex;align-items:center;gap:8px;height:38px;flex:none;padding:0 10px;border:1px solid var(--ui-border);border-radius:var(--arc);background:var(--ui-field-bg);text-align:left;font-size:var(--fs);color:var(--ui-fg);cursor:default;white-space:nowrap}
+  .sym:hover{background:var(--ui-hover)}
+  .sym.on{border-color:var(--ui-accent);background:color-mix(in srgb,var(--ui-accent) 14%,transparent);font-weight:600}
+  .sym.on svg.i{color:var(--ui-info)}
+  .sym .sub{margin-left:auto;font-size:11px;font-weight:400;color:var(--ui-fg-info)}
+  .sym-hint{padding:4px 2px 0;font-size:var(--fs-sm);line-height:var(--lh-sm);color:var(--ui-fg-info)}
+  .prof-main{display:flex;flex-direction:column;gap:8px;padding:10px 12px;overflow:auto;min-height:0}
+  .prof code{font-family:var(--font-code);font-size:11px;background:var(--ui-tag-bg);padding:1px 4px;border-radius:4px}
+  .dm-chart rect.bar{cursor:pointer}
+  .dm-chart rect.bar:hover{opacity:.7}
+  .dm-chart .anom{cursor:pointer;pointer-events:all}
+  .dm-chart .lbl.err{fill:var(--ui-error);font-weight:600}
+  .dm-chart .lbl.ok{fill:var(--ui-success);font-weight:600}
+  .dm-chart .lbl.warn{fill:var(--ui-warning)}
+  .dm-chart .band{fill:color-mix(in srgb,var(--ui-success) 12%,transparent);stroke:color-mix(in srgb,var(--ui-success) 50%,transparent);stroke-dasharray:3 3}
+  .cmp{flex:none;gap:8px}
+  .cmp > * + *{border-left:1px solid var(--ui-border)}
+  .rec-list .dm-item .loc{width:34px}
+  /* Agent 面板里的 diff 卡状态 */
+  .diffcard.applied{border-color:color-mix(in srgb,var(--ui-success) 60%,transparent)}
+  .diffcard.rejected{opacity:.55}
+  .diffcard .dh .note{font-size:11px;color:var(--ui-fg-info);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+  .amsg .step.ok svg.i{color:var(--ui-success)}
+  .amsg .step.run svg.i{color:var(--ui-accent)}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <symbol id="i-therm" viewBox="0 0 16 16"><path d="M6.5 9.3V3.5a1.5 1.5 0 0 1 3 0v5.8a2.5 2.5 0 1 1-3 0Z" stroke="currentColor" stroke-linejoin="round" fill="none"/><path d="M8 7v4" stroke="currentColor" stroke-linecap="round"/></symbol>
+</defs></svg>
+<div class="ide" id="ide" data-ide-theme="dark" data-left="project" data-right="agent" data-bottom="run" role="application" aria-label="DevEco Studio">
+  <div class="body">
+    <div class="tw tw-left">
+      <div class="pane on" data-pane="project">
+        <div class="tw-hdr"><span class="title">Project <svg class="i"><use href="#i-chevD"/></svg></span><span class="grow"></span>
+          <button class="abtn" title="Select Opened File"><svg class="i"><use href="#i-locate"/></svg></button>
+          <button class="abtn" title="Expand All"><svg class="i"><use href="#i-expandAll"/></svg></button>
+          <button class="abtn" title="Collapse All"><svg class="i"><use href="#i-collapseAll"/></svg></button>
+          <button class="abtn" title="Options"><svg class="i"><use href="#i-moreV"/></svg></button>
+          <button class="abtn" title="Hide|Shift+Esc" data-act="hide-left"><svg class="i"><use href="#i-hide"/></svg></button></div>
+        <div class="tw-body" id="tree-slot"></div>
+      </div>
+    </div>
+
+    <div class="editor">
+      <div class="tabs" id="tabs"><span class="grow"></span><span class="tab-tools"><button class="abtn" title="Editor Options"><svg class="i"><use href="#i-moreV"/></svg></button></span></div>
+      <div class="code-wrap"><div class="code" id="code"></div></div>
+      <div class="breadcrumbs" id="crumbs"></div>
+    </div>
+
+    <div class="tw tw-right">
+      <div class="pane on" data-pane="agent">
+        <div class="tw-hdr"><span class="title">CodeGenie</span><span class="grow"></span>
+          <button class="abtn" title="New Chat"><svg class="i"><use href="#i-add"/></svg></button>
+          <button class="abtn" title="History"><svg class="i"><use href="#i-history"/></svg></button>
+          <button class="abtn" title="MCP"><svg class="i"><use href="#i-cube"/></svg></button>
+          <button class="abtn" title="Skills"><svg class="i"><use href="#i-skills"/></svg></button>
+          <button class="abtn" title="Settings"><svg class="i"><use href="#i-settings"/></svg></button>
+          <button class="abtn" title="Options"><svg class="i"><use href="#i-moreV"/></svg></button>
+          <button class="abtn" title="Hide|Shift+Esc" data-act="hide-right"><svg class="i"><use href="#i-hide"/></svg></button></div>
+        <div class="tw-body"><div class="ai">
+          <div class="ai-scroll"><div class="ai-thread">
+            <div class="umsg"><div class="bubble">列表滑起来卡</div></div>
+            <div class="amsg" id="amsg">
+              <div class="step ok"><svg class="i"><use href="#i-locate"/></svg>已定位：ListPage.ets:28 同步解码 · 真机记录 #12</div>
+              <div class="md"><p>那 9 帧都卡在 <code>loadCover</code> 的同步解码上（每帧 38 ms）。改成异步解码 + 占位图，两处改动逐条审：</p></div>
+
+              <div class="diffcard" id="d1">
+                <div class="dh"><svg class="i"><use href="#i-ets"/></svg><span class="fn">ListPage.ets</span><span class="cnt"><span class="add">+6</span> <span class="del">−1</span></span><span class="note">同步解码 → 异步 + 占位图</span><span class="grow"></span><span class="dm-pill ok" data-state hidden></span></div>
+                <pre id="d1-pre"></pre>
+                <div class="actions" data-actions><button class="btn" data-diff="reject">Reject</button><button class="btn primary" data-diff="accept">Accept</button></div>
+              </div>
+
+              <div class="diffcard" id="d2">
+                <div class="dh"><svg class="i"><use href="#i-ets"/></svg><span class="fn">ItemCard.ets</span><span class="cnt"><span class="add">+3</span> <span class="del">−0</span></span><span class="note">封面没到时先画占位图</span><span class="grow"></span><span class="dm-pill ok" data-state hidden></span></div>
+                <pre id="d2-pre"></pre>
+                <div class="actions" data-actions><button class="btn" data-diff="reject">Reject</button><button class="btn primary" data-diff="accept">Accept</button></div>
+              </div>
+
+              <div class="step" id="retest-note"><svg class="i"><use href="#i-phone"/></svg>接受后会在 Mate 70 Pro 上自动重跑记录 #12，给你前后对比</div>
+            </div>
+          </div></div>
+        </div></div>
+      </div>
+    </div>
+
+    <div class="tw tw-bottom">
+      <div class="tw-hdr"><span class="title">Profiler</span>
+        <span class="tabbar"><button class="btab on" data-view="sym">症状</button><button class="btab" data-view="rec">记录</button></span>
+        <span class="grow"></span>
+        <span class="dm-pill muted" id="rec-pill"><svg><use href="#i-phone"/></svg>Mate 70 Pro · 记录 #12</span>
+        <button class="abtn" title="Options" style="margin-left:6px"><svg class="i"><use href="#i-moreV"/></svg></button>
+        <button class="abtn" title="Hide|Shift+Esc" data-act="hide-bottom"><svg class="i"><use href="#i-hide"/></svg></button></div>
+      <div class="tw-body">
+        <div class="pane on" data-pane="run"><div class="prof">
+          <div class="sym-col" id="sym-col">
+            <button class="sym on" data-sym="jank"><svg class="i"><use href="#i-gauge"/></svg>列表滑起来卡<span class="sub">帧耗时</span></button>
+            <button class="sym" data-sym="power"><svg class="i"><use href="#i-bolt"/></svg>耗电快<span class="sub">电流</span></button>
+            <button class="sym" data-sym="launch"><svg class="i"><use href="#i-clock"/></svg>启动慢<span class="sub">冷启动</span></button>
+            <button class="sym" data-sym="heat"><svg class="i"><use href="#i-therm"/></svg>发热<span class="sub">温度</span></button>
+            <div class="sym-hint">不用先知道该看哪个指标</div>
+          </div>
+          <div class="prof-main" id="prof-main">
+            <div id="view-before" class="dm-col">
+              <div class="dm-chart">
+                <div class="ch-t"><b id="ch-title">帧耗时</b><span id="ch-sub">· 真机记录 #12 · Mate 70 Pro · 滑动 ListPage</span><span class="grow"></span><span class="dm-pill err" id="ch-pill">掉帧 9 / 60</span><span class="dm-muted" id="ch-hint">点柱子定位到代码</span></div>
+                <svg id="svg-main"></svg>
+              </div>
+              <div class="dm-callout info" id="loc-callout"><svg><use href="#i-locate"/></svg><div id="loc-text">这 9 帧都卡在 <code>loadCover</code> 的同步解码上（每帧 38 ms）· 已定位到 <b>ListPage.ets:28</b></div></div>
+            </div>
+            <div id="view-compare" class="dm-col" hidden>
+              <div class="dm-callout info" id="cmp-run"><svg><use href="#i-sync"/></svg><div>已应用改动，正在 Mate 70 Pro 上自动重跑同一条滑动记录…<div class="dm-progress indet" style="margin-top:6px"><i></i></div></div></div>
+              <div class="dm-callout ok" id="cmp-ok" hidden><svg><use href="#i-check"/></svg><div>改完在 Mate 70 Pro 上自动重跑了同一条滑动记录：<b>掉帧 9 → 0</b>，平均帧耗时 <b>21.4 → 9.8 ms</b>。差异集中在第 23–31 帧。</div></div>
+              <div class="dm-split cmp">
+                <div class="dm-chart"><div class="ch-t"><b>before</b>· 记录 #12<span class="grow"></span><span class="dm-pill err">掉帧 9</span></div><svg id="svg-before"></svg></div>
+                <div class="dm-chart"><div class="ch-t"><b>after</b>· 记录 #13（自动复测）<span class="grow"></span><span class="dm-pill muted" id="after-pill">复测中…</span></div><svg id="svg-after"></svg></div>
+              </div>
+            </div>
+            <div id="view-rec" class="dm-list rec-list" hidden>
+              <div class="dm-group">这台设备上的记录<span class="cnt">4</span></div>
+              <div class="dm-item" id="rec-13" hidden><span class="loc">#13</span><svg class="i"><use href="#i-gauge"/></svg><span class="grow">滑动 ListPage · 自动复测（和 #12 同一条操作）</span><span class="dm-pill ok">掉帧 0</span><span class="dm-muted dm-small">刚刚</span></div>
+              <div class="dm-item sel"><span class="loc">#12</span><svg class="i"><use href="#i-gauge"/></svg><span class="grow">滑动 ListPage · 60 帧</span><span class="dm-pill err">掉帧 9</span><span class="dm-muted dm-small">10:41</span></div>
+              <div class="dm-item"><span class="loc">#11</span><svg class="i"><use href="#i-clock"/></svg><span class="grow">冷启动 · 1.9 s</span><span class="dm-pill ok">正常</span><span class="dm-muted dm-small">10:38</span></div>
+              <div class="dm-item"><span class="loc">#10</span><svg class="i"><use href="#i-gauge"/></svg><span class="grow">滑动 ListPage · 60 帧</span><span class="dm-pill err">掉帧 11</span><span class="dm-muted dm-small">昨天 18:02</span></div>
+            </div>
+          </div>
+        </div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var $=DemoFrame.$, $$=DemoFrame.$$, esc=DemoFrame.esc;
+  document.getElementById('tree-slot').innerHTML=DemoFrame.tree({sel:'ListPage.ets'});
+  document.getElementById('tabs').insertAdjacentHTML('afterbegin',DemoFrame.tabs([{file:'ListPage.ets',on:true}]));
+  DemoFrame.init({device:'HUAWEI Mate 70 Pro',deviceIcon:'#i-phone',pos:'28:12',onReady:function(){
+    $('#status-slot').innerHTML='<span class="dm-capsule" id="cap"><span class="dm-dot err"></span>记录 #12 · 掉帧 9 · Mate 70 Pro</span>';
+  }});
+
+  /* ---------- 数据：固定种子，截图稳定 ---------- */
+  var seed=7;function rnd(){seed=(seed*9301+49297)%233280;return seed/233280}
+  var BEFORE=[],AFTER=[];
+  for(var i=1;i<=60;i++){
+    if(i>=23&&i<=31)BEFORE.push(34+Math.round(rnd()*8));else BEFORE.push(9+Math.round(rnd()*6));
+    AFTER.push(7+Math.round(rnd()*5));
+  }
+  var FLAT=[];for(var j=0;j<60;j++)FLAT.push(8+Math.round(rnd()*5));
+
+  /* ---------- 柱状图：内联 SVG，按容器实际宽度画 ---------- */
+  function drawBars(svg,vals,o){
+    o=o||{};var W=Math.round(svg.getBoundingClientRect().width)||Math.round(svg.parentNode.getBoundingClientRect().width-20)||800,H=o.h||200;
+    var padL=34,padR=12,padT=16,padB=18,pw=W-padL-padR,ph=H-padT-padB,n=vals.length,gap=2,bw=(pw-gap*(n-1))/n,max=o.max||48,lim=o.lim||16.7;
+    var y=function(v){return padT+ph-(v/max)*ph};var x=function(i){return padL+i*(bw+gap)};
+    var s='';
+    [10,20,30,40].forEach(function(v){s+='<line class="grid" x1="'+padL+'" x2="'+(W-padR)+'" y1="'+y(v).toFixed(1)+'" y2="'+y(v).toFixed(1)+'"/><text class="lbl" x="'+(padL-6)+'" y="'+(y(v)+3).toFixed(1)+'" text-anchor="end">'+v+'</text>'});
+    s+='<text class="lbl" x="'+(padL-6)+'" y="'+(padT-4)+'" text-anchor="end">ms</text>';
+    s+='<line class="grid" x1="'+padL+'" x2="'+(W-padR)+'" y1="'+(padT+ph)+'" y2="'+(padT+ph)+'"/>';
+    if(o.band){var b1=x(o.band[0]-1)-3,b2=x(o.band[1]-1)+bw+3;s+='<rect class="band" x="'+b1.toFixed(1)+'" y="'+padT+'" width="'+(b2-b1).toFixed(1)+'" height="'+ph+'" rx="4"/>';
+      if(o.bandLabel)s+='<text class="lbl ok" x="'+(b2+8).toFixed(1)+'" y="'+(padT+12)+'">'+esc(o.bandLabel)+'</text>'}
+    vals.forEach(function(v,i){var bad=v>lim;s+='<rect class="bar'+(bad?' bad':'')+'" data-frame="'+(i+1)+'" data-ms="'+v+'" x="'+x(i).toFixed(1)+'" y="'+y(v).toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+(padT+ph-y(v)).toFixed(1)+'" rx="1"><title>第 '+(i+1)+' 帧 · '+v+' ms</title></rect>'});
+    s+='<line class="lim" x1="'+padL+'" x2="'+(W-padR)+'" y1="'+y(lim).toFixed(1)+'" y2="'+y(lim).toFixed(1)+'"/><text class="lbl warn" x="'+(W-padR)+'" y="'+(y(lim)-4).toFixed(1)+'" text-anchor="end">16.7 ms · 60 fps 门槛</text>';
+    [1,10,20,30,40,50,60].forEach(function(f){s+='<text class="lbl" x="'+(x(f-1)+bw/2).toFixed(1)+'" y="'+(H-5)+'" text-anchor="middle">'+f+'</text>'});
+    if(o.anom){var a1=x(o.anom[0]-1)-4,a2=x(o.anom[1]-1)+bw+4,top=Math.min.apply(null,vals.slice(o.anom[0]-1,o.anom[1]).map(y))-6;
+      s+='<rect class="anom" data-anom="1" x="'+a1.toFixed(1)+'" y="'+top.toFixed(1)+'" width="'+(a2-a1).toFixed(1)+'" height="'+(padT+ph-top+3).toFixed(1)+'" rx="5"/>';
+      if(o.anomLabel)s+='<text class="lbl err" x="'+(a2+8).toFixed(1)+'" y="'+(top+11).toFixed(1)+'">'+esc(o.anomLabel)+'</text>'}
+    svg.setAttribute('viewBox','0 0 '+W+' '+H);svg.style.height=H+'px';svg.innerHTML=s;
+  }
+
+  /* ---------- 编辑器：定位 / 应用 diff / 退回 ---------- */
+  var CUR=28;
+  function renderCode(){$('#code').innerHTML=DemoFrame.code('ListPage.ets',{cur:28,hl:[28],marks:{28:'warn'}});}
+  function locate(line){
+    $$('#code .ln').forEach(function(l){var on=+l.dataset.ln===line;l.classList.toggle('cur',on);l.classList.toggle('hl',on)});
+    var code=$('#code'),ln=$('#code .ln[data-ln="'+line+'"]');if(ln)code.scrollTop=Math.max(0,ln.offsetTop-code.clientHeight/2+40);
+    var p=$('#status-pos');if(p)p.textContent=line+':12';
+    $('#crumbs').innerHTML=DemoFrame.crumbs('ListPage.ets');
+  }
+  var NEW28=[
+    '    <span class="c">// 解码挪到后台，帧里只查缓存</span>',
+    '    <span class="k">const</span> <span class="p">hit</span> = <span class="k">this</span>.<span class="p">coverCache</span>.<span class="f">get</span>(<span class="p">id</span>);',
+    '    <span class="k">if</span> (<span class="p">hit</span>) { <span class="k">return</span> <span class="p">hit</span>; }',
+    '    <span class="p">image</span>.<span class="f">createPixelMap</span>(<span class="k">this</span>.<span class="p">source</span>.<span class="f">rawCover</span>(<span class="p">id</span>))',
+    '      .<span class="f">then</span>((<span class="p">pm</span>: <span class="ty">PixelMap</span>) =&gt; <span class="k">this</span>.<span class="p">coverCache</span>.<span class="f">set</span>(<span class="p">id</span>, <span class="p">pm</span>));',
+    '    <span class="k">return</span> <span class="k">this</span>.<span class="p">placeholder</span>;'
+  ];
+  function applyToEditor(){
+    var ln=$('#code .ln[data-ln="28"]');if(!ln)return;
+    var h=NEW28.map(function(t){return '<div class="ln hl-ok"><span class="g"><span class="n"></span><span class="m"></span><span class="fold"></span></span><span class="t">'+t+'</span></div>'}).join('');
+    ln.insertAdjacentHTML('afterend',h);ln.remove();
+    $$('#code .ln').forEach(function(l,i){l.dataset.ln=i+1;$('.g .n',l).textContent=i+1});
+    $$('#code .ln').forEach(function(l){l.classList.toggle('cur',+l.dataset.ln===28)});
+  }
+
+  /* ---------- diff 行 ---------- */
+  function diffPre(el,lines){el.innerHTML=lines.map(function(t){var c=t[0]==='+'?' add':(t[0]==='-'?' del':'');return '<span class="l'+c+'">'+esc(t)+'</span>'}).join('')}
+  diffPre($('#d1-pre'),[
+    '  loadCover(id: number): PixelMap {',
+    '-   return image.createPixelMapSync(this.source.rawCover(id));',
+    '+   // 解码挪到后台，帧里只查缓存',
+    '+   const hit = this.coverCache.get(id);',
+    '+   if (hit) { return hit; }',
+    '+   image.createPixelMap(this.source.rawCover(id))',
+    '+     .then((pm: PixelMap) => this.coverCache.set(id, pm));',
+    '+   return this.placeholder;'
+  ]);
+  diffPre($('#d2-pre'),[
+    '    Row() {',
+    '+     if (!this.cover) {',
+    '+       Image($r(\'app.media.cover_placeholder\')).width(56)',
+    '+     }',
+    '      Image(this.cover).width(56).height(56)'
+  ]);
+
+  /* ---------- 底部面板视图 ---------- */
+  var state={sym:'jank',applied:false,retested:false,view:'sym',timer:null};
+  var SYM={jank:{title:'帧耗时',sub:'· 真机记录 #12 · Mate 70 Pro · 滑动 ListPage'},power:{title:'电流',sub:'· 真机记录 #12 · Mate 70 Pro · 每帧采样'},launch:{title:'冷启动各阶段',sub:'· 真机记录 #11 · Mate 70 Pro'},heat:{title:'温度',sub:'· 真机记录 #12 · Mate 70 Pro · 每帧采样'}};
+  function drawMain(){
+    var svg=$('#svg-main');
+    if(state.sym==='jank')drawBars(svg,BEFORE,{h:240,anom:[23,31],anomLabel:"连续掉帧 · 第 23–31 帧"});
+    else drawBars(svg,FLAT,{h:240});
+  }
+  function showViews(){
+    var sym=state.view==='sym';
+    $('#view-rec').hidden=sym;
+    $('#view-before').hidden=!(sym&&!(state.applied&&state.sym==='jank'));
+    $('#view-compare').hidden=!(sym&&state.applied&&state.sym==='jank');
+    if(!$('#view-before').hidden)drawMain();
+    if(!$('#view-compare').hidden){drawBars($('#svg-before'),BEFORE,{h:240,anom:[23,31],anomLabel:"掉帧 9"});
+      if(state.retested)drawBars($('#svg-after'),AFTER,{h:240,band:[23,31],bandLabel:'原掉帧区间 · 已无掉帧'});else drawBars($("#svg-after"),[],{h:240});}
+  }
+  function pickSym(name){
+    state.sym=name;$$('#sym-col .sym').forEach(function(b){b.classList.toggle('on',b.dataset.sym===name)});
+    var m=SYM[name];$('#ch-title').textContent=m.title;$('#ch-sub').textContent=m.sub;
+    var pill=$('#ch-pill'),co=$('#loc-callout');
+    if(name==='jank'){pill.className='dm-pill err';pill.textContent='掉帧 9 / 60';$('#ch-hint').textContent='点柱子定位到代码';
+      co.className='dm-callout info';co.innerHTML='<svg><use href="#i-locate"/></svg><div>这 9 帧都卡在 <code>loadCover</code> 的同步解码上（每帧 38 ms）· 已定位到 <b>ListPage.ets:28</b></div>';locate(28);}
+    else{pill.className='dm-pill ok';pill.textContent='正常';$('#ch-hint').textContent='';
+      co.className='dm-callout';co.innerHTML='<svg><use href="#i-info"/></svg><div>这条记录里没看到「'+esc($('#sym-col .sym[data-sym="'+name+'"]').textContent.replace(/(电流|帧耗时|冷启动|温度)$/,''))+'」对应的异常。要查它，在真机上录一条对应场景的记录就行，指标会自动选好。</div>';}
+    showViews();
+  }
+  $('#sym-col').addEventListener('click',function(e){var b=e.target.closest('.sym');if(b)pickSym(b.dataset.sym)});
+  $$('.tw-bottom .btab').forEach(function(b){b.addEventListener('click',function(){$$('.tw-bottom .btab').forEach(function(x){x.classList.toggle('on',x===b)});state.view=b.dataset.view;showViews()})});
+
+  /* 点柱子：掉帧那段 → 定位到代码；其它柱子 → 只报数 */
+  $('#prof-main').addEventListener('click',function(e){
+    var r=e.target.closest('rect.bar,rect.anom');if(!r||state.sym!=='jank')return;
+    var co=$('#loc-callout');
+    if(r.dataset.anom||(+r.dataset.frame>=23&&+r.dataset.frame<=31)){
+      locate(28);co.className='dm-callout info';
+      co.innerHTML='<svg><use href="#i-locate"/></svg><div>这 9 帧都卡在 <code>loadCover</code> 的同步解码上（每帧 38 ms）· 已定位到 <b>ListPage.ets:28</b></div>';
+    }else{
+      co.className='dm-callout';co.innerHTML='<svg><use href="#i-info"/></svg><div>第 '+r.dataset.frame+' 帧 · '+r.dataset.ms+' ms，在 16.7 ms 门槛内，没有需要处理的地方。点红色那段看问题所在。</div>';
+    }
+  });
+
+  /* ---------- Accept / Reject / 退回 ---------- */
+  function setCard(id,st){
+    var card=$('#'+id),pill=$('[data-state]',card),acts=$('[data-actions]',card);
+    card.classList.toggle('applied',st==='applied');card.classList.toggle('rejected',st==='rejected');
+    if(st==='applied'){pill.hidden=false;pill.className='dm-pill ok';pill.textContent='已应用 · 可退回';acts.innerHTML='<button class="btn" data-diff="revert"><svg class="i" style="width:12px;height:12px"><use href="#i-undo"/></svg>退回这条</button>'}
+    else if(st==='rejected'){pill.hidden=false;pill.className='dm-pill muted';pill.textContent='已拒绝';acts.innerHTML='<button class="btn" data-diff="restore">重新考虑</button>'}
+    else{pill.hidden=true;acts.innerHTML='<button class="btn" data-diff="reject">Reject</button><button class="btn primary" data-diff="accept">Accept</button>'}
+  }
+  function retestStart(){
+    state.applied=true;state.retested=false;
+    $('#cmp-run').hidden=false;$('#cmp-ok').hidden=true;var ap=$('#after-pill');ap.className='dm-pill muted';ap.textContent='复测中…';
+    $('#retest-note').className='step run';$('#retest-note').innerHTML='<span class="spin" style="width:10px;height:10px"></span>正在 Mate 70 Pro 上重跑记录 #12 的滑动…';
+    $('#cap').innerHTML='<span class="spin" style="width:10px;height:10px"></span>自动复测中 · Mate 70 Pro';
+    showViews();
+    state.timer=setTimeout(function(){
+      state.retested=true;state.timer=null;
+      $('#cmp-run').hidden=true;$('#cmp-ok').hidden=false;ap.className='dm-pill ok';ap.textContent='掉帧 0';
+      $('#retest-note').className='step ok';$('#retest-note').innerHTML='<svg class="i"><use href="#i-checkS"/></svg>已在 Mate 70 Pro 上重跑同一条记录：#12 → #13，掉帧 9 → 0';
+      $('#cap').innerHTML='<span class="dm-dot ok"></span>记录 #13 · 掉帧 0 · 已复测';
+      $('#rec-pill').innerHTML='<svg><use href="#i-phone"/></svg>Mate 70 Pro · 记录 #13';
+      $('#rec-13').hidden=false;$('#view-rec .dm-group .cnt').textContent='5';
+      showViews();
+    },1300);
+  }
+  function retestUndo(){
+    if(state.timer){clearTimeout(state.timer);state.timer=null}
+    state.applied=false;state.retested=false;
+    $('#retest-note').className='step';$('#retest-note').innerHTML='<svg class="i"><use href="#i-undo"/></svg>已退回 ListPage.ets 的改动，真机上还是记录 #12 的样子';
+    $('#cap').innerHTML='<span class="dm-dot err"></span>记录 #12 · 掉帧 9 · Mate 70 Pro';
+    $('#rec-pill').innerHTML='<svg><use href="#i-phone"/></svg>Mate 70 Pro · 记录 #12';
+    $('#rec-13').hidden=true;$('#view-rec .dm-group .cnt').textContent='4';
+    showViews();
+  }
+  $('#amsg').addEventListener('click',function(e){
+    var b=e.target.closest('[data-diff]');if(!b)return;var card=b.closest('.diffcard'),id=card.id,act=b.dataset.diff;
+    if(act==='accept'){setCard(id,'applied');if(id==='d1'){applyToEditor();retestStart()}}
+    else if(act==='revert'){setCard(id,'pending');if(id==='d1'){renderCode();locate(28);retestUndo()}}
+    else if(act==='reject'){setCard(id,'rejected')}
+    else if(act==='restore'){setCard(id,'pending')}
+  });
+
+  /* ---------- 初始：已经“点进去”的状态 ---------- */
+  renderCode();locate(28);showViews();
+  window.addEventListener('resize',showViews);
+})();
+</script>
+</body>
+</html>
