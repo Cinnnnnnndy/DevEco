@@ -65,3 +65,5 @@
 3. 保存后去仓库的 **Actions** 标签页看 `pages build and deployment` 有没有跑完（通常几分钟）；跑完后 Settings → Pages 页顶部会显示实际地址，正常就是 `https://cinnnnnnndy.github.io/DevEco/`。
 
 配好之后所有相对链接（demo、分析页、pptx 等）照常可用，不用改任何路径；每个 `demos/<slug>/index.html` 也会各自变成一条可以直接分享的独立网址。
+
+**根目录的 `.nojekyll` 不要删。** GitHub Pages 默认会跑 Jekyll 构建，Jekyll 会把名字以下划线开头的目录整个跳过不发布——`demos/_shared/`（所有 demo 共用的 `frame.js` / `frame.css`）正好是这种目录。少了 `.nojekyll`，线上每个 demo 都会因为 `DemoFrame` 未定义而白屏（本地 `file://` 打开不受影响，只有真正发布到 Pages 才会踩到，所以容易漏测）。
