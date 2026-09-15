@@ -238,12 +238,6 @@ window.DEVECO_CATALOG = {
           view: 'doc', date: '2026-09-03', href: 'deveco-ecosystem-sentiment.html',
           tags: ['舆情', '开发者原声', '同行对照'], thumb: { type: 'image', src: 'site/thumbs/sentiment.jpg' },
         },
-        {
-          title: '鸿蒙开发者生态与开发工具态势分析（2026-09）', subtitle: 'HarmonyOS Developer Ecosystem Report',
-          desc: 'HDC 2026 生态基本盘、HarmonyOS 7 的 Agent 方向、开发工具矩阵（Studio / CodeGenie / Code / CLI / 官网）、五条判断与第一版计划骨架、需要内部核实的问题。',
-          view: 'doc', date: '2026-09-03', href: '鸿蒙开发者生态分析_2026-09_1.md',
-          tags: ['HDC 2026', '工具矩阵'], thumb: { type: 'doc', kind: 'MD' },
-        },
       ],
     },
     {
@@ -257,25 +251,6 @@ window.DEVECO_CATALOG = {
           desc: '三个方向 21 条创新点，一条两页：先讲场景与别人做到哪，再讲我们怎么做。附体验评估策略（四个指标各自怎么测）、落地节奏、资产与来源局限。这个工作台上所有 demo 的出处。',
           view: 'doc', date: '2026-09-13', href: '鸿蒙开发工具_创新方向_20260913.pptx',
           tags: ['PPTX', '21 条创新点', '对标七家'], thumb: { type: 'doc', kind: 'PPTX' },
-        },
-        {
-          title: '总体材料结构 · 思维导图', subtitle: 'Master Narrative · Mind Map',
-          desc: '四条业务线、今年三个变化、融合方案（KIT + TUI + IDE）、体验设计七项、创新机会点七条、风险四条与团队组成。',
-          view: 'doc', date: '2026-09-09', href: '思维导图_总体材料结构.svg',
-          links: [{ label: '大纲 (md)', href: '思维导图_总体材料结构.md' }, { label: 'OPML', href: '思维导图_总体材料结构.opml' }],
-          tags: ['思维导图'], thumb: { type: 'image', src: 'site/thumbs/mindmap.png' },
-        },
-        {
-          title: '鸿蒙开发工具体验 · 总体材料（框架版 202609）', subtitle: 'Master Deck · Framework Draft',
-          desc: '汇报胶片的框架版。下载后用 PowerPoint / WPS 打开。',
-          view: 'doc', date: '2026-09-09', href: '鸿蒙开发工具体验_总体材料_框架版_202609_1.pptx',
-          tags: ['PPTX', '4.6 MB'], thumb: { type: 'doc', kind: 'PPTX' },
-        },
-        {
-          title: '鸿蒙开发工具接手思路', subtitle: 'Transition Notes',
-          desc: '判断、可直接迁移的存量资产（TUI 设计系统、设计直出代码、交付流水线、体验治理）、接手后的主攻方向、期望与建议。',
-          view: 'doc', date: '2026-09-03', href: '鸿蒙开发工具接手思路.md',
-          tags: ['接手思路'], thumb: { type: 'doc', kind: 'MD' },
         },
       ],
     },
