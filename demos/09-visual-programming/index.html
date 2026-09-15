@@ -1,0 +1,357 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>09 · 可视化编程：画布和代码是同一份东西的两种看法</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="../../deveco-intui-kit/src/tokens.css">
+<link rel="stylesheet" href="../../deveco-intui-kit/src/components.css">
+<link rel="stylesheet" href="../_shared/frame.css">
+<script src="../../deveco-intui-kit/src/icons.js"></script>
+<script src="../_shared/frame.js"></script>
+<style>
+  .dm-split{grid-template-columns:1fr 1.08fr}
+  .dm-node .nh,.dm-node .nb{white-space:nowrap}
+  .vp-left{background:var(--ui-editor-bg)}
+  .vp-left .dm-pane-hd{height:36px}
+  .vp-left .dm-pane-hd .dm-seg{align-self:center}
+  .vp-left .dm-pane-hd .sub{font-family:var(--font-code);font-size:11px;color:var(--ui-fg-info)}
+  .dm-pill.flash{animation:vpflash .9s ease-out}
+  @keyframes vpflash{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--ui-success) 55%,transparent)}100%{box-shadow:0 0 0 8px transparent}}
+  .vp-stage{position:relative;min-width:560px;height:540px}
+  .dm-node{cursor:default;transition:box-shadow .15s,border-color .15s}
+  .dm-node:hover{border-color:var(--ui-fg-info)}
+  .dm-node.sel:hover{border-color:var(--ui-accent)}
+  .dm-node .nh .grow{flex:1}
+  .dm-node .nh .dm-pill{margin-left:auto;height:16px;line-height:16px;font-size:10px;padding:0 5px}
+  .dm-node .nb code{font-family:var(--font-code);font-size:11px;color:var(--ui-fg-info)}
+  .dm-node .nb .prm{display:flex;align-items:center;gap:6px;color:var(--ui-fg)}
+  .dm-node .nb .prm .lb{width:28px;color:var(--ui-fg-info)}
+  .dm-node .nb .prm .unit{color:var(--ui-fg-info);font-size:11px}
+  .dm-node .nb .ctx{height:24px;border:1px solid var(--ui-component-border);background:var(--ui-field-bg);padding:0 4px 0 8px;gap:2px;font-family:var(--font-code);font-size:11px;color:var(--ui-fg);cursor:default}
+  .dm-node .nb .ctx b{font-weight:600;min-width:30px;text-align:center}
+  .dm-node .nb .ctx.val{padding:0 8px}
+  .dm-node .nb .ctx button{width:18px;height:18px;border:0;border-radius:4px;background:transparent;color:var(--ui-fg);display:grid;place-items:center;padding:0}
+  .dm-node .nb .ctx button:hover{background:var(--ui-hover)}
+  .dm-node .nb .ctx button svg{width:12px;height:12px}
+  .dm-node .nb .ctx.flash{animation:vpctx .9s ease-out}
+  @keyframes vpctx{0%{border-color:var(--ui-success);box-shadow:0 0 0 0 color-mix(in srgb,var(--ui-success) 55%,transparent)}100%{box-shadow:0 0 0 6px transparent}}
+  .dm-node .port.t{top:-5px;left:50%;margin-left:-4px}
+  .dm-node .port.b{bottom:-5px;left:50%;margin-left:-4px}
+  .dm-node .port.l{left:-5px;top:50%;margin-top:-4px}
+  .dm-node .port.r{right:-5px;top:50%;margin-top:-4px}
+  .dm-node.cond{width:130px;height:70px;min-width:0;border:0;background:transparent;box-shadow:none;display:grid;place-items:center}
+  .dm-node.cond .dia{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+  .dm-node.cond .dia polygon{fill:var(--ui-bg);stroke:var(--ui-component-border);stroke-width:1.2;transition:stroke .15s}
+  .dm-node.cond:hover .dia polygon{stroke:var(--ui-fg-info)}
+  .dm-node.cond.sel .dia polygon{stroke:var(--ui-accent);stroke-width:1.6;filter:drop-shadow(0 0 3px color-mix(in srgb,var(--ui-accent) 55%,transparent))}
+  .dm-node.cond .lbl{position:relative;display:inline-flex;align-items:center;gap:4px;font-weight:600}
+  .dm-node.cond .lbl svg{width:14px;height:14px;color:var(--ui-icon)}
+  .dm-node.cond .port.t{top:-3px}.dm-node.cond .port.b{bottom:-3px}.dm-node.cond .port.r{right:-3px}
+  .dm-edges{width:100%;height:100%}
+  .dm-edges path{transition:stroke .15s}
+  .dm-edges path.on{stroke-width:2}
+  .dm-edges text{paint-order:stroke;stroke:var(--ui-editor-bg);stroke-width:5px;stroke-linejoin:round}
+  .dm-edges text.on{fill:var(--ui-accent);font-weight:600}
+  .code .ln{transition:background .25s}
+  .code .num-edit{cursor:pointer;border-bottom:1px dashed currentColor;padding:0 2px;border-radius:3px}
+  .code .num-edit:hover{background:color-mix(in srgb,var(--ui-accent) 22%,transparent)}
+  .code .ln .g .m svg.lnk{width:13px;height:13px;color:var(--ui-accent)}
+  /* 界面视图 */
+  .vp-ui{position:absolute;inset:0;display:flex;gap:22px;padding:28px 22px;align-items:flex-start;justify-content:center}
+  .vp-pal{display:flex;flex-direction:column;gap:6px;width:104px;flex:none}
+  .vp-pal .hd{font-size:11px;color:var(--ui-fg-info);padding:0 2px 2px}
+  .vp-pal .chip{justify-content:flex-start;background:var(--ui-bg);cursor:grab}
+  .vp-phone{display:flex;flex-direction:column;align-items:center;gap:26px;flex:none;padding-top:12px}
+  .vp-phone .dm-device .scr{position:relative}
+  .vp-tree{width:236px;flex:none}
+  .vp-tree .dm-item{cursor:default;font-size:var(--fs-sm)}
+  .vp-tree .dm-item .ico{width:14px;height:14px;flex:none;color:var(--ui-icon)}
+  .vp-tree .dm-item .ico svg{width:14px;height:14px;display:block}
+  .vp-tree .dm-item .grow{display:flex;align-items:center;gap:6px}
+  .vp-tree .dm-item .grow code{font-family:var(--font-code);font-size:11px;color:var(--ui-fg-info)}
+  .vp-tree .dm-item.sel .grow code{color:var(--ui-fg)}
+  .vp-tree .dm-item .loc{font-size:10px}
+  .vp-tree .dm-card-bd{padding:8px 12px}
+  .vp-tree .dm-kv{font-size:11px}
+  .mapp .inp.hl,.mapp .btn.hl{outline:0}
+  .mapp .st span:last-child{letter-spacing:.06em}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <symbol id="i-vp-minus" viewBox="0 0 16 16"><path d="M4 8h8" stroke="currentColor" stroke-linecap="round" fill="none"/></symbol>
+  <symbol id="i-vp-text" viewBox="0 0 16 16"><path d="M3.5 4.5V3h9v1.5M8 3v10M6 13h4" stroke="currentColor" stroke-linecap="round" fill="none"/></symbol>
+  <symbol id="i-vp-input" viewBox="0 0 16 16"><rect x="1.5" y="4.5" width="13" height="7" rx="1.5" stroke="currentColor" fill="none"/><path d="M4.5 7v2" stroke="currentColor" stroke-linecap="round"/></symbol>
+  <symbol id="i-vp-button" viewBox="0 0 16 16"><rect x="1.5" y="4.5" width="13" height="7" rx="3.5" stroke="currentColor" fill="none"/><path d="M5.5 8h5" stroke="currentColor" stroke-linecap="round"/></symbol>
+  <symbol id="i-vp-image" viewBox="0 0 16 16"><rect x="2" y="2.5" width="12" height="11" rx="1.5" stroke="currentColor" fill="none"/><path d="M2.5 11l3.5-3.5 3 3 2-2 2.5 2.5" stroke="currentColor" stroke-linejoin="round" fill="none"/><circle cx="10.5" cy="6" r="1" fill="currentColor"/></symbol>
+  <symbol id="i-vp-list" viewBox="0 0 16 16"><path d="M2.5 4h11M2.5 8h11M2.5 12h11" stroke="currentColor" stroke-linecap="round"/></symbol>
+  <symbol id="i-vp-column" viewBox="0 0 16 16"><rect x="3" y="2" width="10" height="12" rx="1.5" stroke="currentColor" fill="none"/><path d="M3 6h10M3 10h10" stroke="currentColor"/></symbol>
+  <symbol id="i-vp-if" viewBox="0 0 16 16"><path d="M8 2l6 6-6 6-6-6z" stroke="currentColor" stroke-linejoin="round" fill="none"/></symbol>
+</defs></svg>
+
+<div class="ide" id="ide" data-ide-theme="dark" data-left="project" data-right="none" data-bottom="none" role="application" aria-label="DevEco Studio">
+  <div class="body">
+    <div class="tw tw-left">
+      <div class="pane on" data-pane="project">
+        <div class="tw-hdr"><span class="title">Project <svg class="i"><use href="#i-chevD"/></svg></span><span class="grow"></span>
+          <button class="abtn" title="Select Opened File"><svg class="i"><use href="#i-locate"/></svg></button>
+          <button class="abtn" title="Expand All"><svg class="i"><use href="#i-expandAll"/></svg></button>
+          <button class="abtn" title="Collapse All"><svg class="i"><use href="#i-collapseAll"/></svg></button>
+          <button class="abtn" title="Options"><svg class="i"><use href="#i-moreV"/></svg></button>
+          <button class="abtn" title="Hide|Shift+Esc" data-act="hide-left"><svg class="i"><use href="#i-hide"/></svg></button></div>
+        <div class="tw-body" id="tree-slot"></div>
+      </div>
+    </div>
+
+    <div class="editor">
+      <div class="dm-split">
+        <!-- 左：画布 -->
+        <div class="vp-left">
+          <div class="dm-pane-hd">
+            <div class="dm-seg" id="view-seg"><button data-view="ui" title="界面视图：摆控件、调属性">界面</button><button class="on" data-view="logic" title="逻辑视图：连流程、调参数">逻辑</button></div>
+            <span class="sub" id="view-sub">submit()</span>
+            <span class="grow"></span>
+            <span class="dm-pill ok" id="sync-pill"><svg><use href="#i-sync"/></svg><span id="sync-text">与代码同步</span></span>
+          </div>
+          <div class="dm-canvas" id="canvas">
+            <!-- 逻辑视图 -->
+            <div class="vp-stage" id="stage">
+              <svg class="dm-edges" id="edges"></svg>
+
+              <div class="dm-node" id="n-click" data-node="click" role="button" tabindex="0" style="--x:110px;--y:36px;width:170px">
+                <div class="nh"><svg><use href="#i-cursor"/></svg>点击 登录</div>
+                <div class="nb"><code>Button('登录').onClick</code></div>
+                <i class="port b"></i>
+              </div>
+
+              <div class="dm-node" id="n-call" data-node="call" role="button" tabindex="0" style="--x:70px;--y:140px;width:250px">
+                <div class="nh"><svg><use href="#i-bolt"/></svg>调用 auth.login(phone, code)</div>
+                <div class="nb"><code>await · 失败抛 AuthError</code></div>
+                <i class="port t"></i><i class="port b"></i><i class="port l"></i>
+              </div>
+
+              <div class="dm-node cond" id="n-cond" data-node="cond" role="button" tabindex="0" style="--x:130px;--y:250px">
+                <svg class="dia" viewBox="0 0 130 70" preserveAspectRatio="none"><polygon points="65,2 128,35 65,68 2,35"/></svg>
+                <span class="lbl"><svg><use href="#i-question"/></svg>成功？</span>
+                <i class="port t"></i><i class="port r"></i><i class="port b"></i>
+              </div>
+
+              <div class="dm-node" id="n-go" data-node="go" role="button" tabindex="0" style="--x:360px;--y:256px;width:170px">
+                <div class="nh"><svg><use href="#i-arrowR"/></svg>跳转 pages/Index</div>
+                <div class="nb"><code>router.pushUrl</code></div>
+                <i class="port l"></i>
+              </div>
+
+              <div class="dm-node sel" id="n-retry" data-node="retry" role="button" tabindex="0" style="--x:95px;--y:378px;width:200px">
+                <div class="nh"><svg><use href="#i-refresh"/></svg><span>重试 ≤ <b id="retry-n">2</b> 次</span><span class="dm-pill info">可调</span></div>
+                <div class="nb">
+                  <div class="prm"><span class="lb">次数</span><span class="ctx" id="p-count"><button data-d="-1" title="次数 −1，代码同步"><svg><use href="#i-vp-minus"/></svg></button><b>2</b><button data-d="1" title="次数 +1，代码同步"><svg><use href="#i-add"/></svg></button></span></div>
+                  <div class="prm"><span class="lb">间隔</span><span class="ctx val" id="p-interval" role="button" tabindex="0" title="点一下换一档，代码同步"><b>800</b></span><span class="unit">ms</span></div>
+                </div>
+                <i class="port t"></i><i class="port r"></i><i class="port l"></i>
+              </div>
+
+              <div class="dm-node" id="n-err" data-node="err" role="button" tabindex="0" style="--x:360px;--y:408px;width:180px">
+                <div class="nh"><svg><use href="#i-warn"/></svg>提示 验证码错误</div>
+                <div class="nb"><code>this.error = '验证码错误'</code></div>
+                <i class="port l"></i>
+              </div>
+            </div>
+
+            <!-- 界面视图 -->
+            <div class="vp-ui" id="ui-view" hidden>
+              <div class="vp-pal">
+                <div class="hd">控件 · 拖到屏幕上</div>
+                <button class="chip" title="拖到屏幕上放一个 Text"><svg class="i"><use href="#i-vp-text"/></svg>Text</button>
+                <button class="chip" title="拖到屏幕上放一个 TextInput"><svg class="i"><use href="#i-vp-input"/></svg>TextInput</button>
+                <button class="chip" title="拖到屏幕上放一个 Button"><svg class="i"><use href="#i-vp-button"/></svg>Button</button>
+                <button class="chip" title="拖到屏幕上放一个 Image"><svg class="i"><use href="#i-vp-image"/></svg>Image</button>
+                <button class="chip" title="拖到屏幕上放一个 List"><svg class="i"><use href="#i-vp-list"/></svg>List</button>
+              </div>
+              <div class="vp-phone">
+                <div class="dm-device phone"><span class="tag">实时</span>
+                  <div class="scr" id="scr">
+                    <div class="mapp" id="mapp">
+                      <div class="st"><span>9:41</span><span>5G</span></div>
+                      <div class="title" data-c="text">欢迎回来</div>
+                      <div class="inp" data-c="phone">手机号</div>
+                      <div class="inp" data-c="code">验证码</div>
+                      <div class="err" data-c="iferr">验证码错误</div>
+                      <div class="btn" data-c="button">登录</div>
+                      <div class="fill" data-c="column"></div>
+                    </div>
+                    <div class="dm-hot ok" id="hot" hidden><span class="lb" id="hot-lb"></span></div>
+                  </div>
+                  <span class="cap">Phone · pages/LoginPage</span>
+                </div>
+              </div>
+              <div class="vp-tree">
+                <div class="dm-card">
+                  <div class="dm-card-hd"><svg class="i"><use href="#i-tw-structure"/></svg>组件树<span class="grow"></span><span class="dm-pill muted">build()</span></div>
+                  <div class="dm-list" id="ctree">
+                    <div class="dm-item sel" data-c="column" data-lines="9-16" style="padding-left:12px"><span class="ico"><svg><use href="#i-vp-column"/></svg></span><span class="grow">Column<code>space 16</code></span><span class="loc">L9</span></div>
+                    <div class="dm-item" data-c="text" data-lines="10" style="padding-left:28px"><span class="ico"><svg><use href="#i-vp-text"/></svg></span><span class="grow">Text<code>'欢迎回来' · 24</code></span><span class="loc">L10</span></div>
+                    <div class="dm-item" data-c="phone" data-lines="11" style="padding-left:28px"><span class="ico"><svg><use href="#i-vp-input"/></svg></span><span class="grow">TextInput<code>PhoneNumber</code></span><span class="loc">L11</span></div>
+                    <div class="dm-item" data-c="code" data-lines="12" style="padding-left:28px"><span class="ico"><svg><use href="#i-vp-input"/></svg></span><span class="grow">TextInput<code>maxLength 6</code></span><span class="loc">L12</span></div>
+                    <div class="dm-item" data-c="iferr" data-lines="13-15" style="padding-left:28px"><span class="ico"><svg><use href="#i-vp-if"/></svg></span><span class="grow">if (error) Text<code>12 · 红</code></span><span class="loc">L13</span></div>
+                    <div class="dm-item" data-c="button" data-lines="16-19" style="padding-left:28px"><span class="ico"><svg><use href="#i-vp-button"/></svg></span><span class="grow">Button<code>'登录' · 100%</code></span><span class="loc">L16</span></div>
+                  </div>
+                  <div class="dm-card-ft"><span class="dm-small dm-muted" id="ctree-hint">选中 Column · 第 9–16 行</span><span class="grow"></span><span class="dm-pill ok">已同步</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 右：代码 -->
+        <div class="vp-right">
+          <div class="tabs" id="tabs"><span class="grow"></span><span class="tab-tools"><button class="abtn" title="Editor Options"><svg class="i"><use href="#i-moreV"/></svg></button></span></div>
+          <div class="code-wrap"><div class="code" id="code"></div><span class="ok" title="No problems found"><svg><use href="#i-check"/></svg></span></div>
+        </div>
+      </div>
+      <div class="breadcrumbs" id="crumbs"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var $=DemoFrame.$, $$=DemoFrame.$$;
+  document.getElementById('tree-slot').innerHTML=DemoFrame.tree({sel:'LoginPage.ets'});
+  document.getElementById('tabs').insertAdjacentHTML('afterbegin',DemoFrame.tabs([{file:'LoginPage.ets',on:true}]));
+
+  /* ---- 代码：前 23 行用示例文件，submit() 段换成带重试逻辑的版本（与画布同一份） ---- */
+  function ln(n,t,o){o=o||{};return '<div class="ln" data-ln="'+n+'"><span class="g"><span class="n">'+n+'</span><span class="m"></span><span class="fold">'+(o.fold?'<svg class="i" style="width:12px;height:12px"><use href="#i-chevD"/></svg>':'')+'</span></span><span class="t">'+t+'</span></div>'}
+  var html=DemoFrame.code('LoginPage.ets',{to:23});
+  html+=ln(24,'  <span class="k">async</span> <span class="f">submit</span>() {',{fold:1});
+  html+=ln(25,'    <span class="k">for</span> (<span class="k">let</span> <span class="p">i</span> = <span class="n">0</span>; <span class="p">i</span> &lt;= <span class="n num-edit" data-p="count" title="点一下改次数，画布同步">2</span>; <span class="p">i</span>++) {',{fold:1});
+  html+=ln(26,'      <span class="k">try</span> {');
+  html+=ln(27,'        <span class="k">await</span> <span class="p">auth</span>.<span class="f">login</span>(<span class="k">this</span>.<span class="p">phone</span>, <span class="k">this</span>.<span class="p">code</span>);');
+  html+=ln(28,'        <span class="p">router</span>.<span class="f">pushUrl</span>({ <span class="p">url</span>: <span class="s">\'pages/Index\'</span> });');
+  html+=ln(29,'        <span class="k">return</span>;');
+  html+=ln(30,'      } <span class="k">catch</span> (<span class="p">e</span>) {');
+  html+=ln(31,'        <span class="k">await</span> <span class="f">sleep</span>(<span class="n num-edit" data-p="interval" title="点一下换一档，画布同步">800</span>);');
+  html+=ln(32,'      }');
+  html+=ln(33,'    }');
+  html+=ln(34,'    <span class="k">this</span>.<span class="p">error</span> = <span class="s">\'验证码错误\'</span>;');
+  html+=ln(35,'  }');
+  html+=ln(36,'}');
+  document.getElementById('code').innerHTML=html;
+
+  DemoFrame.init({device:'HUAWEI Mate 70 Pro',deviceIcon:'#i-phone',pos:'25:24',onReady:function(){
+    $('#status-slot').innerHTML='<span class="dm-capsule" id="cap-sync"><svg class="i" style="width:12px;height:12px"><use href="#i-sync"/></svg><span id="cap-text">画布 ↔ 代码 · 已同步</span></span>';
+  }});
+
+  /* ---- 状态 ---- */
+  var state={count:2,interval:800,sel:'retry',view:'logic',comp:'column'};
+  var MAP={click:[16,17,18,19],call:[27],cond:[26,30],go:[28,29],retry:[25,31],err:[34]};
+  var EDGES=[['click','b','call','t',''],['call','b','cond','t',''],['cond','r','go','l','是'],['cond','b','retry','t','否'],['retry','r','err','l','超过次数'],['retry','l','call','l','再试']];
+  var DIR={t:[0,-1],b:[0,1],l:[-1,0],r:[1,0]};
+
+  /* 代码高亮 + 行槽里的“已连到画布”标记 */
+  function setHL(lines){
+    $$('#code .ln').forEach(function(l){var n=+l.dataset.ln;var on=lines.indexOf(n)>=0;l.classList.toggle('hl',on);l.classList.remove('hl-ok');$('.g .m',l).innerHTML=on?'<svg class="lnk"><use href="#i-link"/></svg>':''});
+  }
+  function flashLine(n,keep){
+    var l=$('#code .ln[data-ln="'+n+'"]');if(!l)return;l.classList.remove('hl');l.classList.add('hl-ok');
+    setTimeout(function(){l.classList.remove('hl-ok');if(keep)l.classList.add('hl')},900);
+  }
+  function synced(){
+    var p=$('#sync-pill'),t=$('#sync-text');t.textContent='刚刚同步';p.classList.remove('flash');void p.offsetWidth;p.classList.add('flash');
+    var c=$('#cap-text');if(c)c.textContent='画布 ↔ 代码 · 刚刚同步';
+    clearTimeout(synced.tm);synced.tm=setTimeout(function(){t.textContent='与代码同步';if(c)c.textContent='画布 ↔ 代码 · 已同步'},1500);
+  }
+
+  /* ---- 连线：按节点当前位置算贝塞尔 ---- */
+  function pt(id,side){
+    var el=$('#n-'+id),s=$('#stage').getBoundingClientRect(),r=el.getBoundingClientRect();
+    var x=r.left-s.left,y=r.top-s.top,w=r.width,h=r.height;
+    if(side==='t')return[x+w/2,y];if(side==='b')return[x+w/2,y+h];if(side==='l')return[x,y+h/2];return[x+w,y+h/2];
+  }
+  function drawEdges(){
+    var svg=$('#edges');if($('#ui-view').hidden===false)return;
+    var out='<defs><marker id="ah" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0.5L7.5 4 0 7.5z" fill="var(--ui-component-border)"/></marker><marker id="ah-on" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0.5L7.5 4 0 7.5z" fill="var(--ui-accent)"/></marker></defs>';
+    EDGES.forEach(function(e){
+      var p1=pt(e[0],e[1]),p2=pt(e[2],e[3]),d1=DIR[e[1]],d2=DIR[e[3]];
+      var dist=Math.hypot(p2[0]-p1[0],p2[1]-p1[1]),k=Math.max(40,Math.min(90,dist/2));if(e[1]==='l'&&e[3]==='l')k=72;
+      var c1=[p1[0]+d1[0]*k,p1[1]+d1[1]*k],c2=[p2[0]+d2[0]*k,p2[1]+d2[1]*k];
+      var on=(e[0]===state.sel||e[2]===state.sel);
+      out+='<path class="'+(on?'on':'')+'" marker-end="url(#'+(on?'ah-on':'ah')+')" d="M'+p1[0]+' '+p1[1]+' C'+c1[0]+' '+c1[1]+','+c2[0]+' '+c2[1]+','+p2[0]+' '+p2[1]+'"/>';
+      if(e[4]){var mx=(p1[0]+3*c1[0]+3*c2[0]+p2[0])/8,my=(p1[1]+3*c1[1]+3*c2[1]+p2[1])/8;out+='<text class="'+(on?'on':'')+'" x="'+mx+'" y="'+(my+3.5)+'" text-anchor="middle">'+e[4]+'</text>'}
+    });
+    svg.innerHTML=out;
+  }
+
+  /* ---- 选节点 → 代码对应行 ---- */
+  function selectNode(id){
+    state.sel=id;
+    $$('#stage .dm-node').forEach(function(n){n.classList.toggle('sel',n.dataset.node===id)});
+    setHL(MAP[id]||[]);drawEdges();
+    var first=(MAP[id]||[])[0];var p=$('#status-pos');if(p&&first)p.textContent=first+':1';
+  }
+  $('#stage').addEventListener('click',function(e){
+    var n=e.target.closest('.dm-node');if(!n)return;
+    if(e.target.closest('button')||e.target.closest('#p-interval'))return;
+    selectNode(n.dataset.node);
+  });
+
+  /* ---- 参数：画布改 → 代码跟；代码改 → 画布跟 ---- */
+  function setCount(n){
+    n=Math.max(0,Math.min(5,n));state.count=n;
+    $('#retry-n').textContent=n;$('#p-count b').textContent=n;
+    var c=$('#code .num-edit[data-p="count"]');c.textContent=n;
+    flashLine(25,state.sel==='retry');synced();
+  }
+  function setInterval_(ms){
+    state.interval=ms;
+    $('#p-interval b').textContent=ms;var pc=$('#p-interval');pc.classList.remove('flash');void pc.offsetWidth;pc.classList.add('flash');
+    var c=$('#code .num-edit[data-p="interval"]');c.textContent=ms;
+    flashLine(31,state.sel==='retry');synced();
+  }
+  function nextInterval(ms){return ms>=2000?800:ms+400}
+  $('#p-count').addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;e.stopPropagation();setCount(state.count+(+b.dataset.d));if(state.sel!=='retry')selectNode('retry')});
+  $('#p-interval').addEventListener('click',function(e){e.stopPropagation();setInterval_(nextInterval(state.interval));if(state.sel!=='retry')selectNode('retry')});
+  $('#code').addEventListener('click',function(e){
+    var n=e.target.closest('.num-edit');if(!n)return;
+    if(state.sel!=='retry')selectNode('retry');
+    if(n.dataset.p==='interval')setInterval_(nextInterval(state.interval));
+    else setCount(state.count>=5?1:state.count+1);
+  });
+
+  /* ---- 界面视图：组件树 ↔ 屏幕热区 ↔ 代码行 ---- */
+  var CNAME={column:'Column',text:'Text',phone:'TextInput',code:'TextInput',iferr:'Text (if error)',button:'Button'};
+  function range(s){var m=s.split('-'),a=+m[0],b=+(m[1]||m[0]),r=[];for(var i=a;i<=b;i++)r.push(i);return r}
+  function selectComp(c){
+    state.comp=c;
+    var item=$('#ctree .dm-item[data-c="'+c+'"]');
+    $$('#ctree .dm-item').forEach(function(x){x.classList.toggle('sel',x===item)});
+    var lines=range(item.dataset.lines);setHL(lines);
+    $('#ctree-hint').textContent='选中 '+CNAME[c]+' · 第 '+(lines.length>1?lines[0]+'–'+lines[lines.length-1]:lines[0])+' 行';
+    var p=$('#status-pos');if(p)p.textContent=lines[0]+':1';
+    /* 热区 */
+    var hot=$('#hot'),scr=$('#scr').getBoundingClientRect();
+    if(c==='column'){hot.style.cssText='left:4px;top:30px;right:4px;bottom:4px';}
+    else{var el=$('#mapp [data-c="'+c+'"]'),r=el.getBoundingClientRect();hot.style.cssText='left:'+(r.left-scr.left-3)+'px;top:'+(r.top-scr.top-3)+'px;width:'+(r.width+6)+'px;height:'+(r.height+6)+'px';}
+    $('#hot-lb').textContent=CNAME[c];hot.hidden=false;
+  }
+  $('#ctree').addEventListener('click',function(e){var i=e.target.closest('.dm-item');if(i)selectComp(i.dataset.c)});
+  $('#mapp').addEventListener('click',function(e){var el=e.target.closest('[data-c]');if(el)selectComp(el.dataset.c)});
+
+  /* ---- 界面 / 逻辑 切换：同一份代码，换一种看法 ---- */
+  function setView(v){
+    state.view=v;
+    $$('#view-seg button').forEach(function(b){b.classList.toggle('on',b.dataset.view===v)});
+    $('#stage').hidden=v!=='logic';$('#ui-view').hidden=v!=='ui';
+    $('#view-sub').textContent=v==='logic'?'submit()':'build()';
+    if(v==='logic')selectNode(state.sel);else selectComp(state.comp);
+  }
+  $('#view-seg').addEventListener('click',function(e){var b=e.target.closest('button');if(b)setView(b.dataset.view)});
+
+  selectNode('retry');
+  window.addEventListener('resize',drawEdges);
+})();
+</script>
+</body>
+</html>
