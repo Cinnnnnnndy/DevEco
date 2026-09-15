@@ -2,9 +2,12 @@
 
 围绕 DevEco Studio / DevEco Code / DevEco CLI 的体验设计工作仓：21 条创新点各一个可点的界面稿 demo，加上设计系统、分析与汇报材料。
 
-### 🚀 [打开启动页 →](index.html)
+### 🚀 打开启动页
 
-仓库的工作台首页：左侧按分类导航，右侧一条创新点一张卡。目前还没有配 GitHub Pages，点上面这个链接会在 GitHub 上打开源码而不是渲染页面——要看真正能点的效果，把仓库拉到本地（或者在这个分支下）直接双击 `index.html`，不需要构建、不需要服务器。下面「发布」一节写了怎么配出一个能直接点开的线上地址。
+- 线上：`https://cinnnnnnndy.github.io/DevEco/`（GitHub Pages 配好、且指向 `main` 分支根目录后生效，见下面「发布」一节）
+- 本地：拉到本地后直接双击根目录的 [`index.html`](index.html)，不需要构建、不需要服务器
+
+工作台首页左侧按分类导航，右侧一条创新点一张卡。每个 demo 都在自己独立的路径下（`demos/<编号-slug>/index.html`），线上地址配好之后就是各自独立可分享的 URL，比如 `https://cinnnnnnndy.github.io/DevEco/demos/01-layout-presets/index.html`，不用先打开启动页再点进去。
 
 ## 里面有什么
 
@@ -16,8 +19,6 @@
 | `deveco-intui-kit/` | DevEco Studio（Windows · IntelliJ Int UI）组件库：token、组件样式、图标、主窗口界面稿、规范页。详见 [它的 README](deveco-intui-kit/README.md) |
 | `鸿蒙开发工具_创新方向_20260913.pptx` | 三个方向 21 条创新点的 deck，demo 的出处 |
 | `deveco-ecosystem-sentiment.html` | 《DevEco 生态位与体验舆情》单文件分析页 |
-| `鸿蒙开发者生态分析_2026-09_1.md` · `鸿蒙开发工具接手思路.md` | 生态态势分析、接手思路 |
-| `思维导图_总体材料结构.{svg,md,opml}` · `鸿蒙开发工具体验_总体材料_框架版_202609_1.pptx` | 总体材料的结构与框架版胶片 |
 
 ## 21 个 demo 怎么分
 
@@ -57,12 +58,10 @@
 
 ## 发布
 
-这个仓库现在没有配 GitHub Pages（`main` 分支根目录还没有 `index.html`，这一批 demo 都在 `claude/nifty-pasteur-16rj0g` 分支上，也没有 `gh-pages` 分支），所以还没有一个可以直接点开的线上地址——这一步需要仓库管理员在 GitHub 网页上操作，我这边的工具够不到仓库设置。
+这批内容已经合到 `main`，根目录有 `index.html` 了。要让上面那个线上地址真的能打开，去 `https://github.com/Cinnnnnnndy/DevEco/settings/pages` 确认：
 
-配置方法（在 `https://github.com/Cinnnnnnndy/DevEco/settings/pages`）：
+1. **Source** 是 `Deploy from a branch`。
+2. **Branch** 选 `main`，目录 `/`（root）。
+3. 保存后去仓库的 **Actions** 标签页看 `pages build and deployment` 有没有跑完（通常几分钟）；跑完后 Settings → Pages 页顶部会显示实际地址，正常就是 `https://cinnnnnnndy.github.io/DevEco/`。
 
-1. **Source** 选 `Deploy from a branch`。
-2. **Branch** 选要发布的分支（比如先选这个分支 `claude/nifty-pasteur-16rj0g`，或者先把它合到 `main` 再选 `main`），目录选 `/`（root）。
-3. 保存后几分钟内会在同一个设置页顶部出现地址，通常是 `https://cinnnnnnndy.github.io/DevEco/`（仓库名里没有大小写变化的话）——那就是启动页的线上链接，把它贴回这里的「🚀 打开启动页」一行即可。
-
-配好之后所有相对链接（demo、分析页、pptx 等）照常可用，不用改任何路径。
+配好之后所有相对链接（demo、分析页、pptx 等）照常可用，不用改任何路径；每个 `demos/<slug>/index.html` 也会各自变成一条可以直接分享的独立网址。
