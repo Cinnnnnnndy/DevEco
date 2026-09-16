@@ -1,0 +1,81 @@
+/* =====================================================================
+   demos/_shared/guide.js —— 页面内跟随指引
+   用法（放在 DemoFrame.init(...) 之后）：
+     DemoGuide.init([
+       {target:'#btn-x', kind:'click',  pos:'bottom', label:'点这里：批准这一步'},
+       {target:'#area-y', kind:'change', pos:'top',   label:'这里会变：状态从「在等你」变成「在干」'}
+     ]);
+   kind: 'click'（要点的地方，蓝色实框+跳动的小红点）｜ 'change'（结果会变的地方，绿色虚框）
+   pos:  标签相对目标框的方位，top/bottom/left/right，默认 top
+   标注跟着目标元素的位置实时走（哪怕在 DemoFrame 切换标签页/面板之后目标移动了也一样），
+   找不到目标（selector 暂时没渲染出来）就自动隐藏那一条，不报错。
+   ===================================================================== */
+window.DemoGuide = (function(){
+  'use strict';
+  var $ = function(s,r){ return (r||document).querySelector(s); };
+  var esc = function(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;'); };
+  var marks = [], visible = true, raf = null;
+
+  function sync(){
+    marks.forEach(function(m){
+      var t = $(m.sel);
+      if(!t){ m.el.style.display='none'; return; }
+      var r = t.getBoundingClientRect();
+      if((r.width===0 && r.height===0) || r.bottom<0 || r.top>window.innerHeight || r.right<0 || r.left>window.innerWidth){
+        m.el.style.display='none'; return;
+      }
+      m.el.style.display='';
+      m.el.style.setProperty('--rx', r.left+'px');
+      m.el.style.setProperty('--ry', r.top+'px');
+      m.el.style.setProperty('--rw', r.width+'px');
+      m.el.style.setProperty('--rh', r.height+'px');
+    });
+  }
+  function loop(){ sync(); raf = requestAnimationFrame(loop); }
+  function start(){ if(!raf) raf = requestAnimationFrame(loop); }
+  function stop(){ if(raf){ cancelAnimationFrame(raf); raf=null; } }
+
+  function setVisible(on){
+    visible = on;
+    var layer = $('#gd-layer'); if(layer) layer.classList.toggle('hidden', !visible);
+    var legend = $('#gd-legend'); if(legend) legend.classList.toggle('hidden', !visible);
+    var btn = $('#gd-toggle-btn'); if(btn) btn.classList.toggle('on', visible);
+    if(visible) start(); else stop();
+  }
+
+  function buildToggle(){
+    var b = document.createElement('button');
+    b.type = 'button'; b.id = 'gd-toggle-btn'; b.className = 'gd-toggle on';
+    b.title = '显示 / 隐藏页面指引（Esc 也可以）';
+    b.innerHTML = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5c-2.8 0-5 2-5 4.5 0 1.6.8 2.7 1.8 3.6.5.4.7.8.7 1.4v.3h5v-.3c0-.6.2-1 .7-1.4C12.2 8.7 13 7.6 13 6c0-2.5-2.2-4.5-5-4.5z" stroke="currentColor" fill="none" stroke-linejoin="round"/><path d="M6.7 13.7h2.6M6.9 12h2.2" stroke="currentColor" stroke-linecap="round"/></svg><span>指引</span>';
+    b.addEventListener('click', function(){ setVisible(!visible); });
+    document.body.appendChild(b);
+
+    var legend = document.createElement('div');
+    legend.id = 'gd-legend'; legend.className = 'gd-legend';
+    legend.innerHTML = '<span class="row"><i></i>点这里，触发这条创新点的关键交互</span><span class="row"><i></i>这里会变，是点完之后的结果</span>';
+    document.body.appendChild(legend);
+
+    document.addEventListener('keydown', function(e){ if(e.key === 'Escape') setVisible(false); });
+  }
+
+  function init(list){
+    if(!list || !list.length) return;
+    var layer = document.createElement('div');
+    layer.id = 'gd-layer'; layer.className = 'gd-layer';
+    list.forEach(function(m, i){
+      var el = document.createElement('div');
+      el.className = 'gd-mark gd-' + (m.kind || 'click') + ' gd-pos-' + (m.pos || 'top');
+      var num = m.kind === 'change' ? '→' : String(i + 1);
+      el.innerHTML = '<span class="gd-ring"></span><span class="gd-tag"><b>' + num + '</b><span>' + esc(m.label) + '</span></span>';
+      layer.appendChild(el);
+      marks.push({ el: el, sel: m.target });
+    });
+    document.body.appendChild(layer);
+    buildToggle();
+    sync();
+    start();
+  }
+
+  return { init: init, refresh: sync, setVisible: setVisible };
+})();
