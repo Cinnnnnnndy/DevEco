@@ -17,16 +17,20 @@
   /* 外壳的 .menubar 隐藏时 .body 会落到 auto 行，这里把行位钉死，让主体撑满 */
   .ide > .body{grid-row:3}
   .ide > .status{grid-row:4}
-  .ide[data-ide-theme]{--ai-w:clamp(400px,34vw,520px)}
-  /* 上下文占比卡：钉在会话顶部，不随消息滚 */
-  .ctx-card{flex:none;margin:8px 12px 0}
-  .ctx-card .dm-card-hd svg.i{width:14px;height:14px}
-  .ctx-card .dm-card-hd .btn svg.i{width:12px;height:12px}
-  .ctx-card .dm-ctx{height:10px;border-radius:5px}
-  .ctx-card .dm-ctx i{transition:width .6s ease}
-  .ctx-card .dm-legend{flex-wrap:wrap;gap:4px 14px}
-  .ctx-card .dm-legend i{width:8px;height:8px;border-radius:2px}
-  .ctx-card .dm-legend b{color:var(--ui-fg);font-weight:600;font-family:var(--font-code);font-size:11px}
+  .ide[data-ide-theme]{--proj-w:clamp(400px,34vw,520px)}
+  /* 上下文占用：只留一条细进度条钉在会话顶部；明细和手动压缩收进展开区，不常驻打扰阅读 */
+  .ctx-slim{flex:none;margin:8px 12px 0;display:flex;flex-direction:column;gap:4px}
+  .ctx-slim .row{display:flex;align-items:center;gap:8px}
+  .ctx-slim .row>svg.i{width:13px;height:13px;color:var(--ui-fg-info)}
+  .ctx-slim .dm-ctx{flex:1;height:4px;border-radius:2px}
+  .ctx-slim .dm-ctx i{transition:width .6s ease}
+  .ctx-slim .pct{font-family:var(--font-code);font-size:11px;color:var(--ui-fg-info);min-width:30px;text-align:right}
+  .ctx-slim .btn.sm svg.i{width:12px;height:12px}
+  .ctx-slim .dm-fold{margin:0}
+  .ctx-slim .dm-fold summary{height:22px;padding:0 8px;font-size:11px}
+  .ctx-slim .dm-legend{flex-wrap:wrap;gap:4px 14px}
+  .ctx-slim .dm-legend i{width:8px;height:8px;border-radius:2px}
+  .ctx-slim .dm-legend b{color:var(--ui-fg);font-weight:600;font-family:var(--font-code);font-size:11px}
   .btn:disabled{opacity:.5}
   /* 结论先行的回复 */
   .amsg .step svg.i{width:14px;height:14px}
@@ -49,59 +53,49 @@
   .dm-callout .acts{display:flex;gap:6px;justify-content:flex-end}
   .dm-callout > .btn{flex:none;white-space:nowrap;margin-top:-1px}
   .dm-callout.ok svg.lead{color:var(--ui-success)}
-  /* 压缩后插进来的摘要 */
-  .summ{display:flex;flex-direction:column;gap:6px;animation:fadein .4s ease-out}
-  .summ .cap{text-align:center}
+  /* 压缩发生时：在对话里插一张默认收起的系统卡，参考 Claude 的会话压缩提示，不单独占一块面板 */
+  .summ{align-self:center;max-width:440px;width:100%;animation:fadein .4s ease-out}
+  .summ summary svg.i{width:13px;height:13px;color:var(--ui-fg-info)}
+  .summ summary span{color:var(--ui-fg)}
   @keyframes fadein{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
   .dm-capsule b{font-weight:600}
 </style>
 </head>
 <body>
-<div class="ide" id="ide" data-ide-theme="dark" data-left="project" data-right="agent" data-bottom="none" role="application" aria-label="DevEco Studio">
+<div class="ide" id="ide" data-ide-theme="dark" data-left="agent" data-right="project" data-bottom="none" role="application" aria-label="DevEco Studio">
   <div class="body">
     <div class="tw tw-left">
-      <div class="pane on" data-pane="project">
-        <div class="tw-hdr"><span class="title">Project <svg class="i"><use href="#i-chevD"/></svg></span><span class="grow"></span>
-          <button class="abtn" title="Select Opened File"><svg class="i"><use href="#i-locate"/></svg></button>
-          <button class="abtn" title="Expand All"><svg class="i"><use href="#i-expandAll"/></svg></button>
-          <button class="abtn" title="Collapse All"><svg class="i"><use href="#i-collapseAll"/></svg></button>
-          <button class="abtn" title="Options"><svg class="i"><use href="#i-moreV"/></svg></button>
-          <button class="abtn" title="Hide|Shift+Esc" data-act="hide-left"><svg class="i"><use href="#i-hide"/></svg></button></div>
-        <div class="tw-body" id="tree-slot"></div>
-      </div>
-    </div>
-
-    <div class="editor">
-      <div class="tabs" id="tabs"><span class="grow"></span><span class="tab-tools"><button class="abtn" title="Editor Options"><svg class="i"><use href="#i-moreV"/></svg></button></span></div>
-      <div class="code-wrap"><div class="code" id="code"></div></div>
-      <div class="breadcrumbs" id="crumbs"></div>
-    </div>
-
-    <div class="tw tw-right">
       <div class="pane on" data-pane="agent">
-        <div class="tw-hdr"><span class="title">CodeGenie</span><span class="grow"></span>
+        <div class="tw-hdr"><span class="title">DevEco Code</span><span class="grow"></span>
           <button class="abtn" title="New Chat"><svg class="i"><use href="#i-add"/></svg></button>
           <button class="abtn" title="History"><svg class="i"><use href="#i-history"/></svg></button>
           <button class="abtn" title="MCP"><svg class="i"><use href="#i-cube"/></svg></button>
           <button class="abtn" title="Skills"><svg class="i"><use href="#i-skills"/></svg></button>
           <button class="abtn" title="Settings"><svg class="i"><use href="#i-settings"/></svg></button>
           <button class="abtn" title="Options"><svg class="i"><use href="#i-moreV"/></svg></button>
-          <button class="abtn" title="Hide|Shift+Esc" data-act="hide-right"><svg class="i"><use href="#i-hide"/></svg></button></div>
+          <button class="abtn" title="Hide|Shift+Esc" data-act="hide-left"><svg class="i"><use href="#i-hide"/></svg></button></div>
         <div class="tw-body"><div class="ai">
 
-          <!-- 历史侧：谁占了空间，一眼看到；能手动压 -->
-          <div class="dm-card ctx-card" id="ctx-card">
-            <div class="dm-card-hd"><svg class="i"><use href="#i-gauge"/></svg><span id="ctx-title">上下文 · 68%</span><span class="grow"></span><button class="btn sm" id="btn-compress"><svg class="i"><use href="#i-collapseAll"/></svg>压缩历史</button></div>
-            <div class="dm-card-bd">
-              <div class="dm-ctx" id="ctx-bar"><i class="a" style="--v:22%"></i><i class="b" style="--v:31%"></i><i class="c" style="--v:15%"></i><i class="d" style="--v:0%"></i></div>
-              <div class="dm-legend" id="ctx-legend">
-                <span><i></i>对话 <b data-k="a">22%</b></span>
-                <span><i style="background:var(--Purple6,#8150BE)"></i>读的文件 <b data-k="b">31%</b></span>
-                <span><i style="background:var(--ui-warning)"></i>工具输出 <b data-k="c">15%</b></span>
-                <span><i style="background:var(--ui-fg-info)"></i>系统提示 <b data-k="d">0%</b></span>
-              </div>
-              <div class="dm-small dm-muted" id="ctx-note">到 80% 会自动摘要；现在也可以手动压</div>
+          <!-- 上下文占用：一条细进度条 + 百分比，一眼可见；点开看明细/手动压。压缩真正发生时，卡片直接插进下面的对话里 -->
+          <div class="ctx-slim" id="ctx-card">
+            <div class="row">
+              <svg class="i"><use href="#i-gauge"/></svg>
+              <span class="dm-ctx" id="ctx-bar"><i class="a" style="--v:22%"></i><i class="b" style="--v:31%"></i><i class="c" style="--v:15%"></i><i class="d" style="--v:0%"></i></span>
+              <span class="pct" id="ctx-title">68%</span>
+              <button class="btn sm" id="btn-compress" title="压缩历史"><svg class="i"><use href="#i-collapseAll"/></svg></button>
             </div>
+            <details class="dm-fold">
+              <summary>占用明细</summary>
+              <div class="fb">
+                <div class="dm-legend" id="ctx-legend">
+                  <span><i></i>对话 <b data-k="a">22%</b></span>
+                  <span><i style="background:var(--Purple6,#8150BE)"></i>读的文件 <b data-k="b">31%</b></span>
+                  <span><i style="background:var(--ui-warning)"></i>工具输出 <b data-k="c">15%</b></span>
+                  <span><i style="background:var(--ui-fg-info)"></i>系统提示 <b data-k="d">0%</b></span>
+                </div>
+                <div class="dm-small dm-muted" id="ctx-note">到 80% 会自动摘要；现在也可以手动压</div>
+              </div>
+            </details>
           </div>
 
           <div class="ai-scroll" id="ai-scroll">
@@ -176,6 +170,24 @@
         </div></div>
       </div>
     </div>
+
+    <div class="editor">
+      <div class="tabs" id="tabs"><span class="grow"></span><span class="tab-tools"><button class="abtn" title="Editor Options"><svg class="i"><use href="#i-moreV"/></svg></button></span></div>
+      <div class="code-wrap"><div class="code" id="code"></div></div>
+      <div class="breadcrumbs" id="crumbs"></div>
+    </div>
+
+    <div class="tw tw-right">
+      <div class="pane on" data-pane="project">
+        <div class="tw-hdr"><span class="title">Project <svg class="i"><use href="#i-chevD"/></svg></span><span class="grow"></span>
+          <button class="abtn" title="Select Opened File"><svg class="i"><use href="#i-locate"/></svg></button>
+          <button class="abtn" title="Expand All"><svg class="i"><use href="#i-expandAll"/></svg></button>
+          <button class="abtn" title="Collapse All"><svg class="i"><use href="#i-collapseAll"/></svg></button>
+          <button class="abtn" title="Options"><svg class="i"><use href="#i-moreV"/></svg></button>
+          <button class="abtn" title="Hide|Shift+Esc" data-act="hide-right"><svg class="i"><use href="#i-hide"/></svg></button></div>
+        <div class="tw-body" id="tree-slot"></div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -185,30 +197,32 @@
   document.getElementById('tree-slot').innerHTML=DemoFrame.tree({sel:'ListPage.ets'});
   document.getElementById('tabs').insertAdjacentHTML('afterbegin',DemoFrame.tabs([{file:'ListPage.ets',on:true},{file:'ItemCard.ets'}]));
   document.getElementById('code').innerHTML=DemoFrame.code('ListPage.ets',{cur:28,hl:[28]});
-  DemoFrame.init({device:'HUAWEI Mate 70 Pro',deviceIcon:'#i-phone',pos:'28:12',onReady:function(){
-    $('#status-slot').innerHTML='<span class="dm-capsule" id="cap-ctx" title="上下文占用 · 谁占了多少见 CodeGenie 顶部"><svg class="i" style="width:12px;height:12px"><use href="#i-gauge"/></svg>上下文 <b id="cap-pct">68%</b><span class="bar"><i id="cap-bar" style="--v:68%"></i></span></span>';
+  DemoFrame.init({device:'HUAWEI Mate 70 Pro',deviceIcon:'#i-phone',pos:'28:12',
+    stripeLeft:[{left:'agent',icon:'#i-genie',title:'DevEco Code'},{left:'project',icon:'#i-tw-project',title:'Project|Alt+1'},{left:'structure',icon:'#i-tw-structure',title:'Structure|Alt+7'},{more:1},{gap:1},{bottom:'build',icon:'#i-tw-build',title:'Build'},{bottom:'log',icon:'#i-tw-device',title:'Log'},{bottom:'services',icon:'#i-tw-todo',title:'Services|Alt+8'},{bottom:'problems',icon:'#i-tw-problems',title:'Problems|Alt+6'},{bottom:'run',icon:'#i-tw-services',title:'Run|Alt+4'},{bottom:'terminal',icon:'#i-tw-terminal',title:'Terminal|Alt+F12'},{bottom:'debug',icon:'#i-info',title:'Debug|Alt+5'},{bottom:'vcs',icon:'#i-vcs',title:'Version Control|Alt+9'}],
+    stripeRight:[{right:'notifications',icon:'#i-tw-notifications',title:'Notifications',dot:1},{right:'project',icon:'#i-tw-project',title:'Project|Alt+1'},{right:'docs',icon:'#i-hdoc',title:'HarmonyOS Docs'},{right:'inspector',icon:'#i-pen',title:'Code Review'},{right:'web',icon:'#i-puzzle',title:'Extensions'},{right:'previewer',icon:'#i-tw-preview',title:'Previewer'},{more:1},{right:'devices',icon:'#i-phone',title:'Device Manager'}],
+    onReady:function(){
+    $('#status-slot').innerHTML='<span class="dm-capsule" id="cap-ctx" title="上下文占用 · 谁占了多少见 DevEco Code 顶部"><svg class="i" style="width:12px;height:12px"><use href="#i-gauge"/></svg>上下文 <b id="cap-pct">68%</b><span class="bar"><i id="cap-bar" style="--v:68%"></i></span></span>';
   }});
 
   /* 上下文占比：手动压缩 → 对话段大幅缩，读过的文件与工具输出也跟着瘦 */
   function setCtx(v){
     var total=v.a+v.b+v.c+v.d;
     ['a','b','c','d'].forEach(function(k){$('#ctx-bar i.'+k).style.setProperty('--v',v[k]+'%');$('#ctx-legend b[data-k="'+k+'"]').textContent=v[k]+'%'});
-    $('#ctx-title').textContent='上下文 · '+total+'%';
+    $('#ctx-title').textContent=total+'%';
     var p=$('#cap-pct'),b=$('#cap-bar');if(p)p.textContent=total+'%';if(b)b.style.setProperty('--v',total+'%');
   }
   $('#btn-compress').addEventListener('click',function(){
-    var btn=this;if(btn.disabled)return;btn.disabled=true;btn.innerHTML='<span class="spin" style="width:10px;height:10px"></span>压缩中…';
+    var btn=this;if(btn.disabled)return;btn.disabled=true;btn.innerHTML='<span class="spin" style="width:10px;height:10px"></span>';
     setTimeout(function(){
       setCtx({a:6,b:16,c:9,d:0});
-      btn.innerHTML='<svg class="i" style="width:12px;height:12px"><use href="#i-checkS"/></svg>已压缩';
-      $('#ctx-note').textContent='已把前 14 轮压成摘要，省出 37%；摘要在会话顶部，随时能翻';
+      btn.innerHTML='<svg class="i"><use href="#i-checkS"/></svg>';
+      $('#ctx-note').textContent='已把前 14 轮压成摘要，省出 37%；摘要就在对话里，随时能展开看';
       $('#ai-thread').insertAdjacentHTML('afterbegin',
-        '<div class="summ"><div class="dm-small dm-muted cap">已把前 14 轮压成摘要</div>'
-        +'<details class="dm-fold"><summary>摘要 · 14 轮</summary><div class="fb">'
+        '<details class="dm-fold summ"><summary><svg class="i"><use href="#i-collapseAll"/></svg><span>已压缩早前 14 轮对话 · 结论已保留</span></summary><div class="fb">'
         +'<div class="pl"><i>1</i><span>从启动耗时排查转到列表卡顿；启动侧无问题，已关闭</span></div>'
         +'<div class="pl"><i>2</i><span>你定下的约束：不动数据层、不引新依赖、以 Mate 70 Pro 为基准</span></div>'
         +'<div class="pl"><i>3</i><span>已读过并可不再重读：<code>ItemSource.ets</code> <code>EntryAbility.ets</code> <code>module.json5</code></span></div>'
-        +'</div></details></div>');
+        +'</div></details>');
       $('#ai-scroll').scrollTop=0;
     },800);
   });
