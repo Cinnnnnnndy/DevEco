@@ -107,7 +107,7 @@ window.DemoFrame = (function(){
   ];
   var RIGHT_DEFAULT = [
     {right:'notifications',icon:'#i-tw-notifications',title:'Notifications',dot:1},
-    {right:'agent',icon:'#i-genie',title:'CodeGenie'},
+    {right:'agent',icon:'#i-genie',title:'DevEco Code'},
     {right:'docs',icon:'#i-hdoc',title:'HarmonyOS Docs'},
     {right:'inspector',icon:'#i-pen',title:'Code Review'},
     {right:'web',icon:'#i-puzzle',title:'Extensions'},
@@ -127,7 +127,7 @@ window.DemoFrame = (function(){
   /* ---------- 状态栏 ---------- */
   function statusHTML(o){
     return '<div class="status"><span class="crumbs" id="status-crumbs"></span><span class="grow"></span><span class="status-slot" id="status-slot"></span>'
-      + '<span class="sw" title="CodeGenie"><svg class="i"><use href="#i-genie"/></svg></span><span class="sw"><span class="green"></span></span>'
+      + '<span class="sw" title="DevEco Code"><svg class="i"><use href="#i-genie"/></svg></span><span class="sw"><span class="green"></span></span>'
       + '<span class="sw" id="status-pos">'+esc(o.pos||'23:2')+'</span><span class="sw">LF</span><span class="sw">UTF-8</span>'
       + '<span class="sw"><svg class="i"><use href="#i-indent"/></svg>2 spaces</span><span class="sw"><svg class="i"><use href="#i-unlock"/></svg></span></div>'
       + '<div class="tip" id="tip" hidden></div>';
