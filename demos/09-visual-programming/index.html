@@ -23,9 +23,10 @@
   .dm-pill.flash{animation:vpflash .9s ease-out}
   @keyframes vpflash{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--ui-success) 55%,transparent)}100%{box-shadow:0 0 0 8px transparent}}
   .vp-stage{position:relative;min-width:560px;height:540px}
-  .dm-node{cursor:default;transition:box-shadow .15s,border-color .15s}
+  .dm-node{cursor:pointer;transition:box-shadow .15s,border-color .15s}
   .dm-node:hover{border-color:var(--ui-fg-info)}
   .dm-node.sel:hover{border-color:var(--ui-accent)}
+  .dm-node.peek{border-color:var(--ui-accent)}
   .dm-node .nh .grow{flex:1}
   .dm-node .nh .dm-pill{margin-left:auto;height:16px;line-height:16px;font-size:10px;padding:0 5px}
   .dm-node .nb code{font-family:var(--font-code);font-size:11px;color:var(--ui-fg-info)}
@@ -49,6 +50,13 @@
   .dm-node.cond .dia polygon{fill:var(--ui-bg);stroke:var(--ui-component-border);stroke-width:1.2;transition:stroke .15s}
   .dm-node.cond:hover .dia polygon{stroke:var(--ui-fg-info)}
   .dm-node.cond.sel .dia polygon{stroke:var(--ui-accent);stroke-width:1.6;filter:drop-shadow(0 0 3px color-mix(in srgb,var(--ui-accent) 55%,transparent))}
+  .dm-node.cond.peek .dia polygon{stroke:var(--ui-accent)}
+  /* 连接点：节点右上角 ↔ 代码行槽，同一套小圆点语言，呼应 IDE 的行槽标记（断点/书签） */
+  .lnkdot{display:inline-block;width:8px;height:8px;border-radius:50%;box-sizing:border-box;border:1.5px solid var(--ui-fg-info);background:var(--ui-editor-bg);cursor:pointer;transition:border-color .15s,background-color .15s,box-shadow .15s,transform .15s}
+  .lnkdot:hover{border-color:var(--ui-accent);transform:scale(1.2)}
+  .lnkdot.on{background:var(--ui-accent);border-color:var(--ui-accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--ui-accent) 30%,transparent)}
+  .dm-node .lnkdot{position:absolute;top:-5px;right:-5px;z-index:2}
+  .dm-node.sel .lnkdot{background:var(--ui-accent);border-color:var(--ui-accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--ui-accent) 30%,transparent)}
   .dm-node.cond .lbl{position:relative;display:inline-flex;align-items:center;gap:4px;font-weight:600}
   .dm-node.cond .lbl svg{width:14px;height:14px;color:var(--ui-icon)}
   .dm-node.cond .port.t{top:-3px}.dm-node.cond .port.b{bottom:-3px}.dm-node.cond .port.r{right:-3px}
@@ -60,7 +68,7 @@
   .code .ln{transition:background .25s}
   .code .num-edit{cursor:pointer;border-bottom:1px dashed currentColor;padding:0 2px;border-radius:3px}
   .code .num-edit:hover{background:color-mix(in srgb,var(--ui-accent) 22%,transparent)}
-  .code .ln .g .m svg.lnk{width:13px;height:13px;color:var(--ui-accent)}
+  .code .ln.peek{background:color-mix(in srgb,var(--ui-accent) 8%,transparent)}
   /* 界面视图 */
   .vp-ui{position:absolute;inset:0;display:flex;gap:22px;padding:28px 22px;align-items:flex-start;justify-content:center}
   .vp-pal{display:flex;flex-direction:column;gap:6px;width:104px;flex:none}
@@ -75,11 +83,14 @@
   .vp-tree .dm-item .grow{display:flex;align-items:center;gap:6px}
   .vp-tree .dm-item .grow code{font-family:var(--font-code);font-size:11px;color:var(--ui-fg-info)}
   .vp-tree .dm-item.sel .grow code{color:var(--ui-fg)}
-  .vp-tree .dm-item .loc{font-size:10px}
+  .vp-tree .dm-item.sel .loc{color:var(--ui-accent);font-weight:600}
+  .vp-tree .dm-item.peek{background:var(--ui-hover-list)}
+  .vp-tree .dm-item .loc{font-size:10px;transition:color .15s}
   .vp-tree .dm-card-bd{padding:8px 12px}
   .vp-tree .dm-kv{font-size:11px}
   .mapp .inp.hl,.mapp .btn.hl{outline:0}
   .mapp .st span:last-child{letter-spacing:.06em}
+  .mapp [data-c].peek{outline:1.5px solid var(--ui-accent);outline-offset:1px;border-radius:3px;transition:outline-color .15s}
 </style>
 </head>
 <body>
@@ -221,7 +232,7 @@
 
 <script>
 (function(){
-  var $=DemoFrame.$, $$=DemoFrame.$$;
+  var $=DemoFrame.$, $$=DemoFrame.$$, esc=DemoFrame.esc;
   document.getElementById('tree-slot').innerHTML=DemoFrame.tree({sel:'LoginPage.ets'});
   document.getElementById('tabs').insertAdjacentHTML('afterbegin',DemoFrame.tabs([{file:'LoginPage.ets',on:true}]));
 
@@ -253,9 +264,37 @@
   var EDGES=[['click','b','call','t',''],['call','b','cond','t',''],['cond','r','go','l','是'],['cond','b','retry','t','否'],['retry','r','err','l','超过次数'],['retry','l','call','l','再试']];
   var DIR={t:[0,-1],b:[0,1],l:[-1,0],r:[1,0]};
 
-  /* 代码高亮 + 行槽里的“已连到画布”标记 */
-  function setHL(lines){
-    $$('#code .ln').forEach(function(l){var n=+l.dataset.ln;var on=lines.indexOf(n)>=0;l.classList.toggle('hl',on);l.classList.remove('hl-ok');$('.g .m',l).innerHTML=on?'<svg class="lnk"><use href="#i-link"/></svg>':''});
+  /* ---- 连接点：每个节点/组件在代码行槽里常驻一个小圆点（同 Xcode 的 outlet 圆点），
+     选中时两端一起点亮；点一下圆点，从代码侧也能选回画布侧 ---- */
+  var LABEL={click:'点击 登录',call:'调用 auth.login()',cond:'成功？',go:'跳转 pages/Index',retry:'重试 ≤N 次',err:'提示 验证码错误',
+    column:'Column',text:'Text 欢迎回来',phone:'TextInput 手机号',code:'TextInput 验证码',iferr:'if (error) Text',button:'Button 登录'};
+  function fmtLines(arr){
+    var out=[],i=0;
+    while(i<arr.length){var j=i;while(j+1<arr.length&&arr[j+1]===arr[j]+1)j++;out.push(i===j?('L'+arr[i]):('L'+arr[i]+'–'+arr[j]));i=j+1;}
+    return out.join('、');
+  }
+  var COMPMAP={};
+  $$('#ctree .dm-item[data-c]').forEach(function(it){COMPMAP[it.dataset.c]=range(it.dataset.lines)});
+  /* 代码高亮 + 行槽里的“已连到画布”圆点：map={id:[行号...]}，activeId 为当前选中项 */
+  function markBindings(map,activeId){
+    var owner={};
+    Object.keys(map).forEach(function(id){(map[id]||[]).forEach(function(n){(owner[n]=owner[n]||[]).push(id)})});
+    $$('#code .ln').forEach(function(l){
+      var n=+l.dataset.ln,owners=owner[n]||[],on=!!(activeId&&owners.indexOf(activeId)>=0);
+      /* 一行可能同时属于外层容器和内层子项（比如 Column 包住 Button）：圆点认最贴身的那个 */
+      var id=owners.length?owners.reduce(function(best,cur){return map[cur].length<map[best].length?cur:best}):null;
+      l.classList.toggle('hl',on);
+      $('.g .m',l).innerHTML=id?('<i class="lnkdot'+(on?' on':'')+'" data-bind="'+id+'" title="连到画布 · '+esc(LABEL[id]||id)+'"></i>'):'';
+    });
+  }
+  /* 画布侧：给每个有代码绑定的节点，在右上角补一个同款圆点 */
+  function initConnectorDots(){
+    $$('#stage .dm-node[data-node]').forEach(function(n){
+      var id=n.dataset.node,lines=MAP[id]||[];if(!lines.length)return;
+      var dot=document.createElement('i');
+      dot.className='lnkdot';dot.setAttribute('data-bind',id);dot.title='连到代码 · '+fmtLines(lines);
+      n.appendChild(dot);
+    });
   }
   function flashLine(n,keep){
     var l=$('#code .ln[data-ln="'+n+'"]');if(!l)return;l.classList.remove('hl');l.classList.add('hl-ok');
@@ -291,7 +330,7 @@
   function selectNode(id){
     state.sel=id;
     $$('#stage .dm-node').forEach(function(n){n.classList.toggle('sel',n.dataset.node===id)});
-    setHL(MAP[id]||[]);drawEdges();
+    markBindings(MAP,id);drawEdges();
     var first=(MAP[id]||[])[0];var p=$('#status-pos');if(p&&first)p.textContent=first+':1';
   }
   $('#stage').addEventListener('click',function(e){
@@ -317,6 +356,8 @@
   $('#p-count').addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;e.stopPropagation();setCount(state.count+(+b.dataset.d));if(state.sel!=='retry')selectNode('retry')});
   $('#p-interval').addEventListener('click',function(e){e.stopPropagation();setInterval_(nextInterval(state.interval));if(state.sel!=='retry')selectNode('retry')});
   $('#code').addEventListener('click',function(e){
+    var dot=e.target.closest('.lnkdot');
+    if(dot){e.stopPropagation();var id=dot.dataset.bind;if(state.view==='logic')selectNode(id);else selectComp(id);return;}
     var n=e.target.closest('.num-edit');if(!n)return;
     if(state.sel!=='retry')selectNode('retry');
     if(n.dataset.p==='interval')setInterval_(nextInterval(state.interval));
@@ -330,7 +371,7 @@
     state.comp=c;
     var item=$('#ctree .dm-item[data-c="'+c+'"]');
     $$('#ctree .dm-item').forEach(function(x){x.classList.toggle('sel',x===item)});
-    var lines=range(item.dataset.lines);setHL(lines);
+    var lines=COMPMAP[c]||range(item.dataset.lines);markBindings(COMPMAP,c);
     $('#ctree-hint').textContent='选中 '+CNAME[c]+' · 第 '+(lines.length>1?lines[0]+'–'+lines[lines.length-1]:lines[0])+' 行';
     var p=$('#status-pos');if(p)p.textContent=lines[0]+':1';
     /* 热区 */
@@ -342,6 +383,33 @@
   $('#ctree').addEventListener('click',function(e){var i=e.target.closest('.dm-item');if(i)selectComp(i.dataset.c)});
   $('#mapp').addEventListener('click',function(e){var el=e.target.closest('[data-c]');if(el)selectComp(el.dataset.c)});
 
+  /* ---- 连接点悬停：轻量预览对侧（不改变真正的选中态，只在悬停圆点时短暂点亮），
+     点击圆点/节点/行才真正切换选中——避免悬停和点选两套状态打架 ---- */
+  function peekNode(id,on){var n=$('#n-'+id);if(n)n.classList.toggle('peek',on)}
+  function peekComp(id,on){
+    var it=$('#ctree .dm-item[data-c="'+id+'"]');if(it)it.classList.toggle('peek',on);
+    var el=$('#mapp [data-c="'+id+'"]');if(el)el.classList.toggle('peek',on);
+  }
+  function peekLines(lines,on){(lines||[]).forEach(function(n){var l=$('#code .ln[data-ln="'+n+'"]');if(l)l.classList.toggle('peek',on)})}
+  $('#code').addEventListener('mouseover',function(e){
+    var dot=e.target.closest('.lnkdot');if(!dot)return;
+    var id=dot.dataset.bind;if(state.view==='logic')peekNode(id,true);else peekComp(id,true);
+  });
+  $('#code').addEventListener('mouseout',function(e){
+    var dot=e.target.closest('.lnkdot');if(!dot||dot.contains(e.relatedTarget))return;
+    var id=dot.dataset.bind;if(state.view==='logic')peekNode(id,false);else peekComp(id,false);
+  });
+  $('#stage').addEventListener('mouseover',function(e){
+    var dot=e.target.closest('.lnkdot');if(!dot)return;
+    var node=dot.closest('.dm-node');if(!node)return;
+    peekLines(MAP[node.dataset.node],true);
+  });
+  $('#stage').addEventListener('mouseout',function(e){
+    var dot=e.target.closest('.lnkdot');if(!dot||dot.contains(e.relatedTarget))return;
+    var node=dot.closest('.dm-node');if(!node)return;
+    peekLines(MAP[node.dataset.node],false);
+  });
+
   /* ---- 界面 / 逻辑 切换：同一份代码，换一种看法 ---- */
   function setView(v){
     state.view=v;
@@ -352,6 +420,7 @@
   }
   $('#view-seg').addEventListener('click',function(e){var b=e.target.closest('button');if(b)setView(b.dataset.view)});
 
+  initConnectorDots();
   selectNode('retry');
   window.addEventListener('resize',drawEdges);
 DemoGuide.init([{"target": "#p-count [data-d=\"1\"]", "kind": "click", "pos": "top", "label": "点 + 加次数"}, {"target": "#code", "kind": "change", "pos": "top", "label": "代码同步改写"}]);
