@@ -42,15 +42,31 @@
   @keyframes dmflash{0%{background:color-mix(in srgb,var(--ui-accent) 45%,transparent)}100%{background:transparent}}
   @media (prefers-reduced-motion:reduce){.dm-vstep.run .node::after,.code .ln.flash{animation:none}}
 
-  /* ---- 悬浮时光机：默认收起成小圆钮，挂在对话面板右边缘；点开才展开出完整时间轴卡片 ---- */
+  /* ---- 悬浮时光机：默认收起成一枚「迷你时间轴」小胶囊——圆点连成的进度条 + 当前第几步，不是一个纯图标；
+     挂在对话面板右边缘；悬停弹出当前这步的详情，点开才展开出完整时间轴卡片 ---- */
   .tm-fab{position:fixed;top:50%;left:calc(var(--stripe-w) + var(--proj-w));transform:translate(-50%,-50%);z-index:70;
-    width:44px;height:44px;border-radius:50%;border:1px solid var(--ui-component-border);background:var(--ui-popup-bg);
-    display:grid;place-items:center;box-shadow:var(--ui-shadow);cursor:pointer;padding:0}
+    height:30px;padding:0 10px 0 8px;border-radius:15px;border:1px solid var(--ui-component-border);background:var(--ui-popup-bg);
+    display:inline-flex;align-items:center;gap:6px;box-shadow:var(--ui-shadow);cursor:pointer}
+  .tm-fab svg.i{width:13px;height:13px;color:var(--ui-fg-info);flex:none}
   .tm-fab:hover{filter:brightness(1.08)}
   .tm-fab.on{background:var(--ui-accent);border-color:var(--ui-accent)}
-  .tm-fab.on svg{color:#fff}
-  .tm-badge{position:absolute;top:-3px;right:-3px;min-width:16px;height:16px;padding:0 4px;border-radius:8px;
-    background:var(--ui-error);color:#fff;font-size:10px;line-height:16px;font-weight:700;text-align:center;box-shadow:0 0 0 2px var(--ui-bg)}
+  .tm-fab.on svg.i,.tm-fab.on .tm-badge{color:#fff}
+  .tm-mini{display:flex;align-items:center;gap:3px}
+  .tm-mini i{width:5px;height:5px;border-radius:50%;background:var(--ui-component-border);flex:none}
+  .tm-mini i.done{background:var(--ui-success)}
+  .tm-mini i.run{background:var(--ui-accent);box-shadow:0 0 0 2px color-mix(in srgb,var(--ui-accent) 30%,transparent);animation:tmpulse 1.4s ease-in-out infinite}
+  .tm-mini i.reverted{background:var(--ui-error)}
+  .tm-fab.on .tm-mini i:not(.run):not(.reverted){background:rgba(255,255,255,.6)}
+  @keyframes tmpulse{0%,100%{opacity:1}50%{opacity:.4}}
+  @media (prefers-reduced-motion:reduce){.tm-mini i.run{animation:none}}
+  .tm-badge{font-family:var(--font-code);font-size:11px;color:var(--ui-fg-info);flex:none}
+  .tm-hover{position:fixed;z-index:71;max-width:260px;padding:8px 10px;border-radius:var(--arc);
+    border:1px solid var(--ui-popup-border);background:var(--ui-popup-bg);box-shadow:var(--ui-shadow);
+    font-size:var(--fs-sm);line-height:var(--lh-sm);pointer-events:none}
+  .tm-hover[hidden]{display:none}
+  .tm-hover .hd{display:flex;align-items:center;gap:6px;font-weight:600;margin-bottom:3px}
+  .tm-hover .hd i{width:6px;height:6px;border-radius:50%;background:var(--ui-accent);flex:none}
+  .tm-hover .sub{color:var(--ui-fg-info);margin-top:2px}
   .tm-panel{display:none;position:fixed;z-index:70;top:14%;left:calc(var(--stripe-w) + var(--proj-w) + 14px);
     width:min(380px,calc(100vw - var(--stripe-w) - var(--proj-w) - 32px));max-height:72vh;flex-direction:column;
     border:1px solid var(--ui-popup-border);border-radius:var(--arc);background:var(--ui-popup-bg);box-shadow:var(--ui-shadow);overflow:hidden}
@@ -114,8 +130,10 @@
 
   <button type="button" id="tm-fab" class="tm-fab" aria-controls="tm-panel" aria-expanded="false" aria-label="展开 AI 协作时间轴">
     <svg class="i"><use href="#i-history"/></svg>
-    <span class="tm-badge" id="tm-badge">7</span>
+    <span class="tm-mini" id="tm-mini"></span>
+    <span class="tm-badge" id="tm-badge">6/7</span>
   </button>
+  <div class="tm-hover" id="tm-hover" role="tooltip" hidden></div>
   <div class="tm-panel" id="tm-panel" role="dialog" aria-label="AI 协作时间轴">
     <div class="tm-panel-hd"><svg class="i"><use href="#i-history"/></svg><span>AI 协作时间轴</span><span class="cnt" id="tm-cnt">7</span><span class="grow"></span>
       <button type="button" class="abtn" id="tm-close" title="收起时间轴"><svg class="i"><use href="#i-hide"/></svg></button></div>
@@ -248,9 +266,40 @@
     });
     var total=$$('.dm-vstep',vtl).length;
     $('#step-cnt').textContent=total;
-    var badge=$('#tm-badge');if(badge)badge.textContent=total;
     var cnt2=$('#tm-cnt');if(cnt2)cnt2.textContent=total;
+    renderMini();
   }
+  /* 收起态的迷你时间轴：圆点连成的进度条，一眼看出做到第几步、有没有撤回 —— 不是纯图标 */
+  function renderMini(){
+    var steps=$$('.dm-vstep',vtl),mini=$('#tm-mini'),badge=$('#tm-badge');
+    if(mini)mini.innerHTML=steps.map(function(s){
+      var cls=s.classList.contains('reverted')?'reverted':s.classList.contains('run')?'run':s.classList.contains('done')?'done':'';
+      return '<i class="'+cls+'"></i>';
+    }).join('');
+    var running=steps.filter(function(s){return s.classList.contains('run')});
+    var cur=running.length?+running[0].dataset.step:steps.filter(function(s){return s.classList.contains('done')}).length;
+    if(badge)badge.textContent=cur+'/'+steps.length;
+  }
+  function curStep(){
+    return $('.dm-vstep.run',vtl)||$$('.dm-vstep.done',vtl).slice(-1)[0]||$$('.dm-vstep',vtl)[0];
+  }
+  /* 悬停迷你时间轴：不展开整卡，只弹当前这步的详情 */
+  function showTmHover(){
+    var pop=$('#tm-hover');if(!pop||tmPanel.classList.contains('open'))return;
+    var s=curStep();if(!s)return;
+    var state=s.classList.contains('run')?'进行中':s.classList.contains('reverted')?'已撤回':s.classList.contains('done')?'已完成':'待执行';
+    var title=(s.querySelector('.body-t .grow')||{}).textContent||'';
+    var time=(s.querySelector('.body-t .t')||{}).textContent||'';
+    var plan=(s.querySelector('.plan')||{}).textContent||'';
+    pop.innerHTML='<div class="hd"><i></i>'+state+' · 第 '+s.dataset.step+' / '+$$('.dm-vstep',vtl).length+' 步</div>'
+      +'<div>'+esc(title.trim())+'</div><div class="sub">'+esc(time.trim())+(plan.trim()?' · '+esc(plan.trim()):'')+'</div>';
+    pop.hidden=false;
+    var r=tmFab.getBoundingClientRect(),hr=pop.getBoundingClientRect();
+    var top=r.top-hr.height-10;
+    pop.style.left=Math.max(8,Math.min(r.left+r.width/2-hr.width/2,window.innerWidth-hr.width-8))+'px';
+    pop.style.top=(top<4?r.bottom+10:top)+'px';
+  }
+  function hideTmHover(){var pop=$('#tm-hover');if(pop)pop.hidden=true}
   /* 选中某一步 → 底部出现操作行 */
   function actsFor(st){
     var ro=st.dataset.ro==='1';
@@ -338,8 +387,13 @@
     tmFab.classList.toggle('on',open);
     tmFab.setAttribute('aria-expanded',open?'true':'false');
     tmPanel.classList.toggle('open',open);
+    if(open)hideTmHover();
   }
   tmFab.addEventListener('click',function(){setTM(!tmPanel.classList.contains('open'))});
+  tmFab.addEventListener('mouseenter',showTmHover);
+  tmFab.addEventListener('mouseleave',hideTmHover);
+  tmFab.addEventListener('focus',showTmHover);
+  tmFab.addEventListener('blur',hideTmHover);
   var tmClose=$('#tm-close');if(tmClose)tmClose.addEventListener('click',function(){setTM(false)});
   var segTl=$('#seg-timeline-btn');if(segTl)segTl.addEventListener('click',function(){setTM(true)});
   setTM(false);
@@ -347,7 +401,7 @@
   /* 默认选中第 3 步，操作行直接可见 */
   select($('.dm-vstep[data-step="3"]',vtl));
   recountPlans();
-DemoGuide.init([{"target": "#tm-fab", "kind": "click", "pos": "left", "label": "点这里展开时光机时间轴"}, {"target": "#tm-badge", "kind": "change", "pos": "right", "label": "步骤数会跟着执行实时变化"}]);
+DemoGuide.init([{"target": "#tm-fab", "kind": "click", "pos": "left", "label": "悬停看当前进度，点开看完整时间轴"}, {"target": "#tm-mini", "kind": "change", "pos": "right", "label": "圆点会跟着执行实时变化"}]);
 })();
 </script>
 </body>
