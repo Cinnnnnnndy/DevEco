@@ -27,7 +27,32 @@
   .cap-pop .queue i{width:22px;height:6px;border-radius:3px;background:var(--ui-progress-track)}
   .cap-pop .queue i.me{background:var(--ui-accent)}
   .cap-pop .queue i.run{background:var(--ui-success)}
-  .dm-capsule[aria-expanded="true"]{border-color:var(--ui-component-border);background:var(--ui-hover)}
+
+  /* ---- 智慧胶囊：脱离状态栏文档流，浮在整体框架最上方居中（呼应 Dynamic Island 的悬浮语汇，
+     但克制成 IntelliJ 风：细描边 + 轻发光 + 呼吸感，不用鲜艳撞色） ---- */
+  .dm-capsule-dock{position:absolute;top:calc(var(--hdr-h) + 6px);left:50%;transform:translateX(-50%);
+    z-index:40;display:flex;align-items:flex-start;gap:8px;pointer-events:none}
+  .dm-capsule-dock .dm-capsule{pointer-events:auto;height:26px;padding:0 12px 0 9px;border-radius:13px;
+    font-size:var(--fs-sm);line-height:16px;gap:6px;
+    background:linear-gradient(180deg,color-mix(in srgb,var(--ui-popup-bg) 88%,var(--ui-accent) 12%),var(--ui-popup-bg));
+    border:1px solid color-mix(in srgb,var(--ui-accent) 30%,var(--ui-component-border));
+    box-shadow:0 6px 18px color-mix(in srgb,#000 30%,transparent),0 0 0 1px color-mix(in srgb,var(--ui-accent) 8%,transparent);
+    transition:width .32s cubic-bezier(.4,0,.2,1),box-shadow .25s ease,border-color .25s ease,transform .15s ease}
+  .dm-capsule-dock .dm-capsule:hover{transform:translateY(-1px);border-color:color-mix(in srgb,var(--ui-accent) 55%,var(--ui-component-border))}
+  .dm-capsule-dock .dm-capsule[aria-expanded="true"]{border-color:var(--ui-accent);background:var(--ui-hover)}
+  .dm-capsule-dock .dm-capsule .content{display:inline-flex;align-items:center;gap:6px;overflow:hidden;white-space:nowrap;transition:opacity .12s ease}
+  .dm-capsule-dock .dm-capsule.morphing .content{opacity:0}
+  .dm-capsule-dock .dm-capsule .content svg{width:12px;height:12px;flex:none}
+  .dm-capsule-dock .dm-capsule.busy.running{animation:capBreathe 2.4s ease-in-out infinite}
+  .dm-capsule-dock .dm-capsule.done{border-color:color-mix(in srgb,var(--ui-success) 45%,var(--ui-component-border))}
+  .dm-capsule-dock .dm-capsule.done .content svg{color:var(--ui-success)}
+  .dm-capsule-dock .dm-capsule .popup{top:calc(100% + 8px);bottom:auto;left:50%;right:auto;transform:translateX(-50%);
+    min-width:300px;padding:0;cursor:auto}
+  @keyframes capBreathe{
+    0%,100%{box-shadow:0 6px 18px color-mix(in srgb,#000 30%,transparent),0 0 0 1px color-mix(in srgb,var(--ui-accent) 8%,transparent)}
+    50%{box-shadow:0 6px 22px color-mix(in srgb,#000 26%,transparent),0 0 0 4px color-mix(in srgb,var(--ui-accent) 18%,transparent)}
+  }
+  @media (prefers-reduced-motion:reduce){.dm-capsule-dock .dm-capsule.busy.running{animation:none}}
 </style>
 </head>
 <body>
@@ -79,37 +104,109 @@ Process finished with exit code 0</div>
   document.getElementById('tabs').insertAdjacentHTML('afterbegin',DemoFrame.tabs([{file:'Index.ets',on:true}]));
   document.getElementById('code').innerHTML=DemoFrame.code('Index.ets',{cur:17});
 
-  /* 状态栏：最多两枚胶囊，“在等你”的排前面带蓝点；点开才展开面板 */
+  /* 智慧胶囊：不再挤在状态栏里，脱离那条 flex 文档流，浮在整体框架最上方居中。
+     排队中的第二枚胶囊会自己往前挪一步、变成生成中、再变成已生成，全靠宽度跟着内容一起变形
+     （测量前后宽度再过渡，不是文字瞬间硬切），配合呼吸感高光，让它看起来是活的而不是一枚静态徽标。 */
+  var QUEUE_STEPS=[
+    {pos:3,pct:30,sub:'排队中',hint:'服务端并发排队 · <b>排第 3 位</b> · 预计还要 <b>2 分钟</b>。排到之后自动开始，不用盯着。'},
+    {pos:2,pct:55,sub:'排队中',hint:'前面又走了一个 · <b>排第 2 位</b> · 预计还要 <b>1 分钟</b>。'},
+    {pos:1,pct:82,sub:'马上开始',hint:'就差一个了 · <b>排第 1 位</b> · 预计还要 <b>20 秒</b>。'},
+    {running:true,sub:'生成中',hint:'已经轮到它，正在生成上架材料的标题、截图文案与更新说明。'},
+    {done:true,sub:'等待确认',hint:'标题、截图文案与更新说明都写好了，扫一眼就能提交，也可以让它按原样直接上传。'}
+  ];
+  function dotsForPos(pos){
+    var out='<i class=\'run\'></i>';
+    for(var i=0;i<pos-1;i++)out+='<i></i>';
+    return out+'<i class=\'me\'></i>';
+  }
+  function busyContentHTML(step){
+    if(step.done)return '<svg class=\'i\'><use href=\'#i-check\'/></svg>生成上架材料 · 已生成';
+    if(step.running)return '<span class=\'spin\'></span>生成上架材料 · 生成中';
+    return '<svg class=\'i\'><use href=\'#i-hourglass\'/></svg>生成上架材料 · 排第 '+step.pos+'<span class=\'bar\'><i style=\'--v:'+step.pct+'%\'></i></span>';
+  }
+  function busyPopupHTML(step){
+    var footer;
+    if(step.done){
+      footer='<div class=\'pf\'><a href=\'#\'>查看草稿</a><span class=\'grow\'></span><button class=\'btn sm\'>忽略</button><button class=\'btn sm primary\'>去确认</button></div>';
+    }else if(step.running){
+      footer='<div class=\'pf\'><a href=\'#\'>查看生成过程</a><span class=\'grow\'></span><button class=\'btn sm\'>取消</button></div>';
+    }else{
+      footer='<div class=\'queue\'>'+dotsForPos(step.pos)+'<span>'+(step.pos>1?('前面还有 '+(step.pos-1)+' 个'):'马上就到你')+'</span></div>'
+        +'<div class=\'pf\'><a href=\'#\'>为什么要排队</a><span class=\'grow\'></span><button class=\'btn sm\'>取消</button><button class=\'btn sm\'>排到了提醒我</button></div>';
+    }
+    return '<div class=\'ph\'><svg class=\'i\'><use href=\'#i-hourglass\'/></svg>生成上架材料<span class=\'grow\'></span><span class=\'when\'>'+step.sub+'</span></div>'
+      +'<p>'+step.hint+'</p>'+footer;
+  }
+
   DemoFrame.init({device:'HUAWEI Mate 70 Pro',deviceIcon:'#i-phone',onReady:function(){
-    $('#status-slot').innerHTML=
-      '<span role="button" tabindex="0" class="dm-capsule wait" data-pop aria-expanded="false"><span class="dm-dot info pulse"></span>等你确认 · 修复 ListPage 滑动卡顿'
-      +'<div class="popup" hidden><div class="cap-pop">'
-      +'<div class="ph"><svg class="i"><use href="#i-genie"/></svg>修复 ListPage 滑动卡顿<span class="grow"></span><span class="when">等了 58 分钟</span></div>'
+    document.getElementById('ide').insertAdjacentHTML('beforeend',
+      '<div class=\'dm-capsule-dock\' id=\'capsule-dock\'>'
+      +'<span role=\'button\' tabindex=\'0\' class=\'dm-capsule wait\' data-pop aria-expanded=\'false\'>'
+      +'<span class=\'content\'><span class=\'dm-dot info pulse\'></span>等你确认 · 修复 ListPage 滑动卡顿</span>'
+      +'<div class=\'popup\' hidden><div class=\'cap-pop\'>'
+      +'<div class=\'ph\'><svg class=\'i\'><use href=\'#i-genie\'/></svg>修复 ListPage 滑动卡顿<span class=\'grow\'></span><span class=\'when\'>等了 58 分钟</span></div>'
       +'<p>它打算把 <code>loadCover</code> 的同步解码改成异步加占位图，会改 <code>ListPage.ets</code> 与 <code>ItemCard.ets</code>，不动数据层。</p>'
-      +'<div class="pf"><a href="#">在面板里看完整计划</a><span class="grow"></span><button class="btn sm">拒绝</button><button class="btn sm primary">批准</button></div>'
+      +'<div class=\'pf\'><a href=\'#\'>在面板里看完整计划</a><span class=\'grow\'></span><button class=\'btn sm\'>拒绝</button><button class=\'btn sm primary\'>批准</button></div>'
       +'</div></div></span>'
-      +'<span role="button" tabindex="0" class="dm-capsule" data-pop aria-expanded="false"><span class="spin" style="width:10px;height:10px"></span>生成上架材料 · 排第 3<span class="bar"><i style="--v:30%"></i></span>'
-      +'<div class="popup" hidden><div class="cap-pop">'
-      +'<div class="ph"><svg class="i"><use href="#i-hourglass"/></svg>生成上架材料<span class="grow"></span><span class="when">排队中</span></div>'
-      +'<p>服务端并发排队 · <b>排第 3 位</b> · 预计还要 <b>2 分钟</b>。排到之后自动开始，不用盯着。</p>'
-      +'<div class="queue"><i class="run"></i><i></i><i></i><i class="me"></i><span>前面还有 2 个</span></div>'
-      +'<div class="pf"><a href="#">为什么要排队</a><span class="grow"></span><button class="btn sm">取消</button><button class="btn sm">排到了提醒我</button></div>'
-      +'</div></div></span>';
+      +'<span role=\'button\' tabindex=\'0\' class=\'dm-capsule busy\' data-pop aria-expanded=\'false\' id=\'cap-busy\'>'
+      +'<span class=\'content\'>'+busyContentHTML(QUEUE_STEPS[0])+'</span>'
+      +'<div class=\'popup\' hidden><div class=\'cap-pop\'>'+busyPopupHTML(QUEUE_STEPS[0])+'</div></div>'
+      +'</span></div>');
+
+    /* 排队胶囊的状态机：每 5 秒往前推进一步，宽度用先量出新宽度再过渡的方式变形 */
+    var busyEl=document.getElementById('cap-busy'),qi=0;
+    function renderBusy(step){
+      busyEl.querySelector('.content').innerHTML=busyContentHTML(step);
+      busyEl.querySelector('.cap-pop').innerHTML=busyPopupHTML(step);
+      busyEl.classList.toggle('running',!!step.running);
+      busyEl.classList.toggle('done',!!step.done);
+    }
+    function morphTo(step){
+      var w0=busyEl.getBoundingClientRect().width;
+      busyEl.style.width=w0+'px';
+      busyEl.classList.add('morphing');
+      setTimeout(function(){
+        renderBusy(step);
+        busyEl.style.width='auto';
+        var w1=busyEl.getBoundingClientRect().width;
+        busyEl.style.width=w0+'px';
+        void busyEl.offsetWidth; /* 强制重排，确保下一帧的宽度变化能被过渡到 */
+        requestAnimationFrame(function(){busyEl.style.width=w1+'px'});
+        var settled=false;
+        function settle(){
+          if(settled)return;settled=true;
+          busyEl.style.width='';busyEl.classList.remove('morphing');
+          busyEl.removeEventListener('transitionend',te);
+        }
+        function te(e){if(e.propertyName==='width')settle()}
+        busyEl.addEventListener('transitionend',te);
+        /* 新旧宽度刚好相等时，width 过渡不会触发 transitionend——兜底用定时器收尾，避免内容卡在淡出状态 */
+        setTimeout(settle,360);
+      },150);
+    }
+    function advance(){
+      if(qi>=QUEUE_STEPS.length-1)return false;
+      qi++;morphTo(QUEUE_STEPS[qi]);return true;
+    }
+    var timer=setInterval(function(){if(!advance())clearInterval(timer)},5000);
+    /* 供校验/演示用：不必等定时器，直接推进到下一状态 */
+    window.__capsuleDemo={advance:advance,stepIndex:function(){return qi},total:QUEUE_STEPS.length};
+
     /* 胶囊自己的弹层：复用 frame 的 data-pop 机制（init 时已绑定，这里对新节点再绑一次） */
-    Array.prototype.forEach.call(document.querySelectorAll('#status-slot [data-pop]'),function(b){
+    Array.prototype.forEach.call(document.querySelectorAll('#capsule-dock [data-pop]'),function(b){
       b.addEventListener('click',function(e){
         if(e.target.closest('.popup'))return;
         var open=b.getAttribute('aria-expanded')==='true';
-        Array.prototype.forEach.call(document.querySelectorAll('#status-slot [data-pop]'),function(x){x.setAttribute('aria-expanded','false');x.querySelector('.popup').hidden=true});
+        Array.prototype.forEach.call(document.querySelectorAll('#capsule-dock [data-pop]'),function(x){x.setAttribute('aria-expanded','false');x.querySelector('.popup').hidden=true});
         if(!open){b.setAttribute('aria-expanded','true');b.querySelector('.popup').hidden=false}
         e.stopPropagation();
       });
     });
-    document.addEventListener('click',function(e){if(!e.target.closest('#status-slot'))Array.prototype.forEach.call(document.querySelectorAll('#status-slot [data-pop]'),function(x){x.setAttribute('aria-expanded','false');x.querySelector('.popup').hidden=true})});
+    document.addEventListener('click',function(e){if(!e.target.closest('#capsule-dock'))Array.prototype.forEach.call(document.querySelectorAll('#capsule-dock [data-pop]'),function(x){x.setAttribute('aria-expanded','false');x.querySelector('.popup').hidden=true})});
     /* 默认把第一枚打开，方便一眼看到面板长什么样 */
-    document.querySelector('#status-slot [data-pop]').click();
+    document.querySelector('#capsule-dock [data-pop]').click();
   }});
-DemoGuide.init([{"target": "#status-slot .dm-capsule.wait", "kind": "click", "pos": "top", "label": "点这枚胶囊"}, {"target": "#status-slot .popup", "kind": "change", "pos": "top", "label": "展开完整信息"}]);
+DemoGuide.init([{target:'#capsule-dock .dm-capsule.wait',kind:'click',pos:'bottom',label:'点这枚胶囊'},{target:'#capsule-dock .dm-capsule.wait .popup',kind:'change',pos:'bottom',label:'展开完整信息'}]);
 })();
 </script>
 </body>
