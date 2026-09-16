@@ -17,21 +17,29 @@
   /* 外壳的 .menubar 隐藏时 .body 会落到 auto 行，这里把行位钉死，让主体撑满 */
   .ide > .body{grid-row:3}
   .ide > .status{grid-row:4}
-  .ide[data-ide-theme]{--ai-w:clamp(360px,30vw,460px)}
+  .ide[data-ide-theme]{--proj-w:clamp(360px,30vw,460px)}
   /* 语音消息：录音时长 pill 替代时间戳 */
   .umsg .dm-pill{align-self:flex-end}
   .umsg .heard{display:flex;flex-wrap:wrap;justify-content:flex-end;align-items:center;gap:4px;max-width:92%}
   .umsg .heard .ctx{height:20px;font-family:var(--font-code)}
   .umsg .heard .ctx svg.i{width:11px;height:11px}
-  /* 读回 + 用嘴确认 */
+  /* 读回（普通消息，留在对话记录里） */
   .amsg .step svg.i.spk{color:var(--ui-info)}
-  .confirm .dm-card-hd .dm-wave{height:18px}
-  .confirm .dm-card-hd .dm-wave i{width:2.5px}
-  .confirm .dm-card-bd .dm-chips .chip svg.i{color:var(--ui-info)}
-  .confirm.decided .dm-card-bd .chip{opacity:.45}
-  .confirm.decided .dm-card-bd .chip.picked{opacity:1;background:var(--ui-selection);border-color:var(--ui-accent)}
-  .confirm .dm-card-bd .hint{font-size:11px;color:var(--ui-fg-info)}
-  .confirm .dm-card-bd .hint kbd{font-size:10px;line-height:14px}
+  /* 用嘴确认：不是对话里的卡片，是输入条本身变成的「听你确认」态——
+     类似微信/豆包按住说话时输入框的变化：波形 + 实时文字 + 一排轻量意图小按钮 */
+  .ai-input .voice-bar{display:flex;flex-direction:column;gap:6px;min-height:40px;justify-content:center}
+  .ai-input .voice-row{display:flex;align-items:center;gap:8px}
+  .ai-input .voice-row .dm-wave{height:20px;flex:none}
+  .ai-input .voice-row .dm-wave i{width:2.5px}
+  .ai-input .voice-live{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:var(--fs-para);line-height:var(--lh-para);color:var(--ui-fg-info)}
+  .ai-input .voice-live.final{color:var(--ui-fg);font-weight:600}
+  .voice-chips{display:flex;flex-wrap:wrap;gap:6px}
+  .voice-chips .chip{height:22px;padding:0 8px;font-size:11px;gap:4px}
+  .voice-chips .chip svg.i{width:11px;height:11px;color:var(--ui-info)}
+  .voice-chips.decided .chip{opacity:.45}
+  .voice-chips.decided .chip.picked{opacity:1;background:var(--ui-selection);border-color:var(--ui-accent)}
+  .voice-hint{font-size:11px;color:var(--ui-fg-info)}
+  .voice-hint kbd{font-size:10px;line-height:14px}
   /* 输入区语音态 */
   .ai-input .bot .mode svg.i.rec{color:var(--ui-error)}
   .send.stop.rec{animation:recpulse 1.6s ease-in-out infinite}
@@ -49,36 +57,18 @@
 </style>
 </head>
 <body>
-<div class="ide" id="ide" data-ide-theme="dark" data-left="project" data-right="agent" data-bottom="none" role="application" aria-label="DevEco Studio">
+<div class="ide" id="ide" data-ide-theme="dark" data-left="agent" data-right="project" data-bottom="none" role="application" aria-label="DevEco Studio">
   <div class="body">
     <div class="tw tw-left">
-      <div class="pane on" data-pane="project">
-        <div class="tw-hdr"><span class="title">Project <svg class="i"><use href="#i-chevD"/></svg></span><span class="grow"></span>
-          <button class="abtn" title="Select Opened File"><svg class="i"><use href="#i-locate"/></svg></button>
-          <button class="abtn" title="Expand All"><svg class="i"><use href="#i-expandAll"/></svg></button>
-          <button class="abtn" title="Collapse All"><svg class="i"><use href="#i-collapseAll"/></svg></button>
-          <button class="abtn" title="Options"><svg class="i"><use href="#i-moreV"/></svg></button>
-          <button class="abtn" title="Hide|Shift+Esc" data-act="hide-left"><svg class="i"><use href="#i-hide"/></svg></button></div>
-        <div class="tw-body" id="tree-slot"></div>
-      </div>
-    </div>
-
-    <div class="editor">
-      <div class="tabs" id="tabs"><span class="grow"></span><span class="tab-tools"><button class="abtn" title="Editor Options"><svg class="i"><use href="#i-moreV"/></svg></button></span></div>
-      <div class="code-wrap"><div class="code" id="code"></div></div>
-      <div class="breadcrumbs" id="crumbs"></div>
-    </div>
-
-    <div class="tw tw-right">
       <div class="pane on" data-pane="agent">
-        <div class="tw-hdr"><span class="title">CodeGenie <span class="cnt">语音</span></span><span class="grow"></span>
+        <div class="tw-hdr"><span class="title">DevEco Code <span class="cnt">语音</span></span><span class="grow"></span>
           <button class="abtn" title="New Chat"><svg class="i"><use href="#i-add"/></svg></button>
           <button class="abtn" title="History"><svg class="i"><use href="#i-history"/></svg></button>
           <button class="abtn" title="MCP"><svg class="i"><use href="#i-cube"/></svg></button>
           <button class="abtn" title="Skills"><svg class="i"><use href="#i-skills"/></svg></button>
           <button class="abtn" title="Settings"><svg class="i"><use href="#i-settings"/></svg></button>
           <button class="abtn" title="Options"><svg class="i"><use href="#i-moreV"/></svg></button>
-          <button class="abtn" title="Hide|Shift+Esc" data-act="hide-right"><svg class="i"><use href="#i-hide"/></svg></button></div>
+          <button class="abtn" title="Hide|Shift+Esc" data-act="hide-left"><svg class="i"><use href="#i-hide"/></svg></button></div>
         <div class="tw-body"><div class="ai">
           <div class="ai-scroll" id="ai-scroll">
             <div class="ai-thread" id="ai-thread">
@@ -95,31 +85,30 @@
                 </div>
               </div>
 
-              <!-- ② AI 读回理解，等一句话确认 -->
+              <!-- ② AI 读回理解，等一句话确认（确认交互本身在下面输入条里，不在对话卡片里） -->
               <div class="amsg">
                 <div class="step"><svg class="i spk"><use href="#i-speaker"/></svg><span id="readback-step">已读回（3.1 s）</span></div>
                 <div class="md" id="readback"><p>我理解为：把 <code>ListPage.ets</code> 第 28 行的同步解码改成异步，并给 <code>ItemCard</code> 加占位图。会改 2 个文件，不动数据层。对吗？</p></div>
-                <div class="dm-card confirm" id="confirm">
-                  <div class="dm-card-hd">用嘴确认<span class="grow"></span>
-                    <span class="dm-wave" id="wave"><i style="--h:40%;--d:0s"></i><i style="--h:70%;--d:.1s"></i><i style="--h:100%;--d:.2s"></i><i style="--h:60%;--d:.3s"></i><i style="--h:90%;--d:.4s"></i><i style="--h:50%;--d:.5s"></i><i style="--h:30%;--d:.6s"></i></span>
-                  </div>
-                  <div class="dm-card-bd">
-                    <div class="dm-chips">
-                      <button class="chip" data-say="yes"><svg class="i"><use href="#i-mic"/></svg>对，去做</button>
-                      <button class="chip" data-say="only"><svg class="i"><use href="#i-mic"/></svg>不对，只改 ListPage</button>
-                      <button class="chip" data-say="again"><svg class="i"><use href="#i-mic"/></svg>换个说法</button>
-                    </div>
-                    <div class="hint" id="confirm-hint">直接说出任一句即可，不用碰键盘；也可以按 <kbd>Space</kbd> 后说别的</div>
-                  </div>
-                </div>
               </div>
 
             </div>
           </div>
 
-          <div class="ai-input">
+          <div class="ai-input" id="ai-input">
             <div class="top"><button class="ctx"><svg class="i" style="width:12px;height:12px"><use href="#i-at"/></svg>Add Context</button><span class="ctx"><svg class="i" style="width:12px;height:12px"><use href="#i-ets"/></svg>ListPage.ets</span><span class="grow"></span><button class="toggle on" title="AI 把结果读回来"><svg class="i"><use href="#i-speaker"/></svg>读回给我听</button></div>
-            <textarea id="ai-text" rows="2" placeholder="按住空格说话，或直接说“CodeGenie”" aria-label="Message"></textarea>
+            <textarea id="ai-text" rows="2" placeholder="按住空格说话，或直接说“DevEco Code”" aria-label="Message" hidden></textarea>
+            <div class="voice-bar" id="voice-bar">
+              <div class="voice-row">
+                <span class="dm-wave" id="wave"><i style="--h:40%;--d:0s"></i><i style="--h:70%;--d:.1s"></i><i style="--h:100%;--d:.2s"></i><i style="--h:60%;--d:.3s"></i><i style="--h:90%;--d:.4s"></i><i style="--h:50%;--d:.5s"></i><i style="--h:30%;--d:.6s"></i></span>
+                <span class="voice-live" id="voice-live">在听 · 等你一句话确认</span>
+              </div>
+              <div class="voice-chips" id="confirm">
+                <button class="chip" data-say="yes"><svg class="i"><use href="#i-mic"/></svg>对，去做</button>
+                <button class="chip" data-say="only"><svg class="i"><use href="#i-mic"/></svg>不对，只改 ListPage</button>
+                <button class="chip" data-say="again"><svg class="i"><use href="#i-mic"/></svg>换个说法</button>
+              </div>
+              <div class="voice-hint" id="confirm-hint">直接说出任一句即可，不用碰键盘；也可以按 <kbd>Space</kbd> 后说别的</div>
+            </div>
             <div class="bot"><button class="mode" id="mode-btn" data-pop="mode" aria-expanded="false"><svg class="i rec" style="width:12px;height:12px"><use href="#i-mic"/></svg><span id="mode-label">语音 · 编程词汇</span><svg class="i" style="width:12px;height:12px"><use href="#i-chevD"/></svg>
                 <div class="popup" hidden style="top:auto;bottom:28px;left:0;min-width:260px"><div class="mhead">识别词汇表</div><div class="mi"><span class="chk"><svg class="i"><use href="#i-checkS"/></svg></span>语音 · 编程词汇<span class="sc">ArkTS · 工程符号 · 分支名</span></div><div class="mi"><span class="chk"></span>语音 · 通用<span class="sc">日常口语</span></div><div class="msep"></div><div class="mi"><span class="chk"></span><svg class="i"><use href="#i-kb"/></svg>键盘输入</div></div></button>
               <button class="mode" id="model-btn" data-pop="model" aria-expanded="false"><span id="model-label">deepseek-v4-fl…</span><svg class="i" style="width:12px;height:12px"><use href="#i-chevD"/></svg>
@@ -128,6 +117,24 @@
           </div>
           <div class="ai-foot">The content is generated by AI and may not be entirely accurate or complete. It is for reference only | <a href="#">Terms of Use</a>&nbsp;&nbsp;<a href="#">Privacy Policy</a></div>
         </div></div>
+      </div>
+    </div>
+
+    <div class="editor">
+      <div class="tabs" id="tabs"><span class="grow"></span><span class="tab-tools"><button class="abtn" title="Editor Options"><svg class="i"><use href="#i-moreV"/></svg></button></span></div>
+      <div class="code-wrap"><div class="code" id="code"></div></div>
+      <div class="breadcrumbs" id="crumbs"></div>
+    </div>
+
+    <div class="tw tw-right">
+      <div class="pane on" data-pane="project">
+        <div class="tw-hdr"><span class="title">Project <svg class="i"><use href="#i-chevD"/></svg></span><span class="grow"></span>
+          <button class="abtn" title="Select Opened File"><svg class="i"><use href="#i-locate"/></svg></button>
+          <button class="abtn" title="Expand All"><svg class="i"><use href="#i-expandAll"/></svg></button>
+          <button class="abtn" title="Collapse All"><svg class="i"><use href="#i-collapseAll"/></svg></button>
+          <button class="abtn" title="Options"><svg class="i"><use href="#i-moreV"/></svg></button>
+          <button class="abtn" title="Hide|Shift+Esc" data-act="hide-right"><svg class="i"><use href="#i-hide"/></svg></button></div>
+        <div class="tw-body" id="tree-slot"></div>
       </div>
     </div>
   </div>
@@ -141,7 +148,10 @@
   document.getElementById('code').innerHTML=DemoFrame.code('ListPage.ets',{cur:28,hl:[28]});
 
   var WAVE='<span class="dm-wave"><i style="--h:50%;--d:0s"></i><i style="--h:100%;--d:.15s"></i><i style="--h:70%;--d:.3s"></i><i style="--h:90%;--d:.45s"></i><i style="--h:40%;--d:.6s"></i></span>';
-  DemoFrame.init({device:'HUAWEI Mate 70 Pro',deviceIcon:'#i-phone',pos:'28:12',onReady:function(){
+  DemoFrame.init({device:'HUAWEI Mate 70 Pro',deviceIcon:'#i-phone',pos:'28:12',
+    stripeLeft:[{left:'agent',icon:'#i-genie',title:'DevEco Code'},{left:'project',icon:'#i-tw-project',title:'Project|Alt+1'},{left:'structure',icon:'#i-tw-structure',title:'Structure|Alt+7'},{more:1},{gap:1},{bottom:'build',icon:'#i-tw-build',title:'Build'},{bottom:'log',icon:'#i-tw-device',title:'Log'},{bottom:'services',icon:'#i-tw-todo',title:'Services|Alt+8'},{bottom:'problems',icon:'#i-tw-problems',title:'Problems|Alt+6'},{bottom:'run',icon:'#i-tw-services',title:'Run|Alt+4'},{bottom:'terminal',icon:'#i-tw-terminal',title:'Terminal|Alt+F12'},{bottom:'debug',icon:'#i-info',title:'Debug|Alt+5'},{bottom:'vcs',icon:'#i-vcs',title:'Version Control|Alt+9'}],
+    stripeRight:[{right:'notifications',icon:'#i-tw-notifications',title:'Notifications',dot:1},{right:'project',icon:'#i-tw-project',title:'Project|Alt+1'},{right:'docs',icon:'#i-hdoc',title:'HarmonyOS Docs'},{right:'inspector',icon:'#i-pen',title:'Code Review'},{right:'web',icon:'#i-puzzle',title:'Extensions'},{right:'previewer',icon:'#i-tw-preview',title:'Previewer'},{more:1},{right:'devices',icon:'#i-phone',title:'Device Manager'}],
+    onReady:function(){
     $('#status-slot').innerHTML='<span class="dm-capsule" id="cap-voice"><svg class="i"><use href="#i-mic"/></svg><span id="cap-text">正在听 · 手不离设备</span>'+WAVE+'</span>';
   }});
 
@@ -164,6 +174,18 @@
     $('#confirm-hint').innerHTML='听到了，'+ (btn.dataset.say==='yes'?'开始执行':'按你说的改') +'。中途随时可以说“停”';
     stopWave();
   }
+  /* 输入条本身在「打字态」和「听你确认态」之间切换（类似微信/豆包按住说话时输入框的变化） */
+  function voiceMode(on){
+    var ta=$('#ai-text'),vb=$('#voice-bar');
+    if(ta)ta.hidden=on;
+    if(vb)vb.hidden=!on;
+  }
+  /* 说完一句话：先在输入条里把识别文字过一下（模拟“正在识别”），再落进对话记录，变成一条普通消息气泡 */
+  function speak(text,cb){
+    var vl=$('#voice-live');
+    if(vl){vl.textContent=text;vl.classList.add('final');}
+    setTimeout(cb,320);
+  }
   /* 确认之后，编辑器里 27–28 行真的变成异步版本 */
   function applyAsync(){
     var l27=$('#code .ln[data-ln="27"]'),l28=$('#code .ln[data-ln="28"]');if(!l27||!l28)return;
@@ -177,42 +199,54 @@
     if(ok){c.classList.add('ok');var w=$('.dm-wave',c);if(w)w.remove();c.insertAdjacentHTML('beforeend','<span class="dm-dot ok"></span>')}
   }
 
-  /* 用嘴确认：三句话，三条路 */
+  /* 用嘴确认：三句话，三条路。交互全程发生在输入条的「听你确认」态里，
+     说完的一句话落进对话记录变成普通消息气泡，输入条再收回「打字态」 */
   $('#confirm').addEventListener('click',function(e){
     var b=e.target.closest('.chip[data-say]');if(!b||b.disabled)return;
     var say=b.dataset.say;
     if(say==='yes'){
       decided(b);
-      umsg('0.8','对，去做');
-      setTimeout(function(){
-        amsg('<div class="step"><svg class="i spk"><use href="#i-speaker"/></svg>好，开始改。改完读给你听。</div>'
-          +'<div class="steps">'+stp('done','改 loadCover 为异步','ListPage.ets:28')+stp('run','给 ItemCard 加占位图','ItemCard.ets')+stp('todo','在 Mate 70 Pro 上复测','entry')+'</div>');
-        capsule('执行中 · 仍在听',true);
-        applyAsync();
-      },500);
+      speak('对，去做',function(){
+        umsg('0.8','对，去做');
+        setTimeout(function(){
+          amsg('<div class="step"><svg class="i spk"><use href="#i-speaker"/></svg>好，开始改。改完读给你听。</div>'
+            +'<div class="steps">'+stp('done','改 loadCover 为异步','ListPage.ets:28')+stp('run','给 ItemCard 加占位图','ItemCard.ets')+stp('todo','在 Mate 70 Pro 上复测','entry')+'</div>');
+          capsule('执行中 · 仍在听',true);
+          applyAsync();
+          voiceMode(false);
+        },500);
+      });
     }else if(say==='only'){
       decided(b);
-      umsg('1.2','不对，只改 ListPage');
-      setTimeout(function(){
-        amsg('<div class="step"><svg class="i spk"><use href="#i-speaker"/></svg>已读回（1.6 s）</div>'
-          +'<div class="md"><p>好，只改 <code>ListPage.ets</code>，不动 <code>ItemCard</code>。</p></div>'
-          +'<div class="steps">'+stp('done','改 loadCover 为异步','ListPage.ets:28')+stp('run','在 Mate 70 Pro 上复测','entry')+'</div>');
-        capsule('执行中 · 仍在听',true);
-        applyAsync();
-      },500);
+      speak('不对，只改 ListPage',function(){
+        umsg('1.2','不对，只改 ListPage');
+        setTimeout(function(){
+          amsg('<div class="step"><svg class="i spk"><use href="#i-speaker"/></svg>已读回（1.6 s）</div>'
+            +'<div class="md"><p>好，只改 <code>ListPage.ets</code>，不动 <code>ItemCard</code>。</p></div>'
+            +'<div class="steps">'+stp('done','改 loadCover 为异步','ListPage.ets:28')+stp('run','在 Mate 70 Pro 上复测','entry')+'</div>');
+          capsule('执行中 · 仍在听',true);
+          applyAsync();
+          voiceMode(false);
+        },500);
+      });
     }else{
-      /* 换个说法：不算确认，AI 用另一种话再读一遍，波形继续 */
+      /* 换个说法：不算确认，AI 用另一种话再读一遍，输入条仍留在「听你确认」态，波形继续 */
       if(b.dataset.busy)return;b.dataset.busy='1';
-      umsg('0.6','换个说法');
-      var rb=$('#readback'),st=$('#readback-step');
-      st.textContent='正在换一种说法…';
-      rb.innerHTML='<p><span class="typing"><i></i><i></i><i></i></span></p>';
-      setTimeout(function(){
-        st.textContent='已重新读回（2.6 s）';
-        rb.innerHTML='<p>换句话说：现在每滑一帧都在同步解封面，我把解码挪到后台，列表先显示占位图，解好了再换上。只动 <code>ListPage.ets</code> 和 <code>ItemCard.ets</code>，数据层不碰。这样对吗？</p>';
-        b.dataset.busy='';
-        scroll.scrollTop=scroll.scrollHeight;
-      },900);
+      var vl=$('#voice-live');
+      speak('换个说法',function(){
+        umsg('0.6','换个说法');
+        var rb=$('#readback'),st=$('#readback-step');
+        st.textContent='正在换一种说法…';
+        if(vl)vl.textContent='在听你换一种说法…';
+        rb.innerHTML='<p><span class="typing"><i></i><i></i><i></i></span></p>';
+        setTimeout(function(){
+          st.textContent='已重新读回（2.6 s）';
+          rb.innerHTML='<p>换句话说：现在每滑一帧都在同步解封面，我把解码挪到后台，列表先显示占位图，解好了再换上。只动 <code>ListPage.ets</code> 和 <code>ItemCard.ets</code>，数据层不碰。这样对吗？</p>';
+          if(vl){vl.classList.remove('final');vl.textContent='在听 · 等你一句话确认';}
+          b.dataset.busy='';
+          scroll.scrollTop=scroll.scrollHeight;
+        },900);
+      });
     }
   });
 DemoGuide.init([{"target": ".chip[data-say=\"yes\"]", "kind": "click", "pos": "top", "label": "点这里确认执行"}, {"target": "#ai-scroll", "kind": "change", "pos": "top", "label": "追加执行步骤"}]);
