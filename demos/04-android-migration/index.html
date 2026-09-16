@@ -51,6 +51,13 @@
   .cm .grow .s{font-size:var(--fs-sm);line-height:var(--lh-sm);color:var(--ui-fg-info);white-space:nowrap}
   .cm .btn,.cm .dm-pill{flex:none}
   .dm-card-bd .cm + .cm{border-top:1px solid var(--ui-border);padding-top:8px}
+  /* 左侧真机预览 */
+  .prev-split{display:flex;flex-direction:row;flex:1;min-height:0}
+  .prev-col{flex:none;width:180px;display:flex;flex-direction:column;border-right:1px solid var(--ui-border);background:var(--ui-editor-bg)}
+  .prev-col .previewer{flex:1;padding:12px}
+  .prev-col .phone{width:148px;height:308px;border-width:5px}
+  .prev-path{flex:none;padding:6px 10px;font-family:var(--font-code);font-size:11px;color:var(--ui-fg-info);border-top:1px solid var(--ui-border);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .code-col{flex:1;min-width:0;display:flex;flex-direction:column;min-height:0}
 </style>
 </head>
 <body>
@@ -68,10 +75,19 @@
     </div>
 
     <div class="editor">
-      <div class="tabs" id="tabs"><span class="grow"></span><span class="tab-tools"><button class="abtn" title="Editor Options"><svg class="i"><use href="#i-moreV"/></svg></button></span></div>
-      <div id="callout-wrap"></div>
-      <div class="code-wrap"><div class="code" id="code"></div></div>
-      <div class="breadcrumbs" id="crumbs"></div>
+      <div class="prev-split">
+        <div class="prev-col">
+          <div class="prev-tools"><b><svg class="i" style="width:14px;height:14px"><use href="#i-phone"/></svg>Previewer</b><span>· 1080×2340 · API 20</span></div>
+          <div class="previewer"><div class="phone"><div class="mapp" id="mapp"></div></div></div>
+          <div class="prev-path" id="prev-path"></div>
+        </div>
+        <div class="code-col">
+          <div class="tabs" id="tabs"><span class="grow"></span><span class="tab-tools"><button class="abtn" title="Editor Options"><svg class="i"><use href="#i-moreV"/></svg></button></span></div>
+          <div id="callout-wrap"></div>
+          <div class="code-wrap"><div class="code" id="code"></div></div>
+          <div class="breadcrumbs" id="crumbs"></div>
+        </div>
+      </div>
     </div>
 
     <div class="tw tw-right">
@@ -143,6 +159,23 @@
   var prog={total:6,done:4,manual:2},mode='screen',curFile='LoginPage.ets',selIdx=0,explainOpen=false;
 
   /* ---------- 编辑器 ---------- */
+  var PREV_PATH={'LoginPage.ets':'entry/pages/LoginPage','ListPage.ets':'entry/pages/ListPage','Index.ets':'entry/pages/Index'};
+  function renderPreview(file){
+    var m=$('#mapp'),p=$('#prev-path');if(!m)return;
+    if(file==='LoginPage.ets'){
+      m.innerHTML='<div class="title">欢迎回来</div><div class="inp">手机号</div><div class="inp">验证码</div>'
+        +(FSTATE[file]==='err'?'<div class="err">ERR_AUTH_401</div>':'')+'<div class="fill"></div><div class="btn">登录</div>';
+    }else if(file==='ListPage.ets'){
+      m.innerHTML='<div class="hd">商品</div><div class="search">搜索</div>'
+        +['无线鼠标 · 全新','机械键盘 · 二手','显示器支架 · 全新','蓝牙音箱 · 二手']
+          .map(function(t){return '<div class="row"><div class="th"></div><div class="tx"><b>'+t.split(' · ')[0]+'</b><span>'+t.split(' · ')[1]+'</span></div></div>'}).join('');
+    }else if(file==='Index.ets'){
+      m.innerHTML='<div class="ring"><b>Hello</b>World</div>';
+    }else{
+      m.innerHTML='<div class="ring" style="color:#9aa0ab">无预览</div>';
+    }
+    if(p)p.textContent=PREV_PATH[file]||file;
+  }
   function openFile(file){
     if(!FILES[file])return false;
     curFile=file;explainOpen=false;
@@ -157,7 +190,7 @@
     $$('#tree .row.sel').forEach(function(x){x.classList.remove('sel')});
     var r=$('#tree .row[data-file="'+file+'"]');if(r)r.classList.add('sel');
     var p=$('#status-pos');if(p)p.textContent=cur+':1';
-    renderCallout();
+    renderCallout();renderPreview(file);
     return true;
   }
   function renderCallout(){
@@ -168,7 +201,7 @@
       h='<div class="dm-callout ok"><svg><use href="#i-checkS"/></svg><div class="txt">'+n.text+'<div class="who">已查 · '+n.reviewed+'</div></div><div class="acts"><span class="dm-pill ok">已查</span></div></div>';
     }else{
       h='<div class="dm-callout warn"><svg><use href="#i-warn"/></svg><div class="txt">'+n.text+'<div class="who">第 '+n.range[0]+'–'+n.range[1]+' 行 · 机器转出 · 今天 09:41</div></div>'
-       +'<div class="acts"><button class="btn sm primary" id="btn-reviewed"><svg class="i" style="width:12px;height:12px;color:#fff"><use href="#i-checkS"/></svg>标记为已查</button><button class="btn sm" id="btn-explain"><svg class="i" style="width:12px;height:12px"><use href="#i-genie"/></svg>'+(explainOpen?'收起解释':'让 CodeGenie 解释差异')+'</button></div></div>';
+       +'<div class="acts"><button class="btn sm primary" id="btn-reviewed"><svg class="i" style="width:12px;height:12px;color:#fff"><use href="#i-checkS"/></svg>标记为已查</button><button class="btn sm" id="btn-explain"><svg class="i" style="width:12px;height:12px"><use href="#i-genie"/></svg>'+(explainOpen?'收起解释':'让 DevEco Code 解释差异')+'</button></div></div>';
       if(explainOpen)h+='<div class="dm-callout info"><svg><use href="#i-genie"/></svg><div class="txt"><b>差异在哪</b>：'+n.explain+'</div></div>';
     }
     w.innerHTML=h;
@@ -183,7 +216,7 @@
     SCREENS.forEach(function(s){if(s.file===curFile&&s.st==='err'){s.st='warn';s.why='已按等价写法核对，等真机跑一次'}});
     $$('#code .ln.hl-warn').forEach(function(ln){ln.classList.remove('hl-warn');ln.classList.add('hl-ok')});
     var mk=$('#code .ln[data-ln="'+n.range[0]+'"] .g .m');if(mk)mk.innerHTML='<svg class="i" style="width:14px;height:14px;color:var(--ui-success)"><use href="#i-checkS"/></svg>';
-    renderCallout();renderProgress();renderList();
+    renderCallout();renderProgress();renderList();renderPreview(curFile);
   }
 
   /* ---------- 右侧面板 ---------- */
