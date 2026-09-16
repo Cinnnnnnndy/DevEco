@@ -154,37 +154,37 @@ window.DEVECO_CATALOG = {
       items: [
         {
           no: '15', title: '一多联动＋跨端开发：任务状态跟着人走', subtitle: 'Task State Follows You', mark: '投',
-          desc: '任务状态在 PC、平板、手表、手机之间同步：连着哪几台、断点在哪、日志看到哪、AI 执行到第几步，换一端接上就是原样；每一端只承担适合的那部分，手表和手机也是能发指令的开发端。',
+          desc: '这一组 7 条都是「一次开发、多端」，但各管一段：这条管开发者自己——任务状态在 PC、平板、手表、手机之间同步，连着哪几台、断点在哪、日志看到哪、AI 执行到第几步，换一端接上就是原样；手表和手机也是能发指令的开发端。是后面几条的前提：人换设备，开发状态不丢。',
           view: 'ready', date: '2026-09-14', href: 'demos/15-cross-device-handoff/index.html',
           tags: ['步数与切换次数', '等待可见'], note: '连着产品线一起排', thumb: { type: 'image', src: 'site/thumbs/15-cross-device-handoff.jpg' },
         },
         {
           no: '16', title: '真机多设备：差异并排，替你圈出来', subtitle: 'Multi-device Diff Verdict', mark: '投',
-          desc: '一次改动自动在几种真机形态上各跑一遍，差异截图并排；核心在「判断」：哪些差异是一多适配的正常结果、哪些是缺陷，这套规则要我们自己定。并排的是不同真机，不是一台的几种状态。',
+          desc: '这条管的是被开发的 App 在真机上一不一致：一次改动自动在几种真机形态上各跑一遍，差异截图并排；核心在「判断」：哪些差异是一多适配的正常结果、哪些是缺陷，这套规则要我们自己定。并排的是不同真机，不是一台的几种状态——跟 17 的区别是这条在真机上验证结果，17 在模拟器里先发现问题。',
           view: 'ready', date: '2026-09-14', href: 'demos/16-multi-device-verify/index.html',
           tags: ['步数与切换次数', '审阅与回退'], note: '第二批：差异化最高', thumb: { type: 'image', src: 'site/thumbs/16-multi-device-verify.jpg' },
         },
         {
           no: '17', title: '模拟器 · 单屏多设备切换', subtitle: 'Multi-device Canvas', mark: '投',
-          desc: '一块画布，手机 / 折叠屏 / 手表 / 车机几块屏同时在，本机与远端不分家；改一次代码，几块屏一起刷。并排的是不同形态，不是同一形态的几台机器。是 16 的支撑层。',
+          desc: '这条管的是「先看见」：一块画布，手机 / 折叠屏 / 手表 / 车机几块屏同时在，本机与远端不分家；改一次代码，几块屏一起刷。并排的是不同形态，不是同一形态的几台机器。是 16 判断之前的一步——先在这块画布上发现哪里不对，16 再上真机定结论；也是 18 分布式调试、19 拉远端设备进画布的底座。',
           view: 'ready', date: '2026-09-14', href: 'demos/17-multi-device-canvas/index.html',
           tags: ['步数与切换次数'], note: '第二批', thumb: { type: 'image', src: 'site/thumbs/17-multi-device-canvas.jpg' },
         },
         {
           no: '18', title: '模拟器 · 分布式调试', subtitle: 'Distributed Debug Timeline', mark: '投',
-          desc: '两端日志按同一条时间轴对齐，交接那一下画出来；断点同时管住两端，一端停另一端也停在对应位置；给出判断：这一次是哪一端出的问题、卡在交接的第几步。',
+          desc: '接着 17 的画布往深处走一步——不只是看几块屏，还要管两端联调：两端日志按同一条时间轴对齐，交接那一下画出来；断点同时管住两端，一端停另一端也停在对应位置；给出判断：这一次是哪一端出的问题、卡在交接的第几步。',
           view: 'ready', date: '2026-09-14', href: 'demos/18-distributed-debug/index.html',
           tags: ['步数与切换次数', '审阅与回退'], note: '对齐两端时钟有技术前提，需与调试服务侧确认', thumb: { type: 'image', src: 'site/thumbs/18-distributed-debug.jpg' },
         },
         {
           no: '19', title: '模拟器 · 远端调试', subtitle: 'Remote Device into Canvas', mark: '搭车',
-          desc: '手边没有的手表、车机也能拿过来调：远端设备直接进同屏画布，按钮是「加进画布」不是「连接」；拿过来之后能接着做分布式联调；再往后是 CI 与第三方工具可远程调用的服务。',
+          desc: '还是 17 那块画布，补一种设备来源：手边没有的手表、车机也能拿过来调——远端设备直接进同屏画布，按钮是「加进画布」不是「连接」；拿过来之后能接着做 18 的分布式联调；再往后是 CI 与第三方工具可远程调用的服务。',
           view: 'ready', date: '2026-09-14', href: 'demos/19-remote-device/index.html',
           tags: ['步数与切换次数'], note: '跟着 17 一起做；对我们是追平不是首发', thumb: { type: 'image', src: 'site/thumbs/19-remote-device.jpg' },
         },
         {
           no: '20', title: '模拟器 · 连接状态体验创新', subtitle: 'Connection as Five Visible Steps', mark: '投',
-          desc: '把连接拆成看得见的几步：认出设备 → 授权 → 建立通道 → 版本匹配 → 就绪，当前卡在第几步标出来；每一步失败给一个能当场做的动作，不是错误码；等待有进度，不是一个转圈。',
+          desc: '这条不管画布里连上之后的事，管「连上」这一步本身——17/19 里设备要先连上才能进画布，这条把连接拆成看得见的几步：认出设备 → 授权 → 建立通道 → 版本匹配 → 就绪，当前卡在第几步标出来；每一步失败给一个能当场做的动作，不是错误码；等待有进度，不是一个转圈。',
           view: 'ready', date: '2026-09-14', href: 'demos/20-connect-status/index.html',
           tags: ['等待可见'], note: '第一批：成本最低，新人第一印象在这里定', thumb: { type: 'image', src: 'site/thumbs/20-connect-status.jpg' },
         },
