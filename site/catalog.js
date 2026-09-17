@@ -238,6 +238,12 @@ window.DEVECO_CATALOG = {
           view: 'doc', date: '2026-09-03', href: 'deveco-ecosystem-sentiment.html',
           tags: ['舆情', '开发者原声', '同行对照'], thumb: { type: 'image', src: 'site/thumbs/sentiment.jpg' },
         },
+        {
+          title: 'DevEco Code Agent 输入框：场景与状态说明', subtitle: 'Agent Input Box · Scenarios & States',
+          desc: '只管 Agent 面板输入框本身：九个场景按「触发条件 → 状态变化 → 反馈/边界」拆开——输入编辑、@ 上下文、/ 功能切换、模型与深度思考、语音输入、意图确认与计划预览、发送/生成中/终止、异常边界、快捷键。每组配一段设计依据与来源，末尾附已知局限。',
+          view: 'doc', date: '2026-09-17', href: 'deveco-code-agent-input-states.html',
+          tags: ['输入框', '状态详解', '9 个场景'], thumb: { type: 'image', src: 'site/thumbs/agent-input-states.jpg' },
+        },
       ],
     },
     {
