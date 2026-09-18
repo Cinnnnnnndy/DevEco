@@ -35,16 +35,24 @@
   .rep-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:60px 0;color:var(--ui-fg-info);font-size:var(--fs-sm)}
   .rep-empty svg{width:22px;height:22px;color:var(--ui-fg-disabled)}
   /* ---- 总览列表 ---- */
-  .ov-row{cursor:pointer;gap:10px}
+  .page-group{cursor:pointer}
+  .page-group .chev{transition:transform .15s;color:var(--ui-fg-info);flex:none}
+  .page-group[aria-expanded="true"] .chev{transform:rotate(90deg)}
+  .page-group svg.i.err{color:var(--ui-error)}
+  .page-group svg.i.warn{color:var(--ui-warning)}
+  .page-group svg.i.ok{color:var(--ui-success)}
+  .page-ops[hidden]{display:none}
+  .ov-row{cursor:pointer;gap:10px;padding-left:30px}
   .ov-row svg.i{width:15px;height:15px}
   .ov-row.err svg.i{color:var(--ui-error)}
   .ov-row.warn svg.i{color:var(--ui-warning)}
   .ov-row.ok svg.i{color:var(--ui-success)}
-  .ov-row .op{color:var(--ui-fg-info);font-weight:400}
+  .ov-row .optype{flex:none;font-weight:400}
+  .ov-row .opno{flex:none;font-size:11px;white-space:nowrap}
   .ov-row .ms{font-family:var(--font-code);font-size:12px;min-width:82px;text-align:right}
   .ov-row .chev{transition:transform .15s;color:var(--ui-fg-info)}
   .ov-row[aria-expanded="true"] .chev{transform:rotate(90deg)}
-  .ov-note{margin:2px 12px 6px 34px}
+  .ov-note{margin:2px 12px 6px 58px}
   .ov-search{width:100%;height:26px;padding:0 8px;border:1px solid var(--ui-component-border);border-radius:6px;background:var(--ui-field-bg);color:var(--ui-fg);font:inherit;font-size:12px;outline:none}
   .ov-search:focus{border-color:var(--ui-accent)}
   .ov-search::placeholder{color:var(--ui-fg-disabled)}
@@ -104,6 +112,18 @@
   .rep-tbl th,.rep-tbl td{border:1px solid var(--ui-border);padding:4px 8px;text-align:left;vertical-align:top}
   .rep-tbl th{background:var(--ui-tag-bg);font-weight:600;color:var(--ui-fg-info)}
   .rep-tbl td code,.cause code{font-family:var(--font-code);font-size:11px;background:var(--ui-tag-bg);padding:1px 4px;border-radius:4px;color:var(--ui-fg)}
+  /* ---- 代码与根因的联动标识：分屏时哪一行对应哪条根因，一眼看清 ---- */
+  .code-wrap .cause-pill{position:absolute;right:14px;top:8px;z-index:3;box-shadow:var(--ui-shadow);background:var(--ui-editor-bg);border:1px solid currentColor;height:22px}
+  .code .ln.cause-hl{position:relative}
+  .code .ln.cause-hl.err{background:color-mix(in srgb,var(--ui-error) 20%,transparent)}
+  .code .ln.cause-hl.warn{background:color-mix(in srgb,var(--ui-warning) 22%,transparent)}
+  .code .ln.cause-hl::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;z-index:1}
+  .code .ln.cause-hl.err::before{background:var(--ui-error)}
+  .code .ln.cause-hl.warn::before{background:var(--ui-warning)}
+  .code .ln.cause-hl .g{position:relative;z-index:2}
+  @keyframes causeFlash{0%{filter:brightness(2)}100%{filter:brightness(1)}}
+  .code .ln.cause-hl{animation:causeFlash .7s ease-out}
+  @media (prefers-reduced-motion:reduce){.code .ln.cause-hl{animation:none}}
 </style>
 </head>
 <body>
@@ -228,9 +248,11 @@
 
       <div class="code-wrap" data-for-file="EntryAbility.ets" hidden>
         <div class="code" id="code-entry"></div>
+        <span class="dm-pill cause-pill" id="cause-pill-entry" hidden></span>
       </div>
       <div class="code-wrap" data-for-file="AdvertisementIndex.ets" hidden>
         <div class="code" id="code-ad"></div>
+        <span class="dm-pill cause-pill" id="cause-pill-ad" hidden></span>
       </div>
       </div>
       <div class="breadcrumbs" id="crumbs"></div>
@@ -335,31 +357,31 @@
   /* ---------- 总览：页面 / 操作按得分从差到好排序；真实工程里这张表可能有几十到上百行，
      所以默认只看「有问题」的，全部达标的折起来，另外给一个按页面/操作名的搜索 ---------- */
   var OVERVIEW=[
-    {page:'entry:Index',op:'冷启动（图标点击）· 操作 1',ms:2095.66,threshold:1100,drill:true,prevScore:61},
-    {page:'entry:Index',op:'冷启动（深链接拉起）· 操作 2',ms:1450.30,threshold:1100,drill:false,prevScore:70,
+    {page:'entry:Index',type:'冷启动',op:'图标点击',opNo:1,ms:2095.66,threshold:1100,drill:true,prevScore:61},
+    {page:'entry:Index',type:'冷启动',op:'深链接拉起',opNo:2,ms:1450.30,threshold:1100,drill:false,prevScore:70,
       note:'同样卡在开屏广告的同步排序（<span class="loc" data-file="AdvertisementIndex.ets" data-line="11">AdvertisementIndex.ets:11</span>），这条路径二次刷新次数少一次，影响比图标冷启动小；建议跟图标冷启动一起改，一次修复两条路径都受益。'},
-    {page:'entry:Index',op:'冷启动（通知拉起）· 操作 3',ms:1180.42,threshold:1100,drill:false,prevScore:90,
+    {page:'entry:Index',type:'冷启动',op:'通知拉起',opNo:3,ms:1180.42,threshold:1100,drill:false,prevScore:90,
       note:'只比门槛多 80 ms，主要是 EntryAbility.ets 里同步初始化 SDK 的固定开销，暂未发现新增根因。'},
-    {page:'entry:ListPage',op:'页面滑动，长列表白块检测 · 操作 4',ms:610.50,threshold:500,drill:false,prevScore:85,
+    {page:'entry:ListPage',type:'页面滑动',op:'长列表白块检测',opNo:4,ms:610.50,threshold:500,drill:false,prevScore:85,
       note:'与「冷启动分析报告」不是同一条链路，但同样是列表滑动时同步解码封面导致的白块；参考创新点 03「症状进入」调优流程单独处理。'},
-    {page:'entry:SettingsPage',op:'页面滑动，长列表 · 操作 5',ms:720.90,threshold:500,drill:false,prevScore:74,
+    {page:'entry:SettingsPage',type:'页面滑动',op:'长列表',opNo:5,ms:720.90,threshold:500,drill:false,prevScore:74,
       note:'超出门槛 44%，尚未做根因下钻（这份报告目前只对「冷启动」做了完整拆解）；先按列表滑动类问题的常规排查思路（同步解码 / 未开缓存）处理。'},
-    {page:'entry:ListPage',op:'页面转场 Index → List · 操作 6',ms:320.15,threshold:600,drill:false,prevScore:100,
+    {page:'entry:ListPage',type:'页面转场',op:'Index → List',opNo:6,ms:320.15,threshold:600,drill:false,prevScore:100,
       note:'已达标，未发现需要处理的根因。'},
-    {page:'entry:ListPage',op:'页面滑动，快速上滑 · 操作 7',ms:480.20,threshold:500,drill:false,prevScore:100,
+    {page:'entry:ListPage',type:'页面滑动',op:'快速上滑',opNo:7,ms:480.20,threshold:500,drill:false,prevScore:100,
       note:'已达标，未发现需要处理的根因。'},
-    {page:'entry:LoginPage',op:'页面滑动，键盘弹出 · 操作 8',ms:410.80,threshold:500,drill:false,prevScore:100,
+    {page:'entry:LoginPage',type:'页面滑动',op:'键盘弹出',opNo:8,ms:410.80,threshold:500,drill:false,prevScore:100,
       note:'已达标，未发现需要处理的根因。'},
-    {page:'entry:LoginPage',op:'页面转场 Index → Login · 操作 9',ms:265.40,threshold:600,drill:false,prevScore:100,
+    {page:'entry:LoginPage',type:'页面转场',op:'Index → Login',opNo:9,ms:265.40,threshold:600,drill:false,prevScore:100,
       note:'已达标，未发现需要处理的根因。'},
-    {page:'entry:DetailPage',op:'页面转场 List → Detail · 操作 10',ms:290.00,threshold:600,drill:false,prevScore:100,
+    {page:'entry:DetailPage',type:'页面转场',op:'List → Detail',opNo:10,ms:290.00,threshold:600,drill:false,prevScore:100,
       note:'已达标，未发现需要处理的根因。'},
-    {page:'entry:DetailPage',op:'图片懒加载滑动 · 操作 11',ms:350.40,threshold:500,drill:false,prevScore:100,
+    {page:'entry:DetailPage',type:'页面滑动',op:'图片懒加载滑动',opNo:11,ms:350.40,threshold:500,drill:false,prevScore:100,
       note:'已达标，未发现需要处理的根因。'},
-    {page:'entry:SettingsPage',op:'页面转场 List → Settings · 操作 12',ms:180.20,threshold:600,drill:false,prevScore:100,
+    {page:'entry:SettingsPage',type:'页面转场',op:'List → Settings',opNo:12,ms:180.20,threshold:600,drill:false,prevScore:100,
       note:'已达标，未发现需要处理的根因。'}
   ];
-  var ovFilter='problem',ovQuery='';
+  var ovFilter='problem',ovQuery='',ovPageState={};
   function renderOverview(){
     OVERVIEW.forEach(function(o,i){o._score=scoreOf(o.ms,o.threshold);o._grade=grade(o._score);o._idx=i;o._delta=o._score-o.prevScore});
     var nAll=OVERVIEW.length;
@@ -386,25 +408,51 @@
 
     applyOverviewFilter();
   }
+  function ovRowHtml(o){
+    var icon=o._grade.cls==='err'?'i-err':(o._grade.cls==='warn'?'i-warn':'i-check');
+    var d=o._delta,dCls=d>0?'up':(d<0?'down':'flat'),dTxt=d===0?'—':(d>0?'+'+d:String(d));
+    return '<div class="dm-item ov-row '+o._grade.cls+'" data-idx="'+o._idx+'" role="button" tabindex="0" aria-expanded="false">'
+      +'<svg class="i"><use href="#'+icon+'"/></svg>'
+      +'<span class="dm-pill muted optype">'+o.type+'</span>'
+      +'<span class="grow">'+o.op+'</span>'
+      +'<span class="dm-mono dm-muted opno">操作 '+o.opNo+'</span>'
+      +'<span class="ms">'+o.ms.toFixed(2)+' ms</span>'
+      +'<span class="dm-pill '+o._grade.cls+'">'+o._score+' 分</span>'
+      +'<span class="delta '+dCls+'" title="较上次 '+o.prevScore+' 分">'+(d!==0?'<svg style="transform:rotate('+(d>0?'-90':'90')+'deg);transform-origin:50% 50%"><use href="#i-arrowR"/></svg>':'')+dTxt+'</span>'
+      +'<svg class="i chev"><use href="#i-chevR"/></svg></div>';
+  }
   function applyOverviewFilter(){
     var q=ovQuery.trim().toLowerCase();
     var rows=OVERVIEW.filter(function(o){
       if(ovFilter==='problem'&&o._grade.cls==='ok')return false;
-      if(q&&(o.page+o.op).toLowerCase().indexOf(q)<0)return false;
+      if(q&&(o.page+o.type+o.op).toLowerCase().indexOf(q)<0)return false;
       return true;
-    }).sort(function(a,b){return a._score-b._score});
+    });
     $('#ov-cnt').textContent=rows.length;
     $('#ov-empty').hidden=rows.length>0;
-    $('#ov-list').innerHTML=rows.map(function(o){
-      var icon=o._grade.cls==='err'?'i-err':(o._grade.cls==='warn'?'i-warn':'i-check');
-      var d=o._delta,dCls=d>0?'up':(d<0?'down':'flat'),dArrow=d>0?'i-arrowR':'i-arrowR',dTxt=d===0?'—':(d>0?'+'+d:String(d));
-      return '<div class="dm-item ov-row '+o._grade.cls+'" data-idx="'+o._idx+'" role="button" tabindex="0" aria-expanded="false">'
-        +'<svg class="i"><use href="#'+icon+'"/></svg>'
-        +'<span class="grow"><b>'+o.page+'</b> <span class="op">· '+o.op+'</span></span>'
-        +'<span class="ms">'+o.ms.toFixed(2)+' ms</span>'
-        +'<span class="dm-pill '+o._grade.cls+'">'+o._score+' 分</span>'
-        +'<span class="delta '+dCls+'" title="较上次 '+o.prevScore+' 分">'+(d!==0?'<svg style="transform:rotate('+(d>0?'-90':'90')+'deg);transform-origin:50% 50%"><use href="#'+dArrow+'"/></svg>':'')+dTxt+'</span>'
-        +'<svg class="i chev"><use href="#i-chevR"/></svg></div>';
+
+    /* 页面分组：页面是一层，操作类型 + 具体操作是页面下面一层；组内按分数从差到好排，
+       组本身按组里最差的分数排，组默认按「有没有问题」展开/折叠，用户点过之后记住状态 */
+    var groups={},order=[];
+    rows.forEach(function(o){
+      if(!groups[o.page]){groups[o.page]=[];order.push(o.page)}
+      groups[o.page].push(o);
+    });
+    order.forEach(function(p){groups[p].sort(function(a,b){return a._score-b._score})});
+    order.sort(function(a,b){return groups[a][0]._score-groups[b][0]._score});
+
+    $('#ov-list').innerHTML=order.map(function(p){
+      var items=groups[p],worst=items[0];
+      var nIssue=items.filter(function(o){return o._grade.cls!=='ok'}).length;
+      var expanded=ovPageState.hasOwnProperty(p)?ovPageState[p]:nIssue>0;
+      var icon=worst._grade.cls==='err'?'i-err':(worst._grade.cls==='warn'?'i-warn':'i-check');
+      var head='<div class="dm-group page-group" data-page="'+p+'" role="button" tabindex="0" aria-expanded="'+expanded+'">'
+        +'<svg class="i chev"><use href="#i-chevR"/></svg>'
+        +'<svg class="i '+worst._grade.cls+'"><use href="#'+icon+'"/></svg>'
+        +'<b>'+p+'</b><span class="dm-muted dm-small">'+items.length+' 项操作'+(nIssue?' · '+nIssue+' 项待处理':'')+'</span>'
+        +'<span class="grow"></span><span class="dm-pill '+worst._grade.cls+'">'+worst._score+' 分</span></div>';
+      var body='<div class="page-ops"'+(expanded?'':' hidden')+'>'+items.map(ovRowHtml).join('')+'</div>';
+      return head+body;
     }).join('');
   }
   function showDetail(o){
@@ -473,15 +521,34 @@
     if($('.tab[data-file="'+file+'"]'))return;
     $('#tabs .grow').insertAdjacentHTML('beforebegin',DemoFrame.tabs([{file:file}]));
   }
-  function highlightLine(file,line){
+  function findCauseIdx(file,line){
+    for(var i=0;i<CAUSES.length;i++)if(CAUSES[i].file===file&&CAUSES[i].line===line)return i;
+    return null;
+  }
+  var PILL_ID={'EntryAbility.ets':'cause-pill-entry','AdvertisementIndex.ets':'cause-pill-ad'};
+  function highlightLine(file,line,causeIdx){
     var box=$('[data-for-file="'+file+'"] .code');
     if(!box)return;
-    $$('.ln.cur',box).forEach(function(x){x.classList.remove('cur')});
+    $$('.ln.cur',box).forEach(function(x){x.classList.remove('cur','cause-hl','err','warn')});
     var ln=$('.ln[data-ln="'+line+'"]',box);
-    if(ln){ln.classList.add('cur');ln.scrollIntoView({block:'center'});}
+    var c=causeIdx!=null?CAUSES[causeIdx]:null;
+    if(ln){
+      ln.classList.add('cur');
+      if(c)ln.classList.add('cause-hl',c.sev);
+      ln.scrollIntoView({block:'center'});
+    }
     var p=$('#status-pos');if(p)p.textContent=line+':1';
+    var pill=$('#'+PILL_ID[file]);
+    if(pill){
+      if(c){
+        pill.className='dm-pill cause-pill '+c.sev;
+        pill.innerHTML='<svg style="width:11px;height:11px"><use href="#i-'+(c.sev==='err'?'err':'warn')+'"/></svg>对应左侧根因 '+RANK[causeIdx]+' · '+c.phase+' · -'+fmt(c.impact)+' ms';
+        pill.hidden=false;
+      }else pill.hidden=true;
+    }
   }
-  function enterSplit(file,line){
+  function enterSplit(file,line,causeIdx){
+    if(causeIdx===undefined)causeIdx=findCauseIdx(file,line);
     ensureTab(file);
     var tab=$('.tab[data-file="'+file+'"]');
     if(tab)tab.click();               /* 复用 frame.js 自带的标签切换：更新面包屑、树选中、只显示这个代码面板 */
@@ -489,12 +556,13 @@
     $('.editor').classList.add('split');
     $$('.tab[data-file]').forEach(function(t){t.classList.toggle('split-on',t.dataset.file==='__report__'||t.dataset.file===file)});
     $('#split-exit').hidden=false;
-    highlightLine(file,line);
+    highlightLine(file,line,causeIdx);
   }
   function exitSplit(){
     $('.editor').classList.remove('split');
     $$('.tab.split-on').forEach(function(t){t.classList.remove('split-on')});
     $('#split-exit').hidden=true;
+    $$('.cause-pill').forEach(function(p){p.hidden=true});
     var rep=$('.tab[data-file="__report__"]');if(rep)rep.click();
   }
   function openCause(idx){
@@ -502,7 +570,7 @@
     $$('.cause').forEach(function(x){x.classList.remove('sel')});
     var card=$('.cause[data-idx="'+idx+'"]');
     if(card){card.classList.add('sel');card.scrollIntoView({block:'nearest'});}
-    enterSplit(c.file,c.line);
+    enterSplit(c.file,c.line,idx);
   }
 
   DemoFrame.init({device:'HUAWEI Mate 70 Pro',deviceIcon:'#i-phone',pos:'1:1',onReady:function(){
@@ -534,6 +602,12 @@
       if(flt){
         $$('#ov-filter button').forEach(function(b){b.classList.toggle('on',b===flt)});
         ovFilter=flt.dataset.f;applyOverviewFilter();return;
+      }
+      var grp=e.target.closest('.page-group');
+      if(grp){
+        ovPageState[grp.dataset.page]=grp.getAttribute('aria-expanded')!=='true';
+        applyOverviewFilter();
+        return;
       }
       var row=e.target.closest('.ov-row');
       if(row){
