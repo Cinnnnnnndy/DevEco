@@ -208,6 +208,7 @@ window.DEVECO_CATALOG = {
           title: '冷启动分析报告：总览下钻，打分 + 时延瀑布 + 根因', subtitle: 'Cold Start Report · Overview to Root Cause',
           desc: '02 里「首次启动」体检项的深挖版：先总览——所有页面与操作按得分排序，默认只看「有问题」的几条，几十上百条时不用逐条翻；点进最差的一条下钻，看完整报告——总分与门槛对比、启动阶段拆成 5 段的时延瀑布、根因按影响耗时排序，每条给到方法与文件行号，点一下落到代码。原型对照的是「应用与元服务体检」真机报告：那边遇到主线程阻塞常给出「存在大量等待时间无法诊断」，这里换成能定位到具体方法的结论。',
           view: 'ready', date: '2026-09-18', href: 'demos/22-coldstart-report/index.html',
+          links: [{ label: '单文件版', href: 'deveco-intui-kit/dist/coldstart-report.html' }],
           tags: ['步数与切换次数'], note: '对照真机体检报告提出的具体需求', thumb: { type: 'image', src: 'site/thumbs/22-coldstart-report.jpg' },
         },
       ],
