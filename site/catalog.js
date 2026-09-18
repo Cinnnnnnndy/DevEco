@@ -72,12 +72,6 @@ window.DEVECO_CATALOG = {
           view: 'ready', date: '2026-09-14', href: 'demos/04-android-migration/index.html',
           tags: ['步数与切换次数'], note: '连着产品线一起排', thumb: { type: 'image', src: 'site/thumbs/04-android-migration.jpg' },
         },
-        {
-          title: '冷启动分析报告：总览下钻，打分 + 时延瀑布 + 根因', subtitle: 'Cold Start Report · Overview to Root Cause',
-          desc: '02 里「首次启动」体检项的深挖版：先总览——所有页面与操作按得分排序，默认只看「有问题」的几条，几十上百条时不用逐条翻；点进最差的一条下钻，看完整报告——总分与门槛对比、启动阶段拆成 5 段的时延瀑布、根因按影响耗时排序，每条给到方法与文件行号，点一下落到代码。原型对照的是「应用与元服务体检」真机报告：那边遇到主线程阻塞常给出「存在大量等待时间无法诊断」，这里换成能定位到具体方法的结论。',
-          view: 'ready', date: '2026-09-18', href: 'demos/22-coldstart-report/index.html',
-          tags: ['步数与切换次数'], note: '不在 21 条清单内，是 02 的补充材料', thumb: { type: 'image', src: 'site/thumbs/22-coldstart-report.jpg' },
-        },
       ],
     },
 
@@ -199,6 +193,22 @@ window.DEVECO_CATALOG = {
           desc: '状态栏一枚胶囊，最多两枚，「在等你」的排前面带蓝点，点开才展开面板；先只让正在跑的 Agent 任务（含排队）上胶囊；准入规则先立起来：正在进行、有明确起止、人自己发起、需要持续关注。',
           view: 'ready', date: '2026-09-14', href: 'demos/21-capsule/index.html',
           tags: ['等待可见'], note: '第一批；跟着 14 AI 协作时间轴一起做', thumb: { type: 'image', src: 'site/thumbs/21-capsule.jpg' },
+        },
+      ],
+    },
+
+    /* ================= 版本需求 ================= */
+    {
+      id: 'requirements',
+      title: '版本需求',
+      icon: 'i-cat-version',
+      note: '不是创新方向 deck 里的假设点，是对着已有真机报告 / 已知问题提出的具体版本需求，直接对应一次迭代能排的活。',
+      items: [
+        {
+          title: '冷启动分析报告：总览下钻，打分 + 时延瀑布 + 根因', subtitle: 'Cold Start Report · Overview to Root Cause',
+          desc: '02 里「首次启动」体检项的深挖版：先总览——所有页面与操作按得分排序，默认只看「有问题」的几条，几十上百条时不用逐条翻；点进最差的一条下钻，看完整报告——总分与门槛对比、启动阶段拆成 5 段的时延瀑布、根因按影响耗时排序，每条给到方法与文件行号，点一下落到代码。原型对照的是「应用与元服务体检」真机报告：那边遇到主线程阻塞常给出「存在大量等待时间无法诊断」，这里换成能定位到具体方法的结论。',
+          view: 'ready', date: '2026-09-18', href: 'demos/22-coldstart-report/index.html',
+          tags: ['步数与切换次数'], note: '对照真机体检报告提出的具体需求', thumb: { type: 'image', src: 'site/thumbs/22-coldstart-report.jpg' },
         },
       ],
     },
