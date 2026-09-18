@@ -27,7 +27,7 @@
    `python3 site/tools/thumb.py <slug>` 出缩略图；然后在这里把对应条目的 view 改成 'ready'、补 href 与 thumb。
    ===================================================================== */
 window.DEVECO_CATALOG = {
-  updated: '2026-09-14',
+  updated: '2026-09-18',
   title: '鸿蒙开发工具体验 · 工作台',
   lede: '围绕 DevEco Studio / DevEco Code / DevEco CLI 的体验设计工作台：21 条创新点各一个可点的界面稿 demo，加上设计系统、分析与汇报材料。全部是本地静态文件，双击即开。',
 
@@ -71,6 +71,12 @@ window.DEVECO_CATALOG = {
           desc: '按屏、按模块一块一块迁，产出原生 ArkTS 不做兼容层；转出来的代码在工程树上标「已转 / 待查 / 需人工」；安卓版改了需求，列出鸿蒙版还差哪些没跟上。真空位在一键之后。',
           view: 'ready', date: '2026-09-14', href: 'demos/04-android-migration/index.html',
           tags: ['步数与切换次数'], note: '连着产品线一起排', thumb: { type: 'image', src: 'site/thumbs/04-android-migration.jpg' },
+        },
+        {
+          title: '冷启动分析报告：总览下钻，打分 + 时延瀑布 + 根因', subtitle: 'Cold Start Report · Overview to Root Cause',
+          desc: '02 里「首次启动」体检项的深挖版：先总览——所有页面与操作按得分排序，默认只看「有问题」的几条，几十上百条时不用逐条翻；点进最差的一条下钻，看完整报告——总分与门槛对比、启动阶段拆成 5 段的时延瀑布、根因按影响耗时排序，每条给到方法与文件行号，点一下落到代码。原型对照的是「应用与元服务体检」真机报告：那边遇到主线程阻塞常给出「存在大量等待时间无法诊断」，这里换成能定位到具体方法的结论。',
+          view: 'ready', date: '2026-09-18', href: 'demos/22-coldstart-report/index.html',
+          tags: ['步数与切换次数'], note: '不在 21 条清单内，是 02 的补充材料', thumb: { type: 'image', src: 'site/thumbs/22-coldstart-report.jpg' },
         },
       ],
     },

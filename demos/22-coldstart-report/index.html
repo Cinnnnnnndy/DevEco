@@ -1,0 +1,476 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='32' y2='32' gradientUnits='userSpaceOnUse'%3E%3Cstop stop-color='%232C8DDD'/%3E%3Cstop offset='1' stop-color='%233357AC'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='32' height='32' rx='7' fill='url(%23g)'/%3E%3Ctext x='16' y='22.5' font-family='Arial,Helvetica,sans-serif' font-size='13' font-weight='700' fill='white' text-anchor='middle'%3EDE%3C/text%3E%3C/svg%3E">
+<title>冷启动分析报告：打分 + 时延瀑布 + 根因，一份能看懂的报告</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="../../deveco-intui-kit/src/tokens.css">
+<link rel="stylesheet" href="../../deveco-intui-kit/src/components.css">
+<link rel="stylesheet" href="../_shared/frame.css">
+<link rel="stylesheet" href="../_shared/guide.css">
+<script src="../../deveco-intui-kit/src/icons.js"></script>
+<script src="../_shared/frame.js"></script>
+<script src="../_shared/guide.js"></script>
+<style>
+  .ide[data-ide-theme]{--proj-w:clamp(260px,20vw,300px)}
+  /* ---- 报告本体 ---- */
+  .report{overflow:auto;min-height:0;padding:14px 16px 28px;display:flex;flex-direction:column;gap:16px;background:var(--ui-editor-bg);color:var(--ui-fg);font-size:var(--fs-para);line-height:var(--lh-para)}
+  .report .loc{font-family:var(--font-code);font-size:11px;color:var(--ui-link);cursor:pointer;white-space:nowrap}
+  .report .loc:hover{text-decoration:underline}
+  .rep-toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .rep-score{display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap;padding:14px 16px;border:1px solid var(--ui-border);border-radius:var(--arc);background:var(--ui-field-bg)}
+  .rep-score .dm-score{flex:none}
+  .rep-meta{flex:1;min-width:230px;align-content:start;font-size:var(--fs-sm);line-height:1.9}
+  .rep-meta dd{display:flex;align-items:center;gap:6px}
+  .rep-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:60px 0;color:var(--ui-fg-info);font-size:var(--fs-sm)}
+  .rep-empty svg{width:22px;height:22px;color:var(--ui-fg-disabled)}
+  /* ---- 总览列表 ---- */
+  .ov-row{cursor:pointer;gap:10px}
+  .ov-row svg.i{width:15px;height:15px}
+  .ov-row.err svg.i{color:var(--ui-error)}
+  .ov-row.warn svg.i{color:var(--ui-warning)}
+  .ov-row.ok svg.i{color:var(--ui-success)}
+  .ov-row .op{color:var(--ui-fg-info);font-weight:400}
+  .ov-row .ms{font-family:var(--font-code);font-size:12px;min-width:82px;text-align:right}
+  .ov-row .chev{transition:transform .15s;color:var(--ui-fg-info)}
+  .ov-row[aria-expanded="true"] .chev{transform:rotate(90deg)}
+  .ov-note{margin:2px 12px 6px 34px}
+  .ov-search{width:100%;height:26px;padding:0 8px;border:1px solid var(--ui-component-border);border-radius:6px;background:var(--ui-field-bg);color:var(--ui-fg);font:inherit;font-size:12px;outline:none}
+  .ov-search:focus{border-color:var(--ui-accent)}
+  .ov-search::placeholder{color:var(--ui-fg-disabled)}
+  /* ---- 启动阶段瀑布 ---- */
+  .wf-plot{position:relative;padding-top:2px}
+  .wf-labels{display:flex;align-items:flex-end;gap:2px;min-height:50px}
+  .wf-lab{display:flex;flex-direction:column;align-items:center;text-align:center;gap:1px;font-size:10px;line-height:1.35;color:var(--ui-fg-info);padding:0 2px}
+  .wf-lab b{font-size:11px;font-weight:600;color:var(--ui-fg);white-space:nowrap}
+  .wf-lab .rk{display:inline-flex;width:13px;height:13px;border-radius:50%;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff;background:var(--ui-fg-info);margin-right:2px;vertical-align:1px}
+  .wf-lab .rk.err{background:var(--ui-error)}
+  .wf-lab .rk.warn{background:var(--ui-warning);color:#3a2f00}
+  .wf-lab .bad-note{font-weight:600;white-space:nowrap}
+  .wf-lab .bad-note.err{color:var(--ui-error)}
+  .wf-lab .bad-note.warn{color:color-mix(in srgb,var(--ui-warning) 82%,var(--ui-fg))}
+  .wf-bars{display:flex;gap:2px;height:30px}
+  .wf-seg{display:flex;height:100%;border-radius:4px;overflow:hidden}
+  .wf-ok{background:var(--ui-progress)}
+  .wf-bad{cursor:pointer}
+  .wf-bad.err{background:var(--ui-error)}
+  .wf-bad.warn{background:var(--ui-warning)}
+  .wf-bad:hover{filter:brightness(1.15)}
+  .wf-thresh{position:absolute;top:0;bottom:0;left:var(--x);border-left:1.5px dashed var(--ui-warning);pointer-events:none}
+  .wf-thresh b{position:absolute;top:-2px;left:4px;font-size:10px;font-weight:600;color:var(--ui-warning);white-space:nowrap;background:var(--ui-editor-bg);padding:0 2px}
+  .wf-axis{display:flex;justify-content:space-between;margin-top:4px;font-family:var(--font-code);font-size:10px;color:var(--ui-fg-info)}
+  /* ---- 根因卡片 ---- */
+  .cause{border-left-width:3px;border-left-style:solid}
+  .cause.err{border-left-color:var(--ui-error)}
+  .cause.warn{border-left-color:var(--ui-warning)}
+  .cause.sel{outline:2px solid var(--ui-accent);outline-offset:1px}
+  .cause .dm-card-hd svg{width:16px;height:16px;flex:none}
+  .cause.err .dm-card-hd svg{color:var(--ui-error)}
+  .cause.warn .dm-card-hd svg{color:var(--ui-warning)}
+  .rep-tbl{width:100%;border-collapse:collapse;font-size:11px;margin:2px 0}
+  .rep-tbl th,.rep-tbl td{border:1px solid var(--ui-border);padding:4px 8px;text-align:left;vertical-align:top}
+  .rep-tbl th{background:var(--ui-tag-bg);font-weight:600;color:var(--ui-fg-info)}
+  .rep-tbl td code,.cause code{font-family:var(--font-code);font-size:11px;background:var(--ui-tag-bg);padding:1px 4px;border-radius:4px;color:var(--ui-fg)}
+</style>
+</head>
+<body>
+<div class="ide" id="ide" data-ide-theme="dark" data-left="project" data-right="none" data-bottom="none" role="application" aria-label="DevEco Studio">
+  <div class="body">
+    <div class="tw tw-left">
+      <div class="pane on" data-pane="project">
+        <div class="tw-hdr"><span class="title">Project <svg class="i"><use href="#i-chevD"/></svg></span><span class="grow"></span>
+          <button class="abtn" title="Select Opened File"><svg class="i"><use href="#i-locate"/></svg></button>
+          <button class="abtn" title="Expand All"><svg class="i"><use href="#i-expandAll"/></svg></button>
+          <button class="abtn" title="Collapse All"><svg class="i"><use href="#i-collapseAll"/></svg></button>
+          <button class="abtn" title="Options"><svg class="i"><use href="#i-moreV"/></svg></button>
+          <button class="abtn" title="Hide|Shift+Esc" data-act="hide-left"><svg class="i"><use href="#i-hide"/></svg></button></div>
+        <div class="tw-body" id="tree-slot"></div>
+      </div>
+    </div>
+
+    <div class="editor">
+      <div class="tabs" id="tabs">
+        <button class="tab on" data-file="__report__"><svg class="i"><use href="#i-gauge"/></svg>冷启动分析报告<span class="x"><svg class="i"><use href="#i-closeS"/></svg></span></button>
+        <span class="grow"></span>
+        <span class="tab-tools"><button class="abtn" title="Editor Options"><svg class="i"><use href="#i-moreV"/></svg></button></span>
+      </div>
+
+      <div class="report" data-for-file="__report__" id="report">
+        <div class="rep-toolbar">
+          <span class="dm-seg" id="rep-seg"><button class="on" data-v="cold">冷启动</button><button data-v="feedback">用户反馈</button></span>
+          <span class="grow"></span>
+          <span class="dm-mono dm-muted dm-small">com.example.coldstartlongtime · entry · HUAWEI Mate 70 Pro · API 20</span>
+          <button class="btn sm" id="btn-export"><svg class="i" style="width:12px;height:12px"><use href="#i-export"/></svg>导出报告</button>
+        </div>
+
+        <div id="rep-cold">
+          <div id="rep-overview">
+            <div class="dm-group">冷启动总览 · 按得分排序，先看最差的<span class="cnt" id="ov-cnt">0</span><span class="grow"></span>
+              <span class="dm-seg" id="ov-filter">
+                <button class="on" data-f="problem">有问题<span class="dm-mono dm-muted" id="ov-cnt-problem" style="margin-left:4px"></span></button>
+                <button data-f="all">全部<span class="dm-mono dm-muted" id="ov-cnt-all" style="margin-left:4px"></span></button>
+              </span>
+            </div>
+            <div class="dm-row" style="padding:0 12px 8px">
+              <input type="text" class="ov-search" id="ov-search" placeholder="按页面或操作名搜索…">
+            </div>
+            <div class="dm-list" id="ov-list"></div>
+            <div class="rep-empty" id="ov-empty" hidden><svg><use href="#i-check"/></svg>没有匹配的项</div>
+          </div>
+
+          <div id="rep-detail" hidden>
+            <div class="dm-row" id="rep-crumb" style="margin-bottom:12px">
+              <button class="btn sm" id="btn-back"><svg class="i" style="width:12px;height:12px;transform:rotate(180deg)"><use href="#i-arrowR"/></svg>返回总览</button>
+              <span class="dm-muted dm-small" id="rep-crumb-txt"></span>
+            </div>
+            <div class="dm-col" style="gap:16px">
+            <div class="rep-score">
+              <div class="dm-score err" id="score-block">
+                <div class="ring"><svg viewBox="0 0 88 88"><circle class="track" cx="44" cy="44" r="40"/><circle class="val" id="score-val" cx="44" cy="44" r="40"/></svg>
+                  <div class="num"><b id="score-num">0</b><span>/ 100</span></div>
+                </div>
+                <div class="info">
+                  <span class="dm-pill err grade" id="score-grade"><svg style="width:12px;height:12px"><use href="#i-err"/></svg>D · 严重超标</span>
+                  <div class="headline" id="score-headline">2095.66 ms</div>
+                  <div class="dm-muted dm-small" id="score-note">应用或元服务启动加载完成时延应 ≤ 1100 ms · 超出 995.66 ms（+90%）</div>
+                </div>
+              </div>
+              <dl class="dm-kv rep-meta">
+                <dt>启动页面</dt><dd><span class="dm-mono">entry:Index</span> · 操作 1 · 完成时延</dd>
+                <dt>测试机型</dt><dd>HUAWEI Mate 70 Pro · API 20</dd>
+                <dt>采样方式</dt><dd>单次冷启动 trace（Process Start → 首页可交互）</dd>
+                <dt>较上次</dt><dd><span class="dm-pill ok"><svg style="width:11px;height:11px"><use href="#i-arrowR"/></svg>48 → 52 分</span></dd>
+              </dl>
+            </div>
+
+            <div class="dm-chart" id="wf">
+              <div class="ch-t"><b>启动阶段拆分</b><span>· 5 段 · 点深色块看根因</span><span class="grow"></span>
+                <span class="dm-legend"><i style="background:var(--ui-progress)"></i>基础耗时<i style="background:var(--ui-error);margin-left:10px"></i>可优化耗时</span></div>
+              <div class="wf-plot" id="wf-plot">
+                <div class="wf-labels" id="wf-labels"></div>
+                <div class="wf-bars" id="wf-bars"></div>
+                <div class="wf-thresh" id="wf-thresh"><b>门槛 1100 ms</b></div>
+              </div>
+              <div class="wf-axis"><span>0 ms</span><span>总计 2095.66 ms</span></div>
+            </div>
+
+            <div class="rep-causes" id="rep-causes-wrap">
+              <div class="dm-group">根因 · 按影响耗时排序<span class="cnt">3</span></div>
+              <div class="dm-col" id="cause-list" style="gap:10px"></div>
+            </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="rep-feedback" hidden>
+          <div class="rep-empty"><svg><use href="#i-check"/></svg>这次采集没有关联的用户反馈</div>
+        </div>
+      </div>
+
+      <div class="code-wrap" data-for-file="EntryAbility.ets" hidden>
+        <div class="code" id="code-entry"></div>
+      </div>
+      <div class="code-wrap" data-for-file="AdvertisementIndex.ets" hidden>
+        <div class="code" id="code-ad"></div>
+      </div>
+      <div class="breadcrumbs" id="crumbs"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var $=DemoFrame.$, $$=DemoFrame.$$, FILES=DemoFrame.FILES;
+
+  /* ---------- 扩展示例工程：这份报告要跳转到的文件 ---------- */
+  FILES['__report__']={path:[],crumbs:['冷启动分析报告'],lines:[]};
+  FILES['EntryAbility.ets']={path:['entry','src','main','ets','entryability'],crumbs:['EntryAbility','onCreate'],lines:[
+    ['<span class="k">import</span> { <span class="ty">UIAbility</span> } <span class="k">from</span> <span class="s">\'@kit.AbilityKit\'</span>;'],
+    ['<span class="k">import</span> { <span class="ty">abilityAccessCtrl</span> } <span class="k">from</span> <span class="s">\'@kit.AbilityKit\'</span>;'],
+    ['<span class="k">import</span> { <span class="ty">window</span> } <span class="k">from</span> <span class="s">\'@kit.ArkUI\'</span>;'],
+    ['<span class="k">import</span> { <span class="f">initSdks</span> } <span class="k">from</span> <span class="s">\'../utils/SdkBootstrap\'</span>;'],
+    [''],
+    ['<span class="k">export</span> <span class="k">default</span> <span class="k">class</span> <span class="ty">EntryAbility</span> <span class="k">extends</span> <span class="ty">UIAbility</span> {',{fold:1}],
+    ['  <span class="f">onCreate</span>(<span class="p">want</span>, <span class="p">launchParam</span>) {',{fold:1}],
+    ['    <span class="k">super</span>.<span class="f">onCreate</span>(<span class="p">want</span>, <span class="p">launchParam</span>);'],
+    [''],
+    ['    <span class="f">initSdks</span>();  <span class="c">// 同步初始化 Push / Analytics / Crash，共 600 ms</span>'],
+    ['  }'],
+    [''],
+    ['  <span class="f">onWindowStageCreate</span>(<span class="p">windowStage</span>: <span class="ty">window</span>.<span class="ty">WindowStage</span>) {',{fold:1}],
+    ['    <span class="k">const</span> <span class="p">atManager</span> = <span class="p">abilityAccessCtrl</span>.<span class="f">createAtManager</span>();'],
+    [''],
+    ['    <span class="p">atManager</span>.<span class="f">requestPermissionsFromUser</span>(<span class="k">this</span>.<span class="p">context</span>, [<span class="s">\'ohos.permission.LOCATION\'</span>]);'],
+    [''],
+    ['    <span class="p">windowStage</span>.<span class="f">loadContent</span>(<span class="s">\'pages/Index\'</span>, (<span class="p">err</span>) =&gt; {',{fold:1}],
+    ['      <span class="k">if</span> (<span class="p">err</span>.<span class="p">code</span>) {'],
+    ['        <span class="k">return</span>;'],
+    ['      }'],
+    ['    });'],
+    ['  }'],
+    ['}']
+  ]};
+  FILES['AdvertisementIndex.ets']={path:['entry','src','main','ets','pages'],crumbs:['AdvertisementIndex','aboutToAppear'],lines:[
+    ['<span class="k">import</span> { <span class="ty">AdConfig</span> } <span class="k">from</span> <span class="s">\'../model/AdConfig\'</span>;'],
+    [''],
+    ['<span class="m">@Entry</span>'],
+    ['<span class="m">@Component</span>'],
+    ['<span class="k">struct</span> <span class="ty">AdvertisementIndex</span> {',{fold:1}],
+    ['  <span class="m">@State</span> <span class="p">ad</span>: <span class="ty">AdConfig</span> | <span class="k">null</span> = <span class="k">null</span>;'],
+    [''],
+    ['  <span class="f">aboutToAppear</span>() {',{fold:1}],
+    ['    <span class="k">const</span> <span class="p">list</span> = <span class="ty">AdConfig</span>.<span class="f">fetchCandidates</span>();'],
+    [''],
+    ['    <span class="k">this</span>.<span class="p">ad</span> = <span class="p">list</span>.<span class="f">sort</span>((<span class="p">a</span>, <span class="p">b</span>) =&gt; <span class="k">this</span>.<span class="f">score</span>(<span class="p">b</span>) - <span class="k">this</span>.<span class="f">score</span>(<span class="p">a</span>))[<span class="n">0</span>];  <span class="c">// 每次刷新都同步重排一次，二次刷新又跑了 2 次</span>'],
+    ['  }'],
+    [''],
+    ['  <span class="f">score</span>(<span class="p">a</span>: <span class="ty">AdConfig</span>): <span class="k">number</span> {'],
+    ['    <span class="k">return</span> <span class="p">a</span>.<span class="p">priority</span> * <span class="p">a</span>.<span class="p">ctr</span>;'],
+    ['  }'],
+    [''],
+    ['  <span class="f">build</span>() {',{fold:1,at:1}],
+    ['    <span class="f">Image</span>(<span class="k">this</span>.<span class="p">ad</span>?.<span class="p">cover</span>)'],
+    ['  }'],
+    ['}']
+  ]};
+
+  /* ---------- 数据：启动阶段拆分（总计 2095.66 ms，门槛 1100 ms） ---------- */
+  var THRESHOLD=1100;
+  var CAUSES=[
+    {sev:'err',file:'AdvertisementIndex.ets',line:11,phase:'二次刷新',impact:667.98,
+      title:'开屏广告的排序回调是同步匿名函数，二次刷新又跑了 2 次',
+      body:'<p>开屏广告页 <code>aboutToAppear</code> 里的排序回调是同步匿名函数；二次刷新期间又被连续调用了 2 次，三次共占 <b>667.98 ms</b>，卡住了页面变为可交互的最后一步。</p>'
+        +'<table class="rep-tbl"><thead><tr><th>方法名</th><th>总耗时</th><th>平均耗时</th><th>执行次数</th></tr></thead>'
+        +'<tbody><tr><td><span class="loc" data-file="AdvertisementIndex.ets" data-line="11">anonymous[AdvertisementIndex.ets:11]</span></td><td>667.976 ms</td><td>222.659 ms</td><td>3</td></tr></tbody></table>'
+        +'<div class="dm-kv"><dt>怎么改</dt><dd>把这次排序挪到 <code>taskpool</code> 子线程；或者把候选广告按权重预先排好并缓存，二次刷新时直接读缓存，不用每次都重排。</dd></div>'},
+    {sev:'err',file:'EntryAbility.ets',line:10,phase:'数据请求',impact:480,
+      title:'onCreate 同步初始化 3 个 SDK，数据请求要等它跑完才发得出去',
+      body:'<p><code>onCreate</code> 里同步初始化了 Push / Analytics / Crash 三个 SDK，顺带还同步查了一次登录态；首页的数据请求要等这一串跑完才发得出去，实测占用「数据请求」阶段里的 <b>480 ms</b>。</p>'
+        +'<div class="dm-kv"><dt>怎么改</dt><dd>把第 10 行 <code>initSdks()</code> 挪到 <code>onWindowStageCreate</code> 之后，用 <code>taskpool</code> 异步跑；登录态查询与首屏数据请求并行发出，不要互相等。</dd></div>'},
+    {sev:'warn',file:'EntryAbility.ets',line:16,phase:'首帧绘制',impact:180,
+      title:'首屏还没画完就弹出定位权限弹窗，挡住内容也占用主线程',
+      body:'<p>第 16 行的 <code>requestPermissionsFromUser</code> 在首帧渲染前就触发，权限弹窗挡住内容的同时也占用主线程，首帧绘制多花了 <b>180 ms</b> 才完成。</p>'
+        +'<div class="dm-kv"><dt>怎么改</dt><dd>把这行挪到真正用到定位的页面（比如列表页「附近」筛选）里按需申请，首帧先把内容画出来。</dd></div>'}
+  ];
+  var PHASES=[
+    {name:'进程创建',ms:210},
+    {name:'Ability onCreate',ms:290},
+    {name:'首帧绘制',ms:360,bad:180,cause:2},
+    {name:'数据请求',ms:567.68,bad:480,cause:1},
+    {name:'二次刷新',ms:667.98,bad:667.98,cause:0}
+  ];
+  var TOTAL=0;PHASES.forEach(function(p){TOTAL+=p.ms});
+  var RANK=['①','②','③'];
+
+  function fmt(n){return Math.round(n)}
+  /* 打分公式：门槛 / 实际 × 100，封顶 100 */
+  function scoreOf(ms,threshold){return Math.max(0,Math.min(100,Math.round(threshold/ms*100)))}
+  function grade(score){
+    if(score>=95)return{cls:'ok',t:'A'};
+    if(score>=85)return{cls:'ok',t:'B'};
+    if(score>=70)return{cls:'warn',t:'C'};
+    return{cls:'err',t:'D'};
+  }
+
+  /* ---------- 总览：页面 / 操作按得分从差到好排序；真实工程里这张表可能有几十到上百行，
+     所以默认只看「有问题」的，全部达标的折起来，另外给一个按页面/操作名的搜索 ---------- */
+  var OVERVIEW=[
+    {page:'entry:Index',op:'冷启动（图标点击）· 操作 1',ms:2095.66,threshold:1100,drill:true},
+    {page:'entry:Index',op:'冷启动（深链接拉起）· 操作 2',ms:1450.30,threshold:1100,drill:false,
+      note:'同样卡在开屏广告的同步排序（<span class="loc" data-file="AdvertisementIndex.ets" data-line="11">AdvertisementIndex.ets:11</span>），这条路径二次刷新次数少一次，影响比图标冷启动小；建议跟图标冷启动一起改，一次修复两条路径都受益。'},
+    {page:'entry:Index',op:'冷启动（通知拉起）· 操作 3',ms:1180.42,threshold:1100,drill:false,
+      note:'只比门槛多 80 ms，主要是 EntryAbility.ets 里同步初始化 SDK 的固定开销，暂未发现新增根因。'},
+    {page:'entry:ListPage',op:'页面滑动，长列表白块检测 · 操作 4',ms:610.50,threshold:500,drill:false,
+      note:'与「冷启动分析报告」不是同一条链路，但同样是列表滑动时同步解码封面导致的白块；参考创新点 03「症状进入」调优流程单独处理。'},
+    {page:'entry:SettingsPage',op:'页面滑动，长列表 · 操作 5',ms:720.90,threshold:500,drill:false,
+      note:'超出门槛 44%，尚未做根因下钻（这份报告目前只对「冷启动」做了完整拆解）；先按列表滑动类问题的常规排查思路（同步解码 / 未开缓存）处理。'},
+    {page:'entry:ListPage',op:'页面转场 Index → List · 操作 6',ms:320.15,threshold:600,drill:false,
+      note:'已达标，未发现需要处理的根因。'},
+    {page:'entry:ListPage',op:'页面滑动，快速上滑 · 操作 7',ms:480.20,threshold:500,drill:false,
+      note:'已达标，未发现需要处理的根因。'},
+    {page:'entry:LoginPage',op:'页面滑动，键盘弹出 · 操作 8',ms:410.80,threshold:500,drill:false,
+      note:'已达标，未发现需要处理的根因。'},
+    {page:'entry:LoginPage',op:'页面转场 Index → Login · 操作 9',ms:265.40,threshold:600,drill:false,
+      note:'已达标，未发现需要处理的根因。'},
+    {page:'entry:DetailPage',op:'页面转场 List → Detail · 操作 10',ms:290.00,threshold:600,drill:false,
+      note:'已达标，未发现需要处理的根因。'},
+    {page:'entry:DetailPage',op:'图片懒加载滑动 · 操作 11',ms:350.40,threshold:500,drill:false,
+      note:'已达标，未发现需要处理的根因。'},
+    {page:'entry:SettingsPage',op:'页面转场 List → Settings · 操作 12',ms:180.20,threshold:600,drill:false,
+      note:'已达标，未发现需要处理的根因。'}
+  ];
+  var ovFilter='problem',ovQuery='';
+  function renderOverview(){
+    OVERVIEW.forEach(function(o,i){o._score=scoreOf(o.ms,o.threshold);o._grade=grade(o._score);o._idx=i});
+    var nAll=OVERVIEW.length,nProblem=OVERVIEW.filter(function(o){return o._grade.cls!=='ok'}).length;
+    $('#ov-cnt-all').textContent=nAll;$('#ov-cnt-problem').textContent=nProblem;
+    applyOverviewFilter();
+  }
+  function applyOverviewFilter(){
+    var q=ovQuery.trim().toLowerCase();
+    var rows=OVERVIEW.filter(function(o){
+      if(ovFilter==='problem'&&o._grade.cls==='ok')return false;
+      if(q&&(o.page+o.op).toLowerCase().indexOf(q)<0)return false;
+      return true;
+    }).sort(function(a,b){return a._score-b._score});
+    $('#ov-cnt').textContent=rows.length;
+    $('#ov-empty').hidden=rows.length>0;
+    $('#ov-list').innerHTML=rows.map(function(o){
+      var icon=o._grade.cls==='err'?'i-err':(o._grade.cls==='warn'?'i-warn':'i-check');
+      return '<div class="dm-item ov-row '+o._grade.cls+'" data-idx="'+o._idx+'" role="button" tabindex="0" aria-expanded="false">'
+        +'<svg class="i"><use href="#'+icon+'"/></svg>'
+        +'<span class="grow"><b>'+o.page+'</b> <span class="op">· '+o.op+'</span></span>'
+        +'<span class="ms">'+o.ms.toFixed(2)+' ms</span>'
+        +'<span class="dm-pill '+o._grade.cls+'">'+o._score+' 分</span>'
+        +'<svg class="i chev"><use href="#i-chevR"/></svg></div>';
+    }).join('');
+  }
+  function showDetail(o){
+    $('#rep-overview').hidden=true;
+    $('#rep-detail').hidden=false;
+    $('#rep-crumb-txt').textContent=o.page+' · '+o.op;
+  }
+  function showOverview(){
+    $('#rep-detail').hidden=true;
+    $('#rep-overview').hidden=false;
+  }
+
+  /* ---------- 打分环：门槛 / 实际 × 100，取整 ---------- */
+  function renderScore(){
+    var actual=TOTAL,over=actual-THRESHOLD,pct=Math.round(over/THRESHOLD*100);
+    var score=scoreOf(actual,THRESHOLD);
+    var gr=grade(score),gLabel={A:'优秀',B:'良好',C:'待优化',D:'严重超标'}[gr.t];
+    var g={cls:gr.cls,t:gr.t+' · '+gLabel};
+    var block=$('#score-block');block.className='dm-score '+g.cls;
+    $('#score-num').textContent=score;
+    $('#score-grade').innerHTML='<svg style="width:12px;height:12px"><use href="#i-'+(g.cls==='ok'?'check':(g.cls==='warn'?'warn':'err'))+'"/></svg>'+g.t;
+    $('#score-headline').textContent=actual.toFixed(2)+' ms';
+    $('#score-note').textContent='应用或元服务启动加载完成时延应 ≤ '+THRESHOLD+' ms · 超出 '+over.toFixed(2)+' ms（+'+pct+'%）';
+    var R=40,C=2*Math.PI*R,val=$('#score-val');
+    val.setAttribute('r',R);
+    val.style.strokeDasharray=C;
+    val.style.strokeDashoffset=C*(1-score/100);
+  }
+
+  /* ---------- 启动阶段瀑布：flex-basis 按 ms 比例分配 ---------- */
+  function renderWaterfall(){
+    var labs='',bars='';
+    PHASES.forEach(function(p){
+      var ci=(p.cause!=null)?p.cause:null,sev=ci!=null?CAUSES[ci].sev:null,ok=p.ms-(p.bad||0);
+      labs+='<div class="wf-lab" style="flex:'+p.ms+' 0 0">'
+        +'<b>'+(ci!=null?'<span class="rk '+sev+'">'+RANK[ci]+'</span>':'')+p.name+'</b>'
+        +'<span>'+fmt(p.ms)+' ms</span>'
+        +(p.bad?'<span class="bad-note '+sev+'">-'+fmt(p.bad)+' ms</span>':'')
+        +'</div>';
+      bars+='<div class="wf-seg" style="flex:'+p.ms+' 0 0">'
+        +'<div class="wf-ok" style="flex:'+ok+' 0 0"></div>'
+        +(p.bad?'<div class="wf-bad '+sev+'" style="flex:'+p.bad+' 0 0" data-cause="'+ci+'" role="button" tabindex="0" title="第 '+RANK[ci]+' 根因，点击查看"></div>':'')
+        +'</div>';
+    });
+    $('#wf-labels').innerHTML=labs;
+    $('#wf-bars').innerHTML=bars;
+    $('#wf-thresh').style.setProperty('--x',(THRESHOLD/TOTAL*100)+'%');
+  }
+
+  /* ---------- 根因卡片 ---------- */
+  function renderCauses(){
+    $('#cause-list').innerHTML=CAUSES.map(function(c,i){
+      return '<div class="dm-card cause '+c.sev+'" data-idx="'+i+'">'
+        +'<div class="dm-card-hd"><svg class="i"><use href="#i-'+(c.sev==='err'?'err':'warn')+'"/></svg>'
+        +'<span class="grow">'+RANK[i]+' '+c.title+'</span>'
+        +'<span class="dm-pill '+c.sev+'">-'+fmt(c.impact)+' ms</span></div>'
+        +'<div class="dm-card-bd">'+c.body+'</div>'
+        +'<div class="dm-card-ft"><span class="dm-pill muted">阶段 · '+c.phase+'</span><span class="grow"></span>'
+        +'<span class="loc" data-file="'+c.file+'" data-line="'+c.line+'">'+c.file+':'+c.line+'</span></div>'
+        +'</div>';
+    }).join('');
+  }
+
+  /* ---------- 交互：点色块 / 点定位 → 跳到代码行并选中卡片 ---------- */
+  function ensureTab(file){
+    if($('.tab[data-file="'+file+'"]'))return;
+    $('#tabs .grow').insertAdjacentHTML('beforebegin',DemoFrame.tabs([{file:file}]));
+  }
+  function openCause(idx){
+    var c=CAUSES[idx];if(!c)return;
+    $$('.cause').forEach(function(x){x.classList.remove('sel')});
+    var card=$('.cause[data-idx="'+idx+'"]');
+    if(card){card.classList.add('sel');card.scrollIntoView({block:'nearest'});}
+    jumpTo(c.file,c.line);
+  }
+  function jumpTo(file,line){
+    ensureTab(file);
+    var tab=$('.tab[data-file="'+file+'"]');
+    if(tab)tab.click();
+    var box=$('[data-for-file="'+file+'"] .code');
+    if(!box)return;
+    $$('.ln.cur',box).forEach(function(x){x.classList.remove('cur')});
+    var ln=$('.ln[data-ln="'+line+'"]',box);
+    if(ln){ln.classList.add('cur');ln.scrollIntoView({block:'center'});}
+    var p=$('#status-pos');if(p)p.textContent=line+':1';
+  }
+
+  DemoFrame.init({device:'HUAWEI Mate 70 Pro',deviceIcon:'#i-phone',pos:'1:1',onReady:function(){
+    $('#tree-slot').innerHTML=DemoFrame.tree({sel:'EntryAbility.ets'});
+    $('#code-entry').innerHTML=DemoFrame.code('EntryAbility.ets',{hl:[10,16],marks:{10:'err',16:'warn'}});
+    $('#code-ad').innerHTML=DemoFrame.code('AdvertisementIndex.ets',{hl:[11],marks:{11:'err'}});
+
+    renderOverview();renderScore();renderWaterfall();renderCauses();
+
+    $('#ov-search').addEventListener('input',function(e){ovQuery=e.target.value;applyOverviewFilter()});
+
+    document.getElementById('ide').addEventListener('click',function(e){
+      var flt=e.target.closest('#ov-filter button');
+      if(flt){
+        $$('#ov-filter button').forEach(function(b){b.classList.toggle('on',b===flt)});
+        ovFilter=flt.dataset.f;applyOverviewFilter();return;
+      }
+      var row=e.target.closest('.ov-row');
+      if(row){
+        var o=OVERVIEW[+row.dataset.idx];
+        if(o.drill){showDetail(o);return;}
+        var open=row.getAttribute('aria-expanded')==='true';
+        $$('.ov-note').forEach(function(n){n.remove()});
+        $$('.ov-row[aria-expanded="true"]').forEach(function(r){r.setAttribute('aria-expanded','false')});
+        if(!open){
+          row.insertAdjacentHTML('afterend','<div class="dm-callout '+(o._grade.cls==='ok'?'ok':'warn')+' ov-note"><svg><use href="#i-'+(o._grade.cls==='ok'?'check':'info')+'"/></svg><div>'+o.note+'</div></div>');
+          row.setAttribute('aria-expanded','true');
+        }
+        return;
+      }
+      if(e.target.closest('#btn-back')){showOverview();return;}
+      var bad=e.target.closest('.wf-bad');
+      if(bad){openCause(+bad.dataset.cause);return;}
+      var loc=e.target.closest('.report .loc');
+      if(loc){jumpTo(loc.dataset.file,+loc.dataset.line);return;}
+      var seg=e.target.closest('#rep-seg button');
+      if(seg){
+        $$('#rep-seg button').forEach(function(b){b.classList.toggle('on',b===seg)});
+        $('#rep-cold').hidden=seg.dataset.v!=='cold';
+        $('#rep-feedback').hidden=seg.dataset.v==='cold';
+        return;
+      }
+      if(e.target.closest('#btn-export')){
+        var b=e.target.closest('#btn-export');
+        if(b.dataset.busy)return;b.dataset.busy='1';
+        var old=b.innerHTML;
+        b.innerHTML='<svg class="i" style="width:12px;height:12px"><use href="#i-check"/></svg>已导出';
+        setTimeout(function(){b.innerHTML=old;delete b.dataset.busy},1600);
+        return;
+      }
+      /* 关闭动态打开的文件标签 */
+      var x=e.target.closest('.tab .x');
+      if(x){
+        var t=x.closest('.tab'),wasOn=t.classList.contains('on');
+        t.remove();
+        if(wasOn){var rep=$('.tab[data-file="__report__"]');if(rep)rep.click();}
+      }
+    });
+  }});
+DemoGuide.init([{"target": "#ov-list", "kind": "click", "pos": "top", "label": "总览先看哪条最差"}, {"target": "#wf-bars", "kind": "click", "pos": "top", "label": "下钻后点深色块看根因"}, {"target": "#cause-list", "kind": "change", "pos": "top", "label": "根因按影响排序，点定位跳到代码行"}]);
+})();
+</script>
+</body>
+</html>
