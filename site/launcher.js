@@ -15,8 +15,6 @@
     doc:    { label: '文档',   hint: '白皮书 / 说明' },
   };
   var DOC_ACCENT = { MD: '--ui-info', PPTX: '--ui-warning', BUNDLE: '--ui-accent', README: '--ui-fg-info' };
-  /* deck 里的标记：投 / 半投 强调，其余弱化 */
-  function markCls(m){ return m==='投' ? 'm1' : (m==='半投' ? 'm2' : 'm3'); }
 
   /* ---- 顶部 ---- */
   document.title = C.title;
@@ -80,7 +78,7 @@
       + '<div class="body">'
       + '<div class="row1"><span class="cat-lbl"><span class="dot"></span>'+esc(it._group.title)+(it.no?' <span class="no">'+esc(it.no)+'</span>':'')+'</span>'
       + (it.key?'<span class="keyb" title="规划重点"><svg><use href="#i-star"/></svg>重点</span>':'')
-      + (it.mark?'<span class="mark '+markCls(it.mark)+'">'+esc(it.mark)+'</span>':'')+'<span class="grow"></span>'
+      + '<span class="grow"></span>'
       + '<span class="status '+v+'">'+vinfo.label+'</span></div>'
       + '<h4 class="title">'+(it.href?'<a href="'+url(it.href)+'">'+esc(it.title)+'</a>':esc(it.title))+'</h4>'
       + (it.subtitle?'<p class="subtitle">'+esc(it.subtitle)+'</p>':'')
