@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>冻屏分析报告 · 需求分析</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;overflow:hidden;background:#e0e0e5;
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Noto Sans CJK SC',sans-serif}
+:root{--bg:#f5f5f7;--bg2:#fff;--border:#d2d2d7;--text:#1d1d1f;--text2:#4a4a52;--text3:#86868b;--blue:#0071e3;--green:#1a7f42;--yellow:#b06000;--red:#d70015;--purple:#5e5ce6}
+.deck-wrapper{width:100vw;height:100vh;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.deck{position:absolute;width:1280px;height:720px;transform-origin:top left;background:var(--bg);overflow:hidden;box-shadow:0 24px 80px rgba(0,0,0,.18)}
+.deck-header{position:absolute;top:0;left:0;right:0;height:40px;z-index:200;display:flex;align-items:center;gap:10px;padding:0 20px;background:rgba(255,255,255,.94);border-bottom:1px solid var(--border)}
+.hdr-brand{font-size:12px;font-weight:700;color:var(--text)}
+.hdr-title{font-size:11.5px;color:var(--text3)}
+.hdr-grow{flex:1}
+.hdr-btn{border:1px solid var(--border);background:#fff;border-radius:6px;height:24px;padding:0 10px;font-size:11px;color:var(--text2);cursor:pointer}
+.hdr-btn:hover{border-color:var(--blue);color:var(--blue)}
+#counter{font-size:11px;color:var(--text3);font-family:ui-monospace,SFMono-Regular,Menlo,monospace;min-width:48px;text-align:center}
+.slide{display:none;position:absolute;top:40px;left:0;right:0;bottom:0;padding:26px 48px 28px;overflow:hidden;flex-direction:column;color:var(--text)}
+.slide.active{display:flex}
+.tag{font-size:9.5px;text-transform:uppercase;letter-spacing:.1em;color:var(--blue);font-weight:700;margin-bottom:6px}
+h1{font-size:38px;font-weight:800;line-height:1.2;letter-spacing:-.01em}
+h2{font-size:22px;font-weight:700;margin-bottom:14px;line-height:1.3}
+h3{font-size:13px;font-weight:700;margin-bottom:6px;color:var(--text)}
+h4{font-size:12px;font-weight:700;margin-bottom:4px;color:var(--text)}
+p{font-size:12px;line-height:1.6;color:var(--text2)}
+code,.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:10.5px}
+code{background:#ebebed;border-radius:3px;padding:0 4px}
+.cols{display:flex;gap:16px;flex:1;min-height:0}
+.col{flex:1;min-width:0;display:flex;flex-direction:column;gap:8px}
+.col2{flex:2;min-width:0;display:flex;flex-direction:column;gap:8px}
+.mt6{margin-top:6px}.mt10{margin-top:10px}
+.card{background:#fff;border:1px solid var(--border);border-radius:10px;padding:12px 15px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+ul.list{list-style:none;display:flex;flex-direction:column;gap:5px}
+ul.list li{display:flex;gap:7px;align-items:flex-start;font-size:12px;color:var(--text2);line-height:1.5}
+ul.list li::before{content:'›';color:var(--blue);flex-shrink:0}
+ul.list.sm li{font-size:11px}
+.chip{display:inline-block;padding:2px 9px;border-radius:99px;font-size:10.5px;font-weight:500;border:1px solid;white-space:nowrap}
+.chip-green{color:#1a7f42;border-color:rgba(26,127,66,.35);background:rgba(26,127,66,.08)}
+.chip-yellow{color:#b06000;border-color:rgba(176,96,0,.35);background:rgba(176,96,0,.08)}
+.chip-red{color:#d70015;border-color:rgba(215,0,21,.35);background:rgba(215,0,21,.08)}
+.chip-blue{color:#0071e3;border-color:rgba(0,113,227,.35);background:rgba(0,113,227,.08)}
+.chip-gray{color:#86868b;border-color:rgba(134,134,139,.35);background:rgba(134,134,139,.08)}
+.chip-purple{color:#5e5ce6;border-color:rgba(94,92,230,.35);background:rgba(94,92,230,.08)}
+table{border-collapse:collapse;width:100%}
+th{background:#ebebed;color:#86868b;font-size:10px;font-weight:700;text-transform:uppercase;padding:6px 10px;text-align:left;border-bottom:1px solid var(--border)}
+td{padding:6px 10px;border-bottom:1px solid var(--border);color:var(--text2);font-size:11px;vertical-align:top;line-height:1.45}
+table.tight td{padding:4px 8px;font-size:10.5px}
+table.tight th{padding:4px 8px}
+.tbl-wrap{background:#fff;border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.src{font-size:8.5px;color:var(--text3);margin-left:3px;white-space:nowrap}
+b.r{color:var(--red)}b.g{color:var(--green)}b.y{color:var(--yellow)}b.b{color:var(--blue)}
+/* cover */
+.cover-hook{font-size:16px;color:var(--text2);margin-top:14px;max-width:900px;line-height:1.6}
+.nums{display:flex;gap:14px;margin-top:34px}
+.num{flex:1;background:#fff;border:1px solid var(--border);border-radius:12px;padding:16px 18px}
+.num b{display:block;font-size:34px;font-weight:800;letter-spacing:-.02em;line-height:1.1}
+.num span{font-size:11.5px;color:var(--text2);line-height:1.5;display:block;margin-top:6px}
+.cover-meta{margin-top:auto;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+/* BUTP */
+.butp-grid{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:12px;flex:1;min-height:0}
+.butp-card{border-radius:8px;padding:12px 16px;border:1px solid var(--border);position:relative;overflow:hidden;background:#fff}
+.butp-card::before{content:'';position:absolute;inset:0;opacity:.05;border-radius:8px;pointer-events:none}
+.butp-card.card-b::before{background:#0071e3}.butp-card.card-u::before{background:#5e5ce6}
+.butp-card.card-t::before{background:#1a7f42}.butp-card.card-p::before{background:#d70015}
+.bc-header{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.bc-letter{font-size:26px;font-weight:800;line-height:1}
+.card-b .bc-letter{color:#0071e3}.card-u .bc-letter{color:#5e5ce6}.card-t .bc-letter{color:#1a7f42}.card-p .bc-letter{color:#d70015}
+.bc-name{font-size:12px;font-weight:700;color:var(--text);line-height:1.2}
+.bc-sub{font-size:9.5px;color:var(--text3);margin-top:2px}
+.bc-items{list-style:none;display:flex;flex-direction:column;gap:7px}
+.bc-items li{font-size:12px;color:var(--text2);padding-left:12px;position:relative;line-height:1.45}
+.bc-items li::before{content:'›';position:absolute;left:0;opacity:.6}
+.bc-items li .src{font-size:9.5px;color:var(--text3);margin-left:3px;opacity:.9}
+.bc-link{margin-top:10px;font-size:9.5px;color:var(--text3);border-top:1px solid #ebebed;padding-top:5px}
+.bc-link span{color:var(--blue);font-weight:600}
+/* versions */
+.vs-head{display:flex;gap:10px;margin-bottom:10px}
+.vs-pill{flex:1;border-radius:10px;padding:10px 14px;border:1px solid var(--border);background:#fff}
+.vs-pill .t{font-size:13px;font-weight:700}
+.vs-pill .s{font-size:10.5px;color:var(--text3);margin-top:2px}
+.vs-v1{border-left:4px solid var(--yellow)}.vs-v2{border-left:4px solid var(--green)}
+/* timeline */
+.tl-card{background:#fff;border:1px solid var(--border);border-radius:10px;padding:10px 12px}
+.tl text{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:10px;fill:#4a4a52}
+.tl .lane{font-family:-apple-system,'PingFang SC',sans-serif;font-size:11px;font-weight:700;fill:#1d1d1f}
+.dec{display:grid;grid-template-columns:120px 1fr 1fr;border:1px solid var(--border);border-radius:8px;overflow:hidden;background:#fff}
+.dec div{padding:6px 10px;font-size:10.5px;border-bottom:1px solid #ebebed;color:var(--text2);line-height:1.4}
+.dec .h{background:#ebebed;font-weight:700;color:var(--text3);font-size:10px}
+.dec .k{font-weight:600;color:var(--text)}
+.dec .hit{background:rgba(215,0,21,.05);color:var(--red);font-weight:600}
+/* scenario */
+.scenario{background:#fff;border:1px solid var(--border);border-radius:10px;padding:12px 15px;display:flex;flex-direction:column;gap:6px}
+.scenario .who{display:flex;align-items:center;gap:8px}
+.scenario .who b{font-size:13px}
+.scenario p{font-size:11.5px}
+.scenario .out{font-size:10.5px;color:var(--text3);border-top:1px solid #ebebed;padding-top:6px;margin-top:auto}
+/* pain */
+.pain-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;flex:1;min-height:0}
+.pain{background:#fff;border:1px solid var(--border);border-radius:10px;padding:11px 14px;display:flex;flex-direction:column;gap:5px}
+.pain .n{font-size:24px;font-weight:800;color:var(--red);line-height:1.1}
+.pain .n small{font-size:12px;font-weight:600;color:var(--text3);margin-left:4px}
+.pain h4{font-size:12.5px}
+.pain p{font-size:11px;line-height:1.5}
+.pain .core{font-size:10.5px;color:var(--text);margin-top:auto;border-top:1px solid #ebebed;padding-top:5px}
+.pain .core b{color:var(--red)}
+/* bars */
+.bar{height:14px;border-radius:4px;background:#ebebed;overflow:hidden;display:flex}
+.bar i{display:block;height:100%}
+/* opp */
+.opp-row{display:grid;grid-template-columns:36px 1fr 96px 56px;gap:8px;align-items:center;padding:5px 10px;border-bottom:1px solid #ebebed;font-size:11px;color:var(--text2)}
+.opp-row:last-child{border-bottom:0}
+.opp-row .id{font-weight:700;color:var(--text3);font-size:10.5px}
+.opp-row b{color:var(--text);font-weight:600}
+.opp-row.h{background:#ebebed;font-size:9.5px;font-weight:700;color:var(--text3);text-transform:uppercase}
+.grp{font-size:10px;font-weight:700;color:var(--text3);padding:6px 10px 2px;text-transform:uppercase;letter-spacing:.06em}
+/* patent */
+.patent{border:1.5px dashed rgba(94,92,230,.45);background:rgba(94,92,230,.04);border-radius:10px;padding:12px 15px}
+.patent .kw{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0}
+/* design system */
+.sw{display:inline-block;width:12px;height:12px;border-radius:3px;border:1px solid rgba(0,0,0,.12);vertical-align:-2px;margin-right:5px}
+/* synthesis */
+.flow-card{border-radius:7px;padding:7px 10px;position:relative;border:1px solid;margin-bottom:8px;background:#fff}
+.flow-card h4{font-size:12.5px;margin-bottom:2px}
+.flow-card p{font-size:11px;line-height:1.45}
+.fc-pain{background:rgba(215,0,21,.04);border-color:rgba(215,0,21,.2)}
+.fc-insight{background:rgba(0,113,227,.04);border-color:rgba(0,113,227,.2)}
+.fc-strategy{background:rgba(26,127,66,.04);border-color:rgba(26,127,66,.2)}
+.fc-id{position:absolute;top:5px;right:8px;font-size:8.5px;font-weight:700;opacity:.35;font-family:monospace}
+.col-title{font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px}
+.syn-cols{display:flex;gap:60px;position:relative;flex:1;min-height:0}
+.syn-cols .col{gap:0;justify-content:center;position:relative;padding-top:26px}
+.syn-cols .col-title{position:absolute;top:0;left:0}
+.syn-cols .col.mid{justify-content:space-around}
+/* critique */
+.sev{white-space:nowrap}
+.kpi-row{display:flex;gap:10px;margin-bottom:10px}
+.kpi{flex:1;background:#fff;border:1px solid var(--border);border-radius:8px;padding:8px 12px}
+.kpi b{font-size:20px;font-weight:800;display:block;line-height:1.2}
+.kpi span{font-size:10.5px;color:var(--text3)}
+.foot{font-size:10px;color:var(--text3);margin-top:8px}
+</style>
+</head>
+<body>
+<div class="deck-wrapper">
+<div class="deck" id="deck">
+  <div class="deck-header">
+    <div class="hdr-brand"></div>
+    <div class="hdr-title">AppFreeze 冻屏分析报告 · 阶段一需求分析</div>
+    <div class="hdr-grow"></div>
+    <button class="hdr-btn" onclick="go(-1)">‹ 上一页</button>
+    <span id="counter">1 / 1</span>
+    <button class="hdr-btn" onclick="go(1)">下一页 ›</button>
+  </div>
+
+  <!-- 1 cover -->
+  <section class="slide active" id="cover">
+    <div class="tag">Phase 1 · Requirement Analysis · 2026-09-23</div>
+    <h1>冻屏分析报告：<br>先给判决，再给卷宗</h1>
+    <p class="cover-hook">两份低保真是同一次冻屏、同一份 faultlog 在「源码不可达 / 源码可达」两种条件下生成的报告。它们结论都对，但读者要翻 6 屏才看到怎么改；而且两版都写着「置信度 HIGH」——其中一版的修复建议在源码里早已存在、并且无效。</p>
+    <div class="nums">
+      <div class="num"><b class="r" style="color:var(--red)">5.6–6.2</b><span>屏才到「修复建议」<br>1440×900 视口实测（V2 / V1）</span></div>
+      <div class="num"><b>51–68%</b><span>文本是默认全展开的证据链<br>8 节、10 段原始日志</span></div>
+      <div class="num"><b>0</b><span>个可交互元素<br>7 处文件行号全是纯文本</span></div>
+      <div class="num"><b style="color:var(--yellow)">HIGH = HIGH</b><span>两版置信度相同<br>但定位精度差一整级</span></div>
+    </div>
+    <div class="cover-meta">
+      <span class="chip chip-yellow">V1 · 21:04 · 源码不可达</span>
+      <span class="chip chip-green">V2 · 22:07 · 源码可达</span>
+      <span class="chip chip-gray">产出：本报告 · product-doc.md · PROMPT-Demo优化提示词.md</span>
+    </div>
+  </section>
+
+  <!-- 2 butp -->
+  <section class="slide" id="butp">
+    <div class="tag">BUTP · 四维需求挖掘</div>
+    <h2>冻屏报告 · 商业 / 用户 / 趋势 / 痛点</h2>
+    <div class="butp-grid">
+      <div class="butp-card card-b">
+        <div class="bc-header"><div class="bc-letter">B</div><div><div class="bc-name">商业价值 Business</div><div class="bc-sub">为谁创造什么价值 · 不做的代价</div></div></div>
+        <ul class="bc-items">
+          <li>「版本需求」定位：对着已知问题提的具体需求，一次迭代能排的活；与 22 冷启动报告同属一组<span class="src">【输入】catalog.js</span></li>
+          <li>价值 = 效率（冻屏看懂→改对的时间）+ 留存（对 AI 故障分析的信任）<span class="src">【推断·待确认】</span></li>
+          <li>「故障修复成功率超 80%」意味着约 20% 需人接管，界面必须做信任校准<span class="src">【输入】舆情页 §06（媒体转述）</span></li>
+          <li>不做的代价：V1 建议 2 已存在于源码且无效，照做白费一轮改动<span class="src">【输入】V1 vs V2 原文</span></li>
+        </ul>
+        <div class="bc-link">落点 → <span>H 商业价值（P0/P1/P2）</span> · E 机会点排序权重</div>
+      </div>
+      <div class="butp-card card-u">
+        <div class="bc-header"><div class="bc-letter">U</div><div><div class="bc-name">用户需求 User</div><div class="bc-sub">核心/次要用户 · 频率 · 环境 · 决策链</div></div></div>
+        <ul class="bc-items">
+          <li>主用户：ArkTS 应用开发者，懂页面代码，不懂 EventHandler / 字节码桩 / Binder<span class="src">【推断·待确认】</span></li>
+          <li>低—中频、爆发式：自测卡死、提测打回、线上反馈；在 DevEco Studio 里由 Agent 生成<span class="src">【输入】页脚 + 【推断】</span></li>
+          <li>次要：DFX 专家复核证据；QA / TL 看责任领域分派<span class="src">【推断·待确认】</span></li>
+          <li>决策链：使用者 ≠ 决策者；专家是结论的背书人<span class="src">【推断·待确认】</span></li>
+        </ul>
+        <div class="bc-link">落点 → <span>C 用户画像</span> · B 场景分析</div>
+      </div>
+      <div class="butp-card card-t">
+        <div class="bc-header"><div class="bc-letter">T</div><div><div class="bc-name">趋势洞察 Trend</div><div class="bc-sub">行业走向 · 竞品动向 · 时间窗口</div></div></div>
+        <ul class="bc-items">
+          <li>IDE 内看 ANR、点栈帧跳代码、代码行 gutter 标注已是标配（Android Studio AQI）<span class="src">【外部】developer.android.com</span></li>
+          <li>AI 根因走向「推理可展开 + 证据可核 → 方案 → 生成修复/PR」（Sentry Seer）<span class="src">【外部】docs.sentry.io</span></li>
+          <li>没有竞品对「源码不可达」做精度降级设计<span class="src">【推断·待确认（仅查公开文档）】</span></li>
+          <li>窗口：12/30 发布 7.1 是可排入的最近版本<span class="src">【输入】节奏条 + 【推断】</span></li>
+        </ul>
+        <div class="bc-link">落点 → <span>F 竞品分析 + 专利潜力</span></div>
+      </div>
+      <div class="butp-card card-p">
+        <div class="bc-header"><div class="bc-letter">P</div><div><div class="bc-name">痛点挖掘 Pain-point</div><div class="bc-sub">现有方案的操作成本 · 最频 × 最痛</div></div></div>
+        <ul class="bc-items">
+          <li>最频：修复建议在页深 70% / 84%，翻 5.6 / 6.2 屏<span class="src">【输入】实测</span></li>
+          <li>最痛：两版都标 HIGH，V1 通用建议与源码事实冲突<span class="src">【输入】</span></li>
+          <li>因果只在 21 行 hilog 里，要对 8 个时间戳心算<span class="src">【输入】V1 §4–§5</span></li>
+          <li>零交互：行号不能跳、diff 不能用、「验证后提交」没入口<span class="src">【输入】实测</span></li>
+        </ul>
+        <div class="bc-link">落点 → <span>E 机会点因果起点</span> · G 注意事项</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3 versions -->
+  <section class="slide" id="versions">
+    <div class="tag">Input · 两个版本对照</div>
+    <h2>同一骨架，证据强度差一整级——但页面看不出来</h2>
+    <div class="vs-head">
+      <div class="vs-pill vs-v1"><div class="t">V1 · 源码不可达</div><div class="s">21:04:35 · 按用户要求未检索工程源码 · 业务定位靠应用 hilog（A00000）</div></div>
+      <div class="vs-pill vs-v2"><div class="t">V2 · 源码可达</div><div class="s">22:07:05 · 任务时长吻合 + 页面历史 + git 版本考古（故障版本 4ca0c7e）</div></div>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th style="width:150px">维度</th><th>V1 源码不可达</th><th>V2 源码可达</th><th style="width:210px">对设计意味着</th></tr></thead>
+        <tbody>
+          <tr><td><b>根因</b></td><td>主线程同步执行 <code>saveNoteSync</code> 保存流水线</td><td><code>hasAttachment()</code> 误判 <b>+</b> 同步忙等 8×<code>injectDelay(500)</code>——两层缺陷</td><td>V1 只看到一半因果</td></tr>
+          <tr><td><b>定位粒度</b></td><td>业务函数名（来自 hilog）</td><td>3 个根因文件、7 处行号（:48 / :44-48 / :64-102 / :26-31 …）</td><td>函数级 ≠ 行级，需显式分级</td></tr>
+          <tr><td><b>修复形态</b></td><td>2 条通用模板（TaskPool + in-flight 守卫）</td><td>3 处精确 diff；工作区已含修复</td><td>通用方向不该有「应用补丁」</td></tr>
+          <tr><td><b>修复有效性</b></td><td><b class="r">建议 2 已存在于源码</b>（<code>isSaving</code>），主线程阻塞时不重渲染 → 无效</td><td>指出禁用态失效原因，先解阻塞</td><td>降级提示必须完整显示</td></tr>
+          <tr><td><b>置信度标签</b></td><td>分诊 high · 可信度 HIGH</td><td>分诊 high · 可信度 HIGH</td><td><b class="r">一个数装不下三件事</b></td></tr>
+          <tr><td><b>内部一致性</b></td><td>「9 步 × 0.5s = 4.0s」（实为 8 步）；页脚称含 diff 但没有</td><td>8×500ms = 4.0s 与队列实测吻合</td><td>模板文案需随状态变</td></tr>
+          <tr><td><b>页面</b></td><td>6609px · 7.3 屏 · 修复在 y=5542</td><td>7189px · 8.0 屏 · 修复在 y=5022</td><td>结论先行</td></tr>
+          <tr><td><b>证据链占比</b></td><td>68%（6178 / 9025 字）</td><td>51%（4207 / 8192 字）</td><td>证据默认折叠</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="foot">页面数据：Chromium 无头实测，视口 1440×900；字数为各 H2 区块去空白字符数。</p>
+  </section>
+
+  <!-- 4 concept -->
+  <section class="slide" id="concept">
+    <div class="tag">Concept · 读懂这次冻屏</div>
+    <h2>为什么是 6S：两次点击，把两轮 4.0s 叠在了主线程上</h2>
+    <div class="tl-card">
+      <svg class="tl" viewBox="0 0 1180 232" width="1160" height="228">
+        <!-- grid -->
+        <g stroke="#ebebed">
+          <line x1="130" y1="10" x2="130" y2="218"/><line x1="245" y1="10" x2="245" y2="218"/><line x1="360" y1="10" x2="360" y2="218"/><line x1="475" y1="10" x2="475" y2="218"/><line x1="590" y1="10" x2="590" y2="218"/><line x1="705" y1="10" x2="705" y2="218"/><line x1="820" y1="10" x2="820" y2="218"/><line x1="935" y1="10" x2="935" y2="218"/><line x1="1050" y1="10" x2="1050" y2="218"/><line x1="1165" y1="10" x2="1165" y2="218"/>
+        </g>
+        <g text-anchor="middle"><text x="130" y="230">:02</text><text x="245" y="230">:03</text><text x="360" y="230">:04</text><text x="475" y="230">:05</text><text x="590" y="230">:06</text><text x="705" y="230">:07</text><text x="820" y="230">:08</text><text x="935" y="230">:09</text><text x="1050" y="230">:10</text><text x="1165" y="230">:11</text></g>
+        <text class="lane" x="0" y="36">用户输入</text>
+        <text class="lane" x="0" y="92">主线程</text>
+        <text class="lane" x="0" y="150">看门狗</text>
+        <text class="lane" x="0" y="196">队列</text>
+        <!-- input: x = 130 + (t-2)*115 -->
+        <circle cx="202.6" cy="32" r="6" fill="#0071e3"/><text x="194" y="28" text-anchor="end">点击① 02.631</text>
+        <circle cx="293.1" cy="32" r="6" fill="#0071e3"/><text x="303" y="28">点击② 03.418 · 第一轮未结束，只能排队</text>
+        <path d="M293 38 C 400 62, 520 62, 663 72" fill="none" stroke="#0071e3" stroke-dasharray="4 3"/>
+        <text x="560" y="50" fill="#0071e3">等待 3.2s 才被分发</text>
+        <!-- main thread task1 202.7 -> 663.5 -->
+        <rect x="202.7" y="76" width="460.8" height="26" rx="4" fill="rgba(176,96,0,.14)" stroke="rgba(176,96,0,.45)"/>
+        <g stroke="rgba(176,96,0,.35)"><line x1="260.3" y1="78" x2="260.3" y2="100"/><line x1="317.9" y1="78" x2="317.9" y2="100"/><line x1="375.5" y1="78" x2="375.5" y2="100"/><line x1="433.1" y1="78" x2="433.1" y2="100"/><line x1="490.7" y1="78" x2="490.7" y2="100"/><line x1="548.3" y1="78" x2="548.3" y2="100"/><line x1="605.9" y1="78" x2="605.9" y2="100"/></g>
+        <text x="433" y="93" text-anchor="middle" fill="#b06000" style="font-weight:700">MMITask #1 · 8 × 500ms = 4.0s</text>
+        <!-- task2 663.5 -> 1085.8 (10.313) + dashed -->
+        <rect x="663.5" y="76" width="345" height="26" rx="4" fill="rgba(176,96,0,.14)" stroke="rgba(176,96,0,.45)"/>
+        <rect x="1008.5" y="76" width="77.3" height="26" fill="rgba(215,0,21,.16)" stroke="rgba(215,0,21,.5)"/>
+        <rect x="1085.8" y="76" width="60" height="26" rx="4" fill="none" stroke="rgba(176,96,0,.5)" stroke-dasharray="4 3"/>
+        <text x="836" y="93" text-anchor="middle" fill="#b06000" style="font-weight:700">MMITask #2 · 同一流水线</text>
+        <text x="1047" y="116" text-anchor="middle" fill="#d70015">单任务 &gt;3s</text>
+        <text x="202" y="120">连续占用约 8s · state=R · CPU 98%</text>
+        <!-- watchdog -->
+        <line x1="721.3" y1="128" x2="721.3" y2="170" stroke="#b06000" stroke-width="2"/>
+        <text x="728" y="150" fill="#b06000" style="font-weight:700">3S 告警 07.142</text>
+        <text x="728" y="164">抓栈①：Jeqz（循环判定）</text>
+        <line x1="1085.8" y1="128" x2="1085.8" y2="170" stroke="#d70015" stroke-width="2"/>
+        <text x="1080" y="150" fill="#d70015" text-anchor="end" style="font-weight:700">6S 上报 10.313</text>
+        <text x="1080" y="164" text-anchor="end">抓栈②：Ldobjbyname（取 Date.now）</text>
+        <!-- queue: 07.127 -> x 719.6 ; 10.128 -> 1064.7 -->
+        <polyline points="719.6,204 1064.7,184" fill="none" stroke="#d70015" stroke-width="2"/>
+        <circle cx="719.6" cy="204" r="3.5" fill="#d70015"/><circle cx="1064.7" cy="184" r="3.5" fill="#d70015"/>
+        <text x="600" y="200">62 个任务</text><text x="1072" y="182">115 个</text>
+        <text x="760" y="212">VIP 52 → 105，输入与 vSync 全部排队</text>
+      </svg>
+    </div>
+    <div class="cols mt10">
+      <div class="col">
+        <div class="dec">
+          <div class="h">判据</div><div class="h">繁忙（在干活）</div><div class="h">阻塞（在等人）</div>
+          <div class="k">线程状态</div><div class="hit">state=R 两次一致</div><div>state=S</div>
+          <div class="k">CPU（utime）</div><div class="hit">564→859，3s 内 98%</div><div>几乎不涨</div>
+          <div class="k">两次栈顶</div><div class="hit">不同字节码指令</div><div>停在同一等待点</div>
+          <div class="k" style="border:0">修法方向</div><div class="hit" style="border:0">把活挪出主线程</div><div style="border:0">找它在等的那一方</div>
+        </div>
+      </div>
+      <div class="col">
+        <div class="card" style="flex:1">
+          <h3>对设计意味着（四步法第④步）</h3>
+          <ul class="list sm">
+            <li>这张时间线本身就是报告最该有的图——数据全在 faultlog 里，低保真只给了 21 行文本</li>
+            <li>「繁忙 / 阻塞」是一张 3 行判据表，不是 200 字排除散文</li>
+            <li><code>Not mapped</code> 是解释器帧的正常现象，要翻译成人话，不要让人以为是错误</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5 scenario -->
+  <section class="slide" id="scenario">
+    <div class="tag">Scenario · 使用场景</div>
+    <h2>四个人打开同一份报告，要的东西完全不同</h2>
+    <div class="cols" style="display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:12px">
+      <div class="scenario">
+        <div class="who"><span class="chip chip-green">V2 · 源码可达</span><b>应用开发者 · 本地复现</b></div>
+        <p>小林在模拟器上连点两次「保存笔记」，应用卡死。DevEco Code 生成报告，他打开标签页——<b>现在</b>他要读完基本信息、三级根因、8 节证据，翻到第 5.6 屏才看到 3 处 diff，再逐个手动去工程里找 <code>FreezeNoteDetailPage.ets:48</code>。</p>
+        <div class="out">要：改哪行 → 点过去 → 应用 → 验证不再卡</div>
+      </div>
+      <div class="scenario">
+        <div class="who"><span class="chip chip-yellow">V1 · 源码不可达</span><b>外包同学 · 只有 faultlog</b></div>
+        <p>QA 从测试机拉回 faultlog，外包同学未被授权读工程源码。报告标「置信度 HIGH」，他照着建议 2 加了 in-flight 守卫——代码里其实已经有 <code>isSaving</code>，主线程阻塞时根本不会重渲染。改完复现，照样卡。</p>
+        <div class="out">要：知道这是「通用方向」→ 知道怎么升级到精确定位</div>
+      </div>
+      <div class="scenario">
+        <div class="who"><span class="chip chip-purple">复核</span><b>DFX 专家 · 被 @ 复核</b></div>
+        <p>老周要判断 AI 的结论站不站得住。他关心的是 8 项检查各自结论、排除了哪些模式、三级根因是「采样判定」还是「默认匹配」。现在这些散在 8 节正文与一句 7 项的排除散文里，原始日志还被「← 解读」污染，复制不出原文。</p>
+        <div class="out">要：一张检查清单 + 可原样复制的日志</div>
+      </div>
+      <div class="scenario">
+        <div class="who"><span class="chip chip-gray">分派</span><b>QA / TL · 转发</b></div>
+        <p>TL 在群里收到报告链接，只想知道「谁的问题、多严重、派给谁」。责任领域「应用」在第 5 屏的「根因模块」里；标题 V1 是结论式、V2 是「AppFreeze THREAD_BLOCK_6S 分析报告」——同一模板两种标题口径。</p>
+        <div class="out">要：一句话结论 + 责任领域 + 复制分享</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6 users -->
+  <section class="slide" id="users">
+    <div class="tag">Users · 目标用户</div>
+    <h2>一个主读者，两个次读者——报告目前按次读者的顺序写</h2>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th style="width:120px">维度</th><th>应用开发者（主）</th><th>DFX 专家（次）</th><th>QA / TL（旁观）</th></tr></thead>
+        <tbody>
+          <tr><td><b>角色</b></td><td>ArkTS 应用层 1–5 年；懂页面与业务代码</td><td>稳定性 / 性能专项</td><td>测试、组长</td></tr>
+          <tr><td><b>能看懂</b></td><td>文件、函数、diff；<b class="r">看不懂</b> EventHandler、stub.an、utime、Binder</td><td>全部，且要原文</td><td>结论与严重度</td></tr>
+          <tr><td><b>频率</b></td><td>低—中频、爆发式<span class="src">【推断·待确认】</span></td><td>中频</td><td>低频</td></tr>
+          <tr><td><b>环境</b></td><td>DevEco Studio 编辑区（默认深色）/ 导出 HTML</td><td>同左 + faultlog 原文</td><td>浏览器、IM 转发</td></tr>
+          <tr><td><b>核心诉求</b></td><td>改哪行、怎么改、改完好没好</td><td>结论是否站得住、证据在哪</td><td>谁负责、多严重</td></tr>
+          <tr><td><b>触发点</b></td><td>自测卡死、提测被打回、线上反馈</td><td>被 @ 复核</td><td>收到报告</td></tr>
+          <tr><td><b>最先看</b></td><td>结论卡 → 修复</td><td>证据清单 → 原始日志</td><td>一句话 + 责任领域</td></tr>
+          <tr><td><b>低保真里在第几屏</b></td><td>修复：第 <b class="r">5.6 / 6.2</b> 屏</td><td>证据：第 1.3–5 屏（全展开）</td><td>责任领域：第 5.2 / 5.8 屏</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="foot">用户分层比例未经埋点或访谈核实，列入待确认清单。</p>
+  </section>
+
+  <!-- 7 pain -->
+  <section class="slide" id="pain">
+    <div class="tag">Pain Points · 痛点分析</div>
+    <h2>六个痛点，按最频 × 最痛排</h2>
+    <div class="pain-grid">
+      <div class="pain"><div class="n">5.6–6.2<small>屏</small></div><h4>P1 答案埋在卷宗末尾</h4><p>修复建议在页深 70%（V2 y=5022）/ 84%（V1 y=5542）。首屏只有 250 字诊断散文。</p><div class="core"><b>痛点核心：</b>报告按 Agent 的推理顺序写，不按读者的决策顺序写。</div></div>
+      <div class="pain"><div class="n">51–68<small>%</small></div><h4>P2 证据链全量平铺</h4><p>8 节证据默认全展开，10 段原始日志 60–82 行；术语（Jeqz、utime、VIP 队列）不解释。</p><div class="core"><b>痛点核心：</b>给专家的卷宗挡在了开发者前面。</div></div>
+      <div class="pain"><div class="n">8<small>个时间戳</small></div><h4>P3 因果只能读日志</h4><p>两次点击 → 两轮 4.0s → 3S → 6S 的关系，只存在于 21 行 hilog 与两段散文，读者自己做减法。</p><div class="core"><b>痛点核心：</b>最该被画出来的东西没被画出来。</div></div>
+      <div class="pain"><div class="n" style="color:var(--yellow)">HIGH<small>= HIGH</small></div><h4>P4 置信度不分证据强度（最痛）</h4><p>V1 未读源码，定位只到函数，建议 2 已存在且无效；却与 V2 同标 HIGH。</p><div class="core"><b>痛点核心：</b>结论对 ≠ 定位准 ≠ 修复准，一个数掩盖了三件事。</div></div>
+      <div class="pain"><div class="n">0<small>个交互</small></div><h4>P5 报告是终点</h4><p>7 处行号不能点，3 处 diff 不能用；「验证冻屏不再复现后提交即可」没有入口。</p><div class="core"><b>痛点核心：</b>任务在代码里继续，报告停在了文字里。</div></div>
+      <div class="pain"><div class="n">4<small>种时间格式</small></div><h4>P6 格式与口径不一</h4><p>两个 H1；「置信度 high」与「可信度 HIGH」；V1「9 步 × 0.5s = 4.0s」自相矛盾。</p><div class="core"><b>痛点核心：</b>小瑕疵直接折损专家对结论的信任。</div></div>
+    </div>
+  </section>
+
+  <!-- 8 opp -->
+  <section class="slide" id="opp">
+    <div class="tag">Opportunities · 设计机会点</div>
+    <h2>14 个机会点：5 个修问题，9 个补专业完成度</h2>
+    <div class="cols">
+      <div class="col">
+        <div class="tbl-wrap">
+          <div class="opp-row h"><span>#</span><span>机会点</span><span>实现层级</span><span>商业权重</span></div>
+          <div class="grp">(a) 问题修复型</div>
+          <div class="opp-row"><span class="id">O1</span><span><b>结论先行首屏卡</b> · 一句话 + 三级路径 + 责任领域 + 修复入口</span><span class="chip chip-green">🟢 前端</span><span>高</span></div>
+          <div class="opp-row"><span class="id">O3</span><span><b>证据检查清单</b> · 8 行一行一状态，默认折叠</span><span class="chip chip-green">🟢 前端</span><span>高</span></div>
+          <div class="opp-row"><span class="id">O4</span><span><b>证据强度三轴</b> · 定性 / 定位 / 修复</span><span class="chip chip-yellow">🟡 需 Agent</span><span>高</span></div>
+          <div class="opp-row"><span class="id">O6</span><span><b>口径统一</b> · H1、时间、术语、枚举中文化</span><span class="chip chip-green">🟢 前端</span><span>中</span></div>
+          <div class="opp-row"><span class="id">O7</span><span><b>可操作空态</b> · 无采样栈说明影响与补法</span><span class="chip chip-yellow">🟡 需 Agent</span><span>中</span></div>
+        </div>
+      </div>
+      <div class="col">
+        <div class="tbl-wrap">
+          <div class="opp-row h"><span>#</span><span>机会点</span><span>实现层级</span><span>商业权重</span></div>
+          <div class="grp">(b) 专业级完成度型</div>
+          <div class="opp-row"><span class="id">O2</span><span><b>主线程时间线</b> · 四泳道画因果</span><span class="chip chip-green">🟢 前端</span><span>高</span></div>
+          <div class="opp-row"><span class="id">O5</span><span><b>源码不可达的降级与升级</b></span><span class="chip chip-red">🔴 产品决策</span><span>高</span></div>
+          <div class="opp-row"><span class="id">O8</span><span><b>行号跳转 + 代码分屏</b>（同 22）</span><span class="chip chip-yellow">🟡 IDE 桥</span><span>高</span></div>
+          <div class="opp-row"><span class="id">O9</span><span><b>修复可执行</b> · 复制 / 应用 / 逐处审</span><span class="chip chip-yellow">🟡 IDE 桥</span><span>高</span></div>
+          <div class="opp-row"><span class="id">O10</span><span><b>修复验证闭环</b> · 前后对比</span><span class="chip chip-red">🔴 产品决策</span><span>高</span></div>
+          <div class="opp-row"><span class="id">O11</span><span><b>版本感知</b> · 故障版本 vs 工作区</span><span class="chip chip-yellow">🟡 需 Agent</span><span>中</span></div>
+          <div class="opp-row"><span class="id">O13</span><span><b>结论反馈</b> · 回流故障模式库</span><span class="chip chip-yellow">🟡 后端</span><span>中</span></div>
+          <div class="opp-row"><span class="id">O12</span><span><b>分享分派</b> · 复制结论 / 导出</span><span class="chip chip-green">🟢 前端</span><span>低</span></div>
+          <div class="opp-row"><span class="id">O14</span><span><b>同签名聚合</b> · 历史次数</span><span class="chip chip-red">🔴 线上数据</span><span>低</span></div>
+        </div>
+      </div>
+    </div>
+    <p class="foot">自检三问：一天重复手工的——找文件、抄 diff（O8 O9）；产出去哪——代码、工单、专家（O9 O12）；数据最该被看见的——主线程时间线（O2）。</p>
+  </section>
+
+  <!-- 9 opp before-after -->
+  <section class="slide" id="opp-ba">
+    <div class="tag">Before → After · 回流自提示词 §C</div>
+    <h2>改进承诺：每条都能验收</h2>
+    <div class="tbl-wrap">
+      <table class="tight">
+        <thead><tr><th style="width:46px">ID</th><th style="width:330px">现状（实测）</th><th>目标状态</th><th style="width:150px">服务对象</th></tr></thead>
+        <tbody>
+          <tr><td><b>B1</b></td><td>修复在第 5.6 / 6.2 屏；首屏是 250 字散文</td><td>首屏 900px 同时可见：结论卡 + 证据强度 + 时间线；主按钮「查看修复（3）」</td><td>开发者 · 首次 30 秒</td></tr>
+          <tr><td><b>B4</b></td><td>因果只在 21 行 hilog 里</td><td>四泳道时间线：两次点击、两轮 8×500ms、3S / 6S、队列 62→115</td><td>开发者 · 看懂为什么 6S</td></tr>
+          <tr><td><b>B5</b></td><td>单一「HIGH」；8 项证据无状态</td><td>三轴 pill（定性 / 定位 / 修复）；证据 8 行四色状态 + 顶部「1 命中 · 2 通过 · 4 排除 · 1 缺数据」</td><td>专家 · 一分钟复核</td></tr>
+          <tr><td><b>B6</b></td><td>证据占 51–68%，全展开</td><td>默认全折叠，仅「命中」项展开；原始日志二次折叠，带「复制原文」</td><td>开发者 / 专家</td></tr>
+          <tr><td><b>B7</b></td><td>V1 无降级提示，建议 2 与源码冲突</td><td>不可关闭的警告条 +「允许读取源码并重新定位」；通用方向只能复制，不能应用</td><td>外包 · 源码不可达</td></tr>
+          <tr><td><b>B8</b></td><td>0 个可交互元素</td><td>行号可点 → 编辑区分屏；diff「应用 / 复制」；「复现验证」→ 时间线叠加修复后泳道</td><td>开发者 · 改完好没好</td></tr>
+          <tr><td><b>B9</b></td><td><code>app_freeze</code> / <code>full</code> / <code>high</code> 外露</td><td>工具栏 pill「应用冻屏」「日志完整」；全页只用「置信度」一个词</td><td>全部</td></tr>
+          <tr><td><b>B10</b></td><td>4 种时间格式</td><td>日期只出现一次，正文统一 <code>HH:mm:ss.SSS</code> 等宽</td><td>专家</td></tr>
+          <tr><td><b>B14</b></td><td>「行号基于 4ca0c7e」埋在散文里</td><td>结论卡上方信息条 +「对比工作区」</td><td>开发者 · 行号对不上</td></tr>
+          <tr><td><b>B16</b></td><td>仅浅色</td><td>跟随 IDE 深 / 浅主题，全部 <code>--ui-*</code> token</td><td>开发者 · IDE 内</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 10 comp -->
+  <section class="slide" id="comp">
+    <div class="tag">Competitors · 竞品分析 + 专利潜力</div>
+    <h2>单项都有人做，「按证据强度分级 + 源码授权后就地升级」没人做</h2>
+    <div class="cols">
+      <div class="col2">
+        <div class="tbl-wrap">
+          <table class="tight">
+            <thead><tr><th style="width:150px">竞品 / 方案</th><th>具备的能力</th><th>与本功能的差距</th></tr></thead>
+            <tbody>
+              <tr><td><b>Android Studio AQI</b><span class="src">【外部】</span></td><td>IDE 内看 Crashlytics / Vitals；可筛 ANR；栈帧跳代码；代码行 gutter 标崩溃</td><td>我们缺跳代码；他们不画主线程时间线</td></tr>
+              <tr><td><b>AQI + Gemini Insights</b><span class="src">【外部】</span></td><td>崩溃摘要、定位文件、逐步解释原因、推荐下一步</td><td>单一结论，无证据强度分级，无修复后验证</td></tr>
+              <tr><td><b>Sentry Seer</b><span class="src">【外部】</span></td><td>根因推理实时可见、关键洞察可展开看证据、生成修复可开 PR</td><td>依赖接入代码仓；没有「源码不可达」降级设计</td></tr>
+              <tr><td><b>Xcode Organizer · Hangs</b><span class="src">【外部】</span></td><td>按版本的 hang rate、Top 签名与主线程调用栈</td><td>统计视角，不讲单次事件因果；无 AI 修复</td></tr>
+              <tr><td><b>应用与元服务体检</b><span class="src">【输入】</span></td><td>真机报告；主线程阻塞常给「存在大量等待时间无法诊断」</td><td>定位不到方法——22 冷启动已在补</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="foot">来源：developer.android.com/studio/debug/app-quality-insights · developer.android.com/studio/gemini/analyze-crashes-with-aqi · docs.sentry.io/product/ai-in-sentry/seer/root-cause-analysis · developer.apple.com/videos/play/wwdc2022/10082 · catalog.js 条目 22。竞品仅查公开文档，未实机验证。</p>
+      </div>
+      <div class="col">
+        <div class="patent">
+          <h3>专利潜力 · 评级 <span class="chip chip-purple">中</span></h3>
+          <p>差异化是三个关键词的<b>组合</b>，单项均有先例：</p>
+          <div class="kw"><span class="chip chip-purple">证据强度三轴分级</span><span class="chip chip-purple">源码授权前后就地升级</span><span class="chip chip-purple">同一时间线叠加修复前后复现</span></div>
+          <p>用户交互描述：用户未授权读取源码时，看到的是方向性建议与明确的精度标注；授权后同一份报告就地升级为逐行定位与可应用补丁，并能在同一条时间线上对比修复前后是否再次卡死。</p>
+          <p class="mt6" style="font-size:10.5px;color:var(--text3)">先例检索：组合未见【推断·待确认】</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 11 value -->
+  <section class="slide" id="value">
+    <div class="tag">Value · 商业价值与优先级</div>
+    <h2>P0 全是前端能先做的；授权与验证两件大事等产品拍板</h2>
+    <div class="tbl-wrap">
+      <table class="tight">
+        <thead><tr><th style="width:150px">机会点</th><th style="width:80px">价值类型</th><th>量化或依据</th><th style="width:60px">成本</th><th style="width:170px">不做的代价</th><th style="width:60px">优先级</th></tr></thead>
+        <tbody>
+          <tr><td><b>O1 结论先行</b></td><td>效率</td><td>修复入口从第 5.6–6.2 屏提到第 1 屏<span class="src">【输入·实测】</span></td><td>🟢</td><td>读者在卷宗里迷路</td><td><span class="chip chip-red">P0</span></td></tr>
+          <tr><td><b>O2 时间线</b></td><td>效率</td><td>8 个时间戳心算 → 一眼看因果<span class="src">【输入】</span></td><td>🟢</td><td>看不懂为什么 6S</td><td><span class="chip chip-red">P0</span></td></tr>
+          <tr><td><b>O3 证据清单</b></td><td>效率 / 信任</td><td>证据首屏占用从 51–68% 文本降到 8 行<span class="src">【输入·实测】</span></td><td>🟢</td><td>专家仍要通读</td><td><span class="chip chip-red">P0</span></td></tr>
+          <tr><td><b>O4 三轴强度</b></td><td>信任</td><td>约 20% 需人接管 → 信任校准<span class="src">【输入·舆情页】</span></td><td>🟡</td><td>误导性高置信</td><td><span class="chip chip-red">P0</span></td></tr>
+          <tr><td><b>O5 降级 + 升级</b></td><td>信任 / 效率</td><td>避免「已存在且无效」的白改<span class="src">【输入】</span></td><td>🔴</td><td>一轮无效改动</td><td><span class="chip chip-red">P0</span></td></tr>
+          <tr><td><b>O6 口径统一</b></td><td>信任</td><td>4 种时间、2 个术语、1 处数字矛盾<span class="src">【输入】</span></td><td>🟢</td><td>专家不信任</td><td><span class="chip chip-red">P0</span></td></tr>
+          <tr><td><b>O8 跳代码分屏</b></td><td>效率</td><td>7 处行号手动搜索；AQI 已标配<span class="src">【输入】【外部】</span></td><td>🟡</td><td>落后竞品</td><td><span class="chip chip-yellow">P1</span></td></tr>
+          <tr><td><b>O9 修复可执行</b></td><td>效率</td><td>3 处 diff 手抄<span class="src">【输入】</span></td><td>🟡</td><td>抄写出错</td><td><span class="chip chip-yellow">P1</span></td></tr>
+          <tr><td><b>O10 验证闭环</b></td><td>留存 / 差异化</td><td>与条目 03「没人帮你确认有没有用」同一立论<span class="src">【输入】</span></td><td>🔴</td><td>失去差异化</td><td><span class="chip chip-yellow">P1</span></td></tr>
+          <tr><td><b>O7 O11</b></td><td>效率 / 信任</td><td>三级根因「默认匹配」不透明；行号基于旧版本<span class="src">【输入】</span></td><td>🟡</td><td>误信、对不上</td><td><span class="chip chip-yellow">P1</span></td></tr>
+          <tr><td><b>O12 O13 O14</b></td><td>效率 / 留存</td><td>分享、反馈、同签名聚合<span class="src">【推断·待确认】</span></td><td>🟢🟡🔴</td><td>低</td><td><span class="chip chip-gray">P2</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="foot">O5 拆开做：「未经源码核实」标注是 🟢 可先上；授权流程（默认可读 / 每次询问 / 外包合规）待产品决策。</p>
+  </section>
+
+  <!-- 12 design-system -->
+  <section class="slide" id="design-system">
+    <div class="tag">Design System · 设计系统基线</div>
+    <h2>现状是 GitHub Markdown 皮肤；目标是插入 deveco-intui-kit</h2>
+    <div class="cols">
+      <div class="col">
+        <h3>低保真现状（从两份 HTML 提取）</h3>
+        <div class="tbl-wrap">
+          <table class="tight">
+            <thead><tr><th>用途</th><th>值</th><th>问题</th></tr></thead>
+            <tbody>
+              <tr><td>页面背景</td><td><span class="sw" style="background:#f6f8fa"></span><code>#f6f8fa</code></td><td>仅浅色，IDE 默认深色</td></tr>
+              <tr><td>正文</td><td><span class="sw" style="background:#1f2328"></span><code>#1f2328</code></td><td></td></tr>
+              <tr><td>强调 / badge</td><td><span class="sw" style="background:#0969da"></span><code>#0969da</code></td><td>唯一的 badge 只标故障类型</td></tr>
+              <tr><td>边框</td><td><span class="sw" style="background:#d0d7de"></span><code>#d0d7de</code></td><td></td></tr>
+              <tr><td>diff 增 / 删</td><td><span class="sw" style="background:#dafbe1"></span><span class="sw" style="background:#ffebe9"></span></td><td>只有 V2 用到</td></tr>
+              <tr><td>状态色</td><td>—</td><td><b class="r">没有</b>：命中 / 通过 / 排除 / 缺数据无区分</td></tr>
+              <tr><td>布局</td><td><code>max-width:960px</code></td><td>1920 下 50% 空白</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="col">
+        <h3>目标：委托给 deveco-intui-kit（提示词 §A）</h3>
+        <div class="card"><h4>颜色</h4><p>只用 <code>--ui-*</code>：故障 / 命中 <span class="sw" style="background:#DB5C5C"></span><code>--ui-error</code>，未核实 / 缺数据 <span class="sw" style="background:#F2C55C"></span><code>--ui-warning</code>，通过 / 已验证 <span class="sw" style="background:#57965C"></span><code>--ui-success</code>，已排除 <code>--ui-fg-info</code>（灰）</p></div>
+        <div class="card"><h4>组件</h4><p><code>.dm-pill</code> 状态与三轴；<code>.dm-kv</code> 结论卡字段；<code>.dm-seg</code> 状态切换；<code>.dm-group</code> / <code>.dm-list</code> 证据清单；<code>.btn</code> 按钮层级</p></div>
+        <div class="card"><h4>参照实现</h4><p><code>demos/22-coldstart-report</code>：报告工具栏、根因编号 ①②③、点行号编辑区分屏、命中行染色与浮标</p></div>
+        <div class="card"><h4>字体</h4><p>正文 <code>--font-ui</code>；代码、时间、线程号 <code>--font-code</code>；图标用 kit 雪碧图，不用 emoji</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 13 critique -->
+  <section class="slide" id="critique">
+    <div class="tag">Design Critique · 第一轮设计审查（1/2）</div>
+    <h2>首用 30 秒走查：五镜里四面 🔴</h2>
+    <div class="kpi-row">
+      <div class="kpi"><b style="color:var(--red)">7</b><span>🔴 严重</span></div>
+      <div class="kpi"><b style="color:var(--yellow)">8</b><span>🟡 中等</span></div>
+      <div class="kpi"><b style="color:var(--green)">2</b><span>🟢 轻微</span></div>
+      <div class="kpi"><b>17</b><span>Finding · 与提示词 §B 同编号 B1–B17</span></div>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th style="width:44px">ID</th><th style="width:110px">镜</th><th>Finding（以应用开发者首次打开 V2 为准）</th><th style="width:80px">Severity</th><th style="width:250px">Recommendation</th></tr></thead>
+        <tbody>
+          <tr><td><b>B1</b></td><td>镜1 首屏与空态</td><td>首屏 900px 只有标题、机器枚举、重复 H1、基本信息与 250 字散文；修复在第 5.6 / 6.2 屏</td><td class="sev"><span class="chip chip-red">🔴 严重</span></td><td>结论卡 + 证据强度 + 时间线进首屏</td></tr>
+          <tr><td><b>B2</b></td><td>镜2 可扫读性</td><td>诊断一句含 ≥6 个事实；7 个排除项挤在一句散文</td><td class="sev"><span class="chip chip-red">🔴 严重</span></td><td>要点行 + 定位 chip；排除项 chip 网格</td></tr>
+          <tr><td><b>B3</b></td><td>镜3 空间叙事</td><td>960px 单栏，1440 下空白 33%、1920 下 50%；结论与支撑证据相距 &gt;2700px</td><td class="sev"><span class="chip chip-yellow">🟡 中等</span></td><td>≥1200px 双栏：左判决 / 右证据；行号分屏</td></tr>
+          <tr><td><b>B4</b></td><td>镜4 数据流</td><td>两次点击 → 两轮 4.0s → 3S → 6S 只在 21 行 hilog 里</td><td class="sev"><span class="chip chip-red">🔴 严重</span></td><td>四泳道主线程时间线</td></tr>
+          <tr><td><b>B5</b></td><td>镜5 状态编码</td><td>8 项检查无状态标识；置信度单一「HIGH」，两版相同</td><td class="sev"><span class="chip chip-red">🔴 严重</span></td><td>三轴强度 + 四色证据状态 + 摘要</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="cols mt10" style="flex:none">
+      <div class="col"><div class="card"><h4>Visual Hierarchy</h4><ul class="list sm"><li><b>第一眼落点：</b>重复的第二个 H1「冻屏问题综合分析报告」（24px，比真正的结论更大）</li><li><b>最大问题：</b>同一结论在三处重复（V2 共 1561 字），权重被稀释</li></ul></div></div>
+      <div class="col"><div class="card"><h4>Accessibility</h4><ul class="list sm"><li>长栈帧在 960px 内横向滚动；页脚 12px</li><li>无锚点、无键盘路径；仅浅色，深色 IDE 下刺眼</li></ul></div></div>
+    </div>
+  </section>
+
+  <!-- 14 critique-2 -->
+  <section class="slide" id="critique-2">
+    <div class="tag">Design Critique · 第一轮设计审查（2/2）</div>
+    <h2>逐组件：可信度问题比视觉问题更严重</h2>
+    <div class="cols">
+      <div class="col2">
+        <div class="tbl-wrap">
+          <table class="tight">
+            <thead><tr><th style="width:44px">ID</th><th>Finding</th><th style="width:80px">Severity</th><th style="width:210px">Recommendation</th></tr></thead>
+            <tbody>
+              <tr><td><b>B6</b></td><td>证据链 8 节全展开，占 51% / 68%；10 段日志无折叠无锚点</td><td class="sev"><span class="chip chip-red">🔴 严重</span></td><td>默认折叠，命中项展开，日志二次折叠</td></tr>
+              <tr><td><b>B7</b></td><td>V1 无降级提示；建议 2 已存在于源码且无效，仍标 HIGH</td><td class="sev"><span class="chip chip-red">🔴 严重</span></td><td>警告条 + 升级入口；通用方向不可「应用」</td></tr>
+              <tr><td><b>B8</b></td><td>0 个可交互元素：7 处行号、3 处 diff、验证入口</td><td class="sev"><span class="chip chip-red">🔴 严重</span></td><td>行号分屏、应用 / 复制、复现验证</td></tr>
+              <tr><td><b>B9</b></td><td>「app_freeze / full / high」外露；置信度 / 可信度两词</td><td class="sev"><span class="chip chip-yellow">🟡 中等</span></td><td>中文 pill，统一术语</td></tr>
+              <tr><td><b>B10</b></td><td>4 种时间格式</td><td class="sev"><span class="chip chip-yellow">🟡 中等</span></td><td>统一 HH:mm:ss.SSS</td></tr>
+              <tr><td><b>B11</b></td><td>两个 H1；结论重复 3 次</td><td class="sev"><span class="chip chip-yellow">🟡 中等</span></td><td>单标题；因果链折叠</td></tr>
+              <tr><td><b>B12</b></td><td>V1「9 步 × 0.5s = 4.0s」；V1 页脚称含 diff</td><td class="sev"><span class="chip chip-yellow">🟡 中等</span></td><td>文案随状态变</td></tr>
+              <tr><td><b>B13</b></td><td>采样栈整节只有一行占位，不说影响</td><td class="sev"><span class="chip chip-yellow">🟡 中等</span></td><td>并入清单为「缺数据」+ 补法</td></tr>
+              <tr><td><b>B14</b></td><td>「基于 4ca0c7e，工作区已改」埋在散文</td><td class="sev"><span class="chip chip-yellow">🟡 中等</span></td><td>版本信息条 + 对比工作区</td></tr>
+              <tr><td><b>B15</b></td><td>「← 解读」写进日志行尾，复制即污染</td><td class="sev"><span class="chip chip-green">🟢 轻微</span></td><td>原文与解读分列</td></tr>
+              <tr><td><b>B16</b></td><td>仅浅色</td><td class="sev"><span class="chip chip-yellow">🟡 中等</span></td><td>跟随 IDE 主题</td></tr>
+              <tr><td><b>B17</b></td><td>长行横滚、12px、无键盘路径</td><td class="sev"><span class="chip chip-green">🟢 轻微</span></td><td>pre-wrap、Tab / Enter 可达</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="col">
+        <div class="card"><h4>Consistency · 两版之间</h4>
+          <table class="tight"><thead><tr><th>Element</th><th>Issue</th></tr></thead><tbody>
+            <tr><td>标题</td><td>V1 结论式，V2 类型式</td></tr>
+            <tr><td>三级根因</td><td>V1「多任务混合」，V2 无</td></tr>
+            <tr><td>第 8 节标题</td><td>V2 加「（源码可达）」，V1 不标「不可达」</td></tr>
+            <tr><td>线程表</td><td>同一 IPC 线程栈顶，两版写法不同</td></tr>
+          </tbody></table>
+        </div>
+        <div class="card"><h4>做得好的，保留</h4><ul class="list sm"><li>三级根因表把故障模式库的判断路径说清了</li><li>V2 的 6 步因果链、逐帧解读已经是好内容，只差形态</li><li>「原始日志」随证据附上，可核验</li></ul></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 15 synthesis -->
+  <section class="slide" id="synthesis">
+    <div class="tag">Synthesis · 设计机会汇总</div>
+    <h2>从痛点到设计策略</h2>
+    <div class="syn-cols" id="syn">
+      <div class="col"><div class="col-title">用户痛点</div>
+        <div class="flow-card fc-pain" id="p1"><span class="fc-id">P1</span><h4>修复在第 5.6–6.2 屏</h4><p>首屏只有散文</p></div>
+        <div class="flow-card fc-pain" id="p2"><span class="fc-id">P2</span><h4>证据占 51–68%，全展开</h4><p>术语不解释</p></div>
+        <div class="flow-card fc-pain" id="p3"><span class="fc-id">P3</span><h4>因果只在 21 行日志里</h4><p>8 个时间戳心算</p></div>
+        <div class="flow-card fc-pain" id="p4"><span class="fc-id">P4</span><h4>两版都标 HIGH</h4><p>V1 建议 2 已存在且无效</p></div>
+        <div class="flow-card fc-pain" id="p5"><span class="fc-id">P5</span><h4>0 个交互</h4><p>行号不能点，改完没法验</p></div>
+      </div>
+      <div class="col mid"><div class="col-title">洞察汇聚</div>
+        <div class="flow-card fc-insight" id="i1"><span class="fc-id">I1</span><h4>读者要判决，报告写成了卷宗</h4><p>排版跟着 Agent 的推理顺序，不跟读者的决策顺序</p></div>
+        <div class="flow-card fc-insight" id="i2"><span class="fc-id">I2</span><h4>置信度是一个数，证据强度是三件事</h4><p>结论对、定位准、修复准，各自独立</p></div>
+        <div class="flow-card fc-insight" id="i3"><span class="fc-id">I3</span><h4>报告是终点，但修复才是任务</h4><p>任务在代码里继续，报告要能接过去</p></div>
+      </div>
+      <div class="col"><div class="col-title">设计策略</div>
+        <div class="flow-card fc-strategy" id="s1"><span class="fc-id">S1</span><h4>结论先行 + 证据清单折叠</h4><p><span class="chip chip-green">🟢</span> O1 O3 O6</p></div>
+        <div class="flow-card fc-strategy" id="s2"><span class="fc-id">S2</span><h4>主线程时间线把因果画出来</h4><p><span class="chip chip-green">🟢</span> O2</p></div>
+        <div class="flow-card fc-strategy" id="s3"><span class="fc-id">S3</span><h4>三轴强度 + 源码授权就地升级</h4><p><span class="chip chip-yellow">🟡</span><span class="chip chip-red">🔴</span> O4 O5 O7</p></div>
+        <div class="flow-card fc-strategy" id="s4"><span class="fc-id">S4</span><h4>定位 → 修复 → 验证一条链</h4><p><span class="chip chip-yellow">🟡</span><span class="chip chip-red">🔴</span> O8 O9 O10 O11</p></div>
+      </div>
+      <svg id="opp-svg" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none"></svg>
+    </div>
+  </section>
+
+  <!-- 16 terms -->
+  <section class="slide" id="terms">
+    <div class="tag">Glossary · 术语表</div>
+    <h2>给第一次读冻屏报告的设计师和开发</h2>
+    <div class="cols">
+      <div class="col">
+        <div class="tbl-wrap"><table class="tight"><thead><tr><th style="width:140px">术语</th><th>人话</th></tr></thead><tbody>
+          <tr><td><b>AppFreeze</b></td><td>应用冻屏：应用界面长时间不响应，被系统判定为故障</td></tr>
+          <tr><td><b>THREAD_BLOCK_3S / 6S</b></td><td>看门狗对主线程的两级检测：3s 告警并抓栈，6s 再抓栈并上报定案</td></tr>
+          <tr><td><b>主线程</b></td><td>处理点击、绘制界面的那条线程；它一忙，界面就卡</td></tr>
+          <tr><td><b>EventHandler 队列</b></td><td>主线程的待办清单；卡住时越积越多（本次 62→115）</td></tr>
+          <tr><td><b>MMITask</b></td><td>一次触摸 / 按键输入的分发任务</td></tr>
+          <tr><td><b>VIP 队列</b></td><td>最高优先级待办（输入、vSync），本次积压 105 个</td></tr>
+          <tr><td><b>state=R / S</b></td><td>R：正在跑（繁忙）；S：在睡觉等别人（阻塞或空闲）</td></tr>
+          <tr><td><b>utime · clk=100</b></td><td>用户态 CPU 时间，单位 1/100 秒；564→859 即 3s 里用了 2.95s</td></tr>
+        </tbody></table></div>
+      </div>
+      <div class="col">
+        <div class="tbl-wrap"><table class="tight"><thead><tr><th style="width:140px">术语</th><th>人话</th></tr></thead><tbody>
+          <tr><td><b>stub.an · 字节码桩</b></td><td>ArkTS 解释器执行一条指令的入口；栈顶是它说明在跑应用 ArkTS 代码</td></tr>
+          <tr><td><b>Jeqz / Ldobjbyname</b></td><td>「为零则跳转」（循环判定）/「按名取属性」（如 <code>Date.now</code>）</td></tr>
+          <tr><td><b>Not mapped</b></td><td>解释器帧无法回溯到符号，正常现象，不是错误</td></tr>
+          <tr><td><b>hilog · A00000</b></td><td>应用自己打的日志；域 A00000 表示应用域，V1 靠它定位到业务函数</td></tr>
+          <tr><td><b>Binder / FFRT / libuv</b></td><td>跨进程通信 / 并发任务框架 / 异步 IO 库——本次都被排除</td></tr>
+          <tr><td><b>采样栈</b></td><td>卡顿期间多次抓栈统计热点；缺它时三级根因只能「默认匹配」</td></tr>
+          <tr><td><b>TaskPool</b></td><td>ArkTS 把计算挪到后台线程的机制，冻屏的常见修法</td></tr>
+          <tr><td><b>BuildID · 符号解析</b></td><td>把 so 里的地址还原成函数与行号的前提；本次栈里没有应用 so 帧</td></tr>
+        </tbody></table></div>
+      </div>
+    </div>
+  </section>
+
+</div>
+</div>
+<script>
+function resizeDeck(){
+  const deck=document.getElementById('deck');
+  const ww=window.innerWidth, wh=window.innerHeight;
+  const scale=Math.min(ww/1280, wh/720);
+  deck.style.transform=`scale(${scale})`;
+  deck.style.left=((ww-1280*scale)/2)+'px';
+  deck.style.top=((wh-720*scale)/2)+'px';
+  if(slides[current] && slides[current].id==='synthesis') drawConnections();
+}
+const slides=document.querySelectorAll('.slide');
+let current=0;
+function goTo(n){
+  slides[current].classList.remove('active');
+  current=Math.max(0, Math.min(slides.length-1, n));
+  slides[current].classList.add('active');
+  document.getElementById('counter').textContent=`${current+1} / ${slides.length}`;
+  if(slides[current].id==='synthesis') setTimeout(drawConnections, 80);
+}
+const go=d=>goTo(current+d);
+document.addEventListener('keydown', e=>{
+  if(e.key==='ArrowRight'||e.key==='ArrowDown') go(1);
+  if(e.key==='ArrowLeft'||e.key==='ArrowUp') go(-1);
+});
+document.getElementById('deck').addEventListener('click', e=>{
+  if(e.target.closest('.deck-header')) return;
+  const x=e.clientX, w=window.innerWidth;
+  if(x<w*.25) go(-1); else if(x>w*.75) go(1);
+});
+const LINKS=[['p1','i1'],['p2','i1'],['p3','i1'],['p4','i2'],['p5','i3'],['i1','s1'],['i1','s2'],['i2','s3'],['i3','s4']];
+function drawConnections(){
+  const deck=document.getElementById('deck'), svg=document.getElementById('opp-svg');
+  if(!svg) return;
+  const m=deck.style.transform.match(/scale\(([^)]+)\)/);
+  const scale=m?parseFloat(m[1]):1;
+  const box=svg.getBoundingClientRect();
+  const pt=el=>{const r=el.getBoundingClientRect();return {x:(r.left-box.left)/scale,y:(r.top-box.top)/scale,w:r.width/scale,h:r.height/scale};};
+  let html='';
+  LINKS.forEach(([a,b])=>{
+    const A=pt(document.getElementById(a)), B=pt(document.getElementById(b));
+    const x1=A.x+A.w, y1=A.y+A.h/2, x2=B.x, y2=B.y+B.h/2, mx=(x1+x2)/2;
+    const col=a[0]==='p'?'rgba(215,0,21,.35)':'rgba(0,113,227,.4)';
+    html+=`<path d="M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}" fill="none" stroke="${col}" stroke-width="1.5" stroke-dasharray="4 3"/>`;
+    html+=`<circle cx="${x2}" cy="${y2}" r="2.5" fill="${col}"/>`;
+  });
+  svg.innerHTML=html;
+}
+window.addEventListener('resize', resizeDeck);
+resizeDeck();
+goTo(0);
+</script>
+</body>
+</html>

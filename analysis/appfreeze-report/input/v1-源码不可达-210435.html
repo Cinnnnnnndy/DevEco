@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>冻屏分析报告 — saveNoteSync 主线程同步保存导致 THREAD_BLOCK_6S</title>
+<style>
+:root { color-scheme: light; }
+* { box-sizing: border-box; }
+body { font-family: -apple-system, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+       color: #1f2328; background: #f6f8fa; margin: 0; padding: 24px; line-height: 1.65; }
+.page { max-width: 960px; margin: 0 auto; background: #fff; border: 1px solid #d0d7de;
+        border-radius: 10px; padding: 32px 40px; box-shadow: 0 1px 3px rgba(31,35,40,.08); }
+h1 { font-size: 22px; border-bottom: 1px solid #d8dee4; padding-bottom: 10px; margin-top: 0; }
+h2 { font-size: 18px; border-bottom: 1px solid #eaeef2; padding-bottom: 6px; margin-top: 28px; }
+h3 { font-size: 16px; margin-top: 22px; }
+h4, h5, h6 { font-size: 14px; margin-top: 18px; }
+.meta { color: #57606a; font-size: 13px; margin-bottom: 20px; }
+.meta .badge { display: inline-block; background: #ddf4ff; color: #0969da; border: 1px solid #54aeff;
+               border-radius: 999px; padding: 1px 10px; margin-right: 10px; font-weight: 600; }
+table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 14px; }
+th, td { border: 1px solid #d8dee4; padding: 6px 12px; text-align: left; vertical-align: top; }
+th { background: #f6f8fa; }
+code { font-family: ui-monospace, SFMono-Regular, 'JetBrains Mono', Consolas, monospace;
+       background: #eff1f3; border-radius: 4px; padding: 1px 5px; font-size: 13px; }
+pre { background: #f6f8fa; border: 1px solid #d8dee4; border-radius: 8px; padding: 14px 16px;
+      overflow-x: auto; line-height: 1.5; }
+pre code { background: none; padding: 0; font-size: 13px; white-space: pre; }
+.tok-kw { color: #cf222e; font-weight: 600; }
+.tok-str { color: #0a3069; }
+.tok-com { color: #6e7781; font-style: italic; }
+.tok-num { color: #0550ae; }
+.diff-ins { color: #116329; background: #dafbe1; display: block; }
+.diff-del { color: #82071e; background: #ffebe9; display: block; }
+.diff-hunk { color: #0550ae; background: #ddf4ff; display: block; }
+.diff-file { color: #57606a; background: #eff1f3; display: block; }
+.diff-txt { display: block; }
+hr { border: none; border-top: 1px solid #d8dee4; margin: 20px 0; }
+.footer { color: #6e7781; font-size: 12px; margin-top: 32px; border-top: 1px solid #eaeef2; padding-top: 12px; }
+@media print { body { background: #fff; padding: 0; } .page { border: none; box-shadow: none; } }
+</style>
+</head>
+<body>
+<div class="page">
+<h1>冻屏分析报告 — saveNoteSync 主线程同步保存导致 THREAD_BLOCK_6S</h1>
+<div class="meta"><span class="badge">应用冻屏（AppFreeze）</span>生成时间：2026-09-22 21:04:35</div>
+<p>分诊结论：app_freeze；输入完整度：full；置信度：high</p>
+<h1>冻屏问题综合分析报告</h1>
+<h2>故障基本信息</h2>
+<table><thead><tr><th>项目</th><th>内容</th></tr></thead><tbody><tr><td>故障时间</td><td>2026/06/05-11:15:07（3s 告警）/ 2026/06/05-11:15:10:313（6S 上报）</td></tr><tr><td>故障进程</td><td>19655 / com.example.freezetest（前台，Foreground:Yes）</td></tr><tr><td>故障类型</td><td>APPFREEZE — THREAD_BLOCK_6S（主线程卡死超时）</td></tr><tr><td>故障原因描述</td><td>App main thread is not response!</td></tr><tr><td>故障页面</td><td>/crashtest/pages/FreezeNoteDetailPage（11:14:58.240 切入）</td></tr></tbody></table>
+<h2>根因分析</h2>
+<ul><li><strong>诊断结果</strong>：主线程在 Save 按钮点击回调中同步执行 <code>NoteRepository.saveNoteSync</code> 保存流水线（9 步、每步约 0.5s、单轮约 4.0s）；第一轮执行期间用户再次点击，第二轮流水线紧接执行，主线程连续约 8s 满负荷运行，EventHandler 队列阻塞（62→115 个任务），触发 THREAD_BLOCK_6S。</li><li><strong>可信度</strong>：HIGH</li><li><strong>线程状态</strong>：繁忙（两次抓栈均 state=R、utime 564→859 ≈98% CPU、栈顶为不同字节码桩且应用日志按约 0.5s 步进推进；无任何等待原语）</li></ul>
+<h2>三级根因定位（依据故障模式库）</h2>
+<table><thead><tr><th>层级</th><th>根因</th><th>匹配依据</th></tr></thead><tbody><tr><td>一级根因</td><td>主线程卡死超时</td><td><code>Reason:THREAD_BLOCK_6S</code>；&quot;App main thread is not response!&quot;</td></tr><tr><td>二级根因</td><td>主线程繁忙</td><td>3s/6s 栈顶不一致（Jeqz 与 Ldobjbyname 两种字节码桩）；state=R；utime 564→859（两次抓栈间隔内 CPU 占用约 98%）</td></tr><tr><td>三级根因</td><td>执行耗时操作（多任务混合）</td><td>无采样栈，繁忙类三级根因无法按占比（&gt;30%）判定，默认匹配；业务日志将耗时操作定位到 saveNoteSync 同步保存流水线</td></tr></tbody></table>
+<h2>证据链</h2>
+<h3>1. 故障类型与目标线程路由</h3>
+<p>故障类型 THREAD_BLOCK_6S，事件 TID = PID = 19655，即主线程；按故障模式路由分析主线程。</p>
+<p>原始日志：</p>
+<pre><code>Reason:THREAD_BLOCK_6S
+appfreeze: com.example.freezetest THREAD_BLOCK_6S at 20260605111510
+Pid:19655
+...
+TID = 19655
+...
+Fault time:2026/06/05-11:15:07
+App main thread is not response!</code></pre>
+<h3>2. 整机状态排除（无整机异常）</h3>
+<p>整机资源正常：热等级 0（温度正常）；CPU Usage Total 28.11%（User Space 22.92% / Kernel Space 5.19% / iowait 0.24%），低于 85% 阈值；可用内存 2611.1MB，高于 800MB 阈值。NOTE 中未出现 <code>system&#x27;s low memory and thermal throttling</code>。排除整机高负载、低内存、热限频，无需提前终止，继续线程级分析。</p>
+<p>原始日志：</p>
+<pre><code>Device Memory(kB): Total 4025344, Free 2065700, Available 2699504
+热等级：0，温度正常
+CPU使用率：Total: 28.11%; User Space: 22.92%; Kernel Space: 5.19%; iowait: 0.24%</code></pre>
+<h3>3. 时间差异性校验</h3>
+<p>故障时间（3s 告警 Fault time 11:15:07）→ 3s 抓栈 11:15:07.142：差 0.14s（&lt; 2s）；抓栈 → 上报 11:15:07:311：差 0.17s（&lt; 10s）；6S 二次抓栈 11:15:10.140 → 上报 11:15:10:313：差 0.17s。均在阈值内，堆栈可信，无维测延时。</p>
+<p>原始日志：</p>
+<pre><code>Fault time:2026/06/05-11:15:07
+Catche stack trace start time: 2026-06-05 11:15:07.142
+Catche stack trace start time: 2026-06-05 11:15:10.140</code></pre>
+<h3>4. EventHandler 任务队列分析</h3>
+<p>两次 dump 的 Current Running 均为同一 MMITask（触摸事件分发任务，trigger 11:15:06.639）：3s 时刻（11:15:07.127）已执行 0.5s；6s 时刻（11:15:10.128）已执行 <strong>3.5s，超过 3s 阈值，该任务阻塞了 EventHandler 队列</strong>。历史队列显示前一个 MMITask（trigger 11:15:02.632）执行了 4.0s。队列持续堆积：VIP 52→105，总任务 62→115。</p>
+<p>关键点：当前 MMITask 的 send time 为 11:15:03.418——第二次点击发生在第一轮保存执行期间，事件被排队，直到 11:15:06.639 第一轮任务完成后才分发。</p>
+<p>原始日志：</p>
+<pre><code>EventHandler dump begin curTime: 2026-06-05 11:15:10.128
+Current Running: start at 2026-06-05 11:15:06.639, Event { send thread = 20842, send time = 2026-06-05 11:15:03.418, handle time = 2026-06-05 11:15:03.418, trigger time = 2026-06-05 11:15:06.639, task name = MMITask, caller = [deamon_io_waiter.cpp(HandleFileDescriptorEvent:211)] }
+历史队列中的耗时任务（执行≥1s）：
+  task name = MMITask，执行 4.0s（trigger 2026-06-05 11:15:02.631 -&gt; complete 2026-06-05 11:15:06.639）
+队列堆积：VIP: 105，Immediate: 0，High: 0，Low: 10，Idle: 0，总任务数: 115</code></pre>
+<h3>5. 故障目标线程堆栈分析（逐帧解读）</h3>
+<p><strong>THREAD_BLOCK_3S 堆栈（11:15:07.142 抓取）：</strong></p>
+<pre><code>Tid:19655, Name:mple.freezetest
+state=R, utime=564, stime=53, priority=10, nice=-10, clk=100
+#00 pc 00000000005edb84 /system/lib64/module/arkcompiler/stub.an(BCStub_HandleJeqzImm8StwCopy+4)  ← ArkTS 字节码桩
+#01 pc 10000001ffffffff Not mapped                                              ← 解释器内部地址，不可回溯</code></pre>
+<p><strong>THREAD_BLOCK_6S 堆栈（11:15:10.140 抓取）：</strong></p>
+<pre><code>Tid:19655, Name:mple.freezetest
+state=R, utime=859, stime=56, priority=10, nice=-10, clk=100
+#00 pc 00000000005b93fd /system/lib64/module/arkcompiler/stub.an(BCStub_HandleLdobjbynameImm8Id16StwCopy+6045)  ← ArkTS 字节码桩
+#01 pc 000000006a223f3d Not mapped                                              ← 解释器内部地址，不可回溯</code></pre>
+<p><strong>逐帧解读：</strong></p>
+<ul><li><code>#00</code>（3s）<code>stub.an(BCStub_HandleJeqzImm8StwCopy)</code>：ArkTS 字节码解释器桩。Jeqz = Jump-if-equal-zero 条件跳转指令，对应 if/while/for 的循环条件判定，呈循环式活跃执行。</li><li><code>#00</code>（6s）<code>stub.an(BCStub_HandleLdobjbynameImm8Id16StwCopy)</code>：Ldobjbyname = 按名称加载对象属性（如 <code>obj.prop</code>），属性访问密集的活跃执行。</li><li><code>#01</code>（两次）<code>Not mapped</code>：字节码桩之下的返回地址无符号映射，无法回溯上层调用方；堆栈中无应用 so 帧、无 BuildID。</li><li><code>state=R</code>（两次一致）：主线程处于运行态而非睡眠等待。</li><li><code>utime 564→859</code>（clk=100，即用户态 CPU 时间 5.64s→8.59s）：两次抓栈间隔 2.998s 内主线程消耗 2.95s CPU，占用约 98%——持续满负荷解释执行字节码。</li></ul>
+<p><strong>排除结论</strong>：主线程不在 pthread_mutex（非等锁）、不在 BinderInvoker::WaitForCompletion（非 Binder 阻塞）、不在 ld-musl IO（非阻塞 IO）、不在 libffrt.so（非 FFRT）、不在 libuv.so（非 libuv）、不在 FullGC（GC 线程空闲且栈顶非 cond_wait+jsruntime 组合）、不在 DumpHeapSnapshot（非 Dump）。两次采样位于不同字节码指令、无稳定等待点、CPU 持续满载、业务日志持续步进 → 判定为<strong>繁忙</strong>。</p>
+<p><strong>字节码执行对应的业务时间线（应用域 hilog，A00000）：</strong></p>
+<pre><code>11:15:02.637 I A00000/FreezeNoteDetail: onSaveClick: saving note note_00000, hasAttachment=true   ← 第 1 次点击保存
+11:15:02.637 I A00000/NoteRepository: saveNote: id=note_00000, sync=true, validate=true
+11:15:02.637 D A00000/NoteRepository: saveNoteSync: starting atomic write for note_00000
+11:15:02.637 D A00000/NoteRepository: saveNoteSync: writing note body to database...
+11:15:03.137 D A00000/NoteRepository: saveNoteSync: updating search index...
+11:15:03.637 D A00000/NoteRepository: saveNoteSync: updating attachment references...
+11:15:04.137 D A00000/NoteRepository: saveNoteSync: syncing tag associations...
+11:15:04.637 D A00000/NoteRepository: saveNoteSync: updating category membership...
+11:15:05.137 D A00000/NoteRepository: saveNoteSync: writing thumbnail metadata...
+11:15:05.637 D A00000/NoteRepository: saveNoteSync: queuing for cloud sync...
+11:15:06.137 D A00000/NoteRepository: saveNoteSync: flushing preferences...
+11:15:06.637 I A00000/NoteRepository: saveNoteSync: completed for note_00000                          ← 第 1 轮保存耗时 4.0s（MMITask#1）
+11:15:06.715 I A00000/FreezeNoteDetail: onSaveClick: saving note note_00000, hasAttachment=true   ← 第 2 次点击（11:15:03.418 发出，此刻才被分发）
+11:15:06.715 D A00000/NoteRepository: saveNoteSync: writing note body to database...
+11:15:07.277 D A00000/NoteRepository: saveNoteSync: updating search index...
+11:15:07.778 D A00000/NoteRepository: saveNoteSync: updating attachment references...
+11:15:08.278 D A00000/NoteRepository: saveNoteSync: syncing tag associations...
+11:15:08.778 D A00000/NoteRepository: saveNoteSync: updating category membership...
+11:15:09.278 D A00000/NoteRepository: saveNoteSync: writing thumbnail metadata...
+11:15:09.778 D A00000/NoteRepository: saveNoteSync: queuing for cloud sync...
+11:15:10.282 D A00000/NoteRepository: saveNoteSync: flushing preferences...                          ← 至 6S 上报时第 2 轮已执行 ≥3.5s 仍未结束</code></pre>
+<p>字节码桩与业务步骤对应关系：3s 抓栈（11:15:07.142）时主线程处于第 2 轮第 1 步 &quot;writing note body to database&quot;（11:15:06.715→11:15:07.277）；6s 抓栈（11:15:10.140）时处于第 7 步 &quot;queuing for cloud sync&quot;（11:15:09.778→11:15:10.282）。Jeqz（循环判定）与 Ldobjbyname（属性访问）与各步骤内的同步计算逻辑一致。</p>
+<h3>6. 排除 FFRT / libuv / Binder / 等锁（专项排除）</h3>
+<p>主线程栈无 libffrt.so、libuv.so、pthread_mutex、BinderInvoker::WaitForCompletion、ld-musl IO 符号。日志无 IPC FULL 特征，binder catcher 区段不存在（调用 0 条）；本进程 5 个 binder 线程（OS_IPC_0~4）全部停在 ioctl 的 Binder 等待循环（空闲状态），FFRT worker、GC 线程、ace.bg 均在条件等待。非 FFRT 阻塞、非 libuv 阻塞、非 Binder 阻塞、非等锁。</p>
+<p>原始日志：</p>
+<pre><code>Tid:20804, Name:OS_IPC_0_20804
+state=S
+#00 pc 00000000000da029 /system/lib/ld-musl-x86_64.so.1(ioctl+185)
+#02 pc 0000000000076acd /system/lib64/platformsdk/libipc_single.z.so(OHOS::BinderInvoker::TransactWithDriver(bool)+269)
+#04 pc 0000000000079068 /system/lib64/platformsdk/libipc_single.z.so(OHOS::BinderInvoker::JoinThread(bool)+40)
+#05 pc 000000000006f455 /system/lib64/platformsdk/libipc_single.z.so(OHOS::IPCWorkThread::ThreadHandler(void*)+901)</code></pre>
+<h3>7. 其他线程分析</h3>
+<table><thead><tr><th>TID</th><th>线程名</th><th>栈顶</th><th>状态</th></tr></thead><tbody><tr><td>20804/20805/20811/20843/20846</td><td>OS_IPC_0~4（binder×5）</td><td>ioctl（BinderInvoker::JoinThread）</td><td>空闲等待</td></tr><tr><td>20806</td><td>OS_DfxWatchdog</td><td>pthread_cond_timedwait</td><td>空闲</td></tr><tr><td>20818~20821</td><td>OS_GC_Thread ×4</td><td>pthread_cond_timedwait</td><td>空闲（非 GC 执行期）</td></tr><tr><td>20812/20813/20896/21071/21075~21077 等</td><td>OS_FFRT_*</td><td>pthread_cond_timedwait / epoll_wait</td><td>空闲</td></tr><tr><td>20850~20857</td><td>ace.bg.1~8</td><td>pthread_cond_timedwait</td><td>空闲</td></tr><tr><td>20842</td><td>OS_EVENT_POLL</td><td>epoll_wait</td><td>空闲</td></tr></tbody></table>
+<p>结论：除主线程外其余线程全部处于空闲等待状态，无持锁线程、无跨线程阻塞依赖；主线程不依赖任何其他线程即可推进，进一步佐证&quot;繁忙&quot;而非&quot;阻塞&quot;。</p>
+<h3>8. 符号解析结果及源码定位</h3>
+<p>故障栈无应用 so 帧：栈顶为系统模块 <code>/system/lib64/module/arkcompiler/stub.an</code>（ArkTS 字节码解释器桩），#01 两次均为 Not mapped（无 so 路径与 BuildID），不满足符号解析触发条件（应用 so 裸偏移 + BuildID）。此外，本次分析按用户要求未检索工程源码。标注：无应用 so 帧可解析，行号定位不可用；业务函数定位由应用域 hilog（A00000/FreezeNoteDetail、A00000/NoteRepository）完成，粒度为业务函数名。</p>
+<h2>采样栈热点函数分析</h2>
+<table><thead><tr><th>业务函数</th><th>出现次数</th><th>累计耗时(ms)</th><th>说明</th></tr></thead><tbody><tr><td>本 faultlog 未包含采样栈区段，无热点函数统计</td><td>—</td><td>—</td><td>—</td></tr></tbody></table>
+<h2>根本原因</h2>
+<p>用户在 FreezeNoteDetailPage 页面点击 Save 按钮触发 <code>onSaveClick</code>，其调用的 <code>NoteRepository.saveNote(sync=true)</code> 在主线程同步执行 <code>saveNoteSync</code> 9 步保存流水线（写库 → 搜索索引 → 附件引用 → 标签关联 → 分类归属 → 缩略图元数据 → 云同步排队 → 偏好清理），每步约 0.5s，单轮约 4.0s。第一轮保存执行期间（11:15:03.418）用户因界面无响应再次点击，第二个 MMITask 被排队至 11:15:06.639 分发，第二轮流水线紧接执行。主线程连续约 8s 满负荷解释执行 ArkTS 字节码（两次抓栈 state=R、CPU 占用约 98%、栈顶分别为循环判定与属性访问指令），EventHandler 队列无法处理任何后续任务（堆积 62→115，vSync 与输入均被阻塞），最终于 11:15:07 触发 THREAD_BLOCK_3S 告警、11:15:10:313 触发 THREAD_BLOCK_6S 冻屏上报。</p>
+<h2>根因模块</h2>
+<ul><li><strong>模块名称</strong>：com.example.freezetest（应用业务代码：FreezeNoteDetailPage 的 onSaveClick 回调 → NoteRepository.saveNote / saveNoteSync 同步保存流水线；堆栈帧为字节码桩且本次按用户要求未检索工程源码，具体源码文件与行号不可标注）</li><li><strong>责任领域</strong>：应用</li><li><strong>定界依据</strong>：阻塞主线程的执行流为应用自有 ArkTS 代码——应用域日志 A00000/FreezeNoteDetail、A00000/NoteRepository 按步推进，栈顶为 ArkTS 字节码解释器桩（解释执行的是应用页面代码）；整机资源正常（CPU 28%、可用内存 2611MB、热等级 0）；系统侧 binder/FFRT/GC 线程全部空闲，无 IPC 阻塞与锁竞争；<code>saveNote(sync=true)</code> 的同步执行方式由应用自身选择。</li></ul>
+<h2>修复建议</h2>
+<h3>将 saveNoteSync 保存流水线移出主线程并防止重复提交（源码不可达，提供通用方向与模板）</h3>
+<p><strong>建议1:</strong> 将 saveNoteSync 保存流水线整体移入 TaskPool worker 线程执行，onSaveClick 内只做调度与 UI 回调</p>
+<pre><code><span class="tok-kw">import</span> { taskpool } <span class="tok-kw">from</span> <span class="tok-str">&#x27;@kit.ArkTS&#x27;</span>
+
+@Concurrent
+<span class="tok-kw">function</span> saveNotePipeline(noteId: <span class="tok-kw">string</span>, payload: NoteData): SaveResult {
+  <span class="tok-com">// 原 saveNoteSync 的 9 步流水线整体移入 worker 线程：</span>
+  <span class="tok-com">// 写库 → 搜索索引 → 附件引用 → 标签关联 → 分类归属 → 缩略图元数据 → 云同步排队 → 偏好清理</span>
+  <span class="tok-kw">return</span> doSavePipeline(noteId, payload)
+}
+
+<span class="tok-com">// FreezeNoteDetailPage 的保存按钮回调：只调度，不同步执行</span>
+<span class="tok-kw">async</span> onSaveClick() {
+  <span class="tok-kw">const</span> result = <span class="tok-kw">await</span> taskpool.execute(saveNotePipeline, <span class="tok-kw">this</span>.noteId, <span class="tok-kw">this</span>.buildPayload())
+  <span class="tok-kw">this</span>.onSaveFinished(result) <span class="tok-com">// 仅 UI 更新留在主线程</span>
+}</code></pre>
+<p><strong>修复说明</strong>：冻屏的直接原因是保存流水线（单轮约 4.0s 的同步计算）在主线程 MMITask 回调内执行。移入 TaskPool 后主线程事件循环（MMITask、vSyncTask 分发）保持响应，队列不再堆积。</p>
+<p><strong>建议2:</strong> 保存操作增加进行中（in-flight）守卫，防止重复点击叠加执行</p>
+<pre><code><span class="tok-kw">private</span> saving = <span class="tok-kw">false</span>
+
+<span class="tok-kw">async</span> onSaveClick() {
+  <span class="tok-kw">if</span> (<span class="tok-kw">this</span>.saving) <span class="tok-kw">return</span> <span class="tok-com">// 保存进行中，忽略重复点击</span>
+  <span class="tok-kw">this</span>.saving = <span class="tok-kw">true</span>
+  <span class="tok-kw">this</span>.saveButtonEnabled = <span class="tok-kw">false</span> <span class="tok-com">// 立即禁用按钮，给用户即时反馈</span>
+  <span class="tok-kw">try</span> {
+    <span class="tok-kw">const</span> result = <span class="tok-kw">await</span> taskpool.execute(saveNotePipeline, <span class="tok-kw">this</span>.noteId, <span class="tok-kw">this</span>.buildPayload())
+    <span class="tok-kw">this</span>.onSaveFinished(result)
+  } <span class="tok-kw">finally</span> {
+    <span class="tok-kw">this</span>.saving = <span class="tok-kw">false</span>
+    <span class="tok-kw">this</span>.saveButtonEnabled = <span class="tok-kw">true</span>
+  }
+}</code></pre>
+<p><strong>修复说明</strong>：本日志显示用户在第一轮保存执行期间（11:15:03.418）再次点击，第二轮约 4s 的流水线紧接执行，把无响应时长拉长至约 8s 并触发 6S 上报。in-flight 守卫与按钮禁用消除重复触发叠加，同时避免同一笔记的并发写。</p>
+<div class="footer">本报告由 DevEco Code DFX 故障分析生成 · 代码块含语法高亮，修复建议含源码差异对比</div>
+</div>
+</body>
+</html>

@@ -261,6 +261,13 @@ window.DEVECO_CATALOG = {
           view: 'doc', date: '2026-09-17', href: 'deveco-code-agent-input-states.html',
           tags: ['输入框', '状态详解', '9 个场景'], thumb: { type: 'image', src: 'site/thumbs/agent-input-states.jpg' },
         },
+        {
+          title: '冻屏分析报告：两版低保真的需求分析', subtitle: 'AppFreeze Report · Phase 1 Analysis',
+          desc: '同一次冻屏在「源码不可达 / 源码可达」下生成的两份低保真报告，按 BUTP + A–H 拆开：修复建议埋在第 5.6–6.2 屏、证据链占 51–68%、两版都标 HIGH 而其中一版的建议已存在且无效。16 页 16:9 报告，附 Demo 优化提示词（问题 B1–B17 同源编号）与产品文档。',
+          view: 'doc', date: '2026-09-23', href: 'analysis/appfreeze-report/REPORT-分析报告.html',
+          links: [{ label: '优化提示词', href: 'analysis/appfreeze-report/PROMPT-Demo优化提示词.md' }, { label: '产品文档', href: 'analysis/appfreeze-report/product-doc.md' }],
+          tags: ['冻屏', '需求分析', '优化提示词'],
+        },
       ],
     },
     {

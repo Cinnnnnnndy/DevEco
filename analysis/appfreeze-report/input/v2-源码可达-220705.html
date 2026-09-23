@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AppFreeze THREAD_BLOCK_6S 分析报告</title>
+<style>
+:root { color-scheme: light; }
+* { box-sizing: border-box; }
+body { font-family: -apple-system, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+       color: #1f2328; background: #f6f8fa; margin: 0; padding: 24px; line-height: 1.65; }
+.page { max-width: 960px; margin: 0 auto; background: #fff; border: 1px solid #d0d7de;
+        border-radius: 10px; padding: 32px 40px; box-shadow: 0 1px 3px rgba(31,35,40,.08); }
+h1 { font-size: 22px; border-bottom: 1px solid #d8dee4; padding-bottom: 10px; margin-top: 0; }
+h2 { font-size: 18px; border-bottom: 1px solid #eaeef2; padding-bottom: 6px; margin-top: 28px; }
+h3 { font-size: 16px; margin-top: 22px; }
+h4, h5, h6 { font-size: 14px; margin-top: 18px; }
+.meta { color: #57606a; font-size: 13px; margin-bottom: 20px; }
+.meta .badge { display: inline-block; background: #ddf4ff; color: #0969da; border: 1px solid #54aeff;
+               border-radius: 999px; padding: 1px 10px; margin-right: 10px; font-weight: 600; }
+table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 14px; }
+th, td { border: 1px solid #d8dee4; padding: 6px 12px; text-align: left; vertical-align: top; }
+th { background: #f6f8fa; }
+code { font-family: ui-monospace, SFMono-Regular, 'JetBrains Mono', Consolas, monospace;
+       background: #eff1f3; border-radius: 4px; padding: 1px 5px; font-size: 13px; }
+pre { background: #f6f8fa; border: 1px solid #d8dee4; border-radius: 8px; padding: 14px 16px;
+      overflow-x: auto; line-height: 1.5; }
+pre code { background: none; padding: 0; font-size: 13px; white-space: pre; }
+.tok-kw { color: #cf222e; font-weight: 600; }
+.tok-str { color: #0a3069; }
+.tok-com { color: #6e7781; font-style: italic; }
+.tok-num { color: #0550ae; }
+.diff-ins { color: #116329; background: #dafbe1; display: block; }
+.diff-del { color: #82071e; background: #ffebe9; display: block; }
+.diff-hunk { color: #0550ae; background: #ddf4ff; display: block; }
+.diff-file { color: #57606a; background: #eff1f3; display: block; }
+.diff-txt { display: block; }
+hr { border: none; border-top: 1px solid #d8dee4; margin: 20px 0; }
+.footer { color: #6e7781; font-size: 12px; margin-top: 32px; border-top: 1px solid #eaeef2; padding-top: 12px; }
+@media print { body { background: #fff; padding: 0; } .page { border: none; box-shadow: none; } }
+</style>
+</head>
+<body>
+<div class="page">
+<h1>AppFreeze THREAD_BLOCK_6S 分析报告</h1>
+<div class="meta"><span class="badge">应用冻屏（AppFreeze）</span>生成时间：2026-09-22 22:07:05</div>
+<p>分诊结论：app_freeze；输入完整度：full；置信度：high</p>
+<h1>冻屏问题综合分析报告</h1>
+<h2>故障基本信息</h2>
+<table><thead><tr><th>项目</th><th>内容</th></tr></thead><tbody><tr><td>故障时间</td><td>2026/06/05-11:15:10（THREAD_BLOCK_6S 定案；3S 告警于 11:15:07）</td></tr><tr><td>故障进程</td><td>19655 / com.example.freezetest</td></tr><tr><td>故障类型</td><td>APPFREEZE（THREAD_BLOCK_6S，主线程卡死超时）</td></tr><tr><td>故障原因描述</td><td>App main thread is not response!</td></tr></tbody></table>
+<h2>根因分析</h2>
+<ul><li><strong>诊断结果</strong>：FREEZE-02 场景——笔记详情页保存时 <code>hasAttachment()</code>（FreezeNoteDetailPage.ets:48，故障时 4ca0c7e 版本）把已有封面图误判为&quot;本次待保存附件&quot;，<code>options.sync</code> 恒为 true，<code>NoteRepository.saveNoteSync</code>（NoteRepository.ets:64-102）在主线程同步执行 8 次 <code>FreezeTestHelper.injectDelay(500)</code> 忙等共 4s；连续两次点击保存（第二次点击在主线程忙等期间入队，按钮禁用态因未重渲染而未生效）累计阻塞约 8s，触发 THREAD_BLOCK_3S/6S。</li><li><strong>可信度</strong>：HIGH</li><li><strong>线程状态</strong>：繁忙（两次抓栈 state=R、utime +295 tick/3s ≈ 98% 单核，栈顶为字节码桩循环式活跃执行，无任何等待原语）</li></ul>
+<h2>三级根因定位（依据故障模式库）</h2>
+<table><thead><tr><th>层级</th><th>根因</th><th>匹配依据</th></tr></thead><tbody><tr><td>一级根因</td><td>主线程卡死超时</td><td><code>Reason: THREAD_BLOCK_6S</code>、<code>App main thread is not response!</code></td></tr><tr><td>二级根因</td><td>主线程繁忙</td><td>3s/6s 栈顶不同（<code>BCStub_HandleJeqzImm8StwCopy</code> vs <code>BCStub_HandleLdobjbynameImm8Id16StwCopy</code>），state=R 且 utime 564→859 近满核，无等待原语</td></tr><tr><td>三级根因</td><td>执行耗时操作</td><td>繁忙类三级根因均需采样栈占比（&gt;30%）判定；本 faultlog 无采样栈区段，按规则默认匹配&quot;执行耗时操作&quot;；具体耗时操作经源码定位为 saveNoteSync 的 8×500ms 忙等</td></tr></tbody></table>
+<h2>证据链</h2>
+<h3>1. 故障类型与目标线程路由</h3>
+<p>THREAD_BLOCK_6S（主线程卡死超时）事件，故障目标线程 TID=19655（主线程，Name: mple.freezetest）。前台页面自 11:14:58.240 起为 FreezeNoteDetailPage。</p>
+<p>原始日志：</p>
+<pre><code>Device info:emulator / Module name:com.example.freezetest / Foreground:Yes / Pid:19655
+Reason:THREAD_BLOCK_6S
+Page switch history:
+  11:14:58.240 /crashtest/pages/FreezeNoteDetailPage
+  11:14:51.608 /crashtest/pages/CrashTestPage
+MSG = Fault time:2026/06/05-11:15:07 / App main thread is not response!</code></pre>
+<h3>2. 整机状态排除</h3>
+<p>CPU Total 28.11%（&lt;85%）、可用内存 2611.1MB（&gt;800MB）、热等级 0（&lt;4），NOTE 无 low memory / thermal throttling 标记——排除整机高负载、低内存、热限频，维测信息可信。</p>
+<p>原始日志：</p>
+<pre><code>热等级：0，温度正常
+CPU使用率：Total: 28.11%; User Space: 22.92%; Kernel Space: 5.19%; iowait: 0.24%; irq: 0.12%; idle: 71.53%
+可用内存：2611.1MB（高于800MB阈值，内存水位正常）</code></pre>
+<h3>3. 时间差异性校验</h3>
+<p>故障时间 11:15:07 → hiview 上报 11:15:07.311（+0.31s &lt; 10s）；故障时间 → 抓栈 11:15:07.142（+0.14s &lt; 2s）；6S 事件抓栈 11:15:10.140 同样即时。堆栈与队列 dump 均可信。</p>
+<p>原始日志：</p>
+<pre><code>start time: 2026/06/05-11:15:07:311 / TIMESTAMP: 2026/06/05-11:15:10:313
+Catche stack trace start time: 2026-06-05 11:15:07.142（3S）
+Catche stack trace start time: 2026-06-05 11:15:10.140（6S）</code></pre>
+<h3>4. EventHandler 任务队列分析</h3>
+<p>3S dump：当前执行 MMITask 已 0.5s；历史队列 MMITask 执行 4.0s（trigger 11:15:02.632 → complete 11:15:06.639）。 6S dump：当前执行 MMITask（send 11:15:03.418，trigger 11:15:06.639）已执行 3.5s &gt; 3s，阻塞 EventHandler 队列；VIP 堆积 105，总任务 115。 两次点击的输入事件处理各耗时约 4s（与 8×500ms 忙等精确吻合）；第二次点击在主线程忙等期间入队，首次处理完成后立即接续执行——主线程自 11:15:02.632 起被连续占用约 8s，先后触发 3S/6S 检测。</p>
+<p>原始日志：</p>
+<pre><code>Current Running: start at 2026-06-05 11:15:06.639, Event { send thread = 20842, send time = 2026-06-05 11:15:03.418, ... task name = MMITask, caller = [deamon_io_waiter.cpp(HandleFileDescriptorEvent:211)] }
+No. 28 : Event { ... trigger time = 2026-06-05 11:15:02.632, completeTime time = 2026-06-05 11:15:06.639, priority = VIP, task name = MMITask, ... }
+队列堆积：VIP: 105，Immediate: 0，High: 0，Low: 10，Idle: 0，总任务数: 115</code></pre>
+<h3>5. 故障目标线程堆栈分析（逐帧解读）</h3>
+<p>3S 栈（Tid:19655, state=R, utime=564）：</p>
+<pre><code>#00 pc 00000000005edb84 /system/lib64/module/arkcompiler/stub.an(BCStub_HandleJeqzImm8StwCopy+4)  ← 字节码桩：条件跳转（Jeqz），对应 while 循环条件判定
+#01 pc 10000001ffffffff Not mapped  ← 解释器帧无法映射</code></pre>
+<p>6S 栈（Tid:19655, state=R, utime=859）：</p>
+<pre><code>#00 pc 00000000005b93fd /system/lib64/module/arkcompiler/stub.an(BCStub_HandleLdobjbynameImm8Id16StwCopy+6045)  ← 字节码桩：按名加载对象属性（Ldobjbyname），对应 Date.now 属性访问
+#01 pc 000000006a223f3d Not mapped  ← 解释器帧无法映射</code></pre>
+<p><strong>逐帧解读：</strong></p>
+<ul><li><code>#00</code>（两次均为 stub.an 字节码处理桩）：两次栈顶分别落在&quot;条件跳转&quot;与&quot;按名取属性&quot;两条字节码指令——正是忙等循环 <code>while (Date.now() - start &lt; ms)</code> 的两个组成操作（加载 <code>Date.now</code> 属性 + 判定循环条件），呈循环式活跃执行，与 <code>FreezeTestHelper.injectDelay</code> 的实现逐字对应。</li><li><code>#01</code> Not mapped：ArkTS 字节码解释执行，原生回溯无法展开 JS 调用链；业务调用链经任务队列时长与源码比对定位（见证据链第 8 节）。</li><li><strong>排除结论</strong>：主线程不在 pthread_mutex（非等锁）、不在 BinderInvoker::WaitForCompletion（非 Binder 阻塞）、不在 ld-musl open/read/write（非阻塞 IO）、不在 libffrt.so（非 FFRT）、不在 libuv.so（非 libuv）、不在 FullGC、不在 DumpHeapSnapshot。未命中任何阻塞模式；结合 state=R 与 CPU 饱和（utime 564→859，clk=100 下 3s 内 +295 tick ≈ 98% 单核），判定为繁忙态执行耗时操作。</li></ul>
+<h3>6. 排除 FFRT / libuv / Binder / 等锁（专项排除）</h3>
+<p>主线程栈无 libffrt.so、libuv.so、pthread_mutex、BinderInvoker::WaitForCompletion、ld-musl IO 符号；本 faultlog 无 Binder catcher 区段，无 IPC FULL 特征。</p>
+<p>原始日志：</p>
+<pre><code>区段索引：- binder：无（调用 0 条，资源记录 0 条，对端进程 0 个）
+#00 pc ... /system/lib64/module/arkcompiler/stub.an(BCStub_...)（主线程栈顶为字节码桩，非任何等待原语）</code></pre>
+<h3>7. 其他线程分析</h3>
+<table><thead><tr><th>TID</th><th>线程名</th><th>栈顶</th><th>状态</th></tr></thead><tbody><tr><td>20804 / 20805 / 20811 / 20843</td><td>OS_IPC_*</td><td>BinderConnector::WriteBinder（ioctl）</td><td>空闲等待（S）</td></tr><tr><td>20812</td><td>OS_FFRT_5_0</td><td>pthread_cond_timedwait（libffrt.so）</td><td>空闲等待（S）</td></tr><tr><td>20813</td><td>OS_FFRT_Delay</td><td>epoll_wait（libffrt.so）</td><td>空闲等待（S）</td></tr><tr><td>20818 / 20819</td><td>OS_GC_Thread</td><td>pthread_cond_timedwait（libark_jsruntime.so）</td><td>空闲等待（S）</td></tr><tr><td>20806</td><td>OS_DfxWatchdog</td><td>pthread_cond_timedwait（libhicollie.z.so）</td><td>空闲等待（S）</td></tr></tbody></table>
+<p>结论：两次抓栈中仅主线程 Tid 19655 处于 state=R，其余 31 个线程全部为 S 态空闲等待；无持锁线程，无跨线程阻塞依赖。</p>
+<h3>8. 符号解析结果及源码定位（源码可达）</h3>
+<p>故障栈无应用 so 裸偏移帧（栈顶为系统 stub.an 字节码桩，JS 帧 Not mapped），llvm-addr2line 行号解析不适用；源码定位经由&quot;任务时长精确吻合 + 页面历史 + git 版本考古&quot;完成：</p>
+<ul><li>故障日志产生于 2026-06-05 11:15:10，对应构建版本为提交 4ca0c7e（2026-06-05 10:31:50&quot;构造appfreeze的场景&quot;）；工作区当前已含未提交的修复版（git status: M FreezeNoteDetailPage.ets / M NoteRepository.ets），以下定位以故障时 4ca0c7e 版本行号为准。</li><li>FreezeNoteDetailPage.aboutToAppear（27-36 行）加载的笔记 thumbnailPath 非空（取第一条带封面图的笔记）。</li><li>FreezeNoteDetailPage.ets:48（4ca0c7e）<code>hasAttachment()</code> 返回 <code>this.currentNote?.thumbnailPath !== undefined</code>——对带封面图的笔记恒为 true。</li><li>FreezeNoteDetailPage.ets:86-89 <code>options.sync = this.hasAttachment()</code> → true。</li><li>NoteRepository.ets:44-48（4ca0c7e）<code>if (options.sync) { this.saveNoteSync(note); }</code>——同步调用，阻塞 MMITask 处理。</li><li>NoteRepository.ets:64-102（4ca0c7e）saveNoteSync 在冻屏测试模式开启时执行 8 次 <code>FreezeTestHelper.injectDelay(500)</code> 共 4.0s 同步忙等——与队列中 MMITask 实测 4.0s（11:15:02.632→11:15:06.639）精确吻合。</li><li>FreezeTestHelper.ets:26-31 <code>injectDelay</code> 实现 <code>while (Date.now() - start &lt; ms)</code> 忙等——与两次栈顶字节码（Ldobjbyname 取 Date.now 属性 / Jeqz 循环条件判定）逐字对应。</li><li>触发前置条件：CrashTestPage.ets:115 的冻屏测试模式开关处于开启状态（isFreezeModeEnabled 为 true 时 injectDelay 才生效）。</li></ul>
+<h2>采样栈热点函数分析</h2>
+<table><thead><tr><th>业务函数</th><th>出现次数</th><th>累计耗时(ms)</th><th>说明</th></tr></thead><tbody><tr><td>本 faultlog 未包含采样栈区段，无热点函数统计</td><td>—</td><td>—</td><td>—</td></tr></tbody></table>
+<h2>根本原因</h2>
+<p>应用笔记详情页（FreezeNoteDetailPage）保存路径存在&quot;条件误判 + 同步忙等&quot;双重缺陷，完整触发路径：</p>
+<ol><li>用户在 CrashTestPage 开启冻屏测试模式（freezeModeEnabled = true），于 11:14:58 进入 FreezeNoteDetailPage，页面加载的笔记带封面图（thumbnailPath 非空）。</li><li>11:15:02.631 用户点击&quot;保存笔记&quot;（MMITask #1 入队）。onSaveClick 中 <code>hasAttachment()</code> 按 <code>thumbnailPath !== undefined</code> 误判&quot;有待保存附件&quot;，<code>options.sync=true</code>，saveNote 同步调用 saveNoteSync。</li><li>saveNoteSync 在主线程顺序执行 8 次 injectDelay(500) 忙等（共 4.0s），期间主线程持续执行 <code>while (Date.now() - start &lt; ms)</code> 循环——两次抓栈栈顶字节码（Jeqz 循环判定 / Ldobjbyname 取 Date.now 属性）与 state=R、utime 近满核互相印证：主线程为繁忙态，非等待态。</li><li>11:15:03.418 用户再次点击保存（MMITask #2 入队）。首次点击仍在忙等中，<code>isSaving=true</code> 的禁用态因主线程未返回事件循环、未重渲染而未生效。</li><li>11:15:06.639 MMITask #1 完成（实测 4.0s = 8×500ms 精确吻合），MMITask #2 立即开始处理，再次进入 4.0s 忙等。主线程自 11:15:02.632 起被连续占用约 8s，输入/渲染任务堆积（VIP 105 个）。</li><li>HiCollie 先后于 11:15:07.306（3S 告警）与 11:15:10.313（6S 定案）上报 AppFreeze。</li></ol>
+<h2>根因模块</h2>
+<ul><li><strong>模块名称</strong>：com.example.freezetest（应用业务代码）</li><li>entry/src/main/ets/crashtest/pages/FreezeNoteDetailPage.ets:48（4ca0c7e 版本，hasAttachment 误判条件）</li><li>entry/src/main/ets/crashtest/service/NoteRepository.ets:64-102（4ca0c7e 版本，saveNoteSync 主线程同步忙等路径）</li><li>entry/src/main/ets/crashtest/freezetest/FreezeTestHelper.ets:26-31（injectDelay 忙等实现）</li><li><strong>责任领域</strong>：应用</li><li><strong>定界依据</strong>：误判条件（hasAttachment）、同步阻塞实现（saveNoteSync / injectDelay 忙等）与触发调用链（保存按钮 onClick）全部位于应用侧代码；故障栈无系统等待原语、无 Binder 调用记录、无 IPC FULL，整机资源正常，无任何系统侧参与证据。</li></ul>
+<h2>修复建议</h2>
+<h3>修正 hasAttachment 误判条件，并将附件保存路径改为逐步 await 的异步实现</h3>
+<p><strong>文件</strong>：<code>entry/src/main/ets/crashtest/pages/FreezeNoteDetailPage.ets</code></p>
+<p><strong>修改 1</strong> — 第 45-54 行（杜绝带封面图笔记误入同步保存路径）</p>
+<pre><code><span class="diff-txt">   private hasAttachment(): boolean {</span>
+<span class="diff-del">-    // Check if the note has an associated media resource</span>
+<span class="diff-del">-    // that requires synchronized persistence handling</span>
+<span class="diff-del">-    return this.currentNote?.thumbnailPath !== undefined</span>
+<span class="diff-del">-    // BUG: This checks whether the note has ANY thumbnail (existing cover image),</span>
+<span class="diff-del">-    // not whether there are NEW pending attachments to save.</span>
+<span class="diff-del">-    // A note with an existing cover image will always return true here,</span>
+<span class="diff-del">-    // even when the user only edited text content.</span>
+<span class="diff-del">-    // Should be: return this.pendingAttachments.length &gt; 0</span>
+<span class="diff-ins">+    return this.pendingAttachments.length &gt; 0</span>
+<span class="diff-txt">   }</span></code></pre>
+<p><strong>文件</strong>：<code>entry/src/main/ets/crashtest/service/NoteRepository.ets</code></p>
+<p><strong>修改 2</strong> — 第 44-48 行（sync 路径改为可等待的异步实现）</p>
+<pre><code><span class="diff-txt">     if (options.sync) {</span>
+<span class="diff-del">-      // Synchronous path: used when attachments need atomic commit</span>
+<span class="diff-del">-      // to ensure data consistency between note record and attachment files</span>
+<span class="diff-del">-      this.saveNoteSync(note);</span>
+<span class="diff-ins">+      await this.saveNoteWithAttachmentsAsync(note);</span>
+<span class="diff-txt">     } else {</span>
+<span class="diff-txt">       await this.saveNoteAsync(note);</span>
+<span class="diff-txt">     }</span></code></pre>
+<p><strong>修改 3</strong> — 第 64-102 行（同步忙等改为逐步 await、事件循环让出主线程）</p>
+<pre><code><span class="diff-del">-  private saveNoteSync(note: NoteModel): void {</span>
+<span class="diff-ins">+  private async saveNoteWithAttachmentsAsync(note: NoteModel): Promise&lt;void&gt; {</span>
+<span class="diff-txt">     ...</span>
+<span class="diff-txt">     if (FreezeTestHelper.isFreezeModeEnabled()) {</span>
+<span class="diff-txt">       // Step 1: Insert/update main note record</span>
+<span class="diff-del">-      FreezeTestHelper.injectDelay(500);</span>
+<span class="diff-ins">+      await this.nonBlockingDelay(500);</span>
+<span class="diff-txt">       // Step 2 ~ Step 8 同理，每一步：</span>
+<span class="diff-del">-      FreezeTestHelper.injectDelay(500);</span>
+<span class="diff-ins">+      await this.nonBlockingDelay(500);</span>
+<span class="diff-txt">     }</span>
+<span class="diff-txt">   }</span>
+<span class="diff-ins">+</span>
+<span class="diff-ins">+  private nonBlockingDelay(ms: number): Promise&lt;void&gt; {</span>
+<span class="diff-ins">+    return new Promise&lt;void&gt;((resolve) =&gt; {</span>
+<span class="diff-ins">+      setTimeout(() =&gt; {</span>
+<span class="diff-ins">+        resolve();</span>
+<span class="diff-ins">+      }, ms);</span>
+<span class="diff-ins">+    });</span>
+<span class="diff-ins">+  }</span></code></pre>
+<p>&gt; <strong>修复说明</strong>：修改 1 消除误判根因——仅本次编辑新增的附件（pendingAttachments）才需要附件保存路径，已有封面图随笔记记录持久化，不构成同步保存的理由；修改 2/3 保证即便进入附件保存路径，每一步 IO 都以 await + setTimeout 让出主线程，事件循环可继续处理输入与渲染（两次点击场景下按钮禁用态也能及时生效，第二次忙等不再发生）。当前工作区已包含上述修复（git status 显示 FreezeNoteDetailPage.ets / NoteRepository.ets 为已修改未提交状态，与产生故障日志的 4ca0c7e 版本不同），验证冻屏不再复现后提交即可。</p>
+<div class="footer">本报告由 DevEco Code DFX 故障分析生成 · 代码块含语法高亮，修复建议含源码差异对比</div>
+</div>
+</body>
+</html>
