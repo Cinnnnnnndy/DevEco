@@ -21,7 +21,13 @@
   $('#title').textContent = C.title;
   $('#lede').textContent = C.lede;
   var all = [];
-  C.groups.forEach(function(g){ g.items.forEach(function(it){ all.push(it); it._group = g; }); });
+  /* 规划重点的卡片在各自分类里排到最前，其余保持 catalog.js 里的顺序 */
+  C.groups.forEach(function(g){
+    g.items = g.items.map(function(it,i){ return {it:it,i:i}; })
+      .sort(function(a,b){ return ((b.it.key?1:0)-(a.it.key?1:0)) || (a.i-b.i); })
+      .map(function(x){ return x.it; });
+    g.items.forEach(function(it){ all.push(it); it._group = g; });
+  });
   var ready = all.filter(function(i){ return i.view==='ready'; }).length;
   var sketch = all.filter(function(i){ return i.view==='sketch'; }).length;
   var keyN = all.filter(function(i){ return i.key; }).length;
@@ -91,27 +97,7 @@
   }
 
   /* ---- 分组渲染（全部视图下逐段展示；选中某个分类时只留那一段） ---- */
-  /* ---- 规划重点总览：新一轮规划点 → 归到哪一类、落在哪张卡上 ---- */
-  var F = C.focus, focusHTML = '';
-  if(F && F.themes){
-    var byNo = {}; all.forEach(function(i){ if(i.no) byNo[i.no]=i; });
-    focusHTML = '<section class="focus" id="focus"><div class="fhead"><svg><use href="#i-star"/></svg><h3>'+esc(F.title)+'</h3>'
-      + '<span class="cnt">'+F.themes.reduce(function(n,t){return n+t.points.length;},0)+' 个点</span></div>'
-      + (F.note?'<p class="note">'+esc(F.note)+'</p>':'')
-      + '<div class="fgrid">'+F.themes.map(function(t){
-          return '<div class="ftheme"><div class="ft"><b>'+esc(t.title)+'</b>'+(t.sub?'<span>'+esc(t.sub)+'</span>':'')+'</div>'
-            + t.points.map(function(p){
-                var it = byNo[p.no], how = p.merged ? '并入' : '新增';
-                return '<button type="button" class="fp" data-no="'+esc(p.no)+'">'
-                  + '<span class="fp-t">'+esc(p.title)+'</span>'
-                  + (p.detail?'<span class="fp-d">'+esc(p.detail)+'</span>':'')
-                  + '<span class="fp-to"><i class="'+(p.merged?'mg':'nw')+'">'+how+'</i>'
-                  + '<span class="no">'+esc(p.no)+'</span>'+(it?esc(it.title.split('：')[0]):'')+'</span></button>';
-              }).join('')+'</div>';
-        }).join('')+'</div></section>';
-  }
-
-  groupsEl.innerHTML = focusHTML + C.groups.map(function(g){
+  groupsEl.innerHTML = C.groups.map(function(g){
     return '<section class="grp" id="'+esc(g.id)+'">'
       + '<div class="ghead"><h3>'+esc(g.title)+'</h3><span class="cnt" data-cnt></span></div>'
       + (g.note?'<p class="note">'+esc(g.note)+'</p>':'')
@@ -119,16 +105,6 @@
   }).join('') + '<div class="empty" id="empty" hidden>没有匹配的条目</div>';
 
   groupsEl.addEventListener('click', function(e){
-    var fp = e.target.closest('.fp');
-    if(fp){
-      var tgt = document.getElementById('card-'+fp.dataset.no); if(!tgt) return;
-      if(tgt.hidden){ cat='全部'; q=''; $('#search').value=''; viewFilter=null;
-        catsEl.querySelectorAll('.cat').forEach(function(x){ x.classList.toggle('on', x.dataset.cat==='全部'); });
-        legendEl.querySelectorAll('.lg').forEach(function(x){ x.classList.remove('on'); }); apply(); }
-      tgt.scrollIntoView({behavior:'smooth', block:'center'});
-      tgt.classList.remove('flash'); void tgt.offsetWidth; tgt.classList.add('flash');
-      return;
-    }
     if(e.target.closest('a')) return;
     var c = e.target.closest('.card'); if(!c || !c.dataset.href) return;
     if(window.getSelection && String(window.getSelection())) return;
@@ -184,7 +160,6 @@
       sec.hidden = n===0; if(showSection) visibleTotal += n;
       sec.querySelector('[data-cnt]').textContent = n + ' 项';
     });
-    var fs = $('#focus'); if(fs) fs.hidden = !((cat==='全部' || cat==='key') && !q && !viewFilter);
     $('#section-title').textContent = cat==='全部' ? '全部项目' : cat==='key' ? '规划重点' : cat && (function(){ var g=C.groups.filter(function(g){return g.id===cat})[0]; return g?g.title:'全部项目'; })();
     var totalForCat = cat==='全部' ? all.length : cat==='key' ? keyCount : all.filter(function(i){ return i._group.id===cat; }).length;
     $('#count').textContent = visibleTotal + ' / ' + totalForCat;
