@@ -1,0 +1,537 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='32' y2='32' gradientUnits='userSpaceOnUse'%3E%3Cstop stop-color='%232C8DDD'/%3E%3Cstop offset='1' stop-color='%233357AC'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='32' height='32' rx='7' fill='url(%23g)'/%3E%3Ctext x='16' y='22.5' font-family='Arial,Helvetica,sans-serif' font-size='13' font-weight='700' fill='white' text-anchor='middle'%3EDE%3C/text%3E%3C/svg%3E">
+<title>27 · 云端模拟器：本机不跑，云端多开</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="../../deveco-intui-kit/src/tokens.css">
+<link rel="stylesheet" href="../../deveco-intui-kit/src/components.css">
+<link rel="stylesheet" href="../_shared/frame.css">
+<link rel="stylesheet" href="../_shared/guide.css">
+<script src="../../deveco-intui-kit/src/icons.js"></script>
+<script src="../_shared/frame.js"></script>
+<script src="../_shared/guide.js"></script>
+<style>
+  .ide[data-ide-theme]{--proj-w:360px}
+  .btn{white-space:nowrap}
+  .btn[disabled]{opacity:.5}
+  .btn svg.i{width:12px;height:12px}
+  .btn.primary svg.i{color:inherit}
+
+  /* ---------- Device Manager ---------- */
+  .dmg{padding:8px 12px 12px;display:flex;flex-direction:column;gap:10px}
+  .sec-h{display:flex;align-items:center;gap:6px;font-size:var(--fs-sm);color:var(--ui-fg-info);font-weight:600;letter-spacing:.02em}
+  .sec-h svg{width:14px;height:14px;color:var(--ui-icon)}
+  .sec-h .grow{flex:1}
+  .sec-h .cnt{font-family:var(--font-code);font-weight:400}
+  .loc .dm-card-hd{border-bottom:0;padding:9px 12px 4px}
+  .loc .dm-card-hd svg{width:16px;height:16px;color:var(--ui-icon)}
+  .loc .dm-card-hd .sub{font-weight:400;color:var(--ui-fg-info);font-size:var(--fs-sm)}
+  .meter{display:grid;grid-template-columns:34px minmax(0,1fr) 62px;align-items:center;gap:8px;font-size:var(--fs-sm)}
+  .meter .k{color:var(--ui-fg-info)}
+  .meter .v{font-family:var(--font-code);font-size:11px;text-align:right}
+  .meter .dm-progress{height:5px}
+  .meter .dm-progress > i{transition:width .6s}
+  .meter.hot .dm-progress > i{background:var(--ui-warning)}
+  .meter.hot .v{color:color-mix(in srgb,var(--ui-warning) 80%,var(--ui-fg))}
+  .loc .note{font-size:var(--fs-sm);color:var(--ui-fg-info)}
+  .loc .dm-steps-h{padding:2px 0 0}
+  .loc .dm-steps-h .dm-step{font-size:11px}
+  .loc.gone{opacity:.7}
+
+  .mo .dm-card-bd{gap:8px}
+  .kinds{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .kopt{display:flex;align-items:center;gap:8px;padding:6px 8px;border:1px solid var(--ui-border);border-radius:6px;cursor:default;font-size:12px;min-width:0}
+  .kopt .cb{width:14px;height:14px;border-radius:3px;border:1.5px solid var(--ui-component-border);flex:none;display:grid;place-items:center}
+  .kopt.on{border-color:var(--ui-accent);background:color-mix(in srgb,var(--ui-accent) 10%,transparent)}
+  .kopt.on .cb{background:var(--ui-accent);border-color:var(--ui-accent)}
+  .kopt.on .cb::after{content:"";width:6px;height:3px;border-left:1.5px solid #fff;border-bottom:1.5px solid #fff;transform:rotate(-45deg) translate(1px,-1px)}
+  .kopt svg{width:14px;height:14px;color:var(--ui-icon);flex:none}
+  .kopt b{font-weight:600;white-space:nowrap}
+  .kopt span{color:var(--ui-fg-info);font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .kopt.dis{opacity:.5}
+  .mo .row2{display:flex;align-items:center;gap:8px;font-size:var(--fs-sm);color:var(--ui-fg-info)}
+  .mo .dm-seg button{height:22px;padding:0 9px;font-size:11px}
+
+  .ctab{display:flex;flex-direction:column;border:1px solid var(--ui-border);border-radius:var(--arc);overflow:hidden;background:var(--ui-field-bg)}
+  .ci{display:grid;grid-template-columns:16px minmax(0,1fr) 40px 34px 44px 58px;align-items:center;gap:4px;padding:0 8px;height:32px;font-size:12px;border-top:1px solid var(--ui-border);cursor:default}
+  .ci.th{height:24px;border-top:0;background:var(--ui-bg);color:var(--ui-fg-info);font-size:11px}
+  .ci:not(.th):hover{background:var(--ui-hover)}
+  .ci.sel{background:var(--ui-selection)}
+  .ci svg{width:14px;height:14px;color:var(--ui-icon)}
+  .ci .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:4px}
+  .ci .nm svg{width:11px;height:11px;color:var(--ui-accent);flex:none}
+  .ci .mono{font-family:var(--font-code);font-size:11px;color:var(--ui-fg-info)}
+  .ci .lat{font-family:var(--font-code);font-size:11px;text-align:right}
+  .ci .dm-pill{justify-self:end;font-size:10.5px;padding:0 6px}
+  .ci.new{animation:rowin .3s ease-out}
+  @keyframes rowin{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+  .quota{display:flex;align-items:center;gap:6px;font-size:var(--fs-sm);color:var(--ui-fg-info)}
+  .quota svg{width:13px;height:13px}
+
+  /* ---------- 编辑区：云端多开画面 ---------- */
+  .ce{flex:1;display:flex;flex-direction:column;min-height:0}
+  .ce[hidden]{display:none}
+  .prev-tools{flex:none;background:var(--ui-bg)}
+  .prev-tools b{color:var(--ui-fg);font-weight:600;display:inline-flex;align-items:center;gap:6px}
+  .prev-tools .grow{flex:1}
+  .res{flex:none;padding:8px 14px 8px;border-bottom:1px solid var(--ui-border);background:var(--ui-bg);display:flex;flex-direction:column;gap:6px;font-size:var(--fs-sm)}
+  .res .ra{display:flex;align-items:center;gap:12px}
+  .res .ra .k{font-weight:600;white-space:nowrap}
+  .res .ra .v{font-family:var(--font-code);font-size:12px;white-space:nowrap;min-width:128px;text-align:right}
+  .res .ra .v b{font-weight:600}
+  .rbar{position:relative;flex:1;height:14px;border-radius:4px;background:var(--ui-progress-track);margin-top:12px}
+  .rbar .sg{position:absolute;top:0;bottom:0;left:var(--l);width:var(--w);transition:left .6s,width .6s}
+  .rbar .sg.sys{background:color-mix(in srgb,var(--ui-fg-info) 55%,transparent);border-radius:4px 0 0 4px}
+  .rbar .sg.loc{background:var(--ui-warning)}
+  .rbar .sg.cld{background:var(--ui-accent);min-width:3px}
+  .rbar .ghost{position:absolute;top:-3px;bottom:-3px;left:var(--l);width:var(--w);border:1.5px dashed var(--ui-error);border-radius:4px;background:repeating-linear-gradient(135deg,color-mix(in srgb,var(--ui-error) 22%,transparent) 0 4px,transparent 4px 8px);transition:opacity .4s}
+  .rbar .ghost span{position:absolute;left:0;top:-17px;font-size:11px;color:var(--ui-error);white-space:nowrap;font-weight:600}
+  .rbar .cap32{position:absolute;top:-6px;bottom:-6px;left:var(--l);width:0;border-left:2px solid var(--ui-fg)}
+  .rbar .cap32 span{position:absolute;left:4px;top:-12px;font-size:10px;color:var(--ui-fg-info);white-space:nowrap}
+  .res .lg{display:flex;align-items:center;gap:14px;color:var(--ui-fg-info);font-size:11px;white-space:nowrap}
+  .res .lg i{display:inline-block;width:10px;height:10px;border-radius:2px;vertical-align:-1px;margin-right:5px}
+  .res .lg i.sys{background:color-mix(in srgb,var(--ui-fg-info) 55%,transparent)}
+  .res .lg i.loc{background:var(--ui-warning)}
+  .res .lg i.cld{background:var(--ui-accent)}
+  .res .lg i.gh{border:1.5px dashed var(--ui-error);width:8px;height:8px}
+  .res .lg .grow{flex:1}
+  .res .lg b{color:var(--ui-fg);font-family:var(--font-code);font-weight:500}
+  .res .cmp{display:inline-flex;align-items:center;gap:6px}
+
+  .dm-canvas .stage{flex-wrap:wrap;gap:34px 34px;padding:30px 26px 30px;align-content:flex-start;align-items:flex-start}
+  .inst{display:flex;flex-direction:column;align-items:center;gap:10px}
+  .inst.new{animation:instin .35s ease-out}
+  @keyframes instin{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  .inst.bye{animation:instout .35s ease-in forwards}
+  @keyframes instout{to{opacity:0;transform:scale(.92)}}
+  /* 紧凑尺寸 */
+  .dm-device.phone{width:170px;height:350px;border-radius:24px}
+  .dm-device.fold{width:280px;height:310px}
+  .dm-device.tablet{width:300px;height:212px}
+  .dm-device.watch{width:112px;height:112px}
+  .dm-device .tag{white-space:nowrap}
+  .dm-device .tag.cloud{background:var(--ui-accent)}
+  .dm-device .tag.local{background:color-mix(in srgb,var(--ui-warning) 85%,#000)}
+  .dm-device.sel{outline:2px solid var(--ui-accent);outline-offset:3px}
+  .corner{position:absolute;bottom:-10px;left:50%;transform:translateX(-50%);height:18px;padding:0 7px;border-radius:9px;display:inline-flex;align-items:center;gap:4px;font-size:10px;line-height:18px;white-space:nowrap;z-index:2;background:var(--ui-popup-bg);color:var(--ui-fg);border:1px solid var(--ui-component-border);box-shadow:0 2px 6px rgba(0,0,0,.2)}
+  .corner svg{width:11px;height:11px;color:var(--ui-accent)}
+  .corner .ms{font-family:var(--font-code)}
+  .corner.local svg{color:var(--ui-warning)}
+  .corner .pin{display:none}
+  .pinned .corner .pin{display:inline}
+  .dm-device.watch .tag{left:50%;transform:translateX(-50%)}
+  .inst .acts{display:flex;align-items:center;gap:4px;height:24px;margin-top:10px}
+  .inst .acts .btn{height:22px;padding:0 7px;font-size:11px}
+  .inst .acts .btn.done{border-color:color-mix(in srgb,var(--ui-success) 60%,transparent);color:var(--ui-success)}
+  .inst .acts .abtn.on{background:var(--ui-selection)}
+  .inst .acts .abtn svg{color:var(--ui-icon)}
+  .inst .acts .abtn.on svg{color:var(--ui-accent)}
+  .inst .acts .txt{font-size:11px;color:var(--ui-fg-info);white-space:nowrap}
+
+  /* 启动遮罩 */
+  .boot{position:absolute;inset:0;z-index:5;background:#0c0d10;color:#cfd3da;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:0 14px;text-align:center;transition:opacity .4s}
+  .boot .wm{font-size:13px;font-weight:600;letter-spacing:.06em;color:#fff}
+  .boot .stp{font-size:9px;color:#8a8f99;min-height:12px}
+  .boot .pb{width:70%;height:3px;border-radius:2px;background:#262a31;overflow:hidden}
+  .boot .pb i{display:block;height:100%;width:var(--v,0%);background:#3574F0;transition:width .3s}
+  .boot.q .wm{color:#8a8f99}
+  .boot.off{opacity:0;pointer-events:none}
+  .dm-device.watch .boot .wm{font-size:10px}
+  .mig{position:absolute;inset:0;z-index:6;background:rgba(12,13,16,.72);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;font-size:10px;text-align:center;padding:0 10px}
+  .mig b{font-size:11px}
+  .mig .pb{width:72%;height:3px;border-radius:2px;background:rgba(255,255,255,.2);overflow:hidden}
+  .mig .pb i{display:block;height:100%;width:var(--v,0%);background:#3574F0;transition:width .3s}
+
+  /* 设备里的应用 */
+  .mapp .cols{flex:1;display:flex;min-height:0}
+  .mapp .col{flex:1;min-width:0;display:flex;flex-direction:column}
+  .mapp .col.l{flex:.9;border-right:1px solid #f0f0f0}
+  .mapp .detail{padding:8px 10px;display:flex;flex-direction:column;gap:4px}
+  .mapp .detail .pic{height:70px;border-radius:8px;background:linear-gradient(135deg,#dfe7ff,#b9c9ff)}
+  .mapp .detail b{font-size:11px;font-weight:600}
+  .mapp .detail span{font-size:9px;color:#8a8f99;line-height:1.4}
+  .mapp .detail .price{font-size:13px;font-weight:600;color:#DB3B4B}
+  .mapp .detail .btn{margin:2px 0 0;height:24px;border-radius:12px;font-size:10px}
+  .mapp .nav{height:26px;border-top:1px solid #f0f0f0;display:flex;align-items:center;justify-content:space-around;font-size:8px;color:#8a8f99}
+  .mapp .nav b{color:#3574F0;font-weight:600}
+  .dm-device.phone .mapp .row{padding:5px 9px}
+  .dm-device.phone .mapp .row .th{width:28px;height:28px}
+  .dm-device.tablet .mapp .row{padding:4px 8px}
+  .dm-device.tablet .mapp .row .th{width:24px;height:24px}
+  .dm-device.tablet .mapp .hd{height:22px}
+  .dm-device.tablet .mapp .search{margin:2px 8px 4px;height:16px}
+  .dm-device.tablet .detail .pic{height:56px}
+  .mapp .ring .ws{display:inline-block;margin-top:5px;padding:1px 7px;border-radius:8px;background:#f0f1f3;color:#888;font-size:8px}
+
+  /* 本机模拟器那台：停掉后变灰 */
+  .dm-device.off .scr{filter:grayscale(1) brightness(.4)}
+</style>
+</head>
+<body>
+<div class="ide" id="ide" data-ide-theme="dark" data-left="devices" data-right="none" data-bottom="none" role="application" aria-label="DevEco Studio">
+  <div class="body">
+    <div class="tw tw-left">
+      <div class="pane on" data-pane="devices">
+        <div class="tw-hdr"><span class="title">Device Manager <svg class="i"><use href="#i-chevD"/></svg></span><span class="grow"></span>
+          <button class="abtn" title="Refresh"><svg class="i"><use href="#i-refresh"/></svg></button>
+          <button class="abtn" title="Options"><svg class="i"><use href="#i-moreV"/></svg></button>
+          <button class="abtn" title="Hide|Shift+Esc" data-act="hide-left"><svg class="i"><use href="#i-hide"/></svg></button></div>
+        <div class="tw-body">
+          <div class="dmg">
+
+            <div class="sec-h"><svg><use href="#i-phone"/></svg>本机<span class="grow"></span><span class="cnt" id="loc-cnt">1 台运行</span></div>
+            <div class="dm-card loc" id="loc-card">
+              <div class="dm-card-hd"><svg><use href="#i-phone"/></svg><div style="display:flex;flex-direction:column;min-width:0"><span>Mate 70 Pro 模拟器</span><span class="sub">API 20 · x86_64 · 本机 Hypervisor</span></div><span class="grow"></span><span class="dm-pill warn" id="loc-pill">运行中</span></div>
+              <div class="dm-card-bd" id="loc-bd">
+                <div class="meter hot"><span class="k">内存</span><div class="dm-progress"><i id="m-mem" style="--v:78%"></i></div><span class="v" id="m-mem-v">6.2 GB</span></div>
+                <div class="meter hot"><span class="k">CPU</span><div class="dm-progress"><i id="m-cpu" style="--v:38%"></i></div><span class="v" id="m-cpu-v">38%</span></div>
+                <div class="meter"><span class="k">磁盘</span><div class="dm-progress"><i id="m-disk" style="--v:30%"></i></div><span class="v" id="m-disk-v">18 GB</span></div>
+                <div class="dm-steps-h" id="mig-steps" hidden>
+                  <div class="dm-step" data-s="0"><span class="mk">1</span>快照</div>
+                  <div class="dm-step" data-s="1"><span class="mk">2</span>上传</div>
+                  <div class="dm-step" data-s="2"><span class="mk">3</span>云端恢复</div>
+                  <div class="dm-step" data-s="3"><span class="mk">4</span>接续会话</div>
+                </div>
+                <span class="note" id="loc-note">迁到云端后本机释放约 6.2 GB，应用状态和调试会话接着用</span>
+              </div>
+              <div class="dm-card-ft"><button class="btn primary sm" id="btn-migrate"><svg class="i"><use href="#i-cloud"/></svg>迁到云端</button><button class="btn sm" id="btn-stop-local"><svg class="i"><use href="#i-stopSq"/></svg>停止</button><span class="grow"></span></div>
+            </div>
+
+            <div class="sec-h" style="margin-top:4px"><svg><use href="#i-cloud"/></svg>云端<span class="grow"></span><span class="cnt" id="cld-cnt">2 / 6 台</span></div>
+            <div style="display:flex;gap:6px;align-items:center">
+              <button class="btn primary" id="btn-multi"><svg class="i"><use href="#i-add"/></svg>云端多开</button>
+              <span class="dm-small dm-muted">本机只收画面流，每台 ≈ 0.1 GB</span>
+            </div>
+
+            <div class="dm-card mo" id="mo" hidden>
+              <div class="dm-card-bd">
+                <div class="row2"><b style="color:var(--ui-fg)">选形态</b><span class="grow"></span>镜像 API 20 · 预装 entry.hap</div>
+                <div class="kinds" id="kinds">
+                  <div class="kopt" data-k="phone"><span class="cb"></span><svg><use href="#i-phone"/></svg><div style="min-width:0"><b>手机</b><br><span>Pura 70 · API 20</span></div></div>
+                  <div class="kopt" data-k="fold"><span class="cb"></span><svg><use href="#i-fold"/></svg><div style="min-width:0"><b>折叠</b><br><span>Mate X6 · 展开</span></div></div>
+                  <div class="kopt on" data-k="tablet"><span class="cb"></span><svg><use href="#i-tablet"/></svg><div style="min-width:0"><b>平板</b><br><span>MatePad Pro 13.2</span></div></div>
+                  <div class="kopt on" data-k="watch"><span class="cb"></span><svg><use href="#i-watch"/></svg><div style="min-width:0"><b>手表</b><br><span>WATCH 5 · 46mm</span></div></div>
+                </div>
+                <div class="row2">区域
+                  <div class="dm-seg" id="region"><button class="on" data-r="华东">就近 · 华东</button><button data-r="华南">华南</button><button data-r="华北">华北</button></div>
+                </div>
+                <div class="row2"><svg class="i" style="width:13px;height:13px"><use href="#i-gauge"/></svg><span id="mo-est">本机 +0.2 GB</span></div>
+              </div>
+              <div class="dm-card-ft"><span class="grow"></span><button class="btn sm" id="mo-cancel">取消</button><button class="btn primary sm" id="mo-go"><svg class="i"><use href="#i-run"/></svg>并行启动 2 台</button></div>
+            </div>
+
+            <div class="ctab" id="ctab">
+              <div class="ci th"><span></span><span>机型</span><span>API</span><span>区域</span><span style="text-align:right">延迟</span><span style="text-align:right">状态</span></div>
+            </div>
+            <div class="quota"><svg><use href="#i-clock"/></svg><span>空闲 15 分钟自动释放，固定的会话除外</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="editor">
+      <div class="tabs" id="tabs"><span class="grow"></span><span class="tab-tools"><button class="abtn" title="Split Right"><svg class="i"><use href="#i-split"/></svg></button><button class="abtn" title="Editor Options"><svg class="i"><use href="#i-moreV"/></svg></button></span></div>
+      <div class="ce" data-for-file="Cloud Emulators">
+        <div class="prev-tools">
+          <b><svg class="i"><use href="#i-cloud"/></svg>云端模拟器 · <span id="n-run">云端 2 台 · 本机 1 台</span></b>
+          <span class="dm-pill muted">画面流 H.265 · 60 fps · 输入回传</span>
+          <span class="grow"></span>
+          <span class="dm-pill ok" id="net-pill"><svg><use href="#i-wifi"/></svg>链路稳定 · 平均 31 ms</span>
+          <button class="abtn" title="Refresh All"><svg class="i"><use href="#i-refresh"/></svg></button>
+        </div>
+        <div class="res" id="res">
+          <div class="ra">
+            <span class="k">本机内存</span>
+            <div class="rbar" id="rbar">
+              <span class="sg sys" id="sg-sys"></span><span class="sg loc" id="sg-loc"></span><span class="sg cld" id="sg-cld"></span>
+              <span class="ghost" id="ghost"><span>本地开 4 台 ≈ 24.8 GB，超出物理内存</span></span>
+              <span class="cap32" id="cap32"><span>32 GB</span></span>
+            </div>
+            <span class="v">已用 <b id="used">14.0</b> / 32 GB</span>
+          </div>
+          <div class="lg">
+            <span><i class="sys"></i>系统 + IDE <b>7.6</b></span>
+            <span><i class="loc"></i>本机模拟器 <b id="lg-loc">6.2</b></span>
+            <span><i class="cld"></i>云端画面流 <b id="lg-cld">0.2</b></span>
+            <span><i class="gh"></i>若都在本地跑</span>
+            <span class="grow"></span>
+            <span class="cmp">云端开 <b id="cmp-n">2</b> 台 · 本机只多 <b id="cmp-gb">0.2 GB</b></span>
+          </div>
+        </div>
+        <div class="dm-canvas" id="canvas"><div class="stage" id="stage"></div></div>
+      </div>
+      <div class="code-wrap" data-for-file="ListPage.ets" hidden><div class="code" id="code"></div></div>
+      <div class="breadcrumbs" id="crumbs"></div>
+      <div class="dm-toast" id="toast" hidden>
+        <div class="th"><svg><use href="#i-info"/></svg><span id="toast-t"></span><span class="grow"></span><button class="abtn" id="toast-x" title="Close"><svg class="i"><use href="#i-closeS"/></svg></button></div>
+        <div class="tb" id="toast-b"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var $=DemoFrame.$, $$=DemoFrame.$$;
+  document.getElementById('tabs').insertAdjacentHTML('afterbegin',DemoFrame.tabs([{file:'Cloud Emulators',label:'Cloud Emulators',icon:'#i-cloud',on:true},{file:'ListPage.ets'}]));
+  document.getElementById('code').innerHTML=DemoFrame.code('ListPage.ets',{cur:12});
+  DemoFrame.init({device:'Cloud · Mate X6 (华东)',deviceIcon:'#i-cloud',
+    stripeLeft:[{left:'devices',icon:'#i-phone',title:'Device Manager'},{left:'project',icon:'#i-tw-project',title:'Project|Alt+1'},{more:1},{gap:1},{bottom:'build',icon:'#i-tw-build',title:'Build'},{bottom:'log',icon:'#i-tw-device',title:'Log'},{bottom:'run',icon:'#i-tw-services',title:'Run|Alt+4'},{bottom:'terminal',icon:'#i-tw-terminal',title:'Terminal|Alt+F12'}],
+    stripeRight:[{right:'notifications',icon:'#i-tw-notifications',title:'Notifications',dot:1},{right:'agent',icon:'#i-genie',title:'DevEco Code'},{right:'previewer',icon:'#i-tw-preview',title:'Previewer'}],
+    onReady:function(){
+      $('#status-slot').innerHTML='<span class="dm-capsule" id="cap"><svg class="i" style="width:12px;height:12px"><use href="#i-cloud"/></svg><span id="cap-txt"></span></span>';
+    }});
+
+  /* ================= 数据 ================= */
+  var SYS=7.6, TOTAL=32, SCALE=36, STREAM=0.1, LOCAL=6.2;
+  var MODELS={
+    phone:{name:'Pura 70',icon:'#i-phone'},
+    fold:{name:'Mate X6',icon:'#i-fold'},
+    tablet:{name:'MatePad Pro',icon:'#i-tablet'},
+    watch:{name:'WATCH 5',icon:'#i-watch'}
+  };
+  var BASE_LAT={'华东':28,'华南':35,'华北':41};
+  var seq=0, localOn=true, localMigrated=false;
+  var insts=[
+    {id:'c'+(++seq),kind:'fold',name:'Mate X6',api:20,region:'华东',lat:28,st:'ready'},
+    {id:'c'+(++seq),kind:'phone',name:'Mate 60',api:18,region:'华南',lat:35,st:'ready'}
+  ];
+
+  /* ================= 设备画面 ================= */
+  var ROWS=[['无线降噪耳机 Pro','¥899 · 已售 1.2 万'],['智能手表 5 · 46mm','¥2199 · 已售 8600'],['便携充电宝 20000','¥199 · 已售 3.4 万'],['折叠键盘 · 蓝牙','¥329 · 已售 5200'],['车载支架 · 磁吸','¥69 · 已售 2.1 万']];
+  function rows(n,short){return ROWS.slice(0,n).map(function(r){return '<div class="row"><span class="th"></span><div class="tx"><b>'+r[0]+'</b><span>'+(short?r[1].split(' · ')[0]:r[1])+'</span></div></div>'}).join('')}
+  var DETAIL='<div class="detail"><div class="pic"></div><b>无线降噪耳机 Pro</b><span>主动降噪 · 40 小时续航</span><span class="price">¥899</span><div class="btn">加入购物车</div></div>';
+  function appHTML(kind){
+    if(kind==='phone')return '<div class="mapp"><div class="st"><span>9:41</span><span>5G ▮▮▮</span></div><div class="hd">商品</div><div class="search">搜索</div>'+rows(5)+'<div class="fill"></div><div class="nav"><b>首页</b><span>分类</span><span>购物车</span><span>我的</span></div></div>';
+    if(kind==='fold')return '<div class="mapp"><div class="st"><span>9:41</span><span>5G ▮▮▮</span></div><div class="cols"><div class="col"><div class="hd">商品</div><div class="search">搜索</div>'+rows(4,1)+'</div><div class="col">'+DETAIL+'</div></div></div>';
+    if(kind==='tablet')return '<div class="mapp"><div class="st"><span>9:41</span><span>WLAN</span></div><div class="cols"><div class="col l"><div class="hd">商品</div><div class="search">搜索</div>'+rows(3,1)+'</div><div class="col">'+DETAIL+'</div></div></div>';
+    return '<div class="mapp"><div class="ring"><div><b>3</b>条新消息<br><span class="ws">搜索</span></div></div></div>';
+  }
+  function cornerHTML(it){return '<svg><use href="#i-cloud"/></svg>云端 · '+it.region+' · <span class="ms">'+it.lat+'</span> ms<svg class="pin"><use href="#i-pin"/></svg>'}
+  function actsHTML(it){
+    return '<button class="btn sm'+(it.canvas?' done':'')+'" data-a="canvas" title="加进 Multi-device 画布，和其他屏一起刷新">'+(it.canvas?'<svg class="i"><use href="#i-checkS"/></svg>已在多设备画布':'<svg class="i"><use href="#i-layout"/></svg>加进多设备画布')+'</button>'
+      +'<button class="abtn'+(it.pinned?' on':'')+'" data-a="pin" title="固定会话：不会因空闲被自动释放"><svg class="i"><use href="#i-pin"/></svg></button>'
+      +'<button class="abtn" data-a="release" title="释放实例"><svg class="i"><use href="#i-stopSq"/></svg></button>';
+  }
+  function instHTML(it){
+    return '<div class="inst'+(it.pinned?' pinned':'')+'" data-id="'+it.id+'"><div class="dm-device '+it.kind+'"><span class="tag cloud">'+it.name+'</span><span class="corner">'+cornerHTML(it)+'</span><div class="scr">'+appHTML(it.kind)+'</div></div><div class="acts">'+actsHTML(it)+'</div></div>';
+  }
+  function localHTML(){
+    return '<div class="inst" data-id="local"><div class="dm-device phone"><span class="tag local">Mate 70 Pro · 本机</span><span class="corner local"><svg><use href="#i-phone"/></svg>本机 · <span class="ms">6.2</span> GB</span><div class="scr">'+appHTML('phone')+'</div></div>'
+      +'<div class="acts"><span class="txt">占本机内存 6.2 GB</span><button class="btn sm" data-a="migrate"><svg class="i"><use href="#i-cloud"/></svg>迁到云端</button></div></div>';
+  }
+  var stage=$('#stage');
+  stage.innerHTML=localHTML()+insts.map(instHTML).join('');
+
+  /* ================= 列表 ================= */
+  var ST={queue:['muted','排队中'],alloc:['info','分配中'],boot:['info','启动中'],ready:['ok','就绪'],pinned:['ok','已固定'],bye:['muted','释放中'],mig:['info','迁入中']};
+  function ciHTML(it){
+    var s=it.st==='ready'&&it.pinned?'pinned':it.st, p=ST[s];
+    var label=s==='boot'?(it.pct||0)+'%':p[1];
+    return '<div class="ci'+(it.fresh?' new':'')+'" data-id="'+it.id+'"><svg><use href="'+MODELS[it.kind].icon+'"/></svg><span class="nm">'+it.name+(it.pinned?'<svg><use href="#i-pin"/></svg>':'')+'</span><span class="mono">'+it.api+'</span><span>'+it.region+'</span><span class="lat">'+(it.st==='ready'?it.lat+' ms':'—')+'</span><span class="dm-pill '+p[0]+'">'+label+'</span></div>';
+  }
+  function renderList(){
+    $$('#ctab .ci:not(.th)').forEach(function(x){x.remove()});
+    $('#ctab').insertAdjacentHTML('beforeend',insts.map(ciHTML).join(''));
+    insts.forEach(function(it){it.fresh=false});
+    if(selId){var r=$('#ctab .ci[data-id="'+selId+'"]');if(r)r.classList.add('sel')}
+  }
+  function updRow(it){var r=$('#ctab .ci[data-id="'+it.id+'"]');if(!r)return;var tmp=document.createElement('div');tmp.innerHTML=ciHTML(it);var n=tmp.firstChild;if(r.classList.contains('sel'))n.classList.add('sel');r.replaceWith(n)}
+
+  /* ================= 资源条 ================= */
+  function pct(gb){return (gb/SCALE*100)+'%'}
+  function renderRes(){
+    var alive=insts.filter(function(i){return i.st!=='bye'});
+    var running=alive.filter(function(i){return i.st==='ready'}).length;
+    var cld=+(alive.length*STREAM).toFixed(1), loc=localOn?LOCAL:0, used=SYS+loc+cld;
+    $('#sg-sys').style.cssText='--l:0%;--w:'+pct(SYS);
+    $('#sg-loc').style.cssText='--l:'+pct(SYS)+';--w:'+pct(loc);
+    $('#sg-cld').style.cssText='--l:'+pct(SYS+loc)+';--w:'+pct(cld);
+    var n=Math.max(4,alive.length+(localOn?1:0));
+    var ghostGB=n*LOCAL;
+    $('#ghost').style.cssText='--l:'+pct(SYS)+';--w:calc('+pct(Math.min(ghostGB,SCALE-SYS))+' + 0px)';
+    $('#ghost span').textContent='本地开 '+n+' 台 ≈ '+ghostGB.toFixed(1)+' GB，超出物理内存';
+    $('#cap32').style.cssText='--l:'+pct(TOTAL);
+    $('#used').textContent=used.toFixed(1);
+    $('#lg-loc').textContent=loc.toFixed(1);$('#lg-cld').textContent=cld.toFixed(1);
+    $('#cmp-n').textContent=alive.length;$('#cmp-gb').textContent=cld.toFixed(1)+' GB';
+    $('#n-run').textContent='云端 '+running+' 台 · 本机 '+(localOn?1:0)+' 台';
+    $('#cld-cnt').textContent=alive.length+' / 6 台';
+    var cap=$('#cap-txt');if(cap)cap.textContent='本机 '+used.toFixed(1)+' / 32 GB · 云端 '+running+' 台';
+    /* 多开的额度 */
+    $$('#kinds .kopt').forEach(function(k){k.classList.toggle('dis',alive.length>=6)});
+    updEst();
+  }
+
+  /* ================= 选中 ================= */
+  var selId=null;
+  function select(id){
+    selId=id;
+    $$('#stage .inst').forEach(function(x){$('.dm-device',x).classList.toggle('sel',x.dataset.id===id)});
+    $$('#ctab .ci').forEach(function(x){x.classList.toggle('sel',x.dataset.id===id)});
+    var it=byId(id),hd=$('#hdr-device span');
+    if(hd)hd.textContent=it?('Cloud · '+it.name+' ('+it.region+')'):(id==='local'?'Mate 70 Pro (Local)':hd.textContent);
+  }
+  function byId(id){for(var i=0;i<insts.length;i++)if(insts[i].id===id)return insts[i];return null}
+  $('#ctab').addEventListener('click',function(e){var r=e.target.closest('.ci:not(.th)');if(!r)return;select(r.dataset.id);var el=$('#stage .inst[data-id="'+r.dataset.id+'"]');if(el)el.scrollIntoView({block:'nearest',behavior:'smooth'})});
+  $('#canvas').addEventListener('click',function(e){
+    var a=e.target.closest('[data-a]');var inst=e.target.closest('.inst');
+    if(inst)select(inst.dataset.id);
+    if(!a)return;
+    var id=inst.dataset.id,it=byId(id),act=a.dataset.a;
+    if(act==='migrate'){migrate();return}
+    if(!it||it.st!=='ready')return;
+    if(act==='canvas'){
+      if(it.canvas)return;it.canvas=true;
+      $('.acts',inst).innerHTML=actsHTML(it);
+      var n=insts.filter(function(i){return i.canvas}).length;
+      toast('已加进多设备画布',it.name+'（云端 · '+it.region+'）和本机屏在同一块画布上，改一次代码一起刷。画布里现在有 '+(n+1)+' 块屏。');
+    }else if(act==='pin'){
+      it.pinned=!it.pinned;inst.classList.toggle('pinned',it.pinned);$('.acts',inst).innerHTML=actsHTML(it);updRow(it);
+      toast(it.pinned?'会话已固定':'已取消固定',it.pinned?it.name+' 不会因空闲 15 分钟被释放，断网重连后回到原会话。':it.name+' 空闲 15 分钟后会自动释放。');
+    }else if(act==='release'){
+      it.st='bye';updRow(it);inst.classList.add('bye');renderRes();
+      setTimeout(function(){insts=insts.filter(function(x){return x!==it});inst.remove();renderList();renderRes();if(selId===id)selId=null},600);
+    }
+  });
+
+  /* ================= 云端多开 ================= */
+  function checked(){return $$('#kinds .kopt.on').map(function(k){return k.dataset.k})}
+  function updEst(){
+    var c=checked().length,alive=insts.filter(function(i){return i.st!=='bye'}).length,room=6-alive;
+    var n=Math.min(c,room);
+    $('#mo-go').innerHTML='<svg class="i"><use href="#i-run"/></svg>并行启动 '+n+' 台';
+    $('#mo-go').disabled=n===0;
+    $('#mo-est').textContent=room<=0?'云端配额已满（6 台）':'本机只多 '+(n*STREAM).toFixed(1)+' GB · 同样几台放本地要 '+(n*LOCAL).toFixed(1)+' GB';
+  }
+  $('#btn-multi').addEventListener('click',function(){var m=$('#mo');m.hidden=!m.hidden;updEst()});
+  $('#mo-cancel').addEventListener('click',function(){$('#mo').hidden=true});
+  $('#kinds').addEventListener('click',function(e){var k=e.target.closest('.kopt');if(!k||k.classList.contains('dis'))return;k.classList.toggle('on');updEst()});
+  $('#region').addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;$$('#region button').forEach(function(x){x.classList.toggle('on',x===b)})});
+  $('#mo-go').addEventListener('click',function(){
+    var region=$('#region button.on').dataset.r;
+    var ks=checked(),room=6-insts.filter(function(i){return i.st!=='bye'}).length;
+    ks=ks.slice(0,Math.max(0,room));if(!ks.length)return;
+    $('#mo').hidden=true;
+    ks.forEach(function(k,idx){
+      var it={id:'c'+(++seq),kind:k,name:MODELS[k].name,api:20,region:region,lat:BASE_LAT[region]+Math.round(Math.random()*4-2),st:'queue',fresh:true,pct:0};
+      insts.push(it);
+      stage.insertAdjacentHTML('beforeend',instHTML(it));
+      var el=stage.lastElementChild;el.classList.add('new');
+      $('.scr',el).insertAdjacentHTML('beforeend','<div class="boot q"><span class="wm">HarmonyOS</span><div class="pb"><i></i></div><span class="stp">排队中 · 第 '+(idx+1)+' 位</span></div>');
+      $$('.acts button',el).forEach(function(b){b.disabled=true});
+      boot(it,el,idx);
+    });
+    renderList();renderRes();
+    var last=stage.lastElementChild;if(last)last.scrollIntoView({block:'nearest',behavior:'smooth'});
+  });
+  function boot(it,el,idx){
+    var bt=$('.boot',el),stp=$('.stp',bt),bar=$('.pb i',bt);
+    var t0=300+idx*350;
+    setTimeout(function(){it.st='alloc';updRow(it);bt.classList.remove('q');stp.textContent='分配 ARM 实例 · '+it.region;bar.style.setProperty('--v','12%')},t0);
+    setTimeout(function(){
+      it.st='boot';it.pct=15;updRow(it);stp.textContent='启动系统镜像 · API 20';
+      var iv=setInterval(function(){
+        it.pct=Math.min(100,it.pct+9+Math.round(Math.random()*8));
+        bar.style.setProperty('--v',it.pct+'%');updRow(it);
+        if(it.pct>=70)stp.textContent='hdc install entry.hap';
+        if(it.pct>=100){
+          clearInterval(iv);
+          it.st='ready';updRow(it);stp.textContent='就绪 · 推流 '+it.lat+' ms';
+          setTimeout(function(){bt.classList.add('off');setTimeout(function(){bt.remove()},420)},300);
+          $$('.acts button',el).forEach(function(b){b.disabled=false});
+          renderRes();
+        }
+      },260);
+    },t0+700);
+  }
+
+  /* ================= 本机模拟器迁到云端 ================= */
+  var migrating=false;
+  function migrate(){
+    if(migrating||localMigrated||!localOn)return;migrating=true;
+    var card=$('#loc-card'),steps=$('#mig-steps'),loc=$('#stage .inst[data-id="local"]');
+    steps.hidden=false;$('#loc-note').textContent='正在打包内存快照…';
+    $('#btn-migrate').disabled=true;$('#btn-stop-local').disabled=true;
+    $('#loc-pill').className='dm-pill info';$('#loc-pill').textContent='迁移中';
+    $$('.acts button',loc).forEach(function(b){b.disabled=true});
+    $('.scr',loc).insertAdjacentHTML('beforeend','<div class="mig"><b id="mig-t">保存快照</b><div class="pb"><i id="mig-b"></i></div><span id="mig-s">内存 6.2 GB → 压缩 1.8 GB</span></div>');
+    var S=[['保存快照','内存 6.2 GB → 压缩 1.8 GB','打包内存快照…'],['上传快照','1.8 GB · 华东 · 210 MB/s','上传到华东…'],['云端恢复','ARM 实例 · API 20','云端恢复中…'],['接续会话','调试会话 · HiLog · 页面栈','接续调试会话…']];
+    function go(i){
+      $$('#mig-steps .dm-step').forEach(function(s,j){s.className='dm-step'+(j<i?' done':j===i?' run':'');if(j<i)$('.mk',s).innerHTML='<svg><use href="#i-check"/></svg>'});
+      if(i>=S.length){finish();return}
+      $('#mig-t').textContent=S[i][0];$('#mig-s').textContent=S[i][1];$('#loc-note').textContent=S[i][2];
+      $('#mig-b').style.setProperty('--v',((i+1)/S.length*100)+'%');
+      setTimeout(function(){go(i+1)},i===1?1100:750);
+    }
+    go(0);
+    function finish(){
+      localOn=false;localMigrated=true;migrating=false;
+      var it={id:'c'+(++seq),kind:'phone',name:'Mate 70 Pro',api:20,region:'华东',lat:26,st:'ready',fresh:true,migrated:true};
+      insts.unshift(it);
+      /* 本机那台原地变成云端实例 */
+      var dev=$('.dm-device',loc);
+      loc.dataset.id=it.id;
+      $('.tag',dev).className='tag cloud';$('.tag',dev).textContent='Mate 70 Pro';
+      var c=$('.corner',dev);c.className='corner';c.innerHTML=cornerHTML(it);
+      var m=$('.mig',dev);if(m)m.remove();
+      $('.acts',loc).innerHTML=actsHTML(it);
+      loc.classList.remove('new');void loc.offsetWidth;loc.classList.add('new');
+      /* 面板：本机释放 */
+      $('#loc-pill').className='dm-pill muted';$('#loc-pill').textContent='已迁到云端';
+      $('#m-mem').style.setProperty('--v','0%');$('#m-mem-v').textContent='0 GB';
+      $('#m-cpu').style.setProperty('--v','0%');$('#m-cpu-v').textContent='0%';
+      $$('#loc-bd .meter').forEach(function(x){x.classList.remove('hot')});
+      $('#loc-note').textContent='本机已释放 6.2 GB · 会话在云端「Mate 70 Pro · 华东」接着跑';
+      $('#loc-cnt').textContent='0 台运行';card.classList.add('gone');
+      $('#btn-migrate').innerHTML='<svg class="i"><use href="#i-checkS"/></svg>已迁到云端';
+      renderList();renderRes();select(it.id);
+      toast('本机释放 6.2 GB 内存','Mate 70 Pro 模拟器已迁到云端（华东 · 26 ms），页面栈、HiLog 与调试断点都保留。');
+    }
+  }
+  $('#btn-migrate').addEventListener('click',migrate);
+  $('#btn-stop-local').addEventListener('click',function(){
+    if(localMigrated||migrating)return;
+    localOn=!localOn;var loc=$('#stage .inst[data-id="local"]');
+    $('.dm-device',loc).classList.toggle('off',!localOn);
+    $('#loc-pill').className='dm-pill '+(localOn?'warn':'muted');$('#loc-pill').textContent=localOn?'运行中':'已停止';
+    $('#m-mem').style.setProperty('--v',localOn?'78%':'0%');$('#m-mem-v').textContent=localOn?'6.2 GB':'0 GB';
+    $('#m-cpu').style.setProperty('--v',localOn?'38%':'0%');$('#m-cpu-v').textContent=localOn?'38%':'0%';
+    $('#btn-stop-local').innerHTML=localOn?'<svg class="i"><use href="#i-stopSq"/></svg>停止':'<svg class="i"><use href="#i-run"/></svg>启动';
+    $('#btn-migrate').disabled=!localOn;$('#loc-cnt').textContent=(localOn?1:0)+' 台运行';
+    $('.acts .txt',loc).textContent=localOn?'占本机内存 6.2 GB':'本机模拟器已停止';
+    renderRes();
+  });
+
+  /* ================= 提示 ================= */
+  var tt=null;
+  function toast(t,b){$('#toast-t').textContent=t;$('#toast-b').textContent=b;$('#toast').hidden=false;clearTimeout(tt);tt=setTimeout(function(){$('#toast').hidden=true},4200)}
+  $('#toast-x').addEventListener('click',function(){$('#toast').hidden=true});
+
+  /* ================= 延迟实时抖动 ================= */
+  setInterval(function(){
+    var sum=0,n=0;
+    insts.forEach(function(it){
+      if(it.st!=='ready')return;
+      var base=BASE_LAT[it.region]-(it.migrated?2:0);
+      it.lat=Math.max(18,base+Math.round(Math.random()*6-3));sum+=it.lat;n++;
+      var el=$('#stage .inst[data-id="'+it.id+'"] .corner .ms');if(el)el.textContent=it.lat;
+      var r=$('#ctab .ci[data-id="'+it.id+'"] .lat');if(r)r.textContent=it.lat+' ms';
+    });
+    if(n)$('#net-pill').innerHTML='<svg><use href="#i-wifi"/></svg>链路稳定 · 平均 '+Math.round(sum/n)+' ms';
+  },1600);
+
+  renderList();renderRes();select('c1');
+
+DemoGuide.init([
+  {"target": "#btn-multi", "kind": "click", "pos": "right", "label": "云端多开：勾形态，几台并行启动"},
+  {"target": ".res .cmp", "kind": "change", "pos": "bottom", "label": "云端多开，本机内存几乎不涨"},
+  {"target": "#btn-migrate", "kind": "click", "pos": "right", "label": "本机模拟器一键迁到云端"}
+]);
+})();
+</script>
+</body>
+</html>
