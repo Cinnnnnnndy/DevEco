@@ -263,9 +263,10 @@ window.DEVECO_CATALOG = {
         },
         {
           title: '冻屏分析报告：先给判决，再给卷宗', subtitle: 'AppFreeze Report · Verdict First',
-          desc: '同一份冻屏报告，结论、证据强度和时间线放到最前，证据折叠成清单；可切换源码可达 / 不可达两版。',
+          desc: '同一份冻屏报告，结论、证据强度和时间线放到最前，证据折叠成清单。',
           view: 'ready', date: '2026-09-23', href: 'demos/28-appfreeze-report/index.html',
           links: [
+            { label: '源码不可达版', href: 'demos/28-appfreeze-report/index.html#v1' },
             { label: '原始 · 源码不可达', href: 'analysis/appfreeze-report/input/v1-源码不可达-210435.html' },
             { label: '原始 · 源码可达', href: 'analysis/appfreeze-report/input/v2-源码可达-220705.html' },
             { label: '分析报告', href: 'analysis/appfreeze-report/REPORT-分析报告.html' },

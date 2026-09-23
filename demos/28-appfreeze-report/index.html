@@ -31,20 +31,7 @@ svg.i{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.6;stro
 .sub{height:40px;background:var(--paper);display:flex;align-items:center;gap:20px;padding:0 56px;box-shadow:0 1px 0 var(--line)}
 .sub .prod{font-weight:700;font-size:14px;white-space:nowrap}
 @media (max-width:900px){.sub .prod{display:none}.sub{gap:8px}}
-.sub .grow{flex:1}
-.seg{display:inline-flex;background:var(--fill);border-radius:999px;padding:2px}
-.seg button{height:26px;padding:0 12px;border-radius:999px;font-size:12.5px;color:var(--ink2);white-space:nowrap}
-.seg button.on{background:var(--paper);color:var(--ink1);font-weight:600;box-shadow:0 1px 2px rgba(0,0,0,.08)}
-.seg-lbl{font-size:12px;color:var(--ink4);margin-right:-10px}
 
-/* ===== 全宽提示条（同官网「对鸿蒙开发还不太熟悉？」） ===== */
-.band{height:40px;display:flex;align-items:center;justify-content:center;gap:10px;font-size:13.5px;padding:0 16px;text-align:center}
-.band.info{background:var(--soft);color:var(--accent)}
-.band.warn{background:var(--part-soft);color:#6B4300}
-.band .go{color:inherit;font-weight:600;cursor:pointer;white-space:nowrap}
-.band .go:hover{text-decoration:underline}
-.band .mono{font-size:12.5px}
-.band:empty{display:none}
 
 /* ===== 头图：DevEco Studio 页式的蓝色渐变淡出 ===== */
 .hero{background:linear-gradient(180deg,#C9D9FF 0%,#E4ECFD 55%,var(--page) 100%)}
@@ -184,8 +171,7 @@ h1{font-size:30px;font-weight:700;line-height:1.3;color:var(--ink)}
 
 .fade{animation:fade .35s ease}
 @keyframes fade{from{opacity:.2;transform:translateY(4px)}to{opacity:1;transform:none}}
-@media (max-width:900px){.side{display:none}.wrap{padding:8px 16px 60px}.hero-in{padding:18px 16px 14px}.sub{padding:0 16px;gap:12px}.seg-lbl{display:none}.seg button{padding:0 8px;font-size:12px}
-  h1{font-size:24px}.axes{grid-template-columns:1fr}.pts li{grid-template-columns:20px 1fr}.pts li>span:last-child{grid-column:2}.vmeta{margin-left:0}.band{height:auto;padding:8px 16px;flex-wrap:wrap}}
+@media (max-width:900px){.side{display:none}.wrap{padding:8px 16px 60px}.hero-in{padding:18px 16px 14px}.sub{padding:0 16px;gap:12px}h1{font-size:24px}.axes{grid-template-columns:1fr}.pts li{grid-template-columns:20px 1fr}.pts li>span:last-child{grid-column:2}.vmeta{margin-left:0}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 
 .stack{display:flex;flex-direction:column;gap:28px;max-width:1040px}
@@ -213,15 +199,8 @@ h1{font-size:30px;font-weight:700;line-height:1.3;color:var(--ink)}
 <div class="top">
   <div class="sub">
     <span class="prod">DevEco Code</span>
-    <span class="grow"></span>
-    <span class="seg-lbl">演示状态</span>
-    <div class="seg" id="mode" role="tablist">
-      <button data-m="v2" class="on">源码可达</button>
-      <button data-m="v1">源码不可达</button>
-    </div>
   </div>
 </div>
-<div class="band" id="band"></div>
 <div id="hero"></div>
 
 <div class="wrap">
@@ -384,17 +363,13 @@ const FIX = {
 const $ = s=>document.querySelector(s), $$ = s=>[...document.querySelectorAll(s)];
 const esc = s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 const ic = (id,cls='')=>`<svg class="i ${cls}"><use href="#i-${id}"/></svg>`;
-let mode='v2';
+let mode=location.hash==='#v1'?'v1':'v2';
 const openChecks=new Set(['queue']);
 
 function render(anim){
   const d=V[mode], cks=checks(mode), fixes=FIX[mode], v2=mode==='v2';
   const cnt={hit:0,pass:0,excl:0,miss:0}; cks.forEach(c=>cnt[c.s]++);
   $('#nav-fixn').textContent=fixes.length; $('#nav-ckn').textContent=cks.length;
-  $('#band').className='band '+(v2?'info':'warn');
-  $('#band').innerHTML = v2
-    ? `行号以故障版本 <span class="mono">4ca0c7e</span>（06-05 10:31）为准；当前工作区已含未提交的修复版。`
-    : `<b>本次按要求未检索工程源码：</b>定位到业务函数（来自应用日志），行号不可用；修复建议为通用方向与模板。`;
   $('#hero').innerHTML=`<div class="hero"><div class="hero-in"><div class="l">
       <h1>冻屏分析报告 · 保存笔记时主线程卡死</h1>
       <div class="meta">
@@ -498,8 +473,6 @@ function drawTimeline(){
 
 /* ---------- 交互：切换版本、展开证据、目录高亮、时间线悬停看原日志 ---------- */
 document.addEventListener('click',e=>{
-  const b=e.target.closest('#mode button');
-  if(b){ if(b.dataset.m!==mode){ mode=b.dataset.m; $$('#mode button').forEach(x=>x.classList.toggle('on',x===b)); render(true); window.scrollTo({top:0}); } return; }
   const h=e.target.closest('.ck-h');
   if(h){ const row=h.closest('.ck'); row.classList.toggle('open'); const o=row.classList.contains('open');
     o?openChecks.add(row.dataset.id):openChecks.delete(row.dataset.id); h.setAttribute('aria-expanded',o); }
@@ -516,6 +489,7 @@ function spy(){
   $$('.side a[data-s]').forEach(a=>a.classList.toggle('on',a.dataset.s===cur));
 }
 addEventListener('scroll',spy,{passive:true});
+addEventListener('hashchange',()=>{mode=location.hash==='#v1'?'v1':'v2'; render(true); scrollTo({top:0});});
 
 render();
 </script>
