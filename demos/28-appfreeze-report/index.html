@@ -83,7 +83,6 @@ h1{font-size:30px;font-weight:700;line-height:1.3;color:var(--ink)}
 .tree a:hover{color:var(--ink1)}
 .tree a.on{border-left-color:var(--ink);color:var(--ink);font-weight:700}
 .tree a .n{margin-left:auto;font-size:11.5px;color:var(--ink4);font-family:var(--mono);font-weight:400}
-.keys{font-size:12px;color:var(--ink3);line-height:2.1}
 .main{flex:1;min-width:0}
 @media (min-width:901px){.wrap{padding-right:104px}}
 
@@ -180,7 +179,6 @@ a.btn{text-decoration:none}
 .ck+.ck{margin-top:2px}
 .ck-h{display:grid;grid-template-columns:22px 1fr auto 16px;gap:10px;align-items:center;width:100%;text-align:left;padding:10px 12px;border-radius:12px}
 .ck-h:hover{background:var(--fill)}
-.ck.focus .ck-h{background:var(--fill);box-shadow:inset 2px 0 0 var(--ink)}
 .ck-h .ic{width:22px;height:22px;border-radius:50%;display:grid;place-items:center}
 .ck-h .ic svg{width:13px;height:13px;stroke-width:2.2}
 .ck-h .tt{font-size:14px;font-weight:600;color:var(--ink1)}
@@ -254,8 +252,6 @@ a.btn{text-decoration:none}
 
 .toast{position:fixed;left:50%;bottom:32px;transform:translate(-50%,20px);background:#191919;color:#fff;padding:10px 18px;border-radius:999px;font-size:13px;opacity:0;transition:all .2s;z-index:99;pointer-events:none}
 .toast.on{opacity:1;transform:translate(-50%,0)}
-.kbd{font-family:var(--mono);font-size:11px;background:var(--paper);border-radius:4px;padding:1px 5px;color:var(--ink2)}
-.hint{font-size:12px;color:var(--ink4);margin-top:10px}
 .fade{animation:fade .35s ease}
 @keyframes fade{from{opacity:.2;transform:translateY(4px)}to{opacity:1;transform:none}}
 @media (max-width:900px){.side,.float{display:none}.wrap{padding:8px 16px 60px}.hero-in{padding:18px 16px 14px}.sub{padding:0 16px;gap:12px}.seg-lbl{display:none}.seg button{padding:0 8px;font-size:12px}
@@ -316,13 +312,6 @@ a.btn{text-decoration:none}
       <a href="#sec-excl" data-s="sec-excl">排除项与判据</a>
       <a href="#sec-threads" data-s="sec-threads">线程快照<span class="n">32</span></a>
     </nav></div>
-    <h6>快捷键</h6>
-    <div class="keys">
-      <span class="kbd">J</span> <span class="kbd">K</span> 证据上下移动<br>
-      <span class="kbd">Enter</span> 展开 / 收起<br>
-      <span class="kbd">G</span> 跳到修复建议<br>
-      <span class="kbd">Esc</span> 关闭代码面板
-    </div>
   </aside>
   <main class="main" id="main"></main>
 </div>
@@ -527,7 +516,7 @@ const CAUSE_LABEL = {1:'对应根因 ① · hasAttachment 误判',2:'对应根�
 const $ = s=>document.querySelector(s), $$ = s=>[...document.querySelectorAll(s)];
 const esc = s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 const ic = (id,cls='')=>`<svg class="i ${cls}"><use href="#i-${id}"/></svg>`;
-let mode='v2', verified=false, focusIdx=-1;
+let mode='v2', verified=false;
 const openChecks=new Set(['queue']);
 
 function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('on'),1800)}
@@ -598,7 +587,6 @@ function render(anim){
         <div class="sec-t"><h2>证据清单</h2><span class="grow"></span>
           <div class="sum"><span class="pill no">${cnt.hit} 命中</span><span class="pill yes">${cnt.pass} 通过</span><span class="pill">${cnt.excl} 排除</span><span class="pill part">${cnt.miss} 缺数据</span></div></div>
         <div class="checks" id="checks">${cks.map((c,i)=>ckRow(c,i)).join('')}</div>
-        <div class="hint"><span class="kbd">J</span> <span class="kbd">K</span> 上下移动 · <span class="kbd">Enter</span> 展开</div>
       </section>
 
       <section id="sec-excl">
@@ -629,7 +617,6 @@ function render(anim){
     </div>
   </div>`;
   drawTimeline();
-  if(focusIdx>=0) setFocus(focusIdx,false);
   spy();
 }
 
@@ -764,12 +751,6 @@ function openWorkspaceDiff(){
 
 /* ---------- 交互 ---------- */
 function setSeg(){ $$('#mode button').forEach(b=>b.classList.toggle('on',b.dataset.m===mode)); }
-function setFocus(i,scroll=true){
-  const rows=$$('#checks .ck'); if(!rows.length) return;
-  focusIdx=Math.max(0,Math.min(rows.length-1,i));
-  rows.forEach((r,k)=>r.classList.toggle('focus',k===focusIdx));
-  if(scroll) rows[focusIdx].scrollIntoView({block:'nearest'});
-}
 function toggleCheck(row){
   const id=row.dataset.id; row.classList.toggle('open');
   row.classList.contains('open')?openChecks.add(id):openChecks.delete(id);
@@ -789,7 +770,7 @@ document.addEventListener('click',e=>{
   const a=t.dataset.act;
   if(t.dataset.loc && (!a||a==='open')){ e.preventDefault(); const [f,x,y]=t.dataset.loc.split('|'); openCode(f,+x,+y); return; }
   switch(a){
-    case 'toggle': toggleCheck(t.closest('.ck')); setFocus(+t.closest('.ck').dataset.i,false); break;
+    case 'toggle': toggleCheck(t.closest('.ck')); break;
     case 'to-tl': $('#sec-timeline').scrollIntoView({block:'start'}); break;
     case 'upgrade': upgrade(); break;
     case 'verify': verify(); break;
@@ -806,12 +787,7 @@ document.addEventListener('click',e=>{
   }
 });
 document.addEventListener('keydown',e=>{
-  if(e.target.closest('input,textarea')) return;
-  if(e.key==='Escape'){ closeCode(); return; }
-  if(e.key==='j'||e.key==='J'){ setFocus(focusIdx+1); e.preventDefault(); }
-  else if(e.key==='k'||e.key==='K'){ setFocus(focusIdx<0?0:focusIdx-1); e.preventDefault(); }
-  else if(e.key==='Enter' && focusIdx>=0 && !e.target.closest('button,a,summary')){ toggleCheck($$('#checks .ck')[focusIdx]); e.preventDefault(); }
-  else if(e.key==='g'||e.key==='G'){ $('#sec-fix').scrollIntoView({block:'start'}); }
+  if(e.key==='Escape') closeCode();
 });
 /* 时间线 hover 显示对应应用日志 */
 document.addEventListener('mousemove',e=>{
