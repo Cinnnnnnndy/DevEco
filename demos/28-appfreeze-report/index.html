@@ -110,7 +110,6 @@ h1{font-size:30px;font-weight:700;line-height:1.3;color:var(--ink)}
 .fix-h .no{width:24px;height:24px;border-radius:50%;background:var(--ink);color:#fff;font-size:12px;font-weight:600;display:grid;place-items:center;flex:none}
 .fix.dir .fix-h .no{background:var(--part)}
 .fix-h h4{font-size:16px;font-weight:700;flex:1;min-width:200px;color:var(--ink)}
-.fix p.why{font-size:13px;color:var(--ink3);margin:12px 0 0;line-height:1.6}
 .code{background:var(--fill);border-radius:var(--r-sm);overflow:auto;font-family:var(--mono);font-size:12.5px;line-height:20px;padding:8px 0}
 .code .r{display:grid;grid-template-columns:22px 1fr;white-space:pre;padding-right:12px}
 .code.plain .r{grid-template-columns:1fr;padding-left:16px}
@@ -178,7 +177,6 @@ h1{font-size:30px;font-weight:700;line-height:1.3;color:var(--ink)}
 .stack{display:flex;flex-direction:column;gap:28px;max-width:1040px}
 .sec-t .grow{flex:1}
 .loc{font-family:var(--mono);font-size:12.5px;color:var(--ink3);white-space:nowrap}
-.fixnote{font-size:13px;color:var(--ink3);margin-top:12px;line-height:1.6}
 .tt2{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:4px}
 .tt2 th{text-align:left;font-weight:600;color:var(--ink3);padding:6px 8px;border-bottom:1px solid var(--line)}
 .tt2 td{padding:6px 8px;border-bottom:1px solid var(--line);color:var(--ink2);vertical-align:top}
@@ -339,21 +337,16 @@ const V = {
 const FIX = {
   v2:[
     {t:'修正 hasAttachment 误判条件', loc:'FreezeNoteDetailPage.ets 第 45-54 行',
-     why:'仅本次编辑新增的附件（pendingAttachments）才需要附件保存路径；已有封面图随笔记记录持久化，不构成同步保存的理由。',
      diff:[['c','  private hasAttachment(): boolean {'],['d','    // Check if the note has an associated media resource'],['d','    // that requires synchronized persistence handling'],['d','    return this.currentNote?.thumbnailPath !== undefined'],['d','    // BUG: This checks whether the note has ANY thumbnail (existing cover image),'],['d','    // not whether there are NEW pending attachments to save.'],['d','    // A note with an existing cover image will always return true here,'],['d','    // even when the user only edited text content.'],['d','    // Should be: return this.pendingAttachments.length > 0'],['a','    return this.pendingAttachments.length > 0'],['c','  }']]},
     {t:'sync 路径改为可等待的异步实现', loc:'NoteRepository.ets 第 44-48 行',
-     why:'即便进入附件保存路径，也不在主线程同步执行。',
      diff:[['c','    if (options.sync) {'],['d','      // Synchronous path: used when attachments need atomic commit'],['d','      // to ensure data consistency between note record and attachment files'],['d','      this.saveNoteSync(note);'],['a','      await this.saveNoteWithAttachmentsAsync(note);'],['c','    } else {'],['c','      await this.saveNoteAsync(note);'],['c','    }']]},
     {t:'同步忙等改为逐步 await，让出主线程', loc:'NoteRepository.ets 第 64-102 行',
-     why:'每一步 IO 都以 await + setTimeout 让出主线程，事件循环可继续处理输入与渲染（两次点击场景下按钮禁用态也能及时生效，第二次忙等不再发生）。',
      diff:[['d','  private saveNoteSync(note: NoteModel): void {'],['a','  private async saveNoteWithAttachmentsAsync(note: NoteModel): Promise<void> {'],['c','     ...'],['c','     if (FreezeTestHelper.isFreezeModeEnabled()) {'],['c','       // Step 1: Insert/update main note record'],['d','      FreezeTestHelper.injectDelay(500);'],['a','      await this.nonBlockingDelay(500);'],['c','       // Step 2 ~ Step 8 同理，每一步：'],['d','      FreezeTestHelper.injectDelay(500);'],['a','      await this.nonBlockingDelay(500);'],['c','     }'],['c','   }'],['a',''],['a','  private nonBlockingDelay(ms: number): Promise<void> {'],['a','    return new Promise<void>((resolve) => {'],['a','      setTimeout(() => {'],['a','        resolve();'],['a','      }, ms);'],['a','    });'],['a','  }']]},
   ],
   v1:[
     {t:'将 saveNoteSync 保存流水线整体移入 TaskPool worker 线程，onSaveClick 内只做调度与 UI 回调', dir:true,
-     why:'冻屏的直接原因是保存流水线（单轮约 4.0s 的同步计算）在主线程 MMITask 回调内执行。移入 TaskPool 后主线程事件循环（MMITask、vSyncTask 分发）保持响应，队列不再堆积。',
      code:["import { taskpool } from '@kit.ArkTS'","","@Concurrent","function saveNotePipeline(noteId: string, payload: NoteData): SaveResult {","  // 原 saveNoteSync 的 8 步流水线整体移入 worker 线程：","  // 写库 → 搜索索引 → 附件引用 → 标签关联 → 分类归属 → 缩略图元数据 → 云同步排队 → 偏好清理","  return doSavePipeline(noteId, payload)","}","","// FreezeNoteDetailPage 的保存按钮回调：只调度，不同步执行","async onSaveClick() {","  const result = await taskpool.execute(saveNotePipeline, this.noteId, this.buildPayload())","  this.onSaveFinished(result) // 仅 UI 更新留在主线程","}"]},
     {t:'保存操作增加进行中（in-flight）守卫，防止重复点击叠加执行', dir:true,
-     why:'本日志显示用户在第一轮保存执行期间（11:15:03.418）再次点击，第二轮约 4s 的流水线紧接执行，把无响应时长拉长至约 8s 并触发 6S 上报。in-flight 守卫与按钮禁用消除重复触发叠加，同时避免同一笔记并发写。',
      code:["private saving = false","","async onSaveClick() {","  if (this.saving) return // 保存进行中，忽略重复点击","  this.saving = true","  this.saveButtonEnabled = false // 立即禁用按钮，给用户即时反馈","  try {","    const result = await taskpool.execute(saveNotePipeline, this.noteId, this.buildPayload())","    this.onSaveFinished(result)","  } finally {","    this.saving = false","    this.saveButtonEnabled = true","  }","}"]},
   ]
 };
@@ -401,7 +394,6 @@ function render(anim){
     <section id="sec-fix">
       <div class="sec-t"><h2>修复建议</h2><span class="sub2">${v2?'源码差异对比':'源码不可达，提供通用方向与模板'}</span></div>
       ${fixes.map((f,i)=>fixCard(f,i)).join('')}
-      ${v2?`<p class="fixnote">当前工作区已包含上述修复（FreezeNoteDetailPage.ets / NoteRepository.ets 为已修改未提交状态，与产生故障日志的 4ca0c7e 版本不同），验证冻屏不再复现后提交即可。</p>`:''}
     </section>
 
     <section id="sec-checks">
@@ -421,7 +413,6 @@ function fixCard(f,i){
     <div class="fix-h"><span class="no">${i+1}</span><h4>${f.t}</h4>
       ${f.dir?`<span class="pill part">通用方向</span>`:`<span class="loc">${f.loc}</span>`}<button class="copy" type="button" title="复制" aria-label="复制">${ic('copy')}</button></div>
     <div class="code ${f.dir?'plain':''}">${rows}</div>
-    <p class="why">${f.why}</p>
   </div>`;
 }
 
