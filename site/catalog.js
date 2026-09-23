@@ -12,7 +12,7 @@
      title    标题
      subtitle 英文 / 技术向副标题，可省略
      desc     一两句话说清是什么、能看到什么
-     mark     deck 里的标记：投 | 半投 | 补齐 | 搭车 | 顺手做（可省略）
+     mark     deck 里的标记：投 | 半投 | 补齐 | 搭车 | 顺手做（可省略；只进搜索，卡片上不显示）
      view     'ready' 可体验（有实际界面可点） · 'doc' 文档（读的东西） · 'sketch' 原型（还没做，占位）
      date     最近更新 YYYY-MM-DD，可省略
      href     点卡片打开的相对路径；sketch 没有 href
