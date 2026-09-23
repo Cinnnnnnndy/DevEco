@@ -9,12 +9,16 @@
    pos:  标签相对目标框的方位，top/bottom/left/right，默认 top
    标注跟着目标元素的位置实时走（哪怕在 DemoFrame 切换标签页/面板之后目标移动了也一样），
    找不到目标（selector 暂时没渲染出来）就自动隐藏那一条，不报错。
+   开关：左下角「关闭标注 / 显示标注」按钮、图例右上角的 × 关掉后记在 localStorage 的
+   deveco-guide（'off' / 'on'），所有 demo 与启动页共用，关一次处处都关；Esc 只收起当前页。
    ===================================================================== */
 window.DemoGuide = (function(){
   'use strict';
   var $ = function(s,r){ return (r||document).querySelector(s); };
   var esc = function(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;'); };
-  var marks = [], visible = true, raf = null;
+  var marks = [], visible = true, raf = null, KEY = 'deveco-guide';
+  function saved(){ try{ return localStorage.getItem(KEY); }catch(e){ return null; } }
+  function save(on){ try{ localStorage.setItem(KEY, on ? 'on' : 'off'); }catch(e){} }
 
   function sync(){
     marks.forEach(function(m){
@@ -35,28 +39,38 @@ window.DemoGuide = (function(){
   function start(){ if(!raf) raf = requestAnimationFrame(loop); }
   function stop(){ if(raf){ cancelAnimationFrame(raf); raf=null; } }
 
-  function setVisible(on){
+  function setVisible(on, keep){
     visible = on;
+    if(keep !== false) save(on);
     var layer = $('#gd-layer'); if(layer) layer.classList.toggle('hidden', !visible);
     var legend = $('#gd-legend'); if(legend) legend.classList.toggle('hidden', !visible);
-    var btn = $('#gd-toggle-btn'); if(btn) btn.classList.toggle('on', visible);
+    var btn = $('#gd-toggle-btn');
+    if(btn){
+      btn.classList.toggle('on', visible);
+      btn.title = visible ? '关闭页面上的全部标注（Esc），所有 demo 一起关' : '显示页面上的标注：点哪里、哪里会变';
+      btn.querySelector('span').textContent = visible ? '关闭标注' : '显示标注';
+    }
     if(visible) start(); else stop();
   }
 
   function buildToggle(){
     var b = document.createElement('button');
     b.type = 'button'; b.id = 'gd-toggle-btn'; b.className = 'gd-toggle on';
-    b.title = '显示 / 隐藏页面指引（Esc 也可以）';
-    b.innerHTML = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5c-2.8 0-5 2-5 4.5 0 1.6.8 2.7 1.8 3.6.5.4.7.8.7 1.4v.3h5v-.3c0-.6.2-1 .7-1.4C12.2 8.7 13 7.6 13 6c0-2.5-2.2-4.5-5-4.5z" stroke="currentColor" fill="none" stroke-linejoin="round"/><path d="M6.7 13.7h2.6M6.9 12h2.2" stroke="currentColor" stroke-linecap="round"/></svg><span>指引</span>';
+    b.title = '';
+    b.innerHTML = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5c-2.8 0-5 2-5 4.5 0 1.6.8 2.7 1.8 3.6.5.4.7.8.7 1.4v.3h5v-.3c0-.6.2-1 .7-1.4C12.2 8.7 13 7.6 13 6c0-2.5-2.2-4.5-5-4.5z" stroke="currentColor" fill="none" stroke-linejoin="round"/><path d="M6.7 13.7h2.6M6.9 12h2.2" stroke="currentColor" stroke-linecap="round"/></svg><span></span>';
     b.addEventListener('click', function(){ setVisible(!visible); });
     document.body.appendChild(b);
 
     var legend = document.createElement('div');
     legend.id = 'gd-legend'; legend.className = 'gd-legend';
-    legend.innerHTML = '<span class="row"><i></i>点这里，触发这条创新点的关键交互</span><span class="row"><i></i>这里会变，是点完之后的结果</span>';
+    legend.innerHTML = '<div class="hd"><b>页面标注</b><button type="button" class="x" title="关闭全部标注（Esc）" aria-label="关闭全部标注">'
+      + '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button></div>'
+      + '<span class="row"><i></i>点这里，触发这条创新点的关键交互</span><span class="row"><i></i>这里会变，是点完之后的结果</span>';
+    legend.querySelector('.x').addEventListener('click', function(){ setVisible(false); });
     document.body.appendChild(legend);
 
-    document.addEventListener('keydown', function(e){ if(e.key === 'Escape') setVisible(false); });
+    /* Esc 只在当前页收起（demo 里 Esc 也用来关弹层，不应顺带改掉全局选择） */
+    document.addEventListener('keydown', function(e){ if(e.key === 'Escape' && visible) setVisible(false, false); });
   }
 
   function init(list){
@@ -73,8 +87,8 @@ window.DemoGuide = (function(){
     });
     document.body.appendChild(layer);
     buildToggle();
+    setVisible(saved() !== 'off', false);
     sync();
-    start();
   }
 
   return { init: init, refresh: sync, setVisible: setVisible };
