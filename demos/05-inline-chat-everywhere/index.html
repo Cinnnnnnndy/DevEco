@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='32' y2='32' gradientUnits='userSpaceOnUse'%3E%3Cstop stop-color='%232C8DDD'/%3E%3Cstop offset='1' stop-color='%233357AC'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='32' height='32' rx='7' fill='url(%23g)'/%3E%3Ctext x='16' y='22.5' font-family='Arial,Helvetica,sans-serif' font-size='13' font-weight='700' fill='white' text-anchor='middle'%3EDE%3C/text%3E%3C/svg%3E">
-<title>05 · 就地对话：代码里、预览上、文档里，同一套</title>
+<title>05 · 就地对话：从编辑器长进 Build、Debug、HiLog</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;500&display=swap">
 <link rel="stylesheet" href="../../deveco-intui-kit/src/tokens.css">
 <link rel="stylesheet" href="../../deveco-intui-kit/src/components.css">
@@ -50,10 +50,98 @@
   .mapp .lbtn-wrap .dm-hot{inset:-3px}
   .mapp .lbtn-wrap .dm-hot .lb{left:auto;right:-1px}
   .mapp .hintline{margin:10px 12px 0;font-size:9px;color:#8a8f99;text-align:center}
+
+  /* ===== AI 长在工具窗里：Build / Debug / Log / Profiler ===== */
+  .ide[data-ide-theme]{--bottom-h:282px}
+  .tw-bottom .pane{height:100%}
+  .tw-bottom .tw-hdr{height:34px}
+  .tw-bottom .tw-hdr .title{font-weight:600}
+  .tw-bottom .tw-body{display:flex;min-height:0}
+  .btab .dm-dot{width:6px;height:6px}
+  .aic{position:relative;border:1px solid var(--ui-popup-border);border-radius:var(--arc);background:var(--ui-popup-bg);box-shadow:var(--ui-shadow);font-size:var(--fs-para);line-height:var(--lh-para);display:flex;flex-direction:column;min-height:0}
+  .aic::before{content:"";position:absolute;left:-1px;top:0;bottom:0;width:3px;border-radius:3px 0 0 3px;background:linear-gradient(#5B8CF7,#9B6CF6)}
+  .aic .ah{display:flex;align-items:center;gap:6px;padding:6px 10px;border-bottom:1px solid var(--ui-border);font-size:var(--fs-sm);color:var(--ui-fg-info);flex:none}
+  .aic .ah b{color:var(--ui-fg);font-weight:600}
+  .aic .ah svg.i{width:14px;height:14px}
+  .aic .ah .grow{flex:1}
+  .aic .ictx{display:flex;flex-wrap:wrap;gap:4px;padding:6px 10px 0}
+  .aic .ictx span{font-family:var(--font-code);font-size:10px;line-height:16px;padding:0 6px;border-radius:4px;background:var(--ui-tag-bg);color:var(--ui-fg-info);white-space:nowrap}
+  .aic .ictx span::before{content:"读了 ";font-family:var(--font-ui);opacity:.7}
+  .aic .ictx span:not(:first-child)::before{content:""}
+  .aic .ab{padding:8px 10px;display:flex;flex-direction:column;gap:6px;overflow:auto;min-height:0}
+  .aic .ab p{margin:0}
+  .aic .ab code{font-family:var(--font-code);font-size:11px;background:var(--ui-tag-bg);padding:1px 4px;border-radius:4px}
+  .aic .q{display:flex;gap:6px;align-items:flex-start;color:var(--ui-fg-info)}
+  .aic .q svg.i,.aic .a svg.i{width:14px;height:14px;margin-top:2px;flex:none}
+  .aic .a{display:flex;gap:6px;align-items:flex-start}
+  .aic .af{display:flex;align-items:center;gap:6px;padding:6px 10px;border-top:1px solid var(--ui-border);flex:none;flex-wrap:wrap}
+  .aic .af .grow{flex:1}
+  .aic .af .btn svg.i{width:12px;height:12px}
+  .aic.ok::before{background:var(--ui-success)}
+  .aic .diffcard pre{padding:4px 0}
+  .aic .diffcard pre .l{line-height:17px}
+  .aic .diffcard .dh{height:24px}
+  .act{display:inline-flex;align-items:center;gap:5px}
+  .act.done{color:var(--ui-success)}
+  .btn.act.done{border-color:color-mix(in srgb,var(--ui-success) 60%,transparent)}
+  .ph{margin:auto;color:var(--ui-fg-info);font-size:var(--fs-sm);text-align:center;display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px}
+  .ph svg.i{width:18px;height:18px;opacity:.7}
+  /* Build */
+  .ide .build{grid-template-columns:34px 270px minmax(0,1fr);flex:1}
+  .build .side .abtn svg.i{width:14px;height:14px}
+  .build .list .row svg.i{width:14px;height:14px}
+  .build .list .row.fail svg.i{color:var(--ui-error)}
+  .build .list .row.l2{padding-left:40px}.build .list .row.l3{padding-left:58px}
+  .build .list .row .grow{flex:1;overflow:hidden;text-overflow:ellipsis}
+  .bout{display:grid;grid-template-columns:minmax(0,1fr) 500px;gap:10px;min-height:0;padding-right:10px}
+  .bout .out{min-height:0}
+  .bout .aic{margin:8px 0}
+  .out .er{color:var(--ui-error)}
+  .out .dim{color:var(--ui-fg-info)}
+  .out .lnk{color:var(--ui-link);text-decoration:underline}
+  /* Debug */
+  .dbg{flex:1;display:grid;grid-template-columns:250px 400px minmax(0,1fr);min-height:0}
+  .dbg > *{min-height:0;overflow:auto;border-right:1px solid var(--ui-border)}
+  .dbg > :last-child{border-right:0;display:flex;padding:8px 10px}
+  .dtools{display:flex;gap:2px;padding:4px 6px;border-bottom:1px solid var(--ui-border)}
+  .dtools .abtn svg.i{width:14px;height:14px}
+  .dsec{padding:6px 12px 2px;font-size:11px;color:var(--ui-fg-info);font-weight:600}
+  .frow{display:flex;align-items:center;gap:6px;height:var(--row);padding:0 12px;white-space:nowrap;font-size:var(--fs-sm)}
+  .frow.sel{background:var(--ui-selection)}
+  .frow .loc{color:var(--ui-fg-info);font-family:var(--font-code);font-size:11px}
+  .frow .bpd{width:9px;height:9px;border-radius:50%;background:var(--ed-breakpoint);flex:none}
+  .frow .bpd.cond{box-shadow:0 0 0 2px color-mix(in srgb,var(--ed-breakpoint) 35%,transparent)}
+  .vrow{display:flex;align-items:center;gap:6px;min-height:26px;padding:0 10px;white-space:nowrap;font-family:var(--font-code);font-size:12px}
+  .vrow.l2{padding-left:30px}
+  .vrow .vn{color:var(--ed-field)}.vrow .vv{color:var(--ed-string)}.vrow .vu{color:var(--ui-fg-info);font-style:italic}
+  .vrow .vt{color:var(--ui-fg-info);font-size:11px}
+  .vrow.sel{background:color-mix(in srgb,var(--ui-warning) 12%,transparent)}
+  .askchip{display:inline-flex;align-items:center;gap:4px;height:20px;padding:0 8px;border-radius:10px;border:1px solid color-mix(in srgb,var(--ui-accent) 60%,transparent);background:color-mix(in srgb,var(--ui-accent) 12%,transparent);color:var(--ui-fg);font-family:var(--font-ui);font-size:11px;margin-left:auto}
+  .askchip svg.i{width:12px;height:12px}
+  .dbg .aic{flex:1}
+  .code .ln.exec{background:color-mix(in srgb,var(--ui-accent) 22%,transparent)}
+  .code .bp.cond{position:relative}
+  .code .bp.cond::after{content:"?";position:absolute;inset:0;display:grid;place-items:center;font-size:8px;font-weight:700;color:#fff;font-family:var(--font-ui)}
+  .code .ln .cbtag{margin-left:10px;font-family:var(--font-ui);font-size:11px;padding:0 6px;border-radius:4px;background:color-mix(in srgb,var(--ed-breakpoint) 18%,transparent);color:var(--ui-fg)}
+  /* Log */
+  .logp{flex:1;display:grid;grid-template-columns:minmax(0,1fr) 500px;gap:10px;min-height:0;padding-right:10px}
+  .lg{overflow:auto;min-height:0;padding:6px 0;font-family:var(--font-code);font-size:12px;line-height:20px;user-select:text}
+  .lg .r{display:flex;gap:10px;padding:0 12px;white-space:pre}
+  .lg .r .ts{color:var(--ui-fg-info)}
+  .lg .r .lv{width:10px;font-weight:600}
+  .lg .r.I .lv{color:var(--ui-success)}.lg .r.W .lv{color:var(--ui-warning)}.lg .r.E .lv,.lg .r.E .msg{color:var(--ui-error)}
+  .lg .r.st{cursor:text}
+  .lg .r.st .msg{color:var(--ed-text)}
+  .lg .r.st:hover{background:var(--ui-hover-list)}
+  .lg .r.sel{background:var(--ui-selection)}
+  .logp .aic{margin:8px 0}
+  /* Profiler */
+  .prof{flex:1;display:grid;grid-template-columns:minmax(0,1fr) 440px;gap:10px;padding:8px 10px;min-height:0}
+  .prof .dm-chart{min-height:0}
 </style>
 </head>
 <body>
-<div class="ide" id="ide" data-ide-theme="dark" data-left="project" data-right="none" data-bottom="none" role="application" aria-label="DevEco Studio">
+<div class="ide" id="ide" data-ide-theme="dark" data-left="project" data-right="none" data-bottom="build" role="application" aria-label="DevEco Studio">
   <div class="body">
     <div class="tw tw-left">
       <div class="pane on" data-pane="project">
@@ -73,7 +161,7 @@
       <!-- ① 文档里：README.md -->
       <div class="code-wrap" data-for-file="README.md">
         <div class="code" id="code-md"></div>
-        <div class="dm-inline" id="ic-md" style="--x:120px;--y:320px">
+        <div class="dm-inline" id="ic-md" style="--x:120px;--y:26px">
           <div class="ih"><svg class="i"><use href="#i-genie"/></svg>Inline Chat · README.md 第 14 行<span class="grow"></span><kbd>Esc</kbd><button class="abtn" title="Close" data-close="ic-md"><svg class="i"><use href="#i-closeS"/></svg></button></div>
           <div class="ib">
             <div class="q"><svg class="i"><use href="#i-user"/></svg><span>把这段改成面向第三方接入方的口吻，补上超时时间</span></div>
@@ -134,7 +222,82 @@
         </div>
       </div>
 
+      <!-- AI 驱动 IDE 打开的文件 -->
+      <div class="code-wrap" data-for-file="module.json5" hidden><div class="code" id="code-json"></div></div>
+      <div class="code-wrap" data-for-file="DetailPage.ets" hidden><div class="code" id="code-detail"></div></div>
+
       <div class="breadcrumbs" id="crumbs"></div>
+    </div>
+
+    <div class="tw tw-bottom">
+      <!-- Build -->
+      <div class="pane on" data-pane="build">
+        <div class="tw-hdr"><span class="title">Build</span><div class="tabbar"><button class="btab on">Build Output</button><button class="btab">Sync</button></div><span class="grow"></span>
+          <button class="abtn" title="Options"><svg class="i"><use href="#i-moreV"/></svg></button><button class="abtn" title="Hide|Shift+Esc" data-act="hide-bottom"><svg class="i"><use href="#i-hide"/></svg></button></div>
+        <div class="tw-body">
+          <div class="build">
+            <div class="side"><button class="abtn" title="Rebuild"><svg class="i"><use href="#i-rerun"/></svg></button><button class="abtn" title="Stop"><svg class="i"><use href="#i-stop"/></svg></button><button class="abtn" title="Filter"><svg class="i"><use href="#i-tune"/></svg></button></div>
+            <div class="list" id="b-list"></div>
+            <div class="bout"><div class="out" id="b-out"></div><div class="aic" id="b-ai"></div></div>
+          </div>
+        </div>
+      </div>
+      <!-- Debug -->
+      <div class="pane" data-pane="debug">
+        <div class="tw-hdr"><span class="title">Debug</span><div class="tabbar"><button class="btab on">entry <span class="dm-dot info"></span></button></div><span class="grow"></span>
+          <button class="abtn" title="Options"><svg class="i"><use href="#i-moreV"/></svg></button><button class="abtn" title="Hide|Shift+Esc" data-act="hide-bottom"><svg class="i"><use href="#i-hide"/></svg></button></div>
+        <div class="tw-body">
+          <div class="dbg">
+            <div>
+              <div class="dtools"><button class="abtn" title="Resume Program|F9"><svg class="i"><use href="#i-play"/></svg></button><button class="abtn" title="Pause"><svg class="i"><use href="#i-pause"/></svg></button><button class="abtn" title="Stop|Ctrl+F2"><svg class="i"><use href="#i-stopSq"/></svg></button><button class="abtn" title="Step Over|F8"><svg class="i"><use href="#i-arrowR"/></svg></button></div>
+              <div class="dsec">Frames</div>
+              <div class="frow sel"><svg class="i" style="width:12px;height:12px"><use href="#i-method"/></svg>aboutToAppear<span class="loc">DetailPage.ets:13</span></div>
+              <div class="frow"><svg class="i" style="width:12px;height:12px"><use href="#i-method"/></svg>initialRender<span class="loc">DetailPage.ets</span></div>
+              <div class="frow"><svg class="i" style="width:12px;height:12px"><use href="#i-method"/></svg>pushUrl<span class="loc">router</span></div>
+              <div class="dsec">Breakpoints</div>
+              <div id="bp-list"><div class="frow"><span class="bpd"></span>DetailPage.ets:13</div></div>
+            </div>
+            <div>
+              <div class="dsec">Variables · 停在 DetailPage.ets:13</div>
+              <div class="vrow"><svg class="i" style="width:12px;height:12px"><use href="#i-chevD"/></svg><span class="vn">params</span> = <span class="vv">{ id: 1024 }</span><span class="vt">Record&lt;string, number&gt;</span></div>
+              <div class="vrow l2"><span class="vn">id</span> = <span class="n">1024</span></div>
+              <div class="vrow sel" id="v-id"><span class="vn">this.id</span> = <span class="vu">undefined</span><span class="vt">number</span><button class="askchip" id="ask-undef"><svg class="i"><use href="#i-genie"/></svg>为什么是 undefined？</button></div>
+              <div class="vrow"><span class="vn">this.product</span> = <span class="vu">undefined</span><span class="vt">Product | undefined</span></div>
+            </div>
+            <div id="d-ai"><div class="ph"><svg class="i"><use href="#i-genie"/></svg>在变量、调用栈上直接问，AI 读得到这一刻的运行状态</div></div>
+          </div>
+        </div>
+      </div>
+      <!-- Log -->
+      <div class="pane" data-pane="log">
+        <div class="tw-hdr"><span class="title">Log</span><div class="tabbar"><button class="btab on">HiLog</button><button class="btab">FaultLog</button></div><span class="grow"></span>
+          <span class="dm-small dm-muted" style="margin-right:8px">HUAWEI Mate 70 Pro · com.example.myapplication</span>
+          <button class="abtn" title="Hide|Shift+Esc" data-act="hide-bottom"><svg class="i"><use href="#i-hide"/></svg></button></div>
+        <div class="tw-body">
+          <div class="logp"><div class="lg" id="lg"></div><div class="aic" id="l-ai" style="display:none"></div><div class="ph" id="l-ph"><svg class="i"><use href="#i-cursor"/></svg>选中一段崩溃栈，就地解释并跳到代码</div></div>
+        </div>
+      </div>
+      <!-- Profiler -->
+      <div class="pane" data-pane="profiler">
+        <div class="tw-hdr"><span class="title">Profiler</span><div class="tabbar"><button class="btab on">Frame</button><button class="btab">ArkTS Allocation</button></div><span class="grow"></span>
+          <span class="dm-pill ok" style="margin-right:8px"><span class="dm-dot ok pulse"></span>录制中 · Mate 70 Pro</span>
+          <button class="abtn" title="Hide|Shift+Esc" data-act="hide-bottom"><svg class="i"><use href="#i-hide"/></svg></button></div>
+        <div class="tw-body">
+          <div class="prof">
+            <div class="dm-chart"><div class="ch-t"><b>帧耗时</b>ms · 列表滑动<span class="grow"></span>超 16.6 ms 的帧 <b>3</b></div>
+              <svg viewBox="0 0 600 150" preserveAspectRatio="none" style="height:170px">
+                <line class="lim" x1="0" y1="80" x2="600" y2="80"/>
+                <path class="area" d="M0 120 L40 118 L80 121 L120 115 L160 60 L200 117 L240 119 L280 55 L320 116 L360 120 L400 118 L440 50 L480 119 L520 117 L560 121 L600 118 L600 150 L0 150Z"/>
+                <path class="line" d="M0 120 L40 118 L80 121 L120 115 L160 60 L200 117 L240 119 L280 55 L320 116 L360 120 L400 118 L440 50 L480 119 L520 117 L560 121 L600 118"/>
+                <text class="lbl" x="4" y="76">16.6</text>
+              </svg></div>
+            <div class="aic"><div class="ah"><svg class="i"><use href="#i-genie"/></svg><b>AI 跟着录制在看</b><span class="grow"></span></div>
+              <div class="ictx"><span>Frame 轨道</span><span>调用栈采样</span></div>
+              <div class="ab"><p>3 帧超 16.6 ms，都卡在 <code>ListPage.loadCover</code> 的 <code>createPixelMapSync</code>——主线程同步解码封面。</p></div>
+              <div class="af"><span class="grow"></span><button class="btn" id="go-lp"><svg class="i"><use href="#i-arrowR"/></svg>跳到 ListPage.ets:28</button></div></div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -142,6 +305,62 @@
 <script>
 (function(){
   var $=DemoFrame.$, $$=DemoFrame.$$;
+
+  /* ===== AI 驱动 IDE 会打开的两份文件 ===== */
+  var F=DemoFrame.FILES;
+  var K=function(x){return '<span class="p">"'+x+'"</span>'},S=function(x){return '<span class="s">"'+x+'"</span>'};
+  var JSON_BEFORE=[
+    ['{',{fold:1}],
+    ['  '+K('module')+': {',{fold:1}],
+    ['    '+K('name')+': '+S('entry')+','],
+    ['    '+K('type')+': '+S('entry')+','],
+    ['    '+K('mainElement')+': '+S('EntryAbility')+','],
+    ['    '+K('deviceTypes')+': ['+S('phone')+', '+S('tablet')+', '+S('2in1')+'],'],
+    ['    '+K('pages')+': '+S('$profile:main_pages')+','],
+    ['    '+K('abilities')+': [',{fold:1}],
+    ['      { '+K('name')+': '+S('EntryAbility')+', '+K('srcEntry')+': '+S('./ets/entryability/EntryAbility.ets')+' }'],
+    ['    ]'],
+    ['  }'],
+    ['}']
+  ];
+  var JSON_ADD=[
+    ['    ],'],
+    ['    '+K('requestPermissions')+': [',{fold:1}],
+    ['      { '+K('name')+': '+S('ohos.permission.INTERNET')+' }'],
+    ['    ]']
+  ];
+  F['module.json5']={path:['entry','src','main'],crumbs:['module.json5','module'],lines:JSON_BEFORE.slice()};
+  F['DetailPage.ets']={path:['entry','src','main','ets','pages'],crumbs:['DetailPage','aboutToAppear'],lines:[
+    ['<span class="k">import</span> { <span class="ty">router</span> } <span class="k">from</span> <span class="s">\'@kit.ArkUI\'</span>;'],
+    ['<span class="k">import</span> { <span class="ty">ProductApi</span>, <span class="ty">Product</span> } <span class="k">from</span> <span class="s">\'../model/ProductApi\'</span>;'],
+    [''],
+    ['<span class="m">@Entry</span>'],
+    ['<span class="m">@Component</span>'],
+    ['<span class="k">struct</span> <span class="ty">DetailPage</span> {',{fold:1}],
+    ['  <span class="m">@State</span> <span class="p">product</span>: <span class="ty">Product</span> | <span class="k">undefined</span> = <span class="k">undefined</span>;'],
+    ['  <span class="k">private</span> <span class="p">id</span>: <span class="k">number</span> = <span class="n">0</span>;'],
+    [''],
+    ['  <span class="f">aboutToAppear</span>() {',{fold:1}],
+    ['    <span class="k">const</span> <span class="p">params</span> = <span class="ty">router</span>.<span class="f">getParams</span>() <span class="k">as</span> <span class="ty">Record</span>&lt;<span class="k">string</span>, <span class="k">number</span>&gt;;'],
+    ['    <span class="k">this</span>.<span class="p">id</span> = <span class="p">params</span>[<span class="s">\'productId\'</span>];'],
+    ['    <span class="k">this</span>.<span class="f">load</span>();'],
+    ['  }'],
+    [''],
+    ['  <span class="k">async</span> <span class="f">load</span>() {',{fold:1}],
+    ['    <span class="k">this</span>.<span class="p">product</span> = <span class="k">await</span> <span class="ty">ProductApi</span>.<span class="f">getDetail</span>(<span class="k">this</span>.<span class="p">id</span>);'],
+    ['  }'],
+    [''],
+    ['  <span class="f">build</span>() {',{fold:1,at:1}],
+    ['    <span class="f">Column</span>({ <span class="p">space</span>: <span class="n">12</span> }) {',{fold:1}],
+    ['      <span class="f">Image</span>(<span class="k">this</span>.<span class="p">product</span>?.<span class="p">cover</span>).<span class="f">width</span>(<span class="s">\'100%\'</span>).<span class="f">aspectRatio</span>(<span class="n">1</span>)'],
+    ['      <span class="f">Text</span>(<span class="k">this</span>.<span class="p">product</span>?.<span class="p">title</span>).<span class="f">fontSize</span>(<span class="n">18</span>)'],
+    ['      <span class="f">Text</span>(<span class="s">`¥${</span><span class="k">this</span>.<span class="p">product</span>!.<span class="p">price</span><span class="s">}`</span>).<span class="f">fontColor</span>(<span class="s">\'#E84026\'</span>)'],
+    ['      <span class="f">Button</span>(<span class="s">\'加入购物车\'</span>).<span class="f">width</span>(<span class="s">\'100%\'</span>)'],
+    ['    }'],
+    ['    .<span class="f">padding</span>(<span class="n">16</span>)'],
+    ['  }'],
+    ['}']
+  ]};
   document.getElementById('tree-slot').innerHTML=DemoFrame.tree({sel:'README.md'});
   document.getElementById('tabs').insertAdjacentHTML('afterbegin',DemoFrame.tabs([
     {file:'LoginPage.ets'},
@@ -196,7 +415,160 @@
     $('#lbtn-lb').textContent='Button · 已改 3 处';
     $('#pv-done').hidden=false;hide('ic-pv');
   });
-DemoGuide.init([{"target": "#md-apply", "kind": "click", "pos": "top", "label": "点这里替换文案"}, {"target": "#tabs", "kind": "change", "pos": "top", "label": "三处同一套对话"}]);
+
+  /* =================== AI 长在工具窗里 =================== */
+  var G='<svg class="i"><use href="#i-genie"/></svg>';
+  function ic(id){return '<svg class="i"><use href="#'+id+'"/></svg>'}
+  function openTab(file,label,icon){
+    var tb=$('.tab[data-file="'+file+'"]');
+    if(!tb){$('#tabs .grow').insertAdjacentHTML('beforebegin',DemoFrame.tabs([{file:file,label:label,icon:icon}]));tb=$('.tab[data-file="'+file+'"]');}
+    tb.click();return tb;
+  }
+  function cap(html){$('#status-slot').innerHTML=html;}
+
+  /* ---- Build：失败 → AI 读完报错 → 修复并重建 ---- */
+  var FAIL_LIST='<div class="row fail sel">'+ic('i-err')+'<span class="grow"><b>Build:</b> failed</span><span class="when">6 s 812 ms</span></div>'
+    +'<div class="row fail l2">'+ic('i-err')+'<span class="grow">:entry:default@CompileArkTS</span><span class="when">1 error</span></div>'
+    +'<div class="row fail l3">'+ic('i-err')+'<span class="grow">ProductApi.ets:12 缺少权限声明</span></div>';
+  var FAIL_OUT='<span class="dim">&gt; hvigor Starting Daemon...</span>\n'
+    +'<span class="dim">&gt; hvigor Finished :entry:default@PreBuild... after 312 ms</span>\n'
+    +'<span class="dim">&gt; hvigor Finished :entry:default@GenerateLoaderJson... after 41 ms</span>\n'
+    +'<span class="er">&gt; hvigor ERROR: Failed :entry:default@CompileArkTS...</span>\n'
+    +'<span class="er">1 ERROR: 10905209 ArkTS Compiler Error</span>\n'
+    +'Error Message: The API \'http.createHttp\' requires permission \'ohos.permission.INTERNET\',\n'
+    +'  which is not declared in \'requestPermissions\' of module.json5.\n'
+    +'  At File: <span class="lnk">entry/src/main/ets/model/ProductApi.ets:12:18</span>\n'
+    +'<span class="er">&gt; hvigor ERROR: BUILD FAILED in 6 s 812 ms</span>';
+  $('#b-list').innerHTML=FAIL_LIST;$('#b-out').innerHTML=FAIL_OUT;
+  $('#b-ai').innerHTML='<div class="ah">'+G+'<b>AI 已读完这次 hvigor 报错</b><span class="grow"></span><span class="dm-pill err">缺少权限声明</span></div>'
+    +'<div class="ictx"><span>Build 输出</span><span>module.json5</span><span>ProductApi.ets:12</span></div>'
+    +'<div class="ab"><p><code>ProductApi.ets:12</code> 调 <code>http.createHttp</code> 要 INTERNET 权限，<code>module.json5</code> 没声明。补上即可，不动代码。</p>'
+    +'<div class="diffcard"><div class="dh">'+ic('i-json')+'<span class="fn">entry/src/main/module.json5</span><span class="cnt"><span class="add">+4</span> <span class="del">−1</span></span></div>'
+    +'<pre><span class="l add">+    "requestPermissions": [</span><span class="l add">+      { "name": "ohos.permission.INTERNET" }</span><span class="l add">+    ]</span></pre></div></div>'
+    +'<div class="af"><button class="btn" id="b-open">'+ic('i-json')+'打开 module.json5</button><span class="grow"></span><button class="btn primary" id="b-fix">'+ic('i-wrench')+'修复并重新构建</button></div>';
+  $('#code-json').innerHTML=DemoFrame.code('module.json5',{});
+  cap('<span class="dm-capsule"><span class="dm-dot err"></span>Build failed · AI 已给出修复</span>');
+
+  function applyJsonFix(){
+    if(F['module.json5'].lines.length>JSON_BEFORE.length)return;
+    F['module.json5'].lines=JSON_BEFORE.slice(0,9).concat(JSON_ADD).concat(JSON_BEFORE.slice(10));
+    $('#code-json').innerHTML=DemoFrame.code('module.json5',{cur:12});
+    [10,11,12,13].forEach(function(n){var l=$('#code-json .ln[data-ln="'+n+'"]');if(l)l.classList.add('hl-ok')});
+  }
+  document.addEventListener('click',function(e){
+    if(e.target.closest('#b-open')){openTab('module.json5','module.json5','#i-json');return;}
+    if(e.target.closest('#b-fix')){
+      applyJsonFix();openTab('module.json5','module.json5','#i-json');
+      $('#b-ai').querySelector('.af').innerHTML='<span class="dm-small dm-muted">已改 module.json5 · 正在重新构建</span><span class="grow"></span><span class="spin"></span>';
+      $('#b-list').innerHTML='<div class="row sel"><span class="spin"></span><span class="grow"><b>Build:</b> running…</span></div>';
+      var L=['<span class="dim">&gt; hvigor Starting Daemon...</span>','<span class="dim">&gt; hvigor Finished :entry:default@PreBuild... after 298 ms</span>','<span class="dim">&gt; hvigor Finished :entry:default@CompileArkTS... after 3 s 410 ms</span>','<span class="dim">&gt; hvigor Finished :entry:default@PackageHap... after 902 ms</span>','<span class="dim">&gt; hvigor Finished :entry:default@SignHap... after 214 ms</span>','<span class="ok">&gt; hvigor BUILD SUCCESSFUL in 5 s 904 ms</span>'];
+      var out=$('#b-out');out.innerHTML='';var i=0;
+      var t=setInterval(function(){out.innerHTML+=(i?'\n':'')+L[i];i++;if(i>=L.length){clearInterval(t);buildOk();}},260);
+      cap('<span class="dm-capsule"><span class="spin" style="width:10px;height:10px"></span>hvigor assembleHap · entry</span>');
+      return;
+    }
+    if(e.target.closest('#go-run')){
+      var b=e.target.closest('#go-run');b.outerHTML='<span class="btn act done">'+ic('i-checkS')+'已装到 Mate 70 Pro</span>';
+      cap('<span class="dm-capsule"><span class="dm-dot ok"></span>hdc install → Mate 70 Pro · 已启动</span>');
+      setTimeout(function(){DemoFrame.setSide('bottom','log');logNew();},500);return;
+    }
+    if(e.target.closest('#go-debug')){
+      var d=e.target.closest('#go-debug');d.outerHTML='<span class="btn act done">'+ic('i-checkS')+'已停在断点</span>';
+      startDebug();return;
+    }
+    if(e.target.closest('#go-prof')){
+      var pr=e.target.closest('#go-prof');pr.outerHTML='<span class="btn act done">'+ic('i-checkS')+'Profiler 已附加</span>';
+      DemoFrame.setSide('bottom','profiler');cap('<span class="dm-capsule"><span class="dm-dot ok pulse"></span>Profiler · Frame 录制中</span>');return;
+    }
+    if(e.target.closest('#go-lp')){openTab('LoginPage.ets');return;}
+  });
+  function buildOk(){
+    $('#b-list').innerHTML='<div class="row sel">'+ic('i-checkS')+'<span class="grow"><b>Build:</b> finished</span><span class="when">5 s 904 ms</span></div><div class="row l2">'+ic('i-checkS')+'<span class="grow">:entry:assembleHap</span><span class="when">entry-default-signed.hap</span></div>';
+    var a=$('#b-ai');a.classList.add('ok');
+    a.innerHTML='<div class="ah">'+G+'<b>补了权限，重新构建成功</b><span class="grow"></span><span class="dm-pill ok">BUILD SUCCESSFUL</span></div>'
+      +'<div class="ictx"><span>Build 输出</span><span>已连接设备</span></div>'
+      +'<div class="ab"><p>在 <code>module.json5</code> 加了 <code>ohos.permission.INTERNET</code>，5.9 s 出了 <code>entry-default-signed.hap</code>。Mate 70 Pro 已经用 hdc 连上，下一步直接点：</p></div>'
+      +'<div class="af"><button class="btn primary" id="go-debug">'+ic('i-debug')+'Debug 到 Mate 70 Pro</button><button class="btn" id="go-run">'+ic('i-run')+'运行</button><button class="btn" id="go-prof">'+ic('i-profile')+'打开 Profiler</button></div>';
+    cap('<span class="dm-capsule"><span class="dm-dot ok"></span>Build successful · 5.9 s</span>');
+    var tb=$('.stripe [data-bottom="build"]');
+  }
+
+  /* ---- Debug：停在断点 → 就地问 → 加条件断点 ---- */
+  function detailCode(o){$('#code-detail').innerHTML=DemoFrame.code('DetailPage.ets',o);}
+  var bpCond=false;
+  function renderDetail(extra){
+    detailCode({cur:13,marks:{13:'bp'}});
+    var l=$('#code-detail .ln[data-ln="13"]');l.classList.add('exec');
+    if(bpCond){$('.bp',l).classList.add('cond');$('.t',l).insertAdjacentHTML('beforeend','<span class="cbtag">条件：this.id === undefined</span>');}
+    if(extra)extra();
+  }
+  function startDebug(){
+    renderDetail();openTab('DetailPage.ets','DetailPage.ets');
+    DemoFrame.setSide('bottom','debug');
+    cap('<span class="dm-capsule wait"><span class="dm-dot info pulse"></span>Debugging · 停在 DetailPage.ets:13</span>');
+    var p=$('#status-pos');if(p)p.textContent='13:5';
+  }
+  $('#ask-undef').addEventListener('click',function(){
+    var d=$('#d-ai');
+    d.innerHTML='<div class="aic"><div class="ah">'+G+'<b>就地问 · this.id</b><span class="grow"></span><span class="dm-mono dm-muted">DetailPage.ets:13</span></div>'
+      +'<div class="ictx"><span>调用栈</span><span>变量</span><span>ListPage.ets 跳转</span></div>'
+      +'<div class="ab"><div class="q">'+ic('i-user')+'<span>this.id 为什么是 undefined？</span></div><div class="a">'+G+'<span class="typing"><i></i><i></i><i></i></span></div></div></div>';
+    setTimeout(function(){
+      $('#d-ai .ab .a').innerHTML=G+'<div><p>键名对不上：跳转时传的是 <code>{ id: item.id }</code>，第 12 行取的是 <code>params[\'productId\']</code>，所以拿到 undefined。</p><p>后面 <code>getDetail(undefined)</code> 返回空，第 24 行 <code>this.product!.price</code> 会崩——HiLog 里那条 TypeError 就是它。</p></div>';
+      $('#d-ai .aic').insertAdjacentHTML('beforeend','<div class="af"><button class="btn primary" id="add-cbp">'+ic('i-debug')+'在此加条件断点</button><button class="btn" id="fix-key">'+ic('i-wrench')+'改成 params[\'id\']</button><span class="grow"></span><button class="btn" title="Resume Program|F9">'+ic('i-play')+'继续</button></div>');
+    },800);
+    this.remove();
+  });
+  document.addEventListener('click',function(e){
+    var b=e.target.closest('#add-cbp');
+    if(b){bpCond=true;renderDetail();openTab('DetailPage.ets','DetailPage.ets');
+      $('#bp-list').innerHTML='<div class="frow"><span class="bpd cond"></span>DetailPage.ets:13<span class="loc">this.id === undefined</span></div>';
+      b.outerHTML='<span class="btn act done">'+ic('i-checkS')+'已加 · 只在 id 取不到时停</span>';return;}
+    var f=e.target.closest('#fix-key');
+    if(f){openTab('DetailPage.ets','DetailPage.ets');
+      var l=$('#code-detail .ln[data-ln="12"]');$('.t',l).innerHTML='    <span class="k">this</span>.<span class="p">id</span> = <span class="p">params</span>[<span class="s">\'id\'</span>];';
+      l.classList.add('hl-ok');setTimeout(function(){l.classList.remove('hl-ok')},1600);
+      f.outerHTML='<span class="btn act done">'+ic('i-checkS')+'已改第 12 行</span>';return;}
+  });
+
+  /* ---- HiLog：选中崩溃栈 → 就地解释 → 跳到代码 ---- */
+  var LOG=[
+    ['I','10:42:07.118','AbilityManager','Start ability: EntryAbility, bundle: com.example.myapplication'],
+    ['I','10:42:07.402','ArkUI','Page loaded: pages/ListPage'],
+    ['W','10:42:09.915','Http','request /api/product/undefined → 404'],
+    ['E','10:42:09.931','JsError','TypeError: Cannot read property \'price\' of undefined'],
+    ['S','','','    at build (entry/src/main/ets/pages/DetailPage.ets:24:25)'],
+    ['S','','','    at initialRender (entry/src/main/ets/pages/DetailPage.ets:21:5)'],
+    ['S','','','    at anonymous (entry/src/main/ets/pages/ListPage.ets:17:13)'],
+    ['E','10:42:09.940','AppMgr','com.example.myapplication died: JS_ERROR']
+  ];
+  function logRender(){
+    $('#lg').innerHTML=LOG.map(function(r,i){
+      if(r[0]==='S')return '<div class="r st E" data-i="'+i+'"><span class="ts">            </span><span class="lv"> </span><span class="msg">'+r[3]+'</span></div>';
+      return '<div class="r '+r[0]+'"><span class="ts">'+r[1]+'</span><span class="lv">'+r[0]+'</span><span class="tag">'+r[2]+'</span><span class="msg">'+r[3].replace(/</g,'&lt;')+'</span></div>';
+    }).join('');
+  }
+  function logNew(){logRender();var lg=$('#lg');lg.scrollTop=lg.scrollHeight;}
+  logRender();
+  $('#lg').addEventListener('click',function(e){
+    var r=e.target.closest('.r.st, .r.E');if(!r)return;
+    $$('#lg .r').forEach(function(x){x.classList.toggle('sel',x.classList.contains('st')||/TypeError/.test(x.textContent))});
+    $('#l-ph').style.display='none';var a=$('#l-ai');a.style.display='';
+    a.innerHTML='<div class="ah">'+G+'<b>这段崩溃栈</b><span class="grow"></span><span class="dm-pill err">JS_ERROR</span></div>'
+      +'<div class="ictx"><span>选中的 4 行栈</span><span>DetailPage.ets</span><span>上一条 404</span></div>'
+      +'<div class="ab"><p>崩在 <code>DetailPage.ets:24</code>：<code>this.product</code> 还没拿到就用 <code>!.</code> 取了 price。上一行 404 请求的是 <code>/product/undefined</code>——id 没取对，根因在第 12 行。</p></div>'
+      +'<div class="af"><button class="btn primary" id="go-24">'+ic('i-arrowR')+'跳到 DetailPage.ets:24</button><button class="btn" id="go-12">跳到根因第 12 行</button></div>';
+  });
+  document.addEventListener('click',function(e){
+    var j=e.target.closest('#go-24,#go-12');if(!j)return;
+    var n=j.id==='go-24'?24:12;
+    if(!$('#code-detail .ln'))renderDetail();
+    openTab('DetailPage.ets','DetailPage.ets');
+    $$('#code-detail .ln').forEach(function(x){x.classList.remove('cur','hl-warn')});
+    var l=$('#code-detail .ln[data-ln="'+n+'"]');l.classList.add('cur','hl-warn');
+    var p=$('#status-pos');if(p)p.textContent=n+':25';
+  });
+DemoGuide.init([{"target": "#md-apply", "kind": "click", "pos": "top", "label": "点这里替换文案"}, {"target": "#b-fix,#go-debug,#ask-undef,#add-cbp", "kind": "click", "pos": "top", "label": "点这里：AI 直接驱动 IDE"}, {"target": ".tw-bottom", "kind": "change", "pos": "top", "label": "Build / Debug / HiLog 里就地出现 AI"}]);
 })();
 </script>
 </body>

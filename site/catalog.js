@@ -12,13 +12,15 @@
      title    标题
      subtitle 英文 / 技术向副标题，可省略
      desc     一两句话说清是什么、能看到什么
-     mark     deck 里的标记：投 | 半投 | 补齐 | 搭车 | 顺手做（可省略）
+     mark     deck 里的标记：投 | 半投 | 补齐 | 搭车 | 顺手做（可省略；只进搜索，卡片上不显示）
      view     'ready' 可体验（有实际界面可点） · 'doc' 文档（读的东西） · 'sketch' 原型（还没做，占位）
      date     最近更新 YYYY-MM-DD，可省略
      href     点卡片打开的相对路径；sketch 没有 href
      links    次要链接 [{label, href}]
      tags     小标签（这里放主要改善的指标）
      note     一行补充（放在卡片底部灰字），例如排期批次
+     key      规划重点：写上它承接的是哪一个规划点（字符串）。卡片会打「重点」角标、描边，
+              左侧导航多一个「规划重点」筛选；在所属分类里自动排到最前
      thumb    {type:'image', src:'site/thumbs/xxx.jpg'} 真实截图
               {type:'doc', kind:'MD'|'PPTX'|'BUNDLE'|'README'} 文档骨架预览
               {type:'sketch'} 或省略 → 按 view 自动兜底
@@ -27,9 +29,9 @@
    `python3 site/tools/thumb.py <slug>` 出缩略图；然后在这里把对应条目的 view 改成 'ready'、补 href 与 thumb。
    ===================================================================== */
 window.DEVECO_CATALOG = {
-  updated: '2026-09-18',
+  updated: '2026-09-23',
   title: '鸿蒙开发工具体验 · 工作台',
-  lede: '围绕 DevEco Studio / DevEco Code / DevEco CLI 的体验设计工作台：21 条创新点各一个可点的界面稿 demo，加上设计系统、分析与汇报材料。全部是本地静态文件，双击即开。',
+  lede: '围绕 DevEco Studio / DevEco Code / DevEco CLI 的体验设计工作台：26 条创新点各一个可点的界面稿 demo，其中 9 条是新一轮规划重点；加上设计系统、分析与汇报材料。全部是本地静态文件，双击即开。',
 
   /* 一年节奏，来自《创新方向》deck 的落地页。date 用于判断是否已过 */
   milestones: [
@@ -83,9 +85,9 @@ window.DEVECO_CATALOG = {
       note: '这一类竞争最挤。七家都在解「让 AI 干得更多」，没人解「人对这一串过程能不能看清楚、挑着退回去」——十条里的空位集中在这儿。',
       items: [
         {
-          no: '05', title: 'Inline-chat 覆盖更多场景：UI、Code、md', subtitle: 'Inline Chat · Code / Preview / Markdown', mark: '半投',
-          desc: '选中一段就地问、就地改。代码里的是标配；扩到界面预览上选中元素直接说，扩到 README、接口说明、上架材料这些 Markdown 文档里就地改——文档这一格一家都没做。',
-          view: 'ready', date: '2026-09-14', href: 'demos/05-inline-chat-everywhere/index.html',
+          no: '05', title: '就地对话：从编辑器长进 Build、Debug、HiLog', subtitle: 'Inline AI · Editor / Build / Debug / HiLog', mark: '半投', key: 'AI 和 IDE 的深度融合',
+          desc: '选中一段就地问、就地改，覆盖代码、界面预览和 Markdown 文档。新增 AI 与 IDE 深度融合：Build 失败时在 Build 面板里读完 hvigor 报错，一键补权限并重建成功；断点停下时在变量旁回答「为什么是 undefined」并加条件断点；HiLog 里选中崩溃栈就解释并跳到代码；回答里的按钮直接调试到设备、打开 Profiler，不用去找菜单。',
+          view: 'ready', date: '2026-09-23', href: 'demos/05-inline-chat-everywhere/index.html',
           tags: ['步数与切换次数'], note: '补齐，并进日常迭代', thumb: { type: 'image', src: 'site/thumbs/05-inline-chat-everywhere.jpg' },
         },
         {
@@ -95,9 +97,9 @@ window.DEVECO_CATALOG = {
           tags: ['步数与切换次数'], note: '补齐，并进日常迭代', thumb: { type: 'image', src: 'site/thumbs/06-voice-coding.jpg' },
         },
         {
-          no: '07', title: 'Agent Team：在干 / 在等你 / 干完了', subtitle: 'Agent Task Tiers', mark: '投',
-          desc: '几件活同时交给 AI，状态分三档一眼看全；排队时说清排第几、还要等多久、能不能取消。不加新的会话列表，缺的是分档。这是全清单里唯一一处三样证据齐全的空位。',
-          view: 'ready', date: '2026-09-14', href: 'demos/07-agent-team/index.html',
+          no: '07', title: 'Agent Team：多 Agent 分工、交接与冲突合并', subtitle: 'Multi-agent Team · Handoff & Merge', mark: '投', key: '多 Agent、Agent team',
+          desc: '一件大活由主 Agent 拆给规划、UI、逻辑、测试、真机验证五个子 Agent：看板上看每人在干什么、谁等谁的交接连线、两个 Agent 同改一个文件的冲突与合并选择；要人拍板的点汇总进「在等你」，批准后沿连线交接到下一角色，直到真机验证通过。原有的「在干 / 在等你 / 干完了」三档与排队可见继续保留。',
+          view: 'ready', date: '2026-09-23', href: 'demos/07-agent-team/index.html',
           tags: ['等待可见'], note: '第一批：成本最低、证据最硬', thumb: { type: 'image', src: 'site/thumbs/07-agent-team.jpg' },
         },
         {
@@ -131,9 +133,9 @@ window.DEVECO_CATALOG = {
           tags: ['步数与切换次数'], thumb: { type: 'image', src: 'site/thumbs/12-auto-workflow.jpg' },
         },
         {
-          no: '13', title: 'UI & Code 二次编辑：预览上改，写回源码', subtitle: 'Preview-to-Source Round Trip', mark: '投',
-          desc: '在预览上直接拖、直接改，改动确定写回源码，不让 AI 去猜；改代码预览立刻跟着变这一半已有，补的是反方向；改动落到源码哪一行人能看见。声明式界面这一代全行业空着。',
-          view: 'ready', date: '2026-09-14', href: 'demos/13-ui-code-roundtrip/index.html',
+          no: '13', title: '设计稿到代码、模拟器上直接改，全部写回源码', subtitle: 'D2C · Live Emulator Edit · Round Trip', mark: '投', key: 'D2C、模拟器直接修改与调试',
+          desc: '导入 Figma / 即时设计 / MasterGo 画板生成 ArkTS 页面，悬停图层时设计稿、预览、代码行一起亮，并标出复用组件、资源 token、新建组件；在运行中的模拟器上点元素直接改文字、间距、颜色，热重载后写回源码行；看运行态组件树与状态变量，在事件上加断点。原有「预览上拖、写回源码」保留。',
+          view: 'ready', date: '2026-09-23', href: 'demos/13-ui-code-roundtrip/index.html',
           tags: ['步数与切换次数'], thumb: { type: 'image', src: 'site/thumbs/13-ui-code-roundtrip.jpg' },
         },
         {
@@ -165,9 +167,9 @@ window.DEVECO_CATALOG = {
           tags: ['步数与切换次数', '审阅与回退'], note: '第二批：差异化最高', thumb: { type: 'image', src: 'site/thumbs/16-multi-device-verify.jpg' },
         },
         {
-          no: '17', title: '模拟器 · 单屏多设备切换', subtitle: 'Multi-device Canvas', mark: '投',
-          desc: '这条管的是「先看见」：一块画布，手机 / 折叠屏 / 手表 / 车机几块屏同时在，本机与远端不分家；改一次代码，几块屏一起刷。并排的是不同形态，不是同一形态的几台机器。是 16 判断之前的一步——先在这块画布上发现哪里不对，16 再上真机定结论；也是 18 分布式调试、19 拉远端设备进画布的底座。',
-          view: 'ready', date: '2026-09-14', href: 'demos/17-multi-device-canvas/index.html',
+          no: '17', title: '模拟器多端：鸿蒙特征 · 跨屏 · 手势', subtitle: 'Multi-device Canvas · HarmonyOS Traits', mark: '投', key: '模拟器多端：鸿蒙特征、跨屏、手势',
+          desc: '一块画布，手机 / 折叠屏 / 平板 / 手表 / 车机同时在，改一行代码几块屏一起刷。新增鸿蒙特征模拟：选中设备切折叠屏展开 / 悬停 / 折叠、手机分屏与悬浮窗、深色与字号；手势模拟（侧滑返回、双指捏合、三指截屏、隔空抓取）在屏上画出轨迹与结果；手机上的商品卡拖到或一键流转到平板、折叠屏，画出跨屏连线与耗时。是 16 真机判断之前的一步，也是 18、19、27 的底座。',
+          view: 'ready', date: '2026-09-23', href: 'demos/17-multi-device-canvas/index.html',
           tags: ['步数与切换次数'], note: '第二批', thumb: { type: 'image', src: 'site/thumbs/17-multi-device-canvas.jpg' },
         },
         {
@@ -193,6 +195,54 @@ window.DEVECO_CATALOG = {
           desc: '状态栏一枚胶囊，最多两枚，「在等你」的排前面带蓝点，点开才展开面板；先只让正在跑的 Agent 任务（含排队）上胶囊；准入规则先立起来：正在进行、有明确起止、人自己发起、需要持续关注。',
           view: 'ready', date: '2026-09-14', href: 'demos/21-capsule/index.html',
           tags: ['等待可见'], note: '第一批；跟着 14 AI 协作时间轴一起做', thumb: { type: 'image', src: 'site/thumbs/21-capsule.jpg' },
+        },
+      ],
+    },
+
+    /* ================= 规划重点 · 新方向 ================= */
+    {
+      id: 'open',
+      title: '开放生态',
+      icon: 'i-cat-open',
+      note: '规划重点里新增的一类。38+ 家头部公司有自己的 IDE 和 Agent，不会换工具——那就把门开出去：编译、签名、真机、上架这段通用 Agent 做不到的能力，做成 MCP、Skill 与插件，用在别人的工具里。2 条。',
+      items: [
+        {
+          no: '23', title: '开放 MCP 与 Skill：把真机这段开给外部 Agent', subtitle: 'DevEco MCP Server & Skills', key: 'DevEco Code / Studio 开放 MCP、Skill',
+          desc: '把构建、签名、装机、截图、HiLog、性能采集、上架自检做成 MCP 工具，逐项可开关，敏感项调用时在 IDE 里弹授权；Claude Code、Cursor 等外部客户端一键接入，调用过程实时可见。官方鸿蒙 Skill 包可装进项目，也能导出给其他 Agent。',
+          view: 'ready', date: '2026-09-23', href: 'demos/23-mcp-skill-open/index.html',
+          tags: ['步数与切换次数'], note: '对标 Xcode 27 mcpbridge；DevEco CLI 已有 serve mcp', thumb: { type: 'image', src: 'site/thumbs/23-mcp-skill-open.jpg' },
+        },
+        {
+          no: '24', title: '插件化开放：模拟器、调测、调优拆成插件', subtitle: 'Pluggable Tools & Implicit Extension Points', key: '插件 + 第三方工具（隐性开放）',
+          desc: '模拟器、HiLog 与断点调测、Profiler 调优拆成独立插件，装进 DevEco Studio，也能装进 VS Code、Cursor；第三方工具不开独立入口，挂到 IDE 已有的扩展点上（设备菜单、Profiler 页签、日志过滤），用起来像 IDE 自带，来源可追溯。',
+          view: 'ready', date: '2026-09-23', href: 'demos/24-plugin-open/index.html',
+          tags: ['步数与切换次数'], thumb: { type: 'image', src: 'site/thumbs/24-plugin-open.jpg' },
+        },
+      ],
+    },
+    {
+      id: 'lite',
+      title: '轻量与云端',
+      icon: 'i-cat-cloud',
+      note: '规划重点里新增的一类。IDE 大、不够轻量，模拟器吃内存——把「想验证一下」的门槛降下来：手机上说一句就调、浏览器里打开就跑、模拟器放到云端多开。3 条。',
+      items: [
+        {
+          no: '25', title: '手机客户端：对话直接真机调试', subtitle: 'Debug on the Phone in Your Hand', key: '手机客户端：对话直接真机调试',
+          desc: '手里的手机就是真机：在手机上的 DevEco Code 里说一句「登录按钮点了没反应」，AI 在这台手机上装包、自动复现、抓 HiLog、定位到代码行、出补丁，应用后重装再点一遍给前后对比。不用回到电脑前。和 15 的区别：15 接续进度，这条手机本身就是调试入口。',
+          view: 'ready', date: '2026-09-23', href: 'demos/25-phone-client-debug/index.html',
+          tags: ['步数与切换次数', '等待可见'], thumb: { type: 'image', src: 'site/thumbs/25-phone-client-debug.jpg' },
+        },
+        {
+          no: '26', title: 'IDE Web：打开链接就能写、就能跑', subtitle: 'IDE Lite / Web · Quick Validation', key: 'IDE Lite / IDE Web',
+          desc: '浏览器里的轻量 IDE：不装几个 GB、几秒可用；云端构建、云端模拟器出预览，改一行热更新；分享一个链接或二维码，别人在浏览器或真机上直接看；要完整能力时一键「在 DevEco Studio 中打开」，工程原样带过去。',
+          view: 'ready', date: '2026-09-23', href: 'demos/26-ide-web-lite/index.html',
+          tags: ['步数与切换次数', '等待可见'], thumb: { type: 'image', src: 'site/thumbs/26-ide-web-lite.jpg' },
+        },
+        {
+          no: '27', title: '云端模拟器：本机不跑，云端多开', subtitle: 'Cloud Emulator · Multi-instance', key: '云端模拟器',
+          desc: '一台本地模拟器吃掉几个 GB 内存，多开基本不可能。云端模拟器把算力放到云上，本机只收画面：手机、折叠屏、平板、手表并行启动，本机占用几乎不变；本机模拟器一键迁到云端释放内存；实例直接加进 17 的多设备画布。',
+          view: 'ready', date: '2026-09-23', href: 'demos/27-cloud-emulator/index.html',
+          tags: ['等待可见'], note: '17 多设备画布、19 远端设备的底座', thumb: { type: 'image', src: 'site/thumbs/27-cloud-emulator.jpg' },
         },
       ],
     },

@@ -1,0 +1,489 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='32' y2='32' gradientUnits='userSpaceOnUse'%3E%3Cstop stop-color='%232C8DDD'/%3E%3Cstop offset='1' stop-color='%233357AC'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='32' height='32' rx='7' fill='url(%23g)'/%3E%3Ctext x='16' y='22.5' font-family='Arial,Helvetica,sans-serif' font-size='13' font-weight='700' fill='white' text-anchor='middle'%3EDE%3C/text%3E%3C/svg%3E">
+<title>23 · 开放 MCP 与 Skill：把编译、签名、真机、上架开给外部 Agent</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="../../deveco-intui-kit/src/tokens.css">
+<link rel="stylesheet" href="../../deveco-intui-kit/src/components.css">
+<link rel="stylesheet" href="../_shared/frame.css">
+<link rel="stylesheet" href="../_shared/guide.css">
+<script src="../../deveco-intui-kit/src/icons.js"></script>
+<script src="../_shared/frame.js"></script>
+<script src="../_shared/guide.js"></script>
+<style>
+  .ide[data-ide-theme]{--ai-w:clamp(340px,25vw,400px)}
+  /* ---- 编辑区：MCP & Skills 管理视图 ---- */
+  .mgr{flex:1;min-height:0;display:flex;flex-direction:column;background:var(--ui-editor-bg);color:var(--ui-fg);font-size:var(--fs-para);line-height:var(--lh-para)}
+  .mgr-bar{display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--ui-border);flex:none}
+  .mgr-bar .grow{flex:1}
+  .mgr-bar .ttl{font-weight:600;font-size:var(--fs-h2,14px);display:flex;align-items:center;gap:6px}
+  .mgr-bar .ttl svg{width:16px;height:16px;color:var(--ui-icon)}
+  .mgr-body{flex:1;min-height:0;overflow:hidden;display:flex}
+  .mgr-body>[hidden]{display:none!important}
+  .view-mcp{flex:1;min-width:0;display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);min-height:0}
+  .col{min-height:0;overflow:auto;padding:12px 16px 24px;display:flex;flex-direction:column;gap:10px}
+  .col + .col{border-left:1px solid var(--ui-border)}
+  .sec-h{display:flex;align-items:center;gap:8px;font-weight:600}
+  .sec-h .grow{flex:1}
+  .sec-h .cnt{font-family:var(--font-code);font-size:11px;font-weight:400;color:var(--ui-fg-info)}
+
+  /* 能力清单 */
+  .cap-grp{border:1px solid var(--ui-border);border-radius:var(--arc);background:var(--ui-field-bg);overflow:hidden}
+  .cap-gh{display:flex;align-items:center;gap:8px;height:28px;padding:0 10px;background:var(--ui-bg);border-bottom:1px solid var(--ui-border);font-size:var(--fs-sm);font-weight:600}
+  .cap-gh .grow{flex:1}
+  .cap-gh .sub{font-weight:400;color:var(--ui-fg-info)}
+  .cap{display:grid;grid-template-columns:minmax(150px,auto) minmax(0,1fr) auto auto auto;align-items:center;gap:10px;min-height:30px;padding:3px 10px;font-size:var(--fs-sm);line-height:var(--lh-sm)}
+  .cap + .cap{border-top:1px solid var(--ui-border)}
+  .cap .nm{font-family:var(--font-code);font-size:11.5px;color:var(--ui-fg);white-space:nowrap}
+  .cap .ds{color:var(--ui-fg-info);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .cap .n{font-family:var(--font-code);font-size:10.5px;color:var(--ui-fg-info);min-width:44px;text-align:right}
+  .cap.off .nm,.cap.off .ds{opacity:.5}
+  .cap.flash{animation:capflash 1.2s ease-out}
+  @keyframes capflash{0%{background:color-mix(in srgb,var(--ui-accent) 28%,transparent)}100%{background:transparent}}
+  .tgl{position:relative;width:28px;height:16px;border-radius:8px;border:0;padding:0;background:var(--ui-component-border);flex:none;transition:background .15s}
+  .tgl::after{content:"";position:absolute;top:2px;left:2px;width:12px;height:12px;border-radius:50%;background:#fff;transition:transform .15s;box-shadow:0 1px 2px rgba(0,0,0,.3)}
+  .tgl.on{background:var(--ui-accent)}
+  .tgl.on::after{transform:translateX(12px)}
+  .need{display:inline-flex;align-items:center;gap:3px}
+  .need svg{width:11px;height:11px}
+
+  /* 客户端 */
+  .cli{display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--ui-border);border-radius:var(--arc);background:var(--ui-field-bg)}
+  .cli .lg{width:28px;height:28px;border-radius:7px;display:grid;place-items:center;font-weight:700;font-size:12px;color:#fff;flex:none}
+  .cli .tx{flex:1;min-width:0;display:flex;flex-direction:column}
+  .cli .tx b{font-weight:600}
+  .cli .tx span{font-size:var(--fs-sm);color:var(--ui-fg-info);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .cli.sel{border-color:var(--ui-accent)}
+  .snip{border:1px solid var(--ui-code-border,var(--ui-border));border-radius:var(--arc);background:var(--ui-code-bg);overflow:hidden}
+  .snip-h{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;padding:6px 8px 6px 10px;border-bottom:1px solid var(--ui-border);font-size:var(--fs-sm);color:var(--ui-fg-info)}
+  .snip-h .grow{flex:1}
+  .snip-h .btn{white-space:nowrap}
+  .snip pre{margin:0;padding:10px 12px;font-family:var(--font-code);font-size:11.5px;line-height:1.6;color:var(--ui-fg);white-space:pre;overflow:auto;user-select:text}
+  .snip pre .k{color:var(--ui-link)}
+  .snip pre .s{color:var(--ui-success)}
+  .srv{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:var(--fs-sm);line-height:var(--lh-sm)}
+  .srv dt{color:var(--ui-fg-info)}.srv dd{margin:0;font-family:var(--font-code);font-size:11px}
+
+  /* Skills 视图 */
+  .view-sk{flex:1;min-width:0;display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);min-height:0}
+  .sk-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .sk{border:1px solid var(--ui-border);border-radius:var(--arc);background:var(--ui-field-bg);padding:10px 12px;display:flex;flex-direction:column;gap:6px;cursor:default;position:relative}
+  .sk.sel{border-color:var(--ui-accent);box-shadow:0 0 0 1px var(--ui-accent)}
+  .sk .t1{display:flex;align-items:center;gap:6px}
+  .sk .t1 b{font-weight:600;flex:1;min-width:0}
+  .sk .t2{font-size:var(--fs-sm);line-height:var(--lh-sm);color:var(--ui-fg-info);min-height:34px}
+  .sk .t3{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .sk .t3 .grow{flex:1}
+  .sk .meta{font-family:var(--font-code);font-size:10.5px;color:var(--ui-fg-info)}
+  .sk .popup{top:auto;bottom:34px;left:auto;right:8px;min-width:280px}
+  .sk-tree{font-family:var(--font-code);font-size:11.5px;line-height:1.8;padding:8px 10px;border:1px solid var(--ui-border);border-radius:var(--arc);background:var(--ui-field-bg)}
+  .sk-tree div{white-space:nowrap}
+  .sk-tree .d{color:var(--ui-fg-info)}
+  .sk-tree .new{color:var(--ui-success)}
+
+  /* ---- 右侧：DevEco Code · 外部调用 ---- */
+  .feed-top{flex:none;padding:10px 12px;display:flex;flex-direction:column;gap:8px;border-bottom:1px solid var(--ui-border)}
+  .sess{border:1px solid var(--ui-border);border-radius:var(--arc);background:var(--ui-field-bg);padding:8px 10px;display:flex;flex-direction:column;gap:4px;font-size:var(--fs-sm);line-height:var(--lh-sm)}
+  .sess .who{display:flex;align-items:center;gap:6px;font-weight:600;font-size:var(--fs-para)}
+  .sess .who .lg{width:18px;height:18px;border-radius:5px;display:grid;place-items:center;font-size:10px;font-weight:700;color:#fff;background:#D97757}
+  .feed{flex:1;min-height:0;overflow:auto;padding:8px 12px 16px;display:flex;flex-direction:column;gap:6px}
+  .feed>*{flex:none}
+  .call{flex:none;border:1px solid var(--ui-border);border-radius:6px;background:var(--ui-field-bg);padding:6px 8px;display:flex;flex-direction:column;gap:4px;font-size:var(--fs-sm);line-height:var(--lh-sm);animation:callin .25s ease-out}
+  @keyframes callin{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+  .call .c1{display:flex;align-items:center;gap:6px}
+  .call .c1 code{font-family:var(--font-code);font-size:11.5px;color:var(--ui-fg)}
+  .call .c1 .grow{flex:1}
+  .call .c1 .ms{font-family:var(--font-code);font-size:10.5px;color:var(--ui-fg-info)}
+  .call .c1 svg.st{width:14px;height:14px;flex:none}
+  .call.ok svg.st{color:var(--ui-success)}
+  .call.err svg.st{color:var(--ui-error)}
+  .call.wait{border-color:color-mix(in srgb,var(--ui-warning) 60%,transparent);background:color-mix(in srgb,var(--ui-warning) 8%,var(--ui-field-bg))}
+  .call.wait svg.st{color:var(--ui-warning)}
+  .call.err{border-color:color-mix(in srgb,var(--ui-error) 50%,transparent)}
+  .call .c2{font-family:var(--font-code);font-size:10.5px;color:var(--ui-fg-info);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .call .c3{color:var(--ui-fg)}
+  .call.old{opacity:.6}
+  .call .spin{width:12px;height:12px}
+  .shot{display:flex;gap:8px;align-items:flex-start}
+  .shot .ph{width:54px;height:100px;border-radius:8px;background:#0f1012;padding:3px;flex:none}
+  .shot .ph .scr{width:100%;height:100%;border-radius:6px;background:#fff;display:flex;flex-direction:column;gap:3px;padding:6px 4px}
+  .shot .ph .scr i{display:block;height:9px;border-radius:2px;background:#e4e8f2}
+  .shot .ph .scr i:first-child{height:6px;width:60%;background:#c9d3ea}
+  .logl{font-family:var(--font-code);font-size:10.5px;line-height:1.55;color:var(--ui-fg-info);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .logl .w{color:var(--ui-warning)}
+  .feed-empty{padding:18px 4px;text-align:center;color:var(--ui-fg-info);font-size:var(--fs-sm)}
+
+  /* ---- 授权弹窗 ---- */
+  .mask{position:absolute;inset:0;z-index:60;background:rgba(0,0,0,.28);display:grid;place-items:center}
+  .mask[hidden]{display:none}
+  .dlg{width:440px;border:1px solid var(--ui-popup-border);border-radius:10px;background:var(--ui-popup-bg);box-shadow:var(--ui-shadow);font-size:var(--fs-para);line-height:var(--lh-para);overflow:hidden}
+  .dlg-h{display:flex;align-items:center;gap:8px;padding:12px 14px 6px;font-weight:600}
+  .dlg-h svg{width:18px;height:18px;color:var(--ui-warning)}
+  .dlg-b{padding:4px 14px 12px;display:flex;flex-direction:column;gap:8px}
+  .dlg-b .args{font-family:var(--font-code);font-size:11px;background:var(--ui-code-bg);border:1px solid var(--ui-border);border-radius:6px;padding:8px 10px;white-space:pre;color:var(--ui-fg)}
+  .dlg-f{display:flex;align-items:center;gap:8px;padding:10px 14px;border-top:1px solid var(--ui-border);background:var(--ui-bg)}
+  .dlg-f .grow{flex:1}
+  .dm-toast[hidden]{display:none}
+</style>
+</head>
+<body>
+<div class="ide" id="ide" data-ide-theme="dark" data-left="none" data-right="agent" data-bottom="none" role="application" aria-label="DevEco Studio">
+  <div class="body">
+    <div class="tw tw-left">
+      <div class="pane" data-pane="project">
+        <div class="tw-hdr"><span class="title">Project <svg class="i"><use href="#i-chevD"/></svg></span><span class="grow"></span>
+          <button class="abtn" title="Hide|Shift+Esc" data-act="hide-left"><svg class="i"><use href="#i-hide"/></svg></button></div>
+        <div class="tw-body" id="tree-slot"></div>
+      </div>
+    </div>
+
+    <div class="editor">
+      <div class="tabs" id="tabs">
+        <button class="tab" data-file="ListPage.ets"><svg class="i"><use href="#i-ets"/></svg>ListPage.ets<span class="x"><svg class="i"><use href="#i-closeS"/></svg></span></button>
+        <button class="tab on" data-file="MCP &amp; Skills"><svg class="i"><use href="#i-cube"/></svg>MCP &amp; Skills<span class="x"><svg class="i"><use href="#i-closeS"/></svg></span></button>
+        <span class="grow"></span><span class="tab-tools"><button class="abtn" title="Editor Options"><svg class="i"><use href="#i-moreV"/></svg></button></span>
+      </div>
+      <div class="code-wrap" data-for-file="ListPage.ets" hidden><div class="code" id="code"></div></div>
+
+      <div class="mgr" data-for-file="MCP &amp; Skills">
+        <div class="mgr-bar">
+          <span class="ttl"><svg><use href="#i-cube"/></svg>DevEco MCP Server</span>
+          <span class="dm-pill ok" id="srv-pill"><span class="dm-dot ok"></span>运行中</span>
+          <span class="dm-mono dm-muted">deveco serve mcp · stdio + http://127.0.0.1:7788/mcp</span>
+          <span class="grow"></span>
+          <span class="dm-seg" id="view-seg"><button class="on" data-v="mcp">MCP 能力</button><button data-v="sk">Skills</button></span>
+        </div>
+        <div class="mgr-body">
+          <!-- ===== MCP 能力 ===== -->
+          <div class="view-mcp" id="view-mcp">
+            <div class="col" id="cap-col">
+              <div class="sec-h">能力清单<span class="cnt" id="cap-cnt"></span><span class="grow"></span><span class="dm-small dm-muted" style="font-weight:400">外部 Agent 只能调用已打开的工具</span></div>
+              <div id="caps"></div>
+            </div>
+            <div class="col">
+              <div class="sec-h">已接入的外部客户端<span class="cnt" id="cli-cnt"></span></div>
+              <div class="dm-col" id="clis" style="gap:6px"></div>
+              <div class="sec-h" style="margin-top:4px">一键接入 · 配置片段</div>
+              <div class="snip">
+                <div class="snip-h"><span class="dm-seg" id="snip-seg"></span><span class="grow"></span><span class="dm-mono" id="snip-path"></span><button class="btn sm" id="btn-copy"><svg class="i" style="width:12px;height:12px"><use href="#i-copy"/></svg><span>复制</span></button></div>
+                <pre id="snip-code"></pre>
+              </div>
+              <dl class="srv">
+                <dt>项目</dt><dd>MyApplication · entry · API 20</dd>
+                <dt>设备</dt><dd>HUAWEI Mate 70 Pro · hdc 已连接</dd>
+                <dt>调用记录</dt><dd>.deveco/mcp/audit.log</dd>
+              </dl>
+            </div>
+          </div>
+          <!-- ===== Skills ===== -->
+          <div class="view-sk" id="view-sk" hidden>
+            <div class="col">
+              <div class="sec-h">官方鸿蒙 Skill 包<span class="cnt" id="sk-cnt"></span><span class="grow"></span><span class="dm-small dm-muted" style="font-weight:400">装进项目后，DevEco Code 与外部 Agent 共用</span></div>
+              <div class="sk-grid" id="sk-grid"></div>
+            </div>
+            <div class="col" id="sk-detail"></div>
+          </div>
+        </div>
+      </div>
+      <div class="breadcrumbs" id="crumbs"></div>
+    </div>
+
+    <div class="tw tw-right">
+      <div class="pane on" data-pane="agent">
+        <div class="tw-hdr"><span class="title">DevEco Code</span><span class="grow"></span>
+          <button class="abtn" title="New Chat"><svg class="i"><use href="#i-add"/></svg></button>
+          <button class="abtn" title="History"><svg class="i"><use href="#i-history"/></svg></button>
+          <button class="abtn on" title="MCP &amp; Skills"><svg class="i"><use href="#i-cube"/></svg></button>
+          <button class="abtn" title="Settings"><svg class="i"><use href="#i-settings"/></svg></button>
+          <button class="abtn" title="Hide|Shift+Esc" data-act="hide-right"><svg class="i"><use href="#i-hide"/></svg></button></div>
+        <div class="tw-body" style="display:flex;flex-direction:column;overflow:hidden">
+          <div class="feed-top">
+            <div class="dm-row"><div class="dm-seg"><button>会话</button><button class="on">外部调用</button></div><span class="grow"></span><span class="dm-small dm-muted" id="feed-sum">今天 36 次</span></div>
+            <div class="sess" id="sess">
+              <div class="who"><span class="lg">C</span>Claude Code<span class="dm-pill muted" style="margin-left:auto">stdio</span></div>
+              <div class="dm-muted">「修复 ListPage 滑动卡顿，并在 Mate 70 Pro 上验证」</div>
+            </div>
+            <button class="btn primary" id="btn-sim" style="align-self:flex-start"><svg class="i" style="width:12px;height:12px"><use href="#i-play"/></svg>模拟一次外部调用</button>
+          </div>
+          <div class="feed" id="feed">
+            <div class="call ok old hist"><div class="c1"><svg class="st"><use href="#i-check"/></svg><code>deveco.appcheck</code><span class="dm-pill muted">Cursor</span><span class="grow"></span><span class="ms">12 分钟前 · 41.2s</span></div><div class="c2">{ module: "entry", rules: "上架基线" }</div></div>
+            <div class="call ok old hist"><div class="c1"><svg class="st"><use href="#i-check"/></svg><code>deveco.ui_tree</code><span class="dm-pill muted">Cursor</span><span class="grow"></span><span class="ms">14 分钟前 · 0.8s</span></div><div class="c2">{ page: "pages/LoginPage" }</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="mask" id="mask" hidden>
+    <div class="dlg" role="dialog" aria-modal="true">
+      <div class="dlg-h"><svg><use href="#i-lock"/></svg><span id="dlg-title">Claude Code 请求使用签名</span></div>
+      <div class="dlg-b">
+        <div id="dlg-desc">外部 Agent 要用本机的调试证书给 <b>entry</b> 签名，签完才能装到真机。</div>
+        <div class="args" id="dlg-args"></div>
+        <div class="dm-small dm-muted">只用调试证书，不会碰发布证书，也不会上传到 AppGallery Connect。</div>
+      </div>
+      <div class="dlg-f"><button class="btn" data-dec="deny">拒绝</button><span class="grow"></span><button class="btn" data-dec="always">总是允许</button><button class="btn primary" data-dec="once">允许一次</button></div>
+    </div>
+  </div>
+
+  <div class="dm-toast" id="toast" hidden><div class="th"><svg><use href="#i-info"/></svg><span id="toast-t"></span></div><div class="tb" id="toast-b"></div></div>
+</div>
+
+<script>
+(function(){
+  var $=DemoFrame.$, $$=DemoFrame.$$;
+  var esc=function(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')};
+
+  /* ---------------- 能力清单 ---------------- */
+  var GROUPS=[
+    {g:'构建',sub:'hvigor',tools:[
+      ['deveco.build','hvigor assembleHap / assembleApp，返回产物与错误',1,0,8],
+      ['deveco.clean','清理构建缓存',1,0,1],
+      ['deveco.sync','ohpm install，同步依赖',1,0,3]]},
+    {g:'签名',sub:'自动签名 · profile',tools:[
+      ['deveco.sign.auto','用调试证书自动签名',1,1,4],
+      ['deveco.sign.profile','读取签名 profile 与权限',1,0,2]]},
+    {g:'安装运行',sub:'hdc',tools:[
+      ['deveco.devices','列出真机 / 模拟器 / 远程真机',1,0,6],
+      ['deveco.install','hdc install 到指定设备',1,0,5],
+      ['deveco.launch','按 Ability 启动应用',1,0,5],
+      ['deveco.clear_data','清除应用数据',0,1,0]]},
+    {g:'截图与 UI 树',sub:'ArkUI Inspector',tools:[
+      ['deveco.screenshot','真机截图',1,0,4],
+      ['deveco.ui_tree','当前页面组件树 + 坐标',1,0,3],
+      ['deveco.input','点击 / 滑动 / 输入',1,0,1]]},
+    {g:'日志',sub:'HiLog · FaultLog',tools:[
+      ['deveco.hilog','按 domain / tag / level 过滤',1,0,7],
+      ['deveco.faultlog','崩溃与 AppFreeze 栈',1,0,1]]},
+    {g:'性能采集',sub:'Profiler',tools:[
+      ['deveco.perf.trace','Frame / ArkTS CPU 采集',1,0,2],
+      ['deveco.perf.coldstart','冷启动分阶段耗时',1,0,1]]},
+    {g:'上架自检',sub:'AppGallery Connect',tools:[
+      ['deveco.appcheck','上架前体检：隐私、权限、适配',1,0,2],
+      ['deveco.publish.upload','上传发布包到 AGC',0,1,0]]}
+  ];
+  var TOOL={};
+  GROUPS.forEach(function(g){g.tools.forEach(function(t){TOOL[t[0]]={name:t[0],desc:t[1],on:!!t[2],sens:!!t[3],n:t[4],always:false}})});
+
+  function renderCaps(){
+    var h='';
+    GROUPS.forEach(function(g){
+      var on=g.tools.filter(function(t){return TOOL[t[0]].on}).length;
+      h+='<div class="cap-grp"><div class="cap-gh">'+esc(g.g)+'<span class="sub">'+esc(g.sub)+'</span><span class="grow"></span><span class="sub dm-mono">'+on+' / '+g.tools.length+'</span></div>';
+      g.tools.forEach(function(t){
+        var x=TOOL[t[0]];
+        var tag=x.sens?(x.always?'<span class="dm-pill ok need">总是允许</span>':'<span class="dm-pill warn need"><svg><use href="#i-lock"/></svg>需确认</span>'):'<span></span>';
+        h+='<div class="cap'+(x.on?'':' off')+'" data-tool="'+x.name+'"><span class="nm">'+x.name+'</span><span class="ds">'+esc(x.desc)+'</span>'+tag+'<span class="n">'+x.n+' 次</span><button class="tgl'+(x.on?' on':'')+'" data-sw="'+x.name+'" aria-pressed="'+x.on+'" title="'+(x.on?'关闭':'开放')+'给外部 Agent"></button></div>';
+      });
+      h+='</div>';
+    });
+    $('#caps').innerHTML=h;
+    var all=Object.keys(TOOL),on=all.filter(function(k){return TOOL[k].on}).length;
+    $('#cap-cnt').textContent='已开放 '+on+' / '+all.length;
+  }
+  $('#caps').addEventListener('click',function(e){
+    var b=e.target.closest('[data-sw]');if(!b)return;
+    var x=TOOL[b.dataset.sw];x.on=!x.on;renderCaps();
+    toast(x.on?'已开放 '+x.name:'已关闭 '+x.name, x.on?'外部 Agent 下次 tools/list 就能看到它。':'正在连接的客户端会收到 tools/list_changed，之后调用会被拒绝。');
+  });
+
+  /* ---------------- 外部客户端 ---------------- */
+  var CLIS=[
+    {id:'claude',nm:'Claude Code',lg:'C',c:'#D97757',on:true,info:'stdio · 今天 28 次',path:'.mcp.json'},
+    {id:'cursor',nm:'Cursor',lg:'Cu',c:'#3A3A3A',on:true,info:'stdio · 今天 8 次',path:'.cursor/mcp.json'},
+    {id:'codebuddy',nm:'CodeBuddy',lg:'CB',c:'#5B6CF0',on:false,info:'未接入',path:'.codebuddy/mcp.json'},
+    {id:'trae',nm:'Trae',lg:'T',c:'#2E9E6B',on:false,info:'未接入',path:'.trae/mcp.json'}
+  ];
+  var snipSel='claude';
+  function renderClis(){
+    $('#clis').innerHTML=CLIS.map(function(c){
+      return '<div class="cli'+(c.id===snipSel?' sel':'')+'" data-cli="'+c.id+'"><span class="lg" style="background:'+c.c+'">'+c.lg+'</span><span class="tx"><b>'+c.nm+'</b><span>'+esc(c.info)+'</span></span>'
+        +(c.on?'<span class="dm-pill ok"><span class="dm-dot ok"></span>已连接</span>':(c.busy?'<span class="dm-pill info"><span class="spin" style="width:10px;height:10px"></span>写入配置…</span>':'<button class="btn sm primary" data-join="'+c.id+'">一键接入</button>'))+'</div>';
+    }).join('');
+    $('#cli-cnt').textContent=CLIS.filter(function(c){return c.on}).length+' 个已连接';
+    $('#snip-seg').innerHTML=CLIS.map(function(c){return '<button data-snip="'+c.id+'"'+(c.id===snipSel?' class="on"':'')+'>'+c.nm+'</button>'}).join('');
+    renderSnip();
+    $('#status-slot')&&($('#status-slot').innerHTML='<span class="dm-capsule"><span class="dm-dot ok"></span>MCP Server · '+CLIS.filter(function(c){return c.on}).length+' 个客户端已连接</span>');
+  }
+  function snipText(id){
+    var http=(id==='codebuddy'||id==='trae');
+    if(http) return '{\n  <k>"mcpServers"</k>: {\n    <k>"deveco"</k>: {\n      <k>"url"</k>: <s>"http://127.0.0.1:7788/mcp"</s>,\n      <k>"headers"</k>: { <k>"Authorization"</k>: <s>"Bearer ${DEVECO_MCP_TOKEN}"</s> }\n    }\n  }\n}';
+    return '{\n  <k>"mcpServers"</k>: {\n    <k>"deveco"</k>: {\n      <k>"command"</k>: <s>"deveco"</s>,\n      <k>"args"</k>: [<s>"serve"</s>, <s>"mcp"</s>, <s>"--stdio"</s>],\n      <k>"env"</k>: { <k>"DEVECO_PROJECT"</k>: <s>"${workspaceFolder}"</s> }\n    }\n  }\n}';
+  }
+  function renderSnip(){
+    var c=CLIS.filter(function(x){return x.id===snipSel})[0];
+    $('#snip-path').textContent=c.path;
+    $('#snip-code').innerHTML=esc(snipText(snipSel)).replace(/&lt;k&gt;(.*?)&lt;\/k&gt;/g,'<span class="k">$1</span>').replace(/&lt;s&gt;(.*?)&lt;\/s&gt;/g,'<span class="s">$1</span>');
+    $('#btn-copy span').textContent='复制';
+  }
+  $('#snip-seg').addEventListener('click',function(e){var b=e.target.closest('[data-snip]');if(!b)return;snipSel=b.dataset.snip;renderClis();});
+  $('#clis').addEventListener('click',function(e){
+    var j=e.target.closest('[data-join]');
+    if(j){
+      var c=CLIS.filter(function(x){return x.id===j.dataset.join})[0];c.busy=true;snipSel=c.id;renderClis();
+      setTimeout(function(){c.busy=false;c.on=true;c.info='http · 刚刚接入';renderClis();toast(c.nm+' 已接入','已写入 '+c.path+'，'+Object.keys(TOOL).filter(function(k){return TOOL[k].on}).length+' 个工具可用。');},900);
+      return;
+    }
+    var r=e.target.closest('[data-cli]');if(r){snipSel=r.dataset.cli;renderClis();}
+  });
+  $('#btn-copy').addEventListener('click',function(){
+    var t=snipText(snipSel).replace(/<\/?[ks]>/g,'');
+    try{navigator.clipboard&&navigator.clipboard.writeText(t).catch(function(){})}catch(err){}
+    $('#btn-copy span').textContent='已复制';
+    setTimeout(function(){var s=$('#btn-copy span');if(s)s.textContent='复制'},1600);
+  });
+
+  /* ---------------- 视图切换 ---------------- */
+  $('#view-seg').addEventListener('click',function(e){
+    var b=e.target.closest('[data-v]');if(!b)return;
+    $$('#view-seg button').forEach(function(x){x.classList.toggle('on',x===b)});
+    $('#view-mcp').hidden=b.dataset.v!=='mcp';$('#view-sk').hidden=b.dataset.v!=='sk';
+  });
+
+  /* ---------------- 模拟外部调用 ---------------- */
+  var STEPS=[
+    {t:'deveco.devices',a:'{}',ms:0.3,res:'1 台可用 · HUAWEI Mate 70 Pro（USB）'},
+    {t:'deveco.build',a:'{ module: "entry", mode: "debug" }',ms:18.4,res:'BUILD SUCCESSFUL · entry-default-unsigned.hap 4.2 MB'},
+    {t:'deveco.sign.auto',a:'{ module: "entry", cert: "debug" }',ms:1.2,res:'entry-default-signed.hap'},
+    {t:'deveco.install',a:'{ device: "Mate 70 Pro", hap: "entry-default-signed.hap" }',ms:3.1,res:'install bundle successfully'},
+    {t:'deveco.launch',a:'{ ability: "EntryAbility" }',ms:1.6,res:'EntryAbility onForeground'},
+    {t:'deveco.screenshot',a:'{ device: "Mate 70 Pro" }',ms:0.9,res:'shot'},
+    {t:'deveco.hilog',a:'{ domain: "0xA0001", level: "W", since: "launch" }',ms:0.6,res:'log'}
+  ];
+  var running=false,todayN=36;
+  function callHTML(s,state,extra){
+    var ic=state==='run'?'<span class="spin"></span>':state==='wait'?'<svg class="st"><use href="#i-lock"/></svg>':state==='err'?'<svg class="st"><use href="#i-err"/></svg>':'<svg class="st"><use href="#i-check"/></svg>';
+    return '<div class="c1">'+ic+'<code>'+s.t+'</code><span class="dm-pill muted">Claude Code</span><span class="grow"></span><span class="ms">'+(extra&&extra.ms||'')+'</span></div><div class="c2">'+esc(s.a)+'</div>'+(extra&&extra.body?'<div class="c3">'+extra.body+'</div>':'');
+  }
+  function resBody(s){
+    if(s.res==='shot') return '<div class="shot"><div class="ph"><div class="scr"><i></i><i></i><i></i><i></i><i></i><i></i></div></div><div class="dm-small dm-muted">1260 × 2844 · ListPage 首屏<br>已回传给外部 Agent</div></div>';
+    if(s.res==='log') return '<div class="logl"><span class="w">W</span> ListPage: decode cover on UI thread, 38ms</div><div class="logl"><span class="w">W</span> ListPage: frame dropped ×6 during fling</div><div class="logl">共 14 条 · 2 条 W · 0 条 E</div>';
+    return '<span class="dm-muted">'+esc(s.res)+'</span>';
+  }
+  function flashTool(name){
+    TOOL[name].n++;renderCaps();
+    var r=$('.cap[data-tool="'+name+'"]');if(r){r.classList.add('flash');r.scrollIntoView({block:'nearest'});}
+  }
+  function finish(msg,ok){
+    running=false;$('#btn-sim').disabled=false;
+    $('#btn-sim').innerHTML='<svg class="i" style="width:12px;height:12px"><use href="#i-rerun"/></svg>再模拟一次';
+    var d=document.createElement('div');d.className='dm-callout '+(ok?'ok':'warn');
+    d.innerHTML='<svg><use href="#i-'+(ok?'check':'warn')+'"/></svg><div>'+msg+'</div>';
+    $('#feed').appendChild(d);d.scrollIntoView({block:'nearest'});
+  }
+  function run(i){
+    if(i>=STEPS.length){finish('外部 Agent 已拿到截图与日志，继续改 <b>ListPage.ets</b>。全程 7 次调用，都记在 audit.log。',true);return;}
+    var s=STEPS[i],x=TOOL[s.t];
+    var el=document.createElement('div');el.className='call';$('#feed').appendChild(el);
+    if(!x.on){
+      el.className='call err';el.innerHTML=callHTML(s,'err',{ms:'已拒绝',body:'<span style="color:var(--ui-error)">该工具未开放，外部 Agent 收到 -32601</span>'});
+      el.scrollIntoView({block:'nearest'});
+      finish('<b>'+s.t+'</b> 在能力清单里是关闭的，外部 Agent 停在这一步。打开开关后可以重试。',false);return;
+    }
+    el.innerHTML=callHTML(s,'run',{ms:'…'});el.scrollIntoView({block:'nearest'});
+    var go=function(){
+      el.className='call';el.innerHTML=callHTML(s,'run',{ms:'…'});
+      setTimeout(function(){
+        el.className='call ok';el.innerHTML=callHTML(s,'ok',{ms:s.ms.toFixed(1)+'s',body:resBody(s)});
+        flashTool(s.t);todayN++;$('#feed-sum').textContent='今天 '+todayN+' 次';
+        setTimeout(function(){run(i+1)},350);
+      },Math.min(1400,300+s.ms*60));
+    };
+    if(x.sens&&!x.always){
+      el.className='call wait';el.innerHTML=callHTML(s,'wait',{ms:'等你授权',body:'<span class="dm-muted">敏感操作，已在 IDE 里弹出确认</span>'});
+      askAuth(s,function(dec){
+        if(dec==='deny'){el.className='call err';el.innerHTML=callHTML(s,'err',{ms:'已拒绝',body:'<span style="color:var(--ui-error)">你拒绝了这次签名，外部 Agent 收到 permission_denied</span>'});finish('签名被拒绝，后面的安装与截图不会执行。',false);return;}
+        if(dec==='always'){x.always=true;renderCaps();}
+        go();
+      });
+    } else go();
+  }
+  var authCb=null;
+  function askAuth(s,cb){
+    authCb=cb;
+    $('#dlg-title').textContent='Claude Code 请求使用「'+s.t+'」';
+    $('#dlg-args').textContent='tool:   '+s.t+'\nargs:   '+s.a+'\nclient: Claude Code (stdio, pid 48213)';
+    $('#mask').hidden=false;
+  }
+  $('#mask').addEventListener('click',function(e){
+    var b=e.target.closest('[data-dec]');if(!b)return;
+    $('#mask').hidden=true;var cb=authCb;authCb=null;cb&&cb(b.dataset.dec);
+  });
+  $('#btn-sim').addEventListener('click',function(){
+    if(running)return;running=true;this.disabled=true;
+    this.innerHTML='<span class="spin" style="width:12px;height:12px"></span>外部 Agent 调用中…';
+    $$("#feed .call:not(.hist), #feed .dm-callout").forEach(function(n){n.remove()});
+    run(0);
+  });
+
+  /* ---------------- Skills ---------------- */
+  var SK=[
+    {id:'harmony-arkts-style',nm:'ArkTS 编码规范',v:'1.4.0',n:1284,inst:true,d:'状态管理 V2、@ComponentV2、禁用 any 与动态属性，写法对齐 API 20。',tools:[]},
+    {id:'harmony-multi-device',nm:'一多适配',v:'0.9.2',n:356,inst:true,d:'断点、栅格与折叠屏悬停态，出一套代码适配手机 / 折叠 / 平板。',tools:['deveco.screenshot','deveco.ui_tree']},
+    {id:'harmony-appcheck',nm:'上架自检',v:'1.2.1',n:97,inst:false,d:'按上架基线查隐私声明、权限用途、图标与适配，给出可改的位置。',tools:['deveco.appcheck','deveco.sign.profile']},
+    {id:'harmony-perf',nm:'性能调优',v:'1.1.0',n:143,inst:false,d:'从掉帧、冷启动入手，采 trace、读火焰图、给改法。',tools:['deveco.perf.trace','deveco.perf.coldstart','deveco.hilog']},
+    {id:'harmony-atomic-service',nm:'元服务开发',v:'0.8.0',n:61,inst:false,d:'元服务包体 10 MB 限制、免安装卡片、服务卡片与分享。',tools:['deveco.build']},
+    {id:'harmony-stage-migrate',nm:'Android → Stage 模型',v:'0.6.3',n:38,inst:false,d:'Activity / Fragment 到 UIAbility 与 Navigation 的对照迁移。',tools:[]}
+  ];
+  var skSel='harmony-arkts-style',openMenu=null;
+  function renderSk(){
+    $('#sk-grid').innerHTML=SK.map(function(s){
+      return '<div class="sk'+(s.id===skSel?' sel':'')+'" data-sk="'+s.id+'"><div class="t1"><svg class="i"><use href="#i-skills"/></svg><b>'+esc(s.nm)+'</b>'+(s.inst?'<span class="dm-pill ok">已安装</span>':'')+'</div>'
+        +'<div class="t2">'+esc(s.d)+'</div>'
+        +'<div class="t3"><span class="meta">v'+s.v+' · 调用 '+s.n+' 次</span>'+(s.exp?'<span class="dm-pill info">已导出 · '+s.exp.join(' / ')+'</span>':'')+'<span class="grow"></span>'
+        +(s.inst?'':'<button class="btn sm primary" data-inst="'+s.id+'">'+(s.busy?'<span class="spin" style="width:10px;height:10px"></span>安装中':'安装到项目')+'</button>')
+        +'<button class="btn sm" data-exp="'+s.id+'"><svg class="i" style="width:12px;height:12px"><use href="#i-export"/></svg>导出</button></div>'
+        +(openMenu===s.id?'<div class="popup"><div class="mhead">导出给其他 Agent</div><div class="mi" data-to="Claude Code"><svg class="i"><use href="#i-export"/></svg>Claude Code<span class="sc">.claude/skills/</span></div><div class="mi" data-to="Cursor"><svg class="i"><use href="#i-export"/></svg>Cursor Rules<span class="sc">.cursor/rules/*.mdc</span></div><div class="mi" data-to="AGENTS.md"><svg class="i"><use href="#i-export"/></svg>AGENTS.md 片段<span class="sc">通用</span></div></div>':'')
+        +'</div>';
+    }).join('');
+    $('#sk-cnt').textContent=SK.filter(function(s){return s.inst}).length+' / '+SK.length+' 已安装';
+    renderSkDetail();
+  }
+  function renderSkDetail(){
+    var s=SK.filter(function(x){return x.id===skSel})[0];
+    var tree='<div class="d">MyApplication/</div><div>&nbsp;&nbsp;.deveco/skills/</div>'
+      +SK.filter(function(x){return x.inst}).map(function(x){return '<div'+(x.fresh?' class="new"':'')+'>&nbsp;&nbsp;&nbsp;&nbsp;'+x.id+'/  <span class="d">SKILL.md · rules/ · examples/</span></div>'}).join('');
+    if(s.exp&&s.exp.indexOf('Claude Code')>=0)tree+='<div class="new">&nbsp;&nbsp;.claude/skills/'+s.id+'/SKILL.md</div>';
+    if(s.exp&&s.exp.indexOf('Cursor')>=0)tree+='<div class="new">&nbsp;&nbsp;.cursor/rules/'+s.id+'.mdc</div>';
+    if(s.exp&&s.exp.indexOf('AGENTS.md')>=0)tree+='<div class="new">&nbsp;&nbsp;AGENTS.md  <span class="d">+ 1 节</span></div>';
+    var md='---\nname: '+s.id+'\ndescription: '+s.d+'\nversion: '+s.v+'\n'+(s.tools.length?'mcp: deveco\ntools: ['+s.tools.join(', ')+']\n':'')+'---\n\n# '+s.nm+'\n\n## 何时使用\n写或改 .ets 文件时自动加载。\n\n## 规则\n1. …';
+    $('#sk-detail').innerHTML='<div class="sec-h">'+esc(s.nm)+'<span class="cnt">v'+s.v+'</span><span class="grow"></span>'+(s.inst?'<span class="dm-pill ok">已在项目中</span>':'<span class="dm-pill muted">未安装</span>')+'</div>'
+      +'<div class="sk-tree">'+tree+'</div>'
+      +(s.tools.length?'<div class="dm-small dm-muted">依赖 MCP 工具：'+s.tools.map(function(t){return '<span class="dm-pill muted dm-mono">'+t+'</span>'}).join(' ')+'</div>':'')
+      +'<div class="snip"><div class="snip-h">SKILL.md<span class="grow"></span><span class="dm-mono">.deveco/skills/'+s.id+'/</span></div><pre>'+esc(md)+'</pre></div>';
+  }
+  $('#sk-grid').addEventListener('click',function(e){
+    var mi=e.target.closest('[data-to]');
+    if(mi){var s=SK.filter(function(x){return x.id===openMenu})[0];s.exp=s.exp||[];if(s.exp.indexOf(mi.dataset.to)<0)s.exp.push(mi.dataset.to);openMenu=null;skSel=s.id;renderSk();
+      toast('已导出「'+s.nm+'」',mi.dataset.to==='Claude Code'?'写入 .claude/skills/'+s.id+'/SKILL.md，Claude Code 下次会话自动加载。':mi.dataset.to==='Cursor'?'写入 .cursor/rules/'+s.id+'.mdc。':'追加到项目根目录 AGENTS.md。');return;}
+    var ex=e.target.closest('[data-exp]');
+    if(ex){openMenu=openMenu===ex.dataset.exp?null:ex.dataset.exp;renderSk();return;}
+    var ins=e.target.closest('[data-inst]');
+    if(ins){var t=SK.filter(function(x){return x.id===ins.dataset.inst})[0];if(t.busy)return;t.busy=true;skSel=t.id;renderSk();
+      setTimeout(function(){t.busy=false;t.inst=true;t.fresh=true;renderSk();toast('已安装「'+t.nm+'」','放进 .deveco/skills/'+t.id+'/，DevEco Code 与已接入的外部 Agent 都能用。');},800);return;}
+    var c=e.target.closest('[data-sk]');if(c){skSel=c.dataset.sk;openMenu=null;renderSk();}
+  });
+
+  document.addEventListener('click',function(e){if(openMenu&&!e.target.closest('#sk-grid .popup')&&!e.target.closest('[data-exp]')){openMenu=null;renderSk();}});
+  /* ---------------- toast ---------------- */
+  var tt=null;
+  function toast(t,b){$('#toast-t').textContent=t;$('#toast-b').textContent=b;$('#toast').hidden=false;clearTimeout(tt);tt=setTimeout(function(){$('#toast').hidden=true},2600);}
+
+  document.getElementById('tree-slot').innerHTML=DemoFrame.tree({sel:'ListPage.ets'});
+  document.getElementById('code').innerHTML=DemoFrame.code('ListPage.ets',{cur:28});
+  DemoFrame.init({device:'HUAWEI Mate 70 Pro',deviceIcon:'#i-phone',pos:'1:1',
+    stripeRight:[{right:'notifications',icon:'#i-tw-notifications',title:'Notifications'},{right:'agent',icon:'#i-genie',title:'DevEco Code'},{right:'docs',icon:'#i-hdoc',title:'HarmonyOS Docs'},{right:'web',icon:'#i-puzzle',title:'Extensions'},{more:1},{right:'devices',icon:'#i-phone',title:'Device Manager'}],
+    onReady:function(){renderCaps();renderClis();renderSk();}});
+
+  DemoGuide.init([
+    {target:'#btn-sim',kind:'click',pos:'bottom',label:'点这里：外部 Agent 调一遍'},
+    {target:"#feed",kind:"change",pos:"bottom",label:'调用流逐条出现，签名时弹授权'},
+    {target:'.cap[data-tool="deveco.install"] .tgl',kind:'click',pos:'left',label:'关掉某项再模拟试试'}
+  ]);
+})();
+</script>
+</body>
+</html>

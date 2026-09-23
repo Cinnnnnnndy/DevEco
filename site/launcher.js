@@ -15,18 +15,24 @@
     doc:    { label: '文档',   hint: '白皮书 / 说明' },
   };
   var DOC_ACCENT = { MD: '--ui-info', PPTX: '--ui-warning', BUNDLE: '--ui-accent', README: '--ui-fg-info' };
-  /* deck 里的标记：投 / 半投 强调，其余弱化 */
-  function markCls(m){ return m==='投' ? 'm1' : (m==='半投' ? 'm2' : 'm3'); }
 
   /* ---- 顶部 ---- */
   document.title = C.title;
   $('#title').textContent = C.title;
   $('#lede').textContent = C.lede;
   var all = [];
-  C.groups.forEach(function(g){ g.items.forEach(function(it){ all.push(it); it._group = g; }); });
+  /* 规划重点的卡片在各自分类里排到最前，其余保持 catalog.js 里的顺序 */
+  C.groups.forEach(function(g){
+    g.items = g.items.map(function(it,i){ return {it:it,i:i}; })
+      .sort(function(a,b){ return ((b.it.key?1:0)-(a.it.key?1:0)) || (a.i-b.i); })
+      .map(function(x){ return x.it; });
+    g.items.forEach(function(it){ all.push(it); it._group = g; });
+  });
   var ready = all.filter(function(i){ return i.view==='ready'; }).length;
   var sketch = all.filter(function(i){ return i.view==='sketch'; }).length;
+  var keyN = all.filter(function(i){ return i.key; }).length;
   $('#meta').innerHTML = '<span>'+all.length+' 个条目</span><span>'+ready+' 个可演示</span>'
+    + (keyN?'<span class="k">'+keyN+' 个规划重点</span>':'')
     + (sketch?'<span>'+sketch+' 个规划中</span>':'') + '<span>更新 '+esc(C.updated)+'</span>';
 
   /* ---- 节奏条 ---- */
@@ -72,14 +78,17 @@
       : '<span class="ph">待排期，暂无链接</span>';
     var links = (it.links||[]).map(function(l){ return '<a href="'+url(l.href)+'">'+esc(l.label)+'</a>'; }).join('');
     var text = ((it.no||'')+' '+it.title+' '+(it.subtitle||'')+' '+it.desc+' '+(it.tags||[]).join(' ')+' '+(it.mark||'')+' '+(it.note||'')+' '+it._group.title).toLowerCase();
-    return '<article class="card '+v+'" data-view="'+v+'" data-cat="'+esc(it._group.id)+'" data-href="'+(it.href?url(it.href):'')+'" data-text="'+esc(text)+'">'
+    if(it.key) text += ' 重点 '+String(it.key).toLowerCase();
+    return '<article class="card '+v+(it.key?' key':'')+'"'+(it.no?' id="card-'+esc(it.no)+'"':'')+' data-view="'+v+'" data-key="'+(it.key?'1':'')+'" data-cat="'+esc(it._group.id)+'" data-href="'+(it.href?url(it.href):'')+'" data-text="'+esc(text)+'">'
       + thumbHTML(it)
       + '<div class="body">'
       + '<div class="row1"><span class="cat-lbl"><span class="dot"></span>'+esc(it._group.title)+(it.no?' <span class="no">'+esc(it.no)+'</span>':'')+'</span>'
-      + (it.mark?'<span class="mark '+markCls(it.mark)+'">'+esc(it.mark)+'</span>':'')+'<span class="grow"></span>'
+      + (it.key?'<span class="keyb" title="规划重点"><svg><use href="#i-star"/></svg>重点</span>':'')
+      + '<span class="grow"></span>'
       + '<span class="status '+v+'">'+vinfo.label+'</span></div>'
       + '<h4 class="title">'+(it.href?'<a href="'+url(it.href)+'">'+esc(it.title)+'</a>':esc(it.title))+'</h4>'
       + (it.subtitle?'<p class="subtitle">'+esc(it.subtitle)+'</p>':'')
+      + (it.key?'<p class="keyline"><svg><use href="#i-star"/></svg>规划重点 · '+esc(it.key)+'</p>':'')
       + '<p class="desc">'+esc(it.desc)+'</p>'
       + (it.tags&&it.tags.length?'<div class="tags">'+it.tags.map(function(t){return '<span>'+esc(t)+'</span>';}).join('')+'</div>':'')
       + (it.note?'<p class="memo">'+esc(it.note)+'</p>':'')
@@ -108,7 +117,9 @@
     return '<button type="button" class="cat'+(id===cat?' on':'')+'" data-cat="'+esc(id)+'">'
       + '<svg><use href="#'+icon+'"/></svg><span class="lbl">'+esc(title)+'</span><span class="cnt">'+count+'</span></button>';
   };
+  var keyCount = all.filter(function(i){ return i.key; }).length;
   catsEl.innerHTML = catRow('全部','全部','i-cat-all',all.length)
+    + (keyCount?catRow('key','规划重点','i-star',keyCount):'')
     + C.groups.map(function(g){ return catRow(g.id, g.title, g.icon, g.items.length); }).join('');
   catsEl.addEventListener('click', function(e){
     var b = e.target.closest('.cat'); if(!b) return;
@@ -140,17 +151,17 @@
     var visibleTotal = 0;
     var sections = groupsEl.querySelectorAll('section.grp');
     sections.forEach(function(sec){
-      var secCat = sec.id, showSection = (cat==='全部' || cat===secCat);
+      var secCat = sec.id, showSection = (cat==='全部' || cat==='key' || cat===secCat);
       var n = 0;
       sec.querySelectorAll('.card').forEach(function(c){
-        var ok = showSection && (!viewFilter || c.dataset.view===viewFilter) && (!q || c.dataset.text.indexOf(q)>=0);
+        var ok = showSection && (cat!=='key' || c.dataset.key==='1') && (!viewFilter || c.dataset.view===viewFilter) && (!q || c.dataset.text.indexOf(q)>=0);
         c.hidden = !ok; if(ok) n++;
       });
       sec.hidden = n===0; if(showSection) visibleTotal += n;
       sec.querySelector('[data-cnt]').textContent = n + ' 项';
     });
-    $('#section-title').textContent = cat==='全部' ? '全部项目' : cat && (function(){ var g=C.groups.filter(function(g){return g.id===cat})[0]; return g?g.title:'全部项目'; })();
-    var totalForCat = cat==='全部' ? all.length : all.filter(function(i){ return i._group.id===cat; }).length;
+    $('#section-title').textContent = cat==='全部' ? '全部项目' : cat==='key' ? '规划重点' : cat && (function(){ var g=C.groups.filter(function(g){return g.id===cat})[0]; return g?g.title:'全部项目'; })();
+    var totalForCat = cat==='全部' ? all.length : cat==='key' ? keyCount : all.filter(function(i){ return i._group.id===cat; }).length;
     $('#count').textContent = visibleTotal + ' / ' + totalForCat;
     $('#empty').hidden = visibleTotal>0;
   }
@@ -174,4 +185,18 @@
     paintBtn();
   });
   paintBtn();
+
+  /* ---- demo 标注总开关：和 demos/_shared/guide.js 共用 localStorage 的 deveco-guide ---- */
+  var GKEY = 'deveco-guide';
+  function guideOn(){ try{ return localStorage.getItem(GKEY)!=='off'; }catch(e){ return true; } }
+  function paintGuide(){
+    var on = guideOn();
+    $('#guide-label').textContent = 'demo 标注：'+(on?'开':'关');
+    $('#guide-btn').classList.toggle('off', !on);
+  }
+  $('#guide-btn').addEventListener('click', function(){
+    try{ localStorage.setItem(GKEY, guideOn()?'off':'on'); }catch(e){}
+    paintGuide();
+  });
+  paintGuide();
 })();
