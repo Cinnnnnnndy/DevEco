@@ -70,8 +70,8 @@ h1{font-size:30px;font-weight:700;line-height:1.3;color:var(--ink)}
 /* 结论卡 */
 .verdict{padding:22px 26px}
 .vlabel{display:inline-flex;align-items:center;height:24px;padding:0 10px;border-radius:999px;background:var(--btn);color:#fff;font-size:12px;font-weight:600;margin-bottom:10px}
-.vrows{display:grid;grid-template-columns:48px minmax(0,1fr);gap:10px 16px;margin-top:16px;padding-top:16px;border-top:1px solid var(--line);font-size:14px;line-height:1.6}
-.vrows dt{color:var(--ink3)}
+.vrows{display:grid;grid-template-columns:84px minmax(0,1fr);gap:10px 16px;margin-top:16px;padding-top:16px;border-top:1px solid var(--line);font-size:14px;line-height:1.6}
+.vrows dt{color:var(--ink3);font-weight:600}
 .vrows dd{margin:0;color:var(--ink1);min-width:0;overflow-wrap:anywhere}
 .vrows dd .loc{white-space:normal}
 .vrows dd .loc{margin-right:16px}
@@ -87,6 +87,14 @@ h1{font-size:30px;font-weight:700;line-height:1.3;color:var(--ink)}
 #tl .ln{font-family:var(--font);font-size:13px;font-weight:600;fill:var(--ink1)}
 #tl .st{cursor:pointer;transition:opacity .15s}
 #tl .st:hover{opacity:.7}
+.story-t{font-size:15px;font-weight:700;color:var(--ink);margin:18px 0 8px;padding-top:16px;border-top:1px solid var(--line)}
+.story{list-style:none;display:flex;flex-direction:column;gap:8px;margin-bottom:6px}
+.story li{display:grid;grid-template-columns:128px minmax(0,1fr);gap:12px;font-size:14px;color:var(--ink2);line-height:1.6}
+.story li{border-radius:8px;padding:4px 8px;margin:0 -8px;transition:background .12s}
+.story li:not(.off){cursor:default}
+.story li.on{background:var(--soft)}
+.story li.on .t{color:var(--accent)}
+.story .t{font-family:var(--mono);font-size:12.5px;color:var(--ink1);padding-top:1px}
 .legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--ink3);margin-top:8px}
 .legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
 .tip{position:fixed;z-index:90;pointer-events:none;background:#191919;color:#fff;border-radius:10px;padding:8px 10px;font-size:12px;line-height:1.5;max-width:420px;opacity:0;transition:opacity .1s}
@@ -94,10 +102,6 @@ h1{font-size:30px;font-weight:700;line-height:1.3;color:var(--ink)}
 .tip code{font-size:11.5px;color:#C9D7FF}
 
 /* 因果链 */
-.chain{padding:18px 22px}
-.chain ol{margin:0;padding:0;list-style:none;counter-reset:c;display:flex;flex-direction:column;gap:8px}
-.chain li{counter-increment:c;display:grid;grid-template-columns:24px 1fr;gap:8px;font-size:14px;color:var(--ink2)}
-.chain li::before{content:counter(c);width:22px;height:22px;border-radius:50%;background:var(--fill);display:grid;place-items:center;font-size:12px;color:var(--ink2);font-family:var(--mono)}
 
 /* 修复 */
 .fix{background:var(--paper);border-radius:var(--r-card);padding:18px 22px}
@@ -170,7 +174,7 @@ h1{font-size:30px;font-weight:700;line-height:1.3;color:var(--ink)}
 
 .fade{animation:fade .35s ease}
 @keyframes fade{from{opacity:.2;transform:translateY(4px)}to{opacity:1;transform:none}}
-@media (max-width:900px){.side{display:none}.wrap{padding:8px 16px 60px}.hero-in{padding:18px 16px 14px}.sub{padding:0 16px;gap:12px}h1{font-size:24px}.axes{grid-template-columns:1fr}.vrows{grid-template-columns:40px minmax(0,1fr)}}
+@media (max-width:900px){.side{display:none}.wrap{padding:8px 16px 60px}.hero-in{padding:18px 16px 14px}.sub{padding:0 16px;gap:12px}h1{font-size:24px}.axes{grid-template-columns:1fr}.vrows{grid-template-columns:1fr;gap:2px 0}.vrows dd{margin-bottom:8px}.story li{grid-template-columns:1fr;gap:0}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 
 .stack{display:flex;flex-direction:column;gap:28px;max-width:1040px}
@@ -207,8 +211,7 @@ h1{font-size:30px;font-weight:700;line-height:1.3;color:var(--ink)}
     <nav class="tree">
       <a href="#sec-verdict" data-s="sec-verdict">结论</a>
       <a href="#sec-strength" data-s="sec-strength">证据强度</a>
-      <a href="#sec-timeline" data-s="sec-timeline">主线程时间线</a>
-      <a href="#sec-chain" data-s="sec-chain">根本原因</a>
+      <a href="#sec-timeline" data-s="sec-timeline">时间线与发生经过</a>
       <a href="#sec-fix" data-s="sec-fix">修复建议<span class="n" id="nav-fixn">3</span></a>
       <a href="#sec-checks" data-s="sec-checks">证据清单<span class="n" id="nav-ckn">9</span></a>
     </nav>
@@ -314,26 +317,26 @@ const V = {
   v2: {
     title:'hasAttachment() 误判附件，保存在主线程同步忙等 4s；连点两次叠加约 8s，触发 6S 冻屏',
     rows:[
-      ['故障','应用冻屏 THREAD_BLOCK_6S · 主线程繁忙 · 执行耗时操作<span class="pill part">默认匹配 · 无采样栈</span>'],
-      ['根因','<code>hasAttachment()</code> 把已有封面图当作待保存附件 → <code>options.sync</code> 恒为 true → <code>saveNoteSync</code> 在主线程执行 8 次 <code>injectDelay(500)</code> 忙等'],
-      ['位置','<span class="loc">FreezeNoteDetailPage.ets:48</span><span class="loc">NoteRepository.ets:44-48</span><span class="loc">NoteRepository.ets:64-102</span>'],
-      ['责任','应用 · FreezeNoteDetailPage'],
-      ['修复','修正 hasAttachment 判断，保存改为逐步 await 让出主线程（3 处，工作区已包含）'],
+      ['发生了什么','应用冻屏（THREAD_BLOCK_6S）：主线程一直在执行代码、不是在等待，连续约 8s 没有响应输入，超过 6s 被系统判定冻屏'],
+      ['为什么','<code>hasAttachment()</code> 把笔记已有的封面图当成「本次待保存附件」，使 <code>options.sync</code> 恒为 true；保存因此走同步路径，<code>saveNoteSync</code> 在主线程连续执行 8 次 <code>injectDelay(500)</code> 忙等，一次保存 4s，连点两次叠加到约 8s'],
+      ['改哪里','<span class="loc">FreezeNoteDetailPage.ets:48</span><span class="loc">NoteRepository.ets:44-48</span><span class="loc">NoteRepository.ets:64-102</span><span class="muted">行号以故障版本 4ca0c7e 为准</span>'],
+      ['谁来改','应用开发：问题全部在应用自身代码（FreezeNoteDetailPage 的保存流程），没有系统侧参与'],
+      ['怎么改','修正 hasAttachment 的判断，只认本次新增的附件；保存改为逐步 await，让出主线程。共 3 处修改，当前工作区已包含，验证不再复现后提交即可'],
     ],
     axes:[['根因类别','高','yes'],['粒度','行级','yes'],['精度','源码差异','yes']],
-    chain:['用户在 CrashTestPage 开启冻屏测试模式，于 11:14:58 进入 FreezeNoteDetailPage，页面加载的笔记带封面图','11:15:02.631 点击「保存笔记」：hasAttachment() 按 thumbnailPath !== undefined 误判有附件，options.sync = true，saveNote 同步调用 saveNoteSync','saveNoteSync 在主线程顺序执行 8 次 injectDelay(500) 忙等（共 4.0s）；两次栈顶字节码与 state=R、utime 近满核互相印证：繁忙态','11:15:03.418 再次点击：首次点击仍在忙等，isSaving 的禁用态因主线程未返回事件循环、未重渲染而未生效','11:15:06.639 第 1 轮完成（4.0s），第 2 轮立即开始；主线程自 02.632 起连续占用约 8s，VIP 队列积压 105 个','HiCollie 先后于 11:15:07 触发 3S 告警、11:15:10.313 触发 6S 上报'],
+    chain:[['11:14:58','冻屏测试模式已开启，进入 FreezeNoteDetailPage，页面加载的笔记带封面图',null],['02.631','第 1 次点击保存：hasAttachment() 把封面图误判为附件，options.sync = true，saveNote 同步调用 saveNoteSync',[[2.631,2.631]]],['02.632 – 06.639','saveNoteSync 在主线程顺序执行 8 次 injectDelay(500) 忙等，共 4.0s；state=R、CPU 近满核',[[2.632,6.639]]],['03.418','第 2 次点击：主线程还没回到事件循环，保存中的禁用态没来得及重渲染，点击排进队列',[[3.418,6.639]]],['06.639','第 1 轮结束，第 2 轮立即开始；主线程自 02.632 起连续占用约 8s，VIP 队列积压 105 个',[[6.639,10.313]]],['07.142 / 10.140','3S、6S 两次抓栈，均在执行保存流水线；10.313 上报 6S 冻屏',[[7.142,7.142],[10.14,10.14],[10.313,10.313]]]],
   },
   v1: {
     title:'保存在主线程同步执行 saveNoteSync 流水线约 4s；连点两次叠加约 8s，触发 6S 冻屏',
     rows:[
-      ['故障','应用冻屏 THREAD_BLOCK_6S · 主线程繁忙 · 执行耗时操作<span class="pill part">默认匹配 · 无采样栈</span>'],
-      ['根因','Save 回调 <code>onSaveClick</code> 调用 <code>saveNote(sync=true)</code>，在主线程同步执行 8 步保存流水线，每步约 0.5s'],
-      ['位置','<span class="loc">A00000/FreezeNoteDetail · onSaveClick</span><span class="loc">A00000/NoteRepository · saveNoteSync</span><span class="muted">行号不可用</span>'],
-      ['责任','应用 · FreezeNoteDetailPage'],
-      ['修复','保存流水线移入 TaskPool，保存增加进行中守卫（通用方向）'],
+      ['发生了什么','应用冻屏（THREAD_BLOCK_6S）：主线程一直在执行代码、不是在等待，连续约 8s 没有响应输入，超过 6s 被系统判定冻屏'],
+      ['为什么','点击保存后，<code>onSaveClick</code> 调用 <code>saveNote(sync=true)</code>，在主线程同步执行 8 步保存流水线，每步约 0.5s，一次保存约 4s；第 1 次还没跑完又点了一次，两轮叠加到约 8s'],
+      ['改哪里','<span class="loc">onSaveClick（FreezeNoteDetail）</span><span class="loc">saveNoteSync（NoteRepository）</span><span class="muted">未检索源码，只能定位到函数，没有行号</span>'],
+      ['谁来改','应用开发：问题在应用自身代码（FreezeNoteDetailPage 的保存流程），没有系统侧参与'],
+      ['怎么改','把保存流水线移到 TaskPool 后台线程执行，并在保存进行中禁止重复点击。这是通用方向，需要对照源码确认后再改'],
     ],
     axes:[['根因类别','高','yes'],['粒度','业务函数','part'],['精度','通用方向与模板','part']],
-    chain:['用户在 FreezeNoteDetailPage（11:14:58.240 切入）点击 Save，onSaveClick 调用 NoteRepository.saveNote(sync=true)','主线程同步执行 saveNoteSync 保存流水线：写库 → 搜索索引 → 附件引用 → 标签关联 → 分类归属 → 缩略图元数据 → 云同步排队 → 偏好清理，每步约 0.5s，单轮约 4.0s','第 1 轮执行期间（11:15:03.418）用户再次点击，第 2 个 MMITask 排队至 11:15:06.639 分发，第 2 轮紧接执行','主线程连续约 8s 满负荷执行 ArkTS 字节码，EventHandler 队列 62 → 115，vSync 与输入均被阻塞','11:15:07 触发 3S 告警，11:15:10.313 触发 6S 冻屏上报'],
+    chain:[['11:14:58','进入 FreezeNoteDetailPage',null],['02.631','第 1 次点击 Save：onSaveClick 调用 NoteRepository.saveNote(sync=true)，在主线程同步执行 saveNoteSync',[[2.631,2.631]]],['02.632 – 06.639','保存流水线 8 步（写库 → 搜索索引 → 附件引用 → 标签关联 → 分类归属 → 缩略图元数据 → 云同步排队 → 偏好清理），每步约 0.5s，共 4.0s',[[2.632,6.639]]],['03.418','第 2 次点击：排队到 06.639 才分发',[[3.418,6.639]]],['06.639','第 2 轮紧接执行；主线程连续约 8s 满负荷，EventHandler 队列 62 → 115',[[6.639,10.313]]],['07.142 / 10.140','3S、6S 两次抓栈；10.313 上报 6S 冻屏',[[7.142,7.142],[10.14,10.14],[10.313,10.313]]]],
   }
 };
 
@@ -393,15 +396,12 @@ function render(anim){
     </section>
 
     <section id="sec-timeline">
-      <div class="sec-t"><h2>主线程时间线</h2><span class="sub2">2026-06-05 11:15:02 – 11:15:11</span></div>
+      <div class="sec-t"><h2>主线程时间线与发生经过</h2><span class="sub2">2026-06-05 11:15:02 – 11:15:11</span></div>
       <div class="chart"><svg id="tl" viewBox="0 0 1000 222"></svg>
         <div class="legend"><span><i style="background:#F3E3C6"></i>保存流水线的一步（约 500ms）</span><span><i style="background:var(--no-soft)"></i>单任务执行超过 3s</span><span><i style="background:var(--accent);border-radius:50%"></i>点击</span><span><i style="background:rgba(10,89,247,.18)"></i>点击排队等待</span></div>
+        <h3 class="story-t">发生经过</h3>
+        <ol class="story" id="story">${d.chain.map(([t,x,r],i)=>`<li data-i="${i}" class="${r?'':'off'}"><span class="t">${t}</span><span>${esc(x)}</span></li>`).join('')}</ol>
       </div>
-    </section>
-
-    <section id="sec-chain">
-      <div class="sec-t"><h2>根本原因</h2></div>
-      <div class="card chain"><ol>${d.chain.map(x=>`<li><span>${esc(x)}</span></li>`).join('')}</ol></div>
     </section>
 
     <section id="sec-fix">
@@ -453,7 +453,7 @@ const X0=80, PX=100;
 const tx=s=>X0+(parseFloat(s)-2)*PX;
 function drawTimeline(){
   const svg=$('#tl'); if(!svg) return;
-  const Y={click:34,main:86,dog:136,queue:180}, axisY=214; let g='';
+  const Y={click:34,main:86,dog:136,queue:180}, axisY=214; let g='<g id="hl"></g>';
   for(let s=2;s<=11;s++){const x=tx(s);g+=`<line x1="${x}" y1="10" x2="${x}" y2="${axisY-12}" stroke="rgba(0,0,0,.06)"/><text x="${x}" y="${axisY}" text-anchor="middle">:${String(s).padStart(2,'0')}</text>`;}
   [['点击',Y.click],['主线程',Y.main],['看门狗',Y.dog],['任务队列',Y.queue]].forEach(([n,y])=>g+=`<text class="ln" x="0" y="${y+4}">${n}</text>`);
   // 点击：第 2 次点击到被分发之间画成水平「排队」条，终点对齐第 2 轮开始
@@ -482,6 +482,24 @@ function drawTimeline(){
   g+=`<text x="${tx(7.127)-12}" y="${base-2}" text-anchor="end">总任务数</text>`;
   svg.innerHTML=g;
 }
+
+/* ---------- 时间线 ⇄ 发生经过 联动 ---------- */
+function highlight(i){
+  const hl=$('#hl'); if(!hl) return;
+  $$('#story li').forEach(li=>li.classList.toggle('on',+li.dataset.i===i));
+  const step=i==null?null:V[mode].chain[i]; const r=step&&step[2];
+  hl.innerHTML=r?r.map(([a,b])=>`<rect x="${tx(a)-4}" y="6" width="${Math.max(8,tx(b)-tx(a)+8)}" height="196" rx="4" fill="rgba(10,89,247,.10)"/>`).join(''):'';
+}
+document.addEventListener('mouseover',e=>{const li=e.target.closest('#story li'); if(li && !li.classList.contains('off')) highlight(+li.dataset.i);});
+document.addEventListener('mouseout',e=>{if(e.target.closest('#story li') && !e.relatedTarget?.closest?.('#story li')) highlight(null);});
+document.addEventListener('mousemove',e=>{
+  const svg=e.target.closest('#tl'); if(!svg) return;
+  const pt=svg.createSVGPoint(); pt.x=e.clientX; pt.y=e.clientY; const x=pt.matrixTransform(svg.getScreenCTM().inverse()).x;
+  const t=(x-X0)/PX+2; let best=null, bw=1e9;
+  V[mode].chain.forEach((c,i)=>(c[2]||[]).forEach(([a,b])=>{const pad=a===b?.12:.06; if(t>=a-pad&&t<=b+pad&&(b-a)<bw){bw=b-a;best=i;}}));
+  highlight(best);
+});
+document.addEventListener('pointerout',e=>{if(e.target.closest&&e.target.closest('#tl')&&!e.relatedTarget?.closest?.('#tl')) highlight(null);});
 
 /* ---------- 交互：切换版本、展开证据、目录高亮、时间线悬停看原日志 ---------- */
 document.addEventListener('click',e=>{
