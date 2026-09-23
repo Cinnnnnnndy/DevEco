@@ -68,17 +68,17 @@ h1{font-size:30px;font-weight:700;line-height:1.3;color:var(--ink)}
 .card{background:var(--paper);border-radius:var(--r-card);padding:20px}
 
 /* 结论卡 */
-.verdict{padding:18px 22px}
-.verdict h3{font-size:19px;font-weight:700;line-height:1.45;margin-bottom:8px;color:var(--ink)}
-.path{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:13px;color:var(--ink2);margin-bottom:10px}
-.path .sep{color:var(--ink4)}
-.pts{list-style:none;display:flex;flex-direction:column;gap:5px;margin-bottom:14px}
-.pts li{display:grid;grid-template-columns:20px 1fr auto;gap:8px;align-items:start;font-size:14px;color:var(--ink2);line-height:1.55}
-.pts li .dot{width:20px;height:20px;border-radius:50%;background:var(--fill);color:var(--ink1);font-size:11px;font-weight:600;display:grid;place-items:center;font-family:var(--mono);margin-top:1px}
-.pts li.unk .dot{background:var(--part-soft);color:var(--part)}
-.pts li code{background:var(--fill);border-radius:4px;padding:0 4px}
-.vmeta{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:13px;color:var(--ink3);margin-left:auto}
-.vmeta b{font-weight:600;color:var(--ink1)}
+.verdict{padding:22px 26px}
+.vlabel{display:inline-flex;align-items:center;height:24px;padding:0 10px;border-radius:999px;background:var(--btn);color:#fff;font-size:12px;font-weight:600;margin-bottom:10px}
+.vrows{display:grid;grid-template-columns:48px minmax(0,1fr);gap:10px 16px;margin-top:16px;padding-top:16px;border-top:1px solid var(--line);font-size:14px;line-height:1.6}
+.vrows dt{color:var(--ink3)}
+.vrows dd{margin:0;color:var(--ink1);min-width:0;overflow-wrap:anywhere}
+.vrows dd .loc{white-space:normal}
+.vrows dd .loc{margin-right:16px}
+.vrows code{background:var(--fill);border-radius:4px;padding:0 4px}
+.vrows .pill{margin-left:8px;vertical-align:1px}
+.vrows .muted{color:var(--ink4);font-size:13px}
+.verdict h3{font-size:22px;font-weight:700;line-height:1.45;color:var(--ink)}
 
 /* 时间线卡 */
 .chart{background:var(--paper);border-radius:var(--r-card);padding:14px 16px 12px}
@@ -121,7 +121,6 @@ h1{font-size:30px;font-weight:700;line-height:1.3;color:var(--ink)}
 .ax .k{font-size:12px;color:var(--ink3)}
 .ax .v{font-size:18px;font-weight:700;display:flex;align-items:center;gap:6px}
 .ax .v i{width:8px;height:8px;border-radius:50%;display:inline-block}
-.ax .d{font-size:12.5px;color:var(--ink3);line-height:1.5}
 .ax.yes .v{color:var(--yes)}.ax.yes .v i{background:var(--yes)}
 .ax.part .v{color:var(--part)}.ax.part .v i{background:var(--part)}
 
@@ -171,13 +170,12 @@ h1{font-size:30px;font-weight:700;line-height:1.3;color:var(--ink)}
 
 .fade{animation:fade .35s ease}
 @keyframes fade{from{opacity:.2;transform:translateY(4px)}to{opacity:1;transform:none}}
-@media (max-width:900px){.side{display:none}.wrap{padding:8px 16px 60px}.hero-in{padding:18px 16px 14px}.sub{padding:0 16px;gap:12px}h1{font-size:24px}.axes{grid-template-columns:1fr}.pts li{grid-template-columns:20px 1fr}.pts li>span:last-child{grid-column:2}.vmeta{margin-left:0}}
+@media (max-width:900px){.side{display:none}.wrap{padding:8px 16px 60px}.hero-in{padding:18px 16px 14px}.sub{padding:0 16px;gap:12px}h1{font-size:24px}.axes{grid-template-columns:1fr}.vrows{grid-template-columns:40px minmax(0,1fr)}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 
 .stack{display:flex;flex-direction:column;gap:28px;max-width:1040px}
 .sec-t .grow{flex:1}
 .loc{font-family:var(--mono);font-size:12.5px;color:var(--ink3);white-space:nowrap}
-.vmeta{margin-left:0}
 .fixnote{font-size:13px;color:var(--ink3);margin-top:12px;line-height:1.6}
 .tt2{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:4px}
 .tt2 th{text-align:left;font-weight:600;color:var(--ink3);padding:6px 8px;border-bottom:1px solid var(--line)}
@@ -314,24 +312,27 @@ function checks(v){
 
 const V = {
   v2: {
-    title:'保存笔记时主线程同步忙等 8 × 500ms，两次点击叠加阻塞约 8s',
-    pts:[
-      {h:'<code>hasAttachment()</code> 把已有封面图误判为「本次待保存附件」', loc:'FreezeNoteDetailPage.ets:48'},
-      {h:'<code>options.sync</code> 因此恒为 true，走同步保存', loc:'NoteRepository.ets:44-48'},
-      {h:'<code>saveNoteSync</code> 在主线程执行 8 次 <code>injectDelay(500)</code> 忙等，共 4s', loc:'NoteRepository.ets:64-102'},
-      {h:'第 2 次点击在忙等期间入队，按钮禁用态因未重渲染而未生效，累计阻塞约 8s'},
+    title:'hasAttachment() 误判附件，保存在主线程同步忙等 4s；连点两次叠加约 8s，触发 6S 冻屏',
+    rows:[
+      ['故障','应用冻屏 THREAD_BLOCK_6S · 主线程繁忙 · 执行耗时操作<span class="pill part">默认匹配 · 无采样栈</span>'],
+      ['根因','<code>hasAttachment()</code> 把已有封面图当作待保存附件 → <code>options.sync</code> 恒为 true → <code>saveNoteSync</code> 在主线程执行 8 次 <code>injectDelay(500)</code> 忙等'],
+      ['位置','<span class="loc">FreezeNoteDetailPage.ets:48</span><span class="loc">NoteRepository.ets:44-48</span><span class="loc">NoteRepository.ets:64-102</span>'],
+      ['责任','应用 · FreezeNoteDetailPage'],
+      ['修复','修正 hasAttachment 判断，保存改为逐步 await 让出主线程（3 处，工作区已包含）'],
     ],
-    axes:[['定性 · 根因类别','高','yes','state=R，3s 内 CPU 约 98%，无等待原语'],['定位 · 粒度','行级','yes','3 个文件，以故障版本 4ca0c7e 行号为准'],['修复 · 精度','源码差异','yes','3 处修改，工作区已包含']],
+    axes:[['根因类别','高','yes'],['粒度','行级','yes'],['精度','源码差异','yes']],
     chain:['用户在 CrashTestPage 开启冻屏测试模式，于 11:14:58 进入 FreezeNoteDetailPage，页面加载的笔记带封面图','11:15:02.631 点击「保存笔记」：hasAttachment() 按 thumbnailPath !== undefined 误判有附件，options.sync = true，saveNote 同步调用 saveNoteSync','saveNoteSync 在主线程顺序执行 8 次 injectDelay(500) 忙等（共 4.0s）；两次栈顶字节码与 state=R、utime 近满核互相印证：繁忙态','11:15:03.418 再次点击：首次点击仍在忙等，isSaving 的禁用态因主线程未返回事件循环、未重渲染而未生效','11:15:06.639 第 1 轮完成（4.0s），第 2 轮立即开始；主线程自 02.632 起连续占用约 8s，VIP 队列积压 105 个','HiCollie 先后于 11:15:07 触发 3S 告警、11:15:10.313 触发 6S 上报'],
   },
   v1: {
-    title:'保存笔记时主线程同步执行 saveNoteSync 流水线，两次点击叠加阻塞约 8s',
-    pts:[
-      {h:'Save 按钮回调 <code>onSaveClick</code> 调用 <code>saveNote(sync=true)</code>，在主线程同步执行 <code>saveNoteSync</code>', loc:'A00000/NoteRepository'},
-      {h:'保存流水线 8 步、每步约 0.5s，单轮约 4.0s'},
-      {h:'第 1 轮执行期间用户再次点击，第 2 轮紧接执行，主线程连续约 8s 满负荷'},
+    title:'保存在主线程同步执行 saveNoteSync 流水线约 4s；连点两次叠加约 8s，触发 6S 冻屏',
+    rows:[
+      ['故障','应用冻屏 THREAD_BLOCK_6S · 主线程繁忙 · 执行耗时操作<span class="pill part">默认匹配 · 无采样栈</span>'],
+      ['根因','Save 回调 <code>onSaveClick</code> 调用 <code>saveNote(sync=true)</code>，在主线程同步执行 8 步保存流水线，每步约 0.5s'],
+      ['位置','<span class="loc">A00000/FreezeNoteDetail · onSaveClick</span><span class="loc">A00000/NoteRepository · saveNoteSync</span><span class="muted">行号不可用</span>'],
+      ['责任','应用 · FreezeNoteDetailPage'],
+      ['修复','保存流水线移入 TaskPool，保存增加进行中守卫（通用方向）'],
     ],
-    axes:[['定性 · 根因类别','高','yes','state=R，3s 内 CPU 约 98%，无等待原语'],['定位 · 粒度','业务函数','part','由应用日志定位，行号不可用'],['修复 · 精度','通用方向与模板','part','源码不可达，未给出源码差异']],
+    axes:[['根因类别','高','yes'],['粒度','业务函数','part'],['精度','通用方向与模板','part']],
     chain:['用户在 FreezeNoteDetailPage（11:14:58.240 切入）点击 Save，onSaveClick 调用 NoteRepository.saveNote(sync=true)','主线程同步执行 saveNoteSync 保存流水线：写库 → 搜索索引 → 附件引用 → 标签关联 → 分类归属 → 缩略图元数据 → 云同步排队 → 偏好清理，每步约 0.5s，单轮约 4.0s','第 1 轮执行期间（11:15:03.418）用户再次点击，第 2 个 MMITask 排队至 11:15:06.639 分发，第 2 轮紧接执行','主线程连续约 8s 满负荷执行 ArkTS 字节码，EventHandler 队列 62 → 115，vSync 与输入均被阻塞','11:15:07 触发 3S 告警，11:15:10.313 触发 6S 冻屏上报'],
   }
 };
@@ -381,15 +382,14 @@ function render(anim){
     </div></div></div>`;
   $('#main').innerHTML=`<div class="stack ${anim?'fade':''}">
     <section id="sec-verdict" class="card verdict">
-      <h3>${d.title}</h3>
-      <div class="path">主线程卡死超时<span class="sep">›</span>主线程繁忙<span class="sep">›</span>执行耗时操作 <span class="pill part">默认匹配 · 无采样栈</span></div>
-      <ul class="pts">${d.pts.map((p,i)=>`<li><span class="dot">${i+1}</span><span>${p.h}</span><span class="loc">${p.loc||''}</span></li>`).join('')}</ul>
-      <div class="vmeta"><span>责任领域 <b>应用</b></span><span>页面 <b>FreezeNoteDetailPage</b></span><span>主线程连续占用 <b>约 8s</b></span></div>
+      <div class="vlabel">结论</div>
+      <h3>${esc(d.title)}</h3>
+      <dl class="vrows">${d.rows.map(r=>`<dt>${r[0]}</dt><dd>${r[1]}</dd>`).join('')}</dl>
     </section>
 
     <section id="sec-strength">
       <div class="sec-t"><h2>证据强度</h2></div>
-      <div class="axes">${d.axes.map(a=>`<div class="ax ${a[2]}"><span class="k">${a[0]}</span><span class="v"><i></i>${a[1]}</span><span class="d">${a[3]}</span></div>`).join('')}</div>
+      <div class="axes">${d.axes.map(a=>`<div class="ax ${a[2]}"><span class="k">${a[0]}</span><span class="v"><i></i>${a[1]}</span></div>`).join('')}</div>
     </section>
 
     <section id="sec-timeline">
