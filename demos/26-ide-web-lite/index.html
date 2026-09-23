@@ -1,0 +1,569 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='32' y2='32' gradientUnits='userSpaceOnUse'%3E%3Cstop stop-color='%232C8DDD'/%3E%3Cstop offset='1' stop-color='%233357AC'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='32' height='32' rx='7' fill='url(%23g)'/%3E%3Ctext x='16' y='22.5' font-family='Arial,Helvetica,sans-serif' font-size='13' font-weight='700' fill='white' text-anchor='middle'%3EDE%3C/text%3E%3C/svg%3E">
+<title>26 · IDE Web：打开链接就能写、就能跑</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="../../deveco-intui-kit/src/tokens.css">
+<link rel="stylesheet" href="../../deveco-intui-kit/src/components.css">
+<link rel="stylesheet" href="../_shared/frame.css">
+<link rel="stylesheet" href="../_shared/guide.css">
+<script src="../../deveco-intui-kit/src/icons.js"></script>
+<script src="../_shared/frame.js"></script>
+<script src="../_shared/guide.js"></script>
+<style>
+  /* 不用 IDE 外壳：外面是浏览器，里面是轻量 IDE。.ide 只负责主题变量 */
+  .ide.wb{display:flex;flex-direction:column;min-width:1280px}
+  .wb svg.i{width:16px;height:16px}
+  /* ---------- 浏览器外壳 ---------- */
+  .bz-tabs{height:38px;flex:none;display:flex;align-items:flex-end;gap:2px;padding:0 0 0 10px;background:var(--hdr-bg)}
+  .bz-tab{height:32px;width:240px;display:flex;align-items:center;gap:8px;padding:0 8px 0 12px;border-radius:8px 8px 0 0;color:var(--hdr-fg-dim);font-size:var(--fs-sm)}
+  .bz-tab.on{background:var(--ui-bg);color:var(--ui-fg)}
+  .bz-tab .t{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .bz-tab svg{width:14px;height:14px;flex:none}
+  .bz-tab .fav{width:16px;height:16px}
+  .bz-tab .x{width:18px;height:18px;border-radius:4px;display:grid;place-items:center}
+  .bz-tab .x:hover{background:var(--ui-action-hover)}
+  .bz-tabs .plus{width:28px;height:28px;margin-bottom:2px;display:grid;place-items:center;color:var(--hdr-icon)}
+  .bz-tabs .grow{flex:1}
+  .bz-cap{display:flex;align-self:stretch}
+  .bz-cap span{width:46px;display:grid;place-items:center;color:var(--hdr-fg)}
+  .bz-cap svg{width:16px;height:16px}
+  .bz-addr{height:40px;flex:none;display:flex;align-items:center;gap:4px;padding:0 10px;background:var(--ui-bg);border-bottom:1px solid var(--ui-border)}
+  .bz-addr .nb{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;color:var(--ui-icon)}
+  .bz-addr .nb:hover{background:var(--ui-hover)}
+  .bz-addr .nb.dis{opacity:.4}
+  .omni{flex:1;height:30px;border-radius:15px;background:var(--ui-field-bg);border:1px solid var(--ui-border);display:flex;align-items:center;gap:8px;padding:0 12px;margin:0 6px;font-size:var(--fs-para);min-width:0}
+  .omni .host{color:var(--ui-fg)}
+  .omni .path{color:var(--ui-fg-info)}
+  .omni .grow{flex:1}
+  .omni svg{width:14px;height:14px}
+  .bz-addr .me{width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,#5B8CFF,#3357AC);color:#fff;font-size:11px;display:grid;place-items:center;font-weight:600;margin-left:4px}
+
+  /* Lite vs Studio 轻提示 */
+  .lite{height:30px;flex:none;display:flex;align-items:center;gap:14px;padding:0 16px;font-size:var(--fs-sm);background:color-mix(in srgb,var(--ui-accent) 8%,var(--ui-bg));border-bottom:1px solid var(--ui-border);color:var(--ui-fg-info)}
+  .lite[hidden]{display:none}
+  .lite b{color:var(--ui-fg);font-weight:600}
+  .lite svg{width:14px;height:14px;color:var(--ui-accent)}
+  .lite .mt{display:inline-flex;align-items:center;gap:6px}
+  .lite .bar{display:inline-flex;align-items:center;gap:3px}
+  .lite .bar i{display:block;height:6px;border-radius:3px}
+  .lite .bar i.a{background:var(--ui-accent)}
+  .lite .bar i.b{background:var(--ui-fg-disabled)}
+  .lite .grow{flex:1}
+  .lite .sep{width:1px;height:14px;background:var(--ui-border)}
+  .lite .x{border:0;background:transparent;color:var(--ui-fg-info);width:20px;height:20px;border-radius:4px;display:grid;place-items:center}
+  .lite .x:hover{background:var(--ui-action-hover)}
+
+  /* ---------- 页面内的轻量 IDE ---------- */
+  .wapp{flex:1;min-height:0;display:flex;flex-direction:column;position:relative;background:var(--ui-bg);color:var(--ui-fg)}
+  .wbar{height:44px;flex:none;display:flex;align-items:center;gap:8px;padding:0 12px;border-bottom:1px solid var(--ui-border)}
+  .wbar .brand{display:flex;align-items:center;gap:8px;font-weight:600;padding-right:6px}
+  .wbar .brand svg{width:20px;height:20px}
+  .wbar .brand em{font-style:normal;font-size:10px;font-weight:600;padding:0 5px;border-radius:4px;background:color-mix(in srgb,var(--ui-accent) 18%,transparent);color:var(--ui-link);line-height:16px}
+  .wbar .vs{width:1px;height:18px;background:var(--ui-border)}
+  .wbar .grow{flex:1}
+  .wbar .btn{height:28px;padding:0 10px;gap:6px}
+  .wbar .btn svg{width:14px;height:14px}
+  .wbar .btn.primary svg{color:var(--ui-accent-fg)}
+  .wbar .dd{position:relative}
+  .wbar .sel{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 8px;border-radius:6px;color:var(--ui-fg)}
+  .wbar .sel:hover{background:var(--ui-hover)}
+  .wbar .sel .dim{color:var(--ui-fg-info)}
+  .wbar .abtn svg{width:16px;height:16px}
+  .pop{position:absolute;top:34px;z-index:40;background:var(--ui-popup-bg);border:1px solid var(--ui-popup-border);border-radius:var(--arc);box-shadow:var(--ui-shadow);padding:6px}
+  .pop[hidden]{display:none}
+  .tpl{width:300px}
+  .tpl .hd{padding:4px 8px 6px;font-size:var(--fs-sm);color:var(--ui-fg-info)}
+  .tpl .it{display:flex;align-items:center;gap:10px;padding:6px 8px;border-radius:6px;width:100%;border:0;background:transparent;color:var(--ui-fg);text-align:left}
+  .tpl .it:hover{background:var(--ui-hover-list)}
+  .tpl .it.on{background:var(--ui-selection)}
+  .tpl .it .pv{width:34px;height:44px;border-radius:5px;background:#fff;border:1px solid var(--ui-border);flex:none;padding:4px;display:flex;flex-direction:column;gap:3px}
+  .tpl .it .pv i{display:block;height:4px;border-radius:2px;background:#d6dbe4}
+  .tpl .it .pv i.a{background:#0A59F7}
+  .tpl .it b{display:block;font-weight:600}
+  .tpl .it span{font-size:var(--fs-sm);color:var(--ui-fg-info)}
+
+  .wbody{flex:1;min-height:0;display:grid;grid-template-columns:210px minmax(0,1fr) 400px;grid-template-rows:minmax(0,1fr) 168px}
+  .files{grid-row:1 / span 2;border-right:1px solid var(--ui-border);display:flex;flex-direction:column;min-height:0}
+  .phd{height:32px;flex:none;display:flex;align-items:center;gap:6px;padding:0 8px 0 12px;font-weight:600;font-size:var(--fs-sm)}
+  .phd .grow{flex:1}
+  .phd .dim{font-weight:400;color:var(--ui-fg-info)}
+  .files .tree{flex:1;overflow:auto}
+  .files .quota{flex:none;padding:10px 12px;border-top:1px solid var(--ui-border);font-size:11px;color:var(--ui-fg-info);display:flex;flex-direction:column;gap:6px}
+  .ed{background:var(--ui-editor-bg);display:flex;flex-direction:column;min-width:0;min-height:0}
+  .ed .tabs{height:34px}
+  .ed .tab svg.i{width:14px;height:14px}
+  .ed .tab .dot{width:7px;height:7px;border-radius:50%;background:var(--ui-accent);display:none}
+  .ed .tab.dirty .dot{display:block}
+  .ed .code{padding-top:8px}
+  .code .ln.editable{cursor:text}
+  .code .ln.editable .t{position:relative}
+  .code .ln.editable:hover{background:color-mix(in srgb,var(--ui-accent) 8%,transparent)}
+  .code .ed-v{outline:none;border-bottom:1px dashed color-mix(in srgb,var(--ui-accent) 70%,transparent);padding:0 1px}
+  .code .ed-v:focus{background:color-mix(in srgb,var(--ui-accent) 18%,transparent);border-bottom-color:var(--ui-accent)}
+  .code .ln .g .m svg.pen{width:12px;height:12px;color:var(--ui-fg-info)}
+  .code .ln.just{animation:flash 1s ease}
+  @keyframes flash{from{background:color-mix(in srgb,var(--ui-success) 22%,transparent)}to{background:transparent}}
+  .ed .foot{height:24px;flex:none;display:flex;align-items:center;gap:12px;padding:0 12px;font-size:11px;color:var(--ui-fg-info);border-top:1px solid var(--ui-border);background:var(--ui-bg)}
+  .ed .foot .grow{flex:1}
+
+  .prev{grid-row:1 / span 2;grid-column:3;border-left:1px solid var(--ui-border);display:flex;flex-direction:column;min-height:0}
+  .prev .phd .dm-pill{font-weight:400}
+  .pstage{flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;background:var(--ui-editor-bg);
+    background-image:radial-gradient(color-mix(in srgb,var(--ui-fg) 12%,transparent) 1px,transparent 1px);background-size:16px 16px}
+  .dm-device.pp{width:270px;height:560px;border-radius:34px;padding:8px}
+  .dm-device.pp .scr{border-radius:27px}
+  .pmeta{display:flex;align-items:center;gap:10px;font-size:11px;color:var(--ui-fg-info)}
+  .pmeta .hot{display:inline-flex;align-items:center;gap:4px;color:var(--ui-success);opacity:0;transition:opacity .2s}
+  .pmeta .hot.on{opacity:1}
+  .pmeta svg{width:12px;height:12px}
+
+  /* 预览屏：设备内部，固定色 */
+  .scr .ly{position:absolute;inset:0;display:flex;flex-direction:column;font-family:var(--font-ui)}
+  .desk{background:linear-gradient(160deg,#3a5bd9,#7b5bd6 55%,#c36fb4);color:#fff}
+  .desk .clk{padding:44px 0 0;text-align:center;font-size:40px;font-weight:300;line-height:1}
+  .desk .dt{text-align:center;font-size:11px;opacity:.85;margin-top:6px}
+  .desk .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px 10px;padding:36px 18px 0}
+  .desk .grid i{display:block;width:40px;height:40px;border-radius:11px;background:rgba(255,255,255,.28);margin:0 auto}
+  .desk .ready{margin:auto 16px 26px;padding:8px 10px;border-radius:12px;background:rgba(0,0,0,.35);font-size:11px;text-align:center;line-height:1.5}
+  .bld{background:rgba(255,255,255,.94);color:#333;align-items:center;justify-content:center;gap:10px;font-size:12px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:5}
+  .bld.on{opacity:1}
+  .bld .ring{width:40px;height:40px;border-radius:50%;border:3px solid #e3e6eb;border-top-color:#0A59F7;animation:spin .9s linear infinite;display:block}
+  .bld .bb{width:150px;height:4px;border-radius:2px;background:#e3e6eb;overflow:hidden}
+  .bld .bb i{display:block;height:100%;width:0;background:#0A59F7;transition:width .15s}
+  .bld .sm{font-size:10px;color:#8a8f99}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .app{background:#F1F3F5;color:#1a1a1a;padding-top:24px;transition:background .25s}
+  .app .ttl{padding:10px 16px 8px;font-size:22px;font-weight:700;transition:font-size .25s}
+  .app .card{margin:0 12px 10px;background:#fff;border-radius:12px;display:flex;gap:10px;padding:10px;align-items:center}
+  .app .card i{width:56px;height:56px;border-radius:8px;flex:none;background:linear-gradient(135deg,#dfe7ff,#b9c9ff)}
+  .app .card:nth-child(3) i{background:linear-gradient(135deg,#ffe3d6,#ffc2a8)}
+  .app .card:nth-child(4) i{background:linear-gradient(135deg,#d8f5e3,#a9e6c1)}
+  .app .card:nth-child(5) i{background:linear-gradient(135deg,#f3e0ff,#d7b8f5)}
+  .app .card b{display:block;font-size:13px;font-weight:600}
+  .app .card span{display:block;font-size:11px;color:#8a8f99;margin-top:2px}
+  .app .card em{display:block;font-style:normal;color:#DB3B4B;font-weight:600;font-size:13px;margin-top:4px}
+  .app.login{background:#fff}
+  .app.login .ttl{padding:36px 22px 4px}
+  .app .sub{padding:0 22px 18px;font-size:11px;color:#8a8f99}
+  .app .in{margin:0 22px 10px;height:38px;border-radius:10px;background:#F1F3F5;display:flex;align-items:center;padding:0 12px;font-size:12px;color:#9aa0ab}
+  .app .go{margin:8px 22px 0;height:38px;border-radius:19px;background:#0A59F7;color:#fff;display:grid;place-items:center;font-weight:600;font-size:13px}
+  .app.fa{background:linear-gradient(180deg,#e9eefb,#f6f7fb)}
+  .app .fcard{margin:14px;border-radius:18px;background:#fff;box-shadow:0 4px 14px rgba(0,0,0,.06);padding:14px}
+  .app .fcard .h{font-size:11px;color:#8a8f99}
+  .app .fcard .v{font-size:28px;font-weight:700;margin:6px 0 2px}
+  .app .fcard .s{font-size:11px;color:#2E9E5B}
+  .app .fgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 14px}
+  .app .fgrid div{height:92px;border-radius:16px;background:#fff;box-shadow:0 4px 14px rgba(0,0,0,.06);padding:10px;font-size:11px;color:#555}
+
+  .out{grid-column:2;grid-row:2;border-top:1px solid var(--ui-border);display:flex;flex-direction:column;min-height:0;background:var(--ui-bg)}
+  .out .otabs{height:30px;flex:none;display:flex;align-items:stretch;gap:2px;padding:0 8px}
+  .out .otabs button{border:0;background:transparent;color:var(--ui-fg-info);font-size:var(--fs-sm);padding:0 10px;position:relative}
+  .out .otabs button.on{color:var(--ui-fg)}
+  .out .otabs button.on::after{content:"";position:absolute;left:6px;right:6px;bottom:0;height:2px;border-radius:1px;background:var(--ui-accent)}
+  .out .otabs .grow{flex:1}
+  .out .otabs .dim{align-self:center;font-size:11px;color:var(--ui-fg-info)}
+  .out .log{flex:1;overflow:auto;padding:4px 14px 8px;font-family:var(--font-code);font-size:var(--fs-code-sm);line-height:19px;color:var(--ed-text);white-space:pre}
+  .out .log .ok{color:var(--ui-success)}
+  .out .log .d{color:var(--ui-fg-info)}
+  .out .log .ac{color:var(--ui-link)}
+
+  /* 分享 */
+  .share{right:0;width:340px;padding:12px;display:flex;flex-direction:column;gap:10px}
+  .share .h{display:flex;align-items:center;gap:8px;font-weight:600}
+  .share .h .grow{flex:1}
+  .share .lk{display:flex;gap:6px}
+  .share .lk .fld{flex:1;height:28px;border:1px solid var(--ui-component-border);border-radius:6px;background:var(--ui-field-bg);display:flex;align-items:center;padding:0 8px;font-family:var(--font-code);font-size:11px;overflow:hidden;white-space:nowrap}
+  .share .lk .btn{height:28px}
+  .share .qr{display:flex;gap:12px;align-items:center}
+  .share .qr .box{width:118px;height:118px;border-radius:8px;background:#fff;padding:8px;flex:none;border:1px solid var(--ui-border)}
+  .share .qr .box svg{width:100%;height:100%;display:block}
+  .share .qr .tx{font-size:var(--fs-sm);line-height:var(--lh-sm);color:var(--ui-fg-info);display:flex;flex-direction:column;gap:6px}
+  .share .qr .tx b{color:var(--ui-fg);font-weight:600}
+  .share .dm-seg{align-self:stretch}
+  .share .dm-seg button{flex:1}
+  .share .nt{font-size:11px;color:var(--ui-fg-info)}
+
+  /* 在 DevEco Studio 中打开 */
+  .mask{position:absolute;inset:0;background:rgba(0,0,0,.45);z-index:50;display:grid;place-items:center}
+  .mask[hidden]{display:none}
+  .dlg{width:520px;background:var(--ui-popup-bg);border:1px solid var(--ui-popup-border);border-radius:10px;box-shadow:var(--ui-shadow);color:var(--ui-fg)}
+  .dlg .dh{display:flex;align-items:center;gap:10px;padding:14px 16px 6px;font-weight:600;font-size:var(--fs-h2);line-height:var(--lh-h2)}
+  .dlg .dh svg{width:22px;height:22px}
+  .dlg .db{padding:6px 16px 12px;display:flex;flex-direction:column;gap:10px;font-size:var(--fs-para);line-height:var(--lh-para)}
+  .dlg .flow{display:grid;grid-template-columns:1fr 28px 1fr;align-items:center;gap:6px}
+  .dlg .flow .nd{border:1px solid var(--ui-border);border-radius:8px;padding:8px 10px;background:var(--ui-field-bg);font-size:var(--fs-sm);line-height:var(--lh-sm)}
+  .dlg .flow .nd b{display:block;font-weight:600;font-size:var(--fs)}
+  .dlg .flow .nd span{color:var(--ui-fg-info)}
+  .dlg .flow svg{width:18px;height:18px;color:var(--ui-fg-info);margin:auto}
+  .dlg ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px}
+  .dlg li{display:grid;grid-template-columns:18px 1fr;gap:6px;font-size:var(--fs-sm);line-height:var(--lh-sm)}
+  .dlg li svg{width:14px;height:14px;margin-top:1px;color:var(--ui-success)}
+  .dlg li code,.dlg .db code{font-family:var(--font-code);font-size:11px;background:var(--ui-tag-bg);padding:1px 4px;border-radius:4px}
+  .dlg .ck{display:flex;align-items:center;gap:8px;font-size:var(--fs-sm)}
+  .dlg .ck input{margin:0;accent-color:var(--ui-accent)}
+  .dlg .df{display:flex;align-items:center;gap:8px;padding:10px 16px 14px;border-top:1px solid var(--ui-border)}
+  .dlg .df .grow{flex:1}
+  .dlg .df .btn{height:28px;padding:0 14px}
+  .dlg .prog{display:none;flex-direction:column;gap:6px;font-size:var(--fs-sm)}
+  .dlg.busy .prog{display:flex}
+  .toast{position:absolute;right:16px;bottom:16px;z-index:60;display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:var(--arc);background:var(--ui-popup-bg);border:1px solid var(--ui-popup-border);box-shadow:var(--ui-shadow);font-size:var(--fs-para);opacity:0;transform:translateY(8px);transition:opacity .2s,transform .2s;pointer-events:none}
+  .toast.on{opacity:1;transform:none}
+  .toast svg{width:16px;height:16px;color:var(--ui-success)}
+</style>
+</head>
+<body>
+<div class="ide wb" id="ide" data-ide-theme="dark" role="application" aria-label="DevEco Web">
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+    <symbol id="i-logo" viewBox="0 0 64 64"><defs><linearGradient id="lg1" x1="100%" y1="57%" x2="39%" y2="57%"><stop stop-color="#2C8DDD" offset="0"/><stop stop-color="#3357AC" offset="1"/></linearGradient><linearGradient id="lg2" x1="61%" y1="10%" x2="25%" y2="87%"><stop stop-color="#2369BD" offset="0"/><stop stop-color="#307BD4" offset=".32"/><stop stop-color="#3C6ACB" offset="1"/></linearGradient><linearGradient id="lg3" x1="32%" y1="76%" x2="68%" y2="0%"><stop stop-color="#1A88AC" offset="0"/><stop stop-color="#4BDEE8" offset="1"/></linearGradient></defs><g transform="translate(0,7)"><polygon fill="url(#lg1)" transform="translate(50.15,44.4) scale(-1,1) translate(-50.15,-44.4)" points="36.3 38.15 64 38.15 64 50.67 43.7 50.67"/><polygon fill="url(#lg2)" transform="translate(44.1,25.33) scale(-1,1) translate(-44.1,-25.33)" points="48.5 0 63.97 0 64 0.02 31.6 50.67 24.2 38.15"/><polygon fill="url(#lg3)" points="24.3 0 39.76 0 39.8 0.02 7.4 50.67 0 38.15"/><polygon fill="#1C9DCC" points="0 38.15 27.7 38.15 27.7 50.67 7.4 50.67"/></g></symbol>
+    <symbol id="i-moon" viewBox="0 0 16 16"><path d="M13.5 9.5A5.5 5.5 0 0 1 6.5 2.5a5.5 5.5 0 1 0 7 7Z" stroke="currentColor" stroke-linejoin="round" fill="none"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 16 16"><circle cx="8" cy="8" r="3" stroke="currentColor" fill="none"/><path d="M8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2M3.4 3.4l1.4 1.4M11.2 11.2l1.4 1.4M3.4 12.6l1.4-1.4M11.2 4.8l1.4-1.4" stroke="currentColor" stroke-linecap="round"/></symbol>
+    <symbol id="i-back" viewBox="0 0 16 16"><path d="M13 8H3M7 4L3 8l4 4" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
+    <symbol id="i-fwd" viewBox="0 0 16 16"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
+    <symbol id="i-star" viewBox="0 0 16 16"><path d="M8 2l1.8 3.8 4.1.5-3 2.8.8 4.1L8 11.2 4.3 13.2l.8-4.1-3-2.8 4.1-.5z" stroke="currentColor" stroke-linejoin="round" fill="none"/></symbol>
+    <symbol id="i-share" viewBox="0 0 16 16"><circle cx="12" cy="3.5" r="1.8" stroke="currentColor" fill="none"/><circle cx="4" cy="8" r="1.8" stroke="currentColor" fill="none"/><circle cx="12" cy="12.5" r="1.8" stroke="currentColor" fill="none"/><path d="M5.6 7.1l4.8-2.7M5.6 8.9l4.8 2.7" stroke="currentColor"/></symbol>
+    <symbol id="i-copy" viewBox="0 0 16 16"><rect x="5.5" y="5.5" width="8" height="8" rx="1" stroke="currentColor" fill="none"/><path d="M10.5 5.5v-2a1 1 0 0 0-1-1h-6a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2" stroke="currentColor" fill="none"/></symbol>
+    <symbol id="i-cloud" viewBox="0 0 16 16"><path d="M4.5 12.5a3 3 0 0 1-.4-6 4 4 0 0 1 7.8 1 2.5 2.5 0 0 1-.4 5H4.5Z" stroke="currentColor" stroke-linejoin="round" fill="none"/></symbol>
+    <symbol id="i-bolt" viewBox="0 0 16 16"><path d="M9 1.5L3.5 9h4l-.5 5.5L12.5 7h-4z" stroke="currentColor" stroke-linejoin="round" fill="none"/></symbol>
+    <symbol id="i-pen" viewBox="0 0 16 16"><path d="M2.5 13.5l.8-3.2 7.4-7.4a1.4 1.4 0 0 1 2 0l.4.4a1.4 1.4 0 0 1 0 2l-7.4 7.4z" stroke="currentColor" stroke-linejoin="round" fill="none"/></symbol>
+    <symbol id="i-arrowR" viewBox="0 0 16 16"><path d="M2.5 8h11M9.5 4l4 4-4 4" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
+    <symbol id="i-disk" viewBox="0 0 16 16"><rect x="2" y="3.5" width="12" height="9" rx="1.5" stroke="currentColor" fill="none"/><path d="M2 9h12" stroke="currentColor"/><circle cx="11.5" cy="10.8" r=".7" fill="currentColor"/></symbol>
+    <symbol id="i-grid" viewBox="0 0 16 16"><rect x="2.5" y="2.5" width="4.5" height="4.5" rx="1" stroke="currentColor" fill="none"/><rect x="9" y="2.5" width="4.5" height="4.5" rx="1" stroke="currentColor" fill="none"/><rect x="2.5" y="9" width="4.5" height="4.5" rx="1" stroke="currentColor" fill="none"/><rect x="9" y="9" width="4.5" height="4.5" rx="1" stroke="currentColor" fill="none"/></symbol>
+  </defs></svg>
+
+  <!-- 浏览器 -->
+  <div class="bz-tabs">
+    <div class="bz-tab on"><svg class="fav"><use href="#i-logo"/></svg><span class="t">ShopDemo · DevEco Web</span><span class="x"><svg class="i"><use href="#i-closeS"/></svg></span></div>
+    <div class="bz-tab"><svg class="fav"><use href="#i-logo"/></svg><span class="t">ArkUI List 组件 · 开发指南</span><span class="x"><svg class="i"><use href="#i-closeS"/></svg></span></div>
+    <span class="plus"><svg class="i"><use href="#i-add"/></svg></span>
+    <span class="grow"></span>
+    <div class="bz-cap"><span><svg><use href="#i-win-min"/></svg></span><span><svg><use href="#i-win-max"/></svg></span><span><svg><use href="#i-win-close"/></svg></span></div>
+  </div>
+  <div class="bz-addr">
+    <span class="nb"><svg class="i"><use href="#i-back"/></svg></span>
+    <span class="nb dis"><svg class="i"><use href="#i-fwd"/></svg></span>
+    <span class="nb"><svg class="i"><use href="#i-refresh"/></svg></span>
+    <div class="omni"><svg class="i"><use href="#i-lock"/></svg><span><span class="host">https://developer.huawei.com</span><span class="path">/deveco/web/p/shopdemo-7f3a</span></span><span class="grow"></span><svg class="i"><use href="#i-star"/></svg></div>
+    <span class="nb"><svg class="i"><use href="#i-moreV"/></svg></span>
+    <span class="me">W</span>
+  </div>
+  <div class="lite" id="lite">
+    <svg class="i"><use href="#i-bolt"/></svg><b>DevEco Web</b>
+    <span class="mt">首次可用 <b>5 s</b><span class="bar"><i class="a" style="width:6px"></i></span><span>vs Studio 数分钟</span><span class="bar"><i class="b" style="width:64px"></i></span></span>
+    <span class="sep"></span>
+    <span class="mt">本机占用 <b>~300 MB</b><span class="bar"><i class="a" style="width:8px"></i></span><span>vs Studio 数 GB</span><span class="bar"><i class="b" style="width:72px"></i></span></span>
+    <span class="sep"></span>
+    <span class="mt">构建与模拟器在云端</span>
+    <span class="grow"></span>
+    <button class="x" id="lite-x" title="不再提示"><svg class="i"><use href="#i-closeS"/></svg></button>
+  </div>
+
+  <!-- 轻量 IDE -->
+  <div class="wapp" id="wapp">
+    <div class="wbar">
+      <span class="brand"><svg><use href="#i-logo"/></svg>DevEco Web<em>Lite</em></span>
+      <span class="vs"></span>
+      <span class="sel">ShopDemo <span class="dim">· main</span><svg class="i"><use href="#i-chevD"/></svg></span>
+      <div class="dd">
+        <button class="btn" id="btn-tpl"><svg class="i"><use href="#i-grid"/></svg>从示例开始<svg class="i"><use href="#i-chevD"/></svg></button>
+        <div class="pop tpl" id="pop-tpl" hidden>
+          <div class="hd">示例工程 · 选中后替换当前页面</div>
+          <button class="it on" data-tpl="list"><span class="pv"><i style="width:60%"></i><i></i><i></i><i></i><i></i></span><span><b>列表页</b><span>List + ForEach，带商品卡片</span></span></button>
+          <button class="it" data-tpl="login"><span class="pv"><i style="width:50%;margin-top:6px"></i><i></i><i></i><i class="a"></i></span><span><b>登录页</b><span>TextInput + 表单校验</span></span></button>
+          <button class="it" data-tpl="card"><span class="pv"><i style="height:14px"></i><i style="height:10px;width:45%"></i></span><span><b>元服务卡片</b><span>免安装，服务卡片 2×2</span></span></button>
+        </div>
+      </div>
+      <span class="grow"></span>
+      <span class="sel"><svg class="i"><use href="#i-cloud"/></svg>云端模拟器 <span class="dim">· Phone · API 20</span><svg class="i"><use href="#i-chevD"/></svg></span>
+      <button class="btn primary" id="btn-run"><svg class="i"><use href="#i-run"/></svg><span>运行</span></button>
+      <div class="dd">
+        <button class="btn" id="btn-share"><svg class="i"><use href="#i-share"/></svg>分享</button>
+        <div class="pop share" id="pop-share" hidden>
+          <div class="h">分享这个工程<span class="grow"></span><span class="dm-pill ok" id="sh-st">链接已生成</span></div>
+          <div class="dm-seg" id="sh-mode"><button class="on" data-m="view">只看预览</button><button data-m="fork">可复制一份去改</button></div>
+          <div class="lk"><div class="fld" id="sh-url">https://developer.huawei.com/deveco/web/s/7f3aK2</div><button class="btn" id="sh-copy"><svg class="i" style="width:14px;height:14px"><use href="#i-copy"/></svg>复制</button></div>
+          <div class="qr"><div class="box" id="qr"></div><div class="tx"><b>用华为手机扫码</b><span>在真机上直接打开预览，无需安装 HAP</span><span>对方打开时看到的是你当前这一版</span></div></div>
+          <div class="nt">7 天有效 · 可随时在「分享管理」里撤销</div>
+        </div>
+      </div>
+      <button class="btn" id="btn-studio"><svg class="i"><use href="#i-logo"/></svg>在 DevEco Studio 中打开</button>
+      <button class="abtn" id="theme-btn" title="切换深浅色"><svg class="i"><use href="#i-moon"/></svg></button>
+    </div>
+
+    <div class="wbody">
+      <div class="files">
+        <div class="phd">文件<span class="grow"></span><button class="abtn" title="新建文件"><svg class="i"><use href="#i-add"/></svg></button></div>
+        <div class="tree" id="tree">
+          <div class="row" style="padding-left:8px"><span class="tg"><svg class="i"><use href="#i-chevD"/></svg></span><span class="ico"><svg><use href="#i-module"/></svg></span><span class="lbl"><b>entry</b></span></div>
+          <div class="row" style="padding-left:24px"><span class="tg"><svg class="i"><use href="#i-chevD"/></svg></span><span class="ico"><svg><use href="#i-folder"/></svg></span><span class="lbl">pages</span></div>
+          <div class="row sel" style="padding-left:40px" id="f-main"><span class="tg"></span><span class="ico"><svg><use href="#i-ets"/></svg></span><span class="lbl" id="f-main-l">Index.ets</span></div>
+          <div class="row" style="padding-left:40px"><span class="tg"></span><span class="ico"><svg><use href="#i-ets"/></svg></span><span class="lbl">Detail.ets</span></div>
+          <div class="row" style="padding-left:24px"><span class="tg"><svg class="i"><use href="#i-chevD"/></svg></span><span class="ico"><svg><use href="#i-folder"/></svg></span><span class="lbl">components</span></div>
+          <div class="row" style="padding-left:40px"><span class="tg"></span><span class="ico"><svg><use href="#i-ets"/></svg></span><span class="lbl">ItemCard.ets</span></div>
+          <div class="row" style="padding-left:24px"><span class="tg"><svg class="i"><use href="#i-chevR"/></svg></span><span class="ico"><svg><use href="#i-resRoot"/></svg></span><span class="lbl">resources</span></div>
+          <div class="row" style="padding-left:24px"><span class="tg"></span><span class="ico"><svg><use href="#i-json"/></svg></span><span class="lbl">module.json5</span></div>
+          <div class="row" style="padding-left:8px"><span class="tg"></span><span class="ico"><svg><use href="#i-hvigor"/></svg></span><span class="lbl">build-profile.json5</span></div>
+          <div class="row" style="padding-left:8px"><span class="tg"></span><span class="ico"><svg><use href="#i-json"/></svg></span><span class="lbl">oh-package.json5</span></div>
+        </div>
+        <div class="quota">
+          <span>浏览器缓存 38 MB · 工程存在云端</span>
+          <div class="dm-progress"><i style="--v:13%"></i></div>
+        </div>
+      </div>
+
+      <div class="ed">
+        <div class="tabs"><button class="tab on" id="ed-tab"><svg class="i"><use href="#i-ets"/></svg><span id="ed-tab-l">Index.ets</span><span class="dot"></span></button><span class="grow"></span></div>
+        <div class="code" id="code"></div>
+        <div class="foot"><span id="ed-hint">虚线处可直接改，改完预览热更新</span><span class="grow"></span><span>ArkTS</span><span>UTF-8</span><span id="ed-save">已自动保存到云端</span></div>
+      </div>
+
+      <div class="out">
+        <div class="otabs"><button class="on">输出</button><button>问题 0</button><span class="grow"></span><span class="dim" id="out-st">云端构建机 · 空闲</span></div>
+        <div class="log" id="log"><span class="d">工程已从云端载入 · 6 个文件 · 1.2 s</span>
+<span class="d">点「运行」在云端构建并装到云端模拟器</span></div>
+      </div>
+
+      <div class="prev">
+        <div class="phd">预览<span class="dim">· 云端模拟器</span><span class="grow"></span><span class="dm-pill muted" id="pv-st">未运行</span></div>
+        <div class="pstage">
+          <div class="dm-device pp"><div class="scr" id="scr">
+            <div class="ly desk" id="ly-desk">
+              <div class="clk">10:24</div><div class="dt">9月23日 星期三</div>
+              <div class="grid"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+              <div class="ready">云端模拟器已就绪 · API 20<br>点「运行」装上 ShopDemo</div>
+            </div>
+            <div class="ly app" id="ly-app" hidden></div>
+            <div class="ly bld" id="ly-bld"><span class="ring"></span><span id="bld-t">云端构建中</span><span class="bb"><i id="bld-bar"></i></span><span class="sm" id="bld-s">hvigor assembleHap</span></div>
+          </div></div>
+          <div class="pmeta"><span id="pv-meta">Mate 70 Pro 规格 · 1260×2844</span><span class="hot" id="hot"><svg class="i"><use href="#i-bolt"/></svg>热更新 <b id="hot-t">0.3 s</b></span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mask" id="mask" hidden>
+      <div class="dlg" id="dlg">
+        <div class="dh"><svg><use href="#i-logo"/></svg>在 DevEco Studio 中打开</div>
+        <div class="db">
+          <div class="flow">
+            <div class="nd"><b>DevEco Web</b><span>ShopDemo · main · 1 处未提交修改</span></div>
+            <svg class="i"><use href="#i-arrowR"/></svg>
+            <div class="nd"><b>本机 DevEco Studio 6.0</b><span>已检测到 · <code>D:\DevEcoProjects\ShopDemo</code></span></div>
+          </div>
+          <ul>
+            <li><svg class="i"><use href="#i-check"/></svg><span>同步 6 个源文件与 <code>build-profile.json5</code>，含 Web 端还没提交的 <code id="dlg-chg">Index.ets</code> 修改</span></li>
+            <li><svg class="i"><use href="#i-check"/></svg><span>签名从云端调试证书切换为本机调试证书，其余配置不变</span></li>
+            <li><svg class="i"><use href="#i-check"/></svg><span>打开后两边继续同步：Studio 里提交，Web 链接自动更新</span></li>
+            <li><svg class="i" style="color:var(--ui-fg-info)"><use href="#i-cloud"/></svg><span class="dm-muted">云端构建缓存不下载，首次本机构建约 40 s</span></li>
+          </ul>
+          <label class="ck"><input type="checkbox" checked>打开后定位到 <code>Index.ets:10</code></label>
+          <div class="prog"><span id="dlg-pt">正在同步到本机…</span><div class="dm-progress"><i id="dlg-bar" style="--v:0%"></i></div></div>
+        </div>
+        <div class="df"><span class="dm-small dm-muted">没装 DevEco Studio？会先引导下载</span><span class="grow"></span><button class="btn" id="dlg-cancel">取消</button><button class="btn primary" id="dlg-ok">打开</button></div>
+      </div>
+    </div>
+    <div class="toast" id="toast"><svg class="i"><use href="#i-check"/></svg><span id="toast-t"></span></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var $=function(s,r){return (r||document).querySelector(s)}, $$=function(s,r){return Array.prototype.slice.call((r||document).querySelectorAll(s))};
+  var ide=$('#ide'), wait=function(ms){return new Promise(function(r){setTimeout(r,ms)})};
+
+  function setTheme(t){ide.setAttribute('data-ide-theme',t);$('#theme-btn use').setAttribute('href',t==='dark'?'#i-moon':'#i-sun');try{localStorage.setItem('deveco-theme',t)}catch(e){}}
+  var saved='dark';try{saved=localStorage.getItem('deveco-theme')||'dark'}catch(e){}
+  setTheme(saved==='dark'?'dark':'light');
+  $('#theme-btn').addEventListener('click',function(){setTheme(ide.getAttribute('data-ide-theme')==='dark'?'light':'dark')});
+  $('#lite-x').addEventListener('click',function(){$('#lite').hidden=true});
+
+  /* ---------- 示例工程：代码 + 预览 ---------- */
+  var E=function(k,v){return '<span class="ed-v" contenteditable="true" spellcheck="false" data-k="'+k+'">'+v+'</span>'};
+  var TPL={
+    list:{file:'Index.ets',lines:[
+      ['<span class="k">import</span> { <span class="ty">ItemCard</span> } <span class="k">from</span> <span class="s">\'../components/ItemCard\'</span>'],
+      [''],
+      ['<span class="m">@Entry</span>'],
+      ['<span class="m">@Component</span>'],
+      ['<span class="k">struct</span> <span class="ty">Index</span> {'],
+      ['  <span class="m">@State</span> <span class="p">goods</span>: <span class="ty">Goods</span>[] = <span class="f">mockGoods</span>()'],
+      [''],
+      ['  <span class="f">build</span>() {'],
+      ['    <span class="f">Column</span>() {'],
+      ['      <span class="f">Text</span>(<span class="s">\''+E('title','今日推荐')+'\'</span>)',1],
+      ['        .<span class="f">fontSize</span>(<span class="n">'+E('size','22')+'</span>)',1],
+      ['        .<span class="f">fontWeight</span>(<span class="ty">FontWeight</span>.<span class="p">Bold</span>)'],
+      ['      <span class="f">List</span>({ <span class="p">space</span>: <span class="n">10</span> }) {'],
+      ['        <span class="f">ForEach</span>(<span class="k">this</span>.<span class="p">goods</span>, (<span class="p">g</span>: <span class="ty">Goods</span>) =&gt; {'],
+      ['          <span class="f">ListItem</span>() { <span class="ty">ItemCard</span>({ <span class="p">goods</span>: <span class="p">g</span> }) }'],
+      ['        }, (<span class="p">g</span>: <span class="ty">Goods</span>) =&gt; <span class="p">g</span>.<span class="p">id</span>)'],
+      ['      }'],
+      ['      .<span class="f">layoutWeight</span>(<span class="n">1</span>)'],
+      ['    }'],
+      ['    .<span class="f">backgroundColor</span>(<span class="s">\''+E('bg','#F1F3F5')+'\'</span>)',1],
+      ['  }'],
+      ['}']
+    ]},
+    login:{file:'LoginPage.ets',lines:[
+      ['<span class="m">@Entry</span>'],['<span class="m">@Component</span>'],
+      ['<span class="k">struct</span> <span class="ty">LoginPage</span> {'],
+      ['  <span class="m">@State</span> <span class="p">phone</span>: <span class="k">string</span> = <span class="s">\'\'</span>'],
+      [''],
+      ['  <span class="f">build</span>() {'],
+      ['    <span class="f">Column</span>({ <span class="p">space</span>: <span class="n">12</span> }) {'],
+      ['      <span class="f">Text</span>(<span class="s">\''+E('title','欢迎回来')+'\'</span>).<span class="f">fontSize</span>(<span class="n">'+E('size','22')+'</span>)',1],
+      ['      <span class="f">TextInput</span>({ <span class="p">placeholder</span>: <span class="s">\'手机号\'</span> })'],
+      ['      <span class="f">TextInput</span>({ <span class="p">placeholder</span>: <span class="s">\'验证码\'</span> })'],
+      ['      <span class="f">Button</span>(<span class="s">\'登录\'</span>).<span class="f">width</span>(<span class="s">\'100%\'</span>)'],
+      ['    }.<span class="f">padding</span>(<span class="n">22</span>)'],
+      ['  }'],['}']
+    ]},
+    card:{file:'WidgetCard.ets',lines:[
+      ['<span class="c">// 元服务 · 2×2 服务卡片</span>'],
+      ['<span class="m">@Entry</span>'],['<span class="m">@Component</span>'],
+      ['<span class="k">struct</span> <span class="ty">WidgetCard</span> {'],
+      ['  <span class="m">@LocalStorageProp</span>(<span class="s">\'steps\'</span>) <span class="p">steps</span>: <span class="k">number</span> = <span class="n">8260</span>'],
+      [''],
+      ['  <span class="f">build</span>() {'],
+      ['    <span class="f">Column</span>() {'],
+      ['      <span class="f">Text</span>(<span class="s">\''+E('title','今日步数')+'\'</span>).<span class="f">fontSize</span>(<span class="n">'+E('size','11')+'</span>)',1],
+      ['      <span class="f">Text</span>(<span class="k">this</span>.<span class="p">steps</span>.<span class="f">toString</span>()).<span class="f">fontSize</span>(<span class="n">28</span>)'],
+      ['    }'],
+      ['    .<span class="f">onClick</span>(() =&gt; <span class="f">postCardAction</span>(<span class="k">this</span>, { <span class="p">action</span>: <span class="s">\'router\'</span> }))'],
+      ['  }'],['}']
+    ]}
+  };
+  var cur='list', state={title:'今日推荐',size:'22',bg:'#F1F3F5'}, running=false, built=false;
+  function renderCode(){
+    var t=TPL[cur];
+    $('#code').innerHTML=t.lines.map(function(l,i){
+      return '<div class="ln'+(l[1]?' editable':'')+'" data-ln="'+(i+1)+'"><span class="g"><span class="n">'+(i+1)+'</span><span class="m">'+(l[1]?'<svg class="pen"><use href="#i-pen"/></svg>':'')+'</span><span class="fold"></span></span><span class="t">'+l[0]+'</span></div>';
+    }).join('');
+    $('#ed-tab-l').textContent=t.file;$('#f-main-l').textContent=t.file;$('#dlg-chg').textContent=t.file;
+    state={};$$('#code .ed-v').forEach(function(x){state[x.dataset.k]=x.textContent});
+  }
+  function appHTML(){
+    var s=state;
+    if(cur==='login')return '<div class="ttl" style="font-size:'+s.size+'px">'+esc(s.title)+'</div><div class="sub">登录后同步购物车和订单</div><div class="in">手机号</div><div class="in">验证码</div><div class="go">登录</div>';
+    if(cur==='card')return '<div class="fcard"><div class="h" style="font-size:'+s.size+'px">'+esc(s.title)+'</div><div class="v">8,260</div><div class="s">比昨天多 1,200 步</div></div><div class="fgrid"><div>心率 72</div><div>睡眠 7h 20m</div></div>';
+    var g=[['轻薄羽绒服','已售 2.1 万','¥ 399'],['降噪耳机 Pro','已售 8,400','¥ 899'],['折叠收纳箱','已售 3.6 万','¥ 59'],['保温杯 500ml','已售 1.2 万','¥ 129']];
+    return '<div class="ttl" style="font-size:'+s.size+'px">'+esc(s.title)+'</div>'+g.map(function(x){return '<div class="card"><i></i><div><b>'+x[0]+'</b><span>'+x[1]+'</span><em>'+x[2]+'</em></div></div>'}).join('');
+  }
+  function esc(v){return String(v).replace(/&/g,'&amp;').replace(/</g,'&lt;')}
+  function paintApp(){
+    var a=$('#ly-app');a.className='ly app'+(cur==='login'?' login':cur==='card'?' fa':'');a.innerHTML=appHTML();
+    if(cur==='list')a.style.background=/^#[0-9a-fA-F]{6}$/.test(state.bg||'')?state.bg:'';else a.style.background='';
+  }
+  function log(html){var l=$('#log');l.innerHTML+='\n'+html;l.scrollTop=l.scrollHeight}
+  function toast(t){$('#toast-t').textContent=t;var e=$('#toast');e.classList.add('on');clearTimeout(toast.h);toast.h=setTimeout(function(){e.classList.remove('on')},2600)}
+
+  /* ---------- 运行：云端构建 → 预览 ---------- */
+  async function run(){
+    if(running)return;running=true;
+    var b=$('#btn-run');b.disabled=true;$('span',b).textContent='构建中…';
+    $('#pv-st').className='dm-pill info';$('#pv-st').textContent='云端构建中';$('#out-st').textContent='云端构建机 cn-south · 构建中';
+    $('#ly-bld').classList.add('on');
+    var steps=[
+      [10,'<span class="d">[10:24:31]</span> 同步工程到云端构建机 <span class="ok">0.3 s</span>','同步工程'],
+      [25,'<span class="d">[10:24:31]</span> ohpm install <span class="d">· 依赖缓存命中</span> <span class="ok">0.2 s</span>','安装依赖'],
+      [60,'<span class="d">[10:24:32]</span> &gt; hvigor :entry:default@CompileArkTS <span class="ok">1.4 s</span>','CompileArkTS'],
+      [80,'<span class="d">[10:24:33]</span> &gt; hvigor :entry:default@PackageHap <span class="ok">0.6 s</span>','PackageHap'],
+      [92,'<span class="d">[10:24:34]</span> 安装到云端模拟器 Phone · API 20 <span class="ok">0.5 s</span>','安装到模拟器'],
+      [100,'<span class="d">[10:24:34]</span> 启动 EntryAbility · <span class="ac">预览已推流</span>','启动应用']
+    ];
+    log('<span class="ac">▶ 运行 ShopDemo · entry · 云端构建</span>');
+    for(var i=0;i<steps.length;i++){
+      $('#bld-bar').style.width=steps[i][0]+'%';$('#bld-s').textContent=steps[i][2];$('#bld-t').textContent='云端构建中 '+steps[i][0]+'%';
+      await wait(520);log(steps[i][1]);
+    }
+    log('<span class="ok">BUILD SUCCESSFUL · 共 3.4 s</span>');
+    paintApp();$('#ly-desk').hidden=true;$('#ly-app').hidden=false;
+    await wait(150);$('#ly-bld').classList.remove('on');
+    $('#pv-st').className='dm-pill ok';$('#pv-st').textContent='运行中';$('#out-st').textContent='云端构建机 · 空闲';
+    b.disabled=false;$('span',b).textContent='重新运行';running=false;built=true;
+  }
+  $('#btn-run').addEventListener('click',run);
+
+  /* ---------- 改一行 → 热更新 ---------- */
+  var hotT=null;
+  $('#code').addEventListener('click',function(e){
+    var ln=e.target.closest('.ln.editable');if(!ln)return;
+    var v=$('.ed-v',ln);if(e.target===v)return;
+    v.focus();var r=document.createRange();r.selectNodeContents(v);var s=window.getSelection();s.removeAllRanges();s.addRange(r);
+  });
+  $('#code').addEventListener('keydown',function(e){if(e.target.classList.contains('ed-v')&&e.key==='Enter'){e.preventDefault();e.target.blur()}});
+  $('#code').addEventListener('input',function(e){
+    var v=e.target.closest('.ed-v');if(!v)return;
+    state[v.dataset.k]=v.textContent;
+    $('#ed-tab').classList.add('dirty');$('#ed-save').textContent='保存中…';
+    clearTimeout(hotT);hotT=setTimeout(function(){hot(v)},350);
+  });
+  function hot(v){
+    $('#ed-save').textContent='已自动保存到云端';
+    var ln=v.closest('.ln');ln.classList.remove('just');void ln.offsetWidth;ln.classList.add('just');
+    if(!built){log('<span class="d">已保存 · 运行后预览生效</span>');return}
+    paintApp();
+    var t=(0.2+Math.random()*0.2).toFixed(1)+' s';$('#hot-t').textContent=t;
+    var h=$('#hot');h.classList.add('on');clearTimeout(hot.h);hot.h=setTimeout(function(){h.classList.remove('on')},2200);
+    log('<span class="d">[热更新]</span> '+TPL[cur].file+':'+ln.dataset.ln+' → 预览已刷新 <span class="ok">'+t+'</span>');
+  }
+
+  /* ---------- 弹层 ---------- */
+  function toggle(id,btn){var p=$(id);var open=p.hidden;$$('.pop').forEach(function(x){x.hidden=true});p.hidden=!open;return open}
+  $('#btn-tpl').addEventListener('click',function(e){e.stopPropagation();toggle('#pop-tpl')});
+  $('#pop-tpl').addEventListener('click',function(e){
+    e.stopPropagation();var it=e.target.closest('[data-tpl]');if(!it)return;
+    $$('#pop-tpl .it').forEach(function(x){x.classList.toggle('on',x===it)});
+    cur=it.dataset.tpl;renderCode();$('#pop-tpl').hidden=true;
+    log('<span class="ac">已从示例「'+$('b',it).textContent+'」载入 '+TPL[cur].file+'</span>');
+    if(built)paintApp();
+    $('#pv-meta').textContent=cur==='card'?'服务卡片预览 · 2×2':'Mate 70 Pro 规格 · 1260×2844';
+  });
+  $('#btn-share').addEventListener('click',function(e){e.stopPropagation();if(toggle('#pop-share')){$('#qr').innerHTML=qr($('#sh-url').textContent)}});
+  $('#pop-share').addEventListener('click',function(e){e.stopPropagation()});
+  $('#sh-mode').addEventListener('click',function(e){
+    var b=e.target.closest('button');if(!b)return;$$('#sh-mode button').forEach(function(x){x.classList.toggle('on',x===b)});
+    $('#sh-url').textContent=b.dataset.m==='fork'?'https://developer.huawei.com/deveco/web/fork/7f3aK2':'https://developer.huawei.com/deveco/web/s/7f3aK2';
+    $('#qr').innerHTML=qr($('#sh-url').textContent);
+  });
+  $('#sh-copy').addEventListener('click',function(){$('#sh-st').textContent='已复制';toast('链接已复制，对方打开就能看、就能跑')});
+  document.addEventListener('click',function(){$$('.pop').forEach(function(x){x.hidden=true})});
+
+  /* 二维码（示意图样，按链接取种子） */
+  function qr(text){
+    var N=25,seed=0;for(var i=0;i<text.length;i++)seed=(seed*31+text.charCodeAt(i))>>>0;
+    function rnd(){seed=(seed*1103515245+12345)>>>0;return (seed>>>16)&1}
+    var r='';
+    function finder(x,y){r+='<rect x="'+x+'" y="'+y+'" width="7" height="7" fill="#111"/><rect x="'+(x+1)+'" y="'+(y+1)+'" width="5" height="5" fill="#fff"/><rect x="'+(x+2)+'" y="'+(y+2)+'" width="3" height="3" fill="#111"/>'}
+    for(var y=0;y<N;y++)for(var x=0;x<N;x++){
+      var inF=(x<8&&y<8)||(x>=N-8&&y<8)||(x<8&&y>=N-8);
+      if(!inF&&rnd())r+='<rect x="'+x+'" y="'+y+'" width="1" height="1" fill="#111"/>';
+    }
+    finder(0,0);finder(N-7,0);finder(0,N-7);
+    return '<svg viewBox="0 0 '+N+' '+N+'" shape-rendering="crispEdges">'+r+'</svg>';
+  }
+
+  /* ---------- 在 DevEco Studio 中打开 ---------- */
+  $('#btn-studio').addEventListener('click',function(e){e.stopPropagation();$('#dlg').classList.remove('busy');$('#dlg-ok').disabled=false;$('#mask').hidden=false});
+  $('#dlg-cancel').addEventListener('click',function(){$('#mask').hidden=true});
+  $('#dlg-ok').addEventListener('click',async function(){
+    this.disabled=true;$('#dlg').classList.add('busy');
+    var tx=['正在同步到本机… 6 个文件','正在切换本机调试证书…','正在唤起 DevEco Studio…'];
+    for(var i=1;i<=10;i++){$('#dlg-bar').style.setProperty('--v',i*10+'%');$('#dlg-pt').textContent=tx[Math.min(2,Math.floor((i-1)/3.4))];await wait(150)}
+    $('#mask').hidden=true;
+    toast('已在 DevEco Studio 中打开 ShopDemo · 两边保持同步');
+    log('<span class="ac">已交给本机 DevEco Studio 6.0 · 同步保持开启</span>');
+  });
+
+  renderCode();
+  DemoGuide.init([
+    {target:'#btn-run',kind:'click',pos:'left',label:'点运行：云端构建'},
+    {target:'#code .ed-v[data-k="title"]',kind:'click',pos:'right',label:'改这里，预览热更新'},
+    {target:'#ly-app:not([hidden]), #ly-desk:not([hidden])',kind:'change',pos:'left',label:'云端模拟器画面'}
+  ]);
+})();
+</script>
+</body>
+</html>
