@@ -78,7 +78,7 @@ window.DEVECO_CATALOG = {
       items: [
         {
           no: '01', title: '工具栏自定义：界面跟着任务走', subtitle: 'Task-based Layout Presets', mark: '顺手做',
-          desc: '一块画布，手机 / 折叠屏 / 平板 / 手表 / 车机同时在，改一行代码几块屏一起刷。新增鸿蒙特征模拟：选中设备切折叠屏展开 / 悬停 / 折叠、手机分屏与悬浮窗、深色与字号；手势模拟（侧滑返回、双指捏合、三指截屏、隔空抓取）在屏上画出轨迹与结果；手机上的商品卡拖到或一键流转到平板、折叠屏，画出跨屏连线与耗时。是 16 真机判断之前的一步，也是 18、19、27 的底座。',
+          desc: '按任务给三套预设（调试 / 审阅 / 多设备验证），切一次到位；在这套布局里挪过的面板，下次回来还在原处。不再开一个自定义面板把选择题抛回给用户。',
           view: 'ready', date: '2026-09-14', href: 'demos/01-layout-presets/index.html',
           tags: ['步数与切换次数'], thumb: { type: 'image', src: 'site/thumbs/01-layout-presets.jpg' },
         },
@@ -111,9 +111,9 @@ window.DEVECO_CATALOG = {
       note: '这一类竞争最挤。七家都在解「让 AI 干得更多」，没人解「人对这一串过程能不能看清楚、挑着退回去」——十条里的空位集中在这儿。',
       items: [
         {
-          no: '05', title: 'Inline-chat 覆盖更多场景：UI、Code、md', subtitle: 'Inline Chat · Code / Preview / Markdown', mark: '半投', key: 'AI 和 IDE 的深度融合',
-          desc: '选中一段就地问、就地改。代码里的是标配；扩到界面预览上选中元素直接说，扩到 README、接口说明、上架材料这些 Markdown 文档里就地改——文档这一格一家都没做。',
-          view: 'ready', date: '2026-09-14', href: 'demos/05-inline-chat-everywhere/index.html',
+          no: '05', title: '就地对话：从编辑器长进 Build、Debug、HiLog', subtitle: 'Inline AI · Editor / Build / Debug / HiLog', mark: '半投', key: 'AI 和 IDE 的深度融合',
+          desc: '选中一段就地问、就地改，覆盖代码、界面预览和 Markdown 文档。新增 AI 与 IDE 深度融合：Build 失败时在 Build 面板里读完 hvigor 报错，一键补权限并重建成功；断点停下时在变量旁回答「为什么是 undefined」并加条件断点；HiLog 里选中崩溃栈就解释并跳到代码；回答里的按钮直接调试到设备、打开 Profiler，不用去找菜单。',
+          view: 'ready', date: '2026-09-23', href: 'demos/05-inline-chat-everywhere/index.html',
           tags: ['步数与切换次数'], note: '补齐，并进日常迭代', thumb: { type: 'image', src: 'site/thumbs/05-inline-chat-everywhere.jpg' },
         },
         {
@@ -123,9 +123,9 @@ window.DEVECO_CATALOG = {
           tags: ['步数与切换次数'], note: '补齐，并进日常迭代', thumb: { type: 'image', src: 'site/thumbs/06-voice-coding.jpg' },
         },
         {
-          no: '07', title: 'Agent Team：在干 / 在等你 / 干完了', subtitle: 'Agent Task Tiers', mark: '投', key: '多 Agent、Agent team',
-          desc: '几件活同时交给 AI，状态分三档一眼看全；排队时说清排第几、还要等多久、能不能取消。不加新的会话列表，缺的是分档。这是全清单里唯一一处三样证据齐全的空位。',
-          view: 'ready', date: '2026-09-14', href: 'demos/07-agent-team/index.html',
+          no: '07', title: 'Agent Team：多 Agent 分工、交接与冲突合并', subtitle: 'Multi-agent Team · Handoff & Merge', mark: '投', key: '多 Agent、Agent team',
+          desc: '一件大活由主 Agent 拆给规划、UI、逻辑、测试、真机验证五个子 Agent：看板上看每人在干什么、谁等谁的交接连线、两个 Agent 同改一个文件的冲突与合并选择；要人拍板的点汇总进「在等你」，批准后沿连线交接到下一角色，直到真机验证通过。原有的「在干 / 在等你 / 干完了」三档与排队可见继续保留。',
+          view: 'ready', date: '2026-09-23', href: 'demos/07-agent-team/index.html',
           tags: ['等待可见'], note: '第一批：成本最低、证据最硬', thumb: { type: 'image', src: 'site/thumbs/07-agent-team.jpg' },
         },
         {
@@ -159,9 +159,9 @@ window.DEVECO_CATALOG = {
           tags: ['步数与切换次数'], thumb: { type: 'image', src: 'site/thumbs/12-auto-workflow.jpg' },
         },
         {
-          no: '13', title: 'UI & Code 二次编辑：预览上改，写回源码', subtitle: 'Preview-to-Source Round Trip', mark: '投', key: 'D2C、模拟器直接修改与调试',
-          desc: '在预览上直接拖、直接改，改动确定写回源码，不让 AI 去猜；改代码预览立刻跟着变这一半已有，补的是反方向；改动落到源码哪一行人能看见。声明式界面这一代全行业空着。',
-          view: 'ready', date: '2026-09-14', href: 'demos/13-ui-code-roundtrip/index.html',
+          no: '13', title: '设计稿到代码、模拟器上直接改，全部写回源码', subtitle: 'D2C · Live Emulator Edit · Round Trip', mark: '投', key: 'D2C、模拟器直接修改与调试',
+          desc: '导入 Figma / 即时设计 / MasterGo 画板生成 ArkTS 页面，悬停图层时设计稿、预览、代码行一起亮，并标出复用组件、资源 token、新建组件；在运行中的模拟器上点元素直接改文字、间距、颜色，热重载后写回源码行；看运行态组件树与状态变量，在事件上加断点。原有「预览上拖、写回源码」保留。',
+          view: 'ready', date: '2026-09-23', href: 'demos/13-ui-code-roundtrip/index.html',
           tags: ['步数与切换次数'], thumb: { type: 'image', src: 'site/thumbs/13-ui-code-roundtrip.jpg' },
         },
         {
@@ -194,7 +194,7 @@ window.DEVECO_CATALOG = {
         },
         {
           no: '17', title: '模拟器多端：鸿蒙特征 · 跨屏 · 手势', subtitle: 'Multi-device Canvas · HarmonyOS Traits', mark: '投', key: '模拟器多端：鸿蒙特征、跨屏、手势',
-          desc: '这条管的是「先看见」：一块画布，手机 / 折叠屏 / 手表 / 车机几块屏同时在，本机与远端不分家；改一次代码，几块屏一起刷。并排的是不同形态，不是同一形态的几台机器。是 16 判断之前的一步——先在这块画布上发现哪里不对，16 再上真机定结论；也是 18 分布式调试、19 拉远端设备进画布的底座。',
+          desc: '一块画布，手机 / 折叠屏 / 平板 / 手表 / 车机同时在，改一行代码几块屏一起刷。新增鸿蒙特征模拟：选中设备切折叠屏展开 / 悬停 / 折叠、手机分屏与悬浮窗、深色与字号；手势模拟（侧滑返回、双指捏合、三指截屏、隔空抓取）在屏上画出轨迹与结果；手机上的商品卡拖到或一键流转到平板、折叠屏，画出跨屏连线与耗时。是 16 真机判断之前的一步，也是 18、19、27 的底座。',
           view: 'ready', date: '2026-09-23', href: 'demos/17-multi-device-canvas/index.html',
           tags: ['步数与切换次数'], note: '第二批', thumb: { type: 'image', src: 'site/thumbs/17-multi-device-canvas.jpg' },
         },

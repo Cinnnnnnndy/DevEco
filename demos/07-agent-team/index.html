@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='32' y2='32' gradientUnits='userSpaceOnUse'%3E%3Cstop stop-color='%232C8DDD'/%3E%3Cstop offset='1' stop-color='%233357AC'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='32' height='32' rx='7' fill='url(%23g)'/%3E%3Ctext x='16' y='22.5' font-family='Arial,Helvetica,sans-serif' font-size='13' font-weight='700' fill='white' text-anchor='middle'%3EDE%3C/text%3E%3C/svg%3E">
-<title>07 · Agent Team：在干 / 在等你 / 干完了</title>
+<title>07 · Agent Team：多 Agent 分工、交接与冲突合并</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;500&display=swap">
 <link rel="stylesheet" href="../../deveco-intui-kit/src/tokens.css">
 <link rel="stylesheet" href="../../deveco-intui-kit/src/components.css">
@@ -35,14 +35,113 @@
   .queue i.run{background:var(--ui-success)}
   .task .t3 .dm-progress{flex:1;min-width:60px}
   .empty-hint{padding:12px;color:var(--ui-fg-info);font-size:var(--fs-sm);text-align:center}
+
+  /* ---- Agent Team：成员小头像 ---- */
+  .av{width:20px;height:20px;border-radius:6px;display:inline-grid;place-items:center;flex:none;color:#fff;font-size:10px;font-weight:600;background:var(--c)}
+  .av svg{width:12px;height:12px;color:#fff}
+  .avs{display:inline-flex}
+  .avs .av{width:16px;height:16px;border-radius:5px;font-size:9px;margin-right:-3px;outline:2px solid var(--ui-field-bg)}
+  [data-m="plan"]{--c:var(--Teal4)}
+  [data-m="ui"]{--c:#3574F0}
+  [data-m="logic"]{--c:var(--Purple4)}
+  [data-m="test"]{--c:var(--Orange4)}
+  [data-m="dev"]{--c:#4E8052}
+  .task.team .t2 .bl{display:flex;gap:6px;align-items:flex-start;margin-top:3px}
+  .task.team .t2 .bl::before{content:"";width:5px;height:5px;border-radius:50%;background:var(--ui-accent);margin-top:6px;flex:none}
+  /* 左栏「团队」视图 */
+  .mlist .mrow{display:flex;align-items:center;gap:8px;margin:0 8px 4px;padding:6px 8px;border:1px solid var(--ui-border);border-radius:var(--arc);background:var(--ui-field-bg);font-size:var(--fs-sm);line-height:var(--lh-sm);cursor:default}
+  .mlist .mrow:hover{border-color:var(--ui-component-border)}
+  .mlist .mrow.sel{border-color:var(--ui-accent);background:color-mix(in srgb,var(--ui-accent) 8%,var(--ui-field-bg))}
+  .mlist .mrow .tx{flex:1;min-width:0}
+  .mlist .mrow .tx b{display:block;font-weight:600;font-size:var(--fs-para)}
+  .mlist .mrow .tx span{display:block;color:var(--ui-fg-info);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .mlist .mrow .n{font-family:var(--font-code);font-size:11px;color:var(--ui-fg-info)}
+
+  /* ---- 编辑区：团队看板 ---- */
+  .team{flex:1;min-height:0;display:flex;flex-direction:column;overflow:auto}
+  .team[hidden]{display:none}
+  .lead{display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--ui-border);background:var(--ui-bg);flex:none}
+  .lead .av{width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,#5B8CF7,#9B6CF6)}
+  .lead .av svg{width:16px;height:16px}
+  .lead .tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+  .lead .tx b{font-weight:600;font-size:var(--fs-para);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .lead .tx span{font-size:var(--fs-sm);color:var(--ui-fg-info)}
+  .lead .dm-progress{width:90px}
+  .graph{position:relative;flex:none;height:292px;overflow:hidden;border-bottom:1px solid var(--ui-border)}
+  .graph .stage{position:absolute;left:50%;top:18px;width:752px;height:260px;transform:translateX(-50%)}
+  .graph .lg{position:absolute;left:12px;bottom:8px;display:flex;gap:12px;font-size:11px;color:var(--ui-fg-info);z-index:2}
+  .graph .lg i{display:inline-block;width:14px;height:0;border-top:2px dashed var(--ui-component-border);vertical-align:middle;margin-right:4px}
+  .graph .lg i.ok{border-top:2px solid var(--ui-success)}
+  .graph .lg i.err{border-top-color:var(--ui-error)}
+  .mnode{position:absolute;left:var(--x);top:var(--y);width:152px;height:104px;border:1px solid var(--ui-component-border);border-radius:var(--arc);background:var(--ui-bg);box-shadow:var(--ui-shadow);font-size:var(--fs-sm);line-height:var(--lh-sm);display:flex;flex-direction:column;padding:7px 9px;gap:5px;cursor:default;transition:border-color .2s,box-shadow .2s}
+  .mnode:hover{border-color:var(--ui-accent)}
+  .mnode.sel{border-color:var(--ui-accent);box-shadow:0 0 0 2px color-mix(in srgb,var(--ui-accent) 35%,transparent)}
+  .mnode .nh{display:flex;align-items:center;gap:6px;font-weight:600;font-size:var(--fs-para)}
+  .mnode .nh .grow{flex:1}
+  .mnode .now{flex:none;max-height:32px;color:var(--ui-fg);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+  .mnode .nf{margin-top:auto;display:flex;align-items:center;gap:6px;font-family:var(--font-code);font-size:10px;color:var(--ui-fg-info)}
+  .mnode .nf .dm-progress{flex:1}
+  .mnode.wait{border-color:var(--ui-accent);background:color-mix(in srgb,var(--ui-accent) 8%,var(--ui-bg))}
+  .mnode.idle .now{color:var(--ui-fg-info)}
+  .mnode.done .nf .dm-progress > i{background:var(--ui-success)}
+  .medges{position:absolute;inset:0;overflow:visible;pointer-events:none}
+  .medges path{fill:none;stroke:var(--ui-component-border);stroke-width:1.6;stroke-dasharray:5 4}
+  .medges path.done{stroke:var(--ui-success);stroke-dasharray:none}
+  .medges path.flow{stroke:var(--ui-accent);stroke-dasharray:6 4;animation:flow .6s linear infinite}
+  .medges path.cf{stroke:var(--ui-error);stroke-width:1.6;stroke-dasharray:3 3}
+  .medges text{font-family:var(--font-code);font-size:10px;fill:var(--ui-fg-info)}
+  .medges circle.tok{fill:var(--ui-accent);stroke:var(--ui-bg);stroke-width:2}
+  @keyframes flow{to{stroke-dashoffset:-10}}
+  .cfbadge{position:absolute;left:218px;top:117px;display:inline-flex;align-items:center;gap:4px;height:22px;padding:0 8px;border-radius:11px;background:var(--ui-error);color:#fff;font-size:11px;font-weight:600;border:0;box-shadow:var(--ui-shadow);white-space:nowrap}
+  .cfbadge svg{width:12px;height:12px;color:#fff}
+  .cfbadge[hidden]{display:none}
+  .hlabel{position:absolute;font-family:var(--font-code);font-size:10px;color:var(--ui-fg-info);white-space:nowrap;background:var(--ui-editor-bg);padding:0 3px}
+
+  .decide{padding:14px 16px 20px;display:flex;flex-direction:column;gap:10px}
+  .decide .sec{display:flex;align-items:center;gap:6px;font-size:var(--fs-sm);color:var(--ui-fg-info)}
+  .decide .sec b{color:var(--ui-fg);font-weight:600}
+  .decide .sec .grow{flex:1}
+  .cf2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .cf2 .diffcard .dh{gap:6px}
+  .cf2 .diffcard pre .l{white-space:pre;overflow:hidden;text-overflow:ellipsis}
+  .opts{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  .opts .dm-opt{font-size:var(--fs-sm);line-height:var(--lh-sm)}
+  .opts .dm-opt b{font-size:var(--fs-para)}
+  .dm-card-ft .dm-small{color:var(--ui-fg-info)}
+  .handoff .dm-kv{grid-template-columns:72px 1fr}
+  .handoff .devs{display:flex;gap:6px;flex-wrap:wrap}
+  .dstep{display:flex;flex-direction:column;gap:6px}
+  .dstep .r{display:flex;align-items:center;gap:8px;font-size:var(--fs-sm)}
+  .dstep .r .mk{width:16px;height:16px;border-radius:50%;border:2px solid var(--ui-component-border);flex:none;display:grid;place-items:center}
+  .dstep .r.done .mk{background:var(--ui-success);border-color:var(--ui-success)}
+  .dstep .r.done .mk::after{content:"";width:6px;height:3px;border-left:1.5px solid #fff;border-bottom:1.5px solid #fff;transform:rotate(-45deg) translate(1px,-1px)}
+  .dstep .r.run .mk{border-color:var(--ui-accent);border-right-color:transparent;animation:spin 1s linear infinite}
+  .dstep .r .grow{flex:1}
+  .dstep .r code{font-family:var(--font-code);font-size:11px;color:var(--ui-fg-info)}
+
+  /* ---- 右栏：成员详情 ---- */
+  .mhd{display:flex;align-items:center;gap:10px;padding:12px}
+  .mhd .av{width:32px;height:32px;border-radius:9px;font-size:13px}
+  .mhd .av svg{width:16px;height:16px}
+  .mhd .tx{flex:1;min-width:0}
+  .mhd .tx b{display:block;font-weight:600;font-size:var(--fs-h2);line-height:var(--lh-h2)}
+  .mhd .tx span{font-size:var(--fs-sm);color:var(--ui-fg-info)}
+  .mnow{margin:0 12px 10px}
+  .mkv{padding:0 12px 10px}
+  .mkv code{font-family:var(--font-code);font-size:11px;background:var(--ui-tag-bg);padding:1px 4px;border-radius:4px}
+  .msec{padding:6px 12px 2px;font-size:var(--fs-sm);color:var(--ui-fg-info);font-weight:600}
+  .dm-vstep.wt .node{border-color:var(--ui-accent);background:var(--ui-accent);color:#fff}
+  .dm-vstep .body-t .grow{white-space:normal}
+  .dm-vstep.idle .body-t{color:var(--ui-fg-info)}
+  @media (prefers-reduced-motion:reduce){.medges path.flow{animation:none}}
 </style>
 </head>
 <body>
-<div class="ide" id="ide" data-ide-theme="dark" data-left="agent" data-right="project" data-bottom="none" role="application" aria-label="DevEco Studio">
+<div class="ide" id="ide" data-ide-theme="dark" data-left="agent" data-right="member" data-bottom="none" role="application" aria-label="DevEco Studio">
   <div class="body">
     <div class="tw tw-left">
       <div class="pane on" data-pane="agent">
-        <div class="tw-hdr"><span class="title">DevEco Code <span class="cnt">任务 5</span></span><span class="grow"></span>
+        <div class="tw-hdr"><span class="title">DevEco Code <span class="cnt">任务 6</span></span><span class="grow"></span>
           <button class="abtn" title="New Chat"><svg class="i"><use href="#i-add"/></svg></button>
           <button class="abtn" title="History"><svg class="i"><use href="#i-history"/></svg></button>
           <button class="abtn" title="MCP"><svg class="i"><use href="#i-cube"/></svg></button>
@@ -51,10 +150,15 @@
           <button class="abtn" title="Options"><svg class="i"><use href="#i-moreV"/></svg></button>
           <button class="abtn" title="Hide|Shift+Esc" data-act="hide-left"><svg class="i"><use href="#i-hide"/></svg></button></div>
         <div class="tw-body">
-          <div class="dm-pad dm-row" style="padding-bottom:0"><div class="dm-seg"><button>会话</button><button class="on">任务</button></div><span class="grow"></span><span class="dm-small dm-muted">按状态分档</span></div>
+          <div class="dm-pad dm-row" style="padding-bottom:0"><div class="dm-seg" id="lseg"><button data-v="chat">会话</button><button class="on" data-v="tasks">任务</button><button data-v="team">团队</button></div><span class="grow"></span><span class="dm-small dm-muted" id="lseg-hint">按状态分档</span></div>
           <div class="tasks" id="tasks">
 
-            <div class="tgroup wait" data-g="wait"><span class="dm-dot info pulse"></span>在等你<span class="cnt" data-cnt>2</span><span class="grow"></span><span class="dm-small dm-muted" style="font-weight:400">排在最前</span></div>
+            <div class="tgroup wait" data-g="wait"><span class="dm-dot info pulse"></span>在等你<span class="cnt" data-cnt>3</span><span class="grow"></span><span class="dm-small dm-muted" style="font-weight:400">排在最前</span></div>
+            <div class="task wait team" id="t-team">
+              <div class="t1"><b>商品详情页 · Agent Team</b><span class="avs"><span class="av" data-m="plan">规</span><span class="av" data-m="ui">UI</span><span class="av" data-m="logic">逻</span><span class="av" data-m="test">测</span><span class="av" data-m="dev">机</span></span></div>
+              <div class="t2" id="t-team-t2"></div>
+              <div class="t3"><span class="dm-small dm-muted" id="t-team-meta"></span><span class="grow"></span><button class="btn sm primary" id="t-team-go">去看板处理</button></div>
+            </div>
             <div class="task wait" id="t-fix">
               <div class="t1"><b>修复 ListPage 滑动卡顿</b><span class="when">等了 58 分钟</span></div>
               <div class="t2">要不要把封面解码改成异步加占位图？会改 <code>ListPage.ets</code>、<code>ItemCard.ets</code>，不动数据层。</div>
@@ -86,18 +190,56 @@
             </div>
 
           </div>
+          <div class="tasks mlist" id="mlist" hidden></div>
+          <div class="empty-hint" id="chat-hint" hidden>会话记录在「任务」和「团队」里按状态归档</div>
         </div>
       </div>
     </div>
 
     <div class="editor">
       <div class="tabs" id="tabs"><span class="grow"></span><span class="tab-tools"><button class="abtn" title="Editor Options"><svg class="i"><use href="#i-moreV"/></svg></button></span></div>
-      <div class="code-wrap"><div class="code" id="code"></div></div>
+
+      <!-- 团队看板 -->
+      <div class="team" data-for-file="Team" id="team">
+        <div class="lead">
+          <span class="av"><svg><use href="#i-genie"/></svg></span>
+          <div class="tx"><b>主 Agent · 做商品详情页，适配手机 + 折叠屏并上真机验证</b><span id="lead-sub"></span></div>
+          <div class="dm-progress"><i id="lead-bar" style="--v:20%"></i></div><span class="dm-mono dm-muted" id="lead-n">1/5</span>
+        </div>
+        <div class="graph">
+          <div class="lg"><span><i class="ok"></i>已交接</span><span><i></i>等上游</span><span><i class="err"></i>同改一个文件</span></div>
+          <div class="stage" id="stage">
+            <svg class="medges" id="edges" viewBox="0 0 752 260">
+              <path id="e-pu" d="M152 142 C176 142 176 58 200 58"/>
+              <path id="e-pl" d="M152 142 C176 142 176 206 200 206"/>
+              <path id="e-ut" d="M352 58 C376 58 376 142 400 142"/>
+              <path id="e-lt" d="M352 206 C376 206 376 142 400 142"/>
+              <path id="e-td" d="M552 142 L600 142"/>
+              <path id="e-cf" class="cf" d="M276 110 L276 154"/>
+            </svg>
+            <div class="mnode" data-m="plan" style="--x:0px;--y:90px"></div>
+            <div class="mnode" data-m="ui" style="--x:200px;--y:6px"></div>
+            <div class="mnode" data-m="logic" style="--x:200px;--y:154px"></div>
+            <div class="mnode" data-m="test" style="--x:400px;--y:90px"></div>
+            <div class="mnode" data-m="dev" style="--x:600px;--y:90px"></div>
+            <button class="cfbadge" id="cfbadge" title="两个 Agent 改了同一段"><svg><use href="#i-warn"/></svg>DetailPage.ets 冲突</button>
+          </div>
+        </div>
+        <div class="decide" id="decide"></div>
+      </div>
+
+      <div class="code-wrap" data-for-file="ListPage.ets" hidden><div class="code" id="code"></div></div>
       <div class="breadcrumbs" id="crumbs"></div>
     </div>
 
     <div class="tw tw-right">
-      <div class="pane on" data-pane="project">
+      <div class="pane on" data-pane="member">
+        <div class="tw-hdr"><span class="title">Agent 成员</span><span class="grow"></span>
+          <button class="abtn" title="Options"><svg class="i"><use href="#i-moreV"/></svg></button>
+          <button class="abtn" title="Hide|Shift+Esc" data-act="hide-right"><svg class="i"><use href="#i-hide"/></svg></button></div>
+        <div class="tw-body" id="mdetail"></div>
+      </div>
+      <div class="pane" data-pane="project">
         <div class="tw-hdr"><span class="title">Project <svg class="i"><use href="#i-chevD"/></svg></span><span class="grow"></span>
           <button class="abtn" title="Select Opened File"><svg class="i"><use href="#i-locate"/></svg></button>
           <button class="abtn" title="Expand All"><svg class="i"><use href="#i-expandAll"/></svg></button>
@@ -114,21 +256,202 @@
 (function(){
   var $=DemoFrame.$, $$=DemoFrame.$$;
   document.getElementById('tree-slot').innerHTML=DemoFrame.tree({sel:'ListPage.ets'});
-  document.getElementById('tabs').insertAdjacentHTML('afterbegin',DemoFrame.tabs([{file:'ListPage.ets',on:true},{file:'ItemCard.ets'}]));
+  document.getElementById('tabs').insertAdjacentHTML('afterbegin',DemoFrame.tabs([{file:'Team',label:'Team · 商品详情页',icon:'#i-user-sync',on:true},{file:'ListPage.ets'},{file:'ItemCard.ets'}]));
   document.getElementById('code').innerHTML=DemoFrame.code('ListPage.ets',{cur:28,hl:[28]});
-  DemoFrame.init({device:'HUAWEI Mate 70 Pro',deviceIcon:'#i-phone',stripeLeft:[{left:'agent',icon:'#i-genie',title:'DevEco Code'},{left:'project',icon:'#i-tw-project',title:'Project|Alt+1'},{left:'structure',icon:'#i-tw-structure',title:'Structure|Alt+7'},{more:1},{gap:1},{bottom:'build',icon:'#i-tw-build',title:'Build'},{bottom:'log',icon:'#i-tw-device',title:'Log'},{bottom:'services',icon:'#i-tw-todo',title:'Services|Alt+8'},{bottom:'problems',icon:'#i-tw-problems',title:'Problems|Alt+6'},{bottom:'run',icon:'#i-tw-services',title:'Run|Alt+4'},{bottom:'terminal',icon:'#i-tw-terminal',title:'Terminal|Alt+F12'},{bottom:'debug',icon:'#i-info',title:'Debug|Alt+5'},{bottom:'vcs',icon:'#i-vcs',title:'Version Control|Alt+9'}],stripeRight:[{right:'notifications',icon:'#i-tw-notifications',title:'Notifications',dot:1},{right:'project',icon:'#i-tw-project',title:'Project|Alt+1'},{right:'docs',icon:'#i-hdoc',title:'HarmonyOS Docs'},{right:'inspector',icon:'#i-pen',title:'Code Review'},{right:'web',icon:'#i-puzzle',title:'Extensions'},{right:'previewer',icon:'#i-tw-preview',title:'Previewer'},{more:1},{right:'devices',icon:'#i-phone',title:'Device Manager'}]});
+  DemoFrame.init({device:'HUAWEI Mate 70 Pro',deviceIcon:'#i-phone',stripeLeft:[{left:'agent',icon:'#i-genie',title:'DevEco Code'},{left:'project',icon:'#i-tw-project',title:'Project|Alt+1'},{left:'structure',icon:'#i-tw-structure',title:'Structure|Alt+7'},{more:1},{gap:1},{bottom:'build',icon:'#i-tw-build',title:'Build'},{bottom:'log',icon:'#i-tw-device',title:'Log'},{bottom:'services',icon:'#i-tw-todo',title:'Services|Alt+8'},{bottom:'problems',icon:'#i-tw-problems',title:'Problems|Alt+6'},{bottom:'run',icon:'#i-tw-services',title:'Run|Alt+4'},{bottom:'terminal',icon:'#i-tw-terminal',title:'Terminal|Alt+F12'},{bottom:'debug',icon:'#i-info',title:'Debug|Alt+5'},{bottom:'vcs',icon:'#i-vcs',title:'Version Control|Alt+9'}],stripeRight:[{right:'notifications',icon:'#i-tw-notifications',title:'Notifications',dot:1},{right:'member',icon:'#i-user-sync',title:'Agent 成员'},{right:'project',icon:'#i-tw-project',title:'Project|Alt+1'},{right:'docs',icon:'#i-hdoc',title:'HarmonyOS Docs'},{right:'inspector',icon:'#i-pen',title:'Code Review'},{right:'previewer',icon:'#i-tw-preview',title:'Previewer'},{more:1},{right:'devices',icon:'#i-phone',title:'Device Manager'}]});
 
-  /* 状态栏胶囊：只放“在等你”和排队中的那两枚 */
+  /* 状态栏胶囊：在等你 + 团队 + 排队中 */
   $('#status-slot').innerHTML=
-    '<span class="dm-capsule wait" id="cap-wait"><span class="dm-dot info pulse"></span>等你确认 · 修复 ListPage 滑动卡顿</span>'
+    '<span class="dm-capsule wait" id="cap-wait"><span class="dm-dot info pulse"></span><span id="cap-wait-t">等你确认 · 修复 ListPage 滑动卡顿</span></span>'
+   +'<span class="dm-capsule" id="cap-team"></span>'
    +'<span class="dm-capsule"><span class="spin" style="width:10px;height:10px"></span>生成上架材料 · 排第 3<span class="bar"><i style="--v:30%"></i></span></span>';
+
+  /* ================= Agent Team 模型 ================= */
+  var ICON={plan:'#i-scene',ui:'#i-ui',logic:'#i-code',test:'#i-check',dev:'#i-phone'};
+  var M={
+    plan:{short:'规划',name:'规划 Agent',role:'拆任务、定交接物',st:'done',now:'拆了 6 个子任务，定好页面结构和接口约定',done:6,
+      files:['docs/detail-spec.md'],from:'主 Agent',to:'UI Agent、逻辑 Agent',
+      steps:['读需求和现有 ItemCard、ListPage','拆成 5 个角色、6 个子任务','定页面结构：图集 / 价格 / SKU / 购买栏','定接口约定 ProductApi.getDetail(id)','定一多断点：sm 单栏、md 及以上双栏','交接给 UI、逻辑']},
+    ui:{short:'UI',name:'UI Agent',role:'页面与一多布局',st:'run',now:'写 DetailPage 的 GridRow 断点：手机单栏、折叠屏展开双栏',done:3,
+      files:['pages/DetailPage.ets','components/SkuPanel.ets'],from:'规划 Agent',to:'测试 Agent',
+      steps:['新建 pages/DetailPage.ets','图集 Swiper + 价格区','复用 ItemCard 做推荐位','GridRow 断点：sm 单栏 / md 双栏','折叠屏展开态预览','交给测试']},
+    logic:{short:'逻辑',name:'逻辑 Agent',role:'数据与交互',st:'wait',now:'给购买按钮接 addToCart()，和 UI 改到了同一段，等你定怎么合',done:2,
+      files:['pages/DetailPage.ets','model/ProductApi.ets'],from:'规划 Agent',to:'测试 Agent',
+      steps:['接 ProductApi.getDetail(id)','SKU 选择用 @State 管','购买栏接 addToCart()','错误与空态','交给测试']},
+    test:{short:'测试',name:'测试 Agent',role:'UI 测试与断点截图',st:'idle',now:'等 UI、逻辑交接后跑 DetailPage 的 UI 测试',done:0,
+      files:['ohosTest/DetailPage.test.ets'],from:'UI Agent、逻辑 Agent',to:'真机验证 Agent',
+      steps:['写 DetailPage UI 测试','手机 sm 断点截图比对','折叠屏 md 断点截图比对','交给真机验证']},
+    dev:{short:'真机',name:'真机验证 Agent',role:'hdc 装机与多设备验证',st:'idle',now:'等测试通过后装到 Mate 70 Pro 和 Mate X6',done:0,
+      files:['entry-default-signed.hap'],from:'测试 Agent',to:'主 Agent',
+      steps:['hdc install → Mate 70 Pro','hdc install → Mate X6','折叠 ↔ 展开切换，看有无白屏与错位']}
+  };
+  var ORDER=['plan','ui','logic','test','dev'];
+  var phase='conflict';   /* conflict → running → handoff → verifying → done */
+  var sel='logic', edges={pu:'done',pl:'done',ut:'',lt:'',td:''};
+  var ST={done:['ok','干完了'],run:['info','在干'],wait:['warn','等你'],idle:['muted','等上游']};
+  function grp(st){return st==='wait'?'wait':(st==='done'?'done':'run')}
+
+  function nodeHTML(k){
+    var m=M[k],n=m.steps.length,s=ST[m.st];
+    return '<div class="nh"><span class="av" data-m="'+k+'"><svg><use href="'+ICON[k]+'"/></svg></span>'+m.short+'<span class="grow"></span><span class="dm-pill '+s[0]+'">'+s[1]+'</span></div>'
+      +'<div class="now">'+m.now+'</div>'
+      +'<div class="nf"><div class="dm-progress'+(m.st==='run'?'':'')+'"><i style="--v:'+Math.round(m.done/n*100)+'%"></i></div>'+m.done+'/'+n+' 步</div>';
+  }
+  function renderGraph(){
+    $$('#stage .mnode').forEach(function(el){
+      var k=el.dataset.m;el.className='mnode '+M[k].st+(k===sel?' sel':'');el.innerHTML=nodeHTML(k);
+    });
+    Object.keys(edges).forEach(function(e){$('#e-'+e).setAttribute('class',edges[e])});
+    var cf=phase==='conflict';$('#e-cf').style.display=cf?'':'none';$('#cfbadge').hidden=!cf;
+  }
+  function renderDetail(){
+    var m=M[sel],s=ST[m.st];
+    var steps=m.steps.map(function(t,i){
+      var c=i<m.done?'done':(i===m.done?(m.st==='run'?'run':(m.st==='wait'?'wt':'idle')):'idle');
+      var extra='';
+      if(c==='wt'&&sel==='logic')extra='<div class="plan"><svg><use href="#i-warn"/></svg>和 UI Agent 同改 DetailPage.ets 第 24–31 行</div>';
+      if(c==='wt'&&sel==='test')extra='<div class="plan"><svg><use href="#i-hand"/></svg>18/18 通过，等你批准交接</div>';
+      return '<div class="dm-vstep '+c+'"><span class="node">'+(i+1)+'</span><div class="body"><div class="body-t"><span class="grow">'+t+'</span>'+(c==='run'?'<span class="spin"></span>':'')+'</div>'+extra+'</div></div>';
+    }).join('');
+    $('#mdetail').innerHTML=
+      '<div class="mhd"><span class="av" data-m="'+sel+'"><svg><use href="'+ICON[sel]+'"/></svg></span><div class="tx"><b>'+m.name+'</b><span>'+m.role+'</span></div><span class="dm-pill '+s[0]+'">'+s[1]+'</span></div>'
+      +'<div class="dm-callout '+(m.st==='wait'?'info':(m.st==='done'?'ok':''))+' mnow"><svg><use href="'+(m.st==='wait'?'#i-hand':(m.st==='done'?'#i-checkS':'#i-think'))+'"/></svg><span>'+m.now+'</span></div>'
+      +'<dl class="dm-kv mkv"><dt>接谁的活</dt><dd>'+m.from+'</dd><dt>交给谁</dt><dd>'+m.to+'</dd><dt>动的文件</dt><dd>'+m.files.map(function(f){return '<code>'+f+'</code>'}).join(' ')+'</dd></dl>'
+      +'<div class="msec">步骤 '+m.done+' / '+m.steps.length+'</div><div class="dm-vtl">'+steps+'</div>';
+  }
+  function renderList(){
+    var g={wait:[],run:[],done:[]};
+    ORDER.forEach(function(k){g[grp(M[k].st)].push(k)});
+    var H={wait:['info pulse','在等你'],run:['ok','在干'],done:['','干完了']};
+    $('#mlist').innerHTML=['wait','run','done'].map(function(x){
+      return '<div class="tgroup'+(x==='wait'?' wait':'')+'"><span class="dm-dot '+H[x][0]+'"></span>'+H[x][1]+'<span class="cnt">'+g[x].length+'</span></div>'
+        +g[x].map(function(k){var m=M[k];return '<div class="mrow'+(k===sel?' sel':'')+'" data-pick="'+k+'"><span class="av" data-m="'+k+'"><svg><use href="'+ICON[k]+'"/></svg></span><div class="tx"><b>'+m.name+'</b><span>'+m.now+'</span></div><span class="n">'+m.done+'/'+m.steps.length+'</span></div>'}).join('')
+        +(g[x].length?'':'<div class="empty-hint" style="padding:4px 12px 8px">没有</div>');
+    }).join('');
+  }
+  var LEAD={conflict:'2 个 Agent 同改 DetailPage.ets，已暂停逻辑 Agent，等你定怎么合',running:'UI、逻辑收尾中 → 交给测试',handoff:'测试通过，等你批准交给真机验证',verifying:'真机验证 Agent 在两台设备上跑',done:'全部完成 · 两台真机验证通过'};
+  function renderTeamTask(){
+    var t=$('#t-team'),nd=ORDER.filter(function(k){return M[k].st==='done'}).length;
+    var waits=[];
+    if(phase==='conflict')waits.push('<span class="bl"><span>UI 和逻辑同改 <code>DetailPage.ets</code>，选保留哪边</span></span>');
+    if(phase==='handoff')waits.push('<span class="bl"><span>测试 18/18 通过，批准交给真机验证</span></span>');
+    $('#t-team-t2').innerHTML=waits.length?waits.join(''):(phase==='done'?'5 个角色都交了活 · Mate 70 Pro、Mate X6 验证通过':'主 Agent：'+LEAD[phase]);
+    $('#t-team-meta').textContent=nd+'/5 个角色完成';
+    $('#t-team-go').textContent=waits.length?'去看板处理':'看团队看板';
+    $('#t-team-go').classList.toggle('primary',!!waits.length);
+    var target=waits.length?'wait':(phase==='done'?'done':'run');
+    t.classList.toggle('wait',target==='wait');t.classList.toggle('done',target==='done');
+    var cur=t.previousElementSibling;while(cur&&!cur.classList.contains('tgroup'))cur=cur.previousElementSibling;
+    if(!cur||cur.dataset.g!==target){$('#tasks .tgroup[data-g="'+target+'"]').after(t);}
+    $('#lead-sub').textContent=LEAD[phase];
+    $('#lead-bar').style.setProperty('--v',(nd/5*100)+'%');$('#lead-n').textContent=nd+'/5';
+    var cap=$('#cap-team');
+    cap.className='dm-capsule'+(waits.length?' wait':'');
+    cap.innerHTML=(phase==='done'?'<span class="dm-dot ok"></span>':(waits.length?'<span class="dm-dot info pulse"></span>':'<span class="spin" style="width:10px;height:10px"></span>'))+'Team · 商品详情页 · '+(waits.length?'1 处等你':nd+'/5');
+  }
+
+  /* 需要人拍板的地方：冲突 → 交接确认 → 真机进度 */
+  var cfPick='merge';
+  function renderDecide(){
+    var d=$('#decide');
+    if(phase==='conflict'){
+      d.innerHTML='<div class="sec"><svg class="i" style="width:14px;height:14px;color:var(--ui-error)"><use href="#i-warn"/></svg><b>冲突</b>UI Agent 和逻辑 Agent 同时改了 <b class="dm-mono">DetailPage.ets</b> 第 24–31 行<span class="grow"></span>逻辑 Agent 已暂停</div>'
+        +'<div class="dm-card" id="cf-card"><div class="dm-card-bd">'
+        +'<div class="cf2">'
+        +'<div class="diffcard"><div class="dh"><span class="av" data-m="ui" style="width:16px;height:16px;border-radius:5px"><svg style="width:10px;height:10px"><use href="#i-ui"/></svg></span><span>UI Agent</span><span class="grow"></span><span class="cnt"><span class="add">+4</span> <span class="del">−2</span></span></div>'
+        +'<pre><span class="l del">- Column() {</span><span class="l add">+ GridRow({ columns: { sm: 4, md: 8 } }) {</span><span class="l add">+   GridCol({ span: { sm: 4, md: 4 } }) {</span><span class="l">      this.Gallery()</span><span class="l add">+   }</span><span class="l del">-   Button(\'立即购买\')</span><span class="l add">+   BuyBar()</span></pre></div>'
+        +'<div class="diffcard"><div class="dh"><span class="av" data-m="logic" style="width:16px;height:16px;border-radius:5px"><svg style="width:10px;height:10px"><use href="#i-code"/></svg></span><span>逻辑 Agent</span><span class="grow"></span><span class="cnt"><span class="add">+3</span> <span class="del">−1</span></span></div>'
+        +'<pre><span class="l">  Column() {</span><span class="l">    this.Gallery()</span><span class="l del">-   Button(\'立即购买\')</span><span class="l add">+   Button(\'立即购买\')</span><span class="l add">+     .enabled(this.sku !== undefined)</span><span class="l add">+     .onClick(() =&gt; this.addToCart())</span></pre></div>'
+        +'</div>'
+        +'<div class="opts" id="cf-opts">'
+        +'<div class="dm-opt" data-o="ui"><span class="rd"></span><div><b>保留 UI 的</b><span>断点布局在，购买按钮没接逻辑</span></div></div>'
+        +'<div class="dm-opt" data-o="logic"><span class="rd"></span><div><b>保留逻辑的</b><span>能下单，折叠屏还是单栏</span></div></div>'
+        +'<div class="dm-opt on" data-o="merge"><span class="rd"></span><div><b>合并两边 · 主 Agent 建议</b><span>布局用 UI 的，下单逻辑挪进 BuyBar</span></div></div>'
+        +'</div></div>'
+        +'<div class="dm-card-ft"><span class="dm-small">定了以后，两个 Agent 按这个结果继续</span><span class="grow"></span><button class="btn sm">在 Diff 里看</button><button class="btn sm primary" id="cf-apply">按「合并两边」处理</button></div></div>';
+    }else if(phase==='running'){
+      d.innerHTML='<div class="dm-callout ok"><svg><use href="#i-checkS"/></svg><span>'+(cfPick==='merge'?'已合并：布局用 UI 的 GridRow，购买按钮的 <b>enabled / onClick</b> 挪进 <b>BuyBar</b>':(cfPick==='ui'?'已保留 UI 的改动，逻辑 Agent 改到 BuyBar 里重接 addToCart()':'已保留逻辑的改动，UI Agent 重新套一遍断点布局'))+'。UI、逻辑继续收尾，完了自动交给测试。</span></div>';
+    }else if(phase==='handoff'){
+      d.innerHTML='<div class="sec"><svg class="i" style="width:14px;height:14px;color:var(--ui-accent)"><use href="#i-hand"/></svg><b>交接确认</b>测试 Agent → 真机验证 Agent<span class="grow"></span>装真机要占用设备，交接前问你一次</div>'
+        +'<div class="dm-card accent handoff"><div class="dm-card-bd"><dl class="dm-kv">'
+        +'<dt>交接物</dt><dd><span class="dm-mono">entry-default-signed.hap</span> · UI 测试报告 18/18 通过</dd>'
+        +'<dt>截图比对</dt><dd>sm 断点单栏 ✓ · md 断点双栏 ✓ · 差异 0 处</dd>'
+        +'<dt>目标设备</dt><dd class="devs"><span class="dm-pill info"><svg><use href="#i-phone"/></svg>HUAWEI Mate 70 Pro</span><span class="dm-pill info"><svg><use href="#i-fold"/></svg>HUAWEI Mate X6 折叠屏</span><span class="dm-pill ok">hdc 已连接</span></dd>'
+        +'</dl></div><div class="dm-card-ft"><span class="dm-small">批准后真机验证 Agent 接手，不用你再去点 Run</span><span class="grow"></span><button class="btn sm">让测试再跑一轮</button><button class="btn sm primary" id="ho-approve">批准交接</button></div></div>';
+    }else{
+      var dv=M.dev,rows=dv.steps.map(function(t,i){var c=i<dv.done?'done':(i===dv.done&&phase==='verifying'?'run':'');return '<div class="r '+c+'"><span class="mk"></span><span class="grow">'+t+'</span><code>'+(i<dv.done?['1.8 s','2.1 s','6 次切换'][i]:'')+'</code></div>'}).join('');
+      d.innerHTML='<div class="sec"><span class="av" data-m="dev" style="width:16px;height:16px;border-radius:5px"><svg style="width:10px;height:10px"><use href="#i-phone"/></svg></span><b>真机验证</b>测试 Agent 已交接<span class="grow"></span>'+(phase==='done'?'<span class="dm-pill ok">通过</span>':'<span class="dm-pill info">进行中</span>')+'</div>'
+        +'<div class="dm-card"><div class="dm-card-bd dstep">'+rows+'</div></div>'
+        +(phase==='done'?'<div class="dm-callout ok"><svg><use href="#i-checkS"/></svg><span>商品详情页完成：5 个角色都交了活，改了 4 个文件；两台真机折叠 ↔ 展开 6 次无白屏、无错位。</span></div>':'');
+    }
+  }
+  function render(){renderGraph();renderDetail();renderList();renderTeamTask();renderDecide();recount();}
+
+  /* 交接动画：小圆点沿连线走过去 */
+  function handoff(id,cb){
+    var p=$('#e-'+id),svg=$('#edges');edges[id]='flow';p.setAttribute('class','flow');
+    var len=p.getTotalLength(),c=document.createElementNS('http://www.w3.org/2000/svg','circle');
+    c.setAttribute('r','5');c.setAttribute('class','tok');svg.appendChild(c);
+    var t0=null,D=900;
+    function step(ts){if(!t0)t0=ts;var k=Math.min(1,(ts-t0)/D),pt=p.getPointAtLength(len*k);c.setAttribute('cx',pt.x);c.setAttribute('cy',pt.y);
+      if(k<1)requestAnimationFrame(step);else{c.remove();edges[id]='done';if(cb)cb();render();}}
+    requestAnimationFrame(step);
+  }
+
+  /* 处理冲突 */
+  document.addEventListener('click',function(e){
+    var o=e.target.closest('#cf-opts .dm-opt');
+    if(o){cfPick=o.dataset.o;$$('#cf-opts .dm-opt').forEach(function(x){x.classList.toggle('on',x===o)});
+      $('#cf-apply').textContent='按「'+$('b',o).textContent.replace(' · 主 Agent 建议','')+'」处理';return;}
+    if(e.target.closest('#cf-apply')){
+      phase='running';M.logic.st='run';M.logic.done=3;M.logic.now='合并后继续：补错误与空态';
+      M.ui.done=4;M.ui.now='折叠屏展开态预览，检查 md 断点';sel='logic';render();
+      setTimeout(function(){
+        M.ui.st='done';M.ui.done=6;M.ui.now='DetailPage 一多布局写完，已交给测试';
+        M.logic.st='done';M.logic.done=5;M.logic.now='数据、SKU、下单都接好，已交给测试';render();
+        handoff('ut');handoff('lt',function(){
+          M.test.st='run';M.test.done=1;M.test.now='跑 DetailPage UI 测试：手机 + 折叠屏断点';sel='test';
+          setTimeout(function(){M.test.st='wait';M.test.done=3;M.test.now='18/18 通过，截图比对 0 差异，等你批准交给真机验证';phase='handoff';render();},1600);
+        });
+      },1300);
+      return;
+    }
+    if(e.target.closest('#ho-approve')){
+      M.test.st='done';M.test.done=4;M.test.now='18/18 通过，已交给真机验证';phase='verifying';sel='dev';render();
+      handoff('td',function(){
+        M.dev.st='run';M.dev.now='hdc install 到 Mate 70 Pro';
+        var i=0,NOW=['hdc install 到 Mate X6','在 Mate X6 上折叠 ↔ 展开切换'];
+        var tick=setInterval(function(){
+          i++;M.dev.done=i;
+          if(i>=3){clearInterval(tick);M.dev.st='done';M.dev.now='两台真机验证通过，折叠切换无白屏';phase='done';}
+          else M.dev.now=NOW[i-1];
+          render();
+        },1000);
+      });
+      return;
+    }
+    if(e.target.closest('#cfbadge')){sel='logic';render();var c=$('#cf-card');if(c)c.scrollIntoView({block:'nearest',behavior:'smooth'});return;}
+    var n=e.target.closest('#stage .mnode,[data-pick]');
+    if(n){sel=n.dataset.m||n.dataset.pick;DemoFrame.setSide('right','member');render();return;}
+    if(e.target.closest('#t-team-go')){var tb=$('.tab[data-file="Team"]');if(tb)tb.click();}
+  });
+
+  /* 左栏：会话 | 任务 | 团队 */
+  $('#lseg').addEventListener('click',function(e){
+    var b=e.target.closest('button');if(!b)return;
+    $$('#lseg button').forEach(function(x){x.classList.toggle('on',x===b)});
+    var v=b.dataset.v;$('#tasks').hidden=v!=='tasks';$('#mlist').hidden=v!=='team';$('#chat-hint').hidden=v!=='chat';
+    $('#lseg-hint').textContent=v==='team'?'成员也按三档':'按状态分档';
+  });
 
   function recount(){
     var g=null,n={};
     $$('#tasks > *').forEach(function(el){if(el.classList.contains('tgroup')){g=el.dataset.g;n[g]=0}else if(g){n[g]++}});
     $$('#tasks .tgroup').forEach(function(el){$('[data-cnt]',el).textContent=n[el.dataset.g]||0});
     $('.tw-hdr .title .cnt').textContent='任务 '+$$('#tasks .task').length;
-    var w=$('#cap-wait');if(w){w.hidden=!n.wait;}
+    var w=$('#cap-wait');if(w){w.hidden=!n.wait;
+      var first=$('#tasks .tgroup[data-g="wait"]').nextElementSibling;
+      if(first&&first.classList.contains('task'))$('#cap-wait-t').textContent='等你确认 '+n.wait+' · '+$('.t1 b',first).textContent;}
   }
   /* 批准 → 从“在等你”挪到“在干”，开始跑 */
   $('#tasks').addEventListener('click',function(e){
@@ -140,8 +463,8 @@
     var runG=$('#tasks .tgroup[data-g="run"]');runG.after(t);
     recount();
   });
-  recount();
-DemoGuide.init([{"target": "#t-fix [data-approve]", "kind": "click", "pos": "top", "label": "点这里批准"}, {"target": "#tasks", "kind": "change", "pos": "top", "label": "移到「在干」组"}]);
+  render();
+DemoGuide.init([{"target": "#cf-apply,#ho-approve", "kind": "click", "pos": "top", "label": "点这里：定冲突 / 批准交接"}, {"target": "#stage", "kind": "change", "pos": "top", "label": "交接沿连线推进到下一角色"}, {"target": "#t-team", "kind": "change", "pos": "right", "label": "要你拍板的点汇总到「在等你」"}]);
 })();
 </script>
 </body>
