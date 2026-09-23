@@ -20,7 +20,7 @@
      tags     小标签（这里放主要改善的指标）
      note     一行补充（放在卡片底部灰字），例如排期批次
      key      规划重点：写上它承接的是哪一个规划点（字符串）。卡片会打「重点」角标、描边，
-              左侧导航多一个「规划重点」筛选；点与卡的对应关系登记在下面的 focus
+              左侧导航多一个「规划重点」筛选；在所属分类里自动排到最前
      thumb    {type:'image', src:'site/thumbs/xxx.jpg'} 真实截图
               {type:'doc', kind:'MD'|'PPTX'|'BUNDLE'|'README'} 文档骨架预览
               {type:'sketch'} 或省略 → 按 view 自动兜底
@@ -32,32 +32,6 @@ window.DEVECO_CATALOG = {
   updated: '2026-09-23',
   title: '鸿蒙开发工具体验 · 工作台',
   lede: '围绕 DevEco Studio / DevEco Code / DevEco CLI 的体验设计工作台：26 条创新点各一个可点的界面稿 demo，其中 9 条是新一轮规划重点；加上设计系统、分析与汇报材料。全部是本地静态文件，双击即开。',
-
-  /* 新一轮规划重点：9 个点归成 4 类。已有 demo 能承接的并进去（merged:true，demo 按新点做了优化），
-     没有的新建 demo（23–27）。no 对应卡片编号，点一下滚到那张卡。 */
-  focus: {
-    title: '规划重点',
-    note: '比 deck 里的 21 条更靠前的一轮规划。已有 demo 能承接的并进去，并按新点做了优化；没有的新做了 5 个 demo，放在原有方向后面，归到「开放生态」「轻量与云端」两类。所有相关卡片都打了「重点」角标。',
-    themes: [
-      { title: '开放生态', sub: '头部公司不换 IDE，只开门', points: [
-        { title: 'DevEco Code / Studio 开放 MCP、Skill', detail: '编译、签名、真机、上架这段开给外部 Agent', no: '23' },
-        { title: '插件 + 第三方工具（隐性开放）', detail: '模拟器、调测、调优拆成插件；三方工具挂进原生扩展点', no: '24' },
-      ]},
-      { title: '轻量与云端', sub: 'IDE 太重，验证要快', points: [
-        { title: '手机客户端：对话直接真机调试', detail: '手里的手机就是真机', no: '25' },
-        { title: 'IDE Lite / IDE Web', detail: '打开链接就能写、就能跑', no: '26' },
-        { title: '云端模拟器', detail: '本机不耗内存，云端多开', no: '27' },
-      ]},
-      { title: 'AI 原生', sub: 'AI 长在 IDE 里，不止一个聊天框', points: [
-        { title: 'AI 和 IDE 的深度融合', detail: 'Build / 断点 / 日志里就地出现，能驱动 IDE 动作', no: '05', merged: true },
-        { title: '多 Agent、Agent team', detail: '角色分工、交接、冲突一眼看清', no: '07', merged: true },
-      ]},
-      { title: '模拟器与鸿蒙特征', sub: '只有我们手里有的题', points: [
-        { title: '模拟器多端：鸿蒙特征、跨屏、手势', detail: '折叠 / 悬停 / 分屏，跨设备流转，手势模拟', no: '17', merged: true },
-        { title: 'D2C、模拟器上直接修改与调试', detail: '设计稿进来出 ArkTS；运行态里点选就改', no: '13', merged: true },
-      ]},
-    ],
-  },
 
   /* 一年节奏，来自《创新方向》deck 的落地页。date 用于判断是否已过 */
   milestones: [
