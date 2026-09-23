@@ -261,6 +261,17 @@ window.DEVECO_CATALOG = {
           links: [{ label: '单文件版', href: 'deveco-intui-kit/dist/coldstart-report.html' }],
           tags: ['步数与切换次数'], note: '对照真机体检报告提出的具体需求', thumb: { type: 'image', src: 'site/thumbs/22-coldstart-report.jpg' },
         },
+        {
+          title: '冻屏分析报告：先给判决，再给卷宗', subtitle: 'AppFreeze Report · Verdict First',
+          desc: '同一次冻屏在「源码可达 / 源码不可达」两种条件下，用一个模板出报告：首屏就是一句话结论、证据强度三轴（定性 / 定位 / 修复）和主线程时间线——两次点击怎么把两轮 4.0s 叠成 6S 冻屏，一眼看清；9 项证据折叠成清单，原始日志可原样复制；行号点开侧边看代码；源码不可达时明确标「通用方向」，可授权读取源码就地升级成精确补丁；修复后一键复现，时间线叠加「修复后」泳道做前后对比。视觉按鸿蒙开发者官网令牌。',
+          view: 'ready', date: '2026-09-23', href: 'demos/28-appfreeze-report/index.html',
+          links: [
+            { label: '原始 · 源码不可达', href: 'analysis/appfreeze-report/input/v1-源码不可达-210435.html' },
+            { label: '原始 · 源码可达', href: 'analysis/appfreeze-report/input/v2-源码可达-220705.html' },
+            { label: '分析报告', href: 'analysis/appfreeze-report/REPORT-分析报告.html' },
+          ],
+          tags: ['步数与切换次数', '审阅与回退'], note: '对照两份低保真报告提出的具体需求', thumb: { type: 'image', src: 'site/thumbs/28-appfreeze-report.jpg' },
+        },
       ],
     },
 

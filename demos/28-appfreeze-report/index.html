@@ -1,0 +1,883 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>28 · 冻屏分析报告：先给判决，再给卷宗</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230A59F7'/%3E%3Cpath d='M8 20h4l3-9 3 12 3-7h3' fill='none' stroke='white' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<style>
+/* ===== 令牌：华为开发者联盟官网（与 deck-blueprint-style 同一套） ===== */
+:root{
+  --paper:#FFFFFF; --panel:#F1F3F5; --card:#F4F6F7;
+  --ink:#141414; --ink2:#4D4D4D; --ink3:#7A7A7A; --ink4:#A3A3A3;
+  --line:#E8E8E8; --accent:#0A59F7; --accent-hover:#0047D6; --soft:#E6EEFE;
+  --yes:#237A45; --yes-soft:#E4F2E9; --part:#8F5A00; --part-soft:#FBF0DC; --no:#C4322A; --no-soft:#FBE7E5;
+  --font:'HarmonyOS Sans SC','PingFang SC','Microsoft YaHei','Noto Sans CJK SC',system-ui,sans-serif;
+  --mono:'JetBrains Mono','SFMono-Regular',Consolas,'Liberation Mono',monospace;
+  --r-card:12px; --r-sm:8px;
+  --hdr:64px; --nav-w:248px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-padding-top:calc(var(--hdr) + 16px)}
+body{font-family:var(--font);color:var(--ink);background:var(--paper);font-size:14px;line-height:1.6;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
+code,.mono{font-family:var(--mono);font-size:12.5px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
+svg.i{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;flex:none}
+
+/* ===== 顶部全局导航 ===== */
+.gh{position:sticky;top:0;z-index:50;height:var(--hdr);background:rgba(255,255,255,.96);backdrop-filter:blur(12px);display:flex;align-items:center;gap:28px;padding:0 32px;box-shadow:0 1px 0 var(--line)}
+.brand{display:flex;align-items:center;gap:10px;white-space:nowrap}
+.tile{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,#2E7BFF,#0A59F7 60%,#0843C4);position:relative;overflow:hidden;display:grid;place-items:center;color:#fff}
+.tile::before{content:'';position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.16) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.16) 1px,transparent 1px);background-size:6px 6px}
+.tile svg{position:relative;width:18px;height:18px;stroke-width:2}
+.brand b{font-weight:500;font-size:16px}
+.brand span{color:var(--ink3);font-size:14px}
+.gh nav{display:flex;gap:4px;height:100%}
+.gh nav a{display:flex;align-items:center;padding:0 12px;color:var(--ink2);text-decoration:none;font-size:14px;position:relative}
+.gh nav a.on{color:var(--ink)}
+.gh nav a.on::after{content:'';position:absolute;left:12px;right:12px;bottom:0;height:2px;background:var(--accent);border-radius:2px}
+.gh .grow{flex:1}
+.seg{display:inline-flex;background:var(--panel);border-radius:999px;padding:3px}
+.seg button{height:28px;padding:0 14px;border-radius:999px;font-size:13px;color:var(--ink2);white-space:nowrap}
+.seg button.on{background:var(--paper);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.06)}
+.seg-lbl{font-size:12px;color:var(--ink4);margin-right:8px}
+
+/* ===== 骨架：左目录 + 正文 ===== */
+.shell{display:flex;min-height:calc(100vh - var(--hdr))}
+.side{width:var(--nav-w);flex:none;background:var(--panel);position:sticky;top:var(--hdr);height:calc(100vh - var(--hdr));overflow:auto;padding:20px 12px 24px}
+.side h6{font-size:12px;font-weight:400;color:var(--ink4);padding:0 12px;margin:4px 0 8px}
+.side a{display:flex;align-items:center;gap:8px;height:36px;padding:0 12px;border-radius:8px;color:var(--ink2);text-decoration:none;font-size:14px}
+.side a:hover{background:rgba(0,0,0,.04)}
+.side a.on{background:var(--soft);color:var(--accent)}
+.side a .n{margin-left:auto;font-size:12px;color:var(--ink4);font-family:var(--mono)}
+.side a.on .n{color:var(--accent)}
+.side .sep{height:16px}
+body.is-empty .side .rep{display:none}
+.side .other a{font-size:13px;height:32px}
+.main{flex:1;min-width:0;padding:18px 40px 80px}
+.crumb{font-size:13px;color:var(--ink4);display:flex;gap:6px;align-items:center;margin-bottom:10px}
+.crumb a{color:var(--ink3);text-decoration:none}.crumb a:hover{color:var(--accent)}
+
+/* ===== 报告头 ===== */
+.head{display:flex;align-items:flex-end;gap:24px;flex-wrap:wrap;margin-bottom:14px}
+.head .l{flex:1;min-width:320px}
+.eyebrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+.pill{display:inline-flex;align-items:center;gap:5px;height:24px;padding:0 10px;border-radius:999px;font-size:12px;background:var(--panel);color:var(--ink2);white-space:nowrap}
+.pill.blue{background:var(--soft);color:var(--accent)}
+.pill.yes{background:var(--yes-soft);color:var(--yes)}
+.pill.part{background:var(--part-soft);color:var(--part)}
+.pill.no{background:var(--no-soft);color:var(--no)}
+.pill svg.i{width:13px;height:13px}
+h1{font-size:24px;font-weight:400;line-height:1.35;letter-spacing:-.005em}
+.meta{margin-top:8px;font-size:13px;color:var(--ink3);display:flex;flex-wrap:wrap;gap:4px 16px}
+.meta .mono{font-size:12.5px}
+.acts{display:flex;gap:10px;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 18px;border-radius:999px;font-size:14px;white-space:nowrap;transition:background .15s}
+.btn.pri{background:var(--accent);color:#fff}.btn.pri:hover{background:var(--accent-hover)}
+.btn.sec{background:var(--soft);color:var(--accent)}.btn.sec:hover{background:#D6E3FD}
+.btn.ter{color:var(--ink2);background:var(--panel)}.btn.ter:hover{background:#E6E9EC}
+.btn.sm{height:30px;padding:0 14px;font-size:13px}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.link{color:var(--accent);cursor:pointer;font-family:var(--mono);font-size:12.5px;white-space:nowrap;text-decoration:none}
+.link:hover{text-decoration:underline}
+
+/* ===== 横幅 ===== */
+.banner{display:flex;align-items:center;gap:12px;padding:8px 10px 8px 16px;border-radius:var(--r-card);margin-bottom:16px;font-size:14px}
+.banner.warn{background:var(--part-soft);color:#5E3B00}
+.banner.info{background:var(--soft);color:#0B3A99}
+.banner.ok{background:var(--yes-soft);color:#154D2B}
+.banner.bad{background:var(--no-soft);color:#7A1C16}
+.banner .t{flex:1}
+.banner b{font-weight:500}
+
+/* ===== 两栏 ===== */
+.grid2{display:grid;grid-template-columns:minmax(0,58fr) minmax(0,42fr);gap:20px;align-items:start}
+.col{display:flex;flex-direction:column;gap:20px;min-width:0}
+@media (max-width:1200px){.grid2{grid-template-columns:1fr}}
+.sec-t{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.sec-t h2{font-size:18px;font-weight:400}
+.sec-t .sub{font-size:13px;color:var(--ink4)}
+.sec-t .grow{flex:1}
+.card{background:var(--card);border-radius:var(--r-card);padding:20px}
+.verdict{padding:16px 20px}
+a.btn{text-decoration:none}
+
+/* 结论卡 */
+.verdict h3{font-size:19px;font-weight:400;line-height:1.45;margin-bottom:8px}
+.path{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:13px;color:var(--ink2);margin-bottom:10px}
+.path .sep{color:var(--ink4)}
+.pts{list-style:none;display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
+.pts li{display:grid;grid-template-columns:20px 1fr auto;gap:8px;align-items:start;font-size:14px;color:var(--ink2);line-height:1.55}
+.pts li .dot{width:20px;height:20px;border-radius:50%;background:var(--paper);color:var(--accent);font-size:11px;display:grid;place-items:center;font-family:var(--mono);margin-top:1px}
+.pts li.unk .dot{color:var(--part)}
+.pts li code{background:var(--paper);border-radius:4px;padding:0 4px}
+.vfoot{display:flex;align-items:center;gap:10px 16px;flex-wrap:wrap}
+.vmeta{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:13px;color:var(--ink3);margin-left:auto}
+.vmeta b{font-weight:400;color:var(--ink)}
+.kv{display:none}
+.kv div{background:var(--paper);padding:10px 12px}
+.kv dt{font-size:12px;color:var(--ink4)}
+.kv dd{font-size:14px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media (max-width:1400px){.kv{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.verdict .acts{justify-content:flex-start}
+.upg{display:flex;gap:10px;align-items:center;margin-top:14px;padding:12px 14px;background:var(--paper);border-radius:var(--r-sm)}
+.upg .st{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--ink4)}
+.upg .st.on{color:var(--accent)}.upg .st.done{color:var(--yes)}
+.upg .st .b{width:18px;height:18px;border-radius:50%;background:var(--panel);display:grid;place-items:center;font-size:11px}
+.upg .st.on .b{background:var(--soft)}.upg .st.done .b{background:var(--yes-soft)}
+.upg .ar{color:var(--ink4)}
+
+/* 图表容器：蓝图格 + 制图角标 */
+.chart{position:relative;background:var(--paper);border-radius:var(--r-card);padding:12px 14px 10px;
+  background-image:linear-gradient(rgba(10,89,247,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(10,89,247,.05) 1px,transparent 1px);background-size:20px 20px;background-color:#FBFCFE}
+.chart .cn{position:absolute;width:13px;height:13px;border-color:rgba(10,89,247,.38);border-style:solid;border-width:0}
+.chart .cn.tl{top:0;left:0;border-top-width:1.25px;border-left-width:1.25px}
+.chart .cn.tr{top:0;right:0;border-top-width:1.25px;border-right-width:1.25px}
+.chart .cn.bl{bottom:0;left:0;border-bottom-width:1.25px;border-left-width:1.25px}
+.chart .cn.br{bottom:0;right:0;border-bottom-width:1.25px;border-right-width:1.25px}
+#tl{width:100%;height:auto;display:block;overflow:visible}
+#tl text{font-family:var(--mono);font-size:11.5px;fill:var(--ink3)}
+#tl .ln{font-family:var(--font);font-size:13px;fill:var(--ink2)}
+#tl .st{cursor:pointer;transition:opacity .15s}
+#tl .st:hover,#tl .st.hl{opacity:.72}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--ink3);margin-top:8px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+.tip{position:fixed;z-index:90;pointer-events:none;background:#1F2329;color:#fff;border-radius:8px;padding:8px 10px;font-size:12px;line-height:1.5;max-width:420px;opacity:0;transition:opacity .1s}
+.tip.on{opacity:1}
+.tip code{font-size:11.5px;color:#C9D7FF}
+
+/* 因果链 */
+.chain summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:8px;font-size:14px;color:var(--ink2)}
+.chain summary::-webkit-details-marker{display:none}
+.chain summary svg{transition:transform .15s}
+.chain[open] summary svg{transform:rotate(90deg)}
+.chain ol{margin:12px 0 0 0;padding:0;list-style:none;counter-reset:c;display:flex;flex-direction:column;gap:8px}
+.chain li{counter-increment:c;display:grid;grid-template-columns:24px 1fr;gap:8px;font-size:14px;color:var(--ink2)}
+.chain li::before{content:counter(c);width:22px;height:22px;border-radius:50%;background:var(--paper);display:grid;place-items:center;font-size:12px;color:var(--ink3);font-family:var(--mono)}
+
+/* 修复 */
+.fix{background:var(--card);border-radius:var(--r-card);padding:18px 20px}
+.fix+.fix{margin-top:12px}
+.fix-h{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.fix-h .no{width:24px;height:24px;border-radius:50%;background:var(--accent);color:#fff;font-size:12px;display:grid;place-items:center;flex:none}
+.fix.dir .fix-h .no{background:var(--part)}
+.fix-h h4{font-size:16px;font-weight:400;flex:1;min-width:200px}
+.fix p.why{font-size:13px;color:var(--ink3);margin:8px 0 12px}
+.fix p.cav{font-size:13px;color:var(--part);margin:-4px 0 12px;display:flex;gap:6px}
+.code{background:var(--paper);border-radius:var(--r-sm);overflow:auto;font-family:var(--mono);font-size:12.5px;line-height:20px;padding:8px 0}
+.code .r{display:grid;grid-template-columns:44px 16px 1fr;white-space:pre}
+.code .r .n{color:var(--ink4);text-align:right;padding-right:8px;user-select:none}
+.code .r .s{color:var(--ink4);user-select:none}
+.code .r.add{background:var(--yes-soft)}.code .r.add .s{color:var(--yes)}
+.code .r.del{background:var(--no-soft)}.code .r.del .s{color:var(--no)}
+.code .r.ctx{color:var(--ink2)}
+.code .r.gap{color:var(--ink4)}
+.fix .acts{margin-top:12px}
+.verify{margin-top:16px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:16px 20px;border-radius:var(--r-card);background:var(--soft)}
+.verify .t{flex:1;min-width:240px;font-size:14px;color:#0B3A99}
+.verify .t small{display:block;color:var(--ink3);font-size:12.5px;margin-top:2px}
+.verify.ok{background:var(--yes-soft)}.verify.ok .t{color:#154D2B}
+.verify.off{background:var(--panel)}.verify.off .t{color:var(--ink3)}
+
+/* 三轴 */
+.axes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.ax{background:var(--card);border-radius:var(--r-card);padding:14px 14px 12px;display:flex;flex-direction:column;gap:6px}
+.ax .k{font-size:12px;color:var(--ink4)}
+.ax .v{font-size:17px;display:flex;align-items:center;gap:6px}
+.ax .v i{width:8px;height:8px;border-radius:50%;display:inline-block}
+.ax .d{font-size:12.5px;color:var(--ink3);line-height:1.5}
+.ax.yes .v{color:var(--yes)}.ax.yes .v i{background:var(--yes)}
+.ax.part .v{color:var(--part)}.ax.part .v i{background:var(--part)}
+
+/* 证据清单 */
+.sum{display:flex;gap:6px;flex-wrap:wrap}
+.checks{background:var(--card);border-radius:var(--r-card);padding:6px}
+.ck{border-radius:10px}
+.ck+.ck{margin-top:2px}
+.ck-h{display:grid;grid-template-columns:22px 1fr auto 16px;gap:10px;align-items:center;width:100%;text-align:left;padding:10px 10px;border-radius:10px}
+.ck-h:hover{background:rgba(0,0,0,.03)}
+.ck.focus .ck-h{background:var(--paper);box-shadow:inset 2px 0 0 var(--accent)}
+.ck-h .ic{width:22px;height:22px;border-radius:50%;display:grid;place-items:center}
+.ck-h .ic svg{width:13px;height:13px;stroke-width:2.2}
+.ck-h .tt{font-size:14px;color:var(--ink)}
+.ck-h .one{display:block;font-size:12.5px;color:var(--ink3);margin-top:1px}
+.ck-h .chev{color:var(--ink4);transition:transform .15s}
+.ck.open .ck-h .chev{transform:rotate(90deg)}
+.s-hit .ic{background:var(--no-soft);color:var(--no)}
+.s-pass .ic{background:var(--yes-soft);color:var(--yes)}
+.s-excl .ic{background:#E9EBED;color:var(--ink3)}
+.s-miss .ic{background:var(--part-soft);color:var(--part)}
+.st-t{font-size:12px;padding:0 8px;height:22px;border-radius:999px;display:inline-flex;align-items:center}
+.s-hit .st-t{background:var(--no-soft);color:var(--no)}
+.s-pass .st-t{background:var(--yes-soft);color:var(--yes)}
+.s-excl .st-t{background:#E9EBED;color:var(--ink3)}
+.s-miss .st-t{background:var(--part-soft);color:var(--part)}
+.ck-b{display:none;padding:2px 12px 14px 42px}
+.ck.open .ck-b{display:block}
+.ck-b ul{list-style:none;display:flex;flex-direction:column;gap:5px;margin-bottom:10px}
+.ck-b li{font-size:13px;color:var(--ink2);padding-left:12px;position:relative}
+.ck-b li::before{content:'';position:absolute;left:0;top:9px;width:4px;height:4px;border-radius:50%;background:var(--accent)}
+.raw summary{font-size:12.5px;color:var(--accent);cursor:pointer;list-style:none;display:inline-flex;align-items:center;gap:4px}
+.raw summary::-webkit-details-marker{display:none}
+.raw pre{margin-top:8px;background:var(--paper);border-radius:var(--r-sm);padding:10px 12px;font-family:var(--mono);font-size:12px;line-height:1.6;white-space:pre-wrap;word-break:break-all;color:var(--ink2);position:relative}
+.raw pre .cp{position:absolute;top:6px;right:6px}
+.frames{display:grid;grid-template-columns:auto 1fr;gap:4px 10px;font-size:12.5px;margin-bottom:10px}
+.frames .f{font-family:var(--mono);color:var(--ink3)}
+.frames .e{color:var(--ink2)}
+
+/* 排除项 & 线程 */
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.xchip{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 12px;border-radius:999px;background:var(--card);font-size:13px;color:var(--ink2);cursor:default}
+.xchip svg{width:12px;height:12px;color:var(--ink4);stroke-width:2.2}
+.xchip:hover{background:#E9EBED}
+.dec{display:grid;grid-template-columns:auto 1fr 1fr;border-radius:var(--r-card);overflow:hidden;background:var(--card);font-size:13px;margin-bottom:12px}
+.dec div{padding:8px 12px;color:var(--ink2)}
+.dec .h{color:var(--ink4);font-size:12px;background:var(--panel)}
+.dec .k{color:var(--ink3)}
+.dec .hit{color:var(--no);background:rgba(196,50,42,.05)}
+.threads{background:var(--card);border-radius:var(--r-card);padding:16px}
+.tdots{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.tdots i{width:14px;height:14px;border-radius:4px;background:#D9DDE1}
+.tdots i.r{background:var(--no)}
+.tgrp{display:grid;grid-template-columns:1fr auto auto;gap:4px 14px;font-size:13px;color:var(--ink2)}
+.tgrp .m{font-family:var(--mono);font-size:12px;color:var(--ink3)}
+.tgrp .r{color:var(--no)}
+
+/* 代码抽屉（替代 IDE 分屏） */
+.scrim{position:fixed;inset:var(--hdr) 0 0 0;background:rgba(20,20,20,.18);opacity:0;pointer-events:none;transition:opacity .2s;z-index:60}
+.scrim.on{opacity:1;pointer-events:auto}
+.drawer{position:fixed;top:var(--hdr);right:0;bottom:0;width:min(760px,56vw);background:var(--paper);z-index:61;transform:translateX(100%);transition:transform .22s ease;display:flex;flex-direction:column;box-shadow:-1px 0 0 var(--line)}
+.drawer.on{transform:none}
+.dr-h{display:flex;align-items:center;gap:10px;padding:14px 20px;background:var(--panel)}
+.dr-h .f{font-family:var(--mono);font-size:13px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dr-tabs{display:flex;gap:4px;padding:10px 16px 0;background:var(--panel)}
+.dr-tabs button{height:32px;padding:0 12px;border-radius:8px 8px 0 0;font-size:12.5px;font-family:var(--mono);color:var(--ink3)}
+.dr-tabs button.on{background:var(--paper);color:var(--ink)}
+.dr-b{flex:1;overflow:auto;position:relative;padding:8px 0 40px}
+.src .r{display:grid;grid-template-columns:52px 1fr;font-family:var(--mono);font-size:12.5px;line-height:21px;white-space:pre;color:var(--ink2)}
+.src .r .n{color:var(--ink4);text-align:right;padding-right:14px;user-select:none}
+.src .r.hl{background:var(--no-soft);box-shadow:inset 3px 0 0 var(--no);animation:flash .9s ease-out}
+.src .r.hl2{background:var(--part-soft);box-shadow:inset 3px 0 0 var(--part)}
+.src .kw{color:#C4322A}.src .str{color:#237A45}.src .cm{color:var(--ink4);font-style:italic}.src .ty{color:#0A59F7}
+@keyframes flash{0%{filter:brightness(.88)}100%{filter:none}}
+.flag{position:sticky;top:8px;float:right;margin-right:16px;z-index:2;background:var(--no);color:#fff;font-size:12px;border-radius:999px;padding:4px 12px}
+.flag.part{background:var(--part)}
+.dr-f{padding:10px 20px;background:var(--panel);font-size:12.5px;color:var(--ink3);display:flex;gap:10px;align-items:center}
+
+/* 空态 / 分析中 */
+.empty{max-width:880px;margin:48px auto;text-align:center}
+.empty h1{margin-bottom:6px}
+.empty p{color:var(--ink3)}
+.drop{margin:28px auto 22px;border-radius:var(--r-card);padding:34px;background:var(--card);color:var(--ink3);display:flex;flex-direction:column;align-items:center;gap:10px}
+.drop svg{width:28px;height:28px;color:var(--accent)}
+.samples{display:grid;grid-template-columns:1fr 1fr;gap:14px;text-align:left}
+.sample{background:var(--card);border-radius:var(--r-card);padding:18px 20px;text-align:left;display:flex;flex-direction:column;gap:6px;transition:background .15s}
+.sample:hover{background:var(--soft)}
+.sample b{font-weight:400;font-size:16px}
+.sample span{font-size:13px;color:var(--ink3)}
+.analyzing .ck-h{opacity:.35}
+.analyzing .ck.lit .ck-h{opacity:1}
+
+.toast{position:fixed;left:50%;bottom:32px;transform:translate(-50%,20px);background:#1F2329;color:#fff;padding:10px 18px;border-radius:999px;font-size:13px;opacity:0;transition:all .2s;z-index:99;pointer-events:none}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+.kbd{font-family:var(--mono);font-size:11px;background:var(--paper);border-radius:4px;padding:1px 5px;color:var(--ink3)}
+.hint{font-size:12px;color:var(--ink4);margin-top:10px}
+.fade{animation:fade .35s ease}
+@keyframes fade{from{opacity:.2;transform:translateY(4px)}to{opacity:1;transform:none}}
+@media (max-width:900px){.side{display:none}.main{padding:16px 16px 60px}.gh{padding:0 16px;gap:10px}.gh nav,.seg-lbl,.brand span:not(.tile){display:none}.seg button{padding:0 9px;font-size:12px}.axes{grid-template-columns:1fr}.samples{grid-template-columns:1fr}.pts li{grid-template-columns:20px 1fr}.pts li>span:last-child{grid-column:2}.vmeta{margin-left:0}.banner{flex-wrap:wrap}.dec{grid-template-columns:auto 1fr 1fr;font-size:12px}.drawer{width:100vw}.head .acts{width:100%}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-pulse" viewBox="0 0 24 24"><path d="M3 12h4l3-8 4 16 3-8h4"/></symbol>
+  <symbol id="i-chev" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7"/></symbol>
+  <symbol id="i-bang" viewBox="0 0 24 24"><path d="M12 5v9M12 18.5v.5"/></symbol>
+  <symbol id="i-minus" viewBox="0 0 24 24"><path d="M6 12h12"/></symbol>
+  <symbol id="i-q" viewBox="0 0 24 24"><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14M12 18v.5"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></symbol>
+  <symbol id="i-code" viewBox="0 0 24 24"><path d="M9 7l-5 5 5 5M15 7l5 5-5 5"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="M7 5l12 7-12 7z"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></symbol>
+  <symbol id="i-unlock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 7.5-2"/></symbol>
+  <symbol id="i-branch" viewBox="0 0 24 24"><circle cx="6" cy="6" r="2"/><circle cx="6" cy="18" r="2"/><circle cx="18" cy="8" r="2"/><path d="M6 8v8M18 10c0 4-6 3-10 7"/></symbol>
+  <symbol id="i-export" viewBox="0 0 24 24"><path d="M12 15V4M8 8l4-4 4 4M5 14v5h14v-5"/></symbol>
+  <symbol id="i-file" viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></symbol>
+  <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 16V5M8 9l4-4 4 4M5 15v4h14v-4"/></symbol>
+  <symbol id="i-warn" viewBox="0 0 24 24"><path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17v.5"/></symbol>
+  <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/></symbol>
+  <symbol id="i-ok" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l3 3 5-6"/></symbol>
+  <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 11a8 8 0 0 0-14.6-4.5M4 5v4h4M4 13a8 8 0 0 0 14.6 4.5M20 19v-4h-4"/></symbol>
+</svg>
+
+<header class="gh">
+  <div class="brand"><span class="tile"><svg class="i"><use href="#i-pulse"/></svg></span><b>DevEco Code</b><span>故障分析</span></div>
+  <nav><a class="on" href="#">分析报告</a><a href="#">故障库</a><a href="#">采集设置</a></nav>
+  <div class="grow"></div>
+  <span class="seg-lbl">演示状态</span>
+  <div class="seg" id="mode" role="tablist">
+    <button data-m="v2" class="on">源码可达</button>
+    <button data-m="v1">源码不可达</button>
+    <button data-m="empty">空态</button>
+  </div>
+</header>
+
+<div class="shell">
+  <aside class="side" id="side">
+    <div class="rep"><h6>本份报告</h6>
+    <a href="#sec-verdict" data-s="sec-verdict">结论</a>
+    <a href="#sec-timeline" data-s="sec-timeline">主线程时间线</a>
+    <a href="#sec-fix" data-s="sec-fix">修复建议<span class="n" id="nav-fixn">3</span></a>
+    <a href="#sec-strength" data-s="sec-strength">证据强度</a>
+    <a href="#sec-checks" data-s="sec-checks">证据清单<span class="n" id="nav-ckn">9</span></a>
+    <a href="#sec-excl" data-s="sec-excl">排除项与判据</a>
+    <a href="#sec-threads" data-s="sec-threads">线程快照<span class="n">32</span></a></div>
+    <div class="sep"></div>
+    <h6>同类报告</h6>
+    <div class="other">
+      <a href="../22-coldstart-report/index.html">冷启动分析报告</a>
+    </div>
+    <div class="sep"></div>
+    <h6>快捷键</h6>
+    <div style="padding:0 12px;font-size:12.5px;color:var(--ink3);line-height:2">
+      <span class="kbd">J</span> <span class="kbd">K</span> 证据上下移动<br>
+      <span class="kbd">Enter</span> 展开 / 收起<br>
+      <span class="kbd">G</span> 跳到修复建议<br>
+      <span class="kbd">Esc</span> 关闭代码面板
+    </div>
+  </aside>
+
+  <main class="main" id="main"></main>
+</div>
+
+<div class="scrim" id="scrim"></div>
+<aside class="drawer" id="drawer" aria-hidden="true">
+  <div class="dr-h"><svg class="i"><use href="#i-file"/></svg><span class="f" id="dr-path"></span>
+    <span class="pill" id="dr-ver"></span>
+    <button class="btn ter sm" id="dr-close"><svg class="i"><use href="#i-x"/></svg>关闭</button></div>
+  <div class="dr-tabs" id="dr-tabs"></div>
+  <div class="dr-b" id="dr-body"></div>
+  <div class="dr-f" id="dr-foot"></div>
+</aside>
+<div class="tip" id="tip"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* =====================================================================
+   数据：两份低保真里的真实数据（同一次冻屏，2026-06-05，com.example.freezetest）
+   字段按 product-doc.md 的 FreezeReport 契约组织
+   ===================================================================== */
+const ROUND1 = [
+  ['02.637','writing note body to database'],['03.137','updating search index'],['03.637','updating attachment references'],
+  ['04.137','syncing tag associations'],['04.637','updating category membership'],['05.137','writing thumbnail metadata'],
+  ['05.637','queuing for cloud sync'],['06.137','flushing preferences']];
+const ROUND2 = [
+  ['06.715','writing note body to database'],['07.277','updating search index'],['07.778','updating attachment references'],
+  ['08.278','syncing tag associations'],['08.778','updating category membership'],['09.278','writing thumbnail metadata'],
+  ['09.778','queuing for cloud sync'],['10.282','flushing preferences']];
+
+const RAW = {
+  route:`Reason:THREAD_BLOCK_6S
+appfreeze: com.example.freezetest THREAD_BLOCK_6S at 20260605111510
+Pid:19655
+TID = 19655
+Fault time:2026/06/05-11:15:07
+App main thread is not response!`,
+  device:`Device Memory(kB): Total 4025344, Free 2065700, Available 2699504
+热等级：0，温度正常
+CPU使用率：Total: 28.11%; User Space: 22.92%; Kernel Space: 5.19%; iowait: 0.24%`,
+  time:`Fault time:2026/06/05-11:15:07
+Catche stack trace start time: 2026-06-05 11:15:07.142
+Catche stack trace start time: 2026-06-05 11:15:10.140
+start time: 2026/06/05-11:15:07:311 / TIMESTAMP: 2026/06/05-11:15:10:313`,
+  queue:`EventHandler dump begin curTime: 2026-06-05 11:15:10.128
+Current Running: start at 2026-06-05 11:15:06.639, Event { send thread = 20842, send time = 2026-06-05 11:15:03.418, handle time = 2026-06-05 11:15:03.418, trigger time = 2026-06-05 11:15:06.639, task name = MMITask, caller = [deamon_io_waiter.cpp(HandleFileDescriptorEvent:211)] }
+No. 28 : Event { ... trigger time = 2026-06-05 11:15:02.632, completeTime time = 2026-06-05 11:15:06.639, priority = VIP, task name = MMITask, ... }
+VIP: 105, Immediate: 0, High: 0, Low: 10, Idle: 0, Total: 115`,
+  stack:`Tid:19655, Name:mple.freezetest
+state=R, utime=564, stime=53, priority=10, nice=-10, clk=100
+#00 pc 00000000005edb84 /system/lib64/module/arkcompiler/stub.an(BCStub_HandleJeqzImm8StwCopy+4)
+#01 pc 10000001ffffffff Not mapped
+
+Tid:19655, Name:mple.freezetest
+state=R, utime=859, stime=56, priority=10, nice=-10, clk=100
+#00 pc 00000000005b93fd /system/lib64/module/arkcompiler/stub.an(BCStub_HandleLdobjbynameImm8Id16StwCopy+6045)
+#01 pc 000000006a223f3d Not mapped`,
+  special:`区段索引：- binder：无（调用 0 条，资源记录 0 条，对端进程 0 个）
+Tid:20804, Name:OS_IPC_0_20804
+state=S
+#00 pc 00000000000da029 /system/lib/ld-musl-x86_64.so.1(ioctl+185)
+#02 pc 0000000000076acd /system/lib64/platformsdk/libipc_single.z.so(OHOS::BinderInvoker::TransactWithDriver(bool)+269)
+#04 pc 0000000000079068 /system/lib64/platformsdk/libipc_single.z.so(OHOS::BinderInvoker::JoinThread(bool)+40)`,
+  hilog:`11:15:02.637 I A00000/FreezeNoteDetail: onSaveClick: saving note note_00000, hasAttachment=true
+11:15:02.637 I A00000/NoteRepository: saveNote: id=note_00000, sync=true, validate=true
+11:15:02.637 D A00000/NoteRepository: saveNoteSync: starting atomic write for note_00000
+11:15:06.637 I A00000/NoteRepository: saveNoteSync: completed for note_00000
+11:15:06.715 I A00000/FreezeNoteDetail: onSaveClick: saving note note_00000, hasAttachment=true`,
+};
+
+const EXCL = [
+  ['等锁','栈中无 pthread_mutex；其余线程无持锁者'],
+  ['Binder','栈中无 BinderInvoker::WaitForCompletion；binder 调用 0 条；5 个 IPC 线程均空闲'],
+  ['阻塞 IO','栈中无 ld-musl open / read / write'],
+  ['FFRT','栈中无 libffrt.so；FFRT worker 均在条件等待'],
+  ['libuv','栈中无 libuv.so'],
+  ['FullGC','GC 线程空闲，栈顶不是 cond_wait + jsruntime 组合'],
+  ['HeapDump','栈中无 DumpHeapSnapshot'],
+];
+
+function checks(v){
+  const src = v==='v2'
+    ? {s:'hit', t:'源码定位', one:'3 个文件 7 处行号 · 故障版本 4ca0c7e',
+       pts:['任务时长 4.0s 与 8 × injectDelay(500) 精确吻合','两次栈顶字节码（取 Date.now 属性 / 循环判定）与 injectDelay 的 while 忙等逐字对应','hasAttachment() 对带封面图的笔记恒为 true → options.sync 恒为 true','前置条件：CrashTestPage 冻屏测试模式开关已开启'],
+       raw:`git log -1 4ca0c7e  →  2026-06-05 10:31:50「构造appfreeze的场景」
+git status           →  M FreezeNoteDetailPage.ets / M NoteRepository.ets`}
+    : {s:'miss', t:'源码定位', one:'未读取工程源码 · 业务定位来自应用日志',
+       pts:['栈中没有应用 so 帧，也没有 BuildID，行号无法从栈得到','业务函数由应用日志 A00000/FreezeNoteDetail、A00000/NoteRepository 定位','为什么 sync=true 需要读源码才能回答'], raw:RAW.hilog};
+  return [
+    {id:'route', s:'pass', t:'故障类型与目标线程', one:'THREAD_BLOCK_6S · TID = PID = 19655，即主线程',
+     pts:['按故障模式路由到主线程分析','前台页面自 11:14:58.240 起为 FreezeNoteDetailPage'], raw:RAW.route},
+    {id:'device', s:'excl', t:'整机状态', one:'CPU 28% · 可用内存 2611 MB · 热等级 0',
+     pts:['CPU 28.11%，低于 85% 阈值','可用内存 2611.1 MB，高于 800 MB 阈值','热等级 0，无低内存 / 热限频标记'], raw:RAW.device},
+    {id:'time', s:'pass', t:'时间差校验', one:'抓栈延迟 0.14s · 上报延迟 0.17s，堆栈可信',
+     pts:['故障 → 抓栈 0.14s（阈值 2s）','抓栈 → 上报 0.17s（阈值 10s）'], raw:RAW.time},
+    {id:'queue', s:'hit', t:'任务队列', one:'当前 MMITask 已执行 3.5s，超过 3s 阈值',
+     pts:['前一个 MMITask 执行 4.0s（02.632 → 06.639）','当前 MMITask 于 03.418 发出，06.639 才开始执行——第 2 次点击在第 1 轮期间排队','队列 62 → 115，VIP 52 → 105'], raw:RAW.queue, tl:'queue'},
+    {id:'stack', s:'hit', t:'主线程堆栈', one:'繁忙：state=R，3s 内 CPU 98%，两次栈顶不同',
+     frames:[['#00 · 3S','Jeqz：为零则跳转，对应循环条件判定'],['#00 · 6S','Ldobjbyname：按名取属性'+(v==='v2'?'，即取 Date.now':'')],['#01','Not mapped：解释器帧无法回溯，正常现象'],['utime','564 → 859（1/100 秒），3s 内用了 2.95s']],
+     raw:RAW.stack, tl:'watch'},
+    {id:'special', s:'excl', t:'专项排除', one:'7 类阻塞模式全部排除', pts:['见「排除项与判据」'], raw:RAW.special},
+    {id:'others', s:'excl', t:'其他线程', one:'31 个线程均为 S 态空闲，无持锁、无跨线程依赖', pts:['OS_IPC × 5、GC × 4、FFRT、ace.bg × 8 全部在条件等待'], raw:null},
+    {id:'sample', s:'miss', t:'采样栈', one:'未包含采样栈 → 三级根因按规则默认匹配',
+     pts:['三级根因「执行耗时操作」需要采样栈里热点占比 > 30% 才能判定，本次为默认匹配','开启方式：在「采集设置」里打开冻屏采样栈，再复现一次'], raw:null},
+    Object.assign({id:'source'}, src),
+  ];
+}
+
+const V = {
+  v2: {
+    title:'保存笔记时主线程同步忙等 8 × 500ms，两次点击叠加阻塞约 8s',
+    pts:[
+      {h:'<code>hasAttachment()</code> 把已有封面图当作待保存附件', loc:['FreezeNoteDetailPage.ets',48,48]},
+      {h:'<code>options.sync</code> 因此恒为 true，走同步保存路径', loc:['NoteRepository.ets',44,48]},
+      {h:'<code>saveNoteSync</code> 在主线程顺序执行 8 次 <code>injectDelay(500)</code> 忙等', loc:['NoteRepository.ets',64,102]},
+      {h:'第 2 次点击在忙等期间排队；保存中禁用态来不及重渲染，没有拦住', tl:true},
+    ],
+    axes:[['定性 · 根因类别','高','yes','state=R，3s 内 CPU 98%，两次栈顶不同'],['定位 · 粒度','行级','yes','3 个文件、7 处行号'],['修复 · 精度','精确补丁','yes','3 处改动，工作区已包含']],
+    chain:['冻屏测试模式已开启，进入带封面图的笔记详情页（11:14:58）','02.631 点击保存：hasAttachment() 误判为有附件，options.sync = true','saveNoteSync 在主线程顺序忙等 8 × 500ms，state=R、CPU 近满核','03.418 再次点击：主线程没回到事件循环，isSaving 的禁用态没重渲染，点击排进队列','06.639 第 1 轮结束，第 2 轮立即开始，主线程连续被占约 8s，VIP 队列积压 105 个','07.142 触发 3S 告警，10.313 触发 6S 上报'],
+  },
+  v1: {
+    title:'保存笔记时主线程同步执行 saveNoteSync 流水线，两次点击叠加阻塞约 8s',
+    pts:[
+      {h:'<code>onSaveClick</code> 调用 <code>saveNote(sync=true)</code>，在主线程同步执行 <code>saveNoteSync</code>', log:'A00000/NoteRepository'},
+      {h:'流水线 8 步、每步约 500ms，单轮约 4.0s', tl:true},
+      {h:'第 2 次点击在第 1 轮执行中排队，紧接着再跑一轮', tl:true},
+      {h:'为什么 <code>sync=true</code>：未读取源码，无法判断', unk:true},
+    ],
+    axes:[['定性 · 根因类别','高','yes','state=R，3s 内 CPU 98%，两次栈顶不同'],['定位 · 粒度','函数级','part','来自应用日志，没有文件与行号'],['修复 · 精度','通用方向','part','未经源码核实，可能与现有代码重复']],
+    chain:['进入笔记详情页（11:14:58）','02.631 点击保存：saveNote(sync=true) 在主线程同步执行 saveNoteSync','8 步流水线每步约 500ms，第 1 轮耗时 4.0s','03.418 再次点击，排队到 06.639 才分发，第 2 轮紧接执行','07.142 触发 3S 告警，10.313 触发 6S 上报'],
+  }
+};
+
+const FIX = {
+  v2:[
+    {t:'修正 hasAttachment 误判条件', file:'FreezeNoteDetailPage.ets', range:[45,54], cause:1,
+     why:'只有本次编辑新增的附件才需要走附件保存路径；已有封面图随笔记记录一起保存，不构成同步保存的理由。',
+     diff:[['c',45,'  private hasAttachment(): boolean {'],['d',46,'    // Check if the note has an associated media resource'],['d',47,'    // that requires synchronized persistence handling'],['d',48,'    return this.currentNote?.thumbnailPath !== undefined'],['g',null,'    …（49–53 行注释一并删除）'],['a',46,'    return this.pendingAttachments.length > 0'],['c',54,'  }']]},
+    {t:'sync 路径改为可等待的异步实现', file:'NoteRepository.ets', range:[44,48], cause:2,
+     why:'即便确实有附件，也不在主线程同步执行整条流水线。',
+     diff:[['c',44,'    if (options.sync) {'],['d',45,'      // Synchronous path: used when attachments need atomic commit'],['d',46,'      // to ensure data consistency between note record and attachment files'],['d',47,'      this.saveNoteSync(note);'],['a',45,'      await this.saveNoteWithAttachmentsAsync(note);'],['c',48,'    } else {']]},
+    {t:'同步忙等改为逐步 await，让出主线程', file:'NoteRepository.ets', range:[64,102], cause:3,
+     why:'每一步用 await + setTimeout 让出主线程，事件循环能继续处理输入与渲染，禁用态也能及时生效。',
+     diff:[['d',64,'  private saveNoteSync(note: NoteModel): void {'],['a',64,'  private async saveNoteWithAttachmentsAsync(note: NoteModel): Promise<void> {'],['g',null,'    …'],['d',69,'      FreezeTestHelper.injectDelay(500);'],['a',69,'      await this.nonBlockingDelay(500);'],['g',null,'    …Step 2 – Step 8 同理'],['a',103,'  private nonBlockingDelay(ms: number): Promise<void> {'],['a',104,'    return new Promise<void>((resolve) => setTimeout(resolve, ms));'],['a',105,'  }']]},
+  ],
+  v1:[
+    {t:'把保存流水线整体移入 TaskPool', dir:true, cause:1,
+     why:'onSaveClick 里只做调度与 UI 回调，主线程事件循环保持响应。',
+     diff:[['a',1,"import { taskpool } from '@kit.ArkTS'"],['a',2,''],['a',3,'@Concurrent'],['a',4,'function saveNotePipeline(noteId: string, payload: NoteData): SaveResult {'],['a',5,'  return doSavePipeline(noteId, payload)   // 原 saveNoteSync 的 8 步'],['a',6,'}'],['a',7,''],['a',8,'async onSaveClick() {'],['a',9,'  const result = await taskpool.execute(saveNotePipeline, this.noteId, this.buildPayload())'],['a',10,'  this.onSaveFinished(result)'],['a',11,'}']]},
+    {t:'保存中禁止重复点击', dir:true, cause:2,
+     why:'禁用按钮给即时反馈，避免同一笔记并发写。',
+     caveat:'页面可能已经有「保存中」禁用逻辑；主线程被阻塞时它不会重渲染，拦不住第 2 次点击——先完成上一条。',
+     diff:[['a',1,'private saving = false'],['a',2,''],['a',3,'async onSaveClick() {'],['a',4,'  if (this.saving) return'],['a',5,'  this.saving = true'],['a',6,'  try { await taskpool.execute(saveNotePipeline, this.noteId, this.buildPayload()) }'],['a',7,'  finally { this.saving = false }'],['a',8,'}']]},
+  ]
+};
+
+/* 源码（故障版本 4ca0c7e），行号与报告一致 */
+const SRC = {
+'FreezeNoteDetailPage.ets':{path:'entry/src/main/ets/crashtest/pages/FreezeNoteDetailPage.ets', lines:[
+"import { NoteRepository, SaveOptions } from '../service/NoteRepository'","import { NoteModel } from '../model/NoteModel'","import { promptAction } from '@kit.ArkUI'","import { hilog } from '@kit.PerformanceAnalysisKit'","",
+"@Entry","@Component","struct FreezeNoteDetailPage {","  @State currentNote: NoteModel | undefined = undefined","  @State title: string = ''","  @State content: string = ''","  @State isSaving: boolean = false","  private pendingAttachments: string[] = []","  private repo: NoteRepository = NoteRepository.getInstance()","",
+"  // 页面入口：从路由参数或最近一条带封面的笔记加载","  private noteId(): string | undefined {","    const params = this.getUIContext().getRouter().getParams() as Record<string, string>","    return params?.['noteId']","  }","",
+"  private pickNote(): NoteModel | undefined {","    const id = this.noteId()","    return id ? this.repo.getById(id) : this.repo.list().find(n => n.thumbnailPath)","  }","",
+"  aboutToAppear(): void {","    const note = this.pickNote()","    if (!note) {","      return","    }","    this.currentNote = note","    this.title = note.title","    this.content = note.content","    this.pendingAttachments = []","  }","",
+"  private buildNote(): NoteModel {","    const note = this.currentNote as NoteModel","    note.title = this.title","    note.content = this.content","    return note","  }","",
+"  private hasAttachment(): boolean {","    // Check if the note has an associated media resource","    // that requires synchronized persistence handling","    return this.currentNote?.thumbnailPath !== undefined","    // BUG: This checks whether the note has ANY thumbnail (existing cover image),","    // not whether there are NEW pending attachments to save.","    // A note with an existing cover image will always return true here,","    // even when the user only edited text content.","    // Should be: return this.pendingAttachments.length > 0","  }","",
+"  build() {","    Column() {","      TextInput({ text: $$this.title, placeholder: '标题' })","        .fontSize(20)","      TextArea({ text: $$this.content, placeholder: '正文' })","        .layoutWeight(1)","      Button(this.isSaving ? '保存中…' : '保存笔记')","        .enabled(!this.isSaving)","        .onClick(() => this.onSaveClick())","    }","    .padding(16)","  }","",
+"  private onSaveClick(): void {","    if (this.isSaving) {","      return","    }","    this.isSaving = true","    const note = this.buildNote()","    hilog.info(0x0000, 'FreezeNoteDetail',","      'onSaveClick: saving note %{public}s, hasAttachment=%{public}s', note.id, String(this.hasAttachment()))","    try {","      this.persist(note)","      promptAction.showToast({ message: '已保存' })","    } finally {","      this.isSaving = false","    }","  }","",
+"  private persist(note: NoteModel): void {","    const options: SaveOptions = {","      sync: this.hasAttachment(),","      validate: true","    }","    this.repo.saveNote(note, options)","  }","}"]},
+'NoteRepository.ets':{path:'entry/src/main/ets/crashtest/service/NoteRepository.ets', lines:(()=>{
+  const L=["import { NoteModel } from '../model/NoteModel'","import { FreezeTestHelper } from '../freezetest/FreezeTestHelper'","import { hilog } from '@kit.PerformanceAnalysisKit'","",
+  "export interface SaveOptions {","  sync: boolean","  validate: boolean","}","","const TAG = 'NoteRepository'","",
+  "export class NoteRepository {","  private static instance?: NoteRepository","  private notes: Map<string, NoteModel> = new Map()","",
+  "  static getInstance(): NoteRepository {","    if (!NoteRepository.instance) {","      NoteRepository.instance = new NoteRepository()","    }","    return NoteRepository.instance","  }","",
+  "  getById(id: string): NoteModel | undefined {","    return this.notes.get(id)","  }","","  list(): NoteModel[] {","    return Array.from(this.notes.values())","  }","",
+  "  private validate(note: NoteModel): void {","    if (!note.title && !note.content) {","      throw new Error('empty note')","    }","  }","",
+  "  async saveNote(note: NoteModel, options: SaveOptions): Promise<void> {","    hilog.info(0x0000, TAG, 'saveNote: id=%{public}s, sync=%{public}s, validate=%{public}s',","      note.id, String(options.sync), String(options.validate))","    if (options.validate) {","      this.validate(note)","    }","",
+  "    if (options.sync) {","      // Synchronous path: used when attachments need atomic commit","      // to ensure data consistency between note record and attachment files","      this.saveNoteSync(note);","    } else {","      await this.saveNoteAsync(note);","    }","  }","",
+  "  private async saveNoteAsync(note: NoteModel): Promise<void> {","    hilog.debug(0x0000, TAG, 'saveNoteAsync: queued %{public}s', note.id)","    this.notes.set(note.id, note)","  }","",
+  "  // -------------------------------------------------------------","  // Atomic write path. Every step below must finish before the","  // next one starts, and the whole thing must not be interrupted.","  // -------------------------------------------------------------","","",
+  "  private saveNoteSync(note: NoteModel): void {","    hilog.debug(0x0000, TAG, 'saveNoteSync: starting atomic write for %{public}s', note.id)","    if (FreezeTestHelper.isFreezeModeEnabled()) {"];
+  const steps=['Insert/update main note record|writing note body to database...','Update search index|updating search index...','Update attachment references|updating attachment references...','Sync tag associations|syncing tag associations...','Update category membership|updating category membership...','Write thumbnail metadata|writing thumbnail metadata...','Queue for cloud sync|queuing for cloud sync...','Flush preferences|flushing preferences...'];
+  steps.forEach((s,i)=>{const [c,m]=s.split('|');L.push(`      // Step ${i+1}: ${c}`,`      hilog.debug(0x0000, TAG, 'saveNoteSync: ${m}')`,'      FreezeTestHelper.injectDelay(500);','');});
+  L.push('    }','    this.notes.set(note.id, note)',"    hilog.info(0x0000, TAG, 'saveNoteSync: completed for %{public}s', note.id)",'  }','}');
+  return L;})()},
+'FreezeTestHelper.ets':{path:'entry/src/main/ets/crashtest/freezetest/FreezeTestHelper.ets', lines:[
+"/**"," * Test-only helpers used by the freeze scenarios in crashtest."," * Never enable freeze mode in release builds."," */","export class FreezeTestHelper {","  private static freezeModeEnabled: boolean = false","",
+"  /** Toggled from CrashTestPage (switch at line 115). */","  static setFreezeModeEnabled(enabled: boolean): void {","    FreezeTestHelper.freezeModeEnabled = enabled","  }","",
+"  static isFreezeModeEnabled(): boolean {","    return FreezeTestHelper.freezeModeEnabled","  }","",
+"  /**","   * Blocks the calling thread for `ms` milliseconds.","   *","   * Implemented as a busy loop on purpose: it keeps the thread in the","   * running state so the freeze looks like real CPU-bound work","   * (state=R, high utime) rather than a sleep.","   *","   * @param ms how long to spin","   */",
+"  static injectDelay(ms: number): void {","    const start = Date.now()","    while (Date.now() - start < ms) {","      // spin","    }","  }","}"]},
+};
+const CAUSE_LABEL = {1:'对应根因 ① · hasAttachment 误判',2:'对应根因 ② · sync 恒为 true',3:'对应根因 ③ · 主线程同步忙等'};
+
+/* ===================================================================== */
+const $ = s=>document.querySelector(s), $$ = s=>[...document.querySelectorAll(s)];
+const esc = s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const ic = (id,cls='')=>`<svg class="i ${cls}"><use href="#i-${id}"/></svg>`;
+let mode='v2', verified=false, focusIdx=-1;
+const openChecks=new Set(['queue']);
+
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('on'),1800)}
+function copy(text,msg){(navigator.clipboard?navigator.clipboard.writeText(text):Promise.reject()).then(()=>toast(msg||'已复制'),()=>toast(msg||'已复制'))}
+function locLink(l){const [f,a,b]=l;return `<a class="link" data-loc="${f}|${a}|${b}">${f}:${a===b?a:a+'-'+b}</a>`}
+
+/* ---------- 渲染 ---------- */
+function render(anim){
+  const m=$('#main');
+  document.body.classList.toggle('is-empty',mode==='empty');
+  if(mode==='empty'){ renderEmpty(); return; }
+  const d=V[mode], cks=checks(mode), fixes=FIX[mode];
+  const cnt={hit:0,pass:0,excl:0,miss:0}; cks.forEach(c=>cnt[c.s]++);
+  $('#nav-fixn').textContent=fixes.length; $('#nav-ckn').textContent=cks.length;
+  const v2=mode==='v2';
+  m.innerHTML=`
+  <div class="crumb"><a href="#">故障分析</a>${ic('chev')}<a href="#">应用冻屏</a>${ic('chev')}<span>com.example.freezetest</span></div>
+  <div class="head">
+    <div class="l">
+      <div class="eyebrow">
+        <span class="pill no">${ic('pulse')}应用冻屏 · THREAD_BLOCK_6S</span>
+        <span class="pill">日志完整</span>
+        ${v2?`<span class="pill yes">${ic('unlock')}已读取工程源码</span>`:`<span class="pill part">${ic('lock')}未读取工程源码</span>`}
+      </div>
+      <h1>冻屏分析报告 · 保存笔记时主线程卡死</h1>
+      <div class="meta"><span class="mono">com.example.freezetest</span><span>emulator · 前台</span><span>发生于 2026-06-05 <span class="mono">11:15:10.313</span></span><span>生成于 ${v2?'22:07':'21:04'}</span></div>
+    </div>
+    <div class="acts">
+      <button class="btn ter" data-act="copy-verdict">${ic('copy')}复制结论</button>
+      <button class="btn ter" data-act="export">${ic('export')}导出报告</button>
+    </div>
+  </div>
+  ${v2?`<div class="banner info">${ic('branch')}<span class="t">行号基于故障版本 <b class="mono">4ca0c7e</b>（06-05 10:31）· 工作区已修改 2 个文件，未提交</span><button class="btn sec sm" data-act="diffws">对比工作区</button></div>`
+      :`<div class="banner warn">${ic('warn')}<span class="t"><b>未读取工程源码：</b>定位只到业务函数（来自应用日志），修复为通用方向，可能与现有代码重复。</span><button class="btn pri sm" data-act="upgrade">${ic('unlock')}允许读取源码并重新定位</button></div>`}
+  <div class="grid2 ${anim?'fade':''}">
+    <div class="col">
+      <section id="sec-verdict" class="card verdict">
+        <h3>${d.title}</h3>
+        <div class="path">主线程卡死超时<span class="sep">›</span>主线程繁忙<span class="sep">›</span>执行耗时操作 <span class="pill part" title="本次没有采样栈，三级根因按规则默认匹配">默认匹配 · 无采样栈</span></div>
+        <ul class="pts">${d.pts.map((p,i)=>`<li class="${p.unk?'unk':''}"><span class="dot">${p.unk?'?':i+1}</span><span>${p.h}</span><span>${p.loc?locLink(p.loc):p.tl?'<a class="link" data-act="to-tl">看时间线</a>':p.log?`<span class="mono" style="color:var(--ink3)">${p.log}</span>`:p.unk?'<a class="link" data-act="upgrade">读取源码</a>':''}</span></li>`).join('')}</ul>
+        <div class="vfoot"><a class="btn pri" href="#sec-fix">查看修复（${fixes.length}）</a><details class="chain"><summary>${ic('chev')}因果链 ${d.chain.length} 步</summary></details>
+          <span class="vmeta"><span>责任领域 <b>应用</b></span><span>页面 <b>FreezeNoteDetailPage</b></span><span>主线程连续占用 <b>约 8s</b></span></span></div>
+        <div id="upg"></div>
+      </section>
+
+      <section id="sec-timeline">
+        <div class="sec-t"><h2>主线程时间线</h2><span class="sub">2026-06-05 11:15:02 – 11:15:11</span><span class="grow"></span></div>
+        <div class="chart"><i class="cn tl"></i><i class="cn tr"></i><i class="cn bl"></i><i class="cn br"></i>
+          <svg id="tl" viewBox="0 0 720 ${verified?262:212}"></svg>
+          <div class="legend"><span><i style="background:#F3E3C6"></i>保存流水线的一步（约 500ms）</span><span><i style="background:var(--no-soft)"></i>单任务超过 3s</span><span><i style="background:var(--accent)"></i>点击</span>${verified?'<span><i style="background:var(--yes-soft)"></i>修复后复现</span>':''}</div>
+        </div>
+      </section>
+
+      <section id="sec-chain" class="card" style="padding:16px 20px">
+        <details class="chain" id="chain"><summary>${ic('chev')}因果链 · ${d.chain.length} 步</summary><ol>${d.chain.map(x=>`<li><span>${x}</span></li>`).join('')}</ol></details>
+      </section>
+
+      <section id="sec-fix">
+        <div class="sec-t"><h2>修复建议</h2><span class="sub">${v2?'精确补丁 · 按行号定位':'通用方向 · 未经源码核实'}</span></div>
+        ${fixes.map((f,i)=>fixCard(f,i)).join('')}
+        ${verifyBlock()}
+      </section>
+    </div>
+
+    <div class="col">
+      <section id="sec-strength">
+        <div class="sec-t"><h2>证据强度</h2><span class="sub">结论对、定位准、修复准是三件事</span></div>
+        <div class="axes">${d.axes.map(a=>`<div class="ax ${a[2]}"><span class="k">${a[0]}</span><span class="v"><i></i>${a[1]}</span><span class="d">${a[3]}</span></div>`).join('')}</div>
+      </section>
+
+      <section id="sec-checks">
+        <div class="sec-t"><h2>证据清单</h2><span class="grow"></span>
+          <div class="sum"><span class="pill no">${cnt.hit} 命中</span><span class="pill yes">${cnt.pass} 通过</span><span class="pill">${cnt.excl} 排除</span><span class="pill part">${cnt.miss} 缺数据</span></div></div>
+        <div class="checks" id="checks">${cks.map((c,i)=>ckRow(c,i)).join('')}</div>
+        <div class="hint"><span class="kbd">J</span> <span class="kbd">K</span> 上下移动 · <span class="kbd">Enter</span> 展开</div>
+      </section>
+
+      <section id="sec-excl">
+        <div class="sec-t"><h2>排除项与判据</h2><span class="sub">为什么是繁忙，不是阻塞</span></div>
+        <div class="dec">
+          <div class="h">判据</div><div class="h">繁忙（在干活）</div><div class="h">阻塞（在等人）</div>
+          <div class="k">线程状态</div><div class="hit">state=R，两次一致</div><div>state=S</div>
+          <div class="k">CPU</div><div class="hit">3s 内占用 98%</div><div>几乎不涨</div>
+          <div class="k">两次栈顶</div><div class="hit">不同字节码指令</div><div>停在同一等待点</div>
+          <div class="k">修法</div><div class="hit">把活挪出主线程</div><div>找它在等的那一方</div>
+        </div>
+        <div class="chips">${EXCL.map(e=>`<span class="xchip" title="${e[1]}">${ic('x')}${e[0]} · 已排除</span>`).join('')}</div>
+      </section>
+
+      <section id="sec-threads">
+        <div class="sec-t"><h2>线程快照</h2><span class="sub">6S 抓栈时刻 · 32 个线程</span></div>
+        <div class="threads">
+          <div class="tdots"><i class="r" title="主线程 19655 · state=R"></i>${'<i></i>'.repeat(31)}</div>
+          <div class="tgrp">
+            <span class="r">主线程 mple.freezetest</span><span class="m">19655</span><span class="r">R · 运行</span>
+            <span>OS_IPC_0 – 4（Binder）</span><span class="m">× 5</span><span>S · 空闲</span>
+            <span>OS_GC_Thread</span><span class="m">× 4</span><span>S · 空闲</span>
+            <span>ace.bg.1 – 8</span><span class="m">× 8</span><span>S · 空闲</span>
+            <span>OS_FFRT_* · OS_EVENT_POLL · DfxWatchdog 等</span><span class="m">× 14</span><span>S · 空闲</span>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>`;
+  drawTimeline();
+  if(focusIdx>=0) setFocus(focusIdx,false);
+  spy();
+}
+
+function fixCard(f,i){
+  const v2=!f.dir;
+  const rows=f.diff.map(([k,n,t])=>f.dir?`<div class="r ctx"><span class="n">${n}</span><span class="s"></span><span>${esc(t)}</span></div>`:`<div class="r ${k==='a'?'add':k==='d'?'del':k==='g'?'gap':'ctx'}"><span class="n">${n??''}</span><span class="s">${k==='a'?'+':k==='d'?'−':''}</span><span>${esc(t)}</span></div>`).join('');
+  return `<div class="fix ${f.dir?'dir':''}">
+    <div class="fix-h"><span class="no">${i+1}</span><h4>${f.t}</h4>
+      ${v2?`${locLink([f.file,f.range[0],f.range[1]])}<span class="pill yes">${ic('check')}已在工作区 · 未提交</span>`:`<span class="pill part">通用方向</span>`}</div>
+    <p class="why">${f.why}</p>
+    ${f.caveat?`<p class="cav">${ic('warn')}<span>${f.caveat}</span></p>`:''}
+    <div class="code">${rows}</div>
+    <div class="acts">${v2
+      ?`<button class="btn sec sm" data-act="open" data-loc="${f.file}|${f.range[0]}|${f.range[1]}">${ic('code')}查看代码</button><button class="btn ter sm" data-act="copy-diff" data-i="${i}">${ic('copy')}复制 diff</button>`
+      :`<button class="btn ter sm" data-act="copy-diff" data-i="${i}">${ic('copy')}复制示例代码</button><a class="link" data-act="upgrade" style="font-family:var(--font);font-size:13px;align-self:center">读取源码，换成精确补丁</a>`}</div>
+  </div>`;
+}
+
+function verifyBlock(){
+  if(mode==='v1') return `<div class="verify off"><span class="t">复现验证<small>先读取源码、拿到精确补丁，再验证改动是否生效。</small></span><button class="btn ter" disabled>${ic('play')}复现验证</button></div>`;
+  if(verified) return `<div class="verify ok">${ic('ok')}<span class="t">已验证不再复现<small>按原操作连点两次保存：主线程最长任务 4.0s → 14ms，未再触发 3S / 6S。时间线已叠加「修复后」泳道。</small></span><button class="btn ter" data-act="reverify">${ic('refresh')}再跑一次</button></div>`;
+  return `<div class="verify" id="vb"><span class="t">工作区已包含上面 3 处改动<small>在模拟器上按原操作连点两次保存，对比修复前后是否还会卡。</small></span><button class="btn pri" data-act="verify">${ic('play')}复现验证</button></div>`;
+}
+
+function ckRow(c,i){
+  const icon={hit:'bang',pass:'check',excl:'minus',miss:'q'}[c.s];
+  const lbl={hit:'命中',pass:'通过',excl:'已排除',miss:'缺数据'}[c.s];
+  const open=openChecks.has(c.id);
+  return `<div class="ck s-${c.s} ${open?'open':''}" data-id="${c.id}" data-i="${i}">
+    <button class="ck-h" data-act="toggle" aria-expanded="${open}"><span class="ic">${ic(icon)}</span>
+      <span><span class="tt">${c.t}</span><span class="one">${c.one}</span></span><span class="st-t">${lbl}</span>${ic('chev','chev')}</button>
+    <div class="ck-b">
+      ${c.frames?`<div class="frames">${c.frames.map(f=>`<span class="f">${f[0]}</span><span class="e">${f[1]}</span>`).join('')}</div>`:''}
+      ${c.pts?`<ul>${c.pts.map(p=>`<li>${esc(p)}</li>`).join('')}</ul>`:''}
+      ${c.tl?`<a class="link" data-act="to-tl" style="font-family:var(--font);font-size:12.5px">在时间线上看 →</a>`:''}
+      ${c.raw?`<details class="raw"><summary>${ic('chev')}原始日志</summary><pre><button class="btn ter sm cp" data-act="copy-raw" data-id="${c.id}">${ic('copy')}复制原文</button>${esc(c.raw)}</pre></details>`:''}
+    </div></div>`;
+}
+
+/* ---------- 时间线 ---------- */
+const X0=70, PX=70; // x = X0 + (sec - 2) * PX
+const tx=s=>X0+(parseFloat(s)-2)*PX;
+function drawTimeline(){
+  const svg=$('#tl'); if(!svg) return;
+  const H=verified?262:212; const bottom=H-18;
+  let g='';
+  for(let s=2;s<=11;s++){const x=tx(s);g+=`<line x1="${x}" y1="6" x2="${x}" y2="${bottom-6}" stroke="rgba(10,89,247,.10)"/><text x="${x}" y="${bottom+10}" text-anchor="middle">:${String(s).padStart(2,'0')}</text>`;}
+  const lanes=[['点击',30],['主线程',78],['看门狗',128],['队列',170]]; if(verified) lanes.push(['修复后',222]);
+  lanes.forEach(([n,y])=>g+=`<text class="ln" x="0" y="${y+4}">${n}</text>`);
+  // 点击
+  g+=`<circle cx="${tx(2.631)}" cy="30" r="6" fill="#0A59F7"/><text x="${tx(2.631)-10}" y="18" text-anchor="end">① 02.631</text>`;
+  g+=`<circle cx="${tx(3.418)}" cy="30" r="6" fill="#0A59F7"/><text x="${tx(3.418)+10}" y="18">② 03.418 · 排队 3.2s</text>`;
+  g+=`<path d="M${tx(3.418)} 36 C ${tx(4.6)} 54, ${tx(5.8)} 54, ${tx(6.639)} 62" fill="none" stroke="#0A59F7" stroke-dasharray="4 3" stroke-width="1.2"/>`;
+  // 主线程两轮
+  const round=(arr,r)=>arr.map((st,i)=>{const s=parseFloat(st[0]);const e=i<arr.length-1?parseFloat(arr[i+1][0]):(r===1?6.639:10.782);
+    const over=r===2 && s>=9.639; const x=tx(s), w=Math.max(2,tx(Math.min(e,11))-x-1.5);
+    return `<rect class="st" data-tip="11:15:${st[0]} saveNoteSync: ${st[1]}...${r===2&&i===7?' · 6S 上报时仍在执行':''}" x="${x}" y="66" width="${w}" height="24" rx="3" fill="${over?'#F6D5D2':'#F3E3C6'}"/>`}).join('');
+  g+=round(ROUND1,1)+round(ROUND2,2);
+  g+=`<rect x="${tx(10.313)}" y="66" width="${tx(10.782)-tx(10.313)}" height="24" rx="3" fill="none" stroke="#C4322A" stroke-dasharray="3 3"/>`;
+  g+=`<text x="${(tx(2.632)+tx(6.639))/2}" y="104" text-anchor="middle" fill="#8F5A00">MMITask #1 · 8 × 500ms = 4.0s</text>`;
+  g+=`<text x="${(tx(6.639)+tx(10.313))/2}" y="104" text-anchor="middle" fill="#8F5A00">MMITask #2 · ≥ 3.7s</text>`;
+  // 看门狗
+  g+=`<g id="tl-watch"><line x1="${tx(7.142)}" y1="114" x2="${tx(7.142)}" y2="142" stroke="#8F5A00" stroke-width="2"/><text x="${tx(7.142)+6}" y="126" fill="#8F5A00">3S 告警 07.142</text><text x="${tx(7.142)+6}" y="139">抓栈 · Jeqz</text>`;
+  g+=`<line x1="${tx(10.313)}" y1="114" x2="${tx(10.313)}" y2="142" stroke="#C4322A" stroke-width="2"/><text x="${tx(10.313)-6}" y="126" fill="#C4322A" text-anchor="end">6S 上报 10.313</text><text x="${tx(10.313)-6}" y="139" text-anchor="end">抓栈 · Ldobjbyname</text></g>`;
+  // 队列
+  g+=`<g id="tl-queue"><polyline points="${tx(7.127)},180 ${tx(10.128)},160" fill="none" stroke="#C4322A" stroke-width="2"/><circle cx="${tx(7.127)}" cy="180" r="3.5" fill="#C4322A"/><circle cx="${tx(10.128)}" cy="160" r="3.5" fill="#C4322A"/><text x="${tx(7.127)-8}" y="184" text-anchor="end">62 个任务</text><text x="${tx(10.128)+8}" y="160">115</text><text x="${tx(7.9)}" y="190">VIP 52 → 105</text></g>`;
+  if(verified){
+    g+=`<circle cx="${tx(2.631)}" cy="222" r="5" fill="#237A45"/><circle cx="${tx(3.418)}" cy="222" r="5" fill="#237A45"/>`;
+    g+=`<rect x="${tx(2.64)}" y="214" width="6" height="16" rx="2" fill="#237A45"/><rect x="${tx(3.43)}" y="214" width="5" height="16" rx="2" fill="#237A45"/>`;
+    g+=`<text x="${tx(3.8)}" y="226" fill="#237A45">两次点击各 14ms / 9ms 返回 · 保存在后台完成 · 未触发 3S / 6S</text>`;
+  }
+  svg.setAttribute('viewBox',`0 0 720 ${H}`);
+  svg.innerHTML=g;
+}
+
+/* ---------- 空态 ---------- */
+function renderEmpty(){
+  $('#main').innerHTML=`<div class="empty fade">
+    <h1>选择一条冻屏记录开始分析</h1>
+    <p>从 FaultLog 面板拖入 faultlog，或从设备上拉取最近的故障。</p>
+    <div class="drop">${ic('upload')}<span>把 <span class="mono">appfreeze-*.log</span> 拖到这里</span><button class="btn sec sm" data-act="noop">从设备拉取</button></div>
+    <div class="samples">
+      <button class="sample" data-act="load" data-m="v2"><span class="pill no" style="align-self:flex-start">THREAD_BLOCK_6S</span><b>保存笔记时主线程卡死 · 可读取源码</b><span>com.example.freezetest · 2026-06-05 11:15 · 定位到行、给出补丁</span></button>
+      <button class="sample" data-act="load" data-m="v1"><span class="pill no" style="align-self:flex-start">THREAD_BLOCK_6S</span><b>同一条记录 · 只有 faultlog</b><span>未授权读取源码 · 定位到业务函数、给出通用方向</span></button>
+    </div></div>`;
+}
+
+/* 分析中：证据清单逐项点亮 */
+function analyze(m){
+  mode=m; verified=false; setSeg(); render(true);
+  const box=$('#checks'); box.classList.add('analyzing');
+  const rows=$$('#checks .ck'); rows.forEach(r=>r.classList.remove('open'));
+  rows.forEach((r,i)=>setTimeout(()=>r.classList.add('lit'),180*(i+1)));
+  setTimeout(()=>{box.classList.remove('analyzing');rows.forEach(r=>{r.classList.remove('lit');if(openChecks.has(r.dataset.id))r.classList.add('open')})},180*(rows.length+1));
+}
+
+/* 源码授权：三步进度后就地升级 */
+function upgrade(){
+  const box=$('#upg'); if(!box) return;
+  $('#sec-verdict').scrollIntoView({block:'start'});
+  const st=['读取工程','版本比对 · 4ca0c7e','重新定位'];
+  const draw=k=>box.innerHTML=`<div class="upg">${st.map((s,i)=>`<span class="st ${i<k?'done':i===k?'on':''}"><span class="b">${i<k?'✓':i+1}</span>${s}</span>${i<2?'<span class="ar">›</span>':''}`).join('')}</div>`;
+  draw(0); setTimeout(()=>draw(1),650); setTimeout(()=>draw(2),1300);
+  setTimeout(()=>{mode='v2';setSeg();render(true);toast('已读取源码：定位到 3 个文件 7 处行号')},2000);
+}
+
+/* 复现验证 */
+function verify(){
+  const vb=$('#vb'); if(!vb) return;
+  vb.querySelector('button').disabled=true;
+  const t=vb.querySelector('.t'); const steps=['安装工作区构建到模拟器…','进入笔记详情页，连点两次保存…','采集主线程任务与看门狗事件…'];
+  steps.forEach((s,i)=>setTimeout(()=>t.innerHTML=`复现中<small>${s}</small>`,i*700));
+  setTimeout(()=>{verified=true;render();$('#sec-timeline').scrollIntoView({block:'start'});toast('未再触发 3S / 6S')},2200);
+}
+
+/* ---------- 代码抽屉 ---------- */
+const KW=/\b(import|from|export|class|interface|struct|private|static|async|await|const|return|if|else|while|try|finally|new|function|void|boolean|string|number)\b/g;
+function hlSrc(line){
+  if(/^\s*(\/\/|\/?\*)/.test(line)) return `<span class="cm">${esc(line)}</span>`;
+  const ci=line.indexOf('//'); let tail='';
+  if(ci>=0 && !/'[^']*\/\/[^']*'/.test(line)){ tail=`<span class="cm">${esc(line.slice(ci))}</span>`; line=line.slice(0,ci); }
+  return line.split(/('[^']*')/).map(seg=> seg.startsWith("'")&&seg.endsWith("'")&&seg.length>1
+    ? `<span class="str">${esc(seg)}</span>`
+    : esc(seg).replace(KW,'<span class="kw">$1</span>').replace(/(@\w+)/g,'<span class="ty">$1</span>')).join('')+tail;
+}
+function openCode(file,a,b){
+  const src=SRC[file]; if(!src) return;
+  const fix=FIX.v2.find(f=>f.file===file&&f.range[0]<=a&&f.range[1]>=b) || FIX.v2.find(f=>f.file===file);
+  const cause = file==='FreezeTestHelper.ets'?3:(fix?fix.cause:1);
+  $('#dr-path').textContent=src.path+':'+(a===b?a:a+'-'+b);
+  $('#dr-ver').textContent='故障版本 4ca0c7e';
+  $('#dr-tabs').innerHTML=Object.keys(SRC).map(f=>`<button class="${f===file?'on':''}" data-act="tab" data-f="${f}">${f}</button>`).join('');
+  const hot = file==='FreezeNoteDetailPage.ets'?[48,48]:[a,b];
+  const second = file==='FreezeNoteDetailPage.ets'?[86,89]:null;
+  $('#dr-body').innerHTML=`<span class="flag">${CAUSE_LABEL[cause]}</span><div class="src">`+src.lines.map((l,i)=>{const n=i+1;
+    const cls=n>=hot[0]&&n<=hot[1]?'hl':(second&&n>=second[0]&&n<=second[1]?'hl2':'');
+    return `<div class="r ${cls}" id="L${n}"><span class="n">${n}</span><span>${hlSrc(l)||' '}</span></div>`}).join('')+'</div>';
+  $('#dr-foot').innerHTML= file==='FreezeNoteDetailPage.ets'
+    ? `<span class="pill no">48</span>误判条件<span class="pill part">86–89</span>把误判结果传给 options.sync`
+    : file==='FreezeTestHelper.ets' ? `<span class="pill no">26–31</span>while 忙等，对应两次栈顶的 Date.now 取值与循环判定`
+    : `<span class="pill no">${hot[0]}–${hot[1]}</span>${hot[0]===44?'sync 为 true 时同步调用':'8 × injectDelay(500) 在主线程顺序执行'}`;
+  $('#drawer').classList.add('on');$('#drawer').setAttribute('aria-hidden','false');$('#scrim').classList.add('on');
+  const el=$('#L'+Math.max(1,hot[0]-4)); if(el) $('#dr-body').scrollTop=el.offsetTop-12;
+}
+function closeCode(){$('#drawer').classList.remove('on');$('#drawer').setAttribute('aria-hidden','true');$('#scrim').classList.remove('on')}
+function openWorkspaceDiff(){
+  $('#dr-path').textContent='工作区改动 · 相对 4ca0c7e';
+  $('#dr-ver').textContent='未提交';
+  $('#dr-tabs').innerHTML='';
+  $('#dr-body').innerHTML='<div style="padding:12px 20px;display:flex;flex-direction:column;gap:16px">'+FIX.v2.map((f,i)=>`<div><div style="display:flex;gap:8px;align-items:center;margin-bottom:6px"><span class="pill blue">M</span><span class="mono">${f.file}</span><span style="color:var(--ink3);font-size:13px">· ${f.t}</span></div><div class="code" style="background:var(--card)">${f.diff.map(([k,n,t])=>`<div class="r ${k==='a'?'add':k==='d'?'del':k==='g'?'gap':'ctx'}"><span class="n">${n??''}</span><span class="s">${k==='a'?'+':k==='d'?'−':''}</span><span>${esc(t)}</span></div>`).join('')}</div></div>`).join('')+'</div>';
+  $('#dr-foot').innerHTML='工作区的 2 个文件与报告给出的 3 处修复一致；验证通过后即可提交。';
+  $('#drawer').classList.add('on');$('#scrim').classList.add('on');
+}
+
+/* ---------- 交互 ---------- */
+function setSeg(){ $$('#mode button').forEach(b=>b.classList.toggle('on',b.dataset.m===mode)); }
+function setFocus(i,scroll=true){
+  const rows=$$('#checks .ck'); if(!rows.length) return;
+  focusIdx=Math.max(0,Math.min(rows.length-1,i));
+  rows.forEach((r,k)=>r.classList.toggle('focus',k===focusIdx));
+  if(scroll) rows[focusIdx].scrollIntoView({block:'nearest'});
+}
+function toggleCheck(row){
+  const id=row.dataset.id; row.classList.toggle('open');
+  row.classList.contains('open')?openChecks.add(id):openChecks.delete(id);
+  row.querySelector('.ck-h').setAttribute('aria-expanded',row.classList.contains('open'));
+}
+function reportText(){
+  const d=V[mode];
+  return `【应用冻屏 · THREAD_BLOCK_6S】${d.title}\n责任领域：应用 · 页面：FreezeNoteDetailPage · com.example.freezetest\n`+
+    d.pts.map((p,i)=>`${i+1}. ${p.h.replace(/<[^>]+>/g,'')}${p.loc?'（'+p.loc[0]+':'+p.loc[1]+'）':''}`).join('\n')+
+    `\n证据强度：${d.axes.map(a=>a[0].split(' · ')[0]+' '+a[1]).join(' / ')}`;
+}
+
+document.addEventListener('click',e=>{
+  const t=e.target.closest('[data-act],[data-loc],#mode button,#dr-close,#scrim'); if(!t) return;
+  if(t.matches('#mode button')){ const m=t.dataset.m; if(m===mode) return; mode=m; verified=false; setSeg(); render(true); window.scrollTo({top:0}); return; }
+  if(t.id==='dr-close'||t.id==='scrim'){ closeCode(); return; }
+  const a=t.dataset.act;
+  if(t.dataset.loc && (!a||a==='open')){ e.preventDefault(); const [f,x,y]=t.dataset.loc.split('|'); openCode(f,+x,+y); return; }
+  switch(a){
+    case 'toggle': toggleCheck(t.closest('.ck')); setFocus(+t.closest('.ck').dataset.i,false); break;
+    case 'to-tl': $('#sec-timeline').scrollIntoView({block:'start'}); break;
+    case 'upgrade': upgrade(); break;
+    case 'verify': verify(); break;
+    case 'reverify': verified=false; render(); setTimeout(verify,50); break;
+    case 'diffws': openWorkspaceDiff(); break;
+    case 'tab': { const f=t.dataset.f; const r=f==='FreezeNoteDetailPage.ets'?[48,48]:f==='NoteRepository.ets'?[64,102]:[26,31]; openCode(f,r[0],r[1]); break; }
+    case 'copy-verdict': copy(reportText(),'结论已复制，可直接贴进工单'); break;
+    case 'copy-diff': { const f=FIX[mode][+t.dataset.i]; copy(f.diff.filter(d=>d[0]!=='g').map(([k,,x])=>(k==='a'?'+':k==='d'?'-':' ')+x).join('\n'),mode==='v2'?'diff 已复制':'示例代码已复制'); break; }
+    case 'copy-raw': { e.preventDefault(); const c=checks(mode).find(c=>c.id===t.dataset.id); copy(c.raw,'原始日志已复制'); break; }
+    case 'export': toast('已导出单文件报告 appfreeze-20260605-111510.html'); break;
+    case 'load': analyze(t.dataset.m); break;
+  }
+});
+document.addEventListener('keydown',e=>{
+  if(e.target.closest('input,textarea')) return;
+  if(e.key==='Escape'){ closeCode(); return; }
+  if(mode==='empty') return;
+  if(e.key==='j'||e.key==='J'){ setFocus(focusIdx+1); e.preventDefault(); }
+  else if(e.key==='k'||e.key==='K'){ setFocus(focusIdx<0?0:focusIdx-1); e.preventDefault(); }
+  else if(e.key==='Enter' && focusIdx>=0 && !e.target.closest('button,a,summary')){ toggleCheck($$('#checks .ck')[focusIdx]); e.preventDefault(); }
+  else if(e.key==='g'||e.key==='G'){ $('#sec-fix').scrollIntoView({block:'start'}); }
+});
+/* 时间线 hover 显示对应应用日志 */
+document.addEventListener('mousemove',e=>{
+  const s=e.target.closest('#tl .st'), tip=$('#tip');
+  if(!s){ tip.classList.remove('on'); return; }
+  tip.innerHTML=`<code>${esc(s.dataset.tip)}</code>`; tip.classList.add('on');
+  tip.style.left=Math.min(innerWidth-440,e.clientX+14)+'px'; tip.style.top=(e.clientY+16)+'px';
+});
+/* 因果链：结论卡里的「展开因果链」联动下方 details */
+document.addEventListener('toggle',e=>{
+  if(e.target.matches('.verdict details.chain') && e.target.open){ e.target.open=false; const c=$('#chain'); c.open=true; c.scrollIntoView({block:'center'}); }
+},true);
+/* 左侧目录高亮 */
+function spy(){
+  const ids=$$('.side a[data-s]').map(a=>a.dataset.s); let cur=ids[0], best=-1e9;
+  if(scrollY>40) ids.forEach(id=>{const el=document.getElementById(id); if(!el) return; const t=el.getBoundingClientRect().top; if(t<innerHeight*.35 && t>best){best=t;cur=id;}});
+  $$('.side a[data-s]').forEach(a=>a.classList.toggle('on',a.dataset.s===cur));
+}
+addEventListener('scroll',spy,{passive:true});
+
+render();
+</script>
+</body>
+</html>
