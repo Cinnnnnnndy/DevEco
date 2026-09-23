@@ -394,8 +394,8 @@ function render(anim){
 
     <section id="sec-timeline">
       <div class="sec-t"><h2>主线程时间线</h2><span class="sub2">2026-06-05 11:15:02 – 11:15:11</span></div>
-      <div class="chart"><svg id="tl" viewBox="0 0 1000 212"></svg>
-        <div class="legend"><span><i style="background:#F3E3C6"></i>保存流水线的一步（约 500ms）</span><span><i style="background:var(--no-soft)"></i>单任务超过 3s</span><span><i style="background:var(--accent)"></i>点击</span></div>
+      <div class="chart"><svg id="tl" viewBox="0 0 1000 222"></svg>
+        <div class="legend"><span><i style="background:#F3E3C6"></i>保存流水线的一步（约 500ms）</span><span><i style="background:var(--no-soft)"></i>单任务执行超过 3s</span><span><i style="background:var(--accent);border-radius:50%"></i>点击</span><span><i style="background:rgba(10,89,247,.18)"></i>点击排队等待</span></div>
       </div>
     </section>
 
@@ -453,21 +453,33 @@ const X0=80, PX=100;
 const tx=s=>X0+(parseFloat(s)-2)*PX;
 function drawTimeline(){
   const svg=$('#tl'); if(!svg) return;
-  const bottom=194; let g='';
-  for(let s=2;s<=11;s++){const x=tx(s);g+=`<line x1="${x}" y1="6" x2="${x}" y2="${bottom-6}" stroke="rgba(10,89,247,.10)"/><text x="${x}" y="${bottom+10}" text-anchor="middle">:${String(s).padStart(2,'0')}</text>`;}
-  [['点击',30],['主线程',78],['看门狗',128],['队列',170]].forEach(([n,y])=>g+=`<text class="ln" x="0" y="${y+4}">${n}</text>`);
-  g+=`<circle cx="${tx(2.631)}" cy="30" r="6" fill="#0A59F7"/><text x="${tx(2.631)-10}" y="18" text-anchor="end">① 02.631</text>`;
-  g+=`<circle cx="${tx(3.418)}" cy="30" r="6" fill="#0A59F7"/><text x="${tx(3.418)+10}" y="18">② 03.418 · 排队至 06.639</text>`;
-  g+=`<path d="M${tx(3.418)} 36 C ${tx(4.6)} 54, ${tx(5.8)} 54, ${tx(6.639)} 62" fill="none" stroke="#0A59F7" stroke-dasharray="4 3" stroke-width="1.2"/>`;
+  const Y={click:34,main:86,dog:136,queue:180}, axisY=214; let g='';
+  for(let s=2;s<=11;s++){const x=tx(s);g+=`<line x1="${x}" y1="10" x2="${x}" y2="${axisY-12}" stroke="rgba(0,0,0,.06)"/><text x="${x}" y="${axisY}" text-anchor="middle">:${String(s).padStart(2,'0')}</text>`;}
+  [['点击',Y.click],['主线程',Y.main],['看门狗',Y.dog],['任务队列',Y.queue]].forEach(([n,y])=>g+=`<text class="ln" x="0" y="${y+4}">${n}</text>`);
+  // 点击：第 2 次点击到被分发之间画成水平「排队」条，终点对齐第 2 轮开始
+  g+=`<rect x="${tx(3.418)}" y="${Y.click-6}" width="${tx(6.639)-tx(3.418)}" height="12" rx="6" fill="rgba(10,89,247,.10)"/>`;
+  g+=`<text x="${(tx(3.418)+tx(6.639))/2}" y="${Y.click+4}" text-anchor="middle" fill="#0A59F7">排队 3.2s</text>`;
+  g+=`<line x1="${tx(6.639)}" y1="${Y.click+6}" x2="${tx(6.639)}" y2="${Y.main-12}" stroke="#0A59F7" stroke-dasharray="3 3"/>`;
+  g+=`<line x1="${tx(2.631)}" y1="${Y.click+6}" x2="${tx(2.631)}" y2="${Y.main-12}" stroke="#0A59F7" stroke-dasharray="3 3"/>`;
+  g+=`<circle cx="${tx(2.631)}" cy="${Y.click}" r="6" fill="#0A59F7"/><text x="${tx(2.631)-10}" y="${Y.click+4}" text-anchor="end">02.631</text>`;
+  g+=`<circle cx="${tx(3.418)}" cy="${Y.click}" r="6" fill="#0A59F7"/>`;
+  g+=`<text x="${tx(3.418)}" y="${Y.click-12}" text-anchor="middle">03.418</text>`;
+  // 主线程：两轮保存，每段对应一条应用日志
   const round=(arr,r)=>arr.map((st,i)=>{const s=parseFloat(st[0]);const e=i<arr.length-1?parseFloat(arr[i+1][0]):(r===1?6.639:10.313);
     const over=r===2 && s>=9.639; const x=tx(s), w=Math.max(2,tx(e)-x-1.5);
-    return `<rect class="st" data-tip="11:15:${st[0]} saveNoteSync: ${st[1]}..." x="${x}" y="66" width="${w}" height="24" rx="3" fill="${over?'#F6D5D2':'#F3E3C6'}"/>`}).join('');
+    return `<rect class="st" data-tip="11:15:${st[0]} saveNoteSync: ${st[1]}..." x="${x}" y="${Y.main-12}" width="${w}" height="24" rx="3" fill="${over?'#F6D5D2':'#F3E3C6'}"/>`}).join('');
   g+=round(ROUND1,1)+round(ROUND2,2);
-  g+=`<text x="${(tx(2.632)+tx(6.639))/2}" y="104" text-anchor="middle" fill="#8F5A00">MMITask #1 · 4.0s</text>`;
-  g+=`<text x="${(tx(6.639)+tx(10.313))/2}" y="104" text-anchor="middle" fill="#8F5A00">MMITask #2 · 至上报时仍在执行</text>`;
-  g+=`<line x1="${tx(7.142)}" y1="114" x2="${tx(7.142)}" y2="142" stroke="#8F5A00" stroke-width="2"/><text x="${tx(7.142)+6}" y="126" fill="#8F5A00">3S 抓栈 07.142</text><text x="${tx(7.142)+6}" y="139">栈顶 Jeqz</text>`;
-  g+=`<line x1="${tx(10.313)}" y1="114" x2="${tx(10.313)}" y2="142" stroke="#C4322A" stroke-width="2"/><text x="${tx(10.313)-6}" y="126" fill="#C4322A" text-anchor="end">6S 上报 10.313</text><text x="${tx(10.313)-6}" y="139" text-anchor="end">栈顶 Ldobjbyname</text>`;
-  g+=`<polyline points="${tx(7.127)},180 ${tx(10.128)},160" fill="none" stroke="#C4322A" stroke-width="2"/><circle cx="${tx(7.127)}" cy="180" r="3.5" fill="#C4322A"/><circle cx="${tx(10.128)}" cy="160" r="3.5" fill="#C4322A"/><text x="${tx(7.127)-8}" y="184" text-anchor="end">62 个任务</text><text x="${tx(10.128)+8}" y="160">115</text>`;
+  g+=`<rect x="${tx(10.313)}" y="${Y.main-12}" width="${tx(10.8)-tx(10.313)}" height="24" rx="3" fill="none" stroke="#C4322A" stroke-dasharray="3 3"/>`;
+  g+=`<text x="${(tx(2.632)+tx(6.639))/2}" y="${Y.main+28}" text-anchor="middle" fill="#8F5A00">第 1 轮保存 · 4.0s</text>`;
+  g+=`<text x="${(tx(6.639)+tx(10.313))/2}" y="${Y.main+28}" text-anchor="middle" fill="#8F5A00">第 2 轮保存 · 至 10.313 上报仍在执行</text>`;
+  // 看门狗：两次抓栈
+  g+=`<line x1="${tx(7.142)}" y1="${Y.dog-14}" x2="${tx(7.142)}" y2="${Y.dog+16}" stroke="#8F5A00" stroke-width="2"/><text x="${tx(7.142)+8}" y="${Y.dog-2}" fill="#8F5A00">3S 抓栈 07.142</text><text x="${tx(7.142)+8}" y="${Y.dog+12}">栈顶 Jeqz</text>`;
+  g+=`<line x1="${tx(10.14)}" y1="${Y.dog-14}" x2="${tx(10.14)}" y2="${Y.dog+16}" stroke="#C4322A" stroke-width="2"/><text x="${tx(10.14)-8}" y="${Y.dog-2}" fill="#C4322A" text-anchor="end">6S 抓栈 10.140</text><text x="${tx(10.14)-8}" y="${Y.dog+12}" text-anchor="end">栈顶 Ldobjbyname</text>`;
+  // 任务队列：只有两次采样，画两根比例柱，不连线
+  const base=Y.queue+14, hq=n=>Math.round(n/115*26);
+  [[7.127,62],[10.128,115]].forEach(([t,n])=>{const x=tx(t);
+    g+=`<rect x="${x-5}" y="${base-hq(n)}" width="10" height="${hq(n)}" rx="2" fill="#C4322A" opacity=".75"/><text x="${x+10}" y="${base-hq(n)+10}" fill="#C4322A">${n}</text>`;});
+  g+=`<text x="${tx(7.127)-12}" y="${base-2}" text-anchor="end">总任务数</text>`;
   svg.innerHTML=g;
 }
 
