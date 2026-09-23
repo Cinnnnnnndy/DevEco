@@ -212,4 +212,18 @@
     paintBtn();
   });
   paintBtn();
+
+  /* ---- demo 标注总开关：和 demos/_shared/guide.js 共用 localStorage 的 deveco-guide ---- */
+  var GKEY = 'deveco-guide';
+  function guideOn(){ try{ return localStorage.getItem(GKEY)!=='off'; }catch(e){ return true; } }
+  function paintGuide(){
+    var on = guideOn();
+    $('#guide-label').textContent = 'demo 标注：'+(on?'开':'关');
+    $('#guide-btn').classList.toggle('off', !on);
+  }
+  $('#guide-btn').addEventListener('click', function(){
+    try{ localStorage.setItem(GKEY, guideOn()?'off':'on'); }catch(e){}
+    paintGuide();
+  });
+  paintGuide();
 })();
