@@ -263,14 +263,14 @@ window.DEVECO_CATALOG = {
         },
         {
           title: '冻屏分析报告：先给判决，再给卷宗', subtitle: 'AppFreeze Report · Verdict First',
-          desc: '同一次冻屏在「源码可达 / 源码不可达」两种条件下，用一个模板出报告：首屏就是一句话结论、证据强度三轴（定性 / 定位 / 修复）和主线程时间线——两次点击怎么把两轮 4.0s 叠成 6S 冻屏，一眼看清；9 项证据折叠成清单，原始日志可原样复制；行号点开侧边看代码；源码不可达时明确标「通用方向」，可授权读取源码就地升级成精确补丁；修复后一键复现，时间线叠加「修复后」泳道做前后对比。视觉按鸿蒙开发者官网令牌。',
+          desc: '同一份冻屏报告，结论、证据强度和时间线放到最前，证据折叠成清单；可切换源码可达 / 不可达两版。',
           view: 'ready', date: '2026-09-23', href: 'demos/28-appfreeze-report/index.html',
           links: [
             { label: '原始 · 源码不可达', href: 'analysis/appfreeze-report/input/v1-源码不可达-210435.html' },
             { label: '原始 · 源码可达', href: 'analysis/appfreeze-report/input/v2-源码可达-220705.html' },
             { label: '分析报告', href: 'analysis/appfreeze-report/REPORT-分析报告.html' },
           ],
-          tags: ['步数与切换次数', '审阅与回退'], note: '对照两份低保真报告提出的具体需求', thumb: { type: 'image', src: 'site/thumbs/28-appfreeze-report.jpg' },
+          tags: ['步数与切换次数'], thumb: { type: 'image', src: 'site/thumbs/28-appfreeze-report.jpg' },
         },
       ],
     },
@@ -324,7 +324,7 @@ window.DEVECO_CATALOG = {
         },
         {
           title: '冻屏分析报告：两版低保真的需求分析', subtitle: 'AppFreeze Report · Phase 1 Analysis',
-          desc: '同一次冻屏在「源码不可达 / 源码可达」下生成的两份低保真报告，按 BUTP + A–H 拆开：修复建议埋在第 5.6–6.2 屏、证据链占 51–68%、两版都标 HIGH 而其中一版的建议已存在且无效。16 页 16:9 报告，附 Demo 优化提示词（问题 B1–B17 同源编号）与产品文档。',
+          desc: '两份原始报告的需求分析：16 页报告 + Demo 优化提示词。',
           view: 'doc', date: '2026-09-23', href: 'analysis/appfreeze-report/REPORT-分析报告.html',
           links: [{ label: '优化提示词', href: 'analysis/appfreeze-report/PROMPT-Demo优化提示词.md' }, { label: '产品文档', href: 'analysis/appfreeze-report/product-doc.md' }],
           tags: ['冻屏', '需求分析', '优化提示词'],
