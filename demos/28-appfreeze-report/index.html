@@ -111,7 +111,7 @@ h1{font-size:30px;font-weight:700;line-height:1.3;color:var(--ink)}
 .fix.dir .fix-h .no{background:var(--part)}
 .fix-h h4{font-size:16px;font-weight:700;flex:1;min-width:200px;color:var(--ink)}
 .fix p.why{font-size:13px;color:var(--ink3);margin:12px 0 0;line-height:1.6}
-.code{position:relative;background:var(--fill);border-radius:var(--r-sm);overflow:auto;font-family:var(--mono);font-size:12.5px;line-height:20px;padding:8px 0}
+.code{background:var(--fill);border-radius:var(--r-sm);overflow:auto;font-family:var(--mono);font-size:12.5px;line-height:20px;padding:8px 0}
 .code .r{display:grid;grid-template-columns:22px 1fr;white-space:pre;padding-right:12px}
 .code.plain .r{grid-template-columns:1fr;padding-left:16px}
 .code .r .s{color:var(--ink4);user-select:none}
@@ -151,11 +151,12 @@ h1{font-size:30px;font-weight:700;line-height:1.3;color:var(--ink)}
 .ck-b li::before{content:'';position:absolute;left:0;top:9px;width:4px;height:4px;border-radius:50%;background:var(--ink3)}
 .raw summary{font-size:12.5px;color:var(--accent);cursor:pointer;list-style:none;display:inline-flex;align-items:center;gap:4px}
 .raw summary::-webkit-details-marker{display:none}
-.copy{position:absolute;top:8px;right:8px;z-index:1;display:inline-flex;align-items:center;gap:5px;height:28px;padding:0 10px;border-radius:999px;background:var(--paper);color:var(--ink1);font-family:var(--font);font-size:12.5px;font-weight:600;box-shadow:0 1px 2px rgba(0,0,0,.06)}
-.copy:hover{background:#FAFAFA}
-.copy svg.i{width:14px;height:14px}
+.copy{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:6px;color:var(--ink3);background:none;flex:none}
+.copy:hover{color:var(--ink1)}
+.copy svg.i{width:16px;height:16px}
 .copy.done{color:var(--yes)}
-.raw pre{margin-top:8px;background:var(--fill);border-radius:var(--r-sm);padding:10px 96px 10px 12px;font-family:var(--mono);font-size:12px;line-height:1.6;white-space:pre-wrap;word-break:break-all;color:var(--ink2);position:relative}
+.raw summary .copy{margin-left:6px}
+.raw pre{margin-top:8px;background:var(--fill);border-radius:var(--r-sm);padding:10px 12px;font-family:var(--mono);font-size:12px;line-height:1.6;white-space:pre-wrap;word-break:break-all;color:var(--ink2);position:relative}
 .frames{display:grid;grid-template-columns:auto 1fr;gap:4px 10px;font-size:12.5px;margin-bottom:10px}
 .frames .f{font-family:var(--mono);color:var(--ink3)}
 .frames .e{color:var(--ink2)}
@@ -188,6 +189,7 @@ h1{font-size:30px;font-weight:700;line-height:1.3;color:var(--ink)}
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7"/></symbol>
   <symbol id="i-chev" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></symbol>
   <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
 </svg>
@@ -417,8 +419,8 @@ function fixCard(f,i){
     : f.diff.map(([k,t])=>`<div class="r ${k==='a'?'add':k==='d'?'del':'ctx'}"><span class="s">${k==='a'?'+':k==='d'?'−':''}</span><span>${esc(t)||' '}</span></div>`).join('');
   return `<div class="fix ${f.dir?'dir':''}">
     <div class="fix-h"><span class="no">${i+1}</span><h4>${f.t}</h4>
-      ${f.dir?`<span class="pill part">通用方向</span>`:`<span class="loc">${f.loc}</span>`}</div>
-    <div class="code ${f.dir?'plain':''}"><button class="copy" type="button">${ic('copy')}<span>复制</span></button>${rows}</div>
+      ${f.dir?`<span class="pill part">通用方向</span>`:`<span class="loc">${f.loc}</span>`}<button class="copy" type="button" title="复制" aria-label="复制">${ic('copy')}</button></div>
+    <div class="code ${f.dir?'plain':''}">${rows}</div>
     <p class="why">${f.why}</p>
   </div>`;
 }
@@ -434,7 +436,7 @@ function ckRow(c){
       ${c.chips?`<div class="chips">${c.chips.map(x=>`<span class="xchip">${ic('x')}${x}</span>`).join('')}</div>`:''}
       ${c.pts?`<ul>${c.pts.map(p=>`<li>${esc(p)}</li>`).join('')}</ul>`:''}
       ${c.table?`<table class="tt2"><thead><tr><th>TID</th><th>线程名</th><th>栈顶</th><th>状态</th></tr></thead><tbody>${c.table.map(r=>`<tr>${r.map((x,k)=>`<td class="${k<1||k==2?'mono':''}">${esc(x)}</td>`).join('')}</tr>`).join('')}</tbody></table>`:''}
-      ${c.raw?`<details class="raw"><summary>${ic('chev')}原始日志</summary><pre><button class="copy" type="button">${ic('copy')}<span>复制</span></button><span class="txt">${esc(c.raw)}</span></pre></details>`:''}
+      ${c.raw?`<details class="raw"><summary>${ic('chev')}原始日志<button class="copy" type="button" title="复制" aria-label="复制">${ic('copy')}</button></summary><pre><span class="txt">${esc(c.raw)}</span></pre></details>`:''}
     </div></div>`;
 }
 
@@ -495,10 +497,11 @@ document.addEventListener('pointerout',e=>{if(e.target.closest&&e.target.closest
 document.addEventListener('click',e=>{
   const cp=e.target.closest('.copy');
   if(cp){
-    const pre=cp.closest('pre'), code=cp.closest('.code');
-    const text = pre ? pre.querySelector('.txt').textContent
-      : [...code.querySelectorAll('.r')].map(r=>{const sg=r.querySelector('.s'); const t=r.lastElementChild.textContent; return (sg?(sg.textContent==='−'?'-':sg.textContent||' '):'')+t;}).join('\n');
-    const done=()=>{cp.classList.add('done'); cp.querySelector('span').textContent='已复制'; clearTimeout(cp._t); cp._t=setTimeout(()=>{cp.classList.remove('done'); cp.querySelector('span').textContent='复制';},1600);};
+    e.preventDefault(); e.stopPropagation();
+    const det=cp.closest('details'), fix=cp.closest('.fix');
+    const text = det ? det.querySelector('.txt').textContent
+      : [...fix.querySelectorAll('.code .r')].map(r=>{const sg=r.querySelector('.s'); const t=r.lastElementChild.textContent; return (sg?(sg.textContent==='−'?'-':sg.textContent||' '):'')+t;}).join('\n');
+    const done=()=>{cp.classList.add('done'); cp.title='已复制'; cp.innerHTML=ic('check'); clearTimeout(cp._t); cp._t=setTimeout(()=>{cp.classList.remove('done'); cp.title='复制'; cp.innerHTML=ic('copy');},1600);};
     if(navigator.clipboard&&window.isSecureContext){navigator.clipboard.writeText(text).then(done,()=>fallback(text,done));} else fallback(text,done);
     return;
   }
