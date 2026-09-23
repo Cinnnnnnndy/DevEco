@@ -78,7 +78,7 @@ window.DEVECO_CATALOG = {
       items: [
         {
           no: '01', title: '工具栏自定义：界面跟着任务走', subtitle: 'Task-based Layout Presets', mark: '顺手做',
-          desc: '按任务给三套预设（调试 / 审阅 / 多设备验证），切一次到位；在这套布局里挪过的面板，下次回来还在原处。不再开一个自定义面板把选择题抛回给用户。',
+          desc: '一块画布，手机 / 折叠屏 / 平板 / 手表 / 车机同时在，改一行代码几块屏一起刷。新增鸿蒙特征模拟：选中设备切折叠屏展开 / 悬停 / 折叠、手机分屏与悬浮窗、深色与字号；手势模拟（侧滑返回、双指捏合、三指截屏、隔空抓取）在屏上画出轨迹与结果；手机上的商品卡拖到或一键流转到平板、折叠屏，画出跨屏连线与耗时。是 16 真机判断之前的一步，也是 18、19、27 的底座。',
           view: 'ready', date: '2026-09-14', href: 'demos/01-layout-presets/index.html',
           tags: ['步数与切换次数'], thumb: { type: 'image', src: 'site/thumbs/01-layout-presets.jpg' },
         },
@@ -193,9 +193,9 @@ window.DEVECO_CATALOG = {
           tags: ['步数与切换次数', '审阅与回退'], note: '第二批：差异化最高', thumb: { type: 'image', src: 'site/thumbs/16-multi-device-verify.jpg' },
         },
         {
-          no: '17', title: '模拟器 · 单屏多设备切换', subtitle: 'Multi-device Canvas', mark: '投', key: '模拟器多端：鸿蒙特征、跨屏、手势',
+          no: '17', title: '模拟器多端：鸿蒙特征 · 跨屏 · 手势', subtitle: 'Multi-device Canvas · HarmonyOS Traits', mark: '投', key: '模拟器多端：鸿蒙特征、跨屏、手势',
           desc: '这条管的是「先看见」：一块画布，手机 / 折叠屏 / 手表 / 车机几块屏同时在，本机与远端不分家；改一次代码，几块屏一起刷。并排的是不同形态，不是同一形态的几台机器。是 16 判断之前的一步——先在这块画布上发现哪里不对，16 再上真机定结论；也是 18 分布式调试、19 拉远端设备进画布的底座。',
-          view: 'ready', date: '2026-09-14', href: 'demos/17-multi-device-canvas/index.html',
+          view: 'ready', date: '2026-09-23', href: 'demos/17-multi-device-canvas/index.html',
           tags: ['步数与切换次数'], note: '第二批', thumb: { type: 'image', src: 'site/thumbs/17-multi-device-canvas.jpg' },
         },
         {

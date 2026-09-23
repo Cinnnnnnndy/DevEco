@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='32' y2='32' gradientUnits='userSpaceOnUse'%3E%3Cstop stop-color='%232C8DDD'/%3E%3Cstop offset='1' stop-color='%233357AC'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='32' height='32' rx='7' fill='url(%23g)'/%3E%3Ctext x='16' y='22.5' font-family='Arial,Helvetica,sans-serif' font-size='13' font-weight='700' fill='white' text-anchor='middle'%3EDE%3C/text%3E%3C/svg%3E">
-<title>17 · 单屏多设备：一块画布，几种形态一起刷</title>
+<title>17 · 模拟器多端：鸿蒙特征 · 跨屏 · 手势</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;500&display=swap">
 <link rel="stylesheet" href="../../deveco-intui-kit/src/tokens.css">
 <link rel="stylesheet" href="../../deveco-intui-kit/src/components.css">
@@ -14,51 +14,201 @@
 <script src="../_shared/frame.js"></script>
 <script src="../_shared/guide.js"></script>
 <style>
-  /* 菜单栏隐藏时 .body 拿 1fr 行，状态栏贴底 */
-  /* 编辑区左右分：左代码，右 Previewer 画布 */
-  .dm-split.mdc{grid-template-columns:minmax(0,1fr) minmax(0,1.6fr)}
+  /* 编辑区左右分：左代码，右 Previewer 画布（画布占大头，放得下 5 块屏） */
+  .dm-split.mdc{grid-template-columns:minmax(0,.8fr) minmax(0,2fr)}
   .prev-tools{flex:none;background:var(--ui-bg)}
   .prev-tools b{color:var(--ui-fg);font-weight:600;display:inline-flex;align-items:center;gap:6px}
   .prev-tools .grow{flex:1}
   .prev-tools .sel-lbl{display:inline-flex;align-items:center;gap:4px;color:var(--ui-fg);padding:0 6px;height:20px;border-radius:4px;background:color-mix(in srgb,var(--ui-accent) 14%,transparent)}
   .prev-tools .sel-lbl svg{width:12px;height:12px;color:var(--ui-accent)}
-  .dm-canvas .stage{flex-wrap:wrap;gap:44px}
+  .dm-canvas .stage{flex-wrap:wrap;gap:40px 36px;padding:30px 28px 36px;align-content:flex-start}
+
+  /* 特征条 / 手势条 */
+  .xbar{flex:none;display:flex;align-items:center;gap:6px;height:34px;padding:0 10px;border-bottom:1px solid var(--ui-border);background:var(--ui-bg);font-size:12px;white-space:nowrap;overflow:hidden;color:var(--ui-fg)}
+  .xbar .grow{flex:1}
+  .xbar .xl{display:inline-flex;align-items:center;gap:4px;color:var(--ui-fg-info);margin-right:2px}
+  .xbar .xl svg{width:14px;height:14px;color:var(--ui-icon)}
+  .xbar .xdev{display:inline-flex;align-items:center;gap:4px;height:22px;padding:0 7px;border-radius:5px;background:var(--ui-tag-bg);font-weight:600}
+  .xbar .xdev svg{width:13px;height:13px;color:var(--ui-accent)}
+  .xbar .xsep{width:1px;height:16px;background:var(--ui-border);margin:0 4px}
+  .xbar .hint{color:var(--ui-fg-info)}
+  .xb{display:inline-flex;align-items:center;gap:4px;height:22px;padding:0 8px;border-radius:5px;border:1px solid var(--ui-component-border);background:transparent;color:var(--ui-fg);font-size:12px;white-space:nowrap}
+  .xb:hover{background:var(--ui-action-hover)}
+  .xb svg{width:12px;height:12px;color:var(--ui-icon)}
+  .xb.on{background:var(--ui-accent);border-color:var(--ui-accent);color:var(--ui-accent-fg)}
+  .xb.on svg{color:inherit}
+  .xb[disabled]{opacity:.45}
+  .xseg{display:inline-flex}
+  .xseg .xb{border-radius:0}
+  .xseg .xb + .xb{margin-left:-1px}
+  .xseg .xb:first-child{border-radius:5px 0 0 5px}
+  .xseg .xb:last-child{border-radius:0 5px 5px 0}
+  #api-pill,#flow-pill{font-family:var(--font-code)}
+
   /* 设备可点选 */
-  .dm-device{cursor:default;transition:box-shadow .15s}
+  .dm-device{cursor:default;transition:box-shadow .15s,width .3s,margin .3s;--fz:1}
   .dm-device.sel{outline:2px solid var(--ui-accent);outline-offset:3px}
+  .dm-device.drop-ok{outline:2px dashed var(--ui-success);outline-offset:5px}
+  .dm-device.drop-hot{outline-style:solid;box-shadow:0 0 0 8px color-mix(in srgb,var(--ui-success) 22%,transparent)}
+  .dm-device.recv .scr{animation:recv .9s ease-out}
+  @keyframes recv{0%{box-shadow:inset 0 0 0 3px #3574F0}100%{box-shadow:inset 0 0 0 0 transparent}}
   .dm-device .scr{transition:opacity .25s}
   .dm-device.refreshing .scr{opacity:.55}
-  /* 同步刷新的进度条：贴在每块屏顶上 */
   .dm-device .sync{position:absolute;left:0;right:0;top:0;height:3px;z-index:6;border-radius:0}
+  .dm-device .tag{white-space:nowrap}
   /* 折叠屏两栏 */
   .mapp .cols{flex:1;display:flex;min-height:0}
   .mapp .col{flex:1;min-width:0;display:flex;flex-direction:column}
   .mapp .detail{padding:10px;display:flex;flex-direction:column;gap:5px}
-  .mapp .detail .pic{height:88px;border-radius:8px;background:linear-gradient(135deg,#dfe7ff,#b9c9ff)}
+  .mapp .detail .pic,.mapp .pic{height:88px;border-radius:8px;background:linear-gradient(135deg,#dfe7ff,#b9c9ff);transition:transform .35s;flex:none}
   .mapp .detail b{font-size:12px;font-weight:600}
   .mapp .detail span{font-size:9px;color:#8a8f99;line-height:1.4}
   .mapp .detail .price{font-size:14px;font-weight:600;color:#DB3B4B}
   .mapp .detail .btn{margin:2px 0 0;height:26px;border-radius:13px}
+  .mapp .detail em.from{font-style:normal;align-self:flex-start;font-size:8px;padding:1px 6px;border-radius:7px;background:#e8f0ff;color:#3574F0}
   /* 手机底栏 */
-  .mapp .nav{height:28px;border-top:1px solid #f0f0f0;display:flex;align-items:center;justify-content:space-around;font-size:8px;color:#8a8f99}
+  .mapp .nav{height:28px;border-top:1px solid #f0f0f0;display:flex;align-items:center;justify-content:space-around;font-size:8px;color:#8a8f99;flex:none}
   .mapp .nav b{color:#3574F0;font-weight:600}
   /* 手表 */
+  .mapp .ring > div{transition:transform .35s}
   .mapp .ring .ws{display:inline-block;margin-top:6px;padding:1px 8px;border-radius:8px;background:#f0f1f3;color:#888;font-size:8px}
   /* 车机：大字横排三个卡片 */
   .mapp.dark .hd{font-size:13px;gap:10px}
   .mapp.dark .hd .search{flex:1;margin:0;height:20px;background:#22252c;color:#8a8f99}
   .mapp.dark .cards{display:flex;gap:8px;padding:2px 10px 0}
   .mapp.dark .cards .cd{flex:1;min-width:0;border-radius:8px;background:#1b1e26;padding:8px}
-  .mapp.dark .cards .cd .th{height:40px;border-radius:6px;background:linear-gradient(135deg,#3b4a7a,#5a6fb0);margin-bottom:5px}
+  .mapp.dark .cards .cd .th{height:40px;border-radius:6px;background:linear-gradient(135deg,#3b4a7a,#5a6fb0);margin-bottom:5px;transition:transform .35s}
   .mapp.dark .cards .cd b{display:block;font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .mapp.dark .cards .cd span{display:block;font-size:9px;color:#8a8f99}
+  .mapp .row .th{transition:transform .35s}
+  .zoomed{transform:scale(1.6);position:relative;z-index:3}
+  .mapp .ring > div.zoomed{transform:scale(1.35)}
+
+  /* 手机：分屏 / 悬浮窗 / 详情页 */
+  .dm-device.phone .scr{display:flex;flex-direction:column;width:100%}
+  .dm-device.phone .pa{flex:1;min-height:0;position:relative;overflow:hidden}
+  .dm-device.phone .pa > .mapp{position:absolute;inset:0}
+  .dm-device.phone .pb{display:none;flex:1;min-height:0;overflow:hidden;border-top:4px solid #0f1012;background:#fffdf5}
+  .dm-device.phone.split .pb{display:flex}
+  .dm-device.phone .pa .row{cursor:grab}
+  .pg-detail{background:#fff;z-index:2}
+  .pg-detail[hidden]{display:none!important}
+  .pg-detail .bk{height:26px;display:flex;align-items:center;gap:4px;padding:0 10px;font-size:10px;color:#3574F0}
+  .pb .mapp .hd{height:24px;font-size:11px}
+  .pb .note{margin:3px 10px;padding:5px 7px;border-radius:6px;background:#fff3c4;font-size:9px;color:#5b4a12}
+  .fw{position:absolute;right:8px;top:74px;width:86px;border-radius:10px;background:#fff;box-shadow:0 6px 18px rgba(0,0,0,.28);z-index:4;overflow:hidden;display:none;font-size:9px}
+  .dm-device.phone.float .fw{display:block;animation:fwin .25s ease-out}
+  @keyframes fwin{from{opacity:0;transform:scale(.85)}to{opacity:1;transform:none}}
+  .fw .fh{height:14px;display:flex;align-items:center;justify-content:center}
+  .fw .fh i{width:22px;height:3px;border-radius:2px;background:#c9ccd3}
+  .fw .res{padding:0 8px;text-align:right;font-size:15px;font-weight:600}
+  .fw .keys{display:grid;grid-template-columns:repeat(4,1fr);gap:3px;padding:4px 6px 7px}
+  .fw .keys span{height:13px;border-radius:4px;background:#f0f1f3;display:grid;place-items:center;font-size:7px;color:#555}
+  .fw .keys span.op{background:#3574F0;color:#fff}
+
+  /* 折叠屏三种姿态 */
+  .dm-device.fold .v{display:none}
+  .dm-device.fold[data-pose="open"] .v-open,.dm-device.fold[data-pose="half"] .v-half,.dm-device.fold[data-pose="closed"] .v-closed{display:flex}
+  .dm-device.fold[data-pose="closed"]{width:150px;margin:0 75px}
+  .dm-device.fold[data-pose="closed"] .scr::after{display:none}
+  .dm-device.fold[data-pose="half"] .scr::after{top:50%;bottom:auto;left:0;right:0;width:auto;height:2px;background:rgba(0,0,0,.22)}
+  .v-closed{position:relative}
+  .v-closed .pg-detail{position:absolute;inset:0}
+  .v-half{flex-direction:column}
+  .v-half .up{height:50%;display:flex;flex-direction:column;padding:0 0 4px;overflow:hidden}
+  .v-half .up .media{flex:1;margin:4px 10px 0;border-radius:8px;display:flex;align-items:flex-end;gap:8px;padding:8px;min-height:0;background:linear-gradient(135deg,#dfe7ff,#b9c9ff);transition:transform .35s}
+  .v-half .up .media b{font-size:12px;font-weight:600}
+  .v-half .up .media span{font-size:12px;font-weight:600;color:#DB3B4B;margin-left:auto}
+  .v-half .lo{height:50%;display:flex;flex-direction:column;gap:6px;padding:10px 12px;background:#f6f7f9;transform:perspective(420px) rotateX(16deg);transform-origin:top center}
+  .v-half .lo .chips{display:flex;gap:5px}
+  .v-half .lo .chips span{padding:2px 8px;border-radius:9px;background:#fff;border:1px solid #dfe2e8;font-size:9px}
+  .v-half .lo .chips span.on{border-color:#3574F0;color:#3574F0}
+  .v-half .lo .acts{display:flex;gap:6px;margin-top:auto}
+  .v-half .lo .acts div{flex:1;height:26px;border-radius:13px;display:grid;place-items:center;font-size:10px;font-weight:600;background:#fff;border:1px solid #dfe2e8}
+  .v-half .lo .acts div.p{background:#3574F0;border-color:#3574F0;color:#fff}
+  .v-half .lo .lbl{font-size:9px;color:#8a8f99}
+
+  /* 平板：左列表右详情 */
+  .dm-device.tablet .mapp .col.l{flex:.85;border-right:1px solid #f0f0f0}
+  .dm-device.tablet .mapp .row{padding:5px 8px}
+  .dm-device.tablet .mapp .row .th{width:26px;height:26px}
+  .dm-device.tablet .mapp .hd{height:24px}
+  .dm-device.tablet .mapp .search{margin:2px 8px 4px;height:18px}
+  .dm-device.tablet .detail{padding:8px 10px;gap:3px}
+  .dm-device.tablet .detail .pic{height:64px}
+  .ph{margin:10px;flex:1;border:1.5px dashed #c7cbd3;border-radius:8px;display:grid;place-items:center;text-align:center;font-size:9px;color:#8a8f99;padding:6px}
+
+  /* 深色模式（设备里的应用） */
+  .dm-device.dk .scr{background:#15171c;color:#e6e6e6}
+  .dm-device.dk .mapp .st{color:#b8bcc4}
+  .dm-device.dk .mapp .search,.dm-device.dk .mapp .ring .ws{background:#262a31;color:#8a8f99}
+  .dm-device.dk .mapp .row,.dm-device.dk .mapp .nav,.dm-device.dk.tablet .mapp .col.l{border-color:#262a31}
+  .dm-device.dk .mapp .row .th,.dm-device.dk .mapp .pic,.dm-device.dk .v-half .up .media{filter:brightness(.62)}
+  .dm-device.dk .pg-detail{background:#15171c}
+  .dm-device.dk .v-half .lo{background:#1d2026}
+  .dm-device.dk .v-half .lo .chips span,.dm-device.dk .v-half .lo .acts div:not(.p){background:#262a31;border-color:#33373f}
+  .dm-device.dk .pb{background:#1b1d22}
+  .dm-device.dk .pb .note{background:#3a3522;color:#e8d9a0}
+  .dm-device.dk .fw{background:#23262d;color:#e6e6e6}
+  .dm-device.dk .fw .keys span:not(.op){background:#33373f;color:#ccc}
+  .dm-device.dk .ph{border-color:#3a3e46}
+  .dm-device.dk .detail em.from{background:#1d2b48;color:#8fb4ff}
+
+  /* 字体大小（fontSizeScale） */
+  .dm-device .mapp .hd{font-size:calc(12px*var(--fz))}
+  .dm-device .mapp .search{font-size:calc(10px*var(--fz))}
+  .dm-device .mapp .row .tx b{font-size:calc(11px*var(--fz))}
+  .dm-device .mapp .row .tx span{font-size:calc(9px*var(--fz))}
+  .dm-device .mapp .detail b{font-size:calc(12px*var(--fz))}
+  .dm-device .mapp .detail span{font-size:calc(9px*var(--fz))}
+  .dm-device .mapp .detail .price{font-size:calc(14px*var(--fz))}
+  .dm-device .mapp .ring{font-size:calc(9px*var(--fz))}
+  .dm-device .mapp .ring b{font-size:calc(18px*var(--fz))}
+  .dm-device .mapp.dark .hd{font-size:calc(13px*var(--fz))}
+  .dm-device .mapp.dark .cards .cd b{font-size:calc(12px*var(--fz))}
+  .dm-device .mapp .nav{font-size:calc(8px*var(--fz))}
+
+  /* 手势轨迹 / 屏内反馈 */
+  .gfx{position:absolute;left:0;top:0;z-index:9;pointer-events:none;overflow:visible}
+  .gfx .trail{fill:none;stroke:#3574F0;stroke-width:3;stroke-linecap:round;stroke-dasharray:1;opacity:.85}
+  .gfx .tip{fill:rgba(53,116,240,.28);stroke:#3574F0;stroke-width:1.5}
+  .gfx .bkind{fill:rgba(0,0,0,.55);animation:fadein .2s}
+  .gfx .bkind path{fill:none;stroke:#fff;stroke-width:1.6;stroke-linecap:round}
+  @keyframes fadein{from{opacity:0}to{opacity:1}}
+  .flash{position:absolute;inset:0;background:#fff;z-index:10;pointer-events:none;animation:flash .35s ease-out forwards}
+  @keyframes flash{from{opacity:.95}to{opacity:0}}
+  .shot{position:absolute;inset:8px;border:2px solid #fff;border-radius:8px;z-index:11;pointer-events:none;background:linear-gradient(160deg,#e9eefb,#c6d3f3);box-shadow:0 4px 14px rgba(0,0,0,.35);transform-origin:12px calc(100% - 12px);animation:shotfly .55s ease-in forwards}
+  @keyframes shotfly{from{transform:scale(1)}to{transform:scale(.24)}}
+  .hand{position:absolute;left:50%;top:44%;width:46px;height:46px;margin:-23px 0 0 -23px;border-radius:50%;background:rgba(53,116,240,.18);border:1.5px solid #3574F0;display:grid;place-items:center;z-index:10;pointer-events:none;animation:grab .7s ease-in-out forwards}
+  .hand svg{width:26px;height:26px;color:#3574F0}
+  @keyframes grab{0%{opacity:0;transform:translateY(-18px) scale(1.25)}35%{opacity:1;transform:none}70%{transform:scale(.78)}100%{opacity:0;transform:scale(.7)}}
+  .ripple{position:absolute;left:50%;top:44%;width:20px;height:20px;margin:-10px 0 0 -10px;border-radius:50%;border:2px solid #3574F0;z-index:9;pointer-events:none;animation:ripple .7s ease-out forwards}
+  @keyframes ripple{from{opacity:.9;transform:scale(1)}to{opacity:0;transform:scale(7)}}
+  .stoast{position:absolute;left:50%;bottom:34px;transform:translateX(-50%);max-width:88%;padding:4px 10px;border-radius:10px;background:rgba(20,22,26,.82);color:#fff;font-size:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;z-index:12;pointer-events:none;animation:stoast 1.9s ease forwards}
+  .dm-device.watch .stoast{bottom:18px;font-size:8px;padding:2px 7px}
+  .dm-device.car .stoast,.dm-device.tv .stoast{bottom:12px}
+  @keyframes stoast{0%{opacity:0;transform:translate(-50%,6px)}12%,80%{opacity:1;transform:translate(-50%,0)}100%{opacity:0}}
+
+  /* 跨屏流转：连线 + 飞行卡片 */
+  .flow-svg{position:absolute;left:0;top:0;pointer-events:none;z-index:20;overflow:visible}
+  .flow-svg path{fill:none;stroke:var(--ui-accent);stroke-width:2;stroke-dasharray:6 5;animation:dash .6s linear infinite}
+  .flow-svg circle{fill:var(--ui-accent)}
+  @keyframes dash{to{stroke-dashoffset:-11}}
+  .flow-lbl{position:absolute;z-index:21;transform:translate(-50%,-50%);height:20px;padding:0 8px;border-radius:10px;background:var(--ui-accent);color:#fff;font-size:11px;line-height:20px;font-weight:600;white-space:nowrap;pointer-events:none;box-shadow:var(--ui-shadow)}
+  .fly{position:absolute;z-index:22;pointer-events:none;display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:8px;background:#fff;color:#1a1a1a;box-shadow:0 8px 22px rgba(0,0,0,.35);font-size:11px;transition:transform .6s cubic-bezier(.5,0,.3,1),opacity .6s;white-space:nowrap}
+  .fly .th,.ghost .th{width:26px;height:26px;border-radius:6px;background:linear-gradient(135deg,#dfe7ff,#b9c9ff);flex:none}
+  .fly b,.ghost b{font-weight:600}
+  .ghost{position:fixed;z-index:1000;pointer-events:none;display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:8px;background:#fff;color:#1a1a1a;box-shadow:0 10px 26px rgba(0,0,0,.4);font:11px/1.4 var(--font-ui);transform:translate(-30%,-50%) rotate(-3deg);white-space:nowrap}
+  .ghost small{display:block;font-size:9px;color:#3574F0}
+  @media (prefers-reduced-motion:reduce){.fly{transition:none}.flow-svg path{animation:none}}
+
   /* 代码：第 12 行可点 */
   .code .ln[data-ln="12"]{cursor:pointer}
   .code .ln[data-ln="12"]:hover .t{text-decoration:underline dotted var(--ui-fg-info)}
 </style>
 </head>
 <body>
-<div class="ide" id="ide" data-ide-theme="dark" data-left="project" data-right="none" data-bottom="none" role="application" aria-label="DevEco Studio">
+<div class="ide" id="ide" data-ide-theme="dark" data-left="none" data-right="none" data-bottom="none" role="application" aria-label="DevEco Studio">
   <div class="body">
     <div class="tw tw-left">
       <div class="pane on" data-pane="project">
@@ -78,67 +228,139 @@
         <div class="code-wrap"><div class="code" id="code"></div></div>
         <div class="prev">
           <div class="prev-tools">
-            <b><svg class="i"><use href="#i-layout"/></svg>Multi-device · <span id="cnt">4</span> 块屏</b>
+            <b><svg class="i"><use href="#i-layout"/></svg>Multi-device · <span id="cnt">5</span> 块屏</b>
             <span class="grow"></span>
             <span class="dm-pill ok" id="sync-pill"><svg><use href="#i-sync"/></svg>改一次一起刷 · 上次 0.8 s</span>
             <span class="sel-lbl" id="sel-lbl" hidden><svg><use href="#i-checkS"/></svg><span id="sel-txt"></span></span>
             <button class="abtn" id="btn-refresh" title="Refresh All"><svg class="i"><use href="#i-refresh"/></svg></button>
             <button class="abtn" id="btn-add" title="加设备"><svg class="i"><use href="#i-add"/></svg></button>
           </div>
+          <div class="xbar" id="feat-bar">
+            <span class="xl"><svg><use href="#i-sparkle"/></svg>鸿蒙特征</span>
+            <span class="xdev" id="feat-dev"><svg><use id="feat-ico" href="#i-fold"/></svg><span id="feat-name">Mate X6</span></span>
+            <span id="feat-spec" style="display:inline-flex;gap:6px;align-items:center"></span>
+            <span class="xsep"></span>
+            <button class="xb" id="f-dark" title="深色模式"><svg><use href="#i-moon"/></svg>深色模式</button>
+            <span class="xl" style="margin-left:4px">字体</span>
+            <span class="xseg" id="f-fz"><button class="xb on" data-fz="1">标准</button><button class="xb" data-fz="1.15">大</button><button class="xb" data-fz="1.3">特大</button></span>
+            <span class="grow"></span>
+            <span class="dm-pill muted" id="api-pill">FoldStatus.EXPANDED</span>
+          </div>
+          <div class="xbar" id="gest-bar">
+            <span class="xl"><svg><use href="#i-hand"/></svg>手势模拟</span>
+            <button class="xb" data-g="back"><svg><use href="#i-undo"/></svg>侧滑返回</button>
+            <button class="xb" data-g="pinch"><svg><use href="#i-expandAll"/></svg>双指捏合</button>
+            <button class="xb" data-g="shot"><svg><use href="#i-camera"/></svg>三指下滑截屏</button>
+            <button class="xb" data-g="air"><svg><use href="#i-hand"/></svg>隔空抓取</button>
+            <span class="xsep"></span>
+            <span class="xl"><svg><use href="#i-send-o"/></svg>跨屏流转</span>
+            <button class="xb" data-to="d-tab"><svg><use href="#i-tablet"/></svg>流转到平板</button>
+            <button class="xb" data-to="d-fold"><svg><use href="#i-fold"/></svg>流转到折叠屏</button>
+            <span class="grow"></span>
+            <span class="dm-pill muted" id="flow-pill">也可直接拖手机上的商品卡</span>
+          </div>
           <div class="dm-canvas" id="canvas">
             <div class="stage" id="stage">
 
-              <div class="dm-device phone" data-name="Mate 70 Pro · 本机">
+              <div class="dm-device phone" id="d-phone" data-kind="phone" data-name="Mate 70 Pro · 本机">
                 <span class="tag">Mate 70 Pro · 本机</span>
                 <div class="scr">
                   <div class="dm-progress indet sync" hidden><i></i></div>
-                  <div class="mapp">
-                    <div class="st"><span>9:41</span><span>5G ▮▮▮</span></div>
-                    <div class="hd">商品</div>
-                    <div class="search" data-search>搜索</div>
-                    <div class="row"><span class="th"></span><div class="tx"><b>无线降噪耳机 Pro</b><span>¥899 · 已售 1.2 万</span></div></div>
-                    <div class="row"><span class="th"></span><div class="tx"><b>智能手表 5 · 46mm</b><span>¥2199 · 已售 8600</span></div></div>
-                    <div class="row"><span class="th"></span><div class="tx"><b>便携充电宝 20000</b><span>¥199 · 已售 3.4 万</span></div></div>
-                    <div class="row"><span class="th"></span><div class="tx"><b>折叠键盘 · 蓝牙</b><span>¥329 · 已售 5200</span></div></div>
-                    <div class="row"><span class="th"></span><div class="tx"><b>车载支架 · 磁吸</b><span>¥69 · 已售 2.1 万</span></div></div>
-                    <div class="fill"></div>
-                    <div class="nav"><b>首页</b><span>分类</span><span>购物车</span><span>我的</span></div>
+                  <div class="pa">
+                    <div class="mapp" id="p-list">
+                      <div class="st"><span>9:41</span><span>5G ▮▮▮</span></div>
+                      <div class="hd">商品</div>
+                      <div class="search" data-search>搜索</div>
+                      <div class="row" data-i="0"><span class="th"></span><div class="tx"><b>无线降噪耳机 Pro</b><span>¥899 · 已售 1.2 万</span></div></div>
+                      <div class="row" data-i="1"><span class="th"></span><div class="tx"><b>智能手表 5 · 46mm</b><span>¥2199 · 已售 8600</span></div></div>
+                      <div class="row" data-i="2"><span class="th"></span><div class="tx"><b>便携充电宝 20000</b><span>¥199 · 已售 3.4 万</span></div></div>
+                      <div class="row" data-i="3"><span class="th"></span><div class="tx"><b>折叠键盘 · 蓝牙</b><span>¥329 · 已售 5200</span></div></div>
+                      <div class="row" data-i="4"><span class="th"></span><div class="tx"><b>车载支架 · 磁吸</b><span>¥69 · 已售 2.1 万</span></div></div>
+                      <div class="fill"></div>
+                      <div class="nav"><b>首页</b><span>分类</span><span>购物车</span><span>我的</span></div>
+                    </div>
+                    <div class="mapp pg-detail" id="p-detail" hidden></div>
                   </div>
+                  <div class="pb">
+                    <div class="mapp">
+                      <div class="hd">备忘录</div>
+                      <div class="note">周六 · 给爸妈挑一副降噪耳机</div>
+                      <div class="note">充电宝要 66W 快充的</div>
+                    </div>
+                  </div>
+                  <div class="fw"><div class="fh"><i></i></div><div class="res">1,098</div><div class="keys"><span>7</span><span>8</span><span>9</span><span class="op">÷</span><span>4</span><span>5</span><span>6</span><span class="op">×</span><span>1</span><span>2</span><span>3</span><span class="op">+</span></div></div>
                 </div>
                 <span class="cap">1080×2340 · API 20</span>
               </div>
 
-              <div class="dm-device fold" data-name="Mate X6 · 展开">
+              <div class="dm-device fold" id="d-fold" data-kind="fold" data-pose="open" data-name="Mate X6 · 展开">
                 <span class="tag">Mate X6 · 展开</span>
                 <div class="scr">
                   <div class="dm-progress indet sync" hidden><i></i></div>
-                  <div class="mapp">
+                  <div class="mapp v v-open">
                     <div class="st"><span>9:41</span><span>5G ▮▮▮</span></div>
                     <div class="cols">
                       <div class="col">
                         <div class="hd">商品</div>
                         <div class="search" data-search>搜索</div>
-                        <div class="row"><span class="th"></span><div class="tx"><b>无线降噪耳机 Pro</b><span>¥899</span></div></div>
-                        <div class="row"><span class="th"></span><div class="tx"><b>智能手表 5</b><span>¥2199</span></div></div>
-                        <div class="row"><span class="th"></span><div class="tx"><b>便携充电宝</b><span>¥199</span></div></div>
-                        <div class="row"><span class="th"></span><div class="tx"><b>折叠键盘</b><span>¥329</span></div></div>
+                        <div class="row" data-i="0"><span class="th"></span><div class="tx"><b>无线降噪耳机 Pro</b><span>¥899</span></div></div>
+                        <div class="row" data-i="1"><span class="th"></span><div class="tx"><b>智能手表 5</b><span>¥2199</span></div></div>
+                        <div class="row" data-i="2"><span class="th"></span><div class="tx"><b>便携充电宝</b><span>¥199</span></div></div>
+                        <div class="row" data-i="3"><span class="th"></span><div class="tx"><b>折叠键盘</b><span>¥329</span></div></div>
                       </div>
                       <div class="col">
-                        <div class="detail">
-                          <div class="pic"></div>
-                          <b>无线降噪耳机 Pro</b>
-                          <span>主动降噪 · 40 小时续航 · 双设备连接</span>
-                          <span class="price">¥899</span>
-                          <div class="btn">加入购物车</div>
-                        </div>
+                        <div class="detail" id="fold-detail"></div>
                       </div>
                     </div>
+                  </div>
+                  <div class="mapp v v-half">
+                    <div class="up">
+                      <div class="st"><span>9:41</span><span>5G ▮▮▮</span></div>
+                      <div class="media" id="fold-media"></div>
+                    </div>
+                    <div class="lo">
+                      <span class="lbl">悬停操作区</span>
+                      <div class="chips"><span class="on">曜石黑</span><span>冰霜银</span><span>× 1</span></div>
+                      <div class="acts"><div>加入购物车</div><div class="p">立即购买</div></div>
+                    </div>
+                  </div>
+                  <div class="mapp v v-closed">
+                    <div class="st"><span>9:41</span><span>5G</span></div>
+                    <div class="hd">商品</div>
+                    <div class="search" data-search>搜索</div>
+                    <div class="row" data-i="0"><span class="th"></span><div class="tx"><b>无线降噪耳机 Pro</b><span>¥899</span></div></div>
+                    <div class="row" data-i="1"><span class="th"></span><div class="tx"><b>智能手表 5</b><span>¥2199</span></div></div>
+                    <div class="row" data-i="2"><span class="th"></span><div class="tx"><b>便携充电宝</b><span>¥199</span></div></div>
+                    <div class="row" data-i="3"><span class="th"></span><div class="tx"><b>折叠键盘</b><span>¥329</span></div></div>
+                    <div class="fill"></div>
+                    <div class="mapp pg-detail" id="fold-cd" hidden></div>
                   </div>
                 </div>
                 <span class="cap">2200×2480 · API 20</span>
               </div>
 
-              <div class="dm-device watch" data-name="WATCH 5 · 远端">
+              <div class="dm-device tablet" id="d-tab" data-kind="tablet" data-name="MatePad Pro · 远端">
+                <span class="tag remote">MatePad Pro · 远端</span>
+                <div class="scr">
+                  <div class="dm-progress indet sync" hidden><i></i></div>
+                  <div class="mapp">
+                    <div class="st"><span>9:41</span><span>WLAN</span></div>
+                    <div class="cols">
+                      <div class="col l">
+                        <div class="hd">商品</div>
+                        <div class="search" data-search>搜索</div>
+                        <div class="row" data-i="0"><span class="th"></span><div class="tx"><b>无线降噪耳机 Pro</b><span>¥899</span></div></div>
+                        <div class="row" data-i="1"><span class="th"></span><div class="tx"><b>智能手表 5</b><span>¥2199</span></div></div>
+                        <div class="row" data-i="2"><span class="th"></span><div class="tx"><b>便携充电宝</b><span>¥199</span></div></div>
+                      </div>
+                      <div class="col" id="tab-right"><div class="ph">从手机拖商品卡到这里<br>或点「流转到平板」</div></div>
+                    </div>
+                  </div>
+                </div>
+                <span class="cap">2800×1840 · API 20</span>
+              </div>
+
+              <div class="dm-device watch" id="d-watch" data-kind="watch" data-name="WATCH 5 · 远端">
                 <span class="tag remote">WATCH 5 · 远端</span>
                 <div class="scr">
                   <div class="dm-progress indet sync" hidden><i></i></div>
@@ -149,7 +371,7 @@
                 <span class="cap">466×466 · API 20</span>
               </div>
 
-              <div class="dm-device car" data-name="HiCar · 远端">
+              <div class="dm-device car" id="d-car" data-kind="car" data-name="HiCar · 远端">
                 <span class="tag remote">HiCar · 远端</span>
                 <div class="scr">
                   <div class="dm-progress indet sync" hidden><i></i></div>
@@ -180,16 +402,17 @@
   document.getElementById('tree-slot').innerHTML=DemoFrame.tree({sel:'ListPage.ets'});
   document.getElementById('tabs').insertAdjacentHTML('afterbegin',DemoFrame.tabs([{file:'ListPage.ets',on:true},{file:'ItemCard.ets'}]));
   document.getElementById('code').innerHTML=DemoFrame.code('ListPage.ets',{cur:12,marks:{12:'bulb'}});
-  DemoFrame.init({device:'Multi-device (4)',deviceIcon:'#i-layout',onReady:function(){
-    $('#status-slot').innerHTML='<span class="dm-capsule" id="cap"><span class="dm-dot ok"></span><span id="cap-txt">4 块屏 · 已同步</span></span>';
+  DemoFrame.init({device:'Multi-device (5)',deviceIcon:'#i-layout',onReady:function(){
+    $('#status-slot').innerHTML='<span class="dm-capsule" id="cap"><span class="dm-dot ok"></span><span id="cap-txt">5 块屏 · 已同步</span></span>';
   }});
 
-  /* 第 12 行：点一下 = 改了一处（占位文字 搜索 ⇄ 搜索商品），四块屏一起刷 */
+  /* ================= 原有：第 12 行改代码 → 所有屏一起刷 ================= */
   var LINE_A='      <span class="f">Search</span>({ <span class="p">value</span>: <span class="k">this</span>.<span class="p">keyword</span> })';
   var LINE_B='      <span class="f">Search</span>({ <span class="p">value</span>: <span class="k">this</span>.<span class="p">keyword</span>, <span class="p">placeholder</span>: <span class="s">\'搜索商品\'</span> })';
   var edited=false, busy=false;
   var ln12=$('.code .ln[data-ln="12"]');
-  ln12.setAttribute('title','改这一行：画布上 4 块屏一起刷');
+  function devCount(){return $$('#stage .dm-device').length}
+  ln12.setAttribute('title','改这一行：画布上 '+devCount()+' 块屏一起刷');
 
   function sync(text){
     if(busy)return;busy=true;
@@ -215,30 +438,312 @@
   });
   $('#btn-refresh').addEventListener('click',function(){sync(edited?'搜索商品':'搜索')});
 
-  /* 画布上任一设备可点选 */
-  $('#canvas').addEventListener('click',function(e){
-    var d=e.target.closest('.dm-device');
+  /* ================= 商品数据 / 详情渲染 ================= */
+  var ITEMS=[
+    {n:'无线降噪耳机 Pro',p:899,d:'主动降噪 · 40 小时续航 · 双设备连接',g:'#dfe7ff,#b9c9ff'},
+    {n:'智能手表 5 · 46mm',p:2199,d:'eSIM 独立通话 · 14 天续航',g:'#dff5ec,#a9dfc6'},
+    {n:'便携充电宝 20000',p:199,d:'66W 超级快充 · 双向快充',g:'#fff0dc,#f7cf98'},
+    {n:'折叠键盘 · 蓝牙',p:329,d:'三折设计 · 三台设备一键切换',g:'#efe6ff,#cdb8f5'},
+    {n:'车载支架 · 磁吸',p:69,d:'磁吸无线充 · 单手取放',g:'#e3eef6,#b7cde0'}
+  ];
+  function detailHTML(i,from,back){
+    var it=ITEMS[i];
+    return (back?'<div class="st"><span>9:41</span><span>5G ▮▮▮</span></div><div class="bk">‹ 商品</div>':'')
+      +'<div class="detail"><div class="pic" style="background:linear-gradient(135deg,'+it.g+')"></div>'
+      +(from?'<em class="from">来自 '+from+' · 流转</em>':'')
+      +'<b>'+it.n+'</b><span>'+it.d+'</span><span class="price">¥'+it.p+'</span><div class="btn">加入购物车</div></div>';
+  }
+  var foldItem=0;
+  function detailInner(i,from){
+    var it=ITEMS[i];
+    return '<div class="pic" style="background:linear-gradient(135deg,'+it.g+')"></div>'+(from?'<em class="from">来自 '+from+' · 流转</em>':'')
+      +'<b>'+it.n+'</b><span>'+it.d+'</span><span class="price">¥'+it.p+'</span><div class="btn">加入购物车</div>';
+  }
+  function renderFold(from){
+    var it=ITEMS[foldItem];
+    $('#fold-detail').innerHTML=detailInner(foldItem,from);
+    $('#fold-media').style.background='linear-gradient(135deg,'+it.g+')';
+    $('#fold-media').innerHTML='<b>'+it.n+'</b><span>¥'+it.p+'</span>';
+    $('#fold-cd').innerHTML=detailHTML(foldItem,from,true);
+  }
+  renderFold();
+  function pageDetail(i){return detailHTML(i,null,true)}
+
+  /* ================= 状态提示 ================= */
+  function api(t){$('#api-pill').textContent=t}
+  function stoast(dev,txt){
+    var s=$('.scr',dev),old=$('.stoast',s);if(old)old.remove();
+    s.insertAdjacentHTML('beforeend','<div class="stoast">'+txt+'</div>');
+    var el=$('.stoast',s);setTimeout(function(){if(el.parentNode)el.remove()},2000);
+  }
+  function shortName(d){return d.dataset.name.split(' · ')[0]}
+
+  /* ================= 选中设备 → 特征条 ================= */
+  var selDev=null;
+  var KIND_ICON={phone:'#i-phone',fold:'#i-fold',tablet:'#i-tablet',watch:'#i-watch',car:'#i-car',tv:'#i-tv'};
+  var POSE={open:['展开','FoldStatus.EXPANDED'],half:['悬停','FoldStatus.HALF_FOLDED'],closed:['折叠','FoldStatus.FOLDED']};
+  function select(d){
+    selDev=d||null;
     $$('#stage .dm-device').forEach(function(x){x.classList.toggle('sel',x===d)});
     var lbl=$('#sel-lbl');
     if(d){$('#sel-txt').textContent='已选 · '+d.dataset.name;lbl.hidden=false}else lbl.hidden=true;
+    renderFeat();
+  }
+  function renderFeat(){
+    var d=selDev,spec=$('#feat-spec');
+    $('#f-dark').disabled=!d;$$('#f-fz .xb').forEach(function(b){b.disabled=!d});
+    if(!d){$('#feat-name').textContent='未选设备';$('#feat-ico').setAttribute('href','#i-cursor');spec.innerHTML='<span class="hint">先在画布上点一台设备</span>';return}
+    var k=d.dataset.kind;
+    $('#feat-name').textContent=shortName(d);$('#feat-ico').setAttribute('href',KIND_ICON[k]||'#i-phone');
+    if(k==='fold'){
+      var p=d.dataset.pose;
+      spec.innerHTML='<span class="xseg">'+['open','half','closed'].map(function(x){return '<button class="xb'+(p===x?' on':'')+'" data-pose="'+x+'">'+POSE[x][0]+'</button>'}).join('')+'</span>';
+    }else if(k==='phone'){
+      spec.innerHTML='<button class="xb'+(d.classList.contains('split')?' on':'')+'" data-pf="split"><svg><use href="#i-split"/></svg>分屏</button>'
+        +'<button class="xb'+(d.classList.contains('float')?' on':'')+'" data-pf="float"><svg><use href="#i-plus-box"/></svg>悬浮窗</button>';
+    }else{
+      spec.innerHTML='<span class="hint">此形态仅通用特征</span>';
+    }
+    $('#f-dark').classList.toggle('on',d.classList.contains('dk'));
+    var fz=d.style.getPropertyValue('--fz')||'1';
+    $$('#f-fz .xb').forEach(function(b){b.classList.toggle('on',b.dataset.fz===fz)});
+  }
+  $('#canvas').addEventListener('click',function(e){
+    if(dragJustEnded)return;
+    select(e.target.closest('.dm-device'));
   });
 
-  /* 加设备：往画布追加一块大屏 */
+  $('#feat-spec').addEventListener('click',function(e){
+    var b=e.target.closest('.xb');if(!b||!selDev)return;
+    var d=selDev;
+    if(b.dataset.pose){
+      var p=b.dataset.pose;d.dataset.pose=p;
+      var nm='Mate X6 · '+POSE[p][0];d.dataset.name=nm;$('.tag',d).textContent=nm;
+      $('.cap',d).textContent=(p==='closed'?'1080×2504':p==='half'?'2200×2480 · 上下分区':'2200×2480')+' · API 20';
+      $('#sel-txt').textContent='已选 · '+nm;
+      api(POSE[p][1]+(p==='half'?' · 上显示 下操作':p==='closed'?' · 切外屏单栏':' · 双栏'));
+    }else if(b.dataset.pf){
+      var on=d.classList.toggle(b.dataset.pf);
+      api(b.dataset.pf==='split'?(on?'WindowStatusType.SPLIT_SCREEN':'WindowStatusType.FULL_SCREEN'):(on?'WindowStatusType.FLOATING · 计算器':'WindowStatusType.FULL_SCREEN'));
+    }
+    renderFeat();
+  });
+  $('#f-dark').addEventListener('click',function(){
+    if(!selDev)return;var on=selDev.classList.toggle('dk');
+    api('ConfigurationConstant.ColorMode.'+(on?'DARK':'LIGHT'));renderFeat();
+  });
+  $('#f-fz').addEventListener('click',function(e){
+    var b=e.target.closest('.xb');if(!b||!selDev)return;
+    selDev.style.setProperty('--fz',b.dataset.fz);
+    api('fontSizeScale = '+b.dataset.fz);renderFeat();
+  });
+
+  /* ================= 手势模拟 ================= */
+  var NS='http://www.w3.org/2000/svg';
+  function vis(el){return el&&el.offsetParent!==null}
+  function trails(dev,list,dur,done){
+    var scr=$('.scr',dev),w=scr.clientWidth,h=scr.clientHeight;
+    var svg=document.createElementNS(NS,'svg');svg.setAttribute('class','gfx');svg.setAttribute('width',w);svg.setAttribute('height',h);svg.setAttribute('viewBox','0 0 '+w+' '+h);
+    var ps=list.map(function(dd){
+      var p=document.createElementNS(NS,'path');p.setAttribute('d',dd);p.setAttribute('class','trail');p.setAttribute('pathLength','1');p.style.strokeDashoffset='1';svg.appendChild(p);
+      var c=document.createElementNS(NS,'circle');c.setAttribute('r','7');c.setAttribute('class','tip');svg.appendChild(c);
+      return {p:p,c:c};
+    });
+    scr.appendChild(svg);
+    var t0=null;
+    function step(ts){
+      if(!t0)t0=ts;var t=Math.min(1,(ts-t0)/dur),e=t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;
+      ps.forEach(function(o){var L=o.p.getTotalLength(),pt=o.p.getPointAtLength(e*L);o.c.setAttribute('cx',pt.x);o.c.setAttribute('cy',pt.y);o.p.style.strokeDashoffset=String(1-e)});
+      if(t<1)requestAnimationFrame(step);
+      else{done&&done();setTimeout(function(){svg.style.transition='opacity .3s';svg.style.opacity='0';setTimeout(function(){svg.remove()},320)},250)}
+    }
+    requestAnimationFrame(step);
+    return svg;
+  }
+  function openDetailEl(dev){
+    var list=$$('.pg-detail',dev).filter(function(x){return !x.hidden&&vis(x)});
+    return list[0]||null;
+  }
+  var GEST={
+    back:function(dev){
+      var scr=$('.scr',dev),w=scr.clientWidth,h=scr.clientHeight,y=h*.5;
+      var svg=trails(dev,['M2 '+y+' C '+w*.12+' '+y+' '+w*.22+' '+(y-4)+' '+w*.36+' '+(y-8)],520,function(){
+        var pg=openDetailEl(dev);
+        if(pg){pg.hidden=true;stoast(dev,'已返回上一页');done('侧滑返回 → 回到商品列表','onBackPress() · router.back()')}
+        else if(dev.id==='d-tab'&&$('#tab-right .detail')){$('#tab-right').innerHTML='<div class="ph">从手机拖商品卡到这里<br>或点「流转到平板」</div>';stoast(dev,'已返回上一页');done('侧滑返回 → 关闭流转详情','onBackPress()')}
+        else{stoast(dev,'已在首页 · 再滑一次退出');done('侧滑返回 → 已在首页','onBackPress() · 返回 false')}
+      });
+      var g=document.createElementNS(NS,'g');g.setAttribute('class','bkind');
+      g.innerHTML='<ellipse cx="0" cy="'+y+'" rx="11" ry="20"/><path d="M6 '+(y-4)+' l-3 4 3 4"/>';svg.insertBefore(g,svg.firstChild);
+    },
+    pinch:function(dev){
+      var scr=$('.scr',dev),w=scr.clientWidth,h=scr.clientHeight,cx=w/2,cy=h*.42,r=Math.min(w,h)*.28;
+      trails(dev,['M'+(cx-6)+' '+(cy+6)+' L'+(cx-r)+' '+(cy+r),'M'+(cx+6)+' '+(cy-6)+' L'+(cx+r)+' '+(cy-r)],560,function(){
+        var t=null;
+        ['.pg-detail:not([hidden]) .pic','.v-half .media','.detail .pic','.ring > div','.cd .th','.row .th'].some(function(q){t=$$(q,dev).filter(vis)[0];return !!t});
+        if(!t){done('双指捏合 → 无可缩放内容','PinchGesture');return}
+        var on=t.classList.toggle('zoomed');
+        stoast(dev,on?'图片放大 1.6×':'图片还原');
+        done('双指捏合 → 图片'+(on?'放大 1.6×':'还原'),'PinchGesture · scale '+(on?'1.6':'1.0'));
+      });
+    },
+    shot:function(dev){
+      var scr=$('.scr',dev),w=scr.clientWidth,h=scr.clientHeight;
+      trails(dev,[.34,.5,.66].map(function(f){return 'M'+w*f+' '+h*.18+' L'+w*f+' '+h*.56}),480,function(){
+        scr.insertAdjacentHTML('beforeend','<div class="flash"></div><div class="shot"></div>');
+        var f=$('.flash',scr),s=$('.shot',scr);
+        setTimeout(function(){f.remove()},380);setTimeout(function(){s.remove()},1900);
+        stoast(dev,'截屏已保存到图库');
+        done('三指下滑 → 截屏已保存','系统手势 · 截屏 '+($('.cap',dev).textContent.split(' ')[0]));
+      });
+    },
+    air:function(dev){
+      var scr=$('.scr',dev);
+      scr.insertAdjacentHTML('beforeend','<div class="hand"><svg><use href="#i-hand"/></svg></div>');
+      var hd=$('.hand',scr);
+      setTimeout(function(){
+        scr.insertAdjacentHTML('beforeend','<div class="ripple"></div><div class="shot"></div>');
+        var rp=$('.ripple',scr),s=$('.shot',scr);
+        setTimeout(function(){rp.remove()},720);setTimeout(function(){s.remove()},1900);
+        stoast(dev,'隔空抓取 · 已截屏');
+        done('隔空抓取 → 握拳截屏','隔空手势 · 抓取（摄像头识别）');
+      },480);
+      setTimeout(function(){hd.remove()},760);
+    }
+  };
+  var gBusy=false,gDev=null;
+  function done(txt,apiTxt){
+    gBusy=false;
+    $('#flow-pill').className='dm-pill info';$('#flow-pill').textContent=shortName(gDev)+' · '+txt;
+    api(apiTxt);
+  }
+  $('#gest-bar').addEventListener('click',function(e){
+    var b=e.target.closest('.xb');if(!b)return;
+    if(b.dataset.g){
+      if(gBusy)return;
+      if(!selDev)select($('#d-phone'));
+      gBusy=true;gDev=selDev;
+      $$('#gest-bar [data-g]').forEach(function(x){x.classList.toggle('on',x===b)});
+      setTimeout(function(){b.classList.remove('on')},900);
+      GEST[b.dataset.g](selDev);
+    }else if(b.dataset.to){
+      var src=phoneItem();
+      var row=$('#p-detail').hidden?$('#p-list .row[data-i="'+src+'"]'):$('#p-detail .pic');
+      flow(src,$('#'+b.dataset.to),row,'一键流转');
+    }
+  });
+
+  /* ================= 跨屏流转 ================= */
+  var phoneCur=null;
+  function phoneItem(){return phoneCur==null?0:phoneCur}
+  var flowing=false;
+  function flow(i,target,fromEl,how,fromRect){
+    if(flowing||!target)return;flowing=true;
+    var stage=$('#stage'),sr=stage.getBoundingClientRect();
+    var fr=fromRect||fromEl.getBoundingClientRect(),tr=$('.scr',target).getBoundingClientRect();
+    var x1=fr.left+fr.width/2-sr.left,y1=fr.top+fr.height/2-sr.top;
+    var x2=tr.left+tr.width/2-sr.left,y2=tr.top+tr.height*.4-sr.top;
+    var mx=(x1+x2)/2,my=Math.min(y1,y2)-60;
+    var svg=document.createElementNS(NS,'svg');svg.setAttribute('class','flow-svg');
+    svg.setAttribute('width',stage.scrollWidth);svg.setAttribute('height',stage.scrollHeight);
+    svg.innerHTML='<path d="M'+x1+' '+y1+' Q '+mx+' '+my+' '+x2+' '+y2+'"/><circle cx="'+x1+'" cy="'+y1+'" r="4"/><circle cx="'+x2+'" cy="'+y2+'" r="4"/>';
+    stage.appendChild(svg);
+    var ms=260+Math.round(Math.random()*120);
+    var it=ITEMS[i];
+    stage.insertAdjacentHTML('beforeend','<div class="flow-lbl" style="left:'+((x1+2*mx+x2)/4)+'px;top:'+((y1+2*my+y2)/4)+'px">'+how+' · 传输中…</div>');
+    var lbl=stage.lastElementChild;
+    stage.insertAdjacentHTML('beforeend','<div class="fly" style="left:'+(x1-80)+'px;top:'+(y1-19)+'px"><span class="th" style="background:linear-gradient(135deg,'+it.g+')"></span><div><b>'+it.n+'</b><br>¥'+it.p+'</div></div>');
+    var fly=stage.lastElementChild;
+    void fly.offsetWidth;
+    fly.style.transform='translate('+(x2-x1)+'px,'+(y2-y1)+'px) scale(.8)';
+    target.classList.add('drop-ok');
+    $('#flow-pill').className='dm-pill info';$('#flow-pill').innerHTML='<span class="spin" style="width:10px;height:10px"></span>'+it.n+' → '+shortName(target);
+    setTimeout(function(){
+      fly.style.opacity='0';
+      target.classList.remove('drop-ok');
+      if(target.id==='d-tab'){
+        $('#tab-right').innerHTML='<div class="detail">'+detailInner(i,'Mate 70 Pro')+'</div>';
+      }else if(target.id==='d-fold'){
+        foldItem=i;renderFold('Mate 70 Pro');
+        if(target.dataset.pose==='closed')$('#fold-cd').hidden=false;
+      }
+      target.classList.remove('recv');void target.offsetWidth;target.classList.add('recv');
+      lbl.textContent=how+' · '+ms+' ms';
+      $('#flow-pill').className='dm-pill ok';$('#flow-pill').innerHTML='<svg><use href="#i-checkS"/></svg>'+it.n.split(' ')[0]+' → '+shortName(target)+' · '+ms+' ms';
+      api(how==='分布式拖拽'?'UDMF · onDrop · 跨设备拖拽':'continueManager · 应用接续');
+      stoast(target,'已接续 · 来自 Mate 70 Pro');
+      flowing=false;
+      setTimeout(function(){svg.style.transition=lbl.style.transition='opacity .4s';svg.style.opacity=lbl.style.opacity='0';setTimeout(function(){svg.remove();lbl.remove();fly.remove()},420)},1800);
+    },650);
+  }
+
+  /* 手机商品卡：点 = 打开详情；拖 = 分布式拖拽到平板 / 折叠屏 */
+  var drag=null,dragJustEnded=false;
+  $('#p-list').addEventListener('pointerdown',function(e){
+    var r=e.target.closest('.row');if(!r)return;
+    drag={i:+r.dataset.i,x:e.clientX,y:e.clientY,row:r,on:false,ghost:null,hot:null};
+  });
+  document.addEventListener('pointermove',function(e){
+    if(!drag)return;
+    if(!drag.on&&Math.hypot(e.clientX-drag.x,e.clientY-drag.y)>6){
+      drag.on=true;var it=ITEMS[drag.i];
+      document.body.insertAdjacentHTML('beforeend','<div class="ghost"><span class="th" style="background:linear-gradient(135deg,'+it.g+')"></span><div><b>'+it.n+'</b><small>拖到平板或折叠屏上松手</small></div></div>');
+      drag.ghost=document.body.lastElementChild;
+      $$('#d-tab,#d-fold').forEach(function(d){d.classList.add('drop-ok')});
+    }
+    if(drag.on){
+      drag.ghost.style.left=e.clientX+'px';drag.ghost.style.top=e.clientY+'px';
+      var el=document.elementFromPoint(e.clientX,e.clientY),t=el&&el.closest('#d-tab,#d-fold');
+      $$('#d-tab,#d-fold').forEach(function(d){d.classList.toggle('drop-hot',d===t)});
+      drag.hot=t;
+    }
+  });
+  document.addEventListener('pointerup',function(e){
+    if(!drag)return;var d=drag;drag=null;
+    if(!d.on){ /* 点：手机打开详情页 */
+      phoneCur=d.i;$('#p-detail').innerHTML=pageDetail(d.i);$('#p-detail').hidden=false;
+      api('router.pushUrl · pages/Detail');
+      return;
+    }
+    dragJustEnded=true;setTimeout(function(){dragJustEnded=false},50);
+    var gr=d.ghost.getBoundingClientRect();d.ghost.remove();
+    $$('#d-tab,#d-fold').forEach(function(x){x.classList.remove('drop-ok','drop-hot')});
+    if(d.hot){phoneCur=d.i;flow(d.i,d.hot,null,'分布式拖拽',gr)}
+    else{$('#flow-pill').className='dm-pill muted';$('#flow-pill').textContent='没落到目标设备上，已取消'}
+  });
+  /* 平板 / 折叠屏的列表行：点一下切右栏详情 */
+  $('#stage').addEventListener('click',function(e){
+    var r=e.target.closest('#d-fold .v-open .row,#d-tab .col.l .row,#d-fold .v-closed .row');if(!r)return;
+    var i=+r.dataset.i;
+    if(r.closest('#d-tab'))$('#tab-right').innerHTML='<div class="detail">'+detailInner(i)+'</div>';
+    else{foldItem=i;renderFold();if(r.closest('.v-closed'))$('#fold-cd').hidden=false}
+  });
+
+  /* ================= 原有：加设备（智慧屏） ================= */
   $('#btn-add').addEventListener('click',function(){
     if($('#stage .dm-device.tv'))return;
     $('#stage').insertAdjacentHTML('beforeend',
-      '<div class="dm-device tv" data-name="智慧屏 V5 · 远端"><span class="tag remote">智慧屏 V5 · 远端</span><div class="scr"><div class="dm-progress indet sync"><i></i></div>'
+      '<div class="dm-device tv" data-kind="tv" data-name="智慧屏 V5 · 远端"><span class="tag remote">智慧屏 V5 · 远端</span><div class="scr"><div class="dm-progress indet sync"><i></i></div>'
       +'<div class="mapp dark"><div class="hd">商品<div class="search" data-search>'+(edited?'搜索商品':'搜索')+'</div></div><div class="cards">'
       +'<div class="cd"><div class="th"></div><b>无线降噪耳机 Pro</b><span>¥899</span></div><div class="cd"><div class="th"></div><b>智能手表 5</b><span>¥2199</span></div><div class="cd"><div class="th"></div><b>便携充电宝</b><span>¥199</span></div><div class="cd"><div class="th"></div><b>折叠键盘</b><span>¥329</span></div>'
       +'</div></div></div><span class="cap">3840×2160 · API 20</span></div>');
     var tv=$('#stage .dm-device.tv');tv.classList.add('refreshing');
     setTimeout(function(){tv.classList.remove('refreshing');$('.sync',tv).hidden=true},800);
-    var n=$$('#stage .dm-device').length;$('#cnt').textContent=n;
+    var n=devCount();$('#cnt').textContent=n;
     var hd=$('#hdr-device span');if(hd)hd.textContent='Multi-device ('+n+')';
     var cap=$('#cap-txt');if(cap)cap.textContent=n+' 块屏 · 已同步';
+    var t=$('.code .ln[data-ln="12"]');if(t)t.setAttribute('data-title','改这一行：画布上 '+n+' 块屏一起刷');
     tv.scrollIntoView({block:'nearest'});
   });
-DemoGuide.init([{"target": ".code .ln[data-ln=\"12\"]", "kind": "click", "pos": "top", "label": "点这一行改代码"}, {"target": "#stage", "kind": "change", "pos": "top", "label": "几块屏一起刷新"}]);
+
+  /* 默认选中折叠屏，特征条首屏可见 */
+  select($('#d-fold'));
+DemoGuide.init([
+  {"target": ".code .ln[data-ln=\"12\"]", "kind": "click", "pos": "top", "label": "点这一行改代码，几块屏一起刷"},
+  {"target": "#feat-spec", "kind": "click", "pos": "top", "label": "切折叠姿态：展开 / 悬停 / 折叠"},
+  {"target": "#gest-bar [data-g=\"back\"]", "kind": "click", "pos": "bottom", "label": "选设备后点手势，屏上出轨迹和结果"},
+  {"target": "#gest-bar [data-to=\"d-tab\"]", "kind": "click", "pos": "bottom", "label": "商品卡流转到平板（也可直接拖）"}
+]);
 })();
 </script>
 </body>
