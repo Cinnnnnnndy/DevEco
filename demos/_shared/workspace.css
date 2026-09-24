@@ -1,0 +1,123 @@
+/* =====================================================================
+   demos/_shared/workspace.css —— 「Agent 工作台」外壳（鸿蒙电脑版 DevEco Studio · AI Coding 默认视图）
+   与 frame.css 平行：frame 是经典 IDE（项目树 + 编辑器），workspace 是任务优先的布局。
+   依赖：deveco-intui-kit/src/tokens.css → components.css → ai.css
+   结构：
+     <div class="ide ws" id="ide" data-ide-theme="dark" data-view="ws">
+       （WorkspaceShell.init 注入 .ws-hdr 与 .ws-status）
+       <div class="ws-body">…</div>
+     </div>
+   命名前缀 ws-；颜色只用 --ui-* / --ai-* 与下面按主题定义的 --ws-* 填充层。
+   ===================================================================== */
+
+/* ---- 填充分层（少描边多填充） ---- */
+.ide.ws[data-ide-theme="dark"]{
+  --ws-pane:#2B2D30;--ws-card:#323438;--ws-card-2:#393B40;--ws-desk:#1E1F22;--ws-line:rgba(255,255,255,.06);--ws-hover:rgba(255,255,255,.05);
+  --ws-win-bar:#2B2D30;--ws-win-shadow:0 10px 28px rgba(0,0,0,.5),0 0 0 1px rgba(255,255,255,.06)}
+.ide.ws[data-ide-theme="light"]{
+  --ws-pane:#F7F8FA;--ws-card:#FFFFFF;--ws-card-2:#EBECF0;--ws-desk:#EDEFF2;--ws-line:rgba(0,0,0,.07);--ws-hover:rgba(0,0,0,.04);
+  --ws-win-bar:#FFFFFF;--ws-win-shadow:0 10px 28px rgba(16,18,24,.14),0 0 0 1px rgba(0,0,0,.06)}
+
+.ide.ws{display:grid;grid-template-rows:40px minmax(0,1fr) 24px;min-width:1200px;background:var(--ws-pane)}
+.ide.ws svg.i{width:16px;height:16px;flex:none;color:var(--ui-icon);display:block}
+.ide.ws code,.ide.ws .mono{font-family:var(--font-code)}
+
+/* ---- 顶栏：鸿蒙电脑窗口标题栏（左 应用与工程 / 中 Agent 胶囊 / 右 视图切换、运行目标、窗口控制） ---- */
+.ws-hdr{grid-row:1;display:flex;align-items:center;gap:4px;padding:0 0 0 10px;background:var(--ws-pane);box-shadow:inset 0 -1px 0 var(--ws-line);position:relative;z-index:20;min-width:0}
+.ws-hdr .zl,.ws-hdr .zr{display:flex;align-items:center;gap:2px;min-width:0}
+.ws-hdr .zl{flex:1}
+.ws-hdr .zr{flex:1;justify-content:flex-end}
+.ws-hdr .zc{flex:none;display:flex;align-items:center;justify-content:center}
+.ws-hdr .logo{width:20px;height:20px;margin-right:6px;flex:none}
+.ws-hb{appearance:none;border:0;background:transparent;height:28px;min-width:28px;display:inline-flex;align-items:center;gap:6px;padding:0 8px;border-radius:7px;
+  color:var(--ui-fg);font:inherit;font-size:13px;cursor:pointer;white-space:nowrap}
+.ws-hb:hover{background:var(--ws-hover)}
+.ws-hb.icon{width:28px;padding:0;justify-content:center}
+.ws-hb b{font-weight:600}
+.ws-hb .dim{color:var(--ui-fg-info)}
+.ws-hb svg.i{width:16px;height:16px}
+.ws-hb .chev{width:12px;height:12px;color:var(--ui-fg-info)}
+.ws-hdr .sep{width:1px;height:16px;background:var(--ws-line);margin:0 6px}
+.ws-hdr .run svg{color:var(--ui-success)}
+.ws-winctl{display:flex;align-items:stretch;height:40px;margin-left:8px}
+.ws-winctl span{width:44px;display:grid;place-items:center;color:var(--ui-fg-info)}
+.ws-winctl span:hover{background:var(--ws-hover)}
+.ws-winctl span.x:hover{background:#E0443E;color:#fff}
+.ws-winctl svg{width:14px;height:14px}
+
+/* 顶栏中间的 Agent 胶囊：就是 ai.css 的状态胶囊，点它跳到当前任务 */
+.ws-cap{cursor:pointer;max-width:460px}
+.ws-cap:hover{filter:brightness(1.06)}
+.ws-cap .ai-ico{width:14px;height:14px}
+
+/* 中性分段（视图切换等）：不用蓝，选中是抬起的填充 */
+.ws-seg{display:inline-flex;gap:2px;padding:2px;border-radius:9px;background:var(--ws-card-2)}
+.ws-seg button{appearance:none;border:0;background:transparent;height:24px;padding:0 10px;border-radius:7px;font:inherit;font-size:12px;color:var(--ui-fg-info);cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;gap:5px}
+.ws-seg button:hover{color:var(--ui-fg)}
+.ws-seg button[aria-pressed="true"]{background:var(--ws-card);color:var(--ui-fg);box-shadow:0 1px 2px rgba(0,0,0,.14)}
+.ws-seg button:focus-visible{outline:2px solid var(--ui-accent);outline-offset:0}
+.ws-seg svg{width:14px;height:14px}
+
+/* ---- 状态栏 ---- */
+.ws-status{grid-row:3;display:flex;align-items:center;gap:2px;padding:0 8px;background:var(--ws-pane);box-shadow:inset 0 1px 0 var(--ws-line);font-size:12px;color:var(--ui-fg-info);min-width:0;white-space:nowrap}
+.ws-status .grow{flex:1}
+.ws-status .it{display:inline-flex;align-items:center;gap:6px;height:20px;padding:0 6px;border-radius:4px}
+.ws-status .it:hover{background:var(--ws-hover)}
+.ws-status .it svg{width:14px;height:14px;color:var(--ui-icon)}
+.ws-status .path{font-family:var(--font-code);font-size:11.5px}
+.ws-status .agent[data-state="waiting"]{color:var(--ai-wait-ink)}
+.ws-status .gdot{width:7px;height:7px;border-radius:50%;background:var(--ui-success);flex:none}
+
+/* ---- 主体 ---- */
+.ws-body{grid-row:2;min-height:0;min-width:0;position:relative}
+
+/* 通用小件 */
+.ws-h{font-size:12px;line-height:16px;color:var(--ui-fg-info);margin:0}
+.ws-muted{color:var(--ui-fg-info)}
+.ws-card{background:var(--ws-card);border-radius:12px}
+.ws-link{appearance:none;border:0;background:none;padding:0;font:inherit;color:var(--ui-link);cursor:pointer}
+.ws-link:hover{text-decoration:underline}
+.ws-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:var(--ui-fg-info);font-size:13px;line-height:20px;text-align:center;padding:24px}
+
+/* 任务状态点：与 ai.css 状态机一一对应 */
+.ws-st{display:inline-grid;place-items:center;width:16px;height:16px;flex:none}
+.ws-st .idle{width:7px;height:7px;border-radius:50%;background:var(--ui-fg-disabled)}
+.ws-st svg{width:14px;height:14px}
+.ws-st .ok{color:var(--ui-success)}
+.ws-st .bad{color:var(--ui-error)}
+
+/* 代码视图（工作台里的编辑器分栏、编辑视图共用） */
+.ws-code{font-family:var(--font-code);font-size:var(--fs-code);line-height:var(--lh-code);color:var(--ed-text);overflow:auto;min-height:0;padding:4px 0 16px;user-select:text;background:var(--ui-editor-bg)}
+.ws-code .ln{display:flex;min-height:var(--lh-code);position:relative}
+.ws-code .ln .g{width:52px;flex:none;display:flex;align-items:center;justify-content:flex-end;gap:4px;padding-right:10px;color:var(--ed-linenum);font-size:12px;user-select:none}
+.ws-code .ln .t{flex:1;white-space:pre;padding-left:6px}
+.ws-code .ln.cur{background:var(--ed-caret-row)}
+.ws-code .ln.cur .g{color:var(--ed-linenum-cur)}
+.ws-code .ln.ai-block .ai-gut{left:40px}
+.ws-code .ln.add{background:var(--diff-add)}
+.ws-code .ln.del{background:var(--diff-del)}
+.ws-code .ln.del .t{text-decoration:line-through;text-decoration-color:color-mix(in srgb,var(--ed-text) 40%,transparent)}
+.ws-code .ln .who{position:absolute;right:10px;top:3px;font-family:var(--font-ui);font-size:11px;line-height:16px;color:var(--ui-fg-info)}
+.ws-num{font:inherit;color:var(--ed-number);width:2.2ch;text-align:center;padding:0;margin:0 1px;border:0;border-radius:4px;background:var(--ui-field-bg);
+  box-shadow:inset 0 0 0 1px var(--ui-component-border);outline:none;height:18px;vertical-align:1px}
+.ws-num:focus{box-shadow:inset 0 0 0 1.5px var(--ui-accent)}
+
+/* 应用窗口：鸿蒙电脑上的自由窗口（原生运行），内容按真实逻辑尺寸画再缩放 */
+.ws-win{position:relative;flex:none;border-radius:10px;background:var(--ws-win-bar);box-shadow:var(--ws-win-shadow);display:flex;flex-direction:column}
+.ws-win .wt{height:24px;display:flex;align-items:center;gap:6px;padding:0 4px 0 8px;font-size:11px;line-height:14px;color:var(--ui-fg);white-space:nowrap;cursor:pointer;flex:none;min-width:0}
+.ws-win .wt .aico{width:13px;height:13px;border-radius:4px;flex:none;background:linear-gradient(135deg,#FF7A45,#E84026)}
+.ws-win .wt b{font-weight:500}
+.ws-win .wt .dim{color:var(--ui-fg-info);overflow:hidden;text-overflow:ellipsis;min-width:0}
+.ws-win .wt .ctl{margin-left:auto;display:flex;gap:0;color:var(--ui-fg-info)}
+.ws-win .wt .ctl svg{width:11px;height:11px;margin:0 3px}
+.ws-win .wc{position:relative;overflow:hidden;border-radius:0 0 10px 10px;background:#F1F3F5}
+.ws-win .wc > .app{position:absolute;left:0;top:0;transform-origin:0 0}
+.ws-win .cap{position:absolute;left:0;right:0;bottom:-22px;text-align:center;font-size:11px;line-height:16px;color:var(--ui-fg-info);white-space:nowrap;font-family:var(--font-code)}
+.ws-win .cap b{font-family:var(--font-ui);font-weight:500;color:var(--ui-fg);margin-right:6px}
+.ws-win > .tag{display:none;position:absolute;left:0;bottom:calc(100% + 4px);font-size:11px;line-height:16px;color:var(--ui-fg);font-weight:500;white-space:nowrap}
+.ds-on .ws-win.ds-side > .tag{display:block}
+.ws-win.reload .wc::after{content:"";position:absolute;inset:0;z-index:8;pointer-events:none;box-shadow:inset 0 0 0 3px var(--ai-orchid);animation:ws-reload 1s ease-out forwards}
+@keyframes ws-reload{0%{opacity:1}100%{opacity:0}}
+.ws-win.checking{box-shadow:var(--ws-win-shadow),0 0 0 2px var(--ai-violet)}
+
+@media (prefers-reduced-motion:reduce){.ws-win.reload .wc::after{animation:none;opacity:0}}

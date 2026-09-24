@@ -67,9 +67,9 @@ window.DemoGuide = (function(){
       + '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button>';
     var keys = '<div class="keys"><span class="row"><i></i>点这里</span><span class="row"><i></i>点完这里会变</span></div>';
     if(scene){
-      var rows = [['在做', scene.at], ['要做成', scene.goal], ['卡在', scene.pain], ['这里', scene.fix]]
+      var rows = [['在做', scene.at], ['要做成', scene.goal], ['卡在', scene.pain], ['这里', scene.fix], ['Agent', scene.agent]]
         .filter(function(r){ return r[1]; })
-        .map(function(r, i, a){ return '<div class="sc' + (i === a.length - 1 ? ' fix' : '') + '"><em>' + r[0] + '</em><span>' + esc(r[1]) + '</span></div>'; }).join('');
+        .map(function(r){ return '<div class="sc' + (r[0] === '这里' ? ' fix' : r[0] === 'Agent' ? ' agent' : '') + '"><em>' + r[0] + '</em><span>' + esc(r[1]) + '</span></div>'; }).join('');
       legend.classList.add('gd-scene');
       legend.innerHTML = '<div class="hd"><button type="button" class="fold" aria-expanded="true" title="折叠 / 展开场景">'
         + '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 6.5 8 10l3.5-3.5" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>'
