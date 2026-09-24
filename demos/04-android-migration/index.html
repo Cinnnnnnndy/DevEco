@@ -314,21 +314,23 @@
     }
     if(p)p.textContent=PREV_PATH[file]||file;
   }
-  function openFile(file){
+  function openFile(file,line,ok){
     if(!FILES[file])return false;
     curFile=file;explainOpen=false;
     var n=NOTES[file],st=FSTATE[file]||'ok';
     var tabs=$('#tabs');$$('.tab',tabs).forEach(function(t){t.remove()});
     tabs.insertAdjacentHTML('afterbegin',DemoFrame.tabs([{file:file,on:true}]));
-    var cur=n&&n.range?n.range[0]:1,marks={};
-    if(n&&n.range&&!n.reviewed)marks[cur]='warn';
+    var cur=line||(n&&n.range?n.range[0]:1),marks={};
+    if(n&&n.range&&!n.reviewed)marks[n.range[0]]='warn';
     $('#code').innerHTML=DemoFrame.code(file,{cur:cur,marks:marks});
     if(n&&n.range)$$('#code .ln').forEach(function(ln){var k=+ln.dataset.ln;if(k>=n.range[0]&&k<=n.range[1])ln.classList.add(n.reviewed?'hl-ok':'hl-warn')});
+    (ok||[]).forEach(function(k){var l=$('#code .ln[data-ln="'+k+'"]');if(l){l.classList.remove('hl-warn');l.classList.add('hl-ok')}});
+    if(line){var ll=$('#code .ln[data-ln="'+line+'"]');if(ll){if(!(ok&&ok.indexOf(line)>=0))ll.classList.add('hl');var cw=$('#code').parentNode;cw.scrollTop=Math.max(0,ll.offsetTop-cw.clientHeight/3)}}
     $('#crumbs').innerHTML=DemoFrame.crumbs(file);
     $$('#tree .row.sel').forEach(function(x){x.classList.remove('sel')});
     var r=$('#tree .row[data-file="'+file+'"]');if(r)r.classList.add('sel');
     var p=$('#status-pos');if(p)p.textContent=cur+':1';
-    renderCallout();renderPreview(file);
+    renderCallout();renderPreview(file);if(CMP.on)renderDiffs();
     return true;
   }
   function renderCallout(){
@@ -364,7 +366,8 @@
     else{pct=60;txt='按模块迁移 · 3 / 5 模块已转 · 2 模块需人工';}
     $('#prog-bar').style.setProperty('--v',pct+'%');$('#prog-txt').textContent=txt;
     $('#tree-prog').textContent='转化 '+prog.done+' / '+prog.total;
-    var slot=$('#status-slot');if(slot)slot.innerHTML='<span class="dm-capsule" title="Android → HarmonyOS Migration"><svg class="i" style="width:12px;height:12px"><use href="#i-translate"/></svg>安卓转化 · '+prog.done+' / '+prog.total+' 屏'+(prog.manual?' · '+prog.manual+' 屏需人工':'')+'</span>';
+    var slot=$('#status-slot');if(slot&&CMP.on){var o=openDiffs();slot.innerHTML='<span class="dm-capsule"><span class="dm-dot '+(o?'warn':'ok')+'"></span>并排对照 · 差异 '+(o?o+' 处待处理':'都已对齐或已排进清单')+' · 键鼠同步</span>';return}
+    if(slot)slot.innerHTML='<span class="dm-capsule" title="Android → HarmonyOS Migration"><svg class="i" style="width:12px;height:12px"><use href="#i-translate"/></svg>安卓转化 · '+prog.done+' / '+prog.total+' 屏'+(prog.manual?' · '+prog.manual+' 屏需人工':'')+'</span>';
   }
   function renderList(){
     var list=mode==='screen'?SCREENS:MODULES;
@@ -380,14 +383,14 @@
   function renderCommits(){
     var left=0;
     $('#commits').innerHTML=COMMITS.map(function(c,i){
-      if(!c.queued)left++;
+      if(!c.queued&&!c.done)left++;
       return '<div class="cm"><span class="sha">'+c.sha+'</span><span class="grow"><span class="m">'+c.msg+'</span><span class="s">'+c.screen+' · '+c.when+' · '+c.who+'</span></span>'
-        +(c.queued?'<span class="dm-pill muted"><svg><use href="#i-checkS"/></svg>已排进清单</span>':'<button class="btn sm" data-sync="'+i+'"><svg class="i" style="width:12px;height:12px"><use href="#i-sync"/></svg>同步到鸿蒙版</button>')+'</div>';
+        +(c.done?'<span class="dm-pill ok"><svg><use href="#i-checkS"/></svg>对照已对齐</span>':(c.queued?'<span class="dm-pill muted"><svg><use href="#i-checkS"/></svg>已排进清单</span>':'<button class="btn sm" data-sync="'+i+'"><svg class="i" style="width:12px;height:12px"><use href="#i-sync"/></svg>同步到鸿蒙版</button>'))+'</div>';
     }).join('');
     var sc=$('#sync-cnt');sc.className='dm-pill '+(left?'warn':'ok');sc.textContent=left?left+' 条':'都跟上了';
   }
   function syncCommit(i){
-    var c=COMMITS[i];if(c.queued)return;c.queued=true;
+    var c=COMMITS[i];if(c.queued||c.done)return;c.queued=true;
     SCREENS.push({name:c.screen,file:c.file,why:'同步安卓提交 '+c.sha+'：'+c.msg,st:'info',est:c.est,fresh:true});
     renderCommits();
     if(mode!=='screen'){mode='screen';$$('#seg button').forEach(function(b){b.classList.toggle('on',b.dataset.mode==='screen')});renderProgress();}
