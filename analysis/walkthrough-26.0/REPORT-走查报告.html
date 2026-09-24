@@ -26,7 +26,7 @@ body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.65 -apple-system
 a{color:var(--accent);text-decoration:none}
 a:hover{text-decoration:underline}
 code{font-family:var(--mono);font-size:.9em;background:var(--line2);padding:1px 5px;border-radius:4px}
-.wrap{max-width:1480px;margin:0 auto;padding:40px 32px 80px}
+.wrap{max-width:2280px;margin:0 auto;padding:40px 32px 80px}
 
 /* 头部 */
 .eyebrow{font-size:12px;letter-spacing:.08em;color:var(--ink3);text-transform:uppercase}
@@ -65,7 +65,8 @@ a.node:hover{border-color:var(--accent);text-decoration:none}
 .step-head h3{font-size:18px;margin:0;font-weight:700}
 .step-head .src{font-size:12px;color:var(--ink3);font-family:var(--mono)}
 .goal{color:var(--ink2);margin:0 0 14px;font-size:13px}
-.split{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(340px,1fr);gap:20px;align-items:start}
+.split{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:20px;align-items:start}
+@media (min-width:1800px){.split{grid-template-columns:minmax(0,1fr) 420px}}
 .figcol{position:sticky;top:16px}
 
 .shot{position:relative;margin:0;border-radius:10px;overflow:hidden;background:var(--shot-bg);border:1px solid var(--line);aspect-ratio:2000/1125;cursor:zoom-in;box-shadow:var(--shadow)}
@@ -121,10 +122,17 @@ td .dot{margin-right:0}
 .note{color:var(--ink3);font-size:12px;margin-top:10px}
 
 /* 放大查看 */
-.lb{position:fixed;inset:0;background:rgba(8,9,11,.86);display:none;align-items:center;justify-content:center;z-index:50;padding:24px}
-.lb.open{display:flex}
-.lb .shot{width:min(96vw,calc(92vh*2000/1125));cursor:zoom-out;box-shadow:none;border-color:#333}
-.lb .hint{position:fixed;top:12px;right:18px;color:#cfd2d8;font-size:12px}
+.lb{position:fixed;inset:0;background:#0b0c0e;display:none;z-index:50;overflow:auto;padding:60px 24px 24px}
+.lb.open{display:block}
+.lb .shot{margin:0 auto;cursor:default;box-shadow:none;border-color:#333}
+.lb[data-mode="fit"] .shot{width:min(100%,calc((100vh - 88px)*2000/1125))}
+.lb[data-mode="full"] .shot{width:2000px}
+.lb .bar{position:fixed;top:0;left:0;right:0;height:48px;display:flex;align-items:center;gap:8px;padding:0 16px;background:#0e0f12;border-bottom:1px solid #26282e;color:#cfd2d8;font-size:13px;z-index:51}
+.lb .bar .t{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
+.lb .bar button{font:inherit;font-size:12px;color:#cfd2d8;background:#1e2024;border:1px solid #33363d;border-radius:6px;padding:4px 12px;cursor:pointer}
+.lb .bar button[aria-pressed="true"]{border-color:#6b9bfa;color:#fff;background:#233150}
+.lb .bar .hint{color:#868b94;font-size:12px}
+.issue .zoom{flex:none;font:inherit;font-size:12px;color:var(--accent);background:var(--accent-bg);border:none;border-radius:6px;padding:1px 8px;cursor:zoom-in;line-height:20px;margin-top:1px}
 
 @media (max-width:1100px){
   .split{grid-template-columns:1fr}
@@ -177,7 +185,10 @@ td .dot{margin-right:0}
   </tbody></table></div>
 </div>
 
-<div class="lb" id="lb" role="dialog" aria-label="放大查看"><span class="hint">点击任意处或按 Esc 关闭</span></div>
+<div class="lb" id="lb" role="dialog" aria-label="放大查看" data-mode="full">
+  <div class="bar"><span class="t" id="lb-title"></span><span class="hint">点框回到对应问题 · Esc 关闭</span>
+    <button type="button" data-m="fit">适应窗口</button><button type="button" data-m="full">原始大小 1:1</button><button type="button" data-close>关闭 ✕</button></div>
+</div>
 
 <script>
 /* ============================================================
@@ -632,7 +643,7 @@ document.getElementById('steps').innerHTML = STEPS.map(function(s){
   var stage = STAGES.filter(function(x){return x.id===s.stage;})[0];
   var list = s.issues.map(function(i,k){
     return '<li class="issue '+i.sev+'" id="i-'+i.id+'" data-i="'+i.id+'">'
-      + '<div class="ih"><span class="num">'+(k+1)+'</span><span class="tt">'+esc(i.title)+'</span></div>'
+      + '<div class="ih"><span class="num">'+(k+1)+'</span><span class="tt">'+esc(i.title)+'</span><button type="button" class="zoom" data-i="'+i.id+'" title="放大到原图，定位到这条的标注">放大</button></div>'
       + '<div class="chips"><span class="chip sev">'+SEV[i.sev].t+'</span><span class="chip cat">'+esc(i.cat)+'</span></div>'
       + '<dl><dt>现象</dt><dd>'+esc(i.what)+'</dd><dt>依据</dt><dd>'+esc(i.rule)+'</dd><dt>改法</dt><dd><b>'+esc(i.fix)+'</b></dd></dl>'
       + '</li>';
@@ -641,7 +652,7 @@ document.getElementById('steps').innerHTML = STEPS.map(function(s){
     + '<div class="step-head"><span class="stg">'+esc(stage.title)+'</span><h3>步骤 '+s.no+' · '+esc(s.title)+'</h3><span class="src">截图 '+s.shot+'</span></div>'
     + '<p class="goal">用户要做：'+esc(s.goal)+'</p>'
     + '<div class="split"><div class="figcol">'+figureHTML(s)
-    + '<div class="figcap"><span>'+dots(sevCount(s.issues))+'</span><span>点图放大 · 点框看对应问题</span></div></div>'
+    + '<div class="figcap"><span>'+dots(sevCount(s.issues))+'</span><span>点图看原图 · 点框看对应问题 · 每条右上「放大」直达标注</span></div></div>'
     + '<ol class="issues">'+list+'</ol></div></section>';
 }).join('');
 
@@ -668,6 +679,8 @@ document.querySelectorAll('.issue').forEach(function(li){
   li.addEventListener('mouseleave', function(){ setFocus(li.dataset.i, false); });
 });
 document.getElementById('steps').addEventListener('click', function(e){
+  var z = e.target.closest('.zoom');
+  if (z){ openLB(z.closest('.step').querySelector('.shot'), z.dataset.i); return; }
   var box = e.target.closest('.box');
   if (box){
     e.stopPropagation();
@@ -677,7 +690,7 @@ document.getElementById('steps').addEventListener('click', function(e){
     return;
   }
   var fig = e.target.closest('.shot');
-  if (fig) openLB(fig);
+  if (fig) openLB(fig, null);
 });
 document.getElementById('steps').addEventListener('mouseover', function(e){
   var box = e.target.closest('.box'); if (!box) return;
@@ -686,18 +699,39 @@ document.getElementById('steps').addEventListener('mouseover', function(e){
 });
 
 /* 放大查看 */
-var lb = document.getElementById('lb');
-function openLB(fig){
-  var c = fig.cloneNode(true); c.classList.remove('focus');
-  lb.querySelectorAll('.shot').forEach(function(n){ n.remove(); });
-  lb.appendChild(c); lb.classList.add('open');
+/* 默认原始大小（2000px 宽，可滚动）；从某条问题进来时滚到它的标注并高亮 */
+var lb = document.getElementById('lb'), lbTarget = null;
+function lbCenter(){
+  var c = lb.querySelector('.shot'); if (!c) return;
+  var box = lbTarget && c.querySelector('.box[data-i="'+lbTarget+'"]');
+  var x = box ? box.offsetLeft + box.offsetWidth/2 : c.offsetWidth/2;
+  var y = box ? box.offsetTop + box.offsetHeight/2 : c.offsetHeight/2;
+  lb.scrollTo(c.offsetLeft + x - lb.clientWidth/2, c.offsetTop + y - lb.clientHeight/2);
 }
+function lbMode(m){
+  lb.dataset.mode = m;
+  lb.querySelectorAll('.bar [data-m]').forEach(function(b){ b.setAttribute('aria-pressed', b.dataset.m===m); });
+  lbCenter();
+}
+function openLB(fig, id){
+  var c = fig.cloneNode(true); c.classList.remove('focus');
+  c.querySelectorAll('.box').forEach(function(b){ b.classList.remove('on'); });
+  if (id){ c.classList.add('focus'); c.querySelectorAll('.box[data-i="'+id+'"]').forEach(function(b){ b.classList.add('on'); }); }
+  lb.querySelectorAll('.shot').forEach(function(n){ n.remove(); });
+  lb.appendChild(c);
+  var step = fig.closest('.step'), li = id && document.getElementById('i-'+id);
+  document.getElementById('lb-title').textContent = step.querySelector('h3').textContent + (li ? ' · ' + li.querySelector('.num').textContent + ' ' + li.querySelector('.tt').textContent : '');
+  lbTarget = id; lb.classList.add('open'); document.body.style.overflow = 'hidden';
+  lbMode(lb.dataset.mode || 'full');
+}
+function closeLB(){ lb.classList.remove('open'); document.body.style.overflow = ''; }
 lb.addEventListener('click', function(e){
+  var m = e.target.closest('[data-m]'); if (m){ lbMode(m.dataset.m); return; }
+  if (e.target.closest('[data-close]') || e.target === lb){ closeLB(); return; }
   var box = e.target.closest('.box');
-  lb.classList.remove('open');
-  if (box){ var li=document.getElementById('i-'+box.dataset.i); li.scrollIntoView({block:'center'}); li.classList.add('flash'); }
+  if (box){ closeLB(); var li=document.getElementById('i-'+box.dataset.i); li.scrollIntoView({block:'center'}); li.classList.remove('flash'); void li.offsetWidth; li.classList.add('flash'); }
 });
-document.addEventListener('keydown', function(e){ if (e.key==='Escape') lb.classList.remove('open'); });
+document.addEventListener('keydown', function(e){ if (e.key==='Escape' && lb.classList.contains('open')) closeLB(); });
 
 /* 总表 */
 var filter = 'all';
