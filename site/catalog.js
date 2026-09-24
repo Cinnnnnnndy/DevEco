@@ -347,6 +347,12 @@ window.DEVECO_CATALOG = {
           tags: ['输入框', '状态详解', '9 个场景'], thumb: { type: 'image', src: 'site/thumbs/agent-input-states.jpg' },
         },
         {
+          title: 'DevEco Studio 三端交互差异：鸿蒙电脑版 vs Windows / macOS', subtitle: 'HarmonyOS PC Edition vs IntelliJ-based Editions',
+          desc: '自研底座的鸿蒙电脑版（毕方平台、Rust 编辑器、盘古与小艺原生）和 IntelliJ 底座的 Windows / macOS 版，在装、写、跑、调、AI、输入与多设备上逐项对照，附社区反馈；再把碰一碰、键鼠穿越、自由窗口、折叠屏与手写笔推成 14 个突破 IntelliJ 底座的机会点，每条标档位与人无我有 / 人有我优。',
+          view: 'doc', date: '2026-09-24', href: 'analysis/deveco-platforms/REPORT-三端交互差异.html',
+          tags: ['鸿蒙电脑', '三端对照', '机会点', '社区反馈'], thumb: { type: 'image', src: 'site/thumbs/deveco-platforms.jpg' },
+        },
+        {
           title: '冻屏分析报告：两版低保真的需求分析', subtitle: 'AppFreeze Report · Phase 1 Analysis',
           desc: '两份原始报告的需求分析：16 页报告 + Demo 优化提示词。',
           view: 'doc', date: '2026-09-23', href: 'analysis/appfreeze-report/REPORT-分析报告.html',
