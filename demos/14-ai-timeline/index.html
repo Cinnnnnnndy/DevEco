@@ -138,8 +138,6 @@
   .fl-hd svg.i{width:14px;height:14px}
   .fl-hd .grow{flex:1}
   .fl-hd .dim{color:var(--ui-fg-info)}
-  .fl-in{display:inline-flex;align-items:center;gap:4px;height:20px;padding:0 8px;border-radius:10px;border:1px solid var(--ui-component-border);font-size:11px;color:var(--ui-fg-info)}
-  .fl-in svg{width:12px;height:12px;color:var(--ui-fg-info)}
   .fl-plan{display:grid;grid-template-columns:repeat(7,1fr);gap:0 4px;padding:10px 14px 0}
   .fl-plan span{height:18px;border-radius:4px;display:flex;align-items:center;gap:4px;padding:0 6px;font-size:10.5px;white-space:nowrap;overflow:hidden;
     background:color-mix(in srgb,var(--ui-accent) 12%,transparent);color:var(--ui-fg-info)}
@@ -238,7 +236,7 @@
             </div></div>
             <div class="mbf-hinge"></div>
             <div class="mbf-low"><div class="scr" id="fold-lower">
-              <div class="fl-hd"><svg class="i"><use href="#i-history"/></svg><b>AI 协作时间轴</b><span class="dim">修复 ListPage 滑动卡顿 · 7 步</span><span class="grow"></span><span class="fl-in" id="fl-in"><svg><use href="#i-hand"/></svg>手指</span></div>
+              <div class="fl-hd"><svg class="i"><use href="#i-history"/></svg><b>AI 协作时间轴</b><span class="dim">修复 ListPage 滑动卡顿 · 7 步</span></div>
               <div class="fl-plan"><span style="grid-column:span 2"><b>P1</b>封面改异步解码</span><span style="grid-column:span 3"><b>P2</b>ItemCard 加占位图</span><span><b>P3</b>无障碍</span><span>收尾</span></div>
               <div class="fl-track" id="fold-track" tabindex="0" role="slider" aria-label="执行步骤" aria-valuemin="1" aria-valuemax="7" aria-valuenow="3">
                 <div class="fl-rail"><i id="fl-rail-v"></i></div>
@@ -592,7 +590,7 @@
       }
       return out+esc(src.slice(last));
     }
-    var on=false,k=3,dragging=false,inputKind='手指',savedRight='project',flatT=null;
+    var on=false,k=3,dragging=false,savedRight='project',flatT=null;
     var scene=$('#fold-scene'),mbf=$('#mbf'),track=$('#fold-track'),cols=$('#fl-cols'),touch=$('#fold-touch');
     function stepEl(n){return $('.dm-vstep:not(.undo-note)[data-step="'+n+'"]',vtl)}
     function stateOf(st){
@@ -685,8 +683,6 @@
       if(e.button>0)return;
       dragging=true;track.classList.add('drag');
       try{track.setPointerCapture(e.pointerId)}catch(_){}
-      inputKind=e.pointerType==='pen'?'M-Pen 3':'手指';
-      $('#fl-in').innerHTML='<svg><use href="'+(e.pointerType==='pen'?'#i-pen':'#i-hand')+'"/></svg>'+inputKind;
       showTouch(e);setK(colAt(e.clientX));renderAct();
       e.preventDefault();
     });
@@ -732,12 +728,17 @@
   select($('.dm-vstep[data-step="3"]',vtl));
   recountPlans();
 DemoGuide.init([
-  {"target": "#tm-fab", "kind": "click", "pos": "left", "label": "悬停看当前进度，点开看完整时间轴"},
-  {"target": "#tm-mini", "kind": "change", "pos": "right", "label": "圆点会跟着执行实时变化"},
-  {"target": "#fold-toggle", "kind": "click", "pos": "left", "label": "MateBook Fold 悬停：下屏变时间轴"},
-  {"target": "#fold-track", "kind": "click", "pos": "left", "label": "手指 / 笔拖到哪一步，上屏就回放到哪一步"},
-  {"target": "#fu-code", "kind": "change", "pos": "right", "label": "代码回放成这一步的样子"}
-]);
+  {"target": "#tm-fab", "kind": "click", "pos": "left", "label": "它跑到第几步了？悬停看，点开挑一步退"},
+  {"target": "#tm-mini", "kind": "change", "pos": "right", "label": "每做完 / 退掉一步，圆点跟着变"},
+  {"target": "#fold-toggle", "kind": "click", "pos": "left", "label": "在 Fold 上复查？合成悬停，下屏拖着找"},
+  {"target": "#fold-track", "kind": "click", "pos": "left", "label": "拖到哪步，上屏就是那步改完的代码"},
+  {"target": "#fu-code", "kind": "change", "pos": "right", "label": "这步改得不对？松手就只退它"}
+],{scene:{
+  at:'Agent 修 ListPage 跑到第 6 步，你回头复查',
+  goal:'找出哪一步改得不对，只退那一步，其余保留',
+  pain:'只能整段撤销，或翻 diff 手工改回、自己记哪步动了哪行',
+  fix:'刻度就是它的步骤；Fold 悬停时下屏拖哪步，上屏回放哪步'
+}});
 })();
 </script>
 </body>

@@ -340,9 +340,8 @@
      进度上实况窗（电脑顶部胶囊 + 手机锁屏），发给别人之前可以在实况窗上点一下确认
      ===================================================================== */
   var WF={
-    'release-check':{cmd:'/release-check',title:'上架自检',phr:['跑一遍上架自检','上架前自检一下'],
-      steps:[['跑体检 · 47 项','AppAnalyzer'],['看报告','report.html'],['改问题','module.json5:18'],['再跑一遍','47 / 47'],['导出上架材料','release/']],
-      confirm:-1,par:'真机 <code>HUAWEI Mate 70 Pro</code> · 输出到 <code>release/</code>',done:'上架自检 47 / 47 通过 · 材料已导出到 release/',secs:38},
+    /* 上架自检中间要人看报告、改代码，离开 IDE 触发没意义：不给注册入口 */
+    'release-check':{cmd:'/release-check'},
     'test-pack':{cmd:'/test-pack',title:'打测试包发测试组',phr:['打个测试包发给测试组','给测试组发个包','发个测试版'],
       steps:[['hvigor 打测试包','entry-default-signed.hap'],['测试签名','test-release.p7b'],['上传 AGC 邀请测试','1.3.0({v})'],['通知测试组','18 人']],
       confirm:2,ask:'上传 1.3.0({v}) 到 AGC 邀请测试，发给「鸿蒙测试组」18 人？',
@@ -368,10 +367,10 @@
       +(share?'<span class="dm-pill ok"><svg><use href="#i-vcs"/></svg>随仓库分发</span>':'<span class="dm-pill muted">仅本机</span>')+'</div>'
       +'<div class="dm-card-bd">'+flow
       +'<div class="wf-next">下次一句话：<code>'+w.cmd+'</code>'+(share?'<span>· 团队拉了仓库就有</span>':'')+'</div>'
-      +actHTML(key)
+      +(w.steps?actHTML(key):'')
       +'</div></div></div>';
   }
-  function actHTML(key){return '<div class="wf-act" data-wf="'+key+'"><button class="btn" data-reg="'+key+'" id="wf-reg-'+key+'"><svg class="i xy"><use href="#i-xy"/></svg>注册为小艺意图</button><span class="dm-small">电脑任意界面、手机上说一句就跑</span></div>'}
+  function actHTML(key){return '<div class="wf-act" data-wf="'+key+'"><button class="btn" data-reg="'+key+'" id="wf-reg-'+key+'"><svg class="i xy"><use href="#i-xy"/></svg>注册为小艺意图</button><span class="dm-small">被催包时不用回工位开 IDE，说一句就发</span></div>'}
   function saveWf(key,share,flow,id){
     thread.insertAdjacentHTML('beforeend',savedCard(key,share,flow,id));toBottom();
     counts.own++;recount();treeAddWf(key+'.json5');
@@ -390,9 +389,9 @@
   var sug2=false;
   function showSug2(){
     if(sug2)return;sug2=true;
-    thread.insertAdjacentHTML('beforeend','<div class="amsg" id="wf-sug2"><div class="dm-card"><div class="dm-card-hd"><svg class="i" style="color:var(--ui-info)"><use href="#i-sparkle"/></svg>还有一串也重复了<span class="grow"></span><span class="dm-small dm-muted">本周 4 次 · 最近 10:05</span></div>'
+    thread.insertAdjacentHTML('beforeend','<div class="amsg" id="wf-sug2"><div class="dm-card"><div class="dm-card-hd"><svg class="i" style="color:var(--ui-info)"><use href="#i-sparkle"/></svg>打测试包发测试组，这周你手动做了 4 次<span class="grow"></span><span class="dm-small dm-muted">最近 10:05</span></div>'
       +'<div class="dm-card-bd">'+FLOW_TP+'</div>'
-      +'<div class="dm-card-ft"><button class="btn primary" id="wf-save2"><svg class="i"><use href="#i-checkS"/></svg>存成 /test-pack</button><button class="btn" id="wf-skip2">不用</button><span class="grow"></span><span class="dm-small dm-muted">存下来能注册成小艺意图</span></div></div></div>');
+      +'<div class="dm-card-ft"><button class="btn primary" id="wf-save2"><svg class="i"><use href="#i-checkS"/></svg>存成 /test-pack</button><button class="btn" id="wf-skip2">不用</button><span class="grow"></span><span class="dm-small dm-muted">存下来，不在 IDE 前也能一句话发包</span></div></div></div>');
     toBottom();
     $('#wf-save2').addEventListener('click',function(){$('#wf-sug2').remove();saveWf('test-pack',true,FLOW_TP,'wf-saved-tp')});
     $('#wf-skip2').addEventListener('click',function(){$('#wf-sug2').remove()});
@@ -539,9 +538,13 @@
   }
   document.addEventListener('click',function(e){var b=e.target.closest('[data-live]');if(!b)return;if(b.dataset.live==='ok')approve();else cancelRun()});
 DemoGuide.init([{"target": "#toast-save", "kind": "click", "pos": "top", "label": "点这里存成命令"}, {"target": "#ai-thread", "kind": "change", "pos": "top", "label": "多一张已存卡片"},
-  {"target": "#wf-save2", "kind": "click", "pos": "top", "label": "这串也存下来"},
-  {"target": "#wf-reg-test-pack", "kind": "click", "pos": "top", "label": "存下来的命令，注册成小艺意图"},
-  {"target": ".wf-int[data-wf=\"test-pack\"] [data-say=\"phone\"]", "kind": "click", "pos": "bottom", "label": "对手机上的小艺说一句试试"}]);
+  {"target": "#wf-save2", "kind": "click", "pos": "top", "label": "发测试包这串也存下来"},
+  {"target": "#wf-reg-test-pack", "kind": "click", "pos": "top", "label": "不在工位也要发包：注册成小艺意图"},
+  {"target": ".wf-int[data-wf=\"test-pack\"] [data-say=\"phone\"]", "kind": "click", "pos": "bottom", "label": "离开工位时，对手机说一句发包"}], {scene:{
+  at:'你这周第 4 次手动打测试包、跑上架自检，一串步骤全靠记',
+  goal:'重复的一串存成一句命令，不在 IDE 前也能一句话触发',
+  pain:'每次重敲一串；被测试催包得回工位开 IDE 盯着传完',
+  fix:'看出重复就提议存；注册小艺意图，说一句后台跑、实况窗看进度'}});
 })();
 </script>
 </body>
