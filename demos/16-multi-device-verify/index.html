@@ -396,14 +396,16 @@
       if(o.active()){var c=$('#cap-txt');if(c)c.textContent='Device Verify · '+o.capPre()+' · '+ok+' 适配 · '+err+' 疑似缺陷'}
     }
     /* 选中一条：对应热区加 on，设备亮边，卡片底部展开「为什么这么判」 */
-    function select(ent){
+    function select(ent,how){
       $$('.dv-ent',list).forEach(function(e){e.classList.toggle('sel',e===ent)});
       $$('.dm-hot',o.canvas).forEach(function(h){h.classList.toggle('on',!!ent&&h.id===ent.dataset.hot)});
       $$('.dm-device',o.canvas).forEach(function(d){d.classList.toggle('sel',!!ent&&hotsOf(d).indexOf(ent.dataset.hot)>=0)});
+      if(o.onSelect)o.onSelect(ent,how||'list');
       if(!ent){o.why.hidden=true;return}
       o.whyTxt.innerHTML=ent.dataset.why;o.why.hidden=false;
       if(o.follow){var sd=o.why.closest('.dv-side'),a=sd.getBoundingClientRect(),w=o.why.getBoundingClientRect();if(w.bottom>a.bottom)sd.scrollTop+=w.bottom-a.bottom+8}
     }
+    function done(ent){ent.dataset.judged=1;recount();if(o.onJudged)o.onJudged(ent);else select(ent)}
     /* 其实是适配：热区变绿、pill 变适配、标签写「你标的」，规则卡记一条 */
     function markOk(ent){
       var hot=$('#'+ent.dataset.hot),pill=$('[data-pill]',ent),ico=$('.r1 svg',ent);
@@ -416,7 +418,7 @@
         $('#rule-bd').insertAdjacentHTML('beforeend','<div class="rule added dm-small" data-for="'+ent.dataset.hot+'"><svg><use href="#i-plus-box"/></svg><span class="grow">已记一条：'+ent.dataset.rule+'（待入规则集）</span></div>');
         $('#rule-cnt').textContent='12 条 · 待入 '+$$('.rule.added').length;
       }
-      recount();select(ent);
+      done(ent);
     }
     /* 确认缺陷：热区变红、pill 变缺陷 */
     function markBug(ent){
@@ -425,22 +427,23 @@
       pill.className='dm-pill err';pill.textContent='缺陷 · 已确认';
       ico.setAttribute('class','err');$('use',ico).setAttribute('href','#i-err');
       ent.dataset.kind='err';
-      ent.dataset.why='你确认为缺陷，已连同'+o.shots()+'进 Problems，指向 <code>ListPage.ets:12</code> 这次改动。';
+      ent.dataset.why='你确认为缺陷，已连同'+o.shots()+'进 Problems，指向 '+(o.codeRef||'<code>ListPage.ets:12</code>')+' 这次改动。';
       var added=$('.rule.added[data-for="'+ent.dataset.hot+'"]');if(added){added.remove();var n=$$('.rule.added').length;$('#rule-cnt').textContent=n?'12 条 · 待入 '+n:'12 条'}
-      recount();select(ent);
+      done(ent);
     }
     list.addEventListener('click',function(e){
       var ent=e.target.closest('.dv-ent');if(!ent)return;
       var b=e.target.closest('[data-act]');
       if(b){if(b.dataset.act==='ok')markOk(ent);else markBug(ent);return}
-      select(ent.classList.contains('sel')?null:ent);
+      if(e.shiftKey&&o.onShift){o.onShift(ent);return}
+      select(o.keepSel||!ent.classList.contains('sel')?ent:null);
     });
     /* 画布上点设备 = 选中它那条 */
     o.canvas.addEventListener('click',function(e){
       var d=e.target.closest('.dm-device[data-hot],.dm-device[data-hots]');if(!d)return;
-      select($('.dv-ent[data-hot="'+hotsOf(d)[0]+'"]',list));
+      select($('.dv-ent[data-hot="'+hotsOf(d)[0]+'"]',list),'canvas');
     });
-    return {select:select,recount:recount};
+    return {select:select,recount:recount,hotsOf:hotsOf};
   }
 
   var view='v41';
@@ -456,15 +459,17 @@
     x6:{name:'Mate X6',form:'展开',px:'2440×2240',bp:'md',vp:'md',ic:[20,18],cls:'tfd',dur:3000,hots:'th2'},
     pad:{name:'MatePad Pro 13.2',form:'横屏',px:'2880×1920',bp:'lg',vp:'lg',ic:[20,13],cls:'tpd',dur:3400,hots:'th3 th4'}
   };
+  var CL='<a class="cl" data-ln="12" title="受这一行影响的设备上台">ListPage.ets:12</a>';
+  var SHORT={th1:'圆角变 22vp',th2:'详情栏没出来',th3:'换成侧边栏',th4:'搜索框拉满'};
   var DIFFS=[
     {d:'m70',hot:'th1',kind:'ok',t:'手机：搜索框圆角 22vp',dev:'Mate 70 Pro · sm',rule:'手机搜索框圆角 22vp 属适配',
-      why:'规则 <b>R2</b>：搜索框圆角按断点取值（sm <code>22vp</code> / md 及以上 <code>12vp</code>），这台取到了 sm 的值，是一多适配的正常结果。'},
+      why:'规则 <b>R2</b>：搜索框圆角按断点取值（sm <code>22vp</code> / md 及以上 <code>12vp</code>），这台取到了 sm 的值，是一多适配的正常结果。改在 '+CL+'。'},
     {d:'x6',hot:'th2',kind:'err',t:'折叠屏展开：右栏详情没出来',dev:'Mate X6 展开 · md',rule:'折叠屏展开态右栏允许延迟渲染',
       why:'规则 <b>R3</b>：md 及以上（<code>≥ 600vp</code>）详情栏必须出现；展开态 2440×2240 落在 md，跑完 1.6 s 后右栏仍是空白。'},
     {d:'pad',hot:'th3',kind:'ok',t:'平板：底部页签换成侧边栏',dev:'MatePad Pro · lg',rule:'平板侧边导航属适配',
       why:'规则 <b>R5</b>：lg 断点用 <code>SideBarContainer</code> 做侧边导航、底部 <code>Tabs</code> 隐藏，是一多适配的正常结果。'},
     {d:'pad',hot:'th4',kind:'err',t:'平板：搜索框拉满整行',dev:'MatePad Pro · lg',rule:'平板搜索框允许撑满整行',
-      why:'规则 <b>R9</b>：lg 下搜索框最大宽 <code>480vp</code>。<code>ListPage.ets:12</code> 的 <code>Search</code> 没设 <code>constraintSize({ maxWidth: 480 })</code>，横屏跟着 Column 撑满整行。'}
+      why:'规则 <b>R9</b>：lg 下搜索框最大宽 <code>480vp</code>。'+CL+' 的 <code>Search</code> 没设 <code>constraintSize({ maxWidth: 480 })</code>，横屏跟着 Column 撑满整行。'}
   ];
   var T={joined:[],run:null,t0:0,runs:0};
   var tdesk=$('#tdesk'),trun=$('#trun');
@@ -551,11 +556,13 @@
     if(!T.run)return;
     trun.innerHTML=T.run.ids.map(function(id){
       var d=TD[id],st=T.run.st[id],scr=id==='m70'?scrPhone():(id==='x6'?scrFold():scrPad());
-      return '<div class="dm-device '+d.cls+'" data-hots="'+d.hots+'"><div class="scr">'+scr+(st.done?HOTS[id]:overlay(id))+'</div>'
+      return '<div class="dm-device '+d.cls+'" data-dev="'+id+'" data-hots="'+d.hots+'"><div class="scr">'+scr+(st.done?HOTS[id]:overlay(id))+'</div>'
         +'<span class="cap"><b>'+d.name+(d.form==='展开'?' · 展开':'')+'</b> · '+d.px+' · '+d.bp+'</span></div>';
     }).join('');
   }
   function showView(v){
+    if(v!=='run'&&ST.isOn())ST.clear();
+    $('#ds-btn').hidden=v!=='run'||!(T.run&&T.run.done);
     $$('#tv-seg button').forEach(function(b){b.classList.toggle('on',b.dataset.v===v)});
     tdesk.hidden=v!=='desk';trun.hidden=v!=='run';
   }
@@ -570,17 +577,20 @@
     }).join('');
     $('#tjudge').hidden=false;$('#twhy').hidden=true;
     if(!JT)JT=Judge({list:$('#tjudge-list'),canvas:$('#trun'),why:$('#twhy'),whyTxt:$('#twhy-txt'),sum:$('#tjudge-sum'),
-      follow:1,active:function(){return view==='tap'},capPre:function(){return '碰一碰 '+T.run.ids.length+' 台'},shots:function(){return T.run.ids.length+' 台截图'}});
+      follow:1,keepSel:1,codeRef:CL,active:function(){return view==='tap'},capPre:function(){return '碰一碰 '+T.run.ids.length+' 台'},shots:function(){return T.run.ids.length+' 台截图'},
+      onSelect:onDiffSelect,onJudged:onJudged,onShift:function(ent){var d=devOf(ent);if(d){DS.reason=null;ST.add(d)}}});
     JT.recount();
     var sd=$('#dvtap .dv-side'),tj=$('#tjudge');sd.scrollTop+=tj.getBoundingClientRect().top-sd.getBoundingClientRect().top-8;
-    var first=$('.dv-ent[data-kind="err"]',$('#tjudge-list'))||$('.dv-ent',$('#tjudge-list'));JT.select(first);
+    var first=$('.dv-ent[data-kind="err"]',$('#tjudge-list'))||$('.dv-ent',$('#tjudge-list'));
+    DS.quiet=1;JT.select(first,'auto');DS.quiet=0;
+    $('#ds-btn').hidden=false;reflag(true);
   }
   function runAll(){
     var ids=T.joined.slice();if(!ids.length)return;
     var sum=0,max=0;ids.forEach(function(id){sum+=TD[id].dur;max=Math.max(max,TD[id].dur)});
     T.run={ids:ids,st:{},done:false,sum:sum*1.0+ids.length*300,max:max};
     ids.forEach(function(id){T.run.st[id]={k:0,done:false}});
-    $('#tjudge').hidden=true;
+    $('#tjudge').hidden=true;if(ST.isOn())ST.clear();DS.kinds=new Map();$('#ds-btn').hidden=true;
     var seg=$('#tv-seg button[data-v="run"]');seg.disabled=false;
     showView('run');renderRun();renderList();
     ids.forEach(function(id){
@@ -597,6 +607,66 @@
   $('#btn-par').addEventListener('click',function(){if(!this.disabled)runAll()});
   $('#tv-seg').addEventListener('click',function(e){var b=e.target.closest('button[data-v]');if(b&&!b.disabled)showView(b.dataset.v)});
 
+
+  /* ================= 台前调度：点哪条差异哪台上台，其余缩到侧边 ================= */
+  var DS={reason:null,quiet:0,pinned:false,kinds:new Map()};
+  var ST=DeviceStage.init({root:'#tcanvas',items:'#trun .dm-device',rail:'right',onChange:onStage});
+  $('#ds-btn').innerHTML=DeviceStage.icon+'台前调度';
+  function devName(el){var id=el.dataset.dev;return TD[id].name+(TD[id].form==='展开'?' 展开':'')}
+  function devOf(ent){return ent&&$('#trun .dm-device[data-hots~="'+ent.dataset.hot+'"]')}
+  function stageTo(els,reason){DS.reason=reason;ST.focus(els)}
+  function onDiffSelect(ent,how){
+    if(DS.quiet||how==='canvas'&&ST.isOn())return;
+    if(!ent){ST.clear();return}
+    var d=devOf(ent);if(!d)return;
+    stageTo(d,'<span class="k">'+(how==='auto'?'下一条差异':'差异')+'</span> '+$('.r1 .grow',ent).textContent);
+  }
+  function onJudged(ent){
+    var all=$$('.dv-ent',$('#tjudge-list')),i=all.indexOf(ent),next=null;
+    for(var k=1;k<=all.length;k++){var c=all[(i+k)%all.length];if(!c.dataset.judged){next=c;break}}
+    reflag();
+    if(next)JT.select(next,'auto');else{DS.quiet=1;JT.select(ent);DS.quiet=0;if(ST.isOn()){DS.reason='<span class="k">这次的差异都判完了</span> Esc 回平铺';paintWhy(ST.focused())}}
+  }
+  function paintWhy(f){
+    var w=$('#ds-why');w.hidden=!f.length;$('#ds-btn').classList.toggle('on',f.length>0);
+    if(f.length)$('#ds-why-t').innerHTML=DS.reason||(f.length>1?'<span class="k">对比</span> '+f.map(devName).join(' vs '):'<span class="k">手动上台</span> '+devName(f[0]));
+    DS.reason=null;
+  }
+  function onStage(f){
+    paintWhy(f);reflag();
+    /* 点侧边缩略图换上台：右侧差异列表跟着选到这台的第一条 */
+    if(f.length===1&&JT){var cur=$('#tjudge-list .dv-ent.sel');if(!cur||devOf(cur)!==f[0]){var h=JT.hotsOf(f[0])[0],e=$('#tjudge-list .dv-ent[data-hot="'+h+'"]');if(e){DS.quiet=1;JT.select(e,'canvas');DS.quiet=0}}}
+  }
+  /* 侧边缩略图的状态点：还有没判成适配的缺陷 = 红点，其余 = 绿点「也变了」 */
+  function reflag(force){
+    $$('#trun .dm-device').forEach(function(d){
+      var ents=JT?JT.hotsOf(d).map(function(h){return $('#tjudge-list .dv-ent[data-hot="'+h+'"]')}).filter(Boolean):[];
+      var bad=ents.filter(function(e){return e.dataset.kind==='err'})[0];
+      var kind=bad?'broken':'changed',txt=SHORT[(bad||ents[0]||{dataset:{}}).dataset.hot]||'';
+      var key=kind+txt;
+      if(!force&&DS.kinds.get(d)===key&&d.querySelector(':scope > .ds-flag'))return;
+      DS.kinds.set(d,key);ST.flag(d,kind,txt);
+    });
+  }
+  /* 代码联动：点 ListPage.ets:12（差异里的链接，或编辑器里第 12–13 行），受这一行影响的设备上台 */
+  var LINE_DEVS={12:['m70','pad'],13:['m70','pad']};
+  function codeFocus(ln,fromEditor){
+    if(!T.run||!T.run.done||view!=='tap')return;
+    if(fromEditor&&DS.pinned)return;
+    var ids=(LINE_DEVS[ln]||[]).filter(function(id){return T.run.ids.indexOf(id)>=0});if(!ids.length)return;
+    var els=ids.map(function(id){return $('#trun .dm-device[data-dev="'+id+'"]')});
+    var row=$('#code .ln[data-ln="'+ln+'"]');if(row){row.scrollIntoView({block:'nearest'});row.classList.add('hl-ok')}
+    stageTo(els.length>1?els:els[0],'<span class="k">按光标所在代码</span> ListPage.ets:'+ln+' Search → '+els.map(devName).join('、'));
+  }
+  $('#twhy').addEventListener('click',function(e){var a=e.target.closest('a.cl');if(a){e.preventDefault();codeFocus(+a.dataset.ln)}});
+  $('#code').addEventListener('click',function(e){var r=e.target.closest('.ln[data-ln]');if(r)codeFocus(+r.dataset.ln,true)});
+  [12,13].forEach(function(n){var r=$('#code .ln[data-ln="'+n+'"]');if(r)r.classList.add('ds-link')});
+  $('#ds-btn').addEventListener('click',function(){
+    if(ST.isOn()){ST.clear();return}
+    var cur=$('#tjudge-list .dv-ent.sel');stageTo(devOf(cur)||$('#trun .dm-device'),null);
+  });
+  $('#ds-pin').addEventListener('click',function(){DS.pinned=!DS.pinned;this.classList.toggle('on',DS.pinned);this.lastChild.textContent=DS.pinned?'已固定':'固定'});
+
   /* ---- 底部页签：改动 #41 / 碰一碰 · 桌上真机 ---- */
   var PILL41=$('#run-pill').outerHTML;
   $('.tw-bottom .tabbar').addEventListener('click',function(e){
@@ -608,10 +678,19 @@
     else{runPill();if(JT&&T.run&&T.run.done)JT.recount();else{var c=$('#cap-txt');if(c)c.textContent='Device Verify · 碰一碰 · 验证列表 '+T.joined.length+' 台'}}
   });
   renderList();
-DemoGuide.init([{"target": ".dv-ent[data-hot=\"h2\"] [data-act=\"ok\"]", "kind": "click", "pos": "top", "label": "点这里改判定"}, {"target": "#h2", "kind": "change", "pos": "top", "label": "热区变绿变适配"},
-  {"target": "#btab-tap", "kind": "click", "pos": "top", "label": "碰一碰拉设备"},
-  {"target": ".tdev[data-d=\"x6\"] .tfr", "kind": "click", "pos": "top", "label": "挨个点设备碰一下"},
-  {"target": "#btn-par:not([disabled])", "kind": "click", "pos": "left", "label": "一次跑完"}]);
+DemoGuide.init([
+  {"target": ".dv-ent[data-hot=\"h2\"] [data-act=\"ok\"]", "kind": "click", "pos": "top", "label": "右栏本就该晚点出？改判成适配"},
+  {"target": "#btab-tap", "kind": "click", "pos": "top", "label": "想在桌上真机上验这次改动"},
+  {"target": ".tdev[data-d=\"x6\"] .tfr", "kind": "click", "pos": "top", "label": "要验哪台，就拿它碰一下电脑"},
+  {"target": "#btn-par:not([disabled])", "kind": "click", "pos": "left", "label": "几台一起跑这次改动"},
+  {"target": "#tjudge-list .dv-ent.sel .r1", "kind": "click", "pos": "left", "label": "判哪条，哪台上台放大"},
+  {"target": "#tcanvas.ds-on .ds-side.ds-broken", "kind": "click", "pos": "left", "label": "红点：还有缺陷没判，点它换上台"}
+], {scene:{
+  at:"你刚改完 ListPage 第 12 行搜索框，桌上摆着几台真机",
+  goal:"确认每台上的差异是正常适配还是缺陷",
+  pain:"逐台插线装包、截图发群，再对着断点规则一张张判",
+  fix:"碰一下就加进来，一起跑完；判哪条哪台上台，其余靠边"
+}});
 })();
 </script>
 </body>

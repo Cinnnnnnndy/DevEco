@@ -11,6 +11,7 @@
 <link rel="stylesheet" href="../_shared/guide.css">
 <script src="../../deveco-intui-kit/src/icons.js"></script>
 <script src="../_shared/frame.js"></script>
+<script src="../_shared/stage.js"></script>
 <script src="../_shared/guide.js"></script>
 <style>
   /* 编辑区左右分：左 代码 + 多端问题面板，右 Previewer 画布（按真实尺寸放 6 块屏） */
@@ -382,6 +383,27 @@
   .pc .sov .cov,.pc .sblank,.pc .sloc{top:0}
   .pc .sbn,.pc .scall{top:4px}
 
+
+  /* ============ 台前调度（共享 stage.js）联动 ============ */
+  .prev{position:relative}
+  #btn-stage svg{width:13px;height:13px}
+  .ds-cue{position:absolute;z-index:30;display:none;align-items:center;gap:6px;height:24px;padding:0 4px 0 10px;border-radius:12px;background:var(--ui-popup-bg);color:var(--ui-fg);box-shadow:0 2px 10px rgba(0,0,0,.28);font-size:12px;white-space:nowrap;transform:translateX(-50%)}
+  .ds-cue.on{display:inline-flex}
+  .ds-cue .dim{color:var(--ui-fg-info)}
+  .ds-cue code{font-family:var(--font-code);font-size:11px;padding:0 5px;border-radius:3px;background:var(--ui-tag-bg)}
+  .ds-cue .xb{height:18px;padding:0 7px;font-size:11px}
+  .ds-on .ds-side > .scb{display:none}
+  .ds-on .ds-stage > .scb{transform:translateX(-50%) scale(var(--ds-inv,1));transform-origin:50% 0}
+  .code .ln .qa{position:sticky;right:6px;margin-left:auto;flex:none;align-self:center;display:inline-flex;align-items:center;gap:4px;height:18px;padding:0 8px;border:0;border-radius:9px;background:var(--ui-popup-bg);box-shadow:0 1px 4px rgba(0,0,0,.25);color:var(--ui-fg);font:500 11px/18px var(--font-ui);white-space:nowrap;cursor:pointer}
+  .code .ln .qa svg{width:12px;height:12px;color:var(--ed-bulb)}
+  /* 手改成 span 12 + lanes(2)：lg 铺满了，但窄列表也被切成两列（被带坏） */
+  #stage.fx-naive:not(.fx-grid) .dm-device:is(.phone,.fold,.xt,.pc,.tablet) .lst{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;padding:2px 6px;align-content:start}
+  #stage.fx-naive:not(.fx-grid) .dm-device:is(.phone,.fold,.xt,.pc,.tablet) .lst .row{flex-direction:column;align-items:stretch;gap:3px;padding:4px;border:0;border-radius:6px;background:#f3f4f6}
+  #stage.fx-naive:not(.fx-grid) .dm-device:is(.phone,.fold,.xt,.pc,.tablet) .lst .row .th{width:auto;height:24px}
+  #stage.fx-naive:not(.fx-grid) .dm-device.dk .lst .row{background:#1d2026}
+  #stage.fx-naive:not(.fx-grid) .dm-device[data-lay="lg"] .xapp .main{flex:1}
+  #stage.fx-naive:not(.fx-grid) .dm-device[data-lay="lg"] .xapp .blank{display:none}
+
   /* 手势轨迹 / 屏内反馈 */
   .gfx{position:absolute;left:0;top:0;z-index:9;pointer-events:none;overflow:visible}
   .gfx .trail{fill:none;stroke:#3574F0;stroke-width:3;stroke-linecap:round;stroke-dasharray:1;opacity:.85}
@@ -522,6 +544,7 @@
             <b><svg class="i"><use href="#i-layout"/></svg>Multi-device · <span id="cnt">7</span> 块屏</b>
             <span class="grow"></span>
             <button class="xb pri" id="btn-check" title="按 sm / md / lg 断点扫一遍所有设备形态"><svg><use href="#i-yiduo"/></svg>一多检查</button>
+            <button class="xb" id="btn-stage" title="改哪台哪台上台，其余缩到侧边实时刷新｜Esc 回平铺"><span id="stage-ico"></span>台前调度</button>
             <span class="dm-pill ok" id="sync-pill"><svg><use href="#i-sync"/></svg>改一次一起刷 · 上次 0.8 s</span>
             <span class="sel-lbl" id="sel-lbl" hidden><svg><use href="#i-checkS"/></svg><span id="sel-txt"></span></span>
             <button class="abtn" id="btn-refresh" title="Refresh All"><svg class="i"><use href="#i-refresh"/></svg></button>
@@ -567,6 +590,7 @@
             <span class="grow"></span>
             <button class="xb" id="sc-reset" disabled><svg><use href="#i-undo"/></svg>复原</button>
           </div>
+          <div class="ds-cue" id="ds-cue"></div>
           <div class="dm-canvas" id="canvas">
             <div class="stage" id="stage">
              <div class="drow" id="row-a">
@@ -940,7 +964,7 @@
 
   /* ================= 编辑器：多文件、问题行、就地修复 ================= */
   document.getElementById('tree-slot').innerHTML=DemoFrame.tree({sel:'ListPage.ets'});
-  document.getElementById('tabs').insertAdjacentHTML('afterbegin',DemoFrame.tabs([{file:'ListPage.ets',on:true},{file:'ItemCard.ets'}]));
+  document.getElementById('tabs').insertAdjacentHTML('afterbegin',DemoFrame.tabs([{file:'ListPage.ets',on:true},{file:'ItemCard.ets'},{file:'MainPage.ets'}]));
   document.getElementById('code').innerHTML=DemoFrame.code('ListPage.ets',{cur:12,marks:{12:'bulb'}});
   document.getElementById('code-card').innerHTML=DemoFrame.code('ItemCard.ets',{});
   var fileBox={'ListPage.ets':$('#code'),'ItemCard.ets':$('#code-card')};
@@ -1021,8 +1045,10 @@
     $('#sync-pill').className='dm-pill info';$('#sync-pill').innerHTML='<span class="spin" style="width:10px;height:10px"></span>'+(label||ds.length+' 块屏刷新中…');
     var cap=$('#cap');if(cap){cap.className='dm-capsule wait';$('#cap-txt').textContent=ds.length+' 块屏 · 刷新中';$('.dm-dot',cap).className='dm-dot info pulse'}
     setTimeout(function(){
+      var before={};ds.forEach(function(d){before[d.id||d.dataset.name]=sig(d)});
       if(mut)mut();
       ds.forEach(function(d){d.classList.remove('refreshing');$('.sync',d).hidden=true});
+      flagAfter(ds,before);
       $('#sync-pill').className='dm-pill ok';$('#sync-pill').innerHTML='<svg><use href="#i-sync"/></svg>改一次一起刷 · 刚刚 0.8 s';
       busy=false;capStatus();
       if(done)done();
@@ -1108,6 +1134,7 @@
     $('.tag',d).textContent=nm+(k==='xt'?' · 远端':'');
     applySpec(d,P);
     if(selDev===d)$('#sel-txt').textContent='已选 · '+nm;
+    if(dsx&&dsx.isOn())setTimeout(dsx.relayout,330);
     if(!quiet)api(P.api+(k==='fold'?(p==='half'?' · 上显示 下操作':p==='closed'?' · 切外屏单栏':' · 双栏'):''));
     markLint();
   }
@@ -1402,7 +1429,7 @@
     var g=$('#pc-grip'),st=null;
     g.addEventListener('pointerdown',function(e){e.preventDefault();e.stopPropagation();st={x:e.clientX,w:pcW,path:[$('#d-pc').dataset.bp]};$('#pc-win').classList.add('drag');g.setPointerCapture(e.pointerId)});
     g.addEventListener('pointermove',function(e){
-      if(!st)return;var bp=setPcWidth(st.w+(e.clientX-st.x)/PCS);
+      if(!st)return;var d=$('#d-pc'),k=d.getBoundingClientRect().width/d.offsetWidth||1;var bp=setPcWidth(st.w+(e.clientX-st.x)/PCS/k);
       if(st.path[st.path.length-1]!==bp)st.path.push(bp);
     });
     function up(){if(!st)return;$('#pc-win').classList.remove('drag');
@@ -1592,7 +1619,7 @@
       if(d.dataset.pdk!=null){d.classList.toggle('dk',d.dataset.pdk==='1');delete d.dataset.pdk}
       if(d.dataset.pfz!=null){if(d.dataset.pfz)d.style.setProperty('--fz',d.dataset.pfz);else d.style.removeProperty('--fz');delete d.dataset.pfz}
       d.style.removeProperty('--fzt');
-      setBadge(d,'','');
+      setBadge(d,'','');if(dsx)dsx.flag(d,null);
     });
     $$('#stage [data-search]').forEach(function(s){s.textContent=placeholder()});
     scene=null;
@@ -1627,6 +1654,7 @@
         d.classList.toggle('sc-bad',r.st==='bad');
         setBadge(d,r.st==='bad'?'bad':'ok',r.badge);
         if(r.st==='bad'){found[r.iss]=true;markCode(r.iss)}
+        if(dsx)dsx.flag(d,r.st==='bad'?'broken':null,r.st==='bad'?r.badge:null);
       });
       if(S.after)S.after();
       scBusy=false;paintBad();
@@ -1677,6 +1705,7 @@
     devs().forEach(function(d){
       var all=devIssues(d.id),open=all.filter(function(x){return !fixed[x]});
       setBadge(d,open.length?'bad':'ok',open.length?open.length+' 个问题':(all.length?'已修复':'通过'));
+      if(dsx&&open.length)dsx.flag(d,'broken',ISS[open[0]].t.split('，')[0]);
     });
   }
   function runLint(){
@@ -1742,7 +1771,10 @@
         if(p[1]&&d.dataset.kind==='pc'){if(p[1].indexOf(d.dataset.bp)<0)setPcWidth(BPW[p[1][0]],true,true)}
         else if(p[1]&&p[1].indexOf(d.dataset.pose)<0)setPose(d,p[1][0],true);
       });
-      if(firstDev){select(firstDev);firstDev.scrollIntoView({block:'nearest',inline:'nearest'})}
+      if(firstDev){select(firstDev);
+        var grp=[];I.devs.forEach(function(p){var x=$('#'+p[0]);if(x&&grp.length<2&&grp.indexOf(x)<0)grp.push(x)});
+        setTimeout(function(){dsx.focus(grp);cue('一多检查 · '+'①②③④'.charAt(+I.no-1),grp)},340);
+      }
     }
     markLint();renderPanel();
     if(open!==false)openFile(id);
@@ -1760,7 +1792,7 @@
   function applyFix(ids){
     ids=ids.filter(function(id){return !fixed[id]});if(!ids.length)return;
     refreshAll(function(){
-      ids.forEach(function(id){fixed[id]=true;if(ISS[id].cls)stage.classList.add(ISS[id].cls);patchCode(id)});
+      ids.forEach(function(id){fixed[id]=true;if(ISS[id].cls)stage.classList.add(ISS[id].cls);patchCode(id);if(id==='L_GRID'){naive=false;stage.classList.remove('fx-naive')}});renderQA();
     },'应用 '+ids.length+' 处修复 · '+devCount()+' 块屏一起刷新…',function(){
       if(mode==='scene'&&scene)runScene(scene.id,true);
       else if(mode==='lint'){lintBadges();markLint();renderPanel();
@@ -1880,7 +1912,7 @@
     if(e.target.closest('#ip-acceptall')){applyFix(lintOpen());return}
     if((t=e.target.closest('.ipi[data-iss]'))){focusIssue(t.dataset.iss);return}
     if((t=e.target.closest('.ipd[data-dev]'))){
-      var d=$('#'+t.dataset.dev);if(d){select(d);d.scrollIntoView({block:'nearest',inline:'nearest'})}
+      var d=$('#'+t.dataset.dev);if(d){select(d);if(dsx&&dsx.isOn())dsx.focus(d);else d.scrollIntoView({block:'nearest',inline:'nearest'})}
       if(t.dataset.iss){selIss=t.dataset.iss;renderPanel();openFile(t.dataset.iss)}
       return;
     }
@@ -1892,9 +1924,118 @@
     }
   });
 
+
+  /* ================= 台前调度：改哪台哪台上台，其余侧边实时刷新 ================= */
+  var dsx=null,pinned=false,cueOn=false,naive=false;
+  var NAIVE14='        GridCol({ span: 12 }) { ProductList({ lanes: 2 }) }';
+  /* 布局指纹：刷新前后对比，侧边设备「也变了」 */
+  function sig(d){
+    return $$('.nav,.side,.blank,.xdet,.lst,[data-search]',d).map(function(e){
+      if(!vis(e))return '0';
+      if(e.hasAttribute('data-search'))return e.textContent;
+      if(e.classList.contains('lst')){var cs=getComputedStyle(e);return cs.display+cs.gridTemplateColumns}
+      return '1';
+    }).join('|');
+  }
+  function brokenNow(d){
+    if(!naive||fixed.L_GRID)return null;
+    var k=d.dataset.kind;if(['phone','fold','xt','pc','tablet'].indexOf(k)<0)return null;
+    if(!$$('.lst',d).some(vis))return null;
+    if(k==='tablet')return '列表栏太窄，被挤成两列';
+    return ['xs','sm','md'].indexOf(d.dataset.bp)>=0?'列表被挤成两列，标题只剩几个字':null;
+  }
+  function flagAfter(list,before){
+    if(!dsx)return;
+    list.forEach(function(d){
+      var b=brokenNow(d);
+      if(b)dsx.flag(d,'broken',b);
+      else if(before[d.id||d.dataset.name]!==sig(d))dsx.flag(d,'changed','也变了');
+      else dsx.flag(d,null);
+    });
+  }
+  function cue(txt,list,why){
+    var c=$('#ds-cue'),cv=$('#canvas');
+    if(!txt){c.classList.remove('on');cueOn=false;return}
+    c.innerHTML='<span class="dim">'+txt+'</span>'+(why?'<code>'+why+'</code>':'')+'<span>→ '+list.map(longName).join('、')+'</span>'
+      +'<button class="xb'+(pinned?' on':'')+'" id="ds-pin" title="锁住台上设备，光标移动不再自动切">'+(pinned?'已固定':'固定')+'</button>';
+    c.style.top=(cv.offsetTop+8)+'px';c.style.left=(cv.offsetLeft+172+(cv.clientWidth-172)/2)+'px';
+    c.classList.add('on');cueOn=true;
+  }
+  /* 光标所在代码 → 只影响哪个断点 / 形态 → 对应设备上台 */
+  var FOLLOW=[
+    {re:/FolderStack|onFoldStatusChange|HALF_FOLDED/,at:'DetailPage.ets:10',why:'悬停',devs:[['d-fold','half']]},
+    {re:/ArcList|\.padding\(68\)/,file:'WatchHome.ets',why:'圆屏',devs:[['d-watch']]},
+    {re:/\blg\b|lanes|GridCol|GridRow/,why:'lg',devs:[['d-xt','3'],['d-tab']]},
+    {re:/SideBarContainer|barPosition|BottomTabs|\bmd\b/,why:'md',devs:[['d-fold','open'],['d-xt','2']]},
+    {re:/\bsm\b/,why:'sm',devs:[['d-phone']]}
+  ];
+  function followCursor(file,ln){
+    if(!dsx||lintBusy||scBusy)return;
+    if(pinned&&dsx.isOn())return;
+    var txt=$('.t',ln).textContent,key=file+':'+ln.dataset.ln,rule=null;
+    FOLLOW.some(function(r){if(r.re.test(txt)||r.at===key||(r.file===file&&r.file)){rule=r;return true}});
+    if(!rule)return;
+    var list=rule.devs.map(function(p){var d=$('#'+p[0]);if(p[1]&&d.dataset.pose!==p[1])setPose(d,p[1],true);return d});
+    setTimeout(function(){dsx.focus(list);cue('按光标所在代码',list,rule.why)},dsx.isOn()?0:60);
+  }
+  $('#code-wrap').addEventListener('click',function(e){
+    if(e.target.closest('.qa'))return;
+    var ln=e.target.closest('.code .ln');if(!ln)return;
+    followCursor(ln.closest('.code').dataset.forFile,ln);
+  });
+  /* MainPage 第 14 行：代码视图里的就地改法（先手改，再按断点改） */
+  function renderQA(){
+    var box=fileBox['MainPage.ets'];if(!box)return;
+    $$('.qa',box).forEach(function(x){x.remove()});
+    if(fixed.L_GRID)return;
+    var l=lineEl('MainPage.ets',14);if(!l)return;
+    l.insertAdjacentHTML('beforeend','<button class="qa" data-qa="'+(naive?'bp':'naive')+'"><svg><use href="#i-bulb"/></svg>'+(naive?'按断点改：lg 3 列 / sm·md 1 列':'改成 span 12 · lanes(2)')+'</button>');
+  }
+  function applyNaive(){
+    if(naive||fixed.L_GRID||busy)return;
+    refreshAll(function(){
+      naive=true;stage.classList.add('fx-naive');
+      FILES['MainPage.ets'].lines[13][0]=hl(NAIVE14);RAW['MainPage.ets'][14]=NAIVE14;
+      var l=lineEl('MainPage.ets',14);
+      if(l){$('.t',l).innerHTML=hl(NAIVE14);l.classList.remove('hl-bad','hl-ok');void l.offsetWidth;l.classList.add('hl-ok');setTimeout(function(){l.classList.remove('hl-ok')},1800)}
+      ISS.L_GRID.t='列数没按断点：lg 铺满了，sm / md 被挤成两列';
+      ISS.L_GRID.why='GridCol 写死 span 12、lanes(2)：lg 铺满了，可手机、折叠屏展开和平板的窄列表也被切成两列。';
+      markLint();
+    },'MainPage.ets:14 热重载 · '+devCount()+' 块屏一起刷新…',function(){
+      renderQA();api('hot reload · MainPage.ets:14 · '+devCount()+' 台');
+      var n=$$('#stage .dm-device.ds-broken').length;
+      $('#flow-pill').className='dm-pill '+(n?'err':'ok');$('#flow-pill').textContent=n?'这次改动带坏了侧边 '+n+' 台':'侧边没有被带坏';
+      if(mode==='lint'){lintBadges();markLint();renderPanel()}
+    });
+  }
+  function initStage(){
+    $('#stage-ico').innerHTML=DeviceStage.icon;
+    dsx=DeviceStage.init({root:'#canvas',items:'.dm-device',rail:'left',onChange:function(f){
+      $('#btn-stage').classList.toggle('on',f.length>0);
+      if(!f.length){cue(null);pinned=false}
+    }});
+    $('#btn-stage').addEventListener('click',function(){
+      if(dsx.isOn()){dsx.clear();return}
+      var d=selDev||$('#d-xt');dsx.focus(d);cue(null);
+    });
+    $('#ds-cue').addEventListener('click',function(e){
+      if(!e.target.closest('#ds-pin'))return;
+      pinned=!pinned;var b=$('#ds-pin');b.classList.toggle('on',pinned);b.textContent=pinned?'已固定':'固定';
+    });
+    /* 点设备名称签或双击设备：直接上台 */
+    $('#canvas').addEventListener('dblclick',function(e){var d=e.target.closest('.dm-device');if(d&&!d.classList.contains('ds-side')){dsx.focus(d);cue(null)}});
+    $('#canvas').addEventListener('click',function(e){var t=e.target.closest('.dm-device > .tag');if(t&&!t.parentNode.classList.contains('ds-side')){dsx.focus(t.parentNode);cue(null)}});
+    $('#code-wrap').addEventListener('click',function(e){
+      var q=e.target.closest('.qa');if(!q)return;
+      followCursor('MainPage.ets',q.closest('.ln'));
+      if(q.dataset.qa==='naive')applyNaive();else applyFix(['L_GRID']);
+    });
+  }
+
   /* 默认选中折叠屏，特征条首屏可见 */
   select($('#d-fold'));
   setPose($('#d-fold'),'open',true);setPose($('#d-xt'),'3',true);setPcWidth(760,true);$('#pc-detail').innerHTML=detailInner(0);
+  ensureFile('MainPage.ets');renderQA();initStage();
 DemoGuide.init([
   {"target": "#code .ln[data-ln=\"12\"]", "kind": "click", "pos": "top", "label": "你刚改了这行搜索框：点一下，7 块屏一起刷"},
   {"target": "#feat-spec", "kind": "click", "pos": "top", "label": "切折叠姿态：展开 / 悬停 / 折叠"},
@@ -1903,12 +2044,14 @@ DemoGuide.init([
   {"target": "#sc-bar [data-sc=\"2g\"]", "kind": "click", "pos": "left", "label": "选一个场景，全部设备同时进入"},
   {"target": "#btn-check", "kind": "click", "pos": "left", "label": "一键扫 sm / md / lg 全部形态"},
   {"target": "#pc-grip", "kind": "click", "pos": "right", "label": "拖本机窗口右边，一口气走完 xs→xl"},
-  {"target": "#ip", "kind": "change", "pos": "top", "label": "问题定位到 ArkTS 行，修复后各设备一起刷新复验"}
+  {"target": "#ip", "kind": "change", "pos": "top", "label": "问题定位到 ArkTS 行，修复后各设备一起刷新复验"},
+  {"target": "#btn-stage", "kind": "click", "pos": "bottom", "label": "改哪台哪台上台，其余缩到侧边"},
+  {"target": "#canvas .ds-side.ds-broken", "kind": "change", "pos": "right", "label": "被带坏的侧边设备亮红点，点它换上台"}
 ], {scene:{
-  at:"你刚改完商品页布局，要在手机到电脑各尺寸上过一遍",
-  goal:"找出哪台设备、哪个断点、哪种场景下会坏",
-  pain:"逐个开模拟器切姿态、断网、调字号，再截图比对",
-  fix:"场景一键作用全部设备，拖本机窗口走完断点，问题直达代码行"
+  at:"你在修 XT 三屏列表只占左半，画布上 7 台并排",
+  goal:"把这台改对，同时确认手机等其他台没被带坏",
+  pain:"平铺每台都看不清，放大一台又看不到别的台",
+  fix:"光标在哪段代码哪台上台，其余侧边实时刷新、坏了亮红点"
 }});
 })();
 </script>

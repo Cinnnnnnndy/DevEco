@@ -11,6 +11,7 @@
 <link rel="stylesheet" href="../_shared/guide.css">
 <script src="../../deveco-intui-kit/src/icons.js"></script>
 <script src="../_shared/frame.js"></script>
+<script src="../_shared/stage.js"></script>
 <script src="../_shared/guide.js"></script>
 <style>
   .ide[data-ide-theme]{--proj-w:360px}
@@ -665,6 +666,7 @@
           <b><svg class="i"><use href="#i-cloud"/></svg>云端模拟器 · <span id="n-run">云端 2 台 · 本机 1 台</span></b>
           <span class="dm-pill muted">画面流 H.265 · 60 fps · 输入回传</span>
           <span class="grow"></span>
+          <button class="abtn ds-btn" id="ds-cloud" title="台前调度：一台上台放大，其余缩到侧边"></button>
           <span class="dm-pill ok" id="net-pill"><svg><use href="#i-wifi"/></svg>链路稳定 · 平均 31 ms</span>
           <button class="abtn" title="Refresh All"><svg class="i"><use href="#i-refresh"/></svg></button>
         </div>
@@ -719,7 +721,7 @@
 <script>
 (function(){
   var $=DemoFrame.$, $$=DemoFrame.$$;
-  document.getElementById('tabs').insertAdjacentHTML('afterbegin',DemoFrame.tabs([{file:'Cloud Emulators',label:'Cloud Emulators',icon:'#i-cloud',on:true},{file:'Journey Matrix',label:'Journey Matrix',icon:'#i-scene'},{file:'ListPage.ets'}]));
+  document.getElementById('tabs').insertAdjacentHTML('afterbegin',DemoFrame.tabs([{file:'Cloud Emulators',label:'Cloud Emulators',icon:'#i-cloud',on:true},{file:'ListPage.ets'},{file:'Journey Matrix',label:'Journey Matrix',icon:'#i-scene'}]));
   document.getElementById('code').innerHTML=DemoFrame.code('ListPage.ets',{cur:12});
   DemoFrame.init({device:'Cloud · Mate X6 (华东)',deviceIcon:'#i-cloud',
     stripeLeft:[{left:'devices',icon:'#i-phone',title:'Device Manager'},{left:'project',icon:'#i-tw-project',title:'Project|Alt+1'},{more:1},{gap:1},{bottom:'journey',icon:'#i-tw-run',title:'Journey Run'},{bottom:'build',icon:'#i-tw-build',title:'Build'},{bottom:'log',icon:'#i-tw-device',title:'Log'},{bottom:'run',icon:'#i-tw-services',title:'Run|Alt+4'},{bottom:'terminal',icon:'#i-tw-terminal',title:'Terminal|Alt+F12'}],
@@ -825,6 +827,7 @@
   $('#canvas').addEventListener('click',function(e){
     var a=e.target.closest('[data-a]');var inst=e.target.closest('.inst');
     if(inst)select(inst.dataset.id);
+    if(inst&&!a&&e.target.closest('.dm-device')&&!inst.classList.contains('popped')&&cst){if(e.shiftKey)cst.add(inst);else if(!(cst.isOn()&&cst.focused().length===1&&cst.focused()[0]===inst))cst.focus(inst)}
     if(!a)return;
     var id=inst.dataset.id,it=byId(id),act=a.dataset.a;
     if(act==='migrate'){migrate();return}
@@ -1016,7 +1019,14 @@
             [39,'+','      }.<span class="f">id</span>(<span class="s">\'detailTop\'</span>)'],
             [40,' ','      <span class="f">Row</span>({ <span class="p">space</span>: <span class="n">12</span> }) {  <span class="c">// 其余落到下半屏，避开折痕</span>'],
             [41,' ','        <span class="f">Button</span>(<span class="s">\'加入购物车\'</span>).<span class="f">layoutWeight</span>(<span class="n">1</span>)']],
-      fixNote:'悬停态由 FolderStack 把图、价格、名称放上半屏，按钮落到下半屏；展开态、外屏布局不变。',
+      fixNote:'悬停态由 FolderStack 把图、价格、名称放上半屏，按钮落到下半屏。',
+      fixNote2:'只在悬停态（HALF_FOLDED）用 FolderStack，其余形态保持原 Column，展开态和 lg 分栏都恢复原样。',
+      diff2:[[34,'+','    <span class="k">if</span> (<span class="k">this</span>.<span class="p">foldStatus</span> === <span class="ty">display</span>.<span class="ty">FoldStatus</span>.<span class="p">FOLD_STATUS_HALF_FOLDED</span>) {'],
+            [35,'+','      <span class="f">FolderStack</span>({ <span class="p">upperItems</span>: [<span class="s">\'detailTop\'</span>] }) { <span class="k">this</span>.<span class="f">DetailBody</span>() }'],
+            [36,'+','    } <span class="k">else</span> {'],
+            [37,'+','      <span class="f">Column</span>({ <span class="p">space</span>: <span class="n">12</span> }) { <span class="k">this</span>.<span class="f">DetailBody</span>() }  <span class="c">// 非悬停：退回原布局</span>'],
+            [38,'+','    }'],
+            [39,'-','    <span class="f">FolderStack</span>({ <span class="p">upperItems</span>: [<span class="s">\'detailTop\'</span>] }) {  <span class="c">// 第一版：所有形态都包，lg 下退化成 Stack</span>']],
       commit:'fix(detail): 悬停态用 FolderStack，按钮避开折痕'},
     width:{dev:'xt3',step:'pay',short:'在屏幕外',title:'「结算」被挤出屏幕',
       why:'CartBar 在 lg 断点写死 1280 vp（照 MatePad Pro 13.2 写的）。Mate XT 三屏只有 1137 vp，同属 lg，「结算」落在 x 1156–1256 vp，整个在屏外，5 s 内找不到控件。',
@@ -1053,7 +1063,8 @@
   function steps(){return JOURNEYS[JM.jr].steps}
   function apis(){return JM.api==='both'?[20,18]:[+JM.api]}
   function selDevs(){return JDEV.filter(function(d){return JM.sel[d.id]})}
-  function fxNow(){return {crease:FIX.crease===2,width:FIX.width===2}}
+  var FIXV={crease:1},REFINING=false;   /* crease：1 = 第一版（FolderStack 全包），2 = 细化版（只在悬停态用） */
+  function fxNow(){return {crease:FIX.crease===2,creaseBad:FIX.crease===2&&FIXV.crease===1,width:FIX.width===2}}
   function devById(id){for(var i=0;i<JDEV.length;i++)if(JDEV[i].id===id)return JDEV[i]}
   function riHTML(d,h){
     h=h||14;
@@ -1076,8 +1087,10 @@
   function jgrid(c,n){var h='';for(var i=0;i<n;i++)h+='<div class="a-gi"><i style="background:'+PRD[i%4][2]+'"></i>'+HOMEP[i][0]+'<b>'+HOMEP[i][1]+'</b></div>';return '<div class="a-grid" style="--c:'+c+'">'+h+'</div>'}
   function jside(){return '<div class="a-side"><span class="t">商城</span><span class="on">首页</span><span>分类</span><span>购物车</span><span>我的</span></div>'}
   function jacts(){return '<div class="a-acts"><span class="a-add" data-t="add">加入购物车</span><span class="a-buy">立即购买</span></div>'}
-  function jdetail(split){
-    var p=PRD[0];
+  function jdetail(split,d,fx){
+    var p=PRD[0];fx=fx||{};
+    if(split&&fx.creaseBad&&d&&d.kind==='unfold')return '<div class="a-dt split" style="flex:1"><div class="a-hero" style="height:200px"></div><div class="a-price">¥899</div><div class="a-name">'+p[0]+'</div><div class="a-spec">星空黑 · 标准版 · 顺丰包邮</div><div class="fill"></div><div style="margin-bottom:24px">'+jacts()+'</div></div>';
+    if(split&&fx.creaseBad&&d&&d.bp==='lg')return '<div class="a-dt split"><div class="a-hero" style="height:200px"></div><div style="position:relative;margin-top:-132px;margin-bottom:84px">'+jacts()+'</div><div class="a-price">¥899</div><div class="a-name">'+p[0]+'</div><div class="a-spec">星空黑 · 标准版 · 顺丰包邮</div></div>';
     if(split)return '<div class="a-dt split"><div class="a-hero" style="height:200px"></div><div class="a-price">¥899</div><div class="a-name">'+p[0]+'</div>'+jacts()+'<div class="a-spec">星空黑 · 标准版 · 顺丰包邮</div></div>';
     return '<div class="a-dt"><div class="a-hero" style="aspect-ratio:16/9"></div><div class="a-price">¥899</div><div class="a-name">'+p[0]+'</div><div class="a-spec">星空黑 · 标准版 · 顺丰包邮</div></div><div class="fill"></div><div class="a-bar">'+jacts()+'</div>';
   }
@@ -1101,11 +1114,11 @@
       var det=k==='detail';
       if(bp==='sm'){
         if(!det)return h+jhd('‹ 搜索',n)+'<div class="a-search on">耳机</div><div class="a-cnt">共 24 件</div>'+jrows(-1)+'<div class="fill"></div>'+GSP;
-        return h+jhd('‹ 商品详情',n)+jdetail(false)+GSP;
+        return h+jhd('‹ 商品详情',n)+jdetail(false,d,fx)+GSP;
       }
       if(det&&d.kind==='hover'&&fx.crease)return h+jhd('商品详情',n)+jhover()+GSP;
       var list='<div class="a-col list"><div class="a-search on">耳机</div><div class="a-cnt">共 24 件</div>'+jrows(det?0:-1)+'</div>';
-      var main='<div class="a-col main">'+(det?jdetail(true):'<div class="a-empty">选择商品查看详情</div>')+'</div>';
+      var main='<div class="a-col main">'+(det?jdetail(true,d,fx):'<div class="a-empty">选择商品查看详情</div>')+'</div>';
       if(bp==='lg')return h+'<div class="a-split">'+jside()+'<div class="a-col main">'+jhd('商品',n)+'<div class="a-split">'+list+main+'</div></div></div>'+GSP;
       return h+jhd('商品',n)+'<div class="a-split">'+list+main+'</div>'+GSP;
     }
@@ -1184,7 +1197,7 @@
       +'<span class="gh">本地开同样 '+n+' 台 ≈ '+(n*LOCAL).toFixed(1)+' GB</span><span class="sep"></span>'
       +'<span class="it">'+(JM.live?'<span class="dm-dot info pulse"></span>':'<svg><use href="#i-cloud"/></svg>')+'云端 <b>'+JM.live+'</b> 台在跑 · 华东</span><span class="sep"></span>'
       +'<span class="it"><svg><use href="#i-clock"/></svg>云端时长 <b>'+(mm<10?'0':'')+mm+':'+(ss<10?'0':'')+ss+'</b> · 计 <b>'+JM.devMin.toFixed(1)+'</b> 台·分钟</span>'
-      +'<span class="grow"></span><span>步骤 <b>'+done+'</b> / '+tot+'</span>';
+      +'<span class="grow"></span><span>步骤 <b>'+done+'</b> / '+tot+'</span><span class="sep"></span><button class="abtn ds-btn'+(jst&&jst.isOn()?' on':'')+'" id="ds-jr" title="台前调度：一台上台放大回放，其余侧边仍在跑；⇧ 点两台并排对比">'+DeviceStage.icon+'</button>';
   }
 
   /* ---------- 渲染：设备墙 ---------- */
@@ -1201,6 +1214,8 @@
     drawStage(stg);
     /* 标签比设备宽时可能折行：逐步缩小直到一行放下 */
     for(var tries=0;tries<12&&wrapped(stg);tries++){JM.s-=0.003;drawStage(stg)}
+    /* 设备墙重建后，台前调度按行号接回来 */
+    if(jst&&jst.isOn()){var idx=(JM.dsIdx||[]).slice();jst.clear();var els=idx.map(function(i){return $('#jm-stage .jd[data-i="'+i+'"]:not(.popped)')}).filter(Boolean);if(els.length)jst.focus(els)}
   }
   function wrapped(stg){
     var n=selDevs().length,els=$$('.jd',stg).slice(0,n);if(els.length<2)return false;
@@ -1315,8 +1330,8 @@
     if(tr.kind==='commit'){tr.c.res=res;tr.c.running=false;renderGit();
       toast('流水线跑完 · 结果已写回 '+tr.c.h,res.ok===res.n?'「'+tr.c.msg+'」在云端 '+res.n+' 台全部通过（'+res.sp+'/'+res.st+' 步），提交记录已标记 ✓。':res.ok+'/'+res.n+' 台通过，失败：'+res.fails.join('、')+'。');
     }else if(tr.kind==='row'){
-      var r=JM.rows[tr.i];
-      toast(r.st==='pass'?r.dev.name+' 重跑通过':r.dev.name+' 重跑仍失败',r.st==='pass'?'只在这 1 台上验证，没动其他实例。工作区的修改可以「提交修复」了。':'稳定复现：'+ISS[r.cells.filter(function(c){return c.iss})[0].iss].title+'。');
+      var r=JM.rows[tr.i],hr=hotReload(tr.i);
+      toast(r.st==='pass'?r.dev.name+' 重跑通过':r.dev.name+' 重跑仍失败',r.st==='pass'?'只重跑了这 1 台；其余 '+(JM.rows.length-1)+' 台热重载到改动页：'+(hr.b?hr.b+' 台被带坏（侧边红点）':'没有被带坏')+(hr.c?'，'+hr.c+' 台布局也变了（绿点）':'')+'。':'稳定复现：'+ISS[r.cells.filter(function(c){return c.iss})[0].iss].title+'。');
     }else{
       toast(res.ok===res.n?'全部通过 · '+res.n+' 台':res.ok+'/'+res.n+' 台通过 · '+sm.fails.length+' 处失败',res.ok===res.n?'同一条旅程在 sm / md / lg 与悬停态上都走通了，共 '+res.sp+' 步。':'失败集中在折叠与三折叠形态：'+res.fails.join('、')+'。点结果矩阵里的红格看现场。');
     }
@@ -1364,7 +1379,7 @@
   /* ---------- 底部：失败现场（截图 · HiLog · ArkTS 代码行 · 修 · 重跑） ---------- */
   function logHTML(L){return '<div class="det-log">'+L.map(function(l){return '<div class="lv-'+l[0]+'"><span class="tm">'+l[1]+'</span>  '+l[0]+'  '+l[2]+'  '+l[3]+'</div>'}).join('')+'</div>'}
   function codeHTML(I){
-    if(FIX[I.key]===2)return '<div class="det-code">'+I.diff.map(function(l){return '<div class="l'+(l[1]==='-'?' del':l[1]==='+'?' add':'')+'"><span class="n">'+l[0]+'</span><span class="g">'+(l[1]===' '?'':l[1])+'</span><span>'+l[2]+'</span></div>'}).join('')+'</div>';
+    if(FIX[I.key]===2)return '<div class="det-code">'+(I.key==='crease'&&FIXV.crease===2?I.diff2:I.diff).map(function(l){return '<div class="l'+(l[1]==='-'?' del':l[1]==='+'?' add':'')+'"><span class="n">'+l[0]+'</span><span class="g">'+(l[1]===' '?'':l[1])+'</span><span>'+l[2]+'</span></div>'}).join('')+'</div>';
     return '<div class="det-code">'+I.code.map(function(l){return '<div class="l'+(l[2]?' err':'')+'"><span class="n">'+l[0]+'</span><span class="g">'+(l[2]?'✗':'')+'</span><span>'+l[1]+'</span></div>'}).join('')+'</div>';
   }
   function renderDetail(){
@@ -1385,14 +1400,14 @@
     var pill=c.st==='pass'?'<span class="dm-pill ok">通过 · '+c.t.toFixed(1)+' s</span>':c.st==='fail'?'<span class="dm-pill err">失败</span>':'<span class="dm-pill muted"><span class="spin"></span>正在这台上重跑</span>';
     var h='<div class="det-h">'+riHTML(d,12)+'<b>'+d.name+'</b><span class="bp '+d.bp+'">'+d.bp+'</span><span class="mono">'+d.vp[0]+'×'+d.vp[1]+' vp · API '+r.api+'</span><svg class="i"><use href="#i-chevR"/></svg><span>'+(sel.c+1)+' '+S[sel.c][1]+'</span>'+pill+'<span class="grow"></span><button class="abtn" data-x="1" title="Close"><svg class="i"><use href="#i-closeS"/></svg></button></div>';
     h+='<div class="det-b"><div class="det-shot"><div class="shot" id="det-shot"></div><div class="cap" id="det-cap"></div></div><div class="det-info">';
-    var running=r.st==='boot'||r.st==='run', shot=running?r.frame:(c.shot||r.frame);
+    var running=r.st==='boot'||r.st==='run', shot=(running||r.hot)?r.frame:(c.shot||r.frame);
     if(running){
       h+='<div class="det-why"><b style="color:var(--ui-info)">正在 '+d.name+' 上重跑…</b><span>只拉起这 1 台，其他实例不动。</span></div>';
     }else if(c.st==='fail'){
       var I=ISS[c.iss];I.key=c.iss;var fs=FIX[c.iss];
       h+='<div class="det-why"><b>'+I.title+'</b><span>'+I.why+'</span></div>';
       if(fs===1)h+='<div class="det-ai"><span class="spin"></span>DevEco Code 在读截图、布局树和 HiLog，改 '+I.file+':'+I.line+' …</div>';
-      if(fs===2)h+='<div class="det-ai ok"><svg class="i"><use href="#i-checkS"/></svg>已改 1 处：'+I.fixNote+'</div>';
+      if(fs===2)h+='<div class="det-ai ok"><svg class="i"><use href="#i-checkS"/></svg>已改 1 处：'+(c.iss==='crease'&&FIXV.crease===2?I.fixNote2:I.fixNote)+'</div>';
       h+='<div class="det-act">'
         +(fs===0?'<button class="btn sm" data-do="fix"><svg class="i"><use href="#i-sparkle"/></svg>交给 AI 修</button>':'')
         +'<button class="btn sm" data-do="rerun"'+(fs===1||JM.running?' disabled':'')+'><svg class="i"><use href="#i-rerun"/></svg>只在这台上重跑</button>'
@@ -1401,6 +1416,11 @@
       h+='<div class="det-sec">HiLog <span class="mono">· 这一步前后 · A03D00 / ArkUI / WMS</span></div>'+logHTML(I.log);
       h+='<div class="det-sec">ArkTS <span class="mono">· '+FILEPATH[I.file]+':'+I.line+(fs===2?' · 工作区改动':'')+'</span></div>'+codeHTML(I);
     }else{
+      if(r.hot&&!running){
+        var hb=r.hot[0]==='broken';
+        h+='<div class="det-why'+(hb?'':' ok')+'"><b>热重载后'+(hb?'被带坏：':'也变了：')+r.hot[1]+'</b><span>'+(hb?'第一版修复在所有形态都包了 FolderStack；非悬停态它就是普通 Stack，lg 分栏里按钮行叠到了商品图上。这台没重跑，是改动页的实时画面。':'这次改动也影响了这台的布局，看一眼是不是想要的。')+'</span></div>';
+        if(hb)h+=REFINING?'<div class="det-ai"><span class="spin"></span>DevEco Code 在细化：只在悬停态用 FolderStack …</div>':'<div class="det-act"><button class="btn sm" data-do="refine"><svg class="i"><use href="#i-sparkle"/></svg>交给 AI 修</button><span class="note">改完侧边的红点会自己变回来</span></div>';
+      }
       var id=S[sel.c][0],fixedHere=(id==='cart'&&d.kind==='hover'&&r.fx&&r.fx.crease)||(id==='pay'&&d.id==='xt3'&&r.fx&&r.fx.width);
       h+='<div class="det-why ok"><b>断言通过 · '+c.t.toFixed(1)+' s</b><span>期望：'+EXP[id]+(fixedHere?'。这台上次在这一步失败，改动后已通过。':'')+'</span></div>';
       h+='<div class="det-sec">HiLog</div>'+logHTML([['I','10:41:0'+(sel.c*2+3)+'.1'+(sel.r%10)+'4','A03D00/Journey','step '+(sel.c+1)+'/'+S.length+' '+S[sel.c][1]+' · assert ok ('+c.t.toFixed(1)+' s)']]);
@@ -1416,8 +1436,10 @@
     var n=['crease','width'].filter(function(k){return FIX[k]===2&&!JM.committed[k]}).length;
     return n?'<button class="btn sm" data-do="commit"'+(JM.running?' disabled':'')+'><svg class="i"><use href="#i-tw-commit"/></svg>提交修复（'+n+' 处）</button>':'';
   }
-  function selectCell(i,j){
+  function selectCell(i,j,mode){
     JM.cell=(i==null)?null:{r:i,c:j};
+    if(i==null){if(jst&&jst.isOn()&&mode!=='none')jst.clear()}
+    else if(mode!=='none')dsJr(i,mode==='add');
     $$('#jm-stage .jd').forEach(function(x){x.classList.toggle('on',!!(JM.cell&&+x.dataset.i===JM.cell.r))});
     renderMatrix();renderDetail();
   }
@@ -1496,22 +1518,24 @@
   $('#jm-stage').addEventListener('click',function(e){
     var pb=e.target.closest('.jd-pop');if(pb){var rr=JM.rows[+pb.dataset.pop];fwPop('jr',rr.dev.id+'@'+rr.api,$('.jdv',pb.closest('.jd')));return}
     var jd=e.target.closest('.jd');if(!jd)return;var i=+jd.dataset.i,r=JM.rows[i];
-    var j=-1;r.cells.forEach(function(c,q){if(c.st==='fail')j=q});
-    if(j<0){for(var q=r.cells.length-1;q>=0;q--)if(r.cells[q].st==='pass'){j=q;break}}
-    if(j>=0){openBottom('mx');selectCell(i,j)}
+    var j=pickCell(i);
+    if(j>=0){openBottom('mx');selectCell(i,j,e.shiftKey?'add':undefined)}
+    else if(!jd.classList.contains('popped'))dsJr(i,e.shiftKey);
   });
   $('#jm-mx').addEventListener('click',function(e){
     var rr=e.target.closest('[data-rr]');if(rr){rerunRow(+rr.dataset.rr);return}
-    var c=e.target.closest('.mc[data-r]');if(c)selectCell(+c.dataset.r,+c.dataset.c);
+    var c=e.target.closest('.mc[data-r]');if(c)selectCell(+c.dataset.r,+c.dataset.c,e.shiftKey?'add':undefined);
   });
   $('#jm-det').addEventListener('click',function(e){
     var it=e.target.closest('.fl-it');if(it){selectCell(+it.dataset.r,+it.dataset.c);return}
+    var ln=e.target.closest('.det-code .l');if(ln){$$('.det-code .l.cur').forEach(function(x){x.classList.remove('cur')});ln.classList.add('cur');dsByCode(ln.textContent);return}
     if(e.target.closest('[data-x]')){selectCell(null);return}
     var b=e.target.closest('[data-do]');if(!b||b.disabled)return;
     var sel=JM.cell,c=sel&&JM.rows[sel.r].cells[sel.c];
     if(b.dataset.do==='fix'&&c&&c.iss)aiFix(c.iss);
     else if(b.dataset.do==='rerun'&&sel)rerunRow(sel.r);
     else if(b.dataset.do==='commit')commitFix();
+    else if(b.dataset.do==='refine')aiRefine();
   });
   $('#jm-git').addEventListener('click',function(e){if(e.target.closest('[data-do="auto"]'))toggleAuto()});
   $('#jm-btabs').addEventListener('click',function(e){var b=e.target.closest('.btab');if(b)openBottom(b.dataset.bt)});
@@ -1590,6 +1614,7 @@
     });
     $$('#jm-stage .jd').forEach(function(x){var r=JM.rows[+x.dataset.i];if(r)x.classList.toggle('popped',fwHas('jr',r.dev.id+'@'+r.api))});
     $('#btn-native-win').innerHTML='<svg class="i"><use href="#i-popout"/></svg>'+(fwHas('native','pc')?'窗口已打开':'弹出窗口');
+    dsRefresh(cst);dsRefresh(jst);
   }
   function fwFront(w){w.el.style.zIndex=++FW.z}
   function fwPop(src,key){
