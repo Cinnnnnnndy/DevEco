@@ -95,7 +95,7 @@
   .xy-pill .said.hint{color:var(--ui-fg-info)}
   .xy-pill .dm-wave i{background:linear-gradient(#5B8CF7,#9B6CF6)}
   /* 离开电脑：电脑锁屏，手机和手表接着说 */
-  .away{position:absolute;inset:0;z-index:70;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;background:color-mix(in srgb,#070a14 70%,transparent);backdrop-filter:blur(8px) saturate(.7);color:#fff;animation:awin .4s ease-out both}
+  .away{position:absolute;inset:0;z-index:64;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;background:color-mix(in srgb,#070a14 70%,transparent);backdrop-filter:blur(8px) saturate(.7);color:#fff;animation:awin .4s ease-out both}
   .away[hidden]{display:none}
   .away.out{animation:awout .4s ease-in both}
   @keyframes awin{from{opacity:0}to{opacity:1}}
@@ -520,6 +520,7 @@
     if(XS.st!=='work')return;XS.st='away';
     var hb=$('#hand-go');if(hb)hb.outerHTML='<span class="btn act"><span class="xy-orb"></span>已接到手机 / 手表</span>';
     var a=$('#away');a.hidden=false;a.classList.remove('out');
+    $('#ide').classList.add('ovl');
     phoneRender();watchRender();
     capSet('<span class="dm-capsule"><span class="xy-orb sm"></span><span>对话在手机 / 手表上 · 应用接续</span></span>');
     clearInterval(XS.timer);
@@ -545,7 +546,7 @@
   function backPc(){
     if(XS.st!=='away')return;XS.st='back';
     clearInterval(XS.timer);XS.pct=100;XS.built=1;
-    var a=$('#away');a.classList.add('out');setTimeout(function(){a.hidden=true;a.classList.remove('out');},400);
+    var a=$('#away');a.classList.add('out');setTimeout(function(){a.hidden=true;a.classList.remove('out');$('#ide').classList.remove('ovl');},400);
     var n=(XS.phone?1:0)+(XS.watch?1:0);
     var h='<div class="away-sep">你离开的 6 分钟 · 在手机和手表上'+(n?'说了 '+n+' 句':'没有说话')+'</div>';
     if(XS.phone)h+='<div class="umsg new"><span class="dm-pill dev"><svg class="i"><use href="#i-phone"/></svg>手机 · 小艺 · 1.8 s</span><div class="bubble">占位图用浅灰，别用纯白</div></div>'
@@ -569,7 +570,9 @@
     if(t.closest('#w-mic')){watchSay();return;}
     if(t.closest('#back-pc')){backPc();return;}
   });
-DemoGuide.init([{"target": ".chip[data-say=\"yes\"]", "kind": "click", "pos": "top", "label": "点这里确认执行"}, {"target": "#ai-scroll", "kind": "change", "pos": "top", "label": "追加执行步骤"}, {"target": "#xy-go:not([disabled])", "kind": "click", "pos": "top", "label": "点这里：交给系统小艺说"}, {"target": "#hand-go", "kind": "click", "pos": "top", "label": "点这里：离开电脑，接到手机 / 手表"}, {"target": "#ph-mic:not([disabled])", "kind": "click", "pos": "top", "label": "点这里：在手机上接着说"}]);
+  /* 桌面 / 锁屏这类系统层盖住 IDE 时，IDE 里的标注先收起 */
+  function ovlGuard(list){return list.map(function(g){if(g.ovl)return g;g.target=g.target.split(',').map(function(t){return '.ide:not(.ovl) '+t.trim()}).join(',');return g;});}
+DemoGuide.init(ovlGuard([{"target": ".chip[data-say=\"yes\"]", "kind": "click", "pos": "top", "label": "点这里确认执行"}, {"target": "#ai-scroll", "kind": "change", "pos": "top", "label": "追加执行步骤"}, {"target": "#xy-go:not([disabled])", "kind": "click", "pos": "top", "label": "点这里：交给系统小艺说"}, {"target": "#hand-go", "kind": "click", "pos": "top", "label": "点这里：离开电脑，接到手机 / 手表"}, {"target": "#ph-mic:not([disabled])", "kind": "click", "pos": "top", "label": "点这里：在手机上接着说", "ovl": true}]));
 })();
 </script>
 </body>

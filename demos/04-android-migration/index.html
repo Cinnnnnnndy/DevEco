@@ -106,8 +106,8 @@
   .ma .in{height:34px;border-radius:17px;background:#f1f3f5;display:flex;align-items:center;padding:0 14px;font-size:11px;letter-spacing:.5px}
   .ma .in.ph{color:#9aa0ab}
   .ma .in.focus{box-shadow:inset 0 0 0 1.5px #0A59F7}
-  .ma .chip{height:26px;border-radius:13px;border:1px solid #cfd6e4;display:flex;align-items:center;gap:5px;padding:0 10px;font-size:10px;color:#0A59F7;align-self:flex-start}
-  .ma .chip svg{width:11px;height:11px}
+  .ma .sms{height:26px;border-radius:13px;border:1px solid #cfd6e4;display:flex;align-items:center;gap:5px;padding:0 10px;font-size:10px;color:#0A59F7;align-self:flex-start}
+  .ma .sms svg{width:11px;height:11px}
   .ma .ghost{height:26px;align-self:stretch}
   .ma .er{font-size:10px;color:#E84026;min-height:14px;margin:-4px 0 -4px 14px}
   .ma .bt{height:36px;border-radius:18px;background:#0A59F7;color:#fff;display:grid;place-items:center;font-weight:600;font-size:12px;margin-top:6px}
@@ -131,9 +131,9 @@
   .ma .rip{position:absolute;width:28px;height:28px;margin:-14px 0 0 -14px;border-radius:50%;background:rgba(10,89,247,.35);pointer-events:none;animation:marip .7s ease-out forwards;z-index:9}
   .ma .rip.miss{background:transparent;border:2px dashed #E84026;animation:none}
   @keyframes marip{from{transform:scale(.3);opacity:1}to{transform:scale(1.7);opacity:0}}
-  .ma .dbox{position:absolute;border:2px solid var(--ui-error);border-radius:7px;cursor:pointer;z-index:8}
+  .ma .dbox{position:absolute;border:2px solid var(--ui-error);border-radius:7px;pointer-events:none;z-index:8}
   .ma .dbox.gone{border-style:dashed}
-  .ma .dbox > b{position:absolute;top:-9px;left:-9px;width:16px;height:16px;border-radius:50%;background:var(--ui-error);color:#fff;font-size:9px;line-height:16px;text-align:center;font-weight:700}
+  .ma .dbox > b{pointer-events:auto;cursor:pointer;position:absolute;top:-9px;left:-9px;width:16px;height:16px;border-radius:50%;background:var(--ui-error);color:#fff;font-size:9px;line-height:16px;text-align:center;font-weight:700}
   .ma .dbox.sel{box-shadow:0 0 0 3px color-mix(in srgb,var(--ui-error) 30%,transparent)}
   .ma .dbox.ok{border-color:var(--ui-success)}
   .ma .dbox.ok > b{background:var(--ui-success)}
@@ -170,6 +170,7 @@
   .df .sd em{font-style:normal;color:var(--ui-fg-info)}
   .df .sd span{min-width:0}
   .df .ac{display:flex;align-items:center;gap:6px;margin-top:2px;min-width:0}
+  .df .ac .btn{flex:none;white-space:nowrap}
   .df .ac .btn svg.i{width:12px;height:12px}
   .df .ac .note{font-size:11px;color:var(--ui-fg-info);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
   .cm .dm-pill.ok{flex:none}
@@ -198,7 +199,7 @@
           <div class="prev-path" id="prev-path"></div>
         </div>
         <div class="desk-col" id="desk" hidden>
-          <div class="desk-bar"><svg class="i"><use href="#i-diff"/></svg><b>并排对照</b><span class="sub">同一台 MateBook Pro · 两窗都按 Mate 70 Pro 1260×2844</span><span class="grow"></span>
+          <div class="desk-bar"><svg class="i"><use href="#i-diff"/></svg><b>并排对照</b><span class="sub">同一台 MateBook Pro · 两窗按 Mate 70 Pro 比例</span><span class="grow"></span>
             <button class="btn sm" id="btn-replay"><svg class="i"><use href="#i-play"/></svg>重放一遍</button><button class="btn sm" id="btn-cmp-exit">退出</button></div>
           <div class="desk-area" id="desk-area">
             <div class="sync-dot" id="sync-dot" title="键鼠同步：点一边，另一边跟着点"><svg class="i"><use href="#i-sync"/></svg></div>
@@ -398,6 +399,258 @@
     var last=$('#mg-list .dm-item:last-child');if(last)last.scrollIntoView({block:'nearest'});
   }
 
+  /* ---------- 并排对照：卓易通里跑安卓原版，原生窗口跑鸿蒙版，键鼠同步，差异落到 ArkTS 行 ---------- */
+  var esc=DemoFrame.esc;
+  var KW=/^(import|from|export|default|class|extends|struct|private|const|let|return|if|else|new|this|void|number|string|boolean|as|async|await|try|catch|true|false|undefined|null)$/;
+  function hl(src){
+    var re=/(\/\/.*$)|('(?:[^'\\]|\\.)*'|`(?:[^`\\]|\\.)*`)|(@[A-Za-z]+)|(\$\$|\$r)|(0x[0-9A-Fa-f]+|\b\d+(?:\.\d+)?\b)|([A-Za-z_$][\w$]*)|([\s\S])/g,m,out='';
+    while((m=re.exec(src))){
+      if(m[1])out+='<span class="c">'+esc(m[1])+'</span>';
+      else if(m[2])out+='<span class="s">'+esc(m[2])+'</span>';
+      else if(m[3])out+='<span class="m">'+esc(m[3])+'</span>';
+      else if(m[4])out+='<span class="f">'+esc(m[4])+'</span>';
+      else if(m[5])out+='<span class="n">'+esc(m[5])+'</span>';
+      else if(m[6]){var w=m[6],rest=src.slice(re.lastIndex),cls=KW.test(w)?'k':(/^\s*\(/.test(rest)?'f':(/^[A-Z]/.test(w)?'ty':'p'));out+='<span class="'+cls+'">'+esc(w)+'</span>'}
+      else out+=esc(m[7]);
+    }
+    return out;
+  }
+  function L(src,meta){return meta?[hl(src),meta]:[hl(src)]}
+  FILES['ItemCard.ets']={path:['entry','src','main','ets','components'],crumbs:['ItemCard','build'],lines:[
+    L("import { Item } from '../model/Item';"),L(""),L("@Component"),L("export struct ItemCard {",{fold:1}),
+    L("  @Prop item: Item;"),L("  @Prop cover: PixelMap | undefined;"),L(""),
+    L("  build() {",{fold:1,at:1}),L("    Row({ space: 10 }) {",{fold:1}),
+    L("      Image(this.cover).width(40).height(40)"),
+    L("      Column({ space: 2 }) {",{fold:1}),
+    L("        Text(this.item.title).fontSize(15).fontWeight(FontWeight.Medium)"),
+    L("        Text(this.item.tag).fontSize(12).fontColor($r('app.color.text_secondary'))"),
+    L("      }.alignItems(HorizontalAlign.Start).layoutWeight(1)"),
+    L("      Text(`¥${this.item.price}`).fontColor($r('app.color.price'))"),
+    L("    }"),L("    .height(72).padding({ left: 16, right: 16 })"),L("  }"),L("}")
+  ]};
+
+  var CMP={on:false,screen:'login',code:'000000',focus:false,aToast:false,hToast:false,hErr:false,aRef:false,hRef:false,miss:null,ops:[],found:[],fixed:{},st:{},sel:null,busy:false,prevLeft:'project'};
+  /* 差异：安卓语汇只写在「安卓原版」一栏，鸿蒙一栏只写 ArkTS */
+  var DIFFS={
+    autofill:{kind:'界面',screen:'login',title:'验证码框下少了短信验证码建议',a:'SmsRetriever 建议条「482913 · 点按填入」',h:'<code>TextInput</code> 只能手动输入',file:'LoginPage.ets',line:12,manual:1,
+      box:{a:'[data-d="chip"]',h:'[data-d="chip"]'}},
+    toast:{kind:'行为',screen:'login',title:'验证码错了，提示不一样',a:'弹 Toast「验证码错误」',h:'<code>Text(this.error)</code> 显示 ERR_AUTH_401',file:'LoginPage.ets',line:28,commit:'a3f9c1',
+      fixLine:30,fixOk:[1,30],fixNote:'改用 promptAction.showToast · string.json 加 code_wrong',box:{a:'[data-d="toast"]',h:'[data-d="err"]'}},
+    radius:{kind:'界面',screen:'list',title:'商品图是直角',a:'ShapeableImageView 圆角 8dp',h:'<code>Image</code> 没有 <code>.borderRadius</code>',file:'ItemCard.ets',line:10,
+      fixLine:10,fixOk:[10],fixNote:'Image 补 .borderRadius(8)',box:{a:'[data-d="th"]',h:'[data-d="th"]'}},
+    refresh:{kind:'行为',screen:'list',title:'列表往下拉不会刷新',a:'SwipeRefreshLayout 下拉刷新，新到 1 件',h:'<code>List</code> 只回弹，外面没有 <code>Refresh</code>',file:'ListPage.ets',line:14,commit:'7d02be',
+      fixLine:15,fixOk:[9,15,24,25],fixNote:'List 外包一层 Refresh + onRefreshing',box:{a:'[data-d="rf"]',h:'[data-d="lsttop"]'}}
+  };
+  function openDiffs(){return CMP.found.filter(function(k){return !CMP.fixed[k]&&!DIFFS[k].manual}).length}
+  function find(k){if(CMP.found.indexOf(k)<0)CMP.found.push(k)}
+
+  /* ---------- 两个窗口里的应用 ---------- */
+  var STSVG='<svg viewBox="0 0 26 10" aria-hidden="true"><path d="M1 9h1.6V7H1zM3.8 9h1.6V5.2H3.8zM6.6 9h1.6V3.4H6.6zM9.4 9h1.6V1.6H9.4z" fill="#1a1a1a"/><rect x="14" y="1.5" width="10" height="7" rx="1.8" fill="none" stroke="#1a1a1a" stroke-width="1"/><rect x="15.3" y="2.8" width="6.4" height="4.4" rx=".8" fill="#1a1a1a"/><path d="M24.8 4v2" stroke="#1a1a1a" stroke-linecap="round"/></svg>';
+  var GOODS=[['无线鼠标','全新 · 包邮','129'],['机械键盘','二手 · 9 成新','389'],['显示器支架','全新','159'],['蓝牙音箱','二手','219'],['移动电源','全新 · 包邮','99'],['智能手表','二手','1299'],['平板支架','全新','59']];
+  function appHTML(side){
+    var a=side==='a',h='<div class="st"><span>09:41</span>'+STSVG+'</div>';
+    if(CMP.screen==='login'){
+      var toast=a?CMP.aToast:CMP.hToast;
+      h+='<div class="lg"><div class="h1">欢迎回来</div><div class="h2">登录后同步购物车和订单</div>'
+        +'<div class="in" data-hs="phone">138 **** 5620</div>'
+        +'<div class="in'+(CMP.code?'':' ph')+(CMP.focus?' focus':'')+'" data-hs="code">'+(CMP.code||'验证码')+'</div>'
+        +(a&&CMP.code!=='482913'?'<div class="sms" data-hs="chip" data-d="chip"><svg viewBox="0 0 16 16"><use href="#i-chat"/></svg>短信验证码 482913 · 点按填入</div>':'<div class="ghost" data-d="chip"></div>')
+        +'<div class="er" data-d="err">'+(!a&&CMP.hErr?'ERR_AUTH_401':'')+'</div>'
+        +'<div class="bt" data-hs="login">登录</div></div>'
+        +'<div class="ft">其他方式登录 · 华为账号</div>'
+        +(toast?'<div class="toast" data-d="toast">验证码错误</div>':'');
+    }else{
+      var ref=a?CMP.aRef:CMP.hRef,round=a||CMP.fixed.radius;
+      h+='<div class="nav"><span class="bk" data-hs="back"><svg viewBox="0 0 16 16"><path d="M10 3L5 8l5 5" stroke="#1a1a1a" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg></span>商品</div>'
+        +'<div class="sr">搜索商品</div><div class="lst" data-hs="pull" data-d="lsttop">'
+        +(ref?'<div class="rf" data-d="rf"><i></i>已更新 · 新到 1 件</div>':'')
+        +(ref?[['降噪耳机','新到 · 全新','699',1]]:[]).concat(GOODS).map(function(g,i){return '<div class="rw'+(g[3]?' nw':'')+'"><span class="th'+(round?' r':'')+'"'+(i===0?' data-d="th"':'')+'></span><div><b>'+g[0]+'</b><span>'+g[1]+'</span></div><span class="pr">¥'+g[2]+'</span></div>'}).join('')
+        +'</div>';
+    }
+    return h+'<div class="gbar"></div>';
+  }
+  function renderApps(){
+    ['a','h'].forEach(function(side){$('#ma-'+side).innerHTML=appHTML(side)});
+    if(CMP.miss){var m=CMP.miss;$('#ma-'+m.side).insertAdjacentHTML('beforeend','<span class="rip miss" style="left:'+m.x+'px;top:'+m.y+'px"></span>')}
+  }
+  /* 差异框按两边实际渲染的位置画（基准坐标 218 × 492） */
+  function drawBoxes(){
+    ['a','h'].forEach(function(side){
+      var root=$('#ma-'+side);$$('.dbox',root).forEach(function(b){b.remove()});
+      CMP.found.forEach(function(k,i){
+        var d=DIFFS[k];if(d.screen!==CMP.screen)return;
+        var el=$(k==='refresh'&&side==='h'&&CMP.hRef?'[data-d="rf"]':d.box[side],root);if(!el)return;
+        var x=el.offsetLeft,y=el.offsetTop,w=el.offsetWidth,h=el.offsetHeight,p=el.offsetParent;
+        while(p&&p!==root){x+=p.offsetLeft;y+=p.offsetTop;p=p.offsetParent}
+        if(k==='refresh'&&side==='h'&&!CMP.hRef){h=30}
+        if(k==='toast'&&side==='h'&&!CMP.hErr&&!CMP.hToast)return;
+        if(k==='toast'&&side==='a'&&!CMP.aToast)return;
+        if(k==='refresh'&&side==='a'&&!CMP.aRef)return;
+        if(k==='toast'&&side==='h'&&CMP.hToast){el=$('[data-d="toast"]',root);x=el.offsetLeft-el.offsetWidth/2;y=el.offsetTop;w=el.offsetWidth;h=el.offsetHeight}
+        if(k==='toast'&&side==='a'){x=el.offsetLeft-el.offsetWidth/2}
+        var ok=!!CMP.fixed[k],gone=!ok&&((k==='autofill'&&side==='h')||(k==='refresh'&&side==='h'));
+        root.insertAdjacentHTML('beforeend','<span class="dbox'+(gone?' gone':'')+(ok?' ok':'')+(CMP.sel===k?' sel':'')+'" data-diff="'+k+'" style="left:'+(x-4)+'px;top:'+(y-4)+'px;width:'+(w+8)+'px;height:'+(h+8)+'px" title="'+esc(d.title)+'"><b>'+(i+1)+'</b></span>');
+      });
+    });
+  }
+
+  /* ---------- 同步操作日志 ---------- */
+  var RES={same:['ok','一致'],beh:['err','行为不同'],ui:['warn','界面不同'],miss:['warn','右边没有这个控件'],fix:['ok','改后重放 · 一致']};
+  function logOp(text,res){CMP.ops.push({t:text,r:res});renderLog()}
+  function nextHint(){
+    if(CMP.screen==='login'){
+      if(CMP.found.indexOf('toast')<0)return '点左边的「登录」，看两边对错误验证码的反应';
+      if(CMP.code!=='482913')return '点左边的「短信验证码」建议条，把正确的码填进去';
+      return '再点「登录」进商品列表';
+    }
+    if(CMP.found.indexOf('refresh')<0)return '在左边列表上往下拖一下，试下拉刷新';
+    return '点右侧差异卡「按原版改」，改完两边会自动重放';
+  }
+  function renderLog(){
+    var h='<div class="hd"><svg class="i" style="width:14px;height:14px;color:var(--ui-accent)"><use href="#i-sync"/></svg><b>同步操作</b><span class="dm-muted">· 点一边，另一边同一位置跟着点</span><span class="grow"></span><span class="dm-pill info">'+CMP.ops.length+' 步</span></div>';
+    CMP.ops.forEach(function(o,i){var r=RES[o.r];h+='<div class="op"><span class="n">'+(i+1)+'</span><span class="tx">'+o.t+'</span><span class="dm-pill '+r[0]+'">'+r[1]+'</span></div>'});
+    h+='<div class="op hint"><span class="n"></span><svg class="i"><use href="#i-arrowR"/></svg><span class="tx">'+nextHint()+'</span></div>';
+    var el=$('#desk-log');el.innerHTML=h;el.scrollTop=el.scrollHeight;
+  }
+
+  /* ---------- 差异卡（Migration 面板） ---------- */
+  function renderDiffs(){
+    var el=$('#cmp-diffs');if(!el)return;
+    var h='';
+    CMP.found.forEach(function(k,i){
+      var d=DIFFS[k],st=CMP.st[k]||'open',done=st==='ok';
+      var pill=d.manual?'<span class="dm-pill err">需人工</span>':(done?'<span class="dm-pill ok">已对齐</span>':(st==='fixing'?'<span class="dm-pill info">重放中…</span>':'<span class="dm-pill '+(d.kind==='行为'?'err':'warn')+'">'+d.kind+'</span>'));
+      var ln=done?d.fixLine:d.line;
+      h+='<div class="df'+(CMP.sel===k?' sel':'')+(done?' done':'')+'" data-k="'+k+'"><div class="t"><span class="num">'+(i+1)+'</span>'+pill+'<b>'+esc(d.title)+'</b><span class="loc">'+d.file+':'+ln+'</span></div>'
+        +'<div class="sd"><em>安卓原版</em><span>'+esc(d.a)+'</span><em>鸿蒙版</em><span>'+(done?'和原版一致 · '+esc(d.fixNote):d.h)+'</span></div>'
+        +'<div class="ac"><button class="btn sm" data-act="loc"><svg class="i"><use href="#i-locate"/></svg>定位</button>'
+        +(d.manual?'<span class="note">没有对应的系统能力，登录页已在剩余清单 #1</span>':(done?'<span class="note">热重载后重放同一步，两边一致'+(d.commit?' · 安卓提交 '+d.commit+' 已跟上':'')+'</span>':'<button class="btn sm primary" data-act="fix"'+(st==='fixing'?' disabled':'')+'><svg class="i" style="color:#fff"><use href="#i-sparkle"/></svg>按原版改</button><span class="note">'+esc(d.fixNote)+'</span>'))
+        +'</div></div>';
+    });
+    if(!h)h='<div class="dm-muted dm-small">两边正在启动…</div>';
+    el.innerHTML=h;
+    var o=openDiffs(),c=$('#cmp-cnt');c.className='dm-pill '+(o?'warn':'ok');c.textContent=o?o+' 处待改 · 共 '+CMP.found.length:'已对齐 · 共 '+CMP.found.length;
+    renderProgress();
+  }
+  function locateDiff(k){
+    var d=DIFFS[k],done=CMP.st[k]==='ok';CMP.sel=k;
+    openFile(d.file,done?d.fixLine:d.line,done?d.fixOk:null);
+    renderDiffs();drawBoxes();
+  }
+
+  /* ---------- 改成和原版一致：改 ArkTS → 热重载 → 两边重放同一步 ---------- */
+  function applyFix(k){
+    if(k==='toast'){
+      var f=FILES['LoginPage.ets'].lines;
+      f.splice(27,1,L("      promptAction.showToast({ message: $r('app.string.code_wrong') });"));
+      f.unshift(L("import { promptAction } from '@kit.ArkUI';"),L(""));
+      NOTES['LoginPage.ets'].range=[26,32];
+    }else if(k==='radius'){
+      FILES['ItemCard.ets'].lines[9]=L("      Image(this.cover).width(40).height(40).borderRadius(8)");
+    }else if(k==='refresh'){
+      var o=FILES['ListPage.ets'].lines,n=o.slice(0,8).concat([L("  @State refreshing: boolean = false;")],o.slice(8,13),[L("      Refresh({ refreshing: $$this.refreshing }) {",{fold:1})],
+        o.slice(13,21).map(function(l){return ['  '+l[0],l[1]]}),[L("      }"),L("      .onRefreshing(async () => { await this.source.reload(); this.refreshing = false; })")],o.slice(21));
+      FILES['ListPage.ets'].lines=n;NOTES['ListPage.ets'].range=[16,23];
+    }
+  }
+  function fix(k){
+    var d=DIFFS[k];if(CMP.busy||d.manual||CMP.st[k]==='ok')return;
+    CMP.busy=true;CMP.st[k]='fixing';CMP.sel=k;applyFix(k);
+    openFile(d.file,d.fixLine,d.fixOk);renderDiffs();
+    setTimeout(function(){
+      CMP.fixed[k]=true;CMP.miss=null;
+      if(k==='toast'){CMP.screen='login';CMP.code='000000';CMP.focus=false;CMP.aToast=true;CMP.hToast=true;CMP.hErr=false;logOp('热重载 → 重放「点登录（验证码 000000）」','fix')}
+      else if(k==='radius'){CMP.screen='list';logOp('热重载 → 重新比对商品列表截图','fix')}
+      else if(k==='refresh'){CMP.screen='list';CMP.aRef=true;CMP.hRef=true;logOp('热重载 → 重放「在列表上往下拉」','fix')}
+      CMP.st[k]='ok';CMP.busy=false;
+      var c=COMMITS.filter(function(x){return x.sha===d.commit})[0];if(c){c.done=true;renderCommits()}
+      renderApps();drawBoxes();renderDiffs();renderLog();
+      openFile(d.file,d.fixLine,d.fixOk);
+    },900);
+  }
+
+  /* ---------- 同步操作：点一边，另一边同一位置跟着点 ---------- */
+  function ripple(x,y){['a','h'].forEach(function(s){$('#ma-'+s).insertAdjacentHTML('beforeend','<span class="rip" style="left:'+x+'px;top:'+y+'px"></span>')})}
+  function doOp(hs,side,x,y){
+    if(CMP.busy)return;
+    CMP.miss=null;var before=CMP.found.length;
+    if(hs==='chip'){
+      CMP.code='482913';CMP.focus=false;CMP.aToast=false;CMP.hErr=false;CMP.hToast=false;CMP.miss={side:side==='a'?'h':'a',x:x,y:y};find('autofill');
+      logOp('点「短信验证码 482913」建议条 → 右边同一位置没有控件，已把 482913 同步键入右边','miss');
+    }else if(hs==='code'){CMP.focus=true;logOp('点「验证码」输入框 → 两边都弹出键盘','same')}
+    else if(hs==='phone'){CMP.focus=false;logOp('点「手机号」输入框 → 两边都弹出键盘','same')}
+    else if(hs==='login'){
+      CMP.focus=false;
+      if(CMP.code==='482913'){CMP.screen='list';CMP.aToast=CMP.hToast=CMP.hErr=false;CMP.aRef=CMP.hRef=false;find('radius');logOp('点「登录」→ 两边都进了商品列表 · 截图比对出 1 处界面差异','ui')}
+      else{CMP.aToast=true;if(CMP.fixed.toast){CMP.hToast=true;logOp('点「登录」（验证码 '+CMP.code+'）→ 两边都提示「验证码错误」','same')}else{CMP.hErr=true;find('toast');logOp('点「登录」（验证码 '+CMP.code+'）→ 左边弹提示，右边显示错误码','beh')}}
+    }else if(hs==='back'){CMP.screen='login';CMP.code='000000';CMP.aRef=CMP.hRef=false;logOp('点返回 → 两边都回到登录页','same')}
+    else if(hs==='pull'){
+      CMP.aRef=true;if(CMP.fixed.refresh){CMP.hRef=true;logOp('在列表上往下拉 → 两边都刷新，新到 1 件','same')}else{CMP.hRef=false;find('refresh');logOp('在列表上往下拉 → 左边刷新出 1 件新品，右边只回弹','beh')}
+    }else return;
+    renderApps();ripple(x,y);drawBoxes();renderDiffs();
+    if(CMP.found.length>before)locateDiff(CMP.found[CMP.found.length-1]);
+  }
+  function basePt(win,e){var r=$('.win-scr',win).getBoundingClientRect(),k=r.width/218;return {x:Math.round((e.clientX-r.left)/k),y:Math.round((e.clientY-r.top)/k)}}
+  var drag=null;
+  function front(win){$$('#desk-area .win').forEach(function(w){w.classList.toggle('front',w===win)})}
+  $('#desk-area').addEventListener('pointerdown',function(e){
+    var win=e.target.closest('.win');if(!win)return;front(win);
+    var area=$('#desk-area').getBoundingClientRect(),wr=win.getBoundingClientRect();
+    if(e.target.closest('.win-rs')){drag={t:'rs',win:win,x0:e.clientX,w0:wr.width};e.preventDefault();return}
+    if(e.target.closest('.win-tb')){drag={t:'mv',win:win,dx:e.clientX-wr.left,dy:e.clientY-wr.top,area:area};win.classList.add('drag');e.preventDefault();return}
+    var hs=e.target.closest('[data-hs]');
+    if(hs){drag={t:'hs',win:win,hs:hs.dataset.hs,y0:e.clientY,pt:basePt(win,e)}}
+  });
+  document.addEventListener('pointermove',function(e){
+    if(!drag)return;
+    if(drag.t==='mv'){var a=drag.area,w=drag.win,x=Math.max(-40,Math.min(a.width-80,e.clientX-a.left-drag.dx)),y=Math.max(0,Math.min(a.height-40,e.clientY-a.top-drag.dy));w.style.left=x+'px';w.style.top=y+'px'}
+    else if(drag.t==='rs'){var nw=Math.round(Math.max(170,Math.min(260,drag.w0+(e.clientX-drag.x0))));setW(drag.win,nw)}
+  });
+  document.addEventListener('pointerup',function(e){
+    if(!drag)return;var d=drag;drag=null;d.win.classList.remove('drag');
+    if(d.t!=='hs')return;
+    var dy=e.clientY-d.y0;
+    if(d.hs==='pull'){if(dy>12)doOp('pull',d.win.dataset.side,d.pt.x,d.pt.y)}
+    else doOp(d.hs,d.win.dataset.side,d.pt.x,d.pt.y);
+  });
+  function setW(win,w){win.style.setProperty('--w',w+'px');win.style.setProperty('--k',((w-2)/218).toFixed(4))}
+  $('#ma-a').parentNode.parentNode.parentNode.addEventListener('dragstart',function(e){e.preventDefault()});
+  /* 点差异框 → 选中并落到代码 */
+  $('#desk-area').addEventListener('click',function(e){var b=e.target.closest('.dbox');if(b)locateDiff(b.dataset.diff)});
+  $('#cmp-diffs').addEventListener('click',function(e){
+    var card=e.target.closest('.df');if(!card)return;var k=card.dataset.k,a=e.target.closest('[data-act]');
+    if(a&&a.dataset.act==='fix'){if(!a.disabled)fix(k);return}
+    locateDiff(k);
+  });
+
+  function replay(){
+    if(CMP.busy)return;CMP.busy=true;
+    var steps=[['login',100,300],['chip',100,240],['login',100,300],['pull',100,200]],i=0;
+    CMP.screen='login';CMP.code='000000';CMP.aToast=CMP.hToast=CMP.hErr=false;CMP.aRef=CMP.hRef=false;CMP.miss=null;
+    logOp('重放一遍：按记录的 4 步在两边同时回放','same');renderApps();drawBoxes();
+    (function next(){if(i>=steps.length){CMP.busy=false;renderLog();return}var s=steps[i++];CMP.busy=false;doOp(s[0],'a',s[1],s[2]);CMP.busy=true;setTimeout(next,650)})();
+  }
+  function cmpStart(){
+    var ide=$('#ide');if(CMP.on)return;
+    CMP.on=true;CMP.prevLeft=ide.getAttribute('data-left');
+    DemoFrame.setSide('left',null);ide.classList.add('cmp-on');
+    $('.prev-split').classList.add('cmp');$('#desk').hidden=false;$('#cmp-pad').hidden=false;
+    ['a','h'].forEach(function(s){setW($('#win-'+s),222)});
+    $('#win-a').style.left='12px';$('#win-a').style.top='14px';$('#win-h').style.left='257px';$('#win-h').style.top='14px';
+    if(!CMP.ops.length){CMP.screen='login';CMP.code='000000';find('autofill');CMP.sel='autofill';CMP.ops.push({t:'两边都冷启动到登录页 · 截图比对出 1 处界面差异',r:'ui'})}
+    renderApps();renderLog();renderDiffs();requestAnimationFrame(drawBoxes);
+    $('#mg-list').closest('.tw-body').scrollTop=0;
+  }
+  function cmpExit(){
+    var ide=$('#ide');CMP.on=false;ide.classList.remove('cmp-on');
+    $('.prev-split').classList.remove('cmp');$('#desk').hidden=true;$('#cmp-pad').hidden=true;
+    DemoFrame.setSide('left',CMP.prevLeft&&CMP.prevLeft!=='none'?CMP.prevLeft:'project');
+    renderProgress();
+  }
+  $('#btn-cmp').addEventListener('click',cmpStart);
+  $('#btn-cmp-exit').addEventListener('click',cmpExit);
+  $('#btn-replay').addEventListener('click',replay);
+
   /* ---------- 初始 ---------- */
   document.getElementById('tree-slot').innerHTML=DemoFrame.tree({sel:'LoginPage.ets',decorate:function(name){return FSTATE[name]?pill(FSTATE[name]):''}});
   document.getElementById('tabs').insertAdjacentHTML('afterbegin',DemoFrame.tabs([{file:'LoginPage.ets',on:true}]));
@@ -425,7 +678,13 @@
       var f=r.dataset.file;if(FILES[f]&&f!==curFile)openFile(f);
     });
   }});
-DemoGuide.init([{"target": "#btn-reviewed", "kind": "click", "pos": "top", "label": "点这里标记已查"}, {"target": "#tree-prog", "kind": "change", "pos": "top", "label": "进度 4/6→5/6"}]);
+DemoGuide.init([
+  {"target": "#btn-reviewed", "kind": "click", "pos": "top", "label": "点这里标记已查"},
+  {"target": "#tree-prog", "kind": "change", "pos": "top", "label": "进度 4/6→5/6"},
+  {"target": "#btn-cmp", "kind": "click", "pos": "top", "label": "同一台电脑上并排对照安卓原版"},
+  {"target": "#win-a [data-hs=\"login\"]", "kind": "click", "pos": "bottom", "label": "点左边，右边跟着点"},
+  {"target": "#cmp-card", "kind": "change", "pos": "top", "label": "差异自动标出，落到 ArkTS 行"}
+]);
 })();
 </script>
 </body>

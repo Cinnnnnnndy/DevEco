@@ -388,7 +388,7 @@
   .sys-note .pb i{display:block;height:100%;width:0;background:var(--ui-accent);transition:width 1.1s linear}
 
   /* ===== ⑥ 在哪儿都能叫开发助手：鸿蒙电脑桌面 + 小艺唤起条 ===== */
-  .hm-desk{position:absolute;inset:0;z-index:70;overflow:hidden;background:radial-gradient(120% 90% at 20% 10%,#3a5fb8 0%,#23346e 38%,#131a36 75%);font-family:var(--font-ui);animation:deskin .4s ease-out both}
+  .hm-desk{position:absolute;inset:0;z-index:64;overflow:hidden;background:radial-gradient(120% 90% at 20% 10%,#3a5fb8 0%,#23346e 38%,#131a36 75%);font-family:var(--font-ui);animation:deskin .4s ease-out both}
   .hm-desk[hidden]{display:none}
   .ide[data-ide-theme="light"] .hm-desk{background:radial-gradient(120% 90% at 20% 10%,#cfe0ff 0%,#9fb8ee 40%,#6b83c9 80%)}
   @keyframes deskin{from{opacity:0}to{opacity:1}}
@@ -1410,11 +1410,12 @@ struct PriceLabel {
   var XWAVE='<span class="dm-wave"><i style="--h:40%;--d:0s"></i><i style="--h:80%;--d:.12s"></i><i style="--h:100%;--d:.24s"></i><i style="--h:60%;--d:.36s"></i><i style="--h:90%;--d:.48s"></i><i style="--h:45%;--d:.6s"></i></span>';
   function deskOpen(){
     var d=$('#hm-desk');d.hidden=false;d.classList.remove('out');
+    $('#ide').classList.add('ovl');
     var b=$('#xy-bar');b.hidden=true;b.innerHTML='';XY.busy=0;
   }
   function deskClose(fromXY){
     var d=$('#hm-desk');if(d.hidden)return;d.classList.add('out');
-    setTimeout(function(){d.hidden=true;d.classList.remove('out');XY.busy=0;},440);
+    setTimeout(function(){d.hidden=true;d.classList.remove('out');XY.busy=0;$('#ide').classList.remove('ovl');},440);
     var ide=$('#ide');ide.classList.remove('front');void ide.offsetWidth;ide.classList.add('front');
     setTimeout(function(){ide.classList.remove('front')},600);
     if(fromXY)xyLand();
@@ -1459,7 +1460,9 @@ struct PriceLabel {
     if(e.key==='Escape'&&!$('#hm-desk').hidden&&!XY.busy){e.stopPropagation();deskClose(false);}
   },true);
 
-DemoGuide.init([{"target": "#md-apply", "kind": "click", "pos": "top", "label": "点这里替换文案"}, {"target": "#b-fix,#go-debug,#ask-undef,#add-cbp", "kind": "click", "pos": "top", "label": "点这里：AI 直接驱动 IDE"}, {"target": ".tw-bottom", "kind": "change", "pos": "top", "label": "Build / Debug / HiLog 里就地出现 AI"}, {"target": ".tab[data-file=\"ItemCard.ets\"]:not(.on):not([data-seen])", "kind": "click", "pos": "top", "label": "点这里：下一处编辑预测"}, {"target": "#nep-type", "kind": "click", "pos": "right", "label": "点这里：把 number 改成 Price"}, {"target": ".gl.tb .nep-tb", "kind": "click", "pos": "right", "label": "按 Tab 接受，Esc 跳过"}, {"target": ".stripe.right [data-right=\"agent\"]:not(.on)", "kind": "click", "pos": "left", "label": "点这里：手机截图、日志拖进对话"}, {"target": "#ph-to:not(.sent)", "kind": "click", "pos": "left", "label": "点这里：华为分享或碰一碰发到 IDE"}, {"target": "#dc-send.ready", "kind": "click", "pos": "left", "label": "点这里：截图 + HiLog 一起问"}, {"target": "#hm-desk:not([hidden]) #xy-dock", "kind": "click", "pos": "top", "label": "点这里：在桌面叫小艺"}]);
+  /* 桌面 / 锁屏这类系统层盖住 IDE 时，IDE 里的标注先收起 */
+  function ovlGuard(list){return list.map(function(g){if(g.ovl)return g;g.target=g.target.split(',').map(function(t){return '.ide:not(.ovl) '+t.trim()}).join(',');return g;});}
+DemoGuide.init(ovlGuard([{"target": "#md-apply", "kind": "click", "pos": "top", "label": "点这里替换文案"}, {"target": "#b-fix,#go-debug,#ask-undef,#add-cbp", "kind": "click", "pos": "top", "label": "点这里：AI 直接驱动 IDE"}, {"target": ".tw-bottom", "kind": "change", "pos": "top", "label": "Build / Debug / HiLog 里就地出现 AI"}, {"target": ".tab[data-file=\"ItemCard.ets\"]:not(.on):not([data-seen])", "kind": "click", "pos": "top", "label": "点这里：下一处编辑预测"}, {"target": "#nep-type", "kind": "click", "pos": "right", "label": "点这里：把 number 改成 Price"}, {"target": ".gl.tb .nep-tb", "kind": "click", "pos": "right", "label": "按 Tab 接受，Esc 跳过"}, {"target": ".stripe.right [data-right=\"agent\"]:not(.on)", "kind": "click", "pos": "left", "label": "点这里：手机截图、日志拖进对话"}, {"target": "#ph-to:not(.sent)", "kind": "click", "pos": "left", "label": "点这里：华为分享或碰一碰发到 IDE"}, {"target": "#dc-send.ready", "kind": "click", "pos": "left", "label": "点这里：截图 + HiLog 一起问"}, {"target": "#hm-desk:not([hidden]) #xy-dock", "kind": "click", "pos": "top", "label": "点这里：在桌面叫小艺", "ovl": true}]));
 })();
 </script>
 </body>

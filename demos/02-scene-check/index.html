@@ -448,7 +448,7 @@
             <div class="chk-list dm-list" id="chk-list"></div>
             <div class="chk-detail" id="chk-detail"></div>
           </div>
-          <!-- 用户旅程：一句话 → 步骤 + 断言 → 在模拟器上跑 → 失败现场 → 修复 / 存文件 / 加进上架自检 -->
+          <!-- 用户旅程：一句话 → 步骤 + 断言 → 运行在本机原生窗口 / 碰一碰连上的真机（可并行）→ 失败现场 → 修复 / 存文件 / 加进上架自检 -->
           <div class="jr" id="jr" hidden>
             <div class="jr-main">
               <div class="jr-compose">
@@ -773,18 +773,20 @@
   }
 
   /* =====================================================================
-     用户旅程：一句话 → AI 拆步骤 + 断言（可改、可增删）→ 在模拟器上逐步跑
-     → 某步没过给出截图对比 + HiLog + 代码行 → 转成修复任务 / 存成旅程文件 / 加进上架自检
+     用户旅程：一句话 → AI 拆步骤 + 断言（可改、可增删）→「运行在」：
+       本机（鸿蒙电脑原生自由窗口，默认，不用起模拟器）/ 碰一碰连上的 Mate 70 Pro、Mate X6 / 模拟器
+     → 多台并行跑，每步按设备并排出截图（真实比例）→ 某步没过：截图对比 + HiLog + 代码行
+     → 转成修复任务，改完在同一组设备上重跑验证 / 存成旅程文件 / 加进上架自检
      ===================================================================== */
   var PROMPT='登录 → 搜索“耳机” → 加入购物车 → 结算页显示正确总价';
   var TPL={
     login:{exp:'3 s 内进入首页，HiLog 无 ERR_AUTH',ops:['打开 LoginPage','手机号填 138 0000 6021、验证码填 246810（mock-config.json5 的测试号）','点 Button(\'登录\')'],file:'LoginPage.ets',line:16,ctl:"Button('登录')",dur:2.3,timeout:5000},
     search:{exp:'结果至少 1 条，首条标题含「耳机」',ops:['点首页 Search 框','输入「耳机」，按回车','等结果列表加载完'],file:'ListPage.ets',line:12,ctl:'Search',dur:1.6,timeout:5000},
     cart:{exp:'右上角购物车角标 0 → 1',ops:['点结果第 1 条「无线降噪耳机 Pro」','在详情页点「加入购物车」','最多等 3 s，读右上角角标'],file:'CartStore.ets',line:44,ctl:'CartStore.addItem()',dur:1.2,failDur:3.2,timeout:3000},
-    checkout:{exp:'合计显示 ¥899（¥899 × 1，包邮）',ops:['点右上角购物车','点「去结算」','读结算页合计金额'],file:'CheckoutPage.ets',line:31,ctl:"Text('合计 ¥…')",dur:1.9,timeout:5000}
+    checkout:{exp:'合计显示 ¥899（¥899 × 1，包邮）',ops:['点购物车（md 分栏点右栏）','点「去结算」','读结算页合计金额'],file:'CheckoutPage.ets',line:31,ctl:"Text('合计 ¥…')",dur:1.9,timeout:5000}
   };
   var JR={prompt:PROMPT,name:'下单结算',file:'checkout.journey.json5',kw:'耳机',steps:[],phase:'empty',sel:0,view:'step',
-    result:null,runIdx:-1,fixed:false,fixStage:0,fixIdx:-1,saved:false,dirty:false,inPublish:false,pubRunning:false,runInLine:0};
+    result:null,runIdx:-1,fixed:false,fixedMd:false,fixKind:null,fixStage:0,fixIdx:-1,saved:false,dirty:false,inPublish:false,pubRunning:false,runInLine:0,devs:null,focus:null};
   var uid=0,TM=[];
   function later(fn,ms){TM.push(setTimeout(fn,ms))}
   function clearTimers(){TM.forEach(clearTimeout);TM=[]}
@@ -806,13 +808,39 @@
   function hasStep(id){return JR.steps.some(function(s){return s.id===id})}
   function failIdx(){for(var i=0;i<JR.steps.length;i++)if(JR.steps[i].st==='fail')return i;return -1}
   function passN(){return JR.steps.filter(function(s){return s.st==='pass'}).length}
-  function totalT(){var t=0;JR.steps.forEach(function(s){t+=s.t||0});return t.toFixed(1)}
   function estT(){var t=0;JR.steps.forEach(function(s){t+=s.dur||0});return Math.round(t)}
-  function locText(s){return s.st==='fail'&&s.id==='cart'?'CartStore.ets:48':(s.file?s.file+':'+s.line:'')}
-  function resetResults(){JR.steps.forEach(function(s){s.st='';s.t=0;s.shot=null});JR.result=null;JR.phase=JR.steps.length?'ready':'empty';JR.view='step'}
+  function locText(s){return s.st==='fail'&&s.fk==='cart'?'CartStore.ets:48':s.st==='fail'&&s.fk==='md'?'CheckoutPage.ets:12':(s.file?s.file+':'+s.line:'')}
+  function resetResults(){JR.steps.forEach(function(s){s.st='';s.t=0;s.shot=null;s.fk=null;s.nf=0;s.part=0});R={};JR.devs=null;JR.result=null;JR.phase=JR.steps.length?'ready':'empty';JR.view='step'}
 
-  /* ---------- 模拟器屏幕（示例应用） ---------- */
-  function sb(){return '<div class="st"><span>9:41</span><span>5G · 86%</span></div>'}
+  /* ---------- 运行设备：本机原生窗口 / 碰一碰连上的真机 / 模拟器 ---------- */
+  var DEV={
+    local:{name:'本机窗口',chip:'本机',icon:'#i-laptop',kd:'win',sp:.8,full:'本机 · 鸿蒙电脑原生窗口',file:'local:window'},
+    m70:{name:'Mate 70 Pro',chip:'Mate 70 Pro',icon:'#i-phone',kd:'phone',bp:'sm',res:'1260×2844',sp:1,pw:146,full:'HUAWEI Mate 70 Pro',file:'hdc:Mate 70 Pro'},
+    x6:{name:'Mate X6',chip:'Mate X6',icon:'#i-fold',kd:'fold',bp:'md',res:'展开 2440×2240',sp:1.12,pw:250,full:'HUAWEI Mate X6 · 展开',file:'hdc:Mate X6'},
+    emu:{name:'模拟器',chip:'模拟器',icon:'#i-phone',kd:'phone',bp:'sm',sp:1,full:'Mate 70 Pro 模拟器 · API 20',file:'emulator:Mate 70 Pro · API 20'}
+  };
+  var ORDER=['local','m70','x6','emu'];
+  var TG={local:true,m70:false,x6:false,emu:false},CONN={m70:false,x6:false},R={},LAST={},BUMP=null,BT=0;
+  function conn(d){return !(d in CONN)||CONN[d]}
+  function targets(){return ORDER.filter(function(d){return TG[d]&&conn(d)})}
+  function runDevs(){return JR.devs||targets()}
+  function isMulti(){return runDevs().length>1}
+  function devsLabel(list){list=list||runDevs();return list.length>1?list.length+' 台设备':list[0]==='emu'?'Mate 70 Pro 模拟器':list[0]?DEV[list[0]].name:'设备'}
+  function names(list){return list.map(function(d){return DEV[d].name}).join('、')}
+  /* 本机窗口：内容区像素 ↔ vp（窗口里 1 vp 画成 0.75 px），应用内容再放大 1.3 倍排版 */
+  var WZ=1.3,VPX=.75;
+  var W={cw:270,ch:390,x:0,y:0,moved:false,max:null,last:{k:'login'}};
+  function winVp(){return [Math.round(W.cw/VPX),Math.round(W.ch/VPX)]}
+  function winBp(){var v=winVp()[0];return v<320?'xs':v<600?'sm':v<840?'md':'lg'}
+  function devBase(d){if(d==='local')return [Math.round(W.cw/WZ),Math.round(W.ch/WZ)];if(d==='x6')return [336,308];return [164,370]}
+  function devMd(d){return d==='x6'||(d==='local'&&winVp()[0]>=600)}
+  function devBp(d){return d==='local'?winBp():DEV[d].bp}
+  function shotOf(d,sh){var b=devBase(d);return {k:sh.k,hot:sh.hot,md:devMd(d),kd:DEV[d].kd,bw:b[0],bh:b[1],stale:!JR.fixedMd}}
+  function cellW(d){var b=devBase(d);return Math.max(64,Math.round(63*b[0]/b[1])+2)}
+
+  /* ---------- 设备屏幕里的示例应用 ---------- */
+  var NOSB=false;
+  function sb(){return NOSB?'':'<div class="st"><span>9:41</span><span>5G · 86%</span></div>'}
   function hd(t,right){return '<div class="m-hd"><span>'+t+'</span><span class="m-sp"></span>'+(right||'')+'</div>'}
   function cartI(n,hot){return '<span class="m-cart'+(hot?' hot-'+hot:'')+'" data-tap="cart"><svg><use href="#i-cart"/></svg>'+(n?'<b>'+n+'</b>':'')+'</span>'}
   function prow(p,tap){return '<div class="row"'+(tap?' data-tap="'+tap+'"':'')+'><span class="th" style="background:'+p[2]+'"></span><span class="tx"><b>'+p[0]+'</b><span>'+p[1]+'</span></span>'+(p[3]||'')+'</div>'}
@@ -828,98 +856,315 @@
     detail0:function(hot){return detail(0,hot)},
     detail1:function(hot){return detail(1,hot)},
     cartpage:function(){return sb()+hd('购物车')+prow([EAR[0][0],'星空黑 · 标准版',G[0],'<span class="m-qty">×1</span>'])+'<div class="fill"></div><div class="m-bar"><span class="m-total">合计 <b>¥899</b></span><span class="m-buy" data-tap="pay">去结算</span></div>'},
-    checkout:function(hot){return sb()+hd('‹ 确认订单')+'<div class="card">小王 138****6021<br>上海市浦东新区 世纪大道 100 号</div>'+prow([EAR[0][0],'¥899 × 1',G[0]])+'<div class="m-kv"><span>商品金额</span><b>¥899</b></div><div class="m-kv"><span>运费</span><b>包邮</b></div><div class="fill"></div><div class="m-bar"><span class="m-total'+(hot?' hot-'+hot:'')+'">合计 <b>¥899</b></span><span class="m-buy">提交订单</span></div>'},
+    checkout:function(hot,sh){var tot=sh&&sh.md&&sh.stale?'¥0':'¥899';return sb()+hd('‹ 确认订单')+'<div class="card">小王 138****6021<br>上海市浦东新区 世纪大道 100 号</div>'+prow([EAR[0][0],'¥899 × 1',G[0]])+'<div class="m-kv"><span>商品金额</span><b>¥899</b></div><div class="m-kv"><span>运费</span><b>包邮</b></div><div class="fill"></div><div class="m-bar"><span class="m-total'+(hot?' hot-'+hot:'')+'">合计 <b>'+tot+'</b></span><span class="m-buy">提交订单</span></div>'},
     cartEmpty:function(hot){return sb()+hd('购物车')+'<div class="m-empty">购物车是空的</div><div class="fill"></div><div class="m-bar"><span class="m-total">合计 <b>¥0</b></span><span class="m-buy m-off'+(hot?' hot-'+hot:'')+'">去结算</span></div>'}
   };
-  function mini(shot){return '<div class="jr-scr"><div class="mapp">'+SCR[shot.k](shot.hot)+'</div></div>'}
-  function emuShow(k,tap,hot){
-    var el=$('#emu-scr');if(!el)return;
-    el.innerHTML='<div class="mapp">'+SCR[k](hot)+'</div>';
-    if(!tap)return;
-    var t=el.querySelector('[data-tap="'+tap+'"]');if(!t)return;
-    var x=t.offsetWidth/2,y=t.offsetHeight/2,n=t;
-    while(n&&n!==el){x+=n.offsetLeft;y+=n.offsetTop;n=n.offsetParent}
-    el.insertAdjacentHTML('beforeend','<span class="jr-tap" style="left:'+x+'px;top:'+y+'px"></span>');
+  /* md 右栏：CheckoutPage 作为子组件常驻，total 只在 aboutToAppear 里算一次（这就是 md 才有的 bug） */
+  function side(n,sh,hot){
+    var tot=n&&!(sh&&sh.stale)?'¥899':'¥0';
+    return hd('购物车')+(n?prow([EAR[0][0],'星空黑 · 标准版',G[0],'<span class="m-qty">×1</span>']):'<div class="m-empty" style="padding-top:44px">购物车是空的</div>')
+      +'<div class="fill"></div><div class="m-bar"><span class="m-total">合计 <b>'+tot+'</b></span><span class="m-buy'+(n?'':' m-off')+(hot?' hot-'+hot:'')+'" data-tap="pay">去结算</span></div>';
   }
+  function mdBody(sh){
+    var k=sh.k,hot=sh.hot,L,Rt;
+    switch(k){
+      case 'login':L='<div class="m-brand"><b>好物商城</b><span>秋季新品 · 满 500 减 50</span></div>';Rt=SCR.login();break;
+      case 'detail0':L=detail(0,hot);Rt=side(0,sh);break;
+      case 'detail1':L=detail(1,hot);Rt=side(1,sh);break;
+      case 'checkout':L=detail(1);Rt=SCR.checkout(hot,sh);break;
+      case 'cartEmpty':L=SCR.home();Rt=side(0,sh,hot);break;
+      case 'cartpage':L=SCR.search();Rt=side(1,sh);break;
+      default:L=SCR[k](hot,sh);Rt=side(0,sh);
+    }
+    return '<div class="mdl"><div class="mapp">'+L+'</div></div><div class="mdr"><div class="mapp">'+Rt+'</div></div>';
+  }
+  function screen(sh){
+    var kd=sh.kd||'phone',md=!!sh.md,inner;
+    NOSB=kd==='win'||md;
+    try{inner=md?'<div class="mdw">'+mdBody(sh)+'</div>':SCR[sh.k](sh.hot,sh)}finally{NOSB=false}
+    return '<div class="mapp'+(md?' md':'')+'">'+(md&&kd!=='win'?sb():'')+inner
+      +(kd==='win'?'':'<i class="m-gbar"></i>')+(kd==='phone'?'<i class="m-punch"></i>':kd==='fold'?'<i class="m-punch r"></i>':'')+'</div>';
+  }
+  function dims(sh){return [sh&&sh.bw||164,sh&&sh.bh||370]}
+  function mini(sh){var b=dims(sh);return '<div class="jr-scr" style="width:'+b[0]+'px;height:'+b[1]+'px">'+screen(sh)+'</div>'}
+  /* 截图缩略：按设备真实宽高比，高度 H */
+  function thumb(sh,H,cls,d){
+    var b=sh?dims(sh):(d?devBase(d):[164,370]),sc=H/b[1],w=Math.round(b[0]*sc);
+    return '<div class="jr-thumb'+(sh?'':' none')+(cls?' '+cls:'')+'" style="width:'+w+'px;height:'+H+'px">'
+      +(sh?'<div class="jr-scr" style="width:'+b[0]+'px;height:'+b[1]+'px;transform:scale('+sc.toFixed(4)+')">'+screen(sh)+'</div>':'<svg class="i"><use href="#i-camera"/></svg>')+'</div>';
+  }
+  /* 把一屏画进某台设备（按设备缩放），点哪里就在哪里画个触点 */
+  function paint(el,sh,tap,z){
+    if(!el)return;
+    el.innerHTML='<div class="zw" style="width:'+sh.bw+'px;height:'+sh.bh+'px;transform:scale('+(z||1)+')">'+screen(sh)+'</div>';
+    if(!tap)return;
+    var zw=el.firstChild,t=zw.querySelector('[data-tap="'+tap+'"]');if(!t)return;
+    var x=t.offsetWidth/2,y=t.offsetHeight/2,n=t;
+    while(n&&n!==zw){x+=n.offsetLeft;y+=n.offsetTop;n=n.offsetParent}
+    zw.insertAdjacentHTML('beforeend','<span class="jr-tap" style="left:'+x+'px;top:'+y+'px"></span>');
+  }
+  function devEl(d){return d==='local'?$('#hw-scr'):d==='emu'?$('#emu-scr'):$('#ph-'+d+' .jscr')}
+  function devZ(d){return d==='local'?WZ:d==='emu'?1:DEV[d].pw/devBase(d)[0]}
+  function paintDev(d,sh,tap){if(d==='local')W.last={k:sh.k,hot:sh.hot};else LAST[d]={k:sh.k,hot:sh.hot};paint(devEl(d),sh,tap,devZ(d))}
   function emuStrip(cls,icon,text){var s=$('#emu-strip');if(!s)return;s.className='emu-strip '+cls;s.innerHTML=(icon==='spin'?'<span class="spin"></span>':'<svg class="i"><use href="#'+icon+'"/></svg>')+'<span class="tx">'+text+'</span>'}
   function emuCap(t){var c=$('#emu-cap');if(c)c.textContent=t||''}
+  function devCap(d,cls,icon,text){
+    if(d==='emu'){emuStrip(cls,icon,text);return}
+    var el=d==='local'?$('#hw-st'):$('#phst-'+d);if(!el)return;
+    el.className=(d==='local'?'hc-st ':'ph-st ')+cls;el.title=text.replace(/<[^>]+>/g,'');
+    el.innerHTML=(icon==='spin'?'<span class="spin"></span>':'<svg class="i"><use href="#'+icon+'"/></svg>')+'<span class="tx">'+text+'</span>';
+  }
 
-  /* 每一步在模拟器上怎么走：先点哪里、最后停在哪一屏、断言过不过 */
-  function plan(s,last){
+  /* ---------- 本机自由窗口：出现在 IDE 旁边，可拖、可缩放 ---------- */
+  function clamp(v,a,b){return Math.max(a,Math.min(b,v))}
+  function ideR(){return ideRoot.getBoundingClientRect()}
+  function edRect(){var e=$('.editor').getBoundingClientRect(),i=ideR();return {l:e.left-i.left,t:e.top-i.top,w:e.width,h:e.height}}
+  function winShown(){return !$('#hwin').hidden}
+  function sizeWin(){
+    var hw=$('#hwin'),bd=$('#hw-body'),bp0=hw.dataset.bp;
+    hw.style.width=W.cw+'px';bd.style.width=W.cw+'px';bd.style.height=W.ch+'px';
+    var v=winVp(),bp=winBp();hw.dataset.bp=bp;
+    $('#hw-sz').innerHTML=v[0]+'×'+v[1]+' vp<span class="bp '+bp+'">'+bp+'</span>';
+    paint($('#hw-scr'),shotOf('local',W.last),null,WZ);
+    var mx=$('#hwin [data-hw="max"]');if(mx){mx.innerHTML='<svg><use href="#'+(W.max?'i-wres':'i-wmax')+'"/></svg>';mx.setAttribute('title',W.max?'还原':'最大化')}
+    if(bp0&&bp0!==bp&&JR.phase!=='running')renderTgt();
+  }
+  function placeWin(soft){
+    if(!winShown())return;
+    var E=edRect(),I=ideR();
+    if(!soft||!W.moved){W.x=E.l+E.w-W.cw-26;W.y=E.t+10}
+    W.x=clamp(W.x,4,I.width-W.cw-6);W.y=clamp(W.y,36,Math.max(36,I.height-W.ch-72));
+    var hw=$('#hwin');hw.style.left=W.x+'px';hw.style.top=W.y+'px';
+  }
+  function showWin(){
+    var hw=$('#hwin');
+    if(hw.hidden){hw.hidden=false;hw.classList.remove('opening');void hw.offsetWidth;hw.classList.add('opening');
+      if(!$('#hw-st').innerHTML)devCap('local','muted','i-laptop','本机原生窗口 · 不用起模拟器');}
+    sizeWin();placeWin(true);
+  }
+  function hideWin(){$('#hwin').hidden=true}
+  function toggleMax(){
+    if(W.max){var m=W.max;W.max=null;W.cw=m.cw;W.ch=m.ch;W.x=m.x;W.y=m.y;W.moved=m.moved}
+    else{var E=edRect();W.max={cw:W.cw,ch:W.ch,x:W.x,y:W.y,moved:W.moved};W.cw=Math.round(E.w-24);W.ch=Math.round(E.h-32-40);W.x=E.l+12;W.y=E.t+6;W.moved=true}
+    sizeWin();placeWin(true);
+  }
+  function bindWin(){
+    var hw=$('#hwin'),bar=$('#hw-bar');
+    bar.addEventListener('pointerdown',function(e){
+      if(e.target.closest('button'))return;
+      var I=ideR(),sx=e.clientX,sy=e.clientY,x0=W.x,y0=W.y;bar.setPointerCapture(e.pointerId);
+      function mv(ev){W.x=clamp(x0+ev.clientX-sx,0,I.width-W.cw);W.y=clamp(y0+ev.clientY-sy,36,I.height-W.ch-66);W.moved=true;hw.style.left=W.x+'px';hw.style.top=W.y+'px'}
+      function up(){bar.removeEventListener('pointermove',mv);bar.removeEventListener('pointerup',up)}
+      bar.addEventListener('pointermove',mv);bar.addEventListener('pointerup',up);
+    });
+    bar.addEventListener('dblclick',function(e){if(!e.target.closest('button'))toggleMax()});
+    $$('#hwin [data-rz]').forEach(function(g){
+      g.addEventListener('pointerdown',function(e){
+        e.preventDefault();var I=ideR(),sx=e.clientX,sy=e.clientY,c0=W.cw,h0=W.ch,m=g.dataset.rz;g.setPointerCapture(e.pointerId);
+        function mv(ev){if(m!=='b')W.cw=Math.round(clamp(c0+ev.clientX-sx,210,I.width-W.x-8));if(m!=='r')W.ch=Math.round(clamp(h0+ev.clientY-sy,280,I.height-W.y-66));W.max=null;sizeWin()}
+        function up(){g.removeEventListener('pointermove',mv);g.removeEventListener('pointerup',up)}
+        g.addEventListener('pointermove',mv);g.addEventListener('pointerup',up);
+      });
+    });
+    hw.addEventListener('click',function(e){
+      var b=e.target.closest('[data-hw]');if(!b)return;
+      if(b.dataset.hw==='max'){toggleMax();return}
+      if(JR.phase==='running'&&(JR.devs||[]).indexOf('local')>=0)stopRun();
+      hideWin();
+    });
+  }
+
+  /* ---------- 碰一碰连上的真机：右侧镜像 ---------- */
+  function rightIs(n){return ideRoot.getAttribute('data-right')===n}
+  function renderPhones(){
+    var el=$('#phs');if(!el)return;
+    var list=['m70','x6'].filter(function(d){return CONN[d]});
+    ideRoot.setAttribute('data-phones',list.length);
+    $('#ph-sub').textContent=list.length?'碰一碰连接 · '+list.length+' 台 · 镜像':'';
+    el.innerHTML=list.length?list.map(function(d){var D=DEV[d],b=devBase(d),z=D.pw/b[0],h=Math.round(b[1]*z);
+      return '<div class="phd'+(TG[d]?'':' off')+'" id="ph-'+d+'"><div class="phv '+D.kd+'"><div class="jscr" style="width:'+D.pw+'px;height:'+h+'px"></div></div>'
+        +'<div class="ph-cap"><svg class="i"><use href="'+D.icon+'"/></svg><b>'+D.name+'</b><span class="bp '+D.bp+'">'+D.bp+'</span></div>'
+        +'<div class="ph-st" id="phst-'+d+'" style="max-width:'+D.pw+'px"></div></div>'}).join(''):'<div class="phs-empty">碰一碰手机，连上后画面出现在这里</div>';
+    list.forEach(function(d){paint($('#ph-'+d+' .jscr'),shotOf(d,LAST[d]||{k:'login'}),null,devZ(d));devCap(d,'muted','i-nfc',TG[d]?'已连接 · 等旅程开始':'已连接 · 没加入这次运行')});
+  }
+  function syncSurfaces(){
+    var ts=targets();
+    if(!TG.local)hideWin();
+    renderPhones();
+    if(TG.emu)DemoFrame.setSide('right','devices');
+    else if(ts.some(function(d){return d==='m70'||d==='x6'}))DemoFrame.setSide('right','phones');
+    else if(rightIs('phones')||rightIs('devices'))DemoFrame.setSide('right',null);
+    placeWin(true);
+  }
+  function openSurfaces(devs){
+    if(devs.indexOf('emu')>=0)DemoFrame.setSide('right','devices');
+    else if(devs.some(function(d){return d==='m70'||d==='x6'})){renderPhones();DemoFrame.setSide('right','phones')}
+    else if(rightIs('phones')||rightIs('devices'))DemoFrame.setSide('right',null);
+    if(devs.indexOf('local')>=0)showWin();else placeWin(true);
+  }
+  /* 碰一碰：手机靠近电脑 → 波纹 → 系统连接卡 → 设备进「运行在」并勾上 */
+  function bump(d){
+    if(BUMP||JR.phase==='running'||JR.fixStage)return;
+    BUMP=d;var tok=++BT,D=DEV[d],c=$('#tapc');
+    function at(ms,fn){setTimeout(function(){if(tok===BT)fn()},ms)}
+    renderTgt();
+    c.className='tapc';c.hidden=false;
+    $('#tapc-t').textContent='正在连接…';
+    $('#tapc-s').innerHTML='把 <b>'+esc(D.full)+'</b> 碰一下电脑的碰一碰区域';
+    $('#tapc-m').textContent='';
+    void c.offsetWidth;c.classList.add('in');
+    at(200,function(){c.classList.add('go')});
+    at(820,function(){c.classList.add('hit')});
+    setTimeout(function(){
+      var before=targets().join();
+      CONN[d]=true;TG[d]=true;TG.emu=false;BUMP=null;
+      if(tok===BT){
+        c.classList.add('ok');
+        $('#tapc-t').textContent='已连接，可用于调试';
+        $('#tapc-s').innerHTML='<b>'+esc(D.full)+'</b>';
+        $('#tapc-m').textContent='无线调试已开 · hdc 已授权 · '+D.res+' · '+D.bp;
+      }
+      afterTgtChange(before);
+    },1500);
+    at(4300,function(){c.classList.remove('in')});
+    at(4600,function(){c.hidden=true});
+  }
+  function afterTgtChange(before){
+    if(targets().join()!==before&&JR.steps.length&&JR.phase!=='splitting'&&JR.phase!=='running'&&!JR.fixStage)resetResults();
+    syncSurfaces();renderJourney();
+  }
+
+  /* 每一步在某台设备上怎么走：先点哪里、最后停在哪一屏、断言过不过 */
+  function plan(s,last,d){
+    var md=devMd(d);
     switch(s.id){
       case 'login':return {frames:[{k:'login',tap:'btn',cap:'填手机号、验证码，点「登录」'}],ok:true,end:{k:'home'}};
       case 'search':return {frames:[{k:'home',tap:'search',cap:'点搜索框'},{k:'search',cap:'输入「'+JR.kw+'」，回车'}],ok:true,end:{k:'search'}};
       case 'cart':return {frames:[{k:'search',tap:'row1',cap:'点第 1 条'},{k:'detail0',tap:'add',cap:'点「加入购物车」'}],ok:JR.fixed,
-        end:JR.fixed?{k:'detail1',hot:'ok'}:{k:'detail0',hot:'err'},why:'等了 3 s，角标还是空的'};
+        end:JR.fixed?{k:'detail1',hot:'ok'}:{k:'detail0',hot:'err'},why:'等了 3 s，角标还是空的',kind:'cart'};
       case 'checkout':
-        if(hasStep('cart'))return {frames:[{k:'detail1',tap:'cart',cap:'点购物车'},{k:'cartpage',tap:'pay',cap:'点「去结算」'}],ok:true,end:{k:'checkout',hot:'ok'}};
-        return {frames:[{k:'home',tap:'cart',cap:'点购物车'}],ok:false,end:{k:'cartEmpty',hot:'err'},why:'购物车是空的，进不了结算页'};
+        if(!hasStep('cart'))return {frames:[{k:'home',tap:md?'pay':'cart',cap:md?'点右栏「去结算」':'点购物车'}],ok:false,end:{k:'cartEmpty',hot:'err'},why:'购物车是空的，进不了结算页',kind:'nocart'};
+        if(md)return {frames:[{k:'detail1',tap:'pay',cap:'点右栏购物车「去结算」'}],ok:JR.fixedMd,end:{k:'checkout',hot:JR.fixedMd?'ok':'err'},why:'合计 ¥0，右栏结算没重算',kind:'md'};
+        return {frames:[{k:'detail1',tap:'cart',cap:'点购物车'},{k:'cartpage',tap:'pay',cap:'点「去结算」'}],ok:true,end:{k:'checkout',hot:'ok'}};
       default:return {frames:[{k:last.k,cap:s.name||'按描述操作'}],ok:true,end:{k:last.k}};
     }
   }
+  function newR(){return {st:[],t:[],shot:[],why:[],kind:[],fi:-1,idx:0,done:false,last:{k:'login'}}}
+  function devT(d){var t=0,r=R[d];if(r)r.t.forEach(function(x){t+=x||0});return t}
+  function totalT(){var t=0;(JR.devs||[]).forEach(function(d){t=Math.max(t,devT(d))});return t.toFixed(1)}
+  /* 各设备结果汇总到每一步：有在跑的算在跑，有没过的算没过，全过才算过 */
+  function agg(){
+    var devs=JR.devs||[];if(!devs.length)return;
+    JR.steps.forEach(function(s,i){
+      var sts=devs.map(function(d){return R[d]&&R[d].st[i]||''});
+      var np=sts.filter(function(x){return x==='pass'}).length;
+      s.part=0;
+      s.st=sts.indexOf('run')>=0?'run':sts.indexOf('fail')>=0?'fail':np===sts.length?'pass':np&&sts.indexOf('')<0?(s.part=1,'pass'):sts.indexOf('skip')>=0&&sts.indexOf('')<0?'skip':'';
+      var fd=null;devs.forEach(function(d){if(!fd&&R[d].st[i]==='fail')fd=d});
+      s.fk=fd?R[fd].kind[i]:null;
+      s.nf=sts.filter(function(x){return x==='fail'}).length;s.np=np;
+      var sd=fd||devs.filter(function(d){return R[d].shot[i]})[0];
+      s.shot=sd?R[sd].shot[i]:null;
+      var t=0;devs.forEach(function(d){t=Math.max(t,R[d].t[i]||0)});s.t=t;
+    });
+    var ri=-1;devs.forEach(function(d){var r=R[d];if(!r.done&&r.idx<JR.steps.length&&(ri<0||r.idx<ri))ri=r.idx});
+    JR.runIdx=ri;if(JR.phase==='running'&&ri>=0)JR.sel=ri;
+  }
   function runJourney(done){
-    if(!JR.steps.length||JR.phase==='running')return;
+    var devs=targets();
+    if(!JR.steps.length||JR.phase==='running'||!devs.length)return;
     clearTimers();
-    JR.phase='running';JR.result=null;JR.view='step';
-    JR.steps.forEach(function(s){s.st='';s.t=0;s.shot=null});
-    DemoFrame.setSide('right','devices');
-    var i=0,n=JR.steps.length,last={k:'login'};
-    function step(){
-      if(i>=n){finish(true,-1);return}
-      var s=JR.steps[i],pl=plan(s,last),k=0;
-      s.st='run';JR.runIdx=i;JR.sel=i;
-      emuStrip('info','spin','第 '+(i+1)+'/'+n+' 步 · '+esc(s.name||'未命名'));
+    JR.phase='running';JR.result=null;JR.view='step';JR.devs=devs;JR.focus=devs[0];
+    R={};devs.forEach(function(d){R[d]=newR()});
+    JR.steps.forEach(function(s){s.st='';s.t=0;s.shot=null;s.fk=null});
+    openSurfaces(devs);
+    var n=JR.steps.length;
+    function tick(){agg();renderRun()}
+    function devStep(d){
+      var r=R[d],i=r.idx;
+      if(JR.phase!=='running'||R!==RR)return;
+      if(i>=n){r.done=true;devCap(d,'ok','i-check',n+'/'+n+' 通过 · '+devT(d).toFixed(1)+' s');if(d==='emu')emuCap('');check();return}
+      var s=JR.steps[i],pl=plan(s,r.last,d),k=0,sp=DEV[d].sp;
+      r.st[i]='run';
+      devCap(d,'info','spin','第 '+(i+1)+'/'+n+' 步 · '+esc(s.name||'未命名'));
       (function frame(){
-        if(k<pl.frames.length){var f=pl.frames[k++];s.shot={k:f.k};renderRun();emuShow(f.k,f.tap);emuCap(f.cap);later(frame,560);return}
-        s.st=pl.ok?'pass':'fail';s.t=pl.ok?s.dur:(s.failDur||3.0);s.shot=pl.end;last=pl.end;
-        emuShow(pl.end.k,null,pl.end.hot);emuCap(pl.ok?'断言通过 · '+s.t.toFixed(1)+' s':pl.why);
-        if(!pl.ok){for(var j=i+1;j<n;j++)JR.steps[j].st='skip';finish(false,i);return}
-        renderRun();i++;later(step,380);
+        if(JR.phase!=='running'||R!==RR)return;
+        if(k<pl.frames.length){
+          var f=pl.frames[k++];r.shot[i]=shotOf(d,{k:f.k});paintDev(d,r.shot[i],f.tap);
+          if(d==='emu')emuCap(f.cap);else devCap(d,'info','spin','第 '+(i+1)+'/'+n+' 步 · '+f.cap);
+          tick();later(frame,Math.round(560*sp));return;
+        }
+        r.st[i]=pl.ok?'pass':'fail';r.t[i]=pl.ok?s.dur*sp:(s.failDur||3.0);r.shot[i]=shotOf(d,pl.end);r.last=pl.end;r.why[i]=pl.why;r.kind[i]=pl.kind;
+        paintDev(d,r.shot[i]);
+        if(!pl.ok){
+          for(var j=i+1;j<n;j++)r.st[j]='skip';r.fi=i;r.done=true;
+          devCap(d,'err','i-err','第 '+(i+1)+' 步没过 · '+pl.why);if(d==='emu')emuCap(pl.why);
+          check();return;
+        }
+        if(d==='emu')emuCap('断言通过 · '+r.t[i].toFixed(1)+' s');else devCap(d,'info','i-check','第 '+(i+1)+' 步通过 · '+r.t[i].toFixed(1)+' s');
+        r.idx++;tick();later(function(){devStep(d)},Math.round(380*sp));
       })();
     }
-    function finish(ok,fi){
-      JR.phase=ok?'passed':'failed';JR.result=ok?'pass':'fail';JR.runIdx=-1;
-      if(ok){JR.view='summary';emuStrip('ok','i-check',n+'/'+n+' 通过 · '+totalT()+' s')}
+    function check(){if(devs.every(function(d){return R[d].done}))finish();else tick()}
+    function finish(){
+      agg();
+      var fails=devs.filter(function(d){return R[d].fi>=0});
+      JR.phase=fails.length?'failed':'passed';JR.result=fails.length?'fail':'pass';JR.runIdx=-1;
+      if(!fails.length)JR.view='summary';
       else{
-        var s=JR.steps[fi];JR.sel=fi;JR.view='fail';
-        emuStrip('err','i-err','第 '+(fi+1)+' 步没过 · '+(s.id==='cart'?'角标没变':'购物车是空的'));
-        if(cur==='journey'&&s.id==='cart')openFile('CartStore.ets',48,'err');
+        var fi=failIdx(),s=JR.steps[fi];JR.sel=fi;JR.view='fail';
+        JR.focus=fails.filter(function(d){return R[d].fi===fi})[0]||fails[0];
+        if(cur==='journey'){if(s.fk==='cart')openFile('CartStore.ets',48,'err');else if(s.fk==='md')openFile('CheckoutPage.ets',12,'err')}
       }
       renderJourney();if(cur==='publish')renderList();
-      if(done)done(ok);
+      if(done)done(!fails.length);
     }
-    renderJourney();step();
+    var RR=R;
+    renderJourney();
+    devs.forEach(function(d,j){later(function(){devStep(d)},j*120)});
   }
   function stopRun(){
     clearTimers();
-    JR.steps.forEach(function(s){if(s.st==='run'||!s.st)s.st='skip'});
-    JR.phase='ready';JR.result=null;JR.runIdx=-1;
-    emuStrip('muted','i-stopSq','已停止');emuCap('');
+    (JR.devs||[]).forEach(function(d){var r=R[d];if(!r)return;JR.steps.forEach(function(s,i){if(r.st[i]==='run'||!r.st[i])r.st[i]='skip'});r.done=true;devCap(d,'muted','i-stopSq','已停止');if(d==='emu')emuCap('')});
+    agg();JR.phase='ready';JR.result=null;JR.runIdx=-1;
     renderJourney();
   }
   /* 上架自检一起跑时：不放动画，直接给结果 */
   function quickEval(){
-    var last={k:'login'},fi=-1;
-    JR.steps.forEach(function(s,i){
-      if(fi>=0){s.st='skip';s.t=0;return}
-      var pl=plan(s,last);s.st=pl.ok?'pass':'fail';s.t=pl.ok?s.dur:(s.failDur||3.0);s.shot=pl.end;last=pl.end;if(!pl.ok)fi=i;
+    var devs=JR.devs||targets();if(!devs.length)devs=['local'];JR.devs=devs;R={};
+    devs.forEach(function(d){
+      var r=R[d]=newR();r.done=true;
+      JR.steps.forEach(function(s,i){
+        if(r.fi>=0){r.st[i]='skip';r.t[i]=0;return}
+        var pl=plan(s,r.last,d);r.st[i]=pl.ok?'pass':'fail';r.t[i]=pl.ok?s.dur*DEV[d].sp:(s.failDur||3.0);r.shot[i]=shotOf(d,pl.end);r.last=pl.end;r.why[i]=pl.why;r.kind[i]=pl.kind;if(!pl.ok)r.fi=i;
+      });
     });
+    agg();var fi=failIdx();
     JR.result=fi<0?'pass':'fail';JR.phase=fi<0?'passed':'failed';
-    if(fi>=0){JR.sel=fi;JR.view='fail'}else JR.view='summary';
+    if(fi>=0){JR.sel=fi;JR.view='fail';JR.focus=devs.filter(function(d){return R[d].fi===fi})[0]||devs[0]}else JR.view='summary';
   }
 
-  /* 失败步 → AI 修复任务：带上截图对比、HiLog、代码行；改完在模拟器上重跑这条旅程 */
+  /* 失败步 → AI 修复任务：带上截图、HiLog、代码行；改完在同一组设备上重跑这条旅程 */
+  var MD_FIX1="  @StorageProp('cartCount') @Watch('recalc') cartCount: number = 0;  // 购物车一变就重算";
+  var MD_FIX2="  recalc(): void { this.total = this.store.totalPrice() + this.freight; }";
+  var FIX={
+    cart:{file:'CartStore.ets',line:48,ctx:['截图对比','HiLog 3 行','CartStore.ets:48'],read:'读失败现场：items=1，角标还是 0',edit:'改 CartStore.ets：第 48 行后同步 cartCount',
+      apply:function(){var f=FILES['CartStore.ets'];if(!f.patched){f.lines.splice(48,0,[hl(CART_FIX)]);f.patched=1}JR.fixed=true;openFile('CartStore.ets',49,null,{ok:[49]})},
+      diff:[['48','  this.items.push({ sku: sku.id, … });',0],['49',"+ AppStorage.setOrCreate('cartCount', this.totalQty());",1]]},
+    md:{file:'CheckoutPage.ets',line:12,ctx:['按设备截图','HiLog 3 行','CheckoutPage.ets:12','md 分栏'],read:'读失败现场：只有 md 分栏里合计停在 ¥0',edit:'改 CheckoutPage.ets：购物车一变就重算 total',
+      apply:function(){var f=FILES['CheckoutPage.ets'];if(!f.patched){f.lines.splice(8,0,[hl(MD_FIX1)]);f.lines.splice(14,0,[hl(MD_FIX2)]);f.patched=1;TPL.checkout.line=33;JR.steps.forEach(function(s){if(s.id==='checkout')s.line=33})}JR.fixedMd=true;openFile('CheckoutPage.ets',9,null,{ok:[9,15]})},
+      diff:[['8','  @State freight: number = 0;',0],['9',"+ @StorageProp('cartCount') @Watch('recalc') cartCount …",1],['15','+ recalc(): void { this.total = this.store.totalPrice() + … }',1]]}
+  };
   function fixTask(){
     var fi=failIdx();if(fi<0||JR.fixStage)return;
-    JR.fixIdx=fi;JR.fixStage=1;renderJourney();
-    emuStrip('info','spin','DevEco Code 在改 CartStore.ets');emuCap('');
+    var F=FIX[JR.steps[fi].fk];if(!F)return;
+    JR.fixKind=JR.steps[fi].fk;JR.fixIdx=fi;JR.fixStage=1;renderJourney();
+    (JR.devs||[]).forEach(function(d){devCap(d,'info','spin','DevEco Code 在改 '+F.file);if(d==='emu')emuCap('')});
     later(function(){
       JR.fixStage=2;renderJD();
-      openFile('CartStore.ets',48,'err');
+      openFile(F.file,F.line,'err');
       later(function(){
-        var f=FILES['CartStore.ets'];if(!f.patched){f.lines.splice(48,0,[hl(CART_FIX)]);f.patched=1}
-        JR.fixed=true;
-        openFile('CartStore.ets',49,null,{ok:[49]});
+        F.apply();
         var a=$('#auto-pill');if(a){a.className='dm-pill ok';a.innerHTML='<svg><use href="#i-check"/></svg><span id="auto-txt">改动后自动跑 · 刚刚</span>'}
         JR.fixStage=3;renderJD();
         later(function(){runJourney(function(){JR.fixStage=0;renderJourney();if(cur==='publish')renderList()})},600);
@@ -935,8 +1180,10 @@
   /* 旅程文件：journeys/<name>.journey.json5，可提交进仓库、在上架自检里重复跑 */
   function q(s){return String(s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'")}
   function buildJourneyFile(){
+    var ds=targets();if(!ds.length)ds=['local'];
     var L=['// '+JR.name+' · 由一句话生成，可以手改','{',"  name: '"+q(JR.name)+"',","  prompt: '"+q(JR.prompt)+"',",
-      "  device: 'phone',  // Mate 70 Pro 模拟器 · API 20","  account: 'mock:testUser',  // entry/src/mock/mock-config.json5",'  steps: ['];
+      "  devices: ["+ds.map(function(d){return "'"+q(DEV[d].file)+"'"}).join(', ')+"],  // "+(ds.length>1?'并行跑':'')+(ds.indexOf('local')>=0?' 本机原生窗口':'')+(ds.some(function(d){return d==='m70'||d==='x6'})?' + 碰一碰连上的真机':''),
+      "  account: 'mock:testUser',  // entry/src/mock/mock-config.json5",'  steps: ['];
     JR.steps.forEach(function(s){
       L.push('    {');L.push("      name: '"+q(s.name)+"',");
       if(s.file)L.push("      locate: '"+s.file+':'+s.line+"',");
@@ -974,50 +1221,81 @@
     return '<button class="btab'+(cur==='journey'?' on':'')+'" data-scene="journey"><svg class="i"><use href="#i-route"/></svg>用户旅程'+c+'</button>';
   }
   function jrPubSection(){
-    var h='<div class="dm-group jr-grp">一起跑的旅程<span class="cnt">'+(JR.inPublish?1:0)+'</span><span class="grow"></span>'+(JR.inPublish?'<span class="dm-small dm-muted" style="font-weight:400">上架自检时在模拟器上跑</span>':'')+'</div>';
+    var h='<div class="dm-group jr-grp">一起跑的旅程<span class="cnt">'+(JR.inPublish?1:0)+'</span><span class="grow"></span>'+(JR.inPublish?'<span class="dm-small dm-muted" style="font-weight:400">上架自检时在 '+devsLabel(targets())+' 上跑</span>':'')+'</div>';
     if(!JR.inPublish)return h+'<div class="dm-item jr-new" id="jr-new" role="button" tabindex="0"><svg class="i"><use href="#i-add"/></svg><span class="msg">用一句话写一条用户旅程</span></div>';
     var n=JR.steps.length,fi=failIdx(),res=JR.pubRunning||JR.phase==='running'?'run':JR.result,pill;
-    pill=res==='run'?'<span class="dm-pill info"><span class="spin"></span>在模拟器上跑</span>'
+    pill=res==='run'?'<span class="dm-pill info"><span class="spin"></span>在跑</span>'
       :res==='fail'?'<span class="dm-pill err">第 '+(fi+1)+' 步没过</span>'
       :res==='pass'?'<span class="dm-pill ok">'+n+'/'+n+' 通过</span>':'<span class="dm-pill muted">待跑</span>';
     return h+'<div class="dm-item jr-pub'+(res==='fail'?' err':'')+'" id="jr-pub" role="button" tabindex="0"><svg class="i"><use href="#i-route"/></svg><span class="msg">旅程「'+esc(JR.name)+'」· '+n+' 步</span>'+pill+'<span class="loc" title="journeys/'+JR.file+'">'+JR.file+'</span></div>';
   }
+  function runLabel(){var ts=targets();if(!ts.length)return '先选运行设备';if(ts.length>1)return '在 '+ts.length+' 台设备上并行跑';return ts[0]==='local'?'在本机窗口跑':ts[0]==='emu'?'在模拟器上跑':'在 '+DEV[ts[0]].name+' 上跑'}
   function renderTools(){
     var h,busy=JR.phase==='running'||JR.fixStage;
     if(JR.phase==='empty'||JR.phase==='splitting'){
       h='<button class="btn primary" id="jr-split"'+(JR.phase==='splitting'?' disabled':'')+'><svg class="i"><use href="#i-genie"/></svg>'+(JR.phase==='splitting'?'正在拆…':'拆成步骤')+'</button>';
     }else{
-      h='<button class="btn primary" id="jr-run"'+(JR.fixStage||!JR.steps.length?' disabled':'')+'>'+(JR.phase==='running'&&!JR.fixStage?'<svg class="i"><use href="#i-stopSq"/></svg>停止':'<svg class="i"><use href="#i-play"/></svg>'+(JR.result?'再跑一遍':'在模拟器上跑'))+'</button>'
+      var none=!targets().length;
+      h='<button class="btn primary" id="jr-run"'+(JR.fixStage||!JR.steps.length||(none&&JR.phase!=='running')?' disabled':'')+'>'+(JR.phase==='running'&&!JR.fixStage?'<svg class="i"><use href="#i-stopSq"/></svg>停止':'<svg class="i"><use href="#i-play"/></svg>'+(JR.result&&!none?'再跑一遍':runLabel()))+'</button>'
         +'<button class="btn" id="jr-split"'+(busy?' disabled':'')+'>重新拆</button>';
     }
     $('#jr-tools').innerHTML=h;
     $('#jr-prompt').readOnly=!!busy;
   }
+  function renderTgt(){
+    var el=$('#jr-tgt');if(!el)return;
+    var busy=JR.phase==='running'||JR.fixStage||BUMP,ts=targets();
+    el.innerHTML='<span class="jr-tk">运行在</span>'+ORDER.map(function(d){
+      var D=DEV[d],c=conn(d),on=c&&TG[d],bp=devBp(d);
+      var rs=d==='local'?'原生窗口':d==='emu'?'API 20 · 要先启动':BUMP===d?'正在连接…':c?D.res:'碰一碰连接';
+      return '<button class="dchip'+(on?' on':'')+(c?'':' tap')+(BUMP===d?' busy':'')+'" data-dev="'+d+'"'+(busy?' disabled':'')+' title="'+esc(D.full)+(c?'':' · 手机碰一下电脑就能连上')+'">'
+        +(c?'<span class="cb"></span>':'<svg class="i nfc"><use href="#i-nfc"/></svg>')
+        +'<svg class="i"><use href="'+D.icon+'"/></svg><b>'+D.chip+'</b><span class="rs">'+rs+'</span>'
+        +(d!=='emu'?'<span class="bp '+bp+'">'+bp+'</span>':'')+'</button>';
+    }).join('')+'<span class="grow"></span><span class="jr-tgs">'+(ts.length>1?'并行 '+ts.length+' 台 · 结果按设备并排':ts.length?'':'至少选一台')+'</span>';
+  }
   function renderSum(){
     var el=$('#jr-sum');
     if(!JR.steps.length||JR.phase==='splitting'){el.hidden=true;return}
     el.hidden=false;
-    var n=JR.steps.length,r,fi=failIdx();
-    if(JR.phase==='running')r='<span class="spin"></span>在 Mate 70 Pro 模拟器上跑 · 第 '+(JR.runIdx+1)+'/'+n+' 步';
-    else if(JR.result==='fail')r='<span class="bad">'+passN()+'/'+n+' 通过 · 第 '+(fi+1)+' 步没过</span>· '+totalT()+' s';
-    else if(JR.result==='pass')r='<span class="good">'+n+'/'+n+' 通过</span>· '+totalT()+' s'+(JR.fixed?' · 修复已验证':'');
+    var n=JR.steps.length,r,fi=failIdx(),devs=JR.devs||[],mul=devs.length>1;
+    if(JR.phase==='running')r='<span class="spin"></span>'+(mul?'在 '+devs.length+' 台设备上并行跑 · '+devs.map(function(d){var x=R[d];return DEV[d].chip+' '+Math.min(n,x.idx+(x.done?0:1))+'/'+n}).join(' · ')
+      :'在 '+devsLabel(devs)+' 上跑 · 第 '+(JR.runIdx+1)+'/'+n+' 步');
+    else if(JR.result==='fail'){
+      var s=JR.steps[fi],fd=devs.filter(function(d){return R[d]&&R[d].st[fi]==='fail'});
+      r='<span class="bad">'+(mul?(fd.length===devs.length?'第 '+(fi+1)+' 步没过 · '+fd.length+'/'+devs.length+' 台':'第 '+(fi+1)+' 步只在 '+names(fd)+' 上没过'):passN()+'/'+n+' 通过 · 第 '+(fi+1)+' 步没过')+'</span>· '+totalT()+' s';
+    }
+    else if(JR.result==='pass')r='<span class="good">'+(mul?devs.length+' 台 × '+n+' 步全部通过':n+'/'+n+' 通过')+'</span>· '+(mul?'最长 ':'')+totalT()+' s'+(JR.fixed||JR.fixedMd?' · 修复已验证':'');
     else r=n+' 条断言 · 预计 '+estT()+' s';
     var busy=JR.phase==='running'||JR.fixStage;
     el.innerHTML='旅程「'+esc(JR.name)+'」<span class="cnt">'+n+' 步</span><button class="jr-add" id="jr-add"'+(busy?' disabled':'')+'><svg class="i"><use href="#i-add"/></svg>加一步</button><span class="grow"></span><span class="jr-sumr">'+r+'</span>';
   }
-  function thumbHTML(s){return s.shot?'<div class="jr-thumb">'+mini(s.shot)+'</div>':'<div class="jr-thumb none"><svg class="i"><use href="#i-camera"/></svg></div>'}
+  function thumbHTML(s){return thumb(s.shot,63,null,runDevs()[0])}
+  function stText(st,t){return st==='pass'?'通过 · '+(t||0).toFixed(1)+' s':st==='fail'?'没过':st==='run'?'在跑':st==='skip'?'未执行':'待跑'}
+  function cellsHTML(i){
+    return '<span class="jr-cells">'+runDevs().map(function(d){
+      var r=R[d]||{},st=(r.st||[])[i]||'',sh=(r.shot||[])[i];
+      return '<span class="jr-cell '+st+'" style="width:'+cellW(d)+'px" title="'+DEV[d].name+' · '+stText(st,(r.t||[])[i])+'">'+thumb(sh||null,63,null,d)
+        +(st==='run'?'<i class="mk"><span class="spin"></span></i>':st==='pass'?'<i class="mk ok"><svg><use href="#i-check"/></svg></i>':st==='fail'?'<i class="mk err"><svg><use href="#i-err"/></svg></i>':'')+'</span>';
+    }).join('')+'</span>';
+  }
+  function colHead(){
+    return '<div class="jr-colhd" id="jr-colhd"><span></span><span class="jr-cells">'+runDevs().map(function(d){
+      return '<span class="jr-ch" style="width:'+cellW(d)+'px" title="'+esc(DEV[d].full)+' · '+devBp(d)+'"><svg class="i"><use href="'+DEV[d].icon+'"/></svg><span>'+DEV[d].name+'</span></span>'}).join('')+'</span><span class="rt">按设备并排 · 截图按真实比例</span></div>';
+  }
   function stepRow(s,i,anim){
-    var st=s.st,busy=JR.phase==='running'||JR.fixStage,ro=busy?' readonly':'';
+    var st=s.st,busy=JR.phase==='running'||JR.fixStage,ro=busy?' readonly':'',mul=isMulti(),nd=runDevs().length;
     var pill=st==='run'?'<span class="dm-pill info"><span class="spin"></span>在跑</span>'
-      :st==='pass'?'<span class="dm-pill ok">通过</span>':st==='fail'?'<span class="dm-pill err">没过</span>'
+      :st==='pass'?'<span class="dm-pill ok">'+(s.part?s.np+'/'+nd+' 通过':'通过')+'</span>'
+      :st==='fail'?'<span class="dm-pill err">'+(mul&&s.nf<nd?s.nf+'/'+nd+' 没过':'没过')+'</span>'
       :st==='skip'?'<span class="dm-pill muted">未执行</span>':'<span class="dm-pill muted">待跑</span>';
     var dur=(st==='pass'||st==='fail')?s.t.toFixed(1)+' s':(st==='run'?'…':'—');
-    var loc=locText(s);
+    var loc=locText(s),bad=st==='fail'&&(s.fk==='cart'||s.fk==='md');
     return '<div class="jr-step'+(st?' '+st:'')+(i===JR.sel&&JR.view!=='summary'?' sel':'')+(anim?' enter':'')+'" data-i="'+i+'"'+(anim?' style="--d:'+(i*0.08)+'s"':'')+'>'
-      +'<span class="jr-no">'+(i+1)+'</span>'+thumbHTML(s)
+      +'<span class="jr-no">'+(i+1)+'</span>'+(mul?cellsHTML(i):thumbHTML(s))
       +'<div class="jr-body">'
         +'<div class="jr-l1"><input class="jr-name" data-f="name" value="'+esc(s.name)+'" placeholder="这一步做什么"'+ro+' aria-label="第 '+(i+1)+' 步"><span class="grow"></span>'
-          +(loc?'<span class="loc'+(st==='fail'&&s.id==='cart'?' bad':'')+'" data-loc="'+i+'" role="button" tabindex="0" title="跳到代码">'+loc+'</span>':'')
+          +(loc?'<span class="loc'+(bad?' bad':'')+'" data-loc="'+i+'" role="button" tabindex="0" title="跳到代码">'+loc+'</span>':'')
           +'<span class="jr-dur">'+dur+'</span>'+pill
           +'<button class="abtn jr-del" data-del="'+i+'" title="删掉这一步"'+(busy?' disabled':'')+'><svg class="i"><use href="#i-closeS"/></svg></button></div>'
         +'<div class="jr-l2"><span class="jr-tag">断言</span><input class="jr-exp" data-f="exp" value="'+esc(s.exp)+'" placeholder="跑完这一步应该看到什么"'+ro+' aria-label="第 '+(i+1)+' 步的断言"></div>'
@@ -1025,12 +1303,12 @@
       +'</div></div>';
   }
   function renderSteps(anim){
-    var el=$('#jr-steps'),busy=JR.phase==='running'||JR.fixStage;
+    var el=$('#jr-steps');
     if(JR.phase==='splitting'){el.innerHTML='<div class="jr-busy"><span class="spin"></span>在读 LoginPage.ets、ListPage.ets、CartStore.ets，拆步骤和断言…</div>';return}
-    if(JR.phase==='empty'){el.innerHTML='<div class="jr-empty"><svg><use href="#i-route"/></svg><div>把这句话拆成能在模拟器上跑的步骤，每步带断言</div></div>';return}
-    el.innerHTML=JR.steps.map(function(s,i){return stepRow(s,i,anim)}).join('');
+    if(JR.phase==='empty'){el.innerHTML='<div class="jr-empty"><svg><use href="#i-route"/></svg><div>把这句话拆成能在设备上跑的步骤，每步带断言</div></div>';return}
+    el.innerHTML=(isMulti()?colHead():'')+JR.steps.map(function(s,i){return stepRow(s,i,anim)}).join('');
   }
-  function renderRun(){renderSteps();renderSum();renderJD();renderTools();renderTabs();if(cur==='publish')renderList();var r=$('#jr-steps .jr-step.run');if(r)r.scrollIntoView({block:'nearest'})}
+  function renderRun(){renderSteps();renderSum();renderJD();renderTools();renderTgt();renderTabs();if(cur==='publish')renderList();var r=$('#jr-steps .jr-step.run');if(r)r.scrollIntoView({block:'nearest'})}
   function markSel(){$$('#jr-steps .jr-step').forEach(function(r){r.classList.toggle('sel',+r.dataset.i===JR.sel&&JR.view!=='summary')})}
 
   var LOG=[
@@ -1038,52 +1316,79 @@
     ['10:24:31.207','I','CartStore','addItem sku=EB-2231 <mark>items=1</mark>'],
     ['10:24:34.212','E','Journey','等 cartCount=1 超时 3 s，实际 0']
   ];
-  function logHTML(){return LOG.map(function(l){return '<div'+(l[1]==='E'?' class="jr-le"':'')+'><span class="jr-lt">'+l[0]+'</span><span class="jr-lv">'+l[1]+'</span><span class="jr-lm">'+l[2]+': '+l[3]+'</span></div>'}).join('')}
+  function logMd(){return [
+    ['10:31:02.114','I','CheckoutPage','aboutToAppear <mark>total=0</mark> · 登录后右栏就建好了'],
+    ['10:31:05.870','I','CartStore','addItem sku=EB-2231 items=1 · cartCount=1'],
+    ['10:31:07.402','E','Journey',(JR.focus&&DEV[JR.focus]?DEV[JR.focus].name:'Mate X6')+' · 合计 ¥0，期望 ¥899']
+  ]}
+  function logHTML(arr){return (arr||LOG).map(function(l){return '<div'+(l[1]==='E'?' class="jr-le"':'')+'><span class="jr-lt">'+l[0]+'</span><span class="jr-lv">'+l[1]+'</span><span class="jr-lm">'+l[2]+': '+l[3]+'</span></div>'}).join('')}
+  /* 这一步在每台设备上的截图，按真实比例并排 */
+  function devRow(i,H){
+    return '<div class="jr-devrow">'+(JR.devs||[]).map(function(d){var r=R[d]||newR(),st=r.st[i]||'',sh=r.shot[i];
+      return '<figure class="jr-dv '+st+'">'+thumb(sh||null,H,null,d)+'<figcaption><b>'+DEV[d].name+'</b><span class="bp '+devBp(d)+'">'+(sh&&sh.md?'md':devBp(d))+'</span></figcaption><span class="jr-dvst">'+stText(st,r.t[i])+'</span></figure>'}).join('')+'</div>';
+  }
   function stepHTML(s,i){
     var cls=s.st==='pass'?'ok':s.st==='fail'?'err':'info',ic=s.st==='pass'?'i-check':s.st==='fail'?'i-err':s.st==='run'?'i-play':'i-route';
     var tt=s.st==='pass'||s.st==='fail'?'耗时 '+s.t.toFixed(1)+' s':s.st==='run'?'在跑…':s.st==='skip'?'未执行':'预计 '+(s.dur||1.4).toFixed(1)+' s';
+    var mul=isMulti()&&JR.devs;
     var body='<div class="dt-loc">'+(s.file?'<svg class="i"><use href="#i-ets"/></svg><span class="loc" data-jloc="'+i+'" role="button" tabindex="0">'+s.file+':'+s.line+'</span><span>'+esc(s.ctl||'')+'</span>':'<span>跑的时候按描述定位控件</span>')+'<span class="grow"></span><span>'+tt+'</span></div>'
       +'<div><div class="dt-h">AI 拆出的操作</div><ol>'+s.ops.map(function(o){return '<li>'+esc(o)+'</li>'}).join('')+'</ol></div>'
       +'<div><div class="dt-h">断言</div><p>'+(s.exp?esc(s.exp):'<span class="dm-muted">还没写</span>')+'</p></div>'
+      +(mul?'<div><div class="dt-h">各设备</div><div class="jr-dres">'+JR.devs.map(function(d){var r=R[d]||newR(),st=r.st[i]||'';
+          return '<div><svg class="i"><use href="'+DEV[d].icon+'"/></svg><span>'+DEV[d].name+'</span><span class="bp '+devBp(d)+'">'+devBp(d)+'</span><span class="grow"></span><span class="dm-pill '+(st==='pass'?'ok':st==='fail'?'err':st==='run'?'info':'muted')+'">'+stText(st,r.t[i])+'</span></div>'}).join('')+'</div></div>':'')
       +(s.edited&&!s.custom?'<div><span class="dm-pill warn">改过 · 跑的时候按新描述重新定位</span></div>':'');
     return '<div class="dt-head '+cls+'"><svg><use href="#'+ic+'"/></svg><span>第 '+(i+1)+' 步 · '+esc(s.name||'未命名')+'</span></div>'
-      +(s.shot?'<div class="jr-sv"><div>'+body+'</div><div class="jr-thumb lg">'+mini(s.shot)+'</div></div>':body);
+      +(s.shot&&!mul?'<div class="jr-sv"><div>'+body+'</div>'+thumb(s.shot,113,'lg')+'</div>':body);
   }
   function failHTML(s,i){
-    if(s.id!=='cart')return '<div class="jr-fail" id="jr-fail">'
+    var devs=JR.devs||[],mul=devs.length>1,fd=devs.filter(function(d){return R[d]&&R[d].st[i]==='fail'}),pd=devs.filter(function(d){return R[d]&&R[d].st[i]==='pass'});
+    if(s.fk==='md')return '<div class="jr-fail" id="jr-fail">'
+      +'<div class="dt-head err"><svg><use href="#i-err"/></svg><span>第 '+(i+1)+' 步「'+esc(s.name)+'」只在 '+names(fd)+' 上没过：合计 ¥0</span></div>'
+      +'<div class="jr-assert"><span class="k2">断言</span><span>'+esc(s.exp)+'</span><span class="k2">实际</span><span class="bad">'+names(fd)+'（md 分栏）合计 ¥0'+(pd.length?' · '+names(pd)+' 都是 ¥899':'')+'</span></div>'
+      +'<div><div class="dt-h">按设备并排 · 只有 md 断点没过</div>'+devRow(i,100)+'</div>'
+      +'<div><div class="dt-h">HiLog · '+names(fd)+'</div><div class="jr-log">'+logHTML(logMd())+'</div></div>'
+      +'<div><div class="dt-h">原因</div><p>md 断点（≥ 600 vp）下购物车常驻右栏，<code>CheckoutPage</code> 登录后就建好了；<span class="loc bad" data-cause="md" role="button" tabindex="0">CheckoutPage.ets:12</span> 只在 <code>aboutToAppear</code> 里算一次 total，加购后不再重算。sm 的手机每次进结算页都重新创建，所以没事。</p></div>'
+      +'</div>';
+    if(s.fk!=='cart')return '<div class="jr-fail" id="jr-fail">'
       +'<div class="dt-head err"><svg><use href="#i-err"/></svg><span>第 '+(i+1)+' 步「'+esc(s.name)+'」没过：购物车是空的</span></div>'
-      +'<div class="jr-sv"><div><div class="jr-assert"><span class="k2">断言</span><span>'+esc(s.exp)+'</span><span class="k2">实际</span><span class="bad">进不了结算页，「去结算」是灰的</span></div>'
-      +'<div><div class="dt-h">原因</div><p>这一步要先把商品加进购物车，旅程里已经没有「加入购物车」这一步了。</p></div></div>'
-      +'<div class="jr-thumb lg">'+mini(s.shot||{k:'cartEmpty',hot:'err'})+'</div></div></div>';
+      +(mul?'<div class="jr-assert"><span class="k2">断言</span><span>'+esc(s.exp)+'</span><span class="k2">实际</span><span class="bad">进不了结算页，「去结算」是灰的</span></div><div><div class="dt-h">按设备并排</div>'+devRow(i,90)+'</div>'
+        :'<div class="jr-sv"><div><div class="jr-assert"><span class="k2">断言</span><span>'+esc(s.exp)+'</span><span class="k2">实际</span><span class="bad">进不了结算页，「去结算」是灰的</span></div></div>'+thumb(s.shot||{k:'cartEmpty',hot:'err'},113,'lg')+'</div>')
+      +'<div><div class="dt-h">原因</div><p>这一步要先把商品加进购物车，旅程里已经没有「加入购物车」这一步了。</p></div>'
+      +'</div>';
     return '<div class="jr-fail" id="jr-fail">'
-      +'<div class="dt-head err"><svg><use href="#i-err"/></svg><span>第 '+(i+1)+' 步「'+esc(s.name)+'」没过：角标没变</span></div>'
+      +'<div class="dt-head err"><svg><use href="#i-err"/></svg><span>第 '+(i+1)+' 步「'+esc(s.name)+'」没过：角标没变'+(mul?' · '+fd.length+'/'+devs.length+' 台':'')+'</span></div>'
       +'<div class="jr-assert"><span class="k2">断言</span><span>'+esc(s.exp)+'</span><span class="k2">实际</span><span class="bad">等了 3 s，角标还是空的</span></div>'
-      +'<div><div class="dt-h">截图对比</div><div class="jr-cmp">'
-        +'<div class="jr-crop">'+mini({k:'detail1',hot:'ok'})+'<span class="jr-lbl ok">期望 · 角标 1</span></div>'
-        +'<div class="jr-crop">'+mini({k:'detail0',hot:'err'})+'<span class="jr-lbl err">实际 · 没有角标</span></div>'
-      +'</div></div>'
+      +(mul?'<div><div class="dt-h">按设备并排 · '+(fd.length===devs.length?'都没过，同一处原因':names(fd)+' 没过')+'</div>'+devRow(i,84)+'</div>'
+        :'<div><div class="dt-h">截图对比 · '+devsLabel(devs)+'</div><div class="jr-cmp">'
+          +'<div class="jr-crop">'+mini({k:'detail1',hot:'ok',kd:'phone'})+'<span class="jr-lbl ok">期望 · 角标 1</span></div>'
+          +'<div class="jr-crop">'+mini({k:'detail0',hot:'err',kd:'phone'})+'<span class="jr-lbl err">实际 · 没有角标</span></div>'
+        +'</div></div>')
       +'<div><div class="dt-h">HiLog · 点击后 3 s</div><div class="jr-log">'+logHTML()+'</div></div>'
-      +'<div><div class="dt-h">原因</div><p><span class="loc bad" data-cause role="button" tabindex="0">CartStore.ets:48</span> 只 push 进了 items，没同步 AppStorage 的 <code>cartCount</code>；角标读的是 <code>@StorageProp</code>，所以不变。HiLog 里 items=1 对得上。</p></div>'
+      +'<div><div class="dt-h">原因</div><p><span class="loc bad" data-cause="cart" role="button" tabindex="0">CartStore.ets:48</span> 只 push 进了 items，没同步 AppStorage 的 <code>cartCount</code>；角标读的是 <code>@StorageProp</code>，所以不变。HiLog 里 items=1 对得上。</p></div>'
       +'</div>';
   }
   function fixHTML(){
-    var st=JR.fixStage,s=JR.steps[JR.fixIdx]||{name:'加入购物车'},n=JR.steps.length,running=st===3&&JR.phase==='running';
+    var F=FIX[JR.fixKind]||FIX.cart,st=JR.fixStage,s=JR.steps[JR.fixIdx]||{name:''},n=JR.steps.length,running=st===3&&JR.phase==='running',devs=JR.devs||targets();
     function it(state,txt){return '<div class="'+state+'"><span class="mk">'+(state==='done'?'<svg><use href="#i-check"/></svg>':state==='run'?'<span class="spin"></span>':'<i></i>')+'</span><span>'+txt+'</span></div>'}
     return '<div class="dt-head info"><svg><use href="#i-genie"/></svg><span>修复任务 · 第 '+(JR.fixIdx+1)+' 步「'+esc(s.name)+'」</span></div>'
-      +'<div><div class="dt-h">带给 DevEco Code 的现场</div><div class="jr-ctx"><span><svg class="i"><use href="#i-camera"/></svg>截图对比</span><span>HiLog 3 行</span><span>CartStore.ets:48</span><span>旅程 '+n+' 步</span></div></div>'
+      +'<div><div class="dt-h">带给 DevEco Code 的现场</div><div class="jr-ctx">'+F.ctx.map(function(c,i){return '<span>'+(i?'':'<svg class="i"><use href="#i-camera"/></svg>')+c+'</span>'}).join('')+'<span>旅程 '+n+' 步</span>'+(devs.length>1?'<span>'+devs.length+' 台设备</span>':'')+'</div></div>'
       +'<div class="jr-prog">'
-        +it(st>1?'done':'run','读失败现场：items=1，角标还是 0')
-        +it(st>2?'done':st===2?'run':'wait','改 CartStore.ets：第 48 行后同步 cartCount')
-        +it(st===3?(running?'run':'done'):'wait','在模拟器上重跑这条旅程'+(running?' · 第 '+(JR.runIdx+1)+'/'+n+' 步':''))
+        +it(st>1?'done':'run',F.read)
+        +it(st>2?'done':st===2?'run':'wait',F.edit)
+        +it(st===3?(running?'run':'done'):'wait','在 '+devsLabel(devs)+' 上重跑这条旅程'+(running?' · 第 '+(JR.runIdx+1)+'/'+n+' 步':''))
       +'</div>'
-      +(st>=3?'<div><div class="dt-h">改动 · CartStore.ets</div><div class="jr-log jr-diff"><div><span class="jr-lt">48</span><span class="jr-lm">  this.items.push({ sku: sku.id, … });</span></div><div class="jr-dadd"><span class="jr-lt">49</span><span class="jr-lm">+ AppStorage.setOrCreate(\'cartCount\', this.totalQty());</span></div></div></div>':'');
+      +(st>=3?'<div><div class="dt-h">改动 · '+F.file+'</div><div class="jr-log jr-diff">'+F.diff.map(function(l){return '<div'+(l[2]?' class="jr-dadd"':'')+'><span class="jr-lt">'+l[0]+'</span><span class="jr-lm">'+esc(l[1])+'</span></div>'}).join('')+'</div></div>':'');
   }
   function summaryHTML(){
-    var n=JR.steps.length,ci=-1;JR.steps.forEach(function(s,i){if(s.id==='cart')ci=i});
-    return '<div class="dt-head ok"><svg><use href="#i-check"/></svg><span>旅程「'+esc(JR.name)+'」'+n+'/'+n+' 通过</span></div>'
-      +'<div class="dt-loc"><span>用时 '+totalT()+' s</span><span>·</span><span>Mate 70 Pro 模拟器 · API 20</span></div>'
-      +(JR.fixed&&ci>=0?'<p class="jr-verified"><svg><use href="#i-check"/></svg><span>修复已在模拟器上验证：<span class="loc" data-fixloc role="button" tabindex="0">CartStore.ets:49</span> 补上 cartCount 同步后，第 '+(ci+1)+' 步角标 0 → 1</span></p>':'')
-      +'<div><div class="dt-h">每步截图</div><div class="jr-film">'+JR.steps.map(function(s,i){return '<figure class="jr-fig pass" data-fig="'+i+'"><div class="jr-thumb lg">'+(s.shot?mini(s.shot):'')+'</div><figcaption title="'+esc(s.name)+'">'+(i+1)+' · '+esc(s.name)+'</figcaption></figure>'}).join('')+'</div></div>';
+    var devs=JR.devs||[],mul=devs.length>1,n=JR.steps.length,ci=-1,oi=-1;
+    JR.steps.forEach(function(s,i){if(s.id==='cart')ci=i;if(s.id==='checkout')oi=i});
+    var hasMd=devs.some(function(d){return devMd(d)});
+    return '<div class="dt-head ok"><svg><use href="#i-check"/></svg><span>旅程「'+esc(JR.name)+'」'+(mul?'在 '+devs.length+' 台设备上 ':'')+n+'/'+n+' 通过</span></div>'
+      +'<div class="dt-loc"><span>'+(mul?'并行 · 最长 ':'用时 ')+totalT()+' s</span><span>·</span><span>'+(mul?names(devs):DEV[devs[0]].full)+'</span></div>'
+      +(JR.fixed&&ci>=0?'<p class="jr-verified"><svg><use href="#i-check"/></svg><span>修复已在 '+devsLabel(devs)+' 上验证：<span class="loc" data-fixloc="cart" role="button" tabindex="0">CartStore.ets:49</span> 补上 cartCount 同步后，第 '+(ci+1)+' 步角标 0 → 1</span></p>':'')
+      +(JR.fixedMd&&oi>=0&&hasMd?'<p class="jr-verified"><svg><use href="#i-check"/></svg><span>一多修复已验证：<span class="loc" data-fixloc="md" role="button" tabindex="0">CheckoutPage.ets:9</span> 监听 cartCount 后，md 分栏第 '+(oi+1)+' 步合计 ¥899，sm 没回退</span></p>':'')
+      +(mul?'<div><div class="dt-h">按设备并排 · 最后一屏</div>'+devRow(n-1,110)+'</div>':'')
+      +'<div><div class="dt-h">每步截图'+(mul?' · '+DEV[devs[0]].name:'')+'</div><div class="jr-film">'+JR.steps.map(function(s,i){var sh=mul?R[devs[0]].shot[i]:s.shot;return '<figure class="jr-fig pass" data-fig="'+i+'">'+thumb(sh||null,100,'lg',devs[0])+'<figcaption title="'+esc(s.name)+'">'+(i+1)+' · '+esc(s.name)+'</figcaption></figure>'}).join('')+'</div></div>';
   }
   function renderJD(){
     var d=$('#jr-dbody'),h;
@@ -1097,11 +1402,11 @@
     var f=$('#jr-foot'),h='';
     if(JR.phase==='empty'||JR.phase==='splitting'){f.hidden=true;return}
     f.hidden=false;
-    if(JR.fixStage)h='<span class="dm-pill info"><span class="spin"></span>'+(JR.fixStage<3?'DevEco Code 在改 CartStore.ets':'在模拟器上重跑旅程')+'</span><span class="grow"></span><span class="dm-muted">改完自动验证</span>';
-    else if(JR.phase==='running')h='<span class="dm-pill info"><span class="spin"></span>在模拟器上跑 · 第 '+(JR.runIdx+1)+'/'+JR.steps.length+' 步</span>';
+    if(JR.fixStage)h='<span class="dm-pill info"><span class="spin"></span>'+(JR.fixStage<3?'DevEco Code 在改 '+(FIX[JR.fixKind]||FIX.cart).file:'在 '+devsLabel()+' 上重跑旅程')+'</span><span class="grow"></span><span class="dm-muted">改完自动验证</span>';
+    else if(JR.phase==='running')h='<span class="dm-pill info"><span class="spin"></span>在 '+devsLabel()+' 上跑 · 第 '+(JR.runIdx+1)+'/'+JR.steps.length+' 步</span>';
     else{
       var fi=failIdx();
-      if(JR.phase==='failed'&&fi>=0)h+=JR.steps[fi].id==='cart'
+      if(JR.phase==='failed'&&fi>=0)h+=FIX[JR.steps[fi].fk]
         ?'<button class="btn primary" id="jr-fix"><svg class="i"><use href="#i-genie"/></svg>转成修复任务</button>'
         :'<button class="btn primary" id="jr-restore"><svg class="i"><use href="#i-add"/></svg>补回「加入购物车」</button>';
       h+=!JR.saved?'<button class="btn" id="jr-save"><svg class="i"><use href="#i-json"/></svg>存为旅程文件</button>'
@@ -1112,11 +1417,11 @@
     }
     f.innerHTML=h;
   }
-  function renderJourney(anim){renderTools();renderSum();renderSteps(anim);renderJD();renderTabs()}
+  function renderJourney(anim){renderTools();renderTgt();renderSum();renderSteps(anim);renderJD();renderTabs()}
 
   function split(){
     var p=$('#jr-prompt').value.trim();if(!p||JR.phase==='running'||JR.fixStage||JR.phase==='splitting')return;
-    JR.prompt=p;JR.phase='splitting';JR.steps=[];renderJourney();
+    JR.prompt=p;JR.phase='splitting';JR.steps=[];R={};JR.devs=null;renderJourney();
     later(function(){
       JR.steps=parsePrompt(p);
       JR.name=/结算|下单|支付/.test(p)?'下单结算':(JR.steps.length&&JR.steps[JR.steps.length-1].name)||'新旅程';
@@ -1131,7 +1436,8 @@
     if(jump)jumpStep(s);
   }
   function jumpStep(s){
-    if(s.st==='fail'&&s.id==='cart')openFile('CartStore.ets',48,'err');
+    if(s.st==='fail'&&s.fk==='cart')openFile('CartStore.ets',48,'err');
+    else if(s.st==='fail'&&s.fk==='md')openFile('CheckoutPage.ets',12,'err');
     else if(s.file&&FILES[s.file])openFile(s.file,s.line,null);
   }
   function addStep(){
@@ -1159,8 +1465,9 @@
 
   DemoFrame.init({device:'HUAWEI Mate 70 Pro',deviceIcon:'#i-phone',pos:'12:1',onReady:function(){
     ideRoot=$('#ide');
-    renderTabs();renderList();renderJD();
-    emuShow('login');emuStrip('muted','i-phone','就绪 · 等旅程开始');
+    renderTabs();renderList();renderJD();renderTgt();
+    paintDev('emu',shotOf('emu',{k:'login'}));emuStrip('muted','i-phone','就绪 · 等旅程开始');
+    bindWin();
     $('#scene-tabs').addEventListener('click',function(e){var b=e.target.closest('.btab');if(b)switchScene(b.dataset.scene)});
     $('#chk-list').addEventListener('click',function(e){
       if(e.target.closest('#jr-pub')){switchScene('journey');return}
@@ -1187,6 +1494,16 @@
       if(e.target.closest('#jr-split'))split();
       else if(e.target.closest('#jr-run')){if(JR.phase==='running')stopRun();else runJourney()}
     });
+    $('#jr-tgt').addEventListener('click',function(e){
+      var b=e.target.closest('.dchip');if(!b||b.disabled)return;
+      var d=b.dataset.dev;
+      if(!conn(d)){bump(d);return}
+      var before=targets().join();
+      if(d==='emu'){var on=!TG.emu;ORDER.forEach(function(x){TG[x]=false});TG.emu=on;if(!on)TG.local=true}
+      else{TG[d]=!TG[d];TG.emu=false}
+      afterTgtChange(before);
+    });
+    $('#tapc-x').addEventListener('click',function(){var c=$('#tapc');c.classList.remove('in');setTimeout(function(){if(!c.classList.contains('in'))c.hidden=true},250)});
     $('#jr-prompt').addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();split()}});
     $('#jr-sum').addEventListener('click',function(e){var a=e.target.closest('#jr-add');if(a&&!a.disabled)addStep()});
     $('#jr-steps').addEventListener('click',function(e){
@@ -1205,8 +1522,9 @@
       var i=+inp.closest('.jr-step').dataset.i;if(i!==JR.sel||JR.view==='summary')selectStep(i,false);
     });
     $('#jr-dbody').addEventListener('click',function(e){
-      if(e.target.closest('[data-cause]'))openFile('CartStore.ets',48,'err');
-      else if(e.target.closest('[data-fixloc]'))openFile('CartStore.ets',49,null,{ok:[49]});
+      var c=e.target.closest('[data-cause]'),fx=e.target.closest('[data-fixloc]');
+      if(c){if(c.dataset.cause==='md')openFile('CheckoutPage.ets',12,'err');else openFile('CartStore.ets',48,'err')}
+      else if(fx){if(fx.dataset.fixloc==='md')openFile('CheckoutPage.ets',9,null,{ok:[9,15]});else openFile('CartStore.ets',49,null,{ok:[49]})}
       else if(e.target.closest('[data-jloc]')){var s=JR.steps[+e.target.closest('[data-jloc]').dataset.jloc];if(s)jumpStep(s)}
       else{var fg=e.target.closest('[data-fig]');if(fg)selectStep(+fg.dataset.fig,true)}
     });
@@ -1218,12 +1536,16 @@
       else if(e.target.closest('#jr-pubadd'))addToPublish();
       else if(e.target.closest('#jr-gopub')){switchScene('publish');var r=$('#jr-pub');if(r)r.scrollIntoView({block:'nearest'})}
     });
+    window.addEventListener('resize',function(){placeWin(true)});
   }});
 DemoGuide.init([
   {"target": "#chk-list", "kind": "click", "pos": "top", "label": "点一条问题"},
   {"target": "#code", "kind": "change", "pos": "top", "label": "自动跳到那一行"},
   {"target": ".btab[data-scene=\"journey\"]", "kind": "click", "pos": "top", "label": "一句话写测试旅程"},
-  {"target": "#jr-run, #jr-split", "kind": "click", "pos": "left", "label": "拆成步骤，再到模拟器上跑"},
+  {"target": "#jr-run, #jr-split", "kind": "click", "pos": "left", "label": "拆成步骤，再在本机窗口跑"},
+  {"target": "#jr-tgt", "kind": "click", "pos": "top", "label": "运行在：默认本机，碰一碰加手机"},
+  {"target": "#hwin", "kind": "change", "pos": "left", "label": "应用以原生窗口跑在 IDE 旁边"},
+  {"target": "#jr-colhd", "kind": "change", "pos": "top", "label": "多台并行，结果按设备并排"},
   {"target": "#jr-fail", "kind": "change", "pos": "top", "label": "失败现场：截图+HiLog+代码行"}
 ]);
 })();

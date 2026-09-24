@@ -15,8 +15,8 @@
 <script src="../_shared/guide.js"></script>
 <style>
   .ide[data-ide-theme]{--proj-w:clamp(400px,32vw,520px)}
-  #wf-saved .dm-flow .fn{font-size:11px;padding:0 8px;gap:5px;height:24px}
-  #wf-saved .dm-flow .fa{width:14px}
+  .wf-saved .dm-flow .fn,#wf-sug2 .dm-flow .fn{font-size:11px;padding:0 8px;gap:5px;height:24px}
+  .wf-saved .dm-flow .fa,#wf-sug2 .dm-flow .fa{width:14px}
   .ai-thread{gap:8px}
   .umsg .bubble{padding:6px 10px}
   /* 官方存好的高频动作 */
@@ -188,6 +188,7 @@
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <symbol id="i-pc" viewBox="0 0 16 16"><rect x="2.5" y="3" width="11" height="7.5" rx="1" stroke="currentColor" fill="none"/><path d="M1 13h14" stroke="currentColor" stroke-linecap="round"/></symbol>
   <symbol id="i-xy" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6" stroke="currentColor" fill="none"/><path d="M8 4.6l.9 2.5 2.5.9-2.5.9L8 11.4l-.9-2.5L4.6 8l2.5-.9z" fill="currentColor"/></symbol>
 </defs></svg>
 <div class="ide" id="ide" data-ide-theme="dark" data-left="agent" data-right="project" data-bottom="none" role="application" aria-label="DevEco Studio">
@@ -311,11 +312,11 @@
   document.getElementById('tree-slot').innerHTML=DemoFrame.tree({sel:'ListPage.ets'});
   document.getElementById('tabs').insertAdjacentHTML('afterbegin',DemoFrame.tabs([{file:'ListPage.ets',on:true}]));
   document.getElementById('code').innerHTML=DemoFrame.code('ListPage.ets',{cur:10});
-  var counts={official:0,own:0};
+  var counts={official:0,own:0,intents:0};
   DemoFrame.init({device:'HUAWEI Mate 70 Pro',deviceIcon:'#i-phone',pos:'10:3',stripeLeft:[{left:'agent',icon:'#i-genie',title:'DevEco Code'},{left:'project',icon:'#i-tw-project',title:'Project|Alt+1'},{left:'structure',icon:'#i-tw-structure',title:'Structure|Alt+7'},{more:1},{gap:1},{bottom:'build',icon:'#i-tw-build',title:'Build'},{bottom:'log',icon:'#i-tw-device',title:'Log'},{bottom:'services',icon:'#i-tw-todo',title:'Services|Alt+8'},{bottom:'problems',icon:'#i-tw-problems',title:'Problems|Alt+6'},{bottom:'run',icon:'#i-tw-services',title:'Run|Alt+4'},{bottom:'terminal',icon:'#i-tw-terminal',title:'Terminal|Alt+F12'},{bottom:'debug',icon:'#i-info',title:'Debug|Alt+5'},{bottom:'vcs',icon:'#i-vcs',title:'Version Control|Alt+9'}],stripeRight:[{right:'notifications',icon:'#i-tw-notifications',title:'Notifications',dot:1},{right:'project',icon:'#i-tw-project',title:'Project|Alt+1'},{right:'docs',icon:'#i-hdoc',title:'HarmonyOS Docs'},{right:'inspector',icon:'#i-pen',title:'Code Review'},{right:'web',icon:'#i-puzzle',title:'Extensions'},{right:'previewer',icon:'#i-tw-preview',title:'Previewer'},{more:1},{right:'devices',icon:'#i-phone',title:'Device Manager'}],onReady:function(){
-    $('#status-slot').innerHTML='<span class="dm-capsule" id="cap-wf"><svg class="i" style="width:12px;height:12px"><use href="#i-skills"/></svg>Workflow · 官方 <b id="cap-off">0</b> · 自定义 <b id="cap-own">0</b></span>';
+    $('#status-slot').innerHTML='<span class="dm-capsule" id="cap-wf"><svg class="i" style="width:12px;height:12px"><use href="#i-skills"/></svg>Workflow · 官方 <b id="cap-off">0</b> · 自定义 <b id="cap-own">0</b> · 小艺意图 <b id="cap-int">0</b></span>';
   }});
-  function recount(){var a=$('#cap-off'),b=$('#cap-own');if(a)a.textContent=counts.official;if(b)b.textContent=counts.own}
+  function recount(){var a=$('#cap-off'),b=$('#cap-own'),c=$('#cap-int');if(a)a.textContent=counts.official;if(b)b.textContent=counts.own;if(c)c.textContent=counts.intents}
 
   /* ---- 官方的：装上 ---- */
   $('#wf-list').addEventListener('click',function(e){
@@ -325,30 +326,222 @@
   });
 
   /* ---- toast：存 / 稍后 / 关 ---- */
-  var toast=$('#wf-toast');
-  function closeToast(){toast.classList.add('out');setTimeout(function(){toast.hidden=true},220)}
+  var toast=$('#wf-toast'),esc=DemoFrame.esc,thread=$('#ai-thread'),scroller=$('#ai-scroll');
+  function toBottom(){scroller.scrollTop=scroller.scrollHeight}
+  function closeToast(){toast.classList.add('out');setTimeout(function(){toast.hidden=true},220);setTimeout(showSug2,700)}
   $('#toast-x').addEventListener('click',closeToast);
   $('#toast-later').addEventListener('click',closeToast);
   $('#toast-never').addEventListener('click',function(e){e.preventDefault();closeToast()});
   $('#wf-share').addEventListener('click',function(){var on=!this.classList.contains('on');this.classList.toggle('on',on);this.setAttribute('aria-pressed',on?'true':'false')});
 
+  /* =====================================================================
+     存下来的 Workflow：可以再「注册为小艺意图」（鸿蒙智能体框架）
+     注册后在鸿蒙电脑任意界面、或同一华为账号的手机上对小艺说一句，就在这台电脑的 IDE 后台跑；
+     进度上实况窗（电脑顶部胶囊 + 手机锁屏），发给别人之前可以在实况窗上点一下确认
+     ===================================================================== */
+  var WF={
+    'release-check':{cmd:'/release-check',title:'上架自检',phr:['跑一遍上架自检','上架前自检一下'],
+      steps:[['跑体检 · 47 项','AppAnalyzer'],['看报告','report.html'],['改问题','module.json5:18'],['再跑一遍','47 / 47'],['导出上架材料','release/']],
+      confirm:-1,par:'真机 <code>HUAWEI Mate 70 Pro</code> · 输出到 <code>release/</code>',done:'上架自检 47 / 47 通过 · 材料已导出到 release/',secs:38},
+    'test-pack':{cmd:'/test-pack',title:'打测试包发测试组',phr:['打个测试包发给测试组','给测试组发个包','发个测试版'],
+      steps:[['hvigor 打测试包','entry-default-signed.hap'],['测试签名','test-release.p7b'],['上传 AGC 邀请测试','1.3.0({v})'],['通知测试组','18 人']],
+      confirm:2,ask:'上传 1.3.0({v}) 到 AGC 邀请测试，发给「鸿蒙测试组」18 人？',
+      par:'分支 <code>feature/favorite</code> · 版本号自动 +1 · 发给「鸿蒙测试组」18 人',done:'1.3.0({v}) 已发给「鸿蒙测试组」18 人',secs:52,runs:0}
+  };
+  var FLOW_TP='<div class="dm-flow"><span class="fn"><svg><use href="#i-hvigor"/></svg>hvigor 打测试包</span><span class="fa"></span><span class="fn"><svg><use href="#i-lock"/></svg>测试签名</span><span class="fa"></span><span class="fn"><svg><use href="#i-cloud"/></svg>上传 AGC 邀请测试</span><span class="fa"></span><span class="fn"><svg><use href="#i-send-o"/></svg>通知测试组</span></div>';
+  var REG={};
+
+  /* 项目树：存下来的命令落在 .codegenie/workflows/ 下，随仓库分发 */
+  function treeRow(name){return DemoFrame.$$('#tree .row').filter(function(r){var l=$('.lbl',r);return l&&l.textContent===name})[0]}
+  function treeAddWf(file){
+    var cg=treeRow('.codegenie');if(!cg)return;var p=parseInt(cg.style.paddingLeft,10)||8,k=cg.nextElementSibling;
+    var wd=treeRow('workflows');
+    if(!wd){k.insertAdjacentHTML('afterbegin','<div class="row" style="padding-left:'+(p+16)+'px" data-dir="1" data-open="1"><span class="tg"><svg class="i"><use href="#i-chevD"/></svg></span><span class="ico"><svg><use href="#i-folder"/></svg></span><span class="lbl">workflows</span></div><div class="kids"></div>');wd=treeRow('workflows')}
+    if(!treeRow(file))wd.nextElementSibling.insertAdjacentHTML('beforeend','<div class="row" style="padding-left:'+(p+32)+'px"><span class="tg"></span><span class="ico"><svg><use href="#i-json"/></svg></span><span class="lbl">'+file+'</span></div>');
+    if(cg.dataset.open!=='1'){cg.dataset.open='1';k.hidden=false;var u=$('.tg use',cg);if(u)u.setAttribute('href','#i-chevD')}
+  }
+
+  function savedCard(key,share,flow,id){
+    var w=WF[key];
+    return '<div class="amsg wf-saved" id="'+id+'">'
+      +'<div class="dm-card"><div class="dm-card-hd"><svg class="i ok"><use href="#i-checkS"/></svg>已存：<span class="dm-mono">'+w.cmd+'</span><span class="grow"></span>'
+      +(share?'<span class="dm-pill ok"><svg><use href="#i-vcs"/></svg>随仓库分发</span>':'<span class="dm-pill muted">仅本机</span>')+'</div>'
+      +'<div class="dm-card-bd">'+flow
+      +'<div class="wf-next">下次一句话：<code>'+w.cmd+'</code>'+(share?'<span>· 团队拉了仓库就有</span>':'')+'</div>'
+      +actHTML(key)
+      +'</div></div></div>';
+  }
+  function actHTML(key){return '<div class="wf-act" data-wf="'+key+'"><button class="btn" data-reg="'+key+'" id="wf-reg-'+key+'"><svg class="i xy"><use href="#i-xy"/></svg>注册为小艺意图</button><span class="dm-small">电脑任意界面、手机上说一句就跑</span></div>'}
+  function saveWf(key,share,flow,id){
+    thread.insertAdjacentHTML('beforeend',savedCard(key,share,flow,id));toBottom();
+    counts.own++;recount();treeAddWf(key+'.json5');
+  }
+
   $('#toast-save').addEventListener('click',function(){
     var share=$('#wf-share').classList.contains('on');
     closeToast();
     var flow=$('#wf-flow').outerHTML.replace('id="wf-flow"','');
-    var html='<div class="amsg" id="wf-saved">'
-      +'<div class="dm-card"><div class="dm-card-hd"><svg class="i ok"><use href="#i-checkS"/></svg>已存：<span class="dm-mono">/release-check</span><span class="grow"></span>'
-      +(share?'<span class="dm-pill ok"><svg><use href="#i-vcs"/></svg>随仓库分发</span>':'<span class="dm-pill muted">仅本机</span>')+'</div>'
-      +'<div class="dm-card-bd">'+flow
-      +'<div class="wf-next">下次一句话：<code>/release-check</code>'+(share?'<span>· 团队拉了仓库就有</span>':'')+'</div>'
-      +'</div></div></div>';
-    $('#ai-thread').insertAdjacentHTML('beforeend',html);
-    var sc=$('#ai-scroll');sc.scrollTop=sc.scrollHeight;
+    saveWf('release-check',share,flow,'wf-saved');
     var ta=$('#ai-text');ta.value='/release-check';$('#send').classList.add('ready');
-    counts.own++;recount();
   });
   $('#ai-text').addEventListener('input',function(){$('#send').classList.toggle('ready',!!this.value.trim())});
-DemoGuide.init([{"target": "#toast-save", "kind": "click", "pos": "top", "label": "点这里存成命令"}, {"target": "#ai-thread", "kind": "change", "pos": "top", "label": "多一张已存卡片"}]);
+
+  /* ---- 第二串重复：打测试包 → 发测试组（本周 4 次） ---- */
+  var sug2=false;
+  function showSug2(){
+    if(sug2)return;sug2=true;
+    thread.insertAdjacentHTML('beforeend','<div class="amsg" id="wf-sug2"><div class="dm-card"><div class="dm-card-hd"><svg class="i" style="color:var(--ui-info)"><use href="#i-sparkle"/></svg>还有一串也重复了<span class="grow"></span><span class="dm-small dm-muted">本周 4 次 · 最近 10:05</span></div>'
+      +'<div class="dm-card-bd">'+FLOW_TP+'</div>'
+      +'<div class="dm-card-ft"><button class="btn primary" id="wf-save2"><svg class="i"><use href="#i-checkS"/></svg>存成 /test-pack</button><button class="btn" id="wf-skip2">不用</button><span class="grow"></span><span class="dm-small dm-muted">存下来能注册成小艺意图</span></div></div></div>');
+    toBottom();
+    $('#wf-save2').addEventListener('click',function(){$('#wf-sug2').remove();saveWf('test-pack',true,FLOW_TP,'wf-saved-tp')});
+    $('#wf-skip2').addEventListener('click',function(){$('#wf-sug2').remove()});
+  }
+
+  /* ---- 注册表单 ---- */
+  function phrChip(t){return '<span class="chip" data-p="'+esc(t)+'">「'+esc(t)+'」<button class="x" title="删掉这个说法" aria-label="删掉这个说法"><svg><use href="#i-closeS"/></svg></button></span>'}
+  function regForm(key){
+    var w=WF[key],r=REG[key]||(REG[key]={phr:w.phr.slice(),pc:true,phone:true,confirm:w.confirm>=0,done:false});
+    return '<div class="wf-reg" data-wf="'+key+'"><div class="rh"><svg class="i xy"><use href="#i-xy"/></svg>注册为小艺意图<span class="grow"></span><span class="dm-small">鸿蒙智能体框架</span></div>'
+      +'<div class="rr"><span class="k">说法</span><div class="dm-chips" data-phr>'+r.phr.map(phrChip).join('')+'<input class="ph-in" placeholder="+ 加一种说法" aria-label="加一种说法"></div></div>'
+      +'<div class="rr"><span class="k">在哪说</span><div class="dm-chips"><button class="chip tg'+(r.pc?' on':'')+'" data-dev="pc" aria-pressed="'+r.pc+'"><svg class="i"><use href="#i-pc"/></svg>这台鸿蒙电脑 · 任意界面</button><button class="chip tg'+(r.phone?' on':'')+'" data-dev="phone" aria-pressed="'+r.phone+'"><svg class="i"><use href="#i-phone"/></svg>Mate 70 Pro · 同一华为账号</button></div></div>'
+      +'<div class="rr"><span class="k">参数</span><span>'+w.par+'</span></div>'
+      +'<div class="rr"><span class="k">进度</span><span>实况窗：电脑顶部胶囊 + 手机锁屏，两边同步</span></div>'
+      +(w.confirm>=0?'<label class="rr"><span class="k">确认</span><span style="display:flex;gap:8px;align-items:flex-start">发给测试组之前，在实况窗上点一下再发<input type="checkbox" data-confirm'+(r.confirm?' checked':'')+' aria-label="发之前在实况窗确认"></span></label>':'')
+      +'<div class="ra"><button class="btn primary" data-reg-ok><svg class="i"><use href="#i-checkS"/></svg>注册</button><button class="btn" data-reg-no>取消</button><span class="dm-small">声明写进 <code>'+key+'.json5</code> 随仓库；注册只在你自己的设备</span></div></div>';
+  }
+  function intCard(key){
+    var r=REG[key],devs=(r.pc?'电脑':'')+(r.pc&&r.phone?' + ':'')+(r.phone?'手机':'');
+    return '<div class="wf-int" data-wf="'+key+'"><div class="rh"><svg class="i xy"><use href="#i-xy"/></svg>小艺意图 · 已注册<span class="grow"></span><span class="dm-pill ok"><svg><use href="#i-checkS"/></svg>'+devs+'</span></div>'
+      +'<div class="phr">「'+esc(r.phr[0])+'」'+(r.phr.length>1?' 等 '+r.phr.length+' 种说法':'')+(WF[key].confirm>=0&&r.confirm?' · 发之前在实况窗确认':'')+'</div>'
+      +'<div class="ra"><span>试一下：</span><button class="btn" data-say="pc"'+(r.pc?'':' disabled')+'><svg class="i"><use href="#i-mic"/></svg>在电脑上说</button><button class="btn" data-say="phone"'+(r.phone?'':' disabled')+'><svg class="i"><use href="#i-phone"/></svg>在手机上说</button></div></div>';
+  }
+  function addPhr(inp){
+    var v=inp.value.trim().replace(/^[「"]|[」"]$/g,'');if(!v)return;
+    var key=inp.closest('.wf-reg').dataset.wf,r=REG[key];
+    if(r.phr.indexOf(v)<0){r.phr.push(v);inp.insertAdjacentHTML('beforebegin',phrChip(v))}
+    inp.value='';
+  }
+  thread.addEventListener('click',function(e){
+    var t;
+    if((t=e.target.closest('[data-reg]'))){var k=t.dataset.reg;t.closest('.wf-act').outerHTML=regForm(k);var f=$('.wf-reg[data-wf="'+k+'"]');if(f&&f.getBoundingClientRect().bottom>scroller.getBoundingClientRect().bottom)scroller.scrollTop+=f.getBoundingClientRect().bottom-scroller.getBoundingClientRect().bottom+12;return}
+    if((t=e.target.closest('.wf-reg .chip .x'))){var ch=t.closest('.chip'),rg=t.closest('.wf-reg'),r=REG[rg.dataset.wf];if(r.phr.length<=1)return;r.phr.splice(r.phr.indexOf(ch.dataset.p),1);ch.remove();return}
+    if((t=e.target.closest('.wf-reg .chip.tg'))){var on=!t.classList.contains('on'),rr=REG[t.closest('.wf-reg').dataset.wf];
+      if(!on&&!(t.dataset.dev==='pc'?rr.phone:rr.pc))return; /* 至少留一个地方能说 */
+      t.classList.toggle('on',on);t.setAttribute('aria-pressed',on?'true':'false');rr[t.dataset.dev]=on;return}
+    if((t=e.target.closest('[data-reg-ok]'))){
+      var fm=t.closest('.wf-reg'),key=fm.dataset.wf,rq=REG[key],pend=$('.ph-in',fm);if(pend&&pend.value.trim())addPhr(pend);
+      var cb=$('[data-confirm]',fm);rq.confirm=cb?cb.checked:false;
+      if(!rq.done){rq.done=true;counts.intents++;recount()}
+      fm.outerHTML=intCard(key);
+      if(rq.phone)phoneIdle(key);
+      return;
+    }
+    if((t=e.target.closest('[data-reg-no]'))){var fn=t.closest('.wf-reg');fn.outerHTML=actHTML(fn.dataset.wf);return}
+    if((t=e.target.closest('[data-say]'))){say(t.closest('.wf-int').dataset.wf,t.dataset.say);return}
+  });
+  thread.addEventListener('keydown',function(e){var inp=e.target.closest('.ph-in');if(inp&&e.key==='Enter'&&!e.isComposing){e.preventDefault();addPhr(inp)}});
+
+  /* ---- 手机（系统层） ---- */
+  var PH={shown:false};
+  function phoneShow(){
+    var d=$('#hp-dock'),hp=$('#hp');
+    if(!PH.shown){PH.shown=true;d.hidden=false;d.classList.add('enter');void d.offsetWidth;d.classList.remove('enter')}
+    hp.classList.remove('buzz');void hp.offsetWidth;hp.classList.add('buzz');
+  }
+  function phoneCard(html,cls){var c=$('#hp-card'),n=c.cloneNode(false);n.hidden=false;n.className='hp-card'+(cls?' '+cls:'');n.innerHTML=html;c.parentNode.replaceChild(n,c)}
+  function phoneIdle(key){
+    phoneShow();$('#hp-live').hidden=true;
+    phoneCard('<div class="ah"><span class="xy-orb" style="width:14px;height:14px;box-shadow:none;animation:none"></span><span>小艺 · 来自 DevEco Studio</span><span class="grow"></span><span>刚刚</span></div>'
+      +'<h4>学会了一句新说法</h4><div class="say">「'+esc(REG[key].phr[0])+'」</div>'
+      +'<div class="rq" style="margin-top:5px">在这台手机上对小艺说，MateBook Fold 上的 DevEco Studio 会去跑 <b>'+WF[key].cmd+'</b></div>');
+  }
+  $('#hp-x').addEventListener('click',function(){PH.shown=false;$('#hp-dock').hidden=true});
+
+  /* ---- 电脑上的实况窗胶囊（系统层，贴在屏幕顶部正中） ---- */
+  document.body.insertAdjacentHTML('beforeend','<div class="pc-live" id="pc-live" hidden><button class="cap" id="pc-live-cap" aria-expanded="false" title="实况窗"><span class="de-ico">DE</span><span id="pc-live-t"></span><span class="rg" id="pc-live-rg"></span></button><div class="card" id="pc-live-card" hidden></div></div>');
+  var LIVE={open:false};
+  function placeLive(){var c=$('#hdr-center'),l=$('#pc-live');if(!c||!l)return;var r=c.getBoundingClientRect();l.style.left=Math.round(r.left+r.width/2)+'px'}
+  window.addEventListener('resize',placeLive);
+  $('#pc-live-cap').addEventListener('click',function(){LIVE.open=!LIVE.open;if(RUN)render()});
+
+  /* ---- 对小艺说 → 跑 Workflow ---- */
+  var RUN=null,runN=0;
+  function typeText(el,t,cb){var i=0;el.textContent='';var tm=setInterval(function(){i++;el.textContent=t.slice(0,i);if(i>=t.length){clearInterval(tm);setTimeout(cb,300)}},70)}
+  function say(key,where){
+    if(RUN&&!RUN.end){var l=$('#pc-live .cap');if(l){l.style.animation='none';void l.offsetWidth;l.style.animation=''}return}
+    var q=REG[key].phr[0],cmd=WF[key].cmd;
+    if(where==='phone'){
+      phoneShow();$('#hp-card').hidden=true;$('#hp-live').hidden=true;var xy=$('#hp-xy');xy.hidden=false;$('#hp-xy-a').textContent='';
+      typeText($('#hp-xy-q'),q,function(){$('#hp-xy-a').textContent='好的，交给电脑上的 DevEco Studio';setTimeout(function(){xy.hidden=true;$('#hp-xy-q').textContent='';startRun(key,where,q)},1000)});
+    }else{
+      var old=$('#xy-pc');if(old)old.remove();
+      $('.body').insertAdjacentHTML('beforeend','<div class="xy-pc" id="xy-pc" role="status"><span class="xy-orb"></span><div class="tx"><span class="q" id="xy-pc-q"></span><span class="a" id="xy-pc-a"></span></div></div>');
+      setTimeout(function(){typeText($('#xy-pc-q'),q,function(){
+        $('#xy-pc-a').textContent='好的，交给 DevEco Studio 跑 '+cmd+'，进度看实况窗';
+        setTimeout(function(){var p=$('#xy-pc');if(p){p.classList.add('out');setTimeout(function(){p.remove()},260)}startRun(key,where,q)},1100);
+      })},350);
+    }
+  }
+  function startRun(key,where,q){
+    var w=WF[key],r=REG[key];runN++;
+    w.runs=(w.runs||0)+1;
+    RUN={v:129+w.runs,key:key,where:where,i:0,wait:false,ok:!(w.confirm>=0&&r.confirm),end:false,done:false,cancel:false,id:'wf-run-'+runN,phone:r.phone};
+    var src=where==='phone'?'HUAWEI Mate 70 Pro':'这台电脑';
+    thread.insertAdjacentHTML('beforeend','<div class="umsg"><span class="time">小艺 · <span class="xy-src">'+src+'</span> · 10:4'+(1+runN)+'</span><div class="bubble">'+esc(q)+'</div></div>'
+      +'<div class="amsg wf-run" id="'+RUN.id+'"><div class="step"><svg class="i xy"><use href="#i-xy"/></svg>小艺意图 → <code>'+w.cmd+'</code> · IDE 在后台跑，进度在实况窗</div><div class="steps"></div><div class="res"></div></div>');
+    toBottom();
+    placeLive();$('#pc-live').hidden=false;LIVE.open=false;
+    if(RUN.phone)phoneShow();
+    step();
+  }
+  function step(){
+    var w=WF[RUN.key];
+    if(RUN.i>=w.steps.length){RUN.end=RUN.done=true;LIVE.open=false;render();toBottom();return}
+    if(RUN.i===w.confirm&&!RUN.ok){RUN.wait=true;LIVE.open=true;render();if(RUN.phone)phoneShow();return}
+    RUN.wait=false;render();
+    RUN.tm=setTimeout(function(){RUN.i++;step()},1300);
+  }
+  function approve(){if(!RUN||!RUN.wait)return;RUN.ok=true;RUN.wait=false;LIVE.open=false;step()}
+  function cancelRun(){if(!RUN||RUN.end)return;clearTimeout(RUN.tm);RUN.end=true;RUN.cancel=true;RUN.wait=false;LIVE.open=false;render();toBottom()}
+  function stOf(i){if(RUN.done||i<RUN.i)return 'done';if(i===RUN.i)return RUN.cancel?'todo':RUN.wait?'wait':'run';return 'todo'}
+  function V(t){return String(t).replace(/\{v\}/g,RUN.v)}
+  function render(){
+    var near=scroller.scrollHeight-scroller.scrollTop-scroller.clientHeight<220;
+    var w0=WF[RUN.key],w={title:w0.title,cmd:w0.cmd,secs:w0.secs,ask:V(w0.ask||''),done:V(w0.done),steps:w0.steps.map(function(x){return [x[0],V(x[1])]})},n=w.steps.length,pct=RUN.done?100:Math.round(RUN.i/n*100),cur=w.steps[Math.min(RUN.i,n-1)];
+    var card=$('#'+RUN.id);
+    $('.steps',card).innerHTML=w.steps.map(function(s,i){var st=stOf(i);return '<div class="stp '+st+'"><span class="st '+st+'">'+(st==='done'?'<svg><use href="#i-checkS"/></svg>':'')+'</span><span class="txt">'+esc(s[0])+(st==='wait'?' · 等你在实况窗上确认':'')+'</span><span class="file">'+esc(s[1])+'</span></div>'}).join('');
+    $('.res',card).innerHTML=RUN.done?'<div class="dm-callout ok"><svg class="i"><use href="#i-checkS"/></svg><span>'+esc(w.done)+' · 用时 '+w.secs+' s</span></div>'
+      :RUN.cancel?'<div class="dm-callout warn"><svg class="i"><use href="#i-warn"/></svg><span>你在实况窗上取消了：没上传，测试包留在 <code>build/default/outputs/</code></span></div>':'';
+    var st=RUN.done?'ok':RUN.cancel?'no':RUN.wait?'wait':'';
+    var short=RUN.done?'已完成':RUN.cancel?'已取消':RUN.wait?'等你确认':(RUN.i+1)+'/'+n+' '+cur[0];
+    /* 电脑实况窗 */
+    var lv=$('#pc-live');lv.className='pc-live'+(st?' '+st:'');
+    $('#pc-live-t').textContent=w.cmd+' · '+short;$('#pc-live-rg').style.setProperty('--v',pct+'%');
+    $('#pc-live-cap').setAttribute('aria-expanded',LIVE.open?'true':'false');
+    var lc=$('#pc-live-card');lc.hidden=!LIVE.open;lc.className='card'+(RUN.done?' ok':'');
+    lc.innerHTML='<div class="lv-h"><span class="de-ico">DE</span><span>DevEco Studio · 小艺意图</span><span class="grow"></span><span>'+(RUN.where==='phone'?'手机上说的':'刚刚说的')+'</span></div>'
+      +'<div class="lv-t">'+esc(w.title)+'</div><div class="lv-bar"><b style="--v:'+pct+'%"></b></div>'
+      +'<ul class="lv-steps">'+w.steps.map(function(s,i){var x=stOf(i);return '<li class="'+x+'"><i></i><span>'+esc(s[0])+'</span><em>'+(x==='done'?'✓':x==='wait'?'等你':x==='run'?'进行中':'')+'</em></li>'}).join('')+'</ul>'
+      +(RUN.wait?'<div class="lv-ask">'+esc(w.ask)+'</div><div class="lv-acts"><button data-live="no">取消</button><button class="p" data-live="ok" id="pc-live-ok">上传并通知</button></div>':'')
+      +(RUN.done?'<div class="lv-ok" style="margin-top:8px">✓ '+esc(w.done)+'</div>':'');
+    /* 手机实况窗 */
+    if(RUN.phone&&PH.shown){
+      var hl=$('#hp-live');hl.hidden=false;hl.className='hp-live'+(st?' '+st:'');$('#hp-live-t').textContent=w.cmd.replace('/','')+' '+(RUN.done?'完成':RUN.cancel?'取消':RUN.wait?'待确认':(RUN.i+1)+'/'+n);$('#hp-live-rg').style.setProperty('--v',pct+'%');
+      var h='<div class="ah"><span class="de-ico">DE</span><span>DevEco Studio · 实况窗</span><span class="grow"></span><span>'+(RUN.done?'10:43':'进行中')+'</span></div><h4>'+esc(w.title)+'</h4><div class="pr"><b style="--v:'+pct+'%"></b></div>';
+      if(RUN.done)h+='<div class="okl">✓ '+esc(w.done)+'</div>';
+      else if(RUN.cancel)h+='<div class="rq">已取消 · 没上传</div>';
+      else if(RUN.wait)h+='<div class="ask">'+esc(w.ask)+'</div><div class="acts"><button class="s" data-live="no">取消</button><button class="p" data-live="ok" id="hp-ok">上传</button></div>';
+      else h+='<div class="now">'+(RUN.i+1)+' / '+n+' · '+esc(cur[0])+'</div><div class="rq">'+esc(cur[1])+'</div>';
+      var c=$('#hp-card');if(c.hidden||!c.dataset.run){phoneCard(h,RUN.done?'ok':'');$('#hp-card').dataset.run='1'}else{c.className='hp-card'+(RUN.done?' ok':'');c.innerHTML=h}
+    }
+    if(near)toBottom();
+  }
+  document.addEventListener('click',function(e){var b=e.target.closest('[data-live]');if(!b)return;if(b.dataset.live==='ok')approve();else cancelRun()});
+DemoGuide.init([{"target": "#toast-save", "kind": "click", "pos": "top", "label": "点这里存成命令"}, {"target": "#ai-thread", "kind": "change", "pos": "top", "label": "多一张已存卡片"},
+  {"target": "#wf-save2", "kind": "click", "pos": "top", "label": "这串也存下来"},
+  {"target": "#wf-reg-test-pack", "kind": "click", "pos": "top", "label": "存下来的命令，注册成小艺意图"},
+  {"target": ".wf-int[data-wf=\"test-pack\"] [data-say=\"phone\"]", "kind": "click", "pos": "bottom", "label": "对手机上的小艺说一句试试"}]);
 })();
 </script>
 </body>
