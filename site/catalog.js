@@ -288,7 +288,7 @@ window.DEVECO_CATALOG = {
           desc: '从安装到使用：设置里从磁盘装插件 → 首次进入 → 一句话建工程写 PRD → 打开新建的工程。13 张截图、62 个问题，左图右文，问题直接框在截图上，悬停联动；附问题总表与待补页面。',
           view: 'doc', date: '2026-09-24', href: 'analysis/walkthrough-26.0/REPORT-走查报告.html',
           links: [{ label: '流程清单', href: 'analysis/walkthrough-26.0/flows.md' }, { label: '走查说明', href: 'analysis/walkthrough-26.0/README.md' }],
-          tags: ['26.0', '走查', '从安装到使用', 'DevEco Code'],
+          tags: ['26.0', '走查', '从安装到使用', 'DevEco Code'], thumb: { type: 'image', src: 'site/thumbs/walkthrough-26.jpg' },
         },
       ],
     },
