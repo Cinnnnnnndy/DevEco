@@ -175,7 +175,7 @@
   .bpk{display:inline-block;font-family:var(--font-code);font-size:10px;line-height:15px;padding:0 4px;border-radius:4px;background:var(--ui-tag-bg);color:var(--ui-fg-info);font-weight:500;flex:none}
   .bpk.md,.bpk.lg{color:var(--ui-info);background:color-mix(in srgb,var(--ui-accent) 14%,transparent)}
 
-  .md-tl{flex:1;min-height:0;display:grid;grid-template-columns:172px minmax(0,1fr);grid-template-rows:18px repeat(3,minmax(0,1fr));
+  .md-tl{flex:1;min-height:0;display:grid;grid-template-columns:196px minmax(0,1fr);grid-template-rows:18px repeat(3,minmax(0,1fr));
     border:1px solid var(--ui-code-border);border-radius:var(--arc);overflow:hidden;background:var(--ui-editor-bg);position:relative}
   .md-rh{grid-column:1;grid-row:1;background:var(--ui-bg);border-right:1px solid var(--ui-code-border);border-bottom:1px solid var(--ui-code-border);font-size:10px;line-height:17px;color:var(--ui-fg-info);padding:0 8px;white-space:nowrap}
   .md-ruler{grid-column:2;grid-row:1;position:relative;background:var(--ui-bg);border-bottom:1px solid var(--ui-code-border)}
@@ -210,15 +210,16 @@
   .md-ch .empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:var(--fs-sm);color:var(--ui-fg-info);cursor:default}
   .md-tl.focus .md-ch:not(.rel) svg,.md-tl.focus .md-lh:not(.rel){opacity:.38}
   .md-lh.rel{box-shadow:inset 3px 0 0 var(--ui-error)}
+  .md-tl.fok .md-lh.rel{box-shadow:inset 3px 0 0 var(--ui-accent)}
   #mdv.fresh #md-issues{animation:ccin .35s ease-out}
   .cc-verdict .btn.ghost{background:transparent}
 
   /* 迷你设备（按真实比例）：Mate 70 Pro 1260×2844 · MatePad Pro 13.2 2880×1920 · 本机自由窗口 */
   .mdev{position:relative;background:#0f1012;padding:2px;border-radius:5px;box-shadow:0 2px 6px rgba(0,0,0,.28)}
   .mdev .ms{position:relative;overflow:hidden;background:#fff;border-radius:3px}
-  .mdev.win{background:#F1F3F5;padding:0;border-radius:4px;box-shadow:0 2px 6px rgba(0,0,0,.28),0 0 0 1px rgba(0,0,0,.18)}
-  .mdev.win::before{content:"";display:block;height:5px;background:#F1F3F5;border-radius:4px 4px 0 0}
-  .mdev.win .ms{border-radius:0 0 4px 4px}
+  .mdev.k-win{background:#F1F3F5;padding:0;border-radius:4px;box-shadow:0 2px 6px rgba(0,0,0,.28),0 0 0 1px rgba(0,0,0,.18)}
+  .mdev.k-win::before{content:"";display:block;height:5px;background:#F1F3F5;border-radius:4px 4px 0 0}
+  .mdev.k-win .ms{border-radius:0 0 4px 4px}
   .mdev.off{background:transparent;box-shadow:none;border:1.5px dashed var(--ui-component-border)}
   .mdev.off .ms{background:transparent}
   .ms .lpw{position:absolute;left:0;top:0;transform-origin:0 0}
@@ -873,6 +874,330 @@
   $('#tree-slot').addEventListener('click',function(e){var r=e.target.closest('.row[data-file]');if(r&&r.dataset.file!=='ListPage.ets'&&CODE_EL[r.dataset.file])openFile(r.dataset.file)});
   window.addEventListener('resize',fitLabels);
 
+  /* =====================================================================
+     多设备同采：同一次操作（进入 ListPage → 滑 3 屏）在本机原生窗口、Mate 70 Pro、MatePad Pro 13.2 上同时采集
+     三条帧耗时轨迹按输入事件对齐；自动找出「只在某一台掉帧」的差异并落到代码行；出补丁后三台一起复测
+     ===================================================================== */
+  DemoFrame.FILES['ItemCard.ets']={path:['entry','src','main','ets','components'],crumbs:['ItemCard','build'],lines:[
+    [K('import')+' { '+Ty('Item')+' } '+K('from')+' '+S("'../model/Item'")+';'],
+    [''],
+    [Me('@Component')],
+    [K('export struct')+' '+Ty('ItemCard')+' {',{fold:1}],
+    ['  '+Me('@Prop')+' '+P('item')+': '+Ty('Item')+';'],
+    ['  '+Me('@Prop')+' '+P('cover')+': '+Ty('PixelMap')+' | '+K('undefined')+';'],
+    ['  '+Me('@StorageProp')+'('+S("'currentBreakpoint'")+') '+P('bp')+': '+K('string')+' = '+S("'sm'")+';  '+Cm('// EntryAbility 按窗口宽度写入')],
+    [''],
+    ['  '+Fn('build')+'() {',{fold:1,at:1}],
+    ['    '+K('if')+' ('+K('this')+'.'+P('bp')+' === '+S("'sm'")+') {',{fold:1}],
+    ['      '+Fn('Column')+'({ '+P('space')+': '+N('8')+' }) {  '+Cm('// sm：整宽大图卡片'),{fold:1}],
+    ['        '+Fn('Image')+'('+K('this')+'.'+P('cover')+')'],
+    ['          .'+Fn('width')+'('+S("'100%'")+')'],
+    ['          .'+Fn('aspectRatio')+'('+N('1')+')'],
+    ['          .'+Fn('borderRadius')+'('+N('12')+')'],
+    ['          .'+Fn('backgroundColor')+'('+S("'#F1F3F5'")+')'],
+    ['          .'+Fn('shadow')+'({ '+P('radius')+': '+N('24')+', '+P('color')+': '+S("'#33000000'")+', '+P('offsetY')+': '+N('8')+' })  '+Cm('// 大半径模糊，滑动时每帧重算')],
+    ['        '+Fn('Text')+'('+K('this')+'.'+P('item')+'.'+P('title')+').'+Fn('fontSize')+'('+N('14')+').'+Fn('maxLines')+'('+N('2')+')'],
+    ['      }'],
+    ['    } '+K('else')+' {',{fold:1}],
+    ['      '+Fn('Row')+'({ '+P('space')+': '+N('12')+' }) {  '+Cm('// md / lg：网格小卡片，没有阴影'),{fold:1}],
+    ['        '+Fn('Image')+'('+K('this')+'.'+P('cover')+').'+Fn('width')+'('+N('88')+').'+Fn('aspectRatio')+'('+N('1')+').'+Fn('borderRadius')+'('+N('8')+')'],
+    ['        '+Fn('Text')+'('+K('this')+'.'+P('item')+'.'+P('title')+').'+Fn('fontSize')+'('+N('13')+').'+Fn('maxLines')+'('+N('2')+').'+Fn('layoutWeight')+'('+N('1')+')'],
+    ['      }'],
+    ['    }'],
+    ['  }'],
+    ['}']
+  ]};
+  var IC='ItemCard.ets';
+  function renderIC(ok){$('#code-ic').innerHTML=DemoFrame.code(IC,{marks:ok?{}:{17:'err'}});if(ok)ok.forEach(function(n){var l=$('#code-ic .ln[data-ln="'+n+'"]');if(l)l.classList.add('hl-ok')})}
+  renderIC();
+  (function(){var r=$$('#tree-slot .row').filter(function(x){var l=$('.lbl',x);return l&&l.textContent===IC})[0];if(r)r.setAttribute('data-file',IC)})();
+
+  var MT=3200,SW=560,OPS=[{t:0,lb:'进入 ListPage'},{t:700,lb:'滑 1'},{t:1500,lb:'滑 2'},{t:2300,lb:'滑 3'}];
+  var MDV={
+    local:{name:'本机窗口',hz:60,kd:'win',off:'+12 ms',icon:'#i-laptop'},
+    m70:{name:'Mate 70 Pro',hz:120,kd:'phone',bp:'sm',off:'−31 ms',res:'1260×2844',icon:'#i-phone'},
+    pad:{name:'MatePad Pro 13.2',hz:144,kd:'tab',bp:'lg',off:'+46 ms',res:'2880×1920',icon:'#i-tablet'}
+  };
+  var MORD=['local','m70','pad'];
+  var MS={conn:{pad:false},bump:false,cap:false,data:null,bp:{},st:null,fixed:false,diffs:[],cur:null,sel:null,rec:13,before:null,started:false};
+  var HW={cw:220,ch:340,x:0,y:0,moved:false,away:false},HVP=.6;  /* 本机窗口里 1 vp 画成 0.6 px */
+  function hwVp(){return [Math.round(HW.cw/HVP),Math.round(HW.ch/HVP)]}
+  function lbp(d){if(d!=='local')return MDV[d].bp;var v=hwVp()[0];return v<600?'sm':v<840?'md':'lg'}
+  function mdevs(){return MORD.filter(function(d){return d!=='pad'||MS.conn.pad})}
+  function bud(d){return 1000/MDV[d].hz}
+  function names(l){return l.map(function(d){return MDV[d].name}).join('、')}
+  function allWord(n){return n===3?'三台':n+' 台'}
+  function rng(sd){var x=sd;return function(){x=(x*9301+49297)%233280;return x/233280}}
+
+  /* 帧耗时：sm 走大图卡片 + 大半径阴影，滑动时新卡片进屏的帧要重算模糊；md/lg 走网格分支 */
+  function genFrames(d,bp){
+    var dt=bud(d),r=rng({local:3,m70:5,pad:9}[d]),F=[],base={local:[5.2,7.0],m70:[4.6,5.6],pad:[3.1,4.1]}[d],shadow=bp==='sm'&&!MS.fixed;
+    for(var t=0,i=0;t<MT;t+=dt,i++){
+      var v=base[0]+r()*(base[1]-base[0]),k='';
+      var sw=OPS.some(function(o){return o.t>0&&t>=o.t&&t<o.t+SW});
+      if(i===0&&!state.patched){v={local:42,m70:38,pad:31}[d];k='spike'}
+      else if(sw){if(shadow&&r()<.34){v+=4.8+r()*2.8;k='shadow'}else{v+=shadow?1.2+r():.6+r()*.8;k='swipe'}}
+      F.push({t:t,v:Math.round(v*10)/10,k:k,over:v>dt});
+    }
+    return F;
+  }
+  function stats(F){var n=0,mx=0;F.forEach(function(f){if(f.over&&f.k!=='spike')n++;if(f.k!=='spike')mx=Math.max(mx,f.v)});return {drops:n,spike:F[0].k==='spike'?F[0].v:0,max:mx}}
+  function opName(t){var o=null;OPS.forEach(function(x){if(t>=x.t)o=x});return o?o.lb:''}
+
+  /* ---------- 示例应用 ListPage：sm 大图卡片 / md、lg 网格 ---------- */
+  var LPG=['linear-gradient(135deg,#e8ecf5,#c3cee6)','linear-gradient(135deg,#f5e9dc,#dfc6a8)','linear-gradient(135deg,#dff3ea,#b1dfc8)','linear-gradient(135deg,#efe3f7,#d3bcea)'];
+  var LPN=[['无线降噪耳机 Pro','¥899'],['头戴式耳机 Max','¥1,499'],['运动耳机 Lite','¥299'],['骨传导耳机','¥599'],['智能手表 5','¥1,588'],['蓝牙音箱 Mini','¥199'],['11 英寸平板','¥2,399'],['充电宝 20000','¥149']];
+  function lpHTML(bp,go){
+    var h='<div class="lh">商品</div><div class="ls">搜索商品</div>';
+    if(bp==='sm'){for(var i=0;i<8;i++)h+='<div class="cd"><i style="background:'+LPG[i%4]+'"></i><b>'+LPN[i][0]+'</b><span>'+LPN[i][1]+'</span></div>';return '<div class="lp'+(go?' go':'')+'">'+h+'</div>'}
+    h+='<div class="gr">';for(var j=0;j<60;j++){var p=LPN[j%8];h+='<div class="gc"><i style="background:'+LPG[j%4]+'"></i><div><b>'+p[0]+'</b><span>'+p[1]+'</span></div></div>'}
+    return '<div class="lp grid'+(bp==='md'?' two':'')+(go?' go':'')+'">'+h+'</div></div>';
+  }
+  /* 迷你设备：按真实宽高比（Mate 70 Pro 1260×2844、MatePad Pro 13.2 2880×1920、本机窗口按当前大小） */
+  function miniDev(d,go){
+    var kd=MDV[d].kd,W,H,bw,bh;
+    if(kd==='phone'){H=54;W=Math.round(H*1260/2844);bw=220;bh=Math.round(220*2844/1260)}
+    else if(kd==='tab'){W=46;H=Math.round(W*1920/2880);bw=480;bh=320}
+    else{H=48;W=Math.round(H*HW.cw/HW.ch);bw=HW.cw;bh=HW.ch}
+    var off=d==='pad'&&!MS.conn.pad;
+    return '<div class="mdev k-'+kd+(off?' off':'')+'"><div class="ms" style="width:'+W+'px;height:'+H+'px">'+(off?'':'<div class="lpw" style="width:'+bw+'px;height:'+bh+'px;transform:scale('+(W/bw).toFixed(4)+')">'+lpHTML(lbp(d),go)+'</div>')+'</div></div>';
+  }
+
+  /* ---------- 三条轨迹 ---------- */
+  function buildMTL(){
+    var h='<div class="md-rh">按输入事件对齐</div><div class="md-ruler">'+OPS.map(function(o){return '<span class="md-rl" style="--a:'+(o.t/MT).toFixed(4)+'">'+o.lb+'</span>'}).join('')+'<span class="md-rl end">3.2 s</span></div>';
+    MORD.forEach(function(d,i){var sep=i<2?' sep':'';h+='<div class="md-lh'+sep+'" data-dev="'+d+'" style="grid-row:'+(i+2)+'"></div><div class="md-ch'+sep+'" data-dev="'+d+'" style="grid-row:'+(i+2)+'"></div>'});
+    $('#md-tl').innerHTML=h;
+  }
+  function renderLH(go){
+    MORD.forEach(function(d){
+      var el=$('.md-lh[data-dev="'+d+'"]');if(!el)return;
+      var D=MDV[d],bp=MS.bp[d]||lbp(d),st=MS.st&&MS.st[d]&&!MS.cap?MS.st[d]:null,tx;
+      if(d==='pad'&&!MS.conn.pad)tx='<b>'+D.name+'</b><span>'+D.res+' · '+D.hz+' Hz</span><span><button class="md-tap" id="md-tap"'+(MS.bump||MS.cap?' disabled':'')+'><svg><use href="#i-nfc"/></svg>'+(MS.bump?'正在连接…':'碰一碰连接')+'</button></span>';
+      else tx='<b>'+D.name+'</b><span>'+D.hz+' Hz · 预算 '+bud(d).toFixed(1)+' ms</span>'
+        +'<span><span class="bpk '+bp+'">'+bp+'</span>'+(st?'对齐 '+D.off:d==='local'?hwVp()[0]+' vp · 原生窗口':D.res+' · 碰一碰')+'</span>'
+        +'<span class="md-st'+(st?(st.drops?' err':' ok'):'')+'">'+(MS.cap?'采集中…':st?'滑动掉帧 '+st.drops:'')+'</span>';
+      el.innerHTML='<div class="md-dv">'+miniDev(d,go)+'</div><div class="md-tx">'+tx+'</div>';
+    });
+  }
+  var mcut=MT;
+  function drawLane(d){
+    var el=$('.md-ch[data-dev="'+d+'"]');if(!el)return;
+    if(d==='pad'&&!MS.conn.pad){el.innerHTML='<div class="empty">碰一碰连上 MatePad，一起采</div>';return}
+    var W=el.clientWidth,H=el.clientHeight;if(!W||!H)return;
+    var F=MS.data&&MS.data[d],x=function(t){return t/MT*W},VM=20,y=function(v){return H-3-Math.min(v,VM)/VM*(H-12)},s='';
+    OPS.forEach(function(o){if(o.t>0)s+='<rect class="band" x="'+x(o.t).toFixed(1)+'" y="0" width="'+(x(o.t+SW)-x(o.t)).toFixed(1)+'" height="'+H+'"/>';s+='<line class="opl" x1="'+x(o.t).toFixed(1)+'" x2="'+x(o.t).toFixed(1)+'" y1="0" y2="'+H+'"/>'});
+    var b=bud(d),by=y(b);
+    s+='<line class="bud" x1="0" x2="'+W+'" y1="'+by.toFixed(1)+'" y2="'+by.toFixed(1)+'"/><text class="lb warn" x="'+(W-4)+'" y="'+(by-3).toFixed(1)+'" text-anchor="end">'+b.toFixed(1)+' ms</text>';
+    if(F){
+      var bw=Math.max(.9,b/MT*W*.8);
+      F.forEach(function(f){if(f.t>mcut)return;var cls=f.k==='spike'?'fr spk':f.over?'fr over':'fr';s+='<rect class="'+cls+'" x="'+x(f.t).toFixed(1)+'" y="'+y(f.v).toFixed(1)+'" width="'+bw.toFixed(2)+'" height="'+(H-3-y(f.v)).toFixed(1)+'"/>'});
+      if(F[0].k==='spike')s+='<text class="lb warn" x="'+(x(0)+5)+'" y="11">首帧 '+F[0].v+' ms</text>';
+      if(MS.sel&&MS.sel.d===d){var f=F[MS.sel.i],sx=x(f.t)+bw/2;s+='<line class="selx" x1="'+sx.toFixed(1)+'" x2="'+sx.toFixed(1)+'" y1="0" y2="'+H+'"/><circle class="seld" cx="'+sx.toFixed(1)+'" cy="'+y(f.v).toFixed(1)+'" r="3.5"/>'}
+    }
+    el.innerHTML='<svg viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none">'+s+'</svg>';
+  }
+  function drawLanes(){if($('#mdv').hidden)return;MORD.forEach(drawLane)}
+
+  /* ---------- 结论条 / 差异 ---------- */
+  function mverdict(cls,v1,ev,file,line){
+    var box=$('#md-verdict');box.className='cc-verdict '+cls;
+    $('#md-ico use').setAttribute('href',cls==='err'?'#i-err':cls==='warn'?'#i-warn':cls==='ok'?'#i-checkS':'#i-info');
+    $('#md-v1').textContent=v1;$('#md-v1').setAttribute('title',v1);
+    $('#md-v2').setAttribute('title',(file?file+':'+line+' · ':'')+(ev||''));
+    $('#md-v2').innerHTML=(file?'<span class="loc" data-file="'+esc(file)+'" data-line="'+line+'">'+esc(file)+':'+line+'</span>'+(ev?' · ':''):'')+esc(ev||'');
+  }
+  function mact(kind,txt){
+    var b=$('#md-act'),ok=$('#md-okpill');ok.hidden=true;b.hidden=!kind;b.dataset.act=kind||'';b.disabled=false;b.className='btn primary sm';
+    if(kind==='fix')b.innerHTML='<svg class="i"><use href="#i-sparkle"/></svg><span>出补丁 · 三台复测</span>';
+    else if(kind==='fixing'){b.disabled=true;b.className='btn sm';b.innerHTML='<span class="spin"></span><span>改 ItemCard.ets…</span>'}
+    else if(kind==='cpu'){b.className='btn sm';b.innerHTML='<svg class="i"><use href="#i-arrowR"/></svg><span>去火焰图看调用栈</span>'}
+    else if(kind==='okpill'){b.hidden=true;ok.hidden=false;ok.lastChild.textContent=txt||'这一帧正常'}
+  }
+  function analyze(){
+    var devs=mdevs(),st={},diffs=[];devs.forEach(function(d){st[d]=stats(MS.data[d])});MS.st=st;
+    var dd=devs.filter(function(d){return st[d].drops>0});
+    if(dd.length&&dd.length<devs.length){
+      var d0=dd[0],n=dd.reduce(function(a,d){return a+st[d].drops},0);
+      var ev=devs.filter(function(d){return dd.indexOf(d)<0}).map(function(d){return MS.bp[d]==='sm'?MDV[d].name+' 也走 sm，但 '+MDV[d].hz+' Hz 预算 '+bud(d).toFixed(1)+' ms 够用':MDV[d].name+' 是 '+MS.bp[d]+'，走网格分支没阴影'}).join(' · ');
+      diffs.push({k:'only',cls:'err',devs:dd,chip:'只在 '+names(dd)+' 掉帧',file:IC,line:17,pill:'只在 '+names(dd)+' 掉帧',
+        v1:'只在 '+names(dd)+' 上掉帧：sm 大图卡片的模糊阴影，'+MDV[d0].hz+' Hz 下超 '+bud(d0).toFixed(1)+' ms 预算',ev:ev});
+    }
+    if(MS.fixed&&MS.before!=null&&!dd.length)diffs.push({k:'fixed',cls:'ok',devs:['m70'],chip:'Mate 70 Pro 掉帧 '+MS.before+'→0',file:IC,line:17,pill:'三台复测 · 掉帧 0',
+      v1:'Mate 70 Pro 滑动掉帧 '+MS.before+' → 0，'+allWord(devs.length)+'滑动都在预算内',ev:'系统阴影 + renderGroup(true) · 记录 #'+MS.rec+' · 本机、MatePad 没回退'});
+    var sp=devs.filter(function(d){return st[d].spike});
+    if(devs.length>1&&sp.length===devs.length){var vs=sp.map(function(d){return st[d].spike});
+      diffs.push({k:'common',cls:'warn',devs:sp,chip:allWord(devs.length)+'首帧都慢',file:'ListPage.ets',line:28,pill:'首帧慢 · 和设备无关',
+        v1:allWord(devs.length)+'都慢：进入 ListPage 首帧 '+Math.min.apply(null,vs)+'–'+Math.max.apply(null,vs)+' ms，超预算',ev:'同步解码封面，和设备无关 · 火焰图里有调用栈'});}
+    MS.diffs=diffs;
+  }
+  function renderDiffs(){
+    var el=$('#md-issues');
+    el.innerHTML=MS.diffs.map(function(x){return '<button class="cc-iss'+(MS.cur===x.k?' on':'')+'" data-diff="'+x.k+'">'+(x.k==='fixed'?'<span class="ok-mk"><svg><use href="#i-checkS"/></svg></span>':'<span class="dm-dot '+x.cls+'"></span>')+'<span class="t">'+esc(x.chip)+'</span></button>'}).join('');
+    el.hidden=!MS.diffs.length;$('#md-note').hidden=!!MS.diffs.length;
+    if(!MS.diffs.length){$('#md-note').innerHTML=allWord(mdevs().length)+'都在预算内';}
+  }
+  function focusLanes(list,ok){
+    var tl=$('#md-tl');tl.classList.toggle('focus',!!list);tl.classList.toggle('fok',!!ok);
+    $$('.md-lh,.md-ch',tl).forEach(function(e){e.classList.toggle('rel',!!list&&list.indexOf(e.dataset.dev)>=0)});
+  }
+  function selectDiff(k){
+    var x=MS.diffs.filter(function(y){return y.k===k})[0];if(!x)return;
+    MS.cur=k;MS.sel=null;renderDiffs();
+    focusLanes(k==='common'?null:x.devs,x.cls==='ok');
+    gotoLine(x.file,x.line);setPill(x.cls,x.file+':'+x.line+' · '+x.pill);
+    mverdict(x.cls,x.v1,x.ev,x.file,x.line);
+    mact(k==='only'?(MS.fixed?null:'fix'):k==='common'?'cpu':'okpill','已复测 · 记录 #'+MS.rec);
+    drawLanes();
+  }
+  function selectFrame(d,i){
+    var F=MS.data&&MS.data[d];if(!F||!F[i])return;
+    var f=F[i],D=MDV[d],b=bud(d),bp=MS.bp[d],n='第 '+(i+1)+' 帧 · '+f.v+' ms',cls,v1,ev,file,line,act=null;
+    MS.sel={d:d,i:i};MS.cur=null;renderDiffs();focusLanes([d],!f.over&&f.k!=='spike');
+    if(f.k==='spike'){cls='warn';v1=D.name+' '+n+' · 进入 ListPage 的首帧';file='ListPage.ets';line=28;ev='同步解码封面 · '+allWord(mdevs().length)+'都有';act='cpu'}
+    else if(f.over){cls='err';v1=D.name+' '+n+'，超 '+b.toFixed(1)+' ms 预算';file=IC;line=17;ev=opName(f.t)+' · 新卡片进屏，阴影模糊重算';act=MS.fixed?null:'fix'}
+    else if(bp==='sm'&&f.k==='shadow'){cls='ok';v1=D.name+' '+n+'，在 '+b.toFixed(1)+' ms 预算内';file=IC;line=17;ev='同样重算阴影，'+D.hz+' Hz 预算够用'}
+    else{cls='ok';v1=D.name+' '+n+'，预算内';file=IC;line=bp==='sm'?11:21;ev=bp==='sm'?'sm 大图卡片':bp+' 网格小卡片，没有阴影'}
+    gotoLine(file,line);setPill(cls==='ok'?'info':cls,file+':'+line+' · '+D.name+' · '+f.v+' ms');
+    mverdict(cls,v1,ev,file,line);mact(act||(cls==='ok'?'okpill':null));
+    drawLanes();
+  }
+  function note(h){var n=$('#md-note');n.hidden=false;n.innerHTML=h;$('#md-issues').hidden=true}
+  function runLbl(){var b=$('#md-run'),n=mdevs().length;b.disabled=MS.cap||MS.bump;b.innerHTML=MS.cap?'<span class="spin" style="width:10px;height:10px;border-width:1.5px"></span><span>采集中…</span>':'<svg class="i"><use href="#i-play"/></svg><span>'+(MS.data?'再采一次':'同时采集')+' · '+n+' 台</span>'}
+  function profDev(mul){$('#prof-dev').innerHTML=mul?'<svg><use href="#i-laptop"/></svg><span>'+mdevs().length+' 台同采 · 记录 #'+(MS.data?MS.rec:'—')+'</span>':'<svg><use href="#i-phone"/></svg><span>Mate 70 Pro · 记录 #12</span>'}
+
+  /* 同时采集：本机窗口里滑一次，hdc 把同一串输入回放到其余设备；帧耗时按输入事件对齐 */
+  function capture(after){
+    if(MS.cap||MS.bump)return;
+    var devs=mdevs();MS.cap=true;MS.rec++;MS.sel=null;MS.cur=null;MS.bp={};
+    devs.forEach(function(d){MS.bp[d]=lbp(d)});
+    MS.data={};devs.forEach(function(d){MS.data[d]=genFrames(d,MS.bp[d])});
+    focusLanes(null);runLbl();profDev(true);
+    note('<span class="spin"></span>在本机窗口滑，同步回放到 '+names(devs.filter(function(d){return d!=='local'}))+'…');
+    mverdict('info','采集中 · 记录 #'+MS.rec,'三台同一串输入，按「进入 / 滑 1 / 滑 2 / 滑 3」对齐','','');mact(null);
+    showWin();hwCap('<span class="spin"></span><span class="tx">在这里滑一次，另外 '+(devs.length-1)+' 台跟着滑</span>');
+    var lp=$('#hw-lp .lp'),hd=$('#hw-hand');if(lp){lp.classList.remove('go');void lp.offsetWidth;lp.classList.add('go')}hd.classList.remove('go');void hd.offsetWidth;hd.classList.add('go');
+    renderLH(true);
+    var t0=Date.now();mcut=0;
+    (function tick(){
+      mcut=Math.min(MT,(Date.now()-t0)/3200*MT);drawLanes();
+      if(mcut<MT){MS.timer=setTimeout(tick,90);return}
+      note('<span class="spin"></span>按输入事件对齐 '+devs.length+' 条轨迹，找差异…');
+      MS.timer=setTimeout(function(){
+        MS.cap=false;analyze();renderLH();drawLanes();runLbl();profDev(true);
+        hwCap('<span class="tx">采完 · 记录 #'+MS.rec+'</span><span class="sz">'+hwVp().join('×')+' vp · '+lbp('local')+'</span>');
+        var c=$('#mdv');c.classList.remove('fresh');void c.offsetWidth;c.classList.add('fresh');
+        $('#cap').innerHTML='<span class="dm-dot '+(MS.diffs.some(function(x){return x.k==='only'})?'err':'ok')+'"></span>记录 #'+MS.rec+' · '+devs.length+' 台同采';
+        if(MS.diffs.length)selectDiff(MS.diffs[0].k);else{renderDiffs();mverdict('ok',allWord(devs.length)+'都在预算内','点任意一帧，落到代码行','','');mact('okpill','没有要处理的')}
+        if(after)after();
+      },650);
+    })();
+  }
+  /* 出补丁：ItemCard.ets:17 改用系统阴影 + 整卡 renderGroup，三台一起复测 */
+  function fixCard(){
+    if(MS.fixed||MS.cap)return;
+    MS.before=MS.st&&MS.st.m70?MS.st.m70.drops:0;mact('fixing');
+    setTimeout(function(){
+      var L=DemoFrame.FILES[IC].lines;
+      L[16]=['          .'+Fn('shadow')+'('+Ty('ShadowStyle')+'.'+P('OUTER_DEFAULT_SM')+')  '+Cm('// 系统阴影，走缓存')];
+      L.splice(19,0,['      .'+Fn('renderGroup')+'('+K('true')+')  '+Cm('// 整张卡片离屏缓存，滑动时不再重画')]);
+      MS.fixed=true;renderIC([17,20]);gotoLine(IC,17);setPill('ok',IC+':17 · 已改 · 三台复测中');
+      $('#amsg').insertAdjacentHTML('beforeend','<div class="step ok"><svg class="i"><use href="#i-checkS"/></svg>改 ItemCard.ets:17：大半径阴影 → 系统阴影 + renderGroup(true)，在 '+names(mdevs())+' 上复测</div>');
+      var sc=$('.ai-scroll');if(sc)sc.scrollTop=sc.scrollHeight;
+      setTimeout(function(){capture(function(){
+        $('#amsg').insertAdjacentHTML('beforeend','<div class="step ok"><svg class="i"><use href="#i-checkS"/></svg>复测完成：Mate 70 Pro 滑动掉帧 '+MS.before+' → 0，本机、MatePad 没回退</div>');
+        if(sc)sc.scrollTop=sc.scrollHeight;
+      })},500);
+    },800);
+  }
+
+  /* ---------- 碰一碰连 MatePad ---------- */
+  function bumpPad(){
+    if(MS.bump||MS.conn.pad||MS.cap)return;
+    MS.bump=true;renderLH();runLbl();
+    var c=$('#tapc');c.className='tapc';c.hidden=false;
+    $('#tapc-t').textContent='正在连接…';$('#tapc-s').innerHTML='把 <b>HUAWEI MatePad Pro 13.2</b> 碰一下电脑的碰一碰区域';$('#tapc-m').textContent='';
+    void c.offsetWidth;c.classList.add('in');
+    setTimeout(function(){c.classList.add('go')},200);
+    setTimeout(function(){c.classList.add('hit')},820);
+    setTimeout(function(){
+      MS.bump=false;MS.conn.pad=true;c.classList.add('ok');
+      $('#tapc-t').textContent='已连接，可用于调试';$('#tapc-s').innerHTML='<b>HUAWEI MatePad Pro 13.2</b>';$('#tapc-m').textContent='无线调试已开 · hdc 已授权 · 2880×1920 · lg · 144 Hz';
+      renderLH();drawLanes();runLbl();profDev(true);
+      if(!MS.data)mverdict('info',allWord(mdevs().length)+'都连上了','点「同时采集」，在本机窗口滑一次，另外两台跟着滑','','');
+    },1500);
+    setTimeout(function(){c.classList.remove('in')},4300);
+    setTimeout(function(){if(!c.classList.contains('in'))c.hidden=true},4600);
+  }
+
+  /* ---------- 本机原生自由窗口：拖动、缩放（拖宽过 600 vp 进 md，下次采集按 md 走） ---------- */
+  function ideR(){return $('#ide').getBoundingClientRect()}
+  function clamp(v,a,b){return Math.max(a,Math.min(b,v))}
+  function hwCap(h){$('#hw-cap').innerHTML=h}
+  function sizeWin(){
+    var hw=$('#hwin'),bd=$('#hw-body'),bp0=hw.dataset.bp,bp=lbp('local');
+    hw.style.width=HW.cw+'px';bd.style.width=HW.cw+'px';bd.style.height=HW.ch+'px';
+    if(bp0!==bp||!$('#hw-lp').firstChild){$('#hw-lp').innerHTML=lpHTML(bp);hw.dataset.bp=bp}
+    if(!MS.cap)hwCap('<span class="tx">本机窗口 · 原生运行</span><span class="sz">'+hwVp().join('×')+' vp · '+bp+'</span>');
+    if(!MS.cap)renderLH();
+  }
+  function placeWin(soft){
+    var hw=$('#hwin');if(hw.hidden)return;
+    var I=ideR(),tr=$('.tw-right'),r=tr&&tr.offsetParent?tr.getBoundingClientRect():null;
+    if(!soft||!HW.moved){if(r&&r.width>HW.cw+20){HW.x=r.left-I.left+(r.width-HW.cw)/2;HW.y=r.top-I.top+40}else{HW.x=I.width-HW.cw-60;HW.y=60}}
+    HW.x=clamp(HW.x,4,I.width-HW.cw-6);HW.y=clamp(HW.y,36,Math.max(36,I.height-HW.ch-72));
+    hw.style.left=HW.x+'px';hw.style.top=HW.y+'px';
+  }
+  function showWin(){var hw=$('#hwin');if(hw.hidden){hw.hidden=false;hw.classList.remove('opening');void hw.offsetWidth;hw.classList.add('opening')}HW.away=false;sizeWin();placeWin(true)}
+  function winAway(){var hw=$('#hwin');if(!hw.hidden){hw.hidden=true;HW.away=true}}
+  (function bindWin(){
+    var hw=$('#hwin'),bar=$('#hw-bar'),g=$('#hw-rz');
+    bar.addEventListener('pointerdown',function(e){
+      if(e.target.closest('button'))return;
+      var I=ideR(),sx=e.clientX,sy=e.clientY,x0=HW.x,y0=HW.y;bar.setPointerCapture(e.pointerId);
+      function mv(ev){HW.x=clamp(x0+ev.clientX-sx,0,I.width-HW.cw);HW.y=clamp(y0+ev.clientY-sy,36,I.height-HW.ch-66);HW.moved=true;hw.style.left=HW.x+'px';hw.style.top=HW.y+'px'}
+      function up(){bar.removeEventListener('pointermove',mv);bar.removeEventListener('pointerup',up)}
+      bar.addEventListener('pointermove',mv);bar.addEventListener('pointerup',up);
+    });
+    g.addEventListener('pointerdown',function(e){
+      e.preventDefault();var I=ideR(),sx=e.clientX,sy=e.clientY,c0=HW.cw,h0=HW.ch;g.setPointerCapture(e.pointerId);
+      function mv(ev){HW.cw=Math.round(clamp(c0+ev.clientX-sx,180,I.width-HW.x-8));HW.ch=Math.round(clamp(h0+ev.clientY-sy,240,I.height-HW.y-66));sizeWin()}
+      function up(){g.removeEventListener('pointermove',mv);g.removeEventListener('pointerup',up)}
+      g.addEventListener('pointermove',mv);g.addEventListener('pointerup',up);
+    });
+    hw.addEventListener('click',function(e){
+      var b=e.target.closest('[data-hw]');if(!b)return;
+      if(b.dataset.hw==='max'){var I=ideR();if(HW.max){var m=HW.max;HW.max=null;HW.cw=m.cw;HW.ch=m.ch;HW.x=m.x;HW.y=m.y}else{HW.max={cw:HW.cw,ch:HW.ch,x:HW.x,y:HW.y};HW.cw=Math.round(I.width*.46);HW.ch=Math.round(I.height-150);HW.x=Math.round(I.width*.5);HW.y=48}HW.moved=true;sizeWin();placeWin(true);return}
+      hw.hidden=true;HW.away=false;
+    });
+  })();
+
+  function enterMulti(){
+    if(!MS.started){MS.started=true;buildMTL();renderLH();mverdict('info','改完商品列表，想确认三台都不掉帧','MatePad 还没连 · 碰一碰连上后点「同时采集」','','');}
+    else if(HW.away)showWin();
+    runLbl();requestAnimationFrame(function(){drawLanes();
+      if(MS.cur)selectDiff(MS.cur);else if(MS.sel)selectFrame(MS.sel.d,MS.sel.i);});
+  }
+  $('#md-run').addEventListener('click',function(){capture()});
+  $('#md-tl').addEventListener('click',function(e){
+    if(e.target.closest('#md-tap')){bumpPad();return}
+    var ch=e.target.closest('.md-ch');if(!ch||!MS.data||MS.cap)return;
+    var d=ch.dataset.dev,F=MS.data[d];if(!F)return;
+    var r=ch.getBoundingClientRect(),t=(e.clientX-r.left)/r.width*MT,i=clamp(Math.round(t/bud(d)),0,F.length-1);
+    /* 附近 3 帧里优先挑超预算的那一帧，好点中 */
+    for(var k=-2;k<=2;k++){var j=i+k;if(F[j]&&F[j].over&&!F[i].over)i=j}
+    selectFrame(d,i);
+  });
+  $('#md-issues').addEventListener('click',function(e){var b=e.target.closest('.cc-iss');if(b)selectDiff(b.dataset.diff)});
+  $('#md-v2').addEventListener('click',function(e){var l=e.target.closest('.loc');if(l)gotoLine(l.dataset.file,+l.dataset.line)});
+  $('#md-act').addEventListener('click',function(){
+    var a=$('#md-act').dataset.act;
+    if(a==='fix')fixCard();
+    else if(a==='cpu'){switchView('cpu');var hot=$('#flame span[data-hot]');if(hot)selectSpan(hot)}
+  });
+  $('#tapc-x').addEventListener('click',function(){var c=$('#tapc');c.classList.remove('in');setTimeout(function(){if(!c.classList.contains('in'))c.hidden=true},250)});
+  window.addEventListener('resize',function(){drawLanes();placeWin(true)});
+
   /* ---------- 初始：火焰图最热的一格已选中，代码已跳到 28 行 ---------- */
   renderCode();renderFlame();drawAll();
   var hot0=$('#flame span[data-hot]');if(hot0)selectSpan(hot0);
@@ -880,7 +1205,15 @@
 DemoGuide.init([{"target": "#flame", "kind": "click", "pos": "top", "label": "点火焰图定位"}, {"target": "#loc-pill", "kind": "change", "pos": "top", "label": "定位到该行"},
     {"target": "#seg button[data-v=\"conc\"]", "kind": "click", "pos": "top", "label": "并发视图"},
     {"target": "#cc-tl", "kind": "click", "pos": "left", "label": "点任意一段，落到代码行"},
-    {"target": "#cc-send", "kind": "click", "pos": "top", "label": "结论交给调优出补丁"}]);
+    {"target": "#cc-send", "kind": "click", "pos": "top", "label": "结论交给调优出补丁"},
+    {"target": "#seg button[data-v=\"multi\"]", "kind": "click", "pos": "top", "label": "只有手机卡？三台一起比"},
+    {"target": "#md-run, #md-tap", "kind": "click", "pos": "left", "label": "本机窗口滑一次，三台同采"},
+    {"target": "#md-issues", "kind": "change", "pos": "top", "label": "只在哪台掉帧，自动标出"}], {scene: {
+    at: "商品列表滑起来卡，你想知道卡在哪行、是不是只有手机卡",
+    goal: "定位到代码行并修掉，本机、手机、平板复测都不掉帧",
+    pain: "每台各录一份 trace，手动对时间轴，再逐帧翻火焰图猜代码",
+    fix: "图上点一处落到代码行；一次操作三台同采对齐，差异自动标出"
+  }});
 })();
 </script>
 </body>

@@ -78,10 +78,10 @@
   .btab .nb{font-family:var(--font-code);font-size:11px;font-weight:400;color:var(--ui-fg-info)}
 
   /* ---------- 新增：碰一碰把桌上几台一次拉进来 ---------- */
-  .tv-seg{position:absolute;left:14px;top:12px;z-index:3}
+  .tv-seg{position:static}
   .tv-seg button{height:24px}
   .tv-seg button[disabled]{color:var(--ui-fg-disabled)}
-  .tdesk{position:relative;display:flex;align-items:center;justify-content:center;gap:44px;min-height:100%;padding:40px 28px 28px;box-sizing:border-box}
+  .tdesk{position:relative;display:flex;align-items:center;justify-content:center;gap:44px;min-height:100%;padding:20px 28px 28px;box-sizing:border-box}
   .tdesk[hidden],.trun[hidden]{display:none}
   .tdeck{position:relative;width:272px;height:196px;flex:none;border-radius:14px;background:color-mix(in srgb,var(--ui-fg) 7%,var(--ui-editor-bg))}
   .tdeck .kb{position:absolute;left:14px;right:14px;top:12px;height:98px;border-radius:6px;
@@ -134,7 +134,7 @@
   .ttoast .tx span{font-size:11px;color:var(--ui-fg-info);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
   /* 并排结果：三台按真实比例（1260×2844 / 2440×2240 / 2880×1920） */
-  .trun{display:flex;align-items:center;justify-content:center;gap:40px;min-height:100%;padding:44px 28px 36px;box-sizing:border-box}
+  .trun{display:flex;align-items:center;justify-content:center;gap:40px;min-height:100%;padding:16px 28px 34px;box-sizing:border-box}
   .trun .dm-device{padding:7px;cursor:default}
   .trun .dm-device.tph{width:160px;height:344px;border-radius:24px}
   .trun .dm-device.tph .scr{border-radius:18px}
@@ -181,7 +181,9 @@
   .dv-side .why a.cl,.dv-side .why code.cl{color:var(--ui-link);cursor:pointer;text-decoration:none}
   .dv-side .why a.cl:hover{text-decoration:underline}
   /* 台前调度：画布工具条 + 上台原因签 */
-  .tv-bar{position:absolute;left:14px;top:12px;z-index:6;display:flex;align-items:center;gap:8px}
+  .tv-col{display:flex;flex-direction:column;min-height:0;min-width:0;background:var(--ui-editor-bg)}
+  .tv-bar{flex:none;display:flex;align-items:center;gap:8px;height:36px;padding:0 12px;min-width:0}
+  .tv-col .dm-canvas{flex:1}
   .tv-bar .tv-seg{position:static}
   .tv-bar .ds-btn{height:24px;display:inline-flex;align-items:center;gap:5px;padding:0 9px;border-radius:var(--arc);border:0;background:color-mix(in srgb,var(--ui-fg) 8%,var(--ui-editor-bg));color:var(--ui-fg);font:inherit;font-size:12px}
   .tv-bar .ds-btn svg{width:14px;height:14px}
@@ -337,10 +339,11 @@
 
         <!-- 新增：碰一碰把桌上几台一次拉进来 → 多设备并行调试 → 差异并排 -->
         <div class="dv" id="dvtap" hidden>
-          <div class="dm-canvas" id="tcanvas">
+          <div class="tv-col">
             <div class="tv-bar"><div class="dm-seg tv-seg" id="tv-seg"><button data-v="desk" class="on">桌面</button><button data-v="run" disabled>并排结果</button></div>
               <button class="ds-btn" id="ds-btn" hidden title="台前调度：一台上台放大，其余缩到侧边（Esc 回平铺）"></button>
               <span class="ds-why" id="ds-why" hidden><span id="ds-why-t"></span><button class="pin" id="ds-pin" title="固定：光标换行也不自动换台"><svg viewBox="0 0 16 16"><path d="M6 2h4l-.5 4 2.5 2.5H4L6.5 6z M8 8.5V14" stroke="currentColor" fill="none" stroke-linejoin="round" stroke-linecap="round"/></svg>固定</button></span></div>
+          <div class="dm-canvas" id="tcanvas">
             <div class="tdesk idle" id="tdesk">
               <div class="tdeck"><div class="kb"></div><div class="tp"></div><span class="who">本机</span>
                 <div class="tnfc" id="tnfc"><svg><use href="#i-tapnfc"/></svg>碰一碰<i class="rip"></i><i class="rip r2"></i></div></div>
@@ -352,6 +355,7 @@
               <div class="ttoast" id="ttoast" hidden></div>
             </div>
             <div class="trun" id="trun" hidden></div>
+          </div>
           </div>
 
           <div class="dv-side">
@@ -489,7 +493,7 @@
     $('#tl-cnt').textContent=n+' 台';
     $('#btab-tap-n').textContent=n?String(n):'';
     var running=T.run&&!T.run.done,b=$('#btn-par');
-    b.disabled=!n||running;
+    b.disabled=!n||running;b.classList.toggle('again',!!(T.run&&T.run.done));
     b.innerHTML='<svg class="i"><use href="#i-play"/></svg>'+(running?'并行调试中…':(T.run&&T.run.done&&T.run.ids.length===n?'再跑一遍 · '+n+' 台':'多设备并行调试'+(n?' · '+n+' 台':'')));
     $('#par-hint').textContent=T.run&&T.run.done?'并行 '+(T.run.max/1000).toFixed(1)+' s · 逐台约 '+(T.run.sum/1000).toFixed(1)+' s':'改动 #41';
     runPill();
@@ -679,14 +683,14 @@
   });
   renderList();
 DemoGuide.init([
-  {"target": ".dv-ent[data-hot=\"h2\"] [data-act=\"ok\"]", "kind": "click", "pos": "top", "label": "右栏本就该晚点出？改判成适配"},
+  {"target": ".dv-ent[data-hot=\"h2\"] [data-act=\"ok\"]", "kind": "click", "pos": "top", "label": "该晚出？改判适配"},
   {"target": "#btab-tap", "kind": "click", "pos": "top", "label": "想在桌上真机上验这次改动"},
   {"target": ".tdev[data-d=\"x6\"] .tfr", "kind": "click", "pos": "top", "label": "要验哪台，就拿它碰一下电脑"},
-  {"target": "#btn-par:not([disabled])", "kind": "click", "pos": "left", "label": "几台一起跑这次改动"},
-  {"target": "#tjudge-list .dv-ent.sel .r1", "kind": "click", "pos": "left", "label": "判哪条，哪台上台放大"},
+  {"target": "#btn-par:not([disabled]):not(.again)", "kind": "click", "pos": "left", "label": "几台一起跑这次改动"},
+  {"target": "#tjudge-t", "kind": "click", "pos": "top", "label": "点哪条差异，哪台上台放大"},
   {"target": "#tcanvas.ds-on .ds-side.ds-broken", "kind": "click", "pos": "left", "label": "红点：还有缺陷没判，点它换上台"}
 ], {scene:{
-  at:"你刚改完 ListPage 第 12 行搜索框，桌上摆着几台真机",
+  at:"你刚改完 ListPage 的搜索框，桌上摆着几台真机",
   goal:"确认每台上的差异是正常适配还是缺陷",
   pain:"逐台插线装包、截图发群，再对着断点规则一张张判",
   fix:"碰一下就加进来，一起跑完；判哪条哪台上台，其余靠边"

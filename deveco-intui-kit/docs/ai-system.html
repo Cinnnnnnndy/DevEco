@@ -1,0 +1,1167 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DevEco 智能 · 视觉与交互</title>
+<meta name="description" content="DevEco Code / AI 能力的视觉与交互体系：智能色、标识、图标、高亮、进行态、组件，以及设计稿到代码之后可视化修改与 AI Coding 的联动。">
+<link rel="icon" type="image/svg+xml" href="../icons/deveco-code-logo.svg">
+<link rel="stylesheet" href="../src/tokens.css">
+<link rel="stylesheet" href="../src/ai.css">
+<script src="../icons/ai-icons.js"></script>
+<style>
+/* ---------- 页面自身的面（填充分层，不靠描边） ---------- */
+:root{--pg-bg:#F7F8FA;--pg-card:#FFFFFF;--pg-stage:#F1F2F5;--pg-sep:rgba(0,0,0,.06);--pg-fg2:#5A5D6B;--pg-shadow:0 1px 2px rgba(16,18,24,.04),0 8px 24px rgba(16,18,24,.05)}
+:root[data-theme="dark"]{--pg-bg:#1E1F22;--pg-card:#2B2D30;--pg-stage:#1E1F22;--pg-sep:rgba(255,255,255,.06);--pg-fg2:#A1A3AB;--pg-shadow:none}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--pg-bg:#1E1F22;--pg-card:#2B2D30;--pg-stage:#1E1F22;--pg-sep:rgba(255,255,255,.06);--pg-fg2:#A1A3AB;--pg-shadow:none}}
+
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+body{margin:0;background:var(--pg-bg);color:var(--ui-fg);font-family:var(--font-ui);font-size:14px;line-height:24px;font-weight:400;
+  -webkit-font-smoothing:antialiased;overflow-x:hidden}
+code,.mono{font-family:var(--font-code);font-size:.92em}
+a{color:var(--ui-link);text-decoration:none}
+a:hover{text-decoration:underline}
+button{font-family:inherit}
+svg.i{width:16px;height:16px;display:block;flex:none}
+
+/* 顶栏 */
+.bar{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:10px;height:56px;padding:0 24px;
+  background:color-mix(in srgb,var(--pg-bg) 86%,transparent);backdrop-filter:saturate(1.4) blur(14px);-webkit-backdrop-filter:saturate(1.4) blur(14px)}
+.bar .nm{font-weight:500;font-size:14px;white-space:nowrap}
+.bar .nm span{color:var(--ui-fg-info);font-weight:400;margin-left:6px}
+.bar .grow{flex:1}
+.tg{appearance:none;border:0;height:30px;padding:0 12px;border-radius:15px;background:var(--pg-card);color:var(--ui-fg);font-size:12px;cursor:pointer;
+  box-shadow:var(--pg-shadow);white-space:nowrap}
+.tg:hover{background:var(--ui-hover)}
+.tg[aria-pressed="true"]{background:var(--ui-fg);color:var(--pg-bg)}
+
+.shell{display:grid;grid-template-columns:200px minmax(0,1fr);max-width:1240px;margin:0 auto;padding:0 24px}
+.toc{position:sticky;top:72px;align-self:start;padding:24px 0 40px;display:flex;flex-direction:column;gap:1px}
+.toc a{display:flex;gap:10px;padding:5px 10px;border-radius:8px;color:var(--pg-fg2);font-size:13px;line-height:18px;text-decoration:none}
+.toc a b{font-family:var(--font-code);font-weight:400;font-size:11px;color:var(--ui-fg-disabled);width:16px}
+.toc a:hover{color:var(--ui-fg);background:var(--pg-card)}
+.toc a.on{color:var(--ui-fg);background:var(--pg-card);box-shadow:var(--pg-shadow)}
+main{min-width:0;padding:0 0 120px 40px}
+
+/* 首屏 */
+.hero{padding:56px 0 16px;display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:48px;align-items:center}
+.eyebrow{font-size:12px;letter-spacing:.08em;color:var(--ui-fg-info);margin:0 0 14px}
+h1{margin:0;font-size:44px;line-height:52px;font-weight:600;letter-spacing:-.02em}
+.hero .lede{margin:18px 0 0;font-size:17px;line-height:30px;color:var(--pg-fg2);max-width:34em}
+.q3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:32px 0 0}
+.q3 div{background:var(--pg-card);border-radius:14px;padding:14px 16px;box-shadow:var(--pg-shadow)}
+.q3 b{display:block;font-weight:500;font-size:14px}
+.q3 span{display:block;font-size:12.5px;line-height:20px;color:var(--pg-fg2);margin-top:4px}
+.hero-art{position:relative;border-radius:24px;background:var(--pg-card);padding:28px 24px 22px;box-shadow:var(--pg-shadow);display:flex;flex-direction:column;gap:18px}
+.hero-art .lg{display:flex;align-items:center;gap:14px}
+.hero-art .lg svg{width:56px;height:56px;filter:drop-shadow(0 10px 22px var(--ai-glow))}
+.hero-art .lg b{display:block;font-size:17px;font-weight:600}
+.hero-art .lg span{display:block;font-size:12px;color:var(--ui-fg-info)}
+.files{display:flex;flex-wrap:wrap;gap:6px;margin-top:22px}
+.files span{font-family:var(--font-code);font-size:11px;line-height:20px;padding:0 8px;border-radius:6px;background:var(--pg-card);color:var(--pg-fg2)}
+
+/* 章节 */
+section{padding-top:112px;scroll-margin-top:40px}
+.sh{max-width:720px;margin-bottom:32px}
+.sh .no{display:block;font-family:var(--font-code);font-size:12px;color:var(--ui-fg-info);margin-bottom:10px}
+.sh h2{margin:0;font-size:30px;line-height:38px;font-weight:600;letter-spacing:-.01em}
+.sh p{margin:12px 0 0;font-size:15px;line-height:27px;color:var(--pg-fg2)}
+h3{margin:48px 0 14px;font-size:18px;line-height:26px;font-weight:500}
+h3 small{font-weight:400;font-size:13px;color:var(--ui-fg-info);margin-left:8px}
+.p{max-width:720px;color:var(--pg-fg2);margin:0 0 16px}
+
+.card{background:var(--pg-card);border-radius:16px;padding:20px 22px;box-shadow:var(--pg-shadow);min-width:0}
+.card h4{margin:0 0 6px;font-size:15px;line-height:22px;font-weight:500}
+.card p{margin:0;font-size:13px;line-height:21px;color:var(--pg-fg2)}
+.stage{background:var(--pg-stage);border-radius:12px;padding:18px;min-width:0}
+.g2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.g3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.g4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
+
+/* 场景三句：在做 → 卡在 → 这样解 */
+.scn{display:grid;grid-template-columns:auto minmax(0,1fr);gap:3px 10px;margin:14px 0 0;padding:12px 14px;border-radius:10px;background:var(--pg-stage);
+  font-size:12.5px;line-height:20px}
+.scn dt{color:var(--ui-fg-info);white-space:nowrap}
+.scn dd{margin:0;color:var(--ui-fg)}
+.scn dd.fix{font-weight:500}
+.card .stage + .scn{background:transparent;padding:12px 0 0;margin:0}
+
+/* 原则 */
+.pr{display:flex;flex-direction:column}
+.pr .hig{font-size:12px;color:var(--ui-fg-info);margin:0 0 8px}
+.pr .hig a{color:inherit;text-decoration:underline;text-decoration-color:var(--pg-sep);text-underline-offset:3px}
+
+/* 表（填充行，不画格线） */
+.tbl{display:flex;flex-direction:column;gap:6px}
+.tr{display:grid;grid-template-columns:170px minmax(0,1.3fr) minmax(0,1fr) minmax(0,.9fr);gap:18px;padding:14px 18px;border-radius:12px;background:var(--pg-card);
+  font-size:13px;line-height:21px;box-shadow:var(--pg-shadow)}
+.tr.th{background:transparent;box-shadow:none;padding-top:0;padding-bottom:0;color:var(--ui-fg-info);font-size:12px}
+.tr b{font-weight:500}
+.tr .src{color:var(--ui-fg-info);font-size:12px;display:block}
+.tr .take{color:var(--ui-fg)}
+.tr .no-take{color:var(--pg-fg2)}
+
+/* 用色 */
+.ribbon{height:120px;border-radius:20px;background:var(--ai-grad);position:relative;overflow:hidden}
+.ribbon::after{content:"";position:absolute;inset:0;background:radial-gradient(120% 90% at 18% 0%,rgba(255,255,255,.35),transparent 55%)}
+.ribbon .stops{position:absolute;left:0;right:0;bottom:12px;display:flex;justify-content:space-between;padding:0 18px;color:#fff;font-size:12px;z-index:1}
+.ribbon .stops span{font-family:var(--font-code);font-size:11px;opacity:.9}
+.sw{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.swc{border-radius:12px;background:var(--pg-card);padding:10px;box-shadow:var(--pg-shadow);min-width:0}
+.swc i{display:block;height:44px;border-radius:8px;margin-bottom:8px}
+.swc b{display:block;font-weight:500;font-size:12.5px;line-height:18px}
+.swc code{display:block;font-size:11px;color:var(--ui-fg-info);line-height:16px;overflow-wrap:anywhere}
+.swc em{display:block;font-style:normal;font-size:11px;color:var(--pg-fg2);line-height:16px;margin-top:2px}
+.tabs2{display:flex;gap:10px;align-items:center;margin:0 0 12px;font-size:12px;color:var(--ui-fg-info)}
+.budget{display:flex;height:12px;border-radius:6px;overflow:hidden;background:var(--pg-stage);margin:10px 0 8px}
+.budget i{display:block;height:100%}
+.legend{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:12px;color:var(--pg-fg2)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:8px;height:8px;border-radius:2px;display:inline-block}
+.roles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.role .chip{display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 10px;border-radius:13px;font-size:12px;margin-bottom:10px}
+
+/* Logo */
+.logo-hero{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px}
+.anat{position:relative;display:grid;place-items:center;min-height:300px}
+.anat svg.big{width:168px;height:168px;filter:drop-shadow(0 18px 40px var(--ai-glow))}
+.anat .note{position:absolute;font-size:12px;line-height:17px;color:var(--pg-fg2);max-width:130px}
+.anat .note b{display:block;color:var(--ui-fg);font-weight:500}
+.variants{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.var{border-radius:12px;padding:18px 10px 12px;display:flex;flex-direction:column;align-items:center;gap:10px;font-size:12px;color:var(--pg-fg2);text-align:center}
+.var svg{width:48px;height:48px}
+.var.on-dark{background:#1E1F22;color:#A1A3AB}
+.var.on-light{background:#F4F5F8;color:#5A5D6B}
+.var.on-page{background:var(--pg-stage)}
+.sizes{display:flex;align-items:flex-end;gap:26px;flex-wrap:wrap}
+.sizes div{display:flex;flex-direction:column;align-items:center;gap:8px;font-family:var(--font-code);font-size:11px;color:var(--ui-fg-info)}
+.safe{position:relative;width:112px;height:112px;background:repeating-linear-gradient(45deg,var(--ai-tint-2) 0 4px,transparent 4px 8px);border-radius:6px;display:grid;place-items:center}
+.safe svg{width:80px;height:80px}
+.safe::after{content:"";position:absolute;inset:16px;outline:1px dashed var(--ui-fg-info);outline-offset:0;border-radius:2px;opacity:.5}
+.donts{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+.dont{display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;font-size:12px;line-height:17px;color:var(--pg-fg2)}
+.dont .box{position:relative;width:100%;aspect-ratio:1.3;border-radius:12px;background:var(--pg-stage);display:grid;place-items:center;overflow:hidden}
+.dont .box::after{content:"";position:absolute;right:8px;top:8px;width:16px;height:16px;border-radius:50%;background:var(--ui-error);
+  -webkit-mask:linear-gradient(45deg,transparent 44%,#000 44% 56%,transparent 56%),linear-gradient(-45deg,transparent 44%,#000 44% 56%,transparent 56%);opacity:.85}
+
+/* 图标 */
+.ig{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:8px}
+.ic{border-radius:12px;background:var(--pg-card);padding:16px 8px 10px;display:flex;flex-direction:column;align-items:center;gap:8px;box-shadow:var(--pg-shadow);min-width:0}
+.ic .pair{display:flex;align-items:center;gap:14px;color:var(--ui-icon)}
+.ic .pair svg.x2{width:32px;height:32px}
+.ic b{font-weight:400;font-size:12px;line-height:16px;text-align:center}
+.ic code{font-size:10.5px;color:var(--ui-fg-info);line-height:14px}
+.derive{display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+.derive .step{display:flex;flex-direction:column;align-items:center;gap:8px;font-size:12px;color:var(--pg-fg2)}
+.derive .step .cell{width:88px;height:88px;border-radius:12px;background:var(--pg-stage);display:grid;place-items:center;color:var(--ui-fg);
+  background-image:linear-gradient(var(--pg-sep) 1px,transparent 1px),linear-gradient(90deg,var(--pg-sep) 1px,transparent 1px);background-size:5.5px 5.5px;background-position:0 0}
+.derive .step .cell svg{width:64px;height:64px}
+.derive .step .cell .ai-derive svg{width:16px;height:16px}
+.derive .op{color:var(--ui-fg-info);font-size:18px}
+
+/* 代码样张 */
+.code{border-radius:12px;background:var(--ui-editor-bg);padding:10px 0;overflow:hidden;font-family:var(--font-code);font-size:12.5px;line-height:22px;color:var(--ed-text)}
+.code .ln{display:grid;grid-template-columns:44px minmax(0,1fr);position:relative}
+.code .ln>i{font-style:normal;text-align:right;padding-right:14px;color:var(--ed-linenum);user-select:none}
+.code .ln>span{white-space:pre;overflow:hidden;text-overflow:ellipsis;padding-right:12px}
+.code .ai-block .ai-gut{left:32px}
+.k{color:var(--ed-keyword)}.s{color:var(--ed-string)}.n{color:var(--ed-number)}.f{color:var(--ed-func)}.m{color:var(--ed-meta)}.c{color:var(--ed-comment)}.fd{color:var(--ed-field)}
+.code .ghost-hint{font-family:var(--font-ui);font-size:11px;margin-left:10px;color:var(--ui-fg-info)}
+.code .ln .gm{position:absolute;left:24px;top:6px}
+.hl-tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:12px}
+
+/* 画布样张：手机里的商品卡 */
+.phone{width:220px;margin:0 auto;border-radius:30px;background:var(--pg-card);padding:14px 12px 18px;box-shadow:var(--pg-shadow)}
+.phone .sb{display:flex;justify-content:space-between;font-size:10px;color:var(--ui-fg-info);padding:0 8px 8px;font-family:var(--font-code)}
+.pc{border-radius:12px;background:var(--pg-stage);padding:10px;display:flex;gap:10px;align-items:center;margin-top:10px}
+.pc .img{width:44px;height:44px;border-radius:8px;background:linear-gradient(135deg,#C9CCD6,#EBECF0)}
+:root[data-theme="dark"] .pc .img{background:linear-gradient(135deg,#4E5157,#393B40)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .pc .img{background:linear-gradient(135deg,#4E5157,#393B40)}}
+.pc .t{font-size:12px;line-height:16px}.pc .t small{display:block;font-size:11px;color:var(--ui-fg-info)}
+.pc .buy{margin-left:auto;height:24px;padding:0 10px;border-radius:12px;background:var(--ui-fg);color:var(--pg-card);font-size:11px;line-height:24px}
+
+/* 进行态 */
+.flow{display:flex;flex-wrap:wrap;align-items:center;gap:8px 6px}
+.flow .nd{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 12px;border-radius:15px;background:var(--pg-card);font-size:12.5px;box-shadow:var(--pg-shadow);white-space:nowrap}
+.flow .ar{color:var(--ui-fg-disabled);font-size:12px}
+.flow .nd.w{background:var(--ai-wait-tint);color:var(--ai-wait-ink);box-shadow:none}
+.side{display:flex;flex-direction:column;gap:6px;margin-top:14px;font-size:12.5px;color:var(--pg-fg2)}
+.player{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:16px;align-items:stretch}
+.panel{border-radius:16px;background:var(--pg-stage);padding:16px;display:flex;flex-direction:column;gap:12px;min-height:300px}
+.panel .ph{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ui-fg-info)}
+.panel .ph .ai-ico{color:var(--ui-icon)}
+.panel .thread{flex:1;display:flex;flex-direction:column;gap:10px;justify-content:flex-end}
+.umsg{align-self:flex-end;max-width:85%;background:var(--ai-surface);border-radius:12px 12px 4px 12px;padding:8px 12px;font-size:13px;line-height:20px}
+.ctl{display:flex;flex-direction:column;gap:4px}
+.ctl button{appearance:none;border:0;display:flex;align-items:center;gap:10px;text-align:left;padding:8px 12px;border-radius:10px;background:transparent;color:var(--pg-fg2);
+  font-size:13px;line-height:18px;cursor:pointer}
+.ctl button:hover{background:var(--pg-card);color:var(--ui-fg)}
+.ctl button[aria-pressed="true"]{background:var(--pg-card);color:var(--ui-fg);box-shadow:var(--pg-shadow)}
+.ctl button b{font-family:var(--font-code);font-weight:400;font-size:11px;color:var(--ui-fg-disabled);width:14px}
+.ctl .auto{margin-top:6px;justify-content:center;background:var(--pg-card);color:var(--ui-fg)}
+.states{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.st .head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+.st .head h4{margin:0}
+.st .spec{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px;font-size:12.5px;line-height:19px;margin:12px 0 0}
+.st .spec dt{color:var(--ui-fg-info)}
+.st .spec dd{margin:0}
+.specimen{min-height:58px;display:flex;align-items:center;padding:14px;border-radius:12px;background:var(--pg-stage)}
+/* 规范页自己也守「一屏最多两处渐变」：样张悬停才动 */
+.st:not(:hover):not(:focus-within) .specimen *,.st:not(:hover):not(:focus-within) .specimen *::after{animation-play-state:paused!important}
+
+/* 组件 */
+.comp-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.comp-grid .wide{grid-column:1 / -1}
+.chips{display:flex;gap:4px;flex-wrap:wrap}
+.chipbtn{appearance:none;border:0;display:inline-flex;align-items:center;gap:4px;height:24px;padding:0 8px;border-radius:6px;background:transparent;color:var(--ui-fg-info);font-size:12px;cursor:pointer}
+.chipbtn:hover{background:var(--ui-action-hover);color:var(--ui-fg)}
+.chipbtn svg{width:14px;height:14px}
+.egs{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.egs button{appearance:none;border:0;height:26px;padding:0 10px;border-radius:13px;background:var(--pg-card);color:var(--pg-fg2);font-size:12px;cursor:pointer}
+.egs button:hover{color:var(--ui-fg)}
+
+/* Do / Don't */
+.dd{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.dd .pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.dd .v{border-radius:12px;background:var(--pg-stage);padding:12px;min-height:118px;display:flex;flex-direction:column;gap:8px;font-size:12px}
+.dd .lab{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:500}
+.dd .lab.no{color:var(--ui-error)}.dd .lab.ok{color:var(--ui-success)}
+.mini-panel{border-radius:8px;padding:10px;display:flex;flex-direction:column;gap:6px;background:var(--ai-surface)}
+.mini-panel.bad{background:var(--ai-grad);color:#fff}
+.mini-line{height:6px;border-radius:3px;background:var(--ui-fg-disabled);opacity:.35}
+.mini-panel.bad .mini-line{background:#fff;opacity:.5}
+.tagnew{display:inline-flex;align-items:center;height:18px;padding:0 6px;border-radius:5px;background:var(--ui-tag-bg);color:var(--ui-tag-fg);font-size:10.5px}
+
+/* 专题 */
+.hands{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.hand .ico{width:36px;height:36px;border-radius:10px;background:var(--pg-stage);display:grid;place-items:center;margin-bottom:12px;color:var(--ui-fg)}
+.hand .ico svg{width:18px;height:18px}
+.hand .pros,.hand .cons{font-size:12.5px;line-height:20px;margin-top:8px}
+.hand .pros b,.hand .cons b{font-weight:500;margin-right:6px}
+.hand .cons{color:var(--pg-fg2)}
+.model{display:grid;grid-template-columns:minmax(0,1fr) 36px minmax(0,1.1fr) 36px minmax(0,1fr);align-items:center;gap:0}
+.model .col{display:flex;flex-direction:column;gap:10px}
+.mnode{border-radius:12px;background:var(--pg-card);padding:12px 14px;box-shadow:var(--pg-shadow);font-size:12.5px;line-height:19px}
+.mnode b{display:block;font-weight:500;font-size:13px}
+.mnode small{display:block;color:var(--pg-fg2);font-size:12px}
+.mnode.src{background:var(--ui-fg);color:var(--pg-card);box-shadow:none;text-align:center;padding:22px 14px}
+.mnode.src small{color:inherit;opacity:.7}
+.mnode.ai{background:var(--ai-tint-2);box-shadow:none}
+.mnode.ai b{color:var(--ai-ink);display:flex;align-items:center;gap:6px}
+.marr{display:grid;place-items:center;color:var(--ui-fg-disabled);font-size:16px}
+.rules4{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:16px}
+.rules4 .eg{margin-top:10px;font-family:var(--font-code);font-size:12px;line-height:20px;padding:8px 10px;border-radius:8px;background:var(--pg-stage);overflow-x:auto;white-space:pre}
+
+.scope{display:grid;grid-template-columns:260px minmax(0,1fr);gap:20px}
+.dm{display:flex;flex-direction:column;gap:12px}
+.dm .phone{width:100%;max-width:240px}
+.dm .pc.sel{outline:1.5px solid var(--ui-accent);outline-offset:2px}
+.dm .slider{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--pg-fg2)}
+.dm input[type=range]{flex:1;accent-color:var(--ui-fg)}
+.dm .val{font-family:var(--font-code);font-size:12px;min-width:44px;text-align:right;color:var(--ui-fg)}
+.tr8{border-radius:12px;background:var(--ai-surface);padding:10px 12px;font-size:12.5px;line-height:19px;display:none;flex-direction:column;gap:8px;box-shadow:var(--pg-shadow)}
+.tr8.on{display:flex}
+.tr8 .h{display:flex;align-items:center;gap:6px;color:var(--ai-ink)}
+.tr8 .opts{display:flex;gap:6px;flex-wrap:wrap}
+.scope-r{display:flex;flex-direction:column;gap:14px;min-width:0}
+.axis{display:flex;flex-direction:column;gap:6px}
+.axis .lb{font-size:12px;color:var(--ui-fg-info);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.axis .rec{display:inline-flex;align-items:center;gap:4px;color:var(--ai-ink)}
+.bps{display:grid;grid-template-columns:.8fr 1.1fr 1.4fr;gap:10px;align-items:end}
+.bp{border-radius:12px;background:var(--pg-card);padding:8px;box-shadow:var(--pg-shadow);min-width:0}
+.bp .cap{display:flex;justify-content:space-between;font-size:11px;color:var(--ui-fg-info);margin-bottom:6px;font-family:var(--font-code)}
+.bp .hd{height:10px;border-radius:3px;background:var(--pg-stage);margin-bottom:6px;transition:margin .25s}
+.bp .grid{display:grid;gap:5px}
+.bp .cd{border-radius:5px;background:var(--pg-stage);transition:padding .25s;min-width:0}
+.bp .cd i{display:block;height:14px;border-radius:3px;background:var(--ui-fg-disabled);opacity:.35}
+.bp .cd.hit{box-shadow:0 0 0 1px var(--ui-fg-info)}
+.bp .cd.hero i{height:20px}
+.bp.bad{box-shadow:0 0 0 1.5px var(--ai-wait)}
+.impact{display:flex;flex-direction:column;gap:6px;font-size:12.5px;line-height:19px}
+.impact .row{display:flex;gap:8px;align-items:flex-start}
+.impact .row svg{width:14px;height:14px;margin-top:3px;flex:none}
+.impact .warn{color:var(--ai-wait-ink)}
+.codebox{border-radius:12px;background:var(--ui-editor-bg);padding:12px 14px;font-family:var(--font-code);font-size:12px;line-height:20px;color:var(--ed-text);white-space:pre;overflow-x:auto;min-height:124px}
+.codebox .file{display:block;color:var(--ui-fg-info);font-size:11px;margin-bottom:4px}
+
+.intent{display:flex;gap:14px;align-items:flex-start}
+.intent .ai-spark{width:14px;height:14px;margin-top:4px}
+.tl{display:flex;flex-direction:column;gap:4px}
+.tl label{display:grid;grid-template-columns:18px 64px 22px minmax(0,1fr) auto;align-items:center;gap:10px;padding:8px 10px;border-radius:10px;font-size:12.5px;line-height:18px;cursor:pointer}
+.tl label:hover{background:var(--pg-stage)}
+.tl input{accent-color:var(--ui-fg);margin:0}
+.tl .tm{font-family:var(--font-code);font-size:11px;color:var(--ui-fg-info)}
+.tl .who{width:20px;height:20px;border-radius:6px;display:grid;place-items:center;background:var(--pg-stage);color:var(--ui-icon)}
+.tl .who svg{width:12px;height:12px}
+.tl .who.ai{background:var(--ai-tint-2);color:var(--ai-ink)}
+.tl .off{opacity:.45;text-decoration:line-through}
+.tl .src2{font-size:11px;color:var(--ui-fg-info);white-space:nowrap}
+
+.lanes{display:grid;grid-template-columns:64px minmax(0,1fr) minmax(0,1fr);gap:8px 12px;font-size:12.5px;line-height:19px}
+.lanes .hd{font-size:12px;color:var(--ui-fg-info)}
+.lanes .t{font-family:var(--font-code);font-size:11px;color:var(--ui-fg-info);padding-top:9px}
+.lanes .ev{border-radius:10px;background:var(--pg-stage);padding:8px 10px;min-width:0}
+.lanes .ev.empty{background:transparent}
+.lanes .ev b{font-weight:500}
+.lanes .ev .ai-status{margin-top:6px;height:24px;max-width:100%}
+
+.drift{display:flex;flex-direction:column;gap:6px}
+.drow{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr) auto;gap:14px;align-items:center;padding:10px 12px;border-radius:10px;background:var(--pg-stage);font-size:12.5px;line-height:19px}
+.drow .vs{font-family:var(--font-code);font-size:11.5px;color:var(--pg-fg2)}
+.drow .acts{display:flex;gap:2px;flex-wrap:wrap}
+.drow.done{opacity:.55}
+
+.cmp{display:flex;flex-direction:column;gap:6px}
+.cmp .tr{grid-template-columns:150px minmax(0,1.2fr) minmax(0,1.2fr) 88px}
+.tagk{display:inline-flex;align-items:center;height:20px;padding:0 8px;border-radius:10px;font-size:11px;white-space:nowrap;background:var(--pg-stage);color:var(--ui-fg)}
+.tagk.new{background:var(--ui-fg);color:var(--pg-card)}
+.unique{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:16px}
+
+.recs{display:flex;flex-direction:column;gap:10px;counter-reset:rec}
+.rec{display:grid;grid-template-columns:36px minmax(0,1fr);gap:4px 12px}
+.rec::before{counter-increment:rec;content:counter(rec,decimal-leading-zero);font-family:var(--font-code);font-size:12px;color:var(--ui-fg-info);padding-top:2px}
+.rec h4{margin:0}
+.rec .scn{margin-top:8px}
+.rec .how{font-size:12.5px;line-height:20px;color:var(--pg-fg2);margin-top:8px}
+.rec .how code{font-size:11.5px}
+
+.refs{columns:2;column-gap:32px;font-size:13px;line-height:22px;padding-left:18px;margin:0}
+.refs li{break-inside:avoid;margin-bottom:8px;color:var(--pg-fg2)}
+.refs a{color:var(--ui-fg)}
+.foot{margin-top:56px;font-size:12px;color:var(--ui-fg-info)}
+
+/* ---------- 窄屏 ---------- */
+@media (max-width:1180px){
+  .shell{grid-template-columns:1fr}
+  .toc{display:none}
+  main{padding-left:0}
+}
+@media (max-width:960px){
+  .hero{grid-template-columns:1fr;gap:28px}
+  .g4,.roles,.sw{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .g3,.hands,.unique{grid-template-columns:1fr}
+  .player{grid-template-columns:1fr}
+  .ctl{flex-direction:row;flex-wrap:wrap}
+  .ctl button{padding:6px 10px}
+  .scope{grid-template-columns:1fr}
+  .model{grid-template-columns:1fr;gap:8px}
+  .marr{transform:rotate(90deg);height:24px}
+  .donts{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .tr,.cmp .tr{grid-template-columns:1fr;gap:6px}
+  .tr.th{display:none}
+}
+@media (max-width:720px){
+  .bar{padding:0 16px}
+  .bar .nm span{display:none}
+  .shell{padding:0 16px}
+  .hero{padding-top:32px}
+  h1{font-size:34px;line-height:42px}
+  .hero .lede{font-size:15px;line-height:26px}
+  .q3{grid-template-columns:1fr}
+  section{padding-top:80px}
+  .sh h2{font-size:24px;line-height:32px}
+  .g2,.states,.comp-grid,.dd,.rules4,.logo-hero{grid-template-columns:1fr}
+  .dd .pair{grid-template-columns:1fr}
+  .donts{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .variants{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .card{padding:16px}
+  .drow{grid-template-columns:1fr}
+  .refs{columns:1}
+  .bps{grid-template-columns:1fr 1fr}
+  .bps .bp:last-child{grid-column:1 / -1}
+  .tl label{grid-template-columns:18px 20px minmax(0,1fr);row-gap:2px}
+  .tl .tm,.tl .src2{grid-column:3}
+  .tl .tm{order:5}
+  .lanes{grid-template-columns:44px minmax(0,1fr) minmax(0,1fr)}
+  .anat .note{display:none}
+  .anat{min-height:220px}
+}
+</style>
+</head>
+<body>
+<header class="bar">
+  <svg class="i" style="width:22px;height:22px"><use href="#ai-logo-16"/></svg>
+  <span class="nm">DevEco 智能<span>视觉与交互体系</span></span>
+  <span class="grow"></span>
+  <button class="tg" id="reduce" aria-pressed="false" title="预览「降低动效」时的替代表现">降低动效</button>
+  <button class="tg" id="theme">深色</button>
+</header>
+
+<div class="shell">
+<nav class="toc" id="toc">
+  <a href="#principles"><b>01</b>原则</a>
+  <a href="#research"><b>02</b>调研对照</a>
+  <a href="#color"><b>03</b>用色</a>
+  <a href="#logo"><b>04</b>标识</a>
+  <a href="#icons"><b>05</b>图标</a>
+  <a href="#highlight"><b>06</b>高亮</a>
+  <a href="#states"><b>07</b>进行态</a>
+  <a href="#components"><b>08</b>组件</a>
+  <a href="#dodont"><b>09</b>Do / Don’t</a>
+  <a href="#visual-edit"><b>10</b>可视化修改 × AI</a>
+  <a href="#demo13"><b>11</b>demo 13 怎么改</a>
+  <a href="#refs"><b>12</b>来源</a>
+</nav>
+
+<main>
+<!-- ================= 首屏 ================= -->
+<div class="hero">
+  <div>
+    <p class="eyebrow">DEVECO INTELLIGENCE · 设计规范 · 2026-09</p>
+    <h1>DevEco 智能</h1>
+    <p class="lede">DevEco Code、CodeGenie 以及 IDE 里所有 AI 能力共用的一套视觉与交互：从标识、用色、图标，到代码高亮、进行态和组件。它只做一件事：让开发者写代码时，随时回答得出下面三个问题。</p>
+    <div class="q3">
+      <div><b>这是谁写的？</b><span>AI 写的代码、改的界面有同一个记号；人改的不打标。</span></div>
+      <div><b>它在干什么？</b><span>每个进行态都说具体在读什么、跑什么、已用多久。</span></div>
+      <div><b>轮到我了吗？</b><span>只有「在等你」会亮琥珀色，其余进行态都安静。</span></div>
+    </div>
+    <div class="files"><span>src/ai.css</span><span>icons/ai-icons.svg</span><span>icons/ai-icons.js</span><span>icons/deveco-code-logo*.svg</span><span>依赖 src/tokens.css</span></div>
+  </div>
+  <div class="hero-art" aria-label="标识与生成中的输入框">
+    <div class="lg"><svg><use href="#ai-logo"/></svg><div><b>DevEco Code</b><span>为代码的智能 · ‹ ✦ ›</span></div></div>
+    <div class="ai-field" data-state="generating">
+      <textarea class="ai-field__ta" rows="2" aria-label="示例输入" placeholder="问 DevEco Code"></textarea>
+      <div class="ai-field__gen"><i class="ai-spark is-live"></i><span class="ai-shimmer">正在写 LoginPage.ets · 第 2 处，共 3 处</span></div>
+      <div class="ai-field__bar"><span class="ai-field__model"><svg><use href="#ai-local"/></svg>本机 · 7B</span><span class="grow"></span>
+        <button class="ai-field__send" title="停止生成" aria-label="停止生成"><svg><use href="#ai-stop"/></svg></button></div>
+    </div>
+    <span class="ai-status" data-state="waiting"><i class="ai-wait-dot"></i><span class="lbl">等你确认：在 Mate 70 上安装调试包</span></span>
+  </div>
+</div>
+
+<!-- ================= 01 原则 ================= -->
+<section id="principles">
+  <div class="sh"><span class="no">01</span><h2>原则</h2>
+    <p>来自 Apple HIG · Generative AI，逐条翻译成开发者在 IDE 里的一幕。每条原则都要能挂到一个开发任务上，挂不上的不收。</p></div>
+  <div class="g2">
+    <div class="card pr"><p class="hig">HIG · Keep people in control</p><h4>改动旁边永远有「编辑 · 退回 · 重试 · 调整」，并告诉你改动已生效</h4>
+      <dl class="scn"><dt>在做</dt><dd>让 AI 把登录页适配深色模式</dd><dt>卡在</dt><dd>它一次改了 5 个文件，不确定哪些真的写进去了；不满意只能 git checkout 全撤</dd><dt>这样解</dt><dd class="fix">回答卡底部写「已写入 5 个文件」，每个文件单独可退</dd></dl></div>
+    <div class="card pr"><p class="hig">HIG · Clearly identify when and where you use AI</p><h4>AI 做的，在代码、画布、时间轴上用同一个记号；人改的不打标</h4>
+      <dl class="scn"><dt>在做</dt><dd>审同事提的 PR，里面一半是 AI 生成的</dd><dt>卡在</dt><dd>分不清哪段该重点看，只能逐行猜</dd><dt>这样解</dt><dd class="fix">gutter 竖条标出 AI 段落，悬停看是哪一步生成的</dd></dl></div>
+    <div class="card pr"><p class="hig">HIG · Set clear expectations</p><h4>空输入框给能直接点的示例，按当前文件生成</h4>
+      <dl class="scn"><dt>在做</dt><dd>第一次打开 DevEco Code</dd><dt>卡在</dt><dd>不知道它只能聊天，还是能直接改工程、跑模拟器</dd><dt>这样解</dt><dd class="fix">示例写「给 LoginPage 加手机号校验」，点一下就能跑</dd></dl></div>
+    <div class="card pr"><p class="hig">HIG · On-device vs. server · privacy</p><h4>本机还是云端，常驻显示；要把代码发出去之前先说</h4>
+      <dl class="scn"><dt>在做</dt><dd>在公司内网项目里问 AI</dd><dt>卡在</dt><dd>不确定代码有没有被传出去，干脆不敢用</dd><dt>这样解</dt><dd class="fix">输入框底栏常驻「本机 / 云端」图标，切云端前提示一次</dd></dl></div>
+    <div class="card pr"><p class="hig">HIG · Factor processing time · specific, reassuring feedback</p><h4>等待要说人话：在读哪个文件、跑哪个工具、已用多久</h4>
+      <dl class="scn"><dt>在做</dt><dd>发出需求后盯着面板等</dd><dt>卡在</dt><dd>只有「处理中…」，不知道是在读工程还是卡死了</dd><dt>这样解</dt><dd class="fix">显示「正在读 LoginPage.ets 和 3 个 @State · 4 s」</dd></dl></div>
+    <div class="card pr"><p class="hig">HIG · Let people share feedback · offer alternate versions</p><h4>反馈放在不打断的地方；备选版本并排给，不连环弹窗</h4>
+      <dl class="scn"><dt>在做</dt><dd>拿到答案，急着回到代码</dd><dt>卡在</dt><dd>弹窗问「这个回答有帮助吗」挡住编辑器</dd><dt>这样解</dt><dd class="fix">点赞点踩淡色放卡片右下角，点不点都行</dd></dl></div>
+    <div class="card pr" style="grid-column:1/-1"><p class="hig">HIG · Ask before taking destructive or irreversible actions</p><h4>删文件、改签名配置、在真机上装包、执行 shell 之前停下来问——这是唯一用琥珀色的时刻</h4>
+      <dl class="scn"><dt>在做</dt><dd>让 Agent 修构建报错，自己去查文档</dd><dt>卡在</dt><dd>回来发现它跑了 clean、还改了签名配置，调试证书没了</dd><dt>这样解</dt><dd class="fix">审批卡先讲清影响和能不能撤回；状态栏琥珀点提醒你回来</dd></dl></div>
+  </div>
+</section>
+
+<!-- ================= 02 调研对照 ================= -->
+<section id="research">
+  <div class="sh"><span class="no">02</span><h2>调研对照</h2>
+    <p>看了五家怎么表达「这是 AI」「AI 正在做」。结论：渐变与流动光只在进行中出现是共识；标识要克制、一致；IDE 里的 AI 应该比手机上的更冷静。</p></div>
+  <div class="tbl">
+    <div class="tr th"><span>来源</span><span>看到什么</span><span>我们取</span><span>我们不取</span></div>
+    <div class="tr"><span><b>Apple Intelligence</b><span class="src">iOS 18 / 26 · Writing Tools · Siri</span></span>
+      <span>生成时输入框出现冷暖多色渐变光与白色外发光；流动光 = 正在生成；shimmer 为线性渐变做色相旋转，约 1.8 s 一轮。</span>
+      <span class="take">流动光只在「生成中」出现在输入框上；1.8 s 一轮；外发光用同一道光模糊而来。</span>
+      <span class="no-take">全屏边缘光——IDE 里会盖住代码。</span></div>
+    <div class="tr"><span><b>Xcode 26</b><span class="src">Coding Intelligence</span></span>
+      <span>工具栏一个 sparkle 打开助手侧栏；Coding Tools 从右键菜单进入；可接 ChatGPT、Claude 或本地模型。</span>
+      <span class="take">全局只有一个入口标识；就地入口走右键与选区；模型与本机 / 云端常驻可见。</span>
+      <span class="no-take">通用 sparkle——我们用 ‹✦› 表明「为代码的智能」。</span></div>
+    <div class="tr"><span><b>Google Gemini</b><span class="src">Google Design · Gemini visual design</span></span>
+      <span>sparkle 是最常见的元素；渐变只在处理、语音转写时出现，从集中到弥散；思考态探索过点和形状的动效。</span>
+      <span class="take">渐变 = 进行中，平时不出现；思考态用星芒自身的流动，不用转圈。</span>
+      <span class="no-take">四色品牌渐变——与状态色（绿 / 黄 / 红）撞色。</span></div>
+    <div class="tr"><span><b>CodeGenie（现状）</b><span class="src">DevEco Studio 6.0.2 · 本仓库 kit</span></span>
+      <span>输入框左下角常驻 #A571E6 紫色光晕；logo 是蓝紫渐变六边形 G。</span>
+      <span class="take">紫色一脉延续：兰紫 #A452E0 与现有 #A571E6 同色相，老用户认得出。</span>
+      <span class="no-take">常驻光晕（待命时也在发光）；六边形 G 与「代码」无关。</span></div>
+    <div class="tr"><span><b>HarmonyOS 6 / 7</b><span class="src">沉浸光感 · 智慧光感 · 小艺</span></span>
+      <span>界面像带光学扩散、动态透光的介质；图标是超椭圆；小艺是系统级智能体。</span>
+      <span class="take">外发光按光学扩散做（柔、无硬边）；标识底用超椭圆；标识左上的光感高光。</span>
+      <span class="no-take">液态玻璃大面积用在代码区——影响阅读与对比度。</span></div>
+  </div>
+</section>
+
+<!-- ================= 03 用色 ================= -->
+<section id="color">
+  <div class="sh"><span class="no">03</span><h2>用色</h2>
+    <p>智能色独立于品牌蓝：蓝色 <code>#3574F0</code> 只留给「你要按的」——主按钮、聚焦、链接；智能色只表示「这是 AI 做的 / AI 正在做」。一道紫罗兰 → 兰紫 → 玫瑰的光，参考 Apple 冷暖多色光、Gemini 蓝紫、CodeGenie 紫光晕与鸿蒙光感。</p></div>
+  <div class="ribbon"><div class="stops"><span>violet</span><span>orchid</span><span>rose</span></div></div>
+
+  <h3>色值与对比度<small>对比度按 WCAG 2.x 相对亮度计算</small></h3>
+  <div class="tabs2"><span>当前主题：</span><b id="themeName" style="font-weight:500;color:var(--ui-fg)">浅色</b><span>· 切右上角看另一套</span></div>
+  <div class="sw" id="swatches"></div>
+
+  <h3>谁用什么色</h3>
+  <div class="roles">
+    <div class="card role"><span class="chip" style="background:var(--ui-accent);color:var(--ui-accent-fg)">品牌蓝</span><p>主按钮（每屏最多一个）、聚焦环、链接、当前选中的小标记。</p></div>
+    <div class="card role"><span class="chip ai-src" style="height:26px;border-radius:13px;font-size:12px"><i class="ai-spark"></i>智能色</span><p>AI 来源记号、进行态、标识。字与图标用纯色 <code>--ai-ink</code>。</p></div>
+    <div class="card role"><span class="chip" style="background:var(--ai-wait-tint);color:var(--ai-wait-ink)"><i class="ai-wait-dot" style="width:6px;height:6px"></i>琥珀</span><p>只给「在等你」：审批、需要你选。唯一会脉冲的颜色。</p></div>
+    <div class="card role"><span class="chip" style="background:var(--diff-add);color:var(--ui-fg)">绿 / 红</span><p>增删、成功、失败。AI 改的代码也用它们，来源只靠 gutter 星芒。</p></div>
+  </div>
+
+  <h3>配额<small>一屏里各色大致占比</small></h3>
+  <div class="card">
+    <div class="budget"><i style="width:92%;background:var(--ui-fg-disabled);opacity:.35"></i><i style="width:3%;background:var(--ui-accent)"></i><i style="width:3%;background:var(--ai-grad)"></i><i style="width:2%;background:var(--ai-wait)"></i></div>
+    <div class="legend"><span><i style="background:var(--ui-fg-disabled)"></i>中性 ≈ 92%</span><span><i style="background:var(--ui-accent)"></i>蓝 ≤ 3%</span><span><i style="background:var(--ai-grad)"></i>智能 ≤ 3%（渐变最多两处）</span><span><i style="background:var(--ai-wait)"></i>琥珀：只在等你时出现</span></div>
+  </div>
+
+  <div class="g2" style="margin-top:16px">
+    <div class="card"><h4>小字用纯色，渐变只做三件事</h4><p>渐变只用于：标识、生成中的输入框光、进行中的光环。不做大面积渐变底，不做渐变字。</p>
+      <dl class="scn"><dt>在做</dt><dd>扫一眼 AI 面板，找它改了哪几处</dd><dt>卡在</dt><dd>渐变小字在深色下糊成一片，读不清文件名</dd><dt>这样解</dt><dd class="fix">字一律 <code>--ai-ink</code>，两套主题都过 AA（≥ 4.5）</dd></dl></div>
+    <div class="card"><h4>一屏最多两处渐变</h4><p>通常是「标识 + 正在发生的那一处」。第三处出现时，说明有东西不该在发光。</p>
+      <dl class="scn"><dt>在做</dt><dd>AI 在跑，你同时在看代码</dd><dt>卡在</dt><dd>面板、按钮、标签到处是彩色光，眼睛不知道看哪</dd><dt>这样解</dt><dd class="fix">光只留给正在发生的那一处，其余回到中性</dd></dl></div>
+    <div class="card"><h4>智能色 ≠ 品牌蓝</h4><p>蓝色 = 你要按的；紫色 = AI 做的。两者不能互换。</p>
+      <dl class="scn"><dt>在做</dt><dd>AI 给了修复建议，旁边是「运行」按钮</dd><dt>卡在</dt><dd>都是蓝色，分不清哪个是 AI 的提议、哪个是要你执行的操作</dd><dt>这样解</dt><dd class="fix">AI 提议用智能色标来源，要你按的仍是蓝色主按钮</dd></dl></div>
+    <div class="card"><h4>琥珀只给「在等你」</h4><p>它是唯一需要抢注意力的态，也同步到状态栏和窗口标题。</p>
+      <dl class="scn"><dt>在做</dt><dd>AI 跑长任务，你切去写别的文件</dd><dt>卡在</dt><dd>它停下来等授权，你十分钟后才发现</dd><dt>这样解</dt><dd class="fix">琥珀点脉冲；其余进行态都安静，所以它一亮你就知道</dd></dl></div>
+  </div>
+</section>
+
+<!-- ================= 04 标识 ================= -->
+<section id="logo">
+  <div class="sh"><span class="no">04</span><h2>标识</h2>
+    <p>代码尖括号 ‹ › 中间一颗星芒：不是通用的 sparkle，而是「为代码的智能」。底是鸿蒙图标的超椭圆（n = 5），左上一道光感高光。</p></div>
+  <div class="logo-hero">
+    <div class="card anat">
+      <svg class="big"><use href="#ai-logo"/></svg>
+      <span class="note" style="left:22px;top:26px"><b>‹ ›</b>代码。尖端朝外，笔画 4.4 / 64，圆端</span>
+      <span class="note" style="right:22px;top:26px;text-align:right"><b>✦</b>智能。四角星芒，凹弧边，直径 18.4 / 64</span>
+      <span class="note" style="left:22px;bottom:22px"><b>超椭圆</b>鸿蒙图标形，n = 5</span>
+      <span class="note" style="right:22px;bottom:22px;text-align:right"><b>光感</b>左上 34% 白色径向高光</span>
+    </div>
+    <div class="card" style="display:flex;flex-direction:column;gap:18px">
+      <div class="variants">
+        <div class="var on-page"><svg><use href="#ai-logo"/></svg>彩色<br>品牌位、欢迎页</div>
+        <div class="var on-light" style="color:#1E1F22"><svg><use href="#ai-logo-mono"/></svg><span style="color:#5A5D6B">单色<br>跟随 currentColor</span></div>
+        <div class="var on-dark"><svg style="color:#DFE1E5"><use href="#ai-mark"/></svg>字形<br>工具栏 16px 图标</div>
+      </div>
+      <div class="stage">
+        <div class="sizes">
+          <div><svg style="width:64px;height:64px"><use href="#ai-logo"/></svg>64</div>
+          <div><svg style="width:32px;height:32px"><use href="#ai-logo"/></svg>32</div>
+          <div><svg style="width:20px;height:20px"><use href="#ai-logo-16"/></svg>20</div>
+          <div><svg style="width:16px;height:16px"><use href="#ai-logo-16"/></svg>16</div>
+          <div><svg style="width:16px;height:16px;color:var(--ui-fg)"><use href="#ai-logo-16-mono"/></svg>16 单色</div>
+        </div>
+        <p style="margin:12px 0 0;font-size:12px;line-height:19px;color:var(--pg-fg2)">16 / 20px 用专门的小尺寸稿（<code>deveco-code-logo-16.svg</code>）：笔画加粗到 1.5 / 16，星芒相对放大，尖括号收短——直接缩小大稿会糊成一团。</p>
+      </div>
+      <div style="display:flex;gap:18px;align-items:center;flex-wrap:wrap">
+        <div class="safe"><svg><use href="#ai-logo"/></svg></div>
+        <p style="margin:0;font-size:12.5px;line-height:20px;color:var(--pg-fg2);flex:1;min-width:180px">安全区：四周留出边长的 1/5（64px 标识留 16px），这一圈里不放字和别的图形。最小 16px。</p>
+      </div>
+    </div>
+  </div>
+  <dl class="scn" style="margin-top:16px"><dt>在做</dt><dd>在工具栏找能改代码的 AI 入口</dd><dt>卡在</dt><dd>翻译插件、文档搜索、云服务都用同一个 sparkle，分不清哪个能动你的工程</dd><dt>这样解</dt><dd class="fix">‹✦› 只代表「对代码的智能」，全 IDE 只有这一个入口标识</dd></dl>
+  <h3>禁用</h3>
+  <div class="donts">
+    <div class="dont"><div class="box"><svg style="width:48px;height:48px;color:var(--ai-ink)"><use href="#ai-sparkle"/></svg></div>换成通用 sparkle</div>
+    <div class="dont"><div class="box"><svg style="width:72px;height:44px" preserveAspectRatio="none" viewBox="0 0 64 64"><use href="#ai-logo"/></svg></div>拉伸变形</div>
+    <div class="dont"><div class="box"><svg style="width:48px;height:48px;filter:drop-shadow(0 0 0 #000) drop-shadow(2px 3px 0 #000)"><use href="#ai-logo"/></svg></div>加描边或硬投影</div>
+    <div class="dont"><div class="box" style="background:linear-gradient(120deg,#FF9F0A,#30D158)"><svg style="width:48px;height:48px"><use href="#ai-logo"/></svg></div>放在花底或渐变底上</div>
+    <div class="dont"><div class="box"><svg style="width:48px;height:48px;color:#3574F0"><use href="#ai-logo-mono"/></svg></div>改成品牌蓝</div>
+  </div>
+</section>
+
+<!-- ================= 05 图标 ================= -->
+<section id="icons">
+  <div class="sh"><span class="no">05</span><h2>图标</h2>
+    <p>16px 线性，1.2 描边，圆端圆角，和 Int UI 同网格；默认中性色 <code>--ui-icon</code>，只有表示 AI 来源或进行中时才换 <code>--ai-ink</code>。用法：<code>&lt;svg class="ai-ico"&gt;&lt;use href="#ai-edit"/&gt;&lt;/svg&gt;</code>，页面先引 <code>icons/ai-icons.js</code>。</p></div>
+  <div class="ig" id="iconGrid"></div>
+
+  <h3>AI 变体 = 基础字形 + 右上角 5px 星芒徽标</h3>
+  <div class="card">
+    <div class="derive">
+      <div class="step"><div class="cell"><svg><use href="#ai-g-pencil"/></svg></div>基础字形</div>
+      <span class="op">→</span>
+      <div class="step"><div class="cell"><svg viewBox="0 0 16 16"><use href="#ai-g-pencil" mask="url(#ai-badge-cut)"/><circle cx="12.5" cy="3.5" r="3.9" fill="none" stroke="var(--ui-fg-info)" stroke-width=".25" stroke-dasharray=".6 .5"/></svg></div>右上挖 r 3.9 的圆</div>
+      <span class="op">+</span>
+      <div class="step"><div class="cell"><svg><use href="#ai-edit"/></svg></div>放 5.2px 星芒</div>
+      <span class="op" style="margin-left:12px">·</span>
+      <div class="step"><div class="cell"><span class="ai-derive" style="transform:scale(4);color:var(--ui-fg)"><svg viewBox="0 0 16 16"><use href="#ai-g-bug"/></svg></span></div>CSS 派生 <code>.ai-derive</code></div>
+    </div>
+    <p style="margin-top:16px">任何现有 Int UI 图标包一层 <code>&lt;span class="ai-derive"&gt;</code> 就得到 AI 版，不用重画。徽标只在同一个动作既有人做、又有 AI 做时才加（编辑 / AI 改、调试 / AI 修复）；AI 专属的图标（对话、Agent）不加，免得星芒泛滥。</p>
+    <dl class="scn"><dt>在做</dt><dd>右键菜单里找「让 AI 修这个报错」</dd><dt>卡在</dt><dd>它和普通「修复」「重构」长得一样，点下去才知道是不是 AI</dd><dt>这样解</dt><dd class="fix">同一字形加星芒徽标，位置固定在右上，扫一眼就分开</dd></dl>
+  </div>
+</section>
+
+<!-- ================= 06 高亮 ================= -->
+<section id="highlight">
+  <div class="sh"><span class="no">06</span><h2>高亮</h2>
+    <p>回答「这是谁写的」。原则：只标 AI，人改的是默认不打标；标记要淡到不影响读代码，淡到接受之后自己消失；但任何时候悬停都能查到来源。</p></div>
+  <div class="g2">
+    <div class="card">
+      <div class="code" id="codeSample">
+        <div class="ln"><i>14</i><span>    <span class="f">TextInput</span>({ placeholder: <span class="s">'手机号'</span> })</span></div>
+        <div class="ln"><i>15</i><span>      .<span class="f">onChange</span>((v: <span class="k">string</span>) => <span class="k">this</span>.<span class="fd">phone</span> = v)</span></div>
+        <div class="ai-block" id="aiBlock"><span class="ai-gut" data-src="DevEco Code · 第 3 步 · 09:41 · 可退回"></span>
+          <div class="ln"><i>16</i><span>    <span class="k">if</span> (!<span class="k">this</span>.<span class="f">isPhoneValid</span>()) {</span></div>
+          <div class="ln"><i>17</i><span>      <span class="f">Text</span>(<span class="s">'请输入 11 位手机号'</span>)</span></div>
+          <div class="ln"><i>18</i><span>        .<span class="f">fontColor</span>(<span class="m">$r</span>(<span class="s">'app.color.error'</span>))</span></div>
+          <div class="ln"><i>19</i><span>    }</span></div>
+        </div>
+        <div class="ln"><i>20</i><span>    <span class="f">Button</span>(<span class="s">'登录'</span>)</span></div>
+        <div class="ln"><i>21</i><span class="ai-ghost">      .onClick(() => this.submit())</span></div>
+      </div>
+      <div class="hl-tools"><button class="ai-btn ai-btn--fill" id="accept">接受这 4 行</button><button class="ai-btn" id="resetBlock">重来</button>
+        <span style="font-size:12px;color:var(--ui-fg-info)">悬停 16–19 行左侧竖条看来源</span></div>
+      <dl class="scn"><dt>在做</dt><dd>审 AI 刚写进 LoginPage 的校验逻辑</dd><dt>卡在</dt><dd>它和你自己写的混在一起；接受之后就再也找不到是哪几行</dd><dt>这样解</dt><dd class="fix">接受前：竖条 + 极淡底；接受后 3 s 淡出不碍眼；悬停 gutter 随时查来源</dd></dl>
+    </div>
+    <div class="card" style="display:flex;flex-direction:column;gap:14px">
+      <div>
+        <h4>幽灵建议</h4>
+        <p>第 21 行：<code>--ai-ghost</code>，两套主题都是 3.15:1——读得出，但一眼看得出「还没写进去」。行尾不加说明，按 <span class="ai-kbd">Tab</span> 接受。</p>
+        <dl class="scn"><dt>在做</dt><dd>边打字边看补全</dd><dt>卡在</dt><dd>补全和已写代码一样深，误以为已经写进去，编译才发现</dd><dt>这样解</dt><dd class="fix">幽灵色明显更浅，且带智能色相，与注释灰也分得开</dd></dl>
+      </div>
+      <div>
+        <h4>AI diff</h4>
+        <div class="code" style="margin-top:8px">
+          <div class="ln ai-del"><i>42</i><span>  .<span class="f">padding</span>(<span class="n">13</span>)</span></div>
+          <div class="ln ai-add"><span class="gm ai-gmark" title="AI 改的"></span><i>42</i><span>  .<span class="f">padding</span>(<span class="m">$r</span>(<span class="s">'app.float.space_md'</span>))</span></div>
+        </div>
+        <dl class="scn"><dt>在做</dt><dd>看 AI 提的改动再决定接不接</dd><dt>卡在</dt><dd>若 AI 改动用紫色标增删，就和 Git 的绿红两套规则，要重新学</dd><dt>这样解</dt><dd class="fix">增删照旧绿红，来源只在 gutter 放一颗星芒</dd></dl>
+      </div>
+    </div>
+    <div class="card">
+      <h4>画布上：AI 选中区域 / AI 刚改过的元素</h4>
+      <div class="stage" style="margin-top:12px">
+        <div class="phone">
+          <div class="sb"><span>9:41</span><span>商品详情</span></div>
+          <div class="pc ai-select" data-ai-tag="AI 将改 · ProductCard"><span class="img"></span><span class="t">MatePad Air<small>¥2,999 · 次日达</small></span><span class="buy">购买</span></div>
+          <div class="pc" id="touched"><span class="img"></span><span class="t">FreeBuds 6<small>¥999 · 12 期免息</small></span><span class="buy">购买</span></div>
+        </div>
+        <div class="hl-tools" style="justify-content:center"><button class="ai-btn ai-btn--fill" id="replayTouch">重放「刚改过」</button></div>
+      </div>
+      <dl class="scn"><dt>在做</dt><dd>用笔在预览上圈了一张卡，说「改成胶囊按钮」</dd><dt>卡在</dt><dd>不确定 AI 理解的是这张卡、整个列表，还是按钮</dd><dt>这样解</dt><dd class="fix">动手前虚线框 + 角标写明「AI 将改 · ProductCard」；改完那一处光晕脉冲一次（1.2 s）就消失</dd></dl>
+    </div>
+    <div class="card" style="display:flex;flex-direction:column;gap:12px">
+      <h4>来源标记</h4>
+      <p>跟在被改的元素、文件、属性旁边。<span class="ai-src"><i class="ai-spark"></i>由 AI 改 <i>·</i> <button>可退回</button></span></p>
+      <p>人改的不打标：你是默认作者，只有例外（AI、设计稿同步）才需要被标出来。</p>
+      <dl class="scn"><dt>在做</dt><dd>一下午里你和 AI 轮流改同一个页面</dd><dt>卡在</dt><dd>满屏标记变成噪音；想撤 AI 那一处又怕连带撤掉自己的</dd><dt>这样解</dt><dd class="fix">只标 AI；标记本身就是退回入口，只退这一处</dd></dl>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 07 进行态 ================= -->
+<section id="states">
+  <div class="sh"><span class="no">07</span><h2>进行态</h2>
+    <p>回答「它在干什么」和「轮到我了吗」。八个状态，一台状态机；每态规定视觉、文案、动效时长，以及系统开了「降低动效」时的替代——替代的原则是把动的信息改成字（步骤数、已用时）。</p></div>
+  <div class="card">
+    <div class="flow">
+      <span class="nd"><svg class="ai-ico"><use href="#ai-mark"/></svg>待命</span><span class="ar">→</span>
+      <span class="nd"><i class="ai-spark"></i>理解中</span><span class="ar">→</span>
+      <span class="nd"><svg class="ai-ico"><use href="#ai-tool"/></svg>调用工具</span><span class="ar">⇄</span>
+      <span class="nd"><i class="ai-spark"></i>生成中</span><span class="ar">→</span>
+      <span class="nd"><svg class="ai-ico"><use href="#ai-verify"/></svg>在设备上验证</span><span class="ar">→</span>
+      <span class="nd"><svg class="ai-ico" style="color:var(--ui-success)"><use href="#ai-verify"/></svg>完成</span><span class="ar">→ 待命</span>
+    </div>
+    <div class="side">
+      <span>任一进行态 → <span class="flow" style="display:inline-flex"><span class="nd w"><i class="ai-wait-dot"></i>在等你</span></span> → 你批准 / 选择后回到原来的态</span>
+      <span>任一进行态 → <b style="font-weight:500;color:var(--ui-fg)">中断 / 失败</b>（白话原因 + 下一步） → 待命；你按停止也走这里，已写的保留、可退回</span>
+    </div>
+  </div>
+
+  <h3>播放一遍<small>点左侧任一状态，或自动播放</small></h3>
+  <div class="player">
+    <div class="panel">
+      <div class="ph"><svg class="ai-ico"><use href="#ai-logo-16"/></svg>DevEco Code<span style="flex:1"></span><span class="mono" style="font-size:11px">LoginPage.ets</span></div>
+      <div class="thread">
+        <div class="umsg">给登录页加手机号校验，不合法时按钮置灰</div>
+        <div><span class="ai-status" id="pStatus" data-state="idle"></span></div>
+        <div id="pExtra"></div>
+      </div>
+      <div class="ai-field" id="pField" data-state="idle">
+        <textarea class="ai-field__ta" rows="2" aria-label="输入" placeholder="问 DevEco Code，或 @ 一个文件"></textarea>
+        <div class="ai-field__gen"><i class="ai-spark is-live"></i><span class="ai-shimmer" id="pGen">正在写 LoginPage.ets · 第 2 处，共 3 处</span></div>
+        <div class="ai-field__bar"><button class="chipbtn"><svg><use href="#ai-context"/></svg>上下文</button><span class="grow"></span>
+          <span class="ai-field__model"><svg><use href="#ai-local"/></svg>本机</span>
+          <button class="ai-field__send" id="pSend" aria-label="发送"><svg><use href="#ai-send"/></svg></button></div>
+      </div>
+    </div>
+    <div class="ctl" id="pCtl"></div>
+  </div>
+
+  <h3>逐态规格<small>样张悬停才动——规范页自己也守「一屏最多两处渐变」</small></h3>
+  <div class="states" id="stateCards"></div>
+</section>
+
+<!-- ================= 08 组件 ================= -->
+<section id="components">
+  <div class="sh"><span class="no">08</span><h2>组件</h2>
+    <p>全部在 <code>src/ai.css</code>，类名 <code>.ai-*</code>。用填充分层，除了输入框、聚焦和审批，不画描边。</p></div>
+  <div class="comp-grid">
+    <div class="card">
+      <h4>智能输入框 <code style="font-weight:400;color:var(--ui-fg-info)">.ai-field</code></h4>
+      <div class="stage" style="display:flex;flex-direction:column;gap:14px;margin-top:12px">
+        <div class="ai-field" data-state="idle">
+          <textarea class="ai-field__ta" rows="2" aria-label="输入" placeholder="问 DevEco Code，或 @ 一个文件"></textarea>
+          <div class="ai-field__bar"><button class="chipbtn"><svg><use href="#ai-context"/></svg>LoginPage.ets</button><button class="chipbtn"><svg><use href="#ai-voice"/></svg></button><span class="grow"></span>
+            <span class="ai-field__model"><svg><use href="#ai-cloud"/></svg>云端 · 盘古</span><button class="ai-field__send" disabled aria-label="发送"><svg><use href="#ai-send"/></svg></button></div>
+        </div>
+        <div class="egs" style="margin-top:-4px"><button>给 LoginPage 加手机号校验</button><button>解释 onClick 里的 await</button><button>生成 3 种状态的 @Preview</button></div>
+      </div>
+      <p style="margin-top:12px">待命：低对比描边；聚焦：蓝色描边（聚焦 = 蓝）；生成中：流动光 + 外发光，发送键变停止（见上方播放器）。</p>
+      <dl class="scn"><dt>在做</dt><dd>写一句需求准备发出去</dd><dt>卡在</dt><dd>不知道 AI 看到了哪些文件、用的哪个模型、代码去了哪里</dd><dt>这样解</dt><dd class="fix">上下文芯片与「本机 / 云端 · 模型名」常驻底栏；示例按当前文件生成</dd></dl>
+    </div>
+    <div class="card">
+      <h4>就地问答浮层 <code style="font-weight:400;color:var(--ui-fg-info)">.ai-pop</code></h4>
+      <div class="stage" style="margin-top:12px">
+        <div class="ai-pop">
+          <div class="ai-pop__ctx"><svg class="ai-ico" style="width:14px;height:14px;color:var(--ai-ink)"><use href="#ai-inline"/></svg><code>LoginPage.ets · 第 16–19 行</code></div>
+          <div class="ai-pop__in"><input aria-label="就地问" placeholder="对选中的代码说点什么"><span class="ai-kbd">↵</span></div>
+          <div class="ai-pop__eg"><button>解释</button><button>改成 BreakpointType</button><button>补单测</button></div>
+          <div class="ai-pop__foot"><span><span class="ai-kbd">Ctrl</span> <span class="ai-kbd">I</span> 唤起</span><span><span class="ai-kbd">Esc</span> 关闭</span></div>
+        </div>
+      </div>
+      <dl class="scn"><dt>在做</dt><dd>选中一段看不懂的代码</dd><dt>卡在</dt><dd>要复制到侧栏，再描述「LoginPage 第 16 行那个 if」</dd><dt>这样解</dt><dd class="fix">选区旁直接问，自动带上文件与行号，不离开编辑器</dd></dl>
+    </div>
+    <div class="card wide">
+      <h4>回答卡 <code style="font-weight:400;color:var(--ui-fg-info)">.ai-answer</code></h4>
+      <div class="stage" style="margin-top:12px">
+        <div class="ai-answer">
+          <div class="ai-answer__meta"><svg><use href="#ai-local"/></svg>本机 · 7B · 用时 11 s</div>
+          <p class="ai-answer__lead">空指针来自 <code style="font-family:var(--font-code);font-size:13px">this.user</code> 在 aboutToAppear 之前被读取；已改成可选链并补了默认值。</p>
+          <details><summary>看了 3 个文件，调用 2 个工具</summary><div>
+            <div class="ai-toolrow"><svg class="ai-ico"><use href="#ai-explain"/></svg><span class="what">读取 <code>pages/ProfilePage.ets</code></span><span class="end">0.4 s</span></div>
+            <div class="ai-toolrow"><svg class="ai-ico"><use href="#ai-tool"/></svg><span class="what">hvigor 构建 <code>entry</code></span><span class="end"><span class="ok">通过</span>8.2 s</span></div>
+          </div></details>
+          <div class="ai-answer__applied"><span class="ai-src"><i class="ai-spark"></i>已写入 2 个文件 <i>·</i> <button>可退回</button></span><span class="mono" style="font-size:11px">ProfilePage.ets +3 −1 · UserStore.ets +1</span></div>
+          <div class="ai-answer__foot">
+            <button class="ai-btn"><svg><use href="#ai-g-pencil"/></svg>编辑</button>
+            <button class="ai-btn"><svg><use href="#ai-revert"/></svg>退回</button>
+            <button class="ai-btn"><svg><use href="#ai-retry"/></svg>重试</button>
+            <button class="ai-btn"><svg><use href="#ai-adjust"/></svg>调整</button>
+            <span class="grow"></span>
+            <span class="ai-fb"><button aria-pressed="false" aria-label="有用"><svg><use href="#ai-thumb-up"/></svg></button><button aria-pressed="false" aria-label="没用"><svg><use href="#ai-thumb-down"/></svg></button></span>
+          </div>
+        </div>
+      </div>
+      <dl class="scn"><dt>在做</dt><dd>让 AI 修一个启动即崩的空指针</dd><dt>卡在</dt><dd>回答先是三段分析，结论在最后；改了哪些文件要自己去 diff 里翻；不满意只能重新描述一遍</dd><dt>这样解</dt><dd class="fix">结论一句话在最前，过程折叠；明确「已写入 2 个文件 · 可退回」；编辑 / 退回 / 重试 / 调整就在卡片底部，反馈淡色放最右</dd></dl>
+    </div>
+    <div class="card">
+      <h4>工具调用行 <code style="font-weight:400;color:var(--ui-fg-info)">.ai-toolrow</code></h4>
+      <div class="stage" style="margin-top:12px;display:flex;flex-direction:column;gap:2px">
+        <div class="ai-toolrow"><svg class="ai-ico"><use href="#ai-explain"/></svg><span class="what">读取 <code>LoginPage.ets</code></span><span class="end">0.3 s</span></div>
+        <div class="ai-toolrow"><svg class="ai-ico"><use href="#ai-tool"/></svg><span class="what">hvigor 构建 <code>entry@default</code></span><span class="end"><i class="ai-ring"></i>6 s</span></div>
+        <div class="ai-toolrow"><svg class="ai-ico"><use href="#ai-verify"/></svg><span class="what">安装到 <code>Mate 70 Pro</code></span><span class="end" style="color:var(--ui-fg-disabled)">排队</span></div>
+      </div>
+      <dl class="scn"><dt>在做</dt><dd>看 Agent 修构建</dd><dt>卡在</dt><dd>后台跑了什么命令看不到，怕它乱动工程</dd><dt>这样解</dt><dd class="fix">一行一个工具：动词 + 目标 + 耗时；点开看完整输出</dd></dl>
+    </div>
+    <div class="card">
+      <h4>审批卡 <code style="font-weight:400;color:var(--ui-fg-info)">.ai-approve</code></h4>
+      <div class="stage" style="margin-top:12px">
+        <div class="ai-approve">
+          <div class="ai-approve__h"><i class="ai-wait-dot"></i>在等你确认</div>
+          <p class="ai-approve__why">要改 <b>build-profile.json5</b> 的签名配置。会替换当前调试证书；<b>可以退回</b>（已备份原文件）。</p>
+          <div class="ai-approve__cmd">signingConfigs[0].material.certpath
+  → ./sign/debug_new.cer</div>
+          <div class="ai-approve__act"><button class="ai-btn ai-btn--primary">允许这一次</button><button class="ai-btn ai-btn--fill">本会话都允许</button><button class="ai-btn">不允许</button></div>
+        </div>
+      </div>
+      <dl class="scn"><dt>在做</dt><dd>让 Agent 修签名报错，自己去看别的</dd><dt>卡在</dt><dd>它悄悄换了证书，真机调试全挂，事后才发现</dd><dt>这样解</dt><dd class="fix">先停下问：改什么、影响什么、能不能退；琥珀色让你隔着窗口也看得到</dd></dl>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 09 Do / Don't ================= -->
+<section id="dodont">
+  <div class="sh"><span class="no">09</span><h2>Do / Don’t</h2>
+    <p>四条最容易犯、也最伤开发者判断的错。</p></div>
+  <div class="dd">
+    <div class="card"><div class="pair">
+      <div class="v"><span class="lab no">✕ 整块面板染 AI 色</span><div class="mini-panel bad"><span class="mini-line" style="width:70%"></span><span class="mini-line"></span><span class="mini-line" style="width:40%"></span></div></div>
+      <div class="v"><span class="lab ok">✓ 面板中性，只在来源处点色</span><div class="mini-panel"><span class="mini-line" style="width:70%"></span><span class="mini-line"></span><span><span class="ai-src"><i class="ai-spark"></i>由 AI 改</span></span></div></div>
+    </div><dl class="scn"><dt>卡在</dt><dd>整块紫色面板里读长回答，眼睛累；真正要注意的地方反而不显眼</dd></dl></div>
+    <div class="card"><div class="pair">
+      <div class="v"><span class="lab no">✕ 星芒当「新功能」角标</span><div style="display:flex;align-items:center;gap:6px">多设备预览 <svg class="ai-ico" style="color:var(--ai-ink);width:12px;height:12px"><use href="#ai-sparkle"/></svg></div></div>
+      <div class="v"><span class="lab ok">✓ 新功能用中性「新」</span><div style="display:flex;align-items:center;gap:6px">多设备预览 <span class="tagnew">新</span></div></div>
+    </div><dl class="scn"><dt>卡在</dt><dd>以为「多设备预览」会把代码发给 AI，不敢在保密项目里用</dd></dl></div>
+    <div class="card"><div class="pair">
+      <div class="v"><span class="lab no">✕ 非 AI 功能用智能色</span><div><button class="ai-btn" style="background:var(--ai-grad);color:#fff">格式化代码</button></div></div>
+      <div class="v"><span class="lab ok">✓ 只有 AI 参与才用</span><div><button class="ai-btn ai-btn--fill">格式化代码</button></div></div>
+    </div><dl class="scn"><dt>卡在</dt><dd>分不清格式化是确定性的规则，还是会「改写」代码的 AI</dd></dl></div>
+    <div class="card"><div class="pair">
+      <div class="v"><span class="lab no">✕ 写「处理中…」</span><div><span class="ai-status" data-state="thinking"><i class="ai-spark"></i><span class="lbl">处理中…</span></span></div></div>
+      <div class="v"><span class="lab ok">✓ 写它在做什么</span><div><span class="ai-status" data-state="thinking"><i class="ai-spark"></i><span class="lbl">正在读 LoginPage.ets</span><span class="t">4 s</span></span></div></div>
+    </div><dl class="scn"><dt>卡在</dt><dd>等了 40 秒不知道是在干活还是卡死，只好重发一遍</dd></dl></div>
+  </div>
+</section>
+
+<!-- ================= 10 专题 ================= -->
+<section id="visual-edit">
+  <div class="sh"><span class="no">10</span><h2>专题：设计稿到代码之后，可视化修改 × AI Coding</h2>
+    <p>D2C 把画板变成了 <code>DetailPage.ets</code>，但真正耗时间的是之后：设计师说「卡片再松一点、价格大一号、按钮换胶囊」，十几处细改。它们会从三只手进来。</p></div>
+  <dl class="scn" style="max-width:760px;margin:0 0 24px"><dt>在做</dt><dd>D2C 出了商品详情页，正对着设计走查意见逐条改</dd><dt>要做成</dt><dd>改完的页面在手机、折叠屏、平板上都对，代码仍然走 token 和组件，设计稿也同步</dd><dt>卡在</dt><dd>拖一下写出裸值、问 AI 又慢又不准、设计稿越改越旧、最后说不清哪处是谁改的</dd></dl>
+
+  <h3>三只手，各自卡在哪</h3>
+  <div class="hands">
+    <div class="card hand"><div class="ico"><svg><use href="#ai-adjust"/></svg></div><h4>直接操作</h4><p>在 Previewer、模拟器、或鸿蒙电脑上的真机镜像窗口里拖、调数值。</p>
+      <div class="pros"><b>好</b>零延迟、确定，所见即所得。</div>
+      <div class="cons"><b>卡</b>写出 <code>.padding(13)</code> 这种裸值，绕开了 token 和组件；改一处，别处的同款卡片不跟。</div></div>
+    <div class="card hand"><div class="ico"><svg><use href="#ai-lasso"/></svg></div><h4>说 / 用笔圈</h4><p>交给 AI：「这块改成两列」「按钮换胶囊」。</p>
+      <div class="pros"><b>好</b>结构性改动一句话搞定。</div>
+      <div class="cons"><b>卡</b>小改动也走 AI：等 10 秒，还可能改到别处；「再大一点」到底是几？</div></div>
+    <div class="card hand"><div class="ico"><svg><use href="#ai-g-cursor"/></svg></div><h4>直接改代码</h4><p>在编辑器里改 ArkTS。</p>
+      <div class="pros"><b>好</b>精确，能用上工程里的一切。</div>
+      <div class="cons"><b>卡</b>先要找到预览上这块对应哪一行；改完设计稿不知道。</div></div>
+  </div>
+  <p class="p" style="margin-top:16px">三只手共同的问题：<b style="font-weight:500;color:var(--ui-fg)">设计稿与代码漂移</b>，以及<b style="font-weight:500;color:var(--ui-fg)">分不清谁改了什么</b>——撤销栈只有一条，Ctrl+Z 会把人和 AI 的改动一起撤。</p>
+
+  <h3>模型：一份源 · 三只手 · AI 做翻译和裁判</h3>
+  <div class="card">
+    <div class="model">
+      <div class="col">
+        <div class="mnode"><b>直接操作</b><small>只改值 · 零延迟 · 不经过 AI</small></div>
+        <div class="mnode"><b>说 / 用笔圈</b><small>结构性改动</small></div>
+        <div class="mnode"><b>改代码</b><small>直接写源</small></div>
+      </div>
+      <div class="marr">→</div>
+      <div class="col">
+        <div class="mnode ai"><b><i class="ai-spark"></i>AI · 翻译</b><small>松手后把数值翻成工程写法：13vp → <code>$r('app.float.space_md')</code>，或建议改组件 / 改 token</small></div>
+        <div class="mnode src"><b>ArkTS 源码</b><small>唯一的事实 · 每次写入都记来源</small></div>
+        <div class="mnode ai"><b><i class="ai-spark"></i>AI · 裁判</b><small>读出一连串操作的意图；人和 AI 同时改时决定谁先、怎么合</small></div>
+      </div>
+      <div class="marr">→</div>
+      <div class="col">
+        <div class="mnode"><b>多断点 / 多设备预览</b><small>每次改完自动跑一遍（demo 17）</small></div>
+        <div class="mnode"><b>AI 协作时间轴</b><small>每条带来源，挑着退（demo 14）</small></div>
+        <div class="mnode"><b>设计稿</b><small>回写 Figma / 即时设计 / MasterGo，标出漂移</small></div>
+      </div>
+    </div>
+  </div>
+  <div class="rules4">
+    <div class="card"><h4>① 直接操作只改值，不经过 AI</h4><p>拖动、输数值直接写进源码对应属性并热重载，确定性、零延迟。</p>
+      <dl class="scn"><dt>在做</dt><dd>在模拟器上把「加入购物车」往下挪一点</dd><dt>卡在</dt><dd>走 AI 要等 10 秒，还可能顺手改了别的</dd><dt>这样解</dt><dd class="fix">拖完 0.2 s 热重载，源码那一行同步变</dd></dl></div>
+    <div class="card"><h4>② 松手后，AI 把值翻译成工程写法</h4><p>不自动替换，给两三个选项；选中后才改。</p>
+      <div class="eg">.padding(13)
+<span class="c">// ✦ 最近的 token：space_md 12vp · space_lg 16vp</span>
+.padding($r('app.float.space_md'))</div>
+      <dl class="scn"><dt>在做</dt><dd>拖完卡片内边距</dd><dt>卡在</dt><dd>代码里多了 <code>.padding(13)</code>，下次调整间距规范这处不跟</dd><dt>这样解</dt><dd class="fix">松手即给「改用 space_md / space_lg / 保留 13」</dd></dl></div>
+    <div class="card"><h4>③ 结构性改动走 AI：说，或用笔圈</h4><p>AI 先用虚线框确认范围，再出 diff。</p>
+      <dl class="scn"><dt>在做</dt><dd>想把横排商品改成两列网格</dd><dt>卡在</dt><dd>拖不出来；手写要改三层嵌套</dd><dt>这样解</dt><dd class="fix">在真机镜像上用笔圈住，写「两列」，AI 出 diff 等你接</dd></dl></div>
+    <div class="card"><h4>④ AI 把一连串直接操作读成意图</h4>
+      <div class="intent" style="margin-top:8px"><i class="ai-spark"></i><div style="font-size:13px;line-height:21px">你把 3 张 <code>ProductCard</code> 的内边距都改成了 16vp。<br><span style="color:var(--pg-fg2)">改 ProductCard 的默认值？另外 4 处实例（2 个页面）会一起变。</span>
+        <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap"><button class="ai-btn ai-btn--fill">改组件默认值</button><button class="ai-btn">只保留这 3 处</button></div></div></div>
+      <dl class="scn"><dt>在做</dt><dd>逐个把卡片间距从 12 拖到 16</dd><dt>卡在</dt><dd>改了三处裸值，另外两个页面的同款卡片没跟</dd><dt>这样解</dt><dd class="fix">第三次同类修改后提示改组件，一步到位</dd></dl></div>
+  </div>
+
+  <h3>作用范围：这是核心<small>试试拖动，再换范围</small></h3>
+  <p class="p">每次可视化修改后都要回答两个问题：改到哪（这一个 / 这个组件的所有实例 / 全局 token），以及在哪些断点生效。第二个问题是鸿蒙「一次开发，多端部署」特有的：你在手机预览上拖，天然会问「平板要不要跟着变」。别家没有这一维。</p>
+  <div class="card">
+    <div class="scope">
+      <div class="dm">
+        <div class="phone" style="max-width:240px">
+          <div class="sb"><span>sm · 390vp</span><span>DetailPage</span></div>
+          <div class="pc sel" id="scPc"><span class="img"></span><span class="t">MatePad Air<small>¥2,999 · 次日达</small></span><span class="buy">购买</span></div>
+          <div class="pc"><span class="img"></span><span class="t">FreeBuds 6<small>猜你喜欢</small></span></div>
+        </div>
+        <div class="slider"><span>内边距</span><input type="range" id="scRange" min="8" max="24" step="1" value="12" aria-label="内边距"><span class="val" id="scVal">12vp</span></div>
+        <div class="tr8" id="scTr">
+          <div class="h"><i class="ai-spark"></i><span id="scTrMsg">13vp 不在间距规范里</span></div>
+          <div class="opts" id="scTrOpts"></div>
+        </div>
+      </div>
+      <div class="scope-r">
+        <div class="axis"><span class="lb">改到哪<span class="rec" id="scRec" hidden><i class="ai-spark" style="width:9px;height:9px"></i>AI 建议：ProductCard 全部（你改过 3 张）</span></span>
+          <div class="ai-seg" id="scTarget"><button data-v="inst" aria-pressed="true">只这一个</button><button data-v="comp" aria-pressed="false">ProductCard 全部</button><button data-v="token" aria-pressed="false">全局 token</button></div></div>
+        <div class="axis"><span class="lb">在哪些断点</span>
+          <div class="ai-seg" id="scBp"><button data-v="all" aria-pressed="true">全部断点</button><button data-v="sm" aria-pressed="false">只在 sm（手机）</button></div></div>
+        <div class="bps" id="scBps"></div>
+        <div class="impact" id="scImpact"></div>
+        <div class="codebox" id="scCode"></div>
+      </div>
+    </div>
+    <dl class="scn"><dt>在做</dt><dd>在手机预览上把一张商品卡内边距从 12 拖到 16</dd><dt>卡在</dt><dd>不知道会写到哪：只这张？所有卡？整个间距规范？平板要不要跟？选错了要到提测才发现</dd><dt>这样解</dt><dd class="fix">松手即问两个维度，每个选项写清影响几处、生成什么代码，三档预览立刻显示结果</dd></dl>
+  </div>
+
+  <div class="g2" style="margin-top:16px">
+    <div class="card">
+      <h4>来源与回退</h4>
+      <p>每次修改记一条来源：人手、AI、设计稿同步。接进 AI 协作时间轴（demo 14），可以只退其中一条。</p>
+      <div class="tl" id="tl" style="margin-top:12px">
+        <label><input type="checkbox" checked><span class="tm">14:02</span><span class="who"><svg><use href="#ai-g-pencil"/></svg></span><span>ProductCard 内边距 12 → 16</span><span class="src2">你 · 模拟器</span></label>
+        <label><input type="checkbox" checked><span class="tm">14:05</span><span class="who ai"><svg><use href="#ai-sparkle"/></svg></span><span>商品列表改两列网格</span><span class="src2">AI · 笔圈</span></label>
+        <label><input type="checkbox" checked><span class="tm">14:06</span><span class="who"><svg><use href="#ai-g-cursor"/></svg></span><span>价格字号 18 → 20</span><span class="src2">你 · 代码</span></label>
+        <label><input type="checkbox" checked><span class="tm">14:09</span><span class="who"><svg><use href="#ai-g-diff"/></svg></span><span>按钮圆角 8 → 20</span><span class="src2">设计稿同步</span></label>
+      </div>
+      <dl class="scn"><dt>在做</dt><dd>一下午改了 20 处，一半是 AI</dd><dt>卡在</dt><dd>想撤掉 AI 改错的两列网格，Ctrl+Z 却会连后面的手改一起撤</dd><dt>这样解</dt><dd class="fix">取消勾选那一条，只退它；其余保留</dd></dl>
+    </div>
+    <div class="card">
+      <h4>冲突：AI 正在改，人又动手</h4>
+      <p>人优先。人一动，AI 暂停；人松手，AI 在人的改动上重新基于（rebase）再继续。同一属性以人为准，AI 排队并说明。</p>
+      <div class="lanes" style="margin-top:12px">
+        <span></span><span class="hd">你</span><span class="hd">AI</span>
+        <span class="t">14:05:02</span><div class="ev empty"></div><div class="ev">改 ProductCard 为两列<br><span class="ai-status" data-state="generating"><i class="ai-spark"></i><span class="lbl">正在写 · 第 2 处</span></span></div>
+        <span class="t">14:05:04</span><div class="ev"><b>拖</b> ProductCard 内边距</div><div class="ev"><span class="ai-status" data-state="idle"><svg class="ai-ico"><use href="#ai-stop"/></svg><span class="lbl">你在改这张卡，我先停下</span></span></div>
+        <span class="t">14:05:06</span><div class="ev">松手 · 16vp</div><div class="ev">读到你的 16vp，<b>在它之上</b>继续</div>
+        <span class="t">14:05:09</span><div class="ev empty"></div><div class="ev">完成。时间轴两条：你 · 内边距；AI · 两列</div>
+      </div>
+      <dl class="scn"><dt>在做</dt><dd>AI 在改卡片结构，你顺手拖了下间距</dd><dt>卡在</dt><dd>AI 写完把你的改动覆盖了，或者留下冲突要手动合</dd><dt>这样解</dt><dd class="fix">暂停 → 你松手 → 基于你的改动继续；同一属性听你的</dd></dl>
+    </div>
+    <div class="card">
+      <h4>回写设计稿：把漂移列出来</h4>
+      <p>对照 Figma MCP 的双向同步：代码改了，设计稿知道。每处漂移三选一。</p>
+      <div class="drift" id="drift" style="margin-top:12px">
+        <div class="drow"><span>价格字号</span><span class="vs">稿 18 · 码 20（你 · 代码）</span><span class="acts"><button class="ai-btn ai-btn--quiet" data-d="回写设计稿">回写</button><button class="ai-btn ai-btn--quiet" data-d="已恢复设计值">恢复</button><button class="ai-btn ai-btn--quiet" data-d="标为有意偏离">有意偏离</button></span></div>
+        <div class="drow"><span>商品列表</span><span class="vs">稿 单列 · 码 两列（AI · 笔圈）</span><span class="acts"><button class="ai-btn ai-btn--quiet" data-d="回写设计稿">回写</button><button class="ai-btn ai-btn--quiet" data-d="已恢复设计值">恢复</button><button class="ai-btn ai-btn--quiet" data-d="标为有意偏离">有意偏离</button></span></div>
+      </div>
+      <dl class="scn"><dt>在做</dt><dd>交付前和设计师对稿</dd><dt>卡在</dt><dd>设计稿还是旧的，设计师以为你改错了，截图来回解释</dd><dt>这样解</dt><dd class="fix">漂移一条条列出，一键回写 Figma / 即时设计 / MasterGo，或标「有意偏离」</dd></dl>
+    </div>
+    <div class="card">
+      <h4>验证：每改一次，三档断点自己跑一遍</h4>
+      <p>接 demo 17 的多设备画布：可视化修改一落地，sm / md / lg 与折叠屏悬停态自动刷新，出问题的那一档亮琥珀框并说原因。</p>
+      <div class="stage" style="margin-top:12px;display:flex;flex-direction:column;gap:6px">
+        <span class="ai-status" data-state="done"><svg class="ai-ico"><use href="#ai-verify"/></svg><span class="lbl">sm · 手机：通过</span></span>
+        <span class="ai-status" data-state="waiting"><i class="ai-wait-dot"></i><span class="lbl">md · 折叠屏：底栏按钮文字换行</span><button class="act">看一下</button></span>
+        <span class="ai-status" data-state="done"><svg class="ai-ico"><use href="#ai-verify"/></svg><span class="lbl">lg · 平板：通过</span></span>
+      </div>
+      <dl class="scn"><dt>在做</dt><dd>手机上调好了间距</dd><dt>卡在</dt><dd>平板上溢出，要到提测才被测试同学截图发回来</dd><dt>这样解</dt><dd class="fix">改完 2 秒内三档都跑过，问题档直接给截图位置</dd></dl>
+    </div>
+  </div>
+
+  <h3>对照友商</h3>
+  <div class="cmp">
+    <div class="tr th"><span>产品</span><span>它怎么做</span><span>我们</span><span></span></div>
+    <div class="tr"><b>Cursor Design Mode</b><span>在运行中的页面上点选、画圈、说话，Agent 找到源码去改；小改动也经过 Agent。</span><span>说 / 圈同样支持；但小改动直接写值不等 AI，AI 只在松手后做翻译。</span><span><span class="tagk">人有我优</span></span></div>
+    <div class="tr"><b>v0 Design Mode</b><span>选元素，用面板调文案、字体、颜色、间距，不花额度、不等模型；结构改动再加一句话。</span><span>同样分层；多出作用范围（实例 / 组件 / token）× 断点，并写成 ArkTS 资源引用。</span><span><span class="tagk">人有我优</span></span></div>
+    <div class="tr"><b>Lovable Visual Edits</b><span>页面上直接改尺寸、颜色、文字、边距，不走 AI。</span><span>直接改之后 AI 把裸值翻译成 token，并读出重复操作的意图。</span><span><span class="tagk">人有我优</span></span></div>
+    <div class="tr"><b>Figma MCP + Code Connect</b><span>设计稿交给 AI 生成代码，组件对应到代码组件；可把代码侧改动同步回设计稿。</span><span>同时对接 Figma、即时设计、MasterGo；按条列出漂移，三选一处理。</span><span><span class="tagk">人有我优</span></span></div>
+    <div class="tr"><b>Xcode Previews</b><span>预览画布旁的检查器改属性，写回 SwiftUI 源码；可在真机上预览。</span><span>在运行态（模拟器 / 真机镜像）上改，改完多设备同时刷新并自动验证。</span><span><span class="tagk">人有我优</span></span></div>
+  </div>
+  <div class="unique">
+    <div class="card"><span class="tagk new">人无我有</span><h4 style="margin-top:10px">断点作用域</h4><p>一多的 sm / md / lg 作为修改的第二维度，生成 <code>BreakpointType</code> 取值，而不是悄悄改掉所有设备。</p></div>
+    <div class="card"><span class="tagk new">人无我有</span><h4 style="margin-top:10px">人机冲突的 rebase</h4><p>AI 在改时人动手：暂停、基于人的改动继续、同属性听人的；时间轴按来源挑着退。</p></div>
+    <div class="card"><span class="tagk new">人无我有</span><h4 style="margin-top:10px">真机镜像上直接改</h4><p>鸿蒙电脑上真机画面是原生窗口，键鼠穿越后在上面拖、用手写笔圈——改的就是运行态，不是静态预览。</p></div>
+  </div>
+</section>
+
+<!-- ================= 11 demo 13 ================= -->
+<section id="demo13">
+  <div class="sh"><span class="no">11</span><h2>demo 13 怎么改</h2>
+    <p>demo 13「设计稿到代码、模拟器上直接改，全部写回源码」已有 D2C 导入、模拟器点选改值、笔圈提问、一句话改、多状态 @Preview、对照设计稿圈差异。下面是按这套体系的改法清单，先不动 demo。</p></div>
+  <div class="recs">
+    <div class="card rec"><div><h4>模拟器上改值，松手出「翻译条」</h4>
+      <dl class="scn"><dt>在做</dt><dd>在模拟器上把登录按钮的上边距从 12 调到 13</dd><dt>卡在</dt><dd>现在直接写回 <code>margin.top 13</code>，裸值进了源码</dd><dt>怎么改</dt><dd class="fix">热重载照旧即时；松手后在属性条下方出 .tr 翻译条：space_md 12 / space_lg 16 / 保留 13</dd></dl></div></div>
+    <div class="card rec"><div><h4>写回之前问作用范围：改到哪 × 哪些断点</h4>
+      <dl class="scn"><dt>在做</dt><dd>在 Phone 模拟器（sm）上改了商品卡</dd><dt>卡在</dt><dd>写回只落在当前实例，平板要不要跟没人问</dd><dt>怎么改</dt><dd class="fix">「写回源码」前加两个 .ai-seg；默认值由 AI 按最近操作推断；每项写影响几处</dd></dl></div></div>
+    <div class="card rec"><div><h4>连续同类修改后给意图卡</h4>
+      <dl class="scn"><dt>在做</dt><dd>逐张改商品卡间距</dd><dt>卡在</dt><dd>每张都是一次独立写回，组件默认值不变</dd><dt>怎么改</dt><dd class="fix">第三次同类修改后，在面板里出「改 ProductCard 默认值？」卡片，不弹窗</dd></dl></div></div>
+    <div class="card rec"><div><h4>笔圈与一句话改：先确认范围，再出 diff</h4>
+      <dl class="scn"><dt>在做</dt><dd>在多屏协同的 Mate 70 画面上用 M-Pen 圈了一块</dd><dt>卡在</dt><dd>AI 理解的范围看不到，直接出 diff 才知道圈偏了</dd><dt>怎么改</dt><dd class="fix">圈完先出 .ai-select 虚线框 +「AI 将改 · ProductCard」；确认后生成，完成时元素 .ai-touched 脉冲一次</dd></dl></div></div>
+    <div class="card rec"><div><h4>三个来源一种记法，接进时间轴</h4>
+      <dl class="scn"><dt>在做</dt><dd>D2C 生成后又手改、又让 AI 改</dd><dt>卡在</dt><dd>现在「由设计稿生成」「AI 生成 · 7 个 @Preview」各有各的标签样式，也没法挑着退</dd><dt>怎么改</dt><dd class="fix">统一成 .ai-src（AI）/ 中性小字（设计稿同步），人改不打标；每条进 demo 14 时间轴</dd></dl></div></div>
+    <div class="card rec"><div><h4>补一个冲突态</h4>
+      <dl class="scn"><dt>在做</dt><dd>一句话改 ProductCard 生成中，顺手在预览上拖了间距</dd><dt>卡在</dt><dd>demo 里没有这个状态，真实产品一定会遇到</dd><dt>怎么改</dt><dd class="fix">生成中的 .ai-field 旁状态胶囊切到「你在改这张卡，我先停下」，松手后回到生成中</dd></dl></div></div>
+    <div class="card rec"><div><h4>「对照设计稿圈差异」改成漂移清单</h4>
+      <dl class="scn"><dt>在做</dt><dd>交付前核对设计稿</dd><dt>卡在</dt><dd>现在只能「一键修正」回设计值，没法承认有意的改动</dd><dt>怎么改</dt><dd class="fix">每条差异三选一：回写设计稿 / 恢复设计值 / 标为有意偏离；注明是谁改的</dd></dl></div></div>
+    <div class="card rec"><div><h4>每次写回后三档断点自动跑</h4>
+      <dl class="scn"><dt>在做</dt><dd>写回源码后回到编辑器</dd><dt>卡在</dt><dd>只看了 Phone，平板溢出要去 demo 17 手动开</dd><dt>怎么改</dt><dd class="fix">写回后底部出 sm / md / lg 三枚 .ai-status，问题档琥珀色，点开跳到多设备画布那一档</dd></dl></div></div>
+    <div class="card rec"><div><h4>视觉统一到这套体系</h4>
+      <dl class="scn"><dt>在做</dt><dd>在 demo 里同时看 D2C 进度、AI 生成与模拟器</dd><dt>卡在</dt><dd>步骤条、标签、按钮多处用蓝，分不清哪个是主操作、哪个是 AI</dd><dt>怎么改</dt><dd class="fix">引 ai.css 与 ai-icons.js；AI 入口换 ‹✦›；进行态用 .ai-status 并写具体文案；蓝色只留「写回源码」这一个主按钮</dd></dl></div></div>
+  </div>
+</section>
+
+<!-- ================= 12 来源 ================= -->
+<section id="refs">
+  <div class="sh"><span class="no">12</span><h2>来源</h2></div>
+  <ol class="refs">
+    <li><a href="https://developer.apple.com/design/human-interface-guidelines/generative-ai">Apple HIG · Generative AI</a>：Keep people in control、Clearly identify、Set clear expectations、处理时长与具体反馈、备选版本、反馈、先确认危险操作</li>
+    <li><a href="https://www.apple.com/apple-intelligence/">Apple Intelligence</a>：Writing Tools 与 Siri 的渐变光、外发光；约 1.8 s 一轮的流动</li>
+    <li><a href="https://developer.apple.com/documentation/xcode/writing-code-with-intelligence-in-xcode">Xcode · Writing code with intelligence</a>：工具栏入口、Coding Tools、可接 ChatGPT / Claude / 本地模型</li>
+    <li><a href="https://design.google/library/gemini-ai-visual-design">Google Design · Gemini AI visual design</a>：sparkle、渐变只在处理时出现、思考态动效</li>
+    <li><a href="https://developer.huawei.com/consumer/cn/doc/design-guides/immersivelight-0000002612101053">HarmonyOS 设计 · 沉浸光感</a>：光学扩散、动态透光</li>
+    <li>HarmonyOS 开发者文档 ·「一次开发，多端部署」响应式布局：断点 sm（320–600vp）/ md（600–840vp）/ lg（≥ 840vp）、BreakpointType</li>
+    <li><a href="https://cursor.com/docs/agent/design-mode">Cursor · Design Mode</a>：点选、画圈、语音，Agent 改源码</li>
+    <li><a href="https://v0.app/docs/design-mode">v0 · Design mode</a>：可视化调样式不花额度，结构改动加 prompt</li>
+    <li><a href="https://docs.lovable.dev/features/design">Lovable · Visual Edits</a>：直接改尺寸、颜色、文字，不走 AI</li>
+    <li><a href="https://help.figma.com/hc/en-us/articles/32132100833559-Guide-to-the-Figma-MCP-server">Figma · MCP server</a> 与 <a href="https://help.figma.com/hc/en-us/articles/23920389749655-Code-Connect">Code Connect</a>：设计到代码、组件对应</li>
+    <li>JetBrains CodeGenie 现状：本仓库 <code>deveco-intui-kit/src/components.css</code> 里的 <code>.ai-input</code>（#A571E6 光晕）</li>
+    <li>WCAG 2.x 对比度：正文 ≥ 4.5:1，非文字图形 ≥ 3:1（本页色值均按此核算）</li>
+  </ol>
+  <p class="foot">DevEco 智能 · 视觉与交互体系 · 2026-09-24 · 改色先改 <code>src/ai.css</code>，改图标改 <code>icons/ai-icons.svg</code> 后跑 <code>python3 build.py sync-icons</code>。</p>
+</section>
+</main>
+</div>
+
+<script>
+(function(){
+  var $=function(s,r){return (r||document).querySelector(s)}, $$=function(s,r){return [].slice.call((r||document).querySelectorAll(s))};
+  var root=document.documentElement;
+  function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+
+  /* ---------- 主题与降低动效 ---------- */
+  function isDark(){return root.getAttribute('data-theme')==='dark'||(!root.hasAttribute('data-theme')&&matchMedia('(prefers-color-scheme: dark)').matches)}
+  try{var sv=localStorage.getItem('intui-docs-theme');if(sv)root.setAttribute('data-theme',sv)}catch(e){}
+  function label(){$('#theme').textContent=isDark()?'浅色':'深色';$('#themeName').textContent=isDark()?'深色':'浅色';renderSwatches()}
+  $('#theme').addEventListener('click',function(){var n=isDark()?'light':'dark';root.setAttribute('data-theme',n);try{localStorage.setItem('intui-docs-theme',n)}catch(e){}label()});
+  try{matchMedia('(prefers-color-scheme: dark)').addEventListener('change',label)}catch(e){}
+  $('#reduce').addEventListener('click',function(){var on=root.classList.toggle('ai-reduce');this.setAttribute('aria-pressed',on)});
+
+  /* ---------- 色板（对比度预先算好，见 ai.css 注释） ---------- */
+  var SW={
+    light:[['violet','--ai-violet','#6E56F0','渐变起点 · 白字 4.94'],['orchid','--ai-orchid','#A452E0','渐变中段 · 白字 4.32'],['rose','--ai-rose','#E0457F','渐变终点 · 图形 3.94'],
+      ['ink','--ai-ink','#6541D6','小字：白 6.40 · Gray13 6.02'],['ghost','--ai-ghost','#9982E4','幽灵建议：白 3.15'],['tint','--ai-tint','rgba(110,86,240,.06)','AI 行底 · 其上代码 18.5'],
+      ['wait','--ai-wait','#BF7000','在等你 · 点：白 3.80'],['wait-ink','--ai-wait-ink','#9A5B00','在等你 · 字：白 5.43']],
+    dark:[['violet','--ai-violet','#8F7CFF','渐变起点 · Gray1 5.10'],['orchid','--ai-orchid','#C08AF7','渐变中段 · Gray1 6.45'],['rose','--ai-rose','#F27BAE','渐变终点 · Gray1 6.45'],
+      ['ink','--ai-ink','#B69CFF','小字：Gray1 7.21 · Gray2 6.04'],['ghost','--ai-ghost','#72649C','幽灵建议：Gray1 3.15'],['tint','--ai-tint','rgba(143,124,255,.08)','AI 行底 · 其上代码 8.0'],
+      ['wait','--ai-wait','#F5A524','在等你 · 点：Gray2 6.77'],['wait-ink','--ai-wait-ink','#F5B64F','在等你 · 字：Gray2 7.68']]
+  };
+  function renderSwatches(){
+    $('#swatches').innerHTML=SW[isDark()?'dark':'light'].map(function(s){
+      var bg=s[0]==='tint'?'background:var(--ui-editor-bg);box-shadow:inset 0 0 0 100px '+s[2]:'background:'+s[2];
+      return '<div class="swc"><i style="'+bg+'"></i><b>'+s[0]+'</b><code>'+s[1]+'</code><code>'+s[2]+'</code><em>'+s[3]+'</em></div>'}).join('');
+  }
+
+  /* ---------- 图标网格 ---------- */
+  var ICONS=[['ai-mark','智能 · 标识'],['ai-chat','对话'],['ai-inline','就地问'],['ai-edit','AI 改'],['ai-explain','解释'],['ai-fix','修复'],['ai-plan','规划'],['ai-agent','Agent'],
+    ['ai-tool','工具调用'],['ai-skill','技能'],['ai-model','模型'],['ai-context','上下文 @'],['ai-review','审阅 · diff'],['ai-revert','退回'],['ai-local','本机模型'],['ai-cloud','云端模型'],
+    ['ai-voice','语音'],['ai-lasso','笔圈选'],['ai-verify','在设备上验证'],['ai-waiting','在等你'],['ai-sparkle','星芒'],['ai-retry','重试'],['ai-adjust','调整'],['ai-send','发送'],['ai-stop','停止'],['ai-thumb-up','有用'],['ai-thumb-down','没用']];
+  $('#iconGrid').innerHTML=ICONS.map(function(x){
+    var st=x[0]==='ai-waiting'?' style="color:var(--ai-wait-ink)"':'';
+    return '<div class="ic"><span class="pair"'+st+'><svg class="x2"><use href="#'+x[0]+'"/></svg><svg class="i"><use href="#'+x[0]+'"/></svg></span><b>'+x[1]+'</b><code>'+x[0]+'</code></div>'}).join('');
+
+  /* ---------- 高亮 ---------- */
+  $('#accept').addEventListener('click',function(){$('#aiBlock').classList.add('is-accepted')});
+  $('#resetBlock').addEventListener('click',function(){var b=$('#aiBlock');b.classList.remove('is-accepted');void b.offsetWidth});
+  function touch(){var t=$('#touched');t.classList.remove('ai-touched');void t.offsetWidth;t.classList.add('ai-touched')}
+  $('#replayTouch').addEventListener('click',touch);
+
+  /* ---------- 进行态 ---------- */
+  var ST=[
+    {id:'idle',n:'待命',cap:'<svg class="ai-ico"><use href="#ai-mark"/></svg><span class="lbl">问 DevEco Code，或 @ 一个文件</span>',
+      vis:'中性 ‹✦› 字形，无颜色、无动效',copy:'「问 DevEco Code，或 @ 一个文件」',mo:'无',rm:'—',
+      at:'写代码写到一半，想起要问',pain:'入口一直在发光，余光里总有东西在动',fix:'待命时完全安静，和普通工具窗一样'},
+    {id:'thinking',n:'理解中',cap:'<i class="ai-spark is-live"></i><span class="lbl ai-shimmer">正在读 LoginPage.ets 和 3 个 @State</span><span class="t">4 s</span>',
+      vis:'星芒自身色相流动 + 文案扫光；底色中性',copy:'说具体在读什么：「正在读 LoginPage.ets 和 3 个 @State」+ 已用时',mo:'1.8 s / 轮，线性循环',rm:'静态渐变星芒；文案每读完一步更新一次',
+      at:'发出需求后盯着面板等',pain:'不知道它是在读工程还是卡死了，犹豫要不要重发',fix:'显示正在读哪个文件、已用多久'},
+    {id:'tool',n:'调用工具',cap:'<svg class="ai-ico"><use href="#ai-tool"/></svg><span class="lbl">hvigor 构建 <code>entry@default</code></span><i class="ai-ring"></i><span class="t">6 s</span>',
+      vis:'工具图标 + 目标（等宽）+ 12px 小环',copy:'动词 + 目标：「hvigor 构建 entry@default」',mo:'小环 1 s / 圈',rm:'静态 3/4 环 + 秒数',
+      at:'让 AI 修构建报错',pain:'它在后台跑命令，看不到在跑什么，怕它乱动工程',fix:'每次调用都亮出工具与目标，点开看完整输出'},
+    {id:'generating',n:'生成中',cap:'<i class="ai-spark is-live"></i><span class="lbl ai-shimmer">正在写 LoginPage.ets · 第 2 处，共 3 处</span>',
+      vis:'输入框流动描边 + 外发光（本页唯一的输入框光）；发送键变停止',copy:'「正在写 LoginPage.ets · 第 2 处，共 3 处」',mo:'1.8 s / 轮；进入 300 ms 淡入',rm:'静态渐变描边，外发光降到 30%',
+      at:'看着它往文件里写',pain:'方向写错了也只能干等它写完再撤',fix:'发送键就地变停止，随时打断，已写的保留、可退回'},
+    {id:'waiting',n:'在等你',cap:'<i class="ai-wait-dot"></i><span class="lbl">等你确认：在 Mate 70 上安装调试包</span>',
+      vis:'琥珀点脉冲 + 琥珀底；同步到状态栏与窗口标题',copy:'「等你确认：…」动作 + 对象',mo:'1.6 s / 次脉冲，持续到你处理',rm:'实心点 + 静态光圈，不闪',
+      at:'AI 跑长任务，你切去看文档',pain:'它停下来等授权，你十分钟后回来才发现',fix:'唯一会抢注意力的态，隔着别的窗口也看得到'},
+    {id:'verifying',n:'在设备上验证',cap:'<svg class="ai-ico"><use href="#ai-verify"/></svg><span class="lbl">安装到 Mate 70 Pro</span><span class="t">2 / 4</span><i class="ai-ring"></i>',
+      vis:'设备图标 + 当前步骤 + 步数 + 小环',copy:'「安装到 Mate 70 Pro · 2 / 4」',mo:'小环 1 s / 圈',rm:'只留步数',
+      at:'AI 说「改好了」',pain:'还得自己打包、装机、点一遍才敢信',fix:'AI 自己在设备上跑一遍，按步骤汇报'},
+    {id:'done',n:'完成',cap:'<svg class="ai-ico"><use href="#ai-verify"/></svg><span class="lbl">已改 3 处 · Mate 70 上通过</span><button class="act">退回</button>',
+      vis:'绿色勾，1 s 后回到中性',copy:'结果 + 验证结论 + 退回入口',mo:'勾停 1 s，0.4 s 褪色',rm:'同左（只有颜色变化）',
+      at:'切回来看结果',pain:'完成提示一直亮着或弹窗，关掉又找不到结果',fix:'勾停 1 s 就回中性，结果留在卡片里'},
+    {id:'error',n:'中断 / 失败',cap:'<svg class="ai-ico"><use href="#ai-verify"/></svg><span class="lbl">没连上 Mate 70：USB 调试没开</span><button class="act">怎么打开</button>',
+      vis:'图标变红，其余中性；原因 + 一个下一步',copy:'白话原因 + 下一步：「没连上 Mate 70：USB 调试没开 · 怎么打开」',mo:'无',rm:'—',
+      at:'等验证结果',pain:'只看到「Error: 1」，要去翻 hdc 日志',fix:'白话原因 + 一个能点的下一步'}
+  ];
+  $('#stateCards').innerHTML=ST.map(function(s){
+    return '<div class="card st" tabindex="0"><div class="head"><h4>'+s.n+'</h4><code style="font-size:11px;color:var(--ui-fg-info)">data-state="'+s.id+'"</code></div>'+
+      '<div class="specimen"><span class="ai-status" data-state="'+s.id+'">'+s.cap+'</span></div>'+
+      '<dl class="spec"><dt>视觉</dt><dd>'+s.vis+'</dd><dt>文案</dt><dd>'+s.copy+'</dd><dt>动效</dt><dd>'+s.mo+'</dd><dt>降低动效</dt><dd>'+s.rm+'</dd></dl>'+
+      '<dl class="scn"><dt>在做</dt><dd>'+s.at+'</dd><dt>卡在</dt><dd>'+s.pain+'</dd><dt>这样解</dt><dd class="fix">'+s.fix+'</dd></dl></div>'}).join('');
+
+  var pStatus=$('#pStatus'),pField=$('#pField'),pSend=$('#pSend'),pExtra=$('#pExtra'),timer=null,cur=0;
+  var EXTRA={waiting:'<div class="ai-approve" style="max-width:420px"><div class="ai-approve__h"><i class="ai-wait-dot"></i>在等你确认</div><p class="ai-approve__why">要在 <b>Mate 70 Pro</b> 上安装调试包，会覆盖设备上的同名应用数据。</p><div class="ai-approve__act"><button class="ai-btn ai-btn--primary">允许</button><button class="ai-btn">不允许</button></div></div>',
+    tool:'<div style="max-width:420px"><div class="ai-toolrow"><svg class="ai-ico"><use href="#ai-explain"/></svg><span class="what">读取 <code>LoginPage.ets</code></span><span class="end">0.3 s</span></div><div class="ai-toolrow"><svg class="ai-ico"><use href="#ai-tool"/></svg><span class="what">hvigor 构建 <code>entry@default</code></span><span class="end"><i class="ai-ring"></i>6 s</span></div></div>'};
+  $('#pCtl').innerHTML=ST.map(function(s,i){return '<button data-i="'+i+'" aria-pressed="'+(i===0)+'"><b>'+(i+1)+'</b>'+s.n+'</button>'}).join('')+'<button class="auto" id="pAuto">自动播放</button>';
+  function show(i){
+    cur=i;var s=ST[i];
+    pStatus.setAttribute('data-state',s.id);pStatus.innerHTML=s.cap;
+    pField.setAttribute('data-state',s.id==='generating'?'generating':'idle');
+    pSend.innerHTML=s.id==='generating'?'<svg><use href="#ai-stop"/></svg>':'<svg><use href="#ai-send"/></svg>';
+    pSend.setAttribute('aria-label',s.id==='generating'?'停止':'发送');
+    pExtra.innerHTML=EXTRA[s.id]||'';
+    $$('#pCtl button[data-i]').forEach(function(b){b.setAttribute('aria-pressed',+b.dataset.i===i)});
+  }
+  function stop(){clearTimeout(timer);timer=null;$('#pAuto').textContent='自动播放'}
+  $('#pCtl').addEventListener('click',function(e){
+    var b=e.target.closest('button');if(!b)return;
+    if(b.id==='pAuto'){if(timer){stop();return}
+      $('#pAuto').textContent='停止播放';var D=[1600,2600,2400,3200,2800,2600,1800,2600];
+      (function step(){show(cur);timer=setTimeout(function(){cur=(cur+1)%ST.length;step()},D[cur])})();return}
+    stop();show(+b.dataset.i);
+  });
+  pSend.addEventListener('click',function(){stop();show(pField.getAttribute('data-state')==='generating'?7:1)});
+  show(0);
+
+  /* ---------- 回答卡反馈 ---------- */
+  $$('.ai-fb').forEach(function(g){g.addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;
+    var on=b.getAttribute('aria-pressed')!=='true';$$('button',g).forEach(function(x){x.setAttribute('aria-pressed','false')});b.setAttribute('aria-pressed',on)})});
+
+  /* ---------- 作用范围 ---------- */
+  var TOK={8:'space_sm',12:'space_md',16:'space_lg',24:'space_xl'};
+  var sc={pad:12,target:'inst',bp:'all',tries:0};
+  function nearest(v){var ks=Object.keys(TOK).map(Number);ks.sort(function(a,b){return Math.abs(a-v)-Math.abs(b-v)});return ks.slice(0,2).sort(function(a,b){return a-b})}
+  function padRes(v){return TOK[v]?"$r('app.float."+TOK[v]+"')":String(v)}
+  function renderScope(){
+    var v=sc.pad,changed=v!==12,res=padRes(v);
+    $('#scVal').textContent=v+'vp';
+    $('#scPc').style.padding=Math.round(v*0.85)+'px';
+    // 三档预览
+    var BP=[['sm','手机 · 390',1,3],['md','折叠屏 · 700',2,4],['lg','平板 · 1024',3,6]];
+    $('#scBps').innerHTML=BP.map(function(b,bi){
+      var applies=changed&&(sc.bp==='all'||b[0]==='sm');
+      var cells='';for(var k=0;k<b[3];k++){
+        var hit=applies&&(sc.target!=='inst'||k===0);
+        var p=hit?Math.round(v/3):4;
+        cells+='<span class="cd'+(k===0?' hero':'')+(hit?' hit':'')+'" style="padding:'+p+'px"><i></i></span>'}
+      var hd=applies&&sc.target==='token'?'margin:'+Math.round(v/4)+'px 0 '+Math.round(v/2.4)+'px':'';
+      var bad=applies&&sc.target==='token'&&b[0]==='md'&&v>=16;
+      return '<div class="bp'+(bad?' bad':'')+'"><div class="cap"><span>'+b[0]+'</span><span>'+b[1]+'</span></div><div class="hd" style="'+hd+'"></div><div class="grid" style="grid-template-columns:repeat('+b[2]+',minmax(0,1fr))">'+cells+'</div></div>'}).join('');
+    // 影响与验证
+    var I={inst:['1 处','DetailPage.ets:42'],comp:['7 处实例','ProductCard 在 3 个页面'],token:['41 处引用','12 个文件，含页头与底栏']};
+    var rows=[];
+    if(!changed){rows.push(['i','拖动左侧滑杆改内边距，这里显示会写到哪、影响几处。'])}
+    else{
+      rows.push(['i','影响 '+I[sc.target][0]+' · '+I[sc.target][1]+(sc.bp==='sm'?' · 只在 sm（< 600vp），md / lg 仍 12vp':' · 全部断点')]);
+      if(sc.target==='token'&&sc.bp==='sm')rows.push(['w','资源限定词按设备类型（phone / tablet / 2in1）区分，不按断点。建议改成下面的断点 token，而不是改 float.json。']);
+      else if(sc.target==='token'&&v>=16)rows.push(['w','已在三档跑过：md 折叠屏底栏「加入购物车」文字换行。']);
+      else rows.push(['ok','已在 sm / md / lg 跑过：除这次改动外无差异。']);
+    }
+    $('#scImpact').innerHTML=rows.map(function(r){
+      var ic=r[0]==='w'?'<i class="ai-wait-dot" style="margin:5px 3px 0"></i>':r[0]==='ok'?'<svg style="color:var(--ui-success)"><use href="#ai-verify"/></svg>':'<svg style="color:var(--ui-icon)"><use href="#ai-review"/></svg>';
+      return '<div class="row'+(r[0]==='w'?' warn':'')+'">'+ic+'<span>'+esc(r[1])+'</span></div>'}).join('');
+    // 代码
+    var bpv='new BreakpointType({\n    sm: '+res+',\n    md: $r(\'app.float.space_md\'),\n    lg: $r(\'app.float.space_md\')\n  }).getValue(this.curBp)';
+    var C;
+    if(!changed)C=['DetailPage.ets:42',"ProductCard({ item: this.hero })\n  .padding($r('app.float.space_md'))   // 12vp"];
+    else if(sc.target==='inst')C=['DetailPage.ets:42',"ProductCard({ item: this.hero })\n  .padding("+(sc.bp==='sm'?bpv:res)+")"+(sc.bp==='sm'?'':'   // 只这一处')];
+    else if(sc.target==='comp')C=['ProductCard.ets:18 · build()',"Column() { … }\n  .padding("+(sc.bp==='sm'?bpv:res)+")"+(sc.bp==='sm'?'':'   // 7 处实例跟随')];
+    else if(sc.bp==='all')C=['resources/base/element/float.json',TOK[v]&&TOK[v]!=='space_md'?'// space_md 本身不变；卡片改用 '+TOK[v]+'\n// 若确要改规范：\n{ "name": "space_md", "value": "'+v+'vp" }   // 原 12vp，41 处跟随':'{ "name": "space_md", "value": "'+v+'vp" }   // 原 12vp，41 处跟随'];
+    else C=['common/Tokens.ets · 建议新建断点 token',"export const SpaceCard = new BreakpointType<Resource>({\n  sm: "+(TOK[v]?res:"$r('app.float.space_lg')")+",\n  md: $r('app.float.space_md'),\n  lg: $r('app.float.space_md')\n})"];
+    $('#scCode').innerHTML='<span class="file">'+esc(C[0])+'</span>'+esc(C[1]);
+    $('#scRec').hidden=!(changed&&sc.tries>=2);
+  }
+  function seg(id,key){$(id).addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;sc[key]=b.dataset.v;
+    $$('button',$(id)).forEach(function(x){x.setAttribute('aria-pressed',x===b)});renderScope()})}
+  seg('#scTarget','target');seg('#scBp','bp');
+  $('#scRange').addEventListener('input',function(){sc.pad=+this.value;$('#scTr').classList.remove('on');renderScope()});
+  $('#scRange').addEventListener('change',function(){
+    var v=+this.value;sc.tries++;
+    var tr=$('#scTr');
+    if(v===12){tr.classList.remove('on');renderScope();return}
+    if(TOK[v]){$('#scTrMsg').textContent=v+'vp 就是 '+TOK[v]+'，按 token 写入';$('#scTrOpts').innerHTML=''}
+    else{var nn=nearest(v);$('#scTrMsg').textContent=v+'vp 不在间距规范里';
+      $('#scTrOpts').innerHTML=nn.map(function(k){return '<button class="ai-btn ai-btn--fill" data-snap="'+k+'">'+TOK[k]+' · '+k+'</button>'}).join('')+'<button class="ai-btn" data-snap="keep">保留 '+v+'</button>'}
+    tr.classList.add('on');renderScope();
+  });
+  $('#scTrOpts').addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;
+    if(b.dataset.snap!=='keep'){sc.pad=+b.dataset.snap;$('#scRange').value=sc.pad}
+    $('#scTr').classList.remove('on');renderScope()});
+  renderScope();
+
+  /* ---------- 时间轴与漂移 ---------- */
+  $$('#tl input').forEach(function(c){c.addEventListener('change',function(){$$('span',c.parentNode).forEach(function(s,i){if(i===2)s.classList.toggle('off',!c.checked)})})});
+  $('#drift').addEventListener('click',function(e){var b=e.target.closest('button[data-d]');if(!b)return;var r=b.closest('.drow');r.classList.add('done');$('.acts',r).innerHTML='<span style="font-size:12px;color:var(--ui-fg-info)">'+esc(b.dataset.d)+'</span>'});
+
+  /* ---------- 目录高亮 ---------- */
+  var links=$$('#toc a');
+  var io=new IntersectionObserver(function(es){es.forEach(function(en){if(!en.isIntersecting)return;
+    links.forEach(function(a){a.classList.toggle('on',a.getAttribute('href')==='#'+en.target.id)})})},{rootMargin:'-20% 0px -70% 0px'});
+  links.forEach(function(a){var s=$(a.getAttribute('href'));if(s)io.observe(s)});
+
+  label();
+})();
+</script>
+</body>
+</html>

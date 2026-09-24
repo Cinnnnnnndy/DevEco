@@ -5,13 +5,13 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='32' y2='32' gradientUnits='userSpaceOnUse'%3E%3Cstop stop-color='%232C8DDD'/%3E%3Cstop offset='1' stop-color='%233357AC'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='32' height='32' rx='7' fill='url(%23g)'/%3E%3Ctext x='16' y='22.5' font-family='Arial,Helvetica,sans-serif' font-size='13' font-weight='700' fill='white' text-anchor='middle'%3EDE%3C/text%3E%3C/svg%3E">
 <title>19 · 远端调试：手边没有的那台，加进画布</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;500&display=swap">
 <link rel="stylesheet" href="../../deveco-intui-kit/src/tokens.css">
 <link rel="stylesheet" href="../../deveco-intui-kit/src/components.css">
 <link rel="stylesheet" href="../_shared/frame.css">
 <link rel="stylesheet" href="../_shared/guide.css">
 <script src="../../deveco-intui-kit/src/icons.js"></script>
 <script src="../_shared/frame.js"></script>
+<script src="../_shared/stage.js"></script>
 <script src="../_shared/guide.js"></script>
 <style>
   /* 用 [data-ide-theme] 提高优先级：tokens.css 在主题块里定义了 --ai-w */
@@ -58,9 +58,6 @@
   .mapp.dark .cards .cd span{display:block;font-size:9px;color:#8a8f99}
   /* Device Manager · 远端真机列表 */
   .devices .seg span{cursor:default}
-  .devices .pool{display:flex;align-items:center;gap:6px}
-  .devices .pool svg{width:14px;height:14px;color:var(--ui-icon)}
-  .devices .pool .grow{flex:1}
   .rd .dm-card-hd{border-bottom:0;padding:9px 12px}
   .rd .dm-card-hd .name{white-space:nowrap}
   .rd .dm-card-hd .dm-pill{white-space:nowrap}
@@ -68,16 +65,11 @@
   .btn[disabled]{opacity:.5}
   .btn svg.i{width:12px;height:12px}
   .btn.primary svg.i{color:inherit}
-  .cap-list .dm-item{padding:4px 12px}
-  .cap-list .dm-item svg{width:14px;height:14px;flex:none}
-  .cap-list .dm-item.ok svg{color:var(--ui-success)}
-  .cap-list .dm-item.todo{color:var(--ui-fg-info)}
-  .cap-list .dm-item.todo svg{color:var(--ui-fg-info)}
 
   /* ===== 远端设备 = 鸿蒙自由窗口 ===== */
-  .fw{position:relative;flex:none;width:var(--fw-w,300px);display:flex;flex-direction:column;border-radius:12px;border:1px solid var(--ui-popup-border);background:var(--ui-popup-bg);box-shadow:0 10px 28px rgba(0,0,0,.28);overflow:hidden}
+  .fw{position:relative;flex:none;width:var(--fw-w,300px);display:flex;flex-direction:column;border-radius:12px;background:var(--ui-popup-bg);box-shadow:0 0 0 1px color-mix(in srgb,var(--ui-fg) 6%,transparent),0 10px 28px rgba(0,0,0,.28)}
   .fw.new{animation:dmjoin .35s ease-out}
-  .fw-bar{flex:none;height:32px;display:flex;align-items:center;gap:6px;padding:0 4px 0 10px;border-bottom:1px solid var(--ui-border);cursor:grab;touch-action:none;font-size:var(--fs-sm);white-space:nowrap}
+  .fw-bar{flex:none;height:32px;display:flex;align-items:center;gap:6px;padding:0 4px 0 10px;border-radius:12px 12px 0 0;cursor:grab;touch-action:none;font-size:var(--fs-sm);white-space:nowrap}
   .fw.drag .fw-bar{cursor:grabbing}
   .fw-bar > svg.i{width:14px;height:14px;color:var(--ui-icon)}
   .fw-bar .nm{font-weight:600;color:var(--ui-fg);overflow:hidden;text-overflow:ellipsis;min-width:0}
@@ -91,12 +83,12 @@
   .fw-bar .wb.x:hover{background:#E5484D}
   .fw-bar .wb.x:hover svg{color:#fff}
   .fw-bar .wb svg.i{width:14px;height:14px}
-  .fw-body{position:relative;flex:1;min-height:0;display:grid;place-items:center;padding:18px 16px;background:var(--ui-editor-bg);
+  .fw-body{position:relative;flex:1;min-height:0;display:grid;place-items:center;padding:18px 16px;background-color:color-mix(in srgb,var(--ui-fg) 4%,var(--ui-popup-bg));
     background-image:radial-gradient(color-mix(in srgb,var(--ui-fg) 10%,transparent) 1px,transparent 1px);background-size:14px 14px}
   .fw-body .sync{position:absolute;left:0;right:0;top:0;height:3px;border-radius:0;z-index:6}
   .fw-dev{position:relative;width:calc(var(--bw) * var(--s,1) * 1px);height:calc(var(--bh) * var(--s,1) * 1px)}
   .fw-dev > .dm-device{position:absolute;left:0;top:var(--oy,0px);transform:scale(var(--s,1));transform-origin:0 0}
-  .fw-ft{flex:none;height:24px;display:flex;align-items:center;gap:6px;padding:0 10px;border-top:1px solid var(--ui-border);font-family:var(--font-code);font-size:11px;color:var(--ui-fg-info);white-space:nowrap;overflow:hidden}
+  .fw-ft{flex:none;height:24px;display:flex;align-items:center;gap:6px;padding:0 10px;border-radius:0 0 12px 12px;font-family:var(--font-code);font-size:11px;color:var(--ui-fg-info);white-space:nowrap;overflow:hidden}
   .fw-ft .grow{flex:1}
   .fw-rz{position:absolute;right:0;bottom:0;width:16px;height:16px;cursor:nwse-resize;display:none;touch-action:none}
   .fw-rz::before{content:"";position:absolute;right:4px;bottom:4px;width:7px;height:7px;border-right:2px solid var(--ui-fg-info);border-bottom:2px solid var(--ui-fg-info);border-radius:0 0 3px 0}
@@ -114,6 +106,7 @@
   .fw-layer{position:absolute;inset:0;pointer-events:none;z-index:40}
   .fw-layer .fw{position:absolute;pointer-events:auto}
   .fw.float .fw-rz{display:block}
+  .fw.snap .fw-bar,.fw.snap .fw-ft{border-radius:0}
   .fw.snap{width:var(--snap-w);border-radius:0;top:0!important;bottom:0;height:auto!important;box-shadow:0 0 0 1px var(--ui-border)}
   .fw.snap.r{left:auto!important;right:0}
   .fw.snap.l{left:0!important}
@@ -123,10 +116,10 @@
   .fw.back{animation:fwback .4s ease-out}
   @keyframes fwback{from{transform:translateY(60vh) scale(.7);opacity:0}to{transform:none;opacity:1}}
   .fw-tf{position:absolute;left:50%;top:44%;z-index:8;display:flex;gap:9px;margin-left:-26px;pointer-events:none;animation:fwtf .38s ease-in forwards}
-  .fw-tf i{width:12px;height:12px;border-radius:50%;background:color-mix(in srgb,var(--ui-accent) 70%,#fff);box-shadow:0 0 0 4px color-mix(in srgb,var(--ui-accent) 25%,transparent)}
+  .fw-tf i{width:12px;height:12px;border-radius:50%;background:rgba(255,255,255,.9);box-shadow:0 0 0 4px rgba(128,128,128,.3)}
   @keyframes fwtf{from{transform:translateY(-30px);opacity:0}30%{opacity:1}to{transform:translateY(70px);opacity:.2}}
-  .snap-ghost{position:absolute;top:0;bottom:0;width:var(--snap-w);background:color-mix(in srgb,var(--ui-accent) 18%,transparent);border:2px solid var(--ui-accent);border-radius:8px;z-index:39;pointer-events:none}
-  .fling-ghost{position:absolute;left:30%;right:30%;bottom:0;height:10px;border-radius:10px 10px 0 0;background:var(--ui-accent);opacity:.7;z-index:39;pointer-events:none}
+  .snap-ghost{position:absolute;top:0;bottom:0;width:var(--snap-w);background:color-mix(in srgb,var(--ui-fg) 14%,transparent);border-radius:8px;z-index:39;pointer-events:none}
+  .fling-ghost{position:absolute;left:30%;right:30%;bottom:0;height:10px;border-radius:10px 10px 0 0;background:var(--ui-fg-info);opacity:.7;z-index:39;pointer-events:none}
   .dm-canvas.drop{outline:2px dashed var(--ui-accent);outline-offset:-4px}
   .fw-toast{position:absolute;left:50%;bottom:44px;transform:translateX(-50%);z-index:70;display:flex;align-items:center;gap:8px;height:34px;padding:0 16px;border-radius:17px;background:rgba(24,25,28,.88);color:#fff;font-size:var(--fs-sm);white-space:nowrap;box-shadow:0 6px 18px rgba(0,0,0,.3);pointer-events:none;animation:dkfade 2.4s ease-out forwards}
   .fw-toast svg{width:14px;height:14px;color:#fff}
@@ -138,9 +131,9 @@
   .fmap .sc{position:relative;width:150px;height:100px;border-radius:6px;background:#0f1012;padding:4px}
   .fmap .sc .in{position:relative;width:100%;height:100%;border-radius:3px;background:var(--ui-editor-bg);overflow:hidden}
   .fmap .hinge{width:150px;height:5px;background:linear-gradient(#55585e,#2c2e32)}
-  .fmap .ide-r{position:absolute;top:0;bottom:0;left:0;right:0;background:var(--ui-bg);border:1px solid var(--ui-border);transition:left .3s,right .3s}
+  .fmap .ide-r{position:absolute;top:0;bottom:0;left:0;right:0;background:var(--ui-bg);transition:left .3s,right .3s}
   .fmap .ide-r::before{content:"";position:absolute;left:0;right:0;top:0;height:6px;background:var(--hdr-bg,#2B2D30)}
-  .fmap .w{position:absolute;border-radius:2px;background:var(--ui-accent);border:1px solid color-mix(in srgb,var(--ui-accent) 60%,#fff);transition:all .3s}
+  .fmap .w{position:absolute;border-radius:2px;background:var(--ui-fg-info);transition:all .3s}
   .fmap .lb{position:absolute;left:4px;bottom:2px;font-size:9px;color:var(--ui-fg-info);z-index:1}
   .fmap .cap2{margin-top:4px;font-size:11px;color:var(--ui-fg-info);white-space:nowrap}
   .fwl{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
@@ -149,8 +142,36 @@
   .fwl .row .nm{font-weight:600;overflow:hidden;text-overflow:ellipsis;min-width:0}
   .fwl .row .grow{flex:1}
   .fwl .empty{color:var(--ui-fg-info);font-size:var(--fs-sm);line-height:var(--lh-sm);white-space:normal}
-  .fwc.flash{box-shadow:0 0 0 2px color-mix(in srgb,var(--ui-accent) 50%,transparent)}
-  .cap-list code{font-family:var(--font-code);font-size:11px;background:var(--ui-tag-bg);padding:1px 4px;border-radius:4px}
+  .fwc.flash{box-shadow:0 0 0 1px var(--ui-component-border)}
+  /* 精修：卡片去描边用填充；蓝色只留主按钮、选中、聚焦 */
+  .ide[data-ide-theme="dark"]{--card:var(--Gray3)}
+  .ide[data-ide-theme="light"]{--card:var(--Gray14)}
+  .devices .dm-card{border:0;background:var(--card)}
+  .devices .dm-card-hd{border-bottom:0}
+  .dm-canvas .dm-device>.tag{background:var(--ui-tag-bg);color:var(--ui-fg);font-weight:500}
+  .mdc .prev{position:relative}
+  /* 代码：本次改过、还没热重载的行 */
+  .code .ln.mod .g{box-shadow:inset 3px 0 0 var(--ui-file-modified)}
+  .code .ln .t [data-bp]{border-radius:3px}
+  .code .ln.cur .t [data-bp]:hover{background:var(--ui-tag-bg)}
+  /* 热重载后的界面变化：X6 详情变宽 / 手机 sm 被撑出屏宽 / 车机一屏少一张卡 */
+  .dm-device.fold.v2 .cols .col:first-child{flex:3}
+  .dm-device.fold.v2 .cols .col:last-child{flex:5}
+  .dm-device.bk .mapp .row,.dm-device.bk .mapp .search{width:185%;flex:none;box-sizing:border-box}
+  .dm-device.bk .mapp .row .tx b{overflow:visible}
+  .dm-device.car.v2 .cards .cd:last-child{display:none}
+  .dm-device.car.v2 .cards .cd .th{height:40px}
+  /* 台前调度：台上方的小签 */
+  .st-tag{position:absolute;top:44px;left:50%;transform:translateX(-50%);z-index:30;display:flex;align-items:center;gap:8px;max-width:calc(100% - 24px);height:30px;padding:0 4px 0 10px;border-radius:15px;background:var(--ui-popup-bg);box-shadow:0 4px 14px rgba(0,0,0,.28);font-size:var(--fs-sm);white-space:nowrap}
+  .st-tag .tx{min-width:0;overflow:hidden;text-overflow:ellipsis;color:var(--ui-fg)}
+  .st-tag .tx code{font-family:var(--font-code);font-size:11px;color:var(--ui-fg-info)}
+  .st-tag svg.i{width:14px;height:14px;color:var(--ui-icon)}
+  .st-tag.err svg.i{color:var(--ui-error)}
+  .st-tag.ok svg.i{color:var(--ui-success)}
+  .st-tag .btn{height:22px;border-radius:11px;border:0;background:var(--ui-tag-bg);flex:none}
+  .st-tag .btn[aria-pressed="true"]{background:var(--ui-fg);color:var(--ui-bg)}
+  #btn-stage svg{width:16px;height:16px;color:var(--ui-icon)}
+  #btn-stage[aria-pressed="true"]{background:var(--ui-tag-bg)}
 </style>
 </head>
 <body>
@@ -176,8 +197,8 @@
           <div class="prev-tools">
             <b><svg class="i"><use href="#i-layout"/></svg>Multi-device · <span id="cnt">2</span> 块屏</b>
             <span class="grow"></span>
-            <span class="dm-pill muted" id="remote-pill">远端 0 台</span>
-            <button class="abtn" title="Refresh All"><svg class="i"><use href="#i-refresh"/></svg></button>
+            <button class="abtn" id="btn-stage" title="台前调度|Esc 回到平铺" aria-pressed="false"></button>
+            <button class="btn primary sm" id="btn-reload" title="Apply Changes · 热重载|⇧⌘R"><svg class="i"><use href="#i-bolt"/></svg>热重载</button>
           </div>
           <div class="dm-canvas" id="canvas">
             <div class="stage" id="stage">
@@ -200,7 +221,7 @@
                 <span class="cap">1260×2844 · sm · USB</span>
               </div>
 
-              <div class="dm-device fold" data-name="Mate X6 · 本机">
+              <div class="dm-device fold" id="dev-fold" data-name="Mate X6 · 本机">
                 <span class="tag">Mate X6 · 本机</span>
                 <div class="scr">
                   <div class="mapp">
@@ -244,29 +265,25 @@
           <button class="abtn" title="Hide|Shift+Esc" data-act="hide-right"><svg class="i"><use href="#i-hide"/></svg></button></div>
         <div class="tw-body"><div class="devices">
           <div class="seg"><span>Local Emulator</span><span>Remote Emulator</span><span class="on">Remote Device</span><span>Local Device</span></div>
-          <div class="pool dm-small dm-muted"><svg><use href="#i-cloud"/></svg>远端真机池 · 本季度免费额度剩 112 分钟<span class="grow"></span><span>5 台</span></div>
 
           <div class="dm-card rd" id="rd-watch">
-            <div class="dm-card-hd"><svg class="i"><use href="#i-watch"/></svg><span class="name">HUAWEI WATCH 5</span><span class="dm-pill muted">HarmonyOS 6.0 · 深圳</span><span class="grow"></span><span class="dm-pill ok" data-state>空闲</span><button class="btn primary" data-add="watch"><svg class="i"><use href="#i-plus-box"/></svg>加进画布</button></div>
+            <div class="dm-card-hd"><svg class="i"><use href="#i-watch"/></svg><span class="name">HUAWEI WATCH 5</span><span class="dm-pill muted">HarmonyOS 6.0 · 深圳</span><span class="grow"></span><span class="dm-pill ok" data-state>空闲</span><button class="btn" data-add="watch"><svg class="i"><use href="#i-plus-box"/></svg>加进画布</button></div>
             <div class="dm-progress indet" hidden><i></i></div>
           </div>
           <div class="dm-card rd" id="rd-phone">
-            <div class="dm-card-hd"><svg class="i"><use href="#i-phone"/></svg><span class="name">Pura 70 Pro</span><span class="dm-pill muted">HarmonyOS 6.0 · 北京</span><span class="grow"></span><span class="dm-pill ok" data-state>空闲</span><button class="btn primary" data-add="phone"><svg class="i"><use href="#i-plus-box"/></svg>加进画布</button></div>
+            <div class="dm-card-hd"><svg class="i"><use href="#i-phone"/></svg><span class="name">Pura 70 Pro</span><span class="dm-pill muted">HarmonyOS 6.0 · 北京</span><span class="grow"></span><span class="dm-pill ok" data-state>空闲</span><button class="btn" data-add="phone"><svg class="i"><use href="#i-plus-box"/></svg>加进画布</button></div>
             <div class="dm-progress indet" hidden><i></i></div>
           </div>
           <div class="dm-card rd" id="rd-car">
-            <div class="dm-card-hd"><svg class="i"><use href="#i-car"/></svg><span class="name">HiCar 车机</span><span class="dm-pill muted">HarmonyOS 6.0 · 东莞</span><span class="grow"></span><span class="dm-pill ok" data-state>空闲</span><button class="btn primary" data-add="car"><svg class="i"><use href="#i-plus-box"/></svg>加进画布</button></div>
+            <div class="dm-card-hd"><svg class="i"><use href="#i-car"/></svg><span class="name">HiCar 车机</span><span class="dm-pill muted">HarmonyOS 6.0 · 东莞</span><span class="grow"></span><span class="dm-pill ok" data-state>空闲</span><button class="btn" data-add="car"><svg class="i"><use href="#i-plus-box"/></svg>加进画布</button></div>
             <div class="dm-progress indet" hidden><i></i></div>
           </div>
           <div class="dm-card rd" id="rd-tv">
             <div class="dm-card-hd"><svg class="i"><use href="#i-tv"/></svg><span class="name">智慧屏 V5</span><span class="dm-pill muted">HarmonyOS 6.0 · 深圳</span><span class="grow"></span><span class="dm-pill warn" data-state>使用中 · 排队 1</span><button class="btn" id="btn-queue"><svg class="i"><use href="#i-hourglass"/></svg>排队</button></div>
           </div>
-          <div class="dm-card rd" id="rd-fold">
-            <div class="dm-card-hd"><svg class="i"><use href="#i-fold"/></svg><span class="name">Mate X6</span><span class="dm-pill muted">HarmonyOS 6.0 · Wi-Fi</span><span class="grow"></span><span class="dm-pill muted" data-state>本机已有</span><button class="btn" disabled>画布里</button></div>
-          </div>
 
           <div class="dm-card fwc" id="fw-card">
-            <div class="dm-card-hd"><svg class="i"><use href="#i-layout"/></svg>自由窗口<span class="dm-pill muted" id="fw-n">0 个</span><span class="grow"></span><span class="dm-small dm-muted" style="font-weight:400">标题栏拖出画布 · 最大化键里选布局</span></div>
+            <div class="dm-card-hd"><svg class="i"><use href="#i-layout"/></svg>自由窗口<span class="dm-pill muted" id="fw-n">0 个</span><span class="grow"></span></div>
             <div class="dm-card-bd">
               <div class="fmap" id="fmap">
                 <div class="sc"><div class="in" id="fm-up"><div class="ide-r" id="fm-ide"></div><span class="lb">上屏 · DevEco Studio</span></div></div>
@@ -274,19 +291,10 @@
                 <div class="sc"><div class="in" id="fm-lo"><span class="lb">下屏</span></div></div>
                 <span class="cap2">MateBook Fold · 折叠双屏</span>
               </div>
-              <div class="fwl" id="fw-list"><div class="empty">远端设备加进画布后，就是一扇鸿蒙自由窗口：按住标题栏拖出画布独立摆放，拖到 IDE 边上吸附，拖到屏幕下沿或三指一甩送到下屏。</div></div>
+              <div class="fwl" id="fw-list"><div class="empty">手表、车机不在手边？加进画布后按住标题栏拖出来，吸附在 IDE 旁边一边改一边看。</div></div>
             </div>
           </div>
 
-          <div class="dm-card cap-list">
-            <div class="dm-card-hd"><svg class="i"><use href="#i-bolt"/></svg>拿过来之后能做的</div>
-            <div class="dm-list">
-              <div class="dm-item ok"><svg><use href="#i-checkS"/></svg><span class="grow">进同屏画布并排看</span></div>
-              <div class="dm-item ok"><svg><use href="#i-checkS"/></svg><span class="grow">拖出画布成自由窗口 · 吸附 IDE 旁 · 三指甩到下屏</span></div>
-              <div class="dm-item ok"><svg><use href="#i-checkS"/></svg><span class="grow">和本机 Mate 70 Pro 做分布式联调</span></div>
-              <div class="dm-item todo"><svg><use href="#i-clock"/></svg><span class="grow">给 CI 远程调用 · <code>hdc -t remote://…</code></span><span class="dm-pill muted">下一步</span></div>
-            </div>
-          </div>
         </div></div>
       </div>
     </div>

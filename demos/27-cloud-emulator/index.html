@@ -560,6 +560,28 @@
   .scrn .lb svg.i{width:14px;height:14px}
   .scrn .lb span{color:var(--ui-fg-info)}
   body.fw-docked .dm-toast{bottom:auto;top:92px}
+
+  /* ---------- 台前调度（画布内聚焦；弹出窗口的不参与） ---------- */
+  .ds-btn svg{width:16px;height:16px;color:var(--ui-icon);display:block}
+  .ds-btn.on{background:var(--card2)}
+  .jd,.inst{position:relative}
+  .dsn{display:none;position:absolute;left:0;bottom:100%;margin-bottom:4px;height:18px;padding:0 7px;border-radius:9px;background:var(--ui-popup-bg);color:var(--ui-fg);font-size:11px;line-height:18px;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,.2);z-index:3}
+  .ds-on .ds-side>.dsn{display:block}
+  .ds-on .jm-rl{visibility:hidden}
+  .ds-on .jd.popped,.ds-on .inst.popped{visibility:hidden}
+  .ds-on .jd.ds-side>.jd-cap,.ds-on .jd.ds-side>.jd-sub,.ds-on .jd.ds-side>.jd-prog,.ds-on .jd.ds-side>.jd-st,.ds-on .inst.ds-side>.acts{display:none}
+  .ds-on .jd.ds-stage>.jd-sub{display:none}
+  .ds-on .jd.on .jdv{outline:0}
+  .ds-cue{position:absolute;left:50%;transform:translateX(-50%);z-index:6;display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 10px;border-radius:12px;background:var(--ui-popup-bg);color:var(--ui-fg);font-size:12px;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,.22)}
+  .ds-cue svg.i{width:13px;height:13px}
+  .det-code .l{cursor:pointer}
+  .det-code .l:hover{background:var(--ui-hover)}
+  .det-code .l.cur{box-shadow:inset 2px 0 0 var(--ui-accent)}
+  /* 底部工具窗开着时，甩出去的屏收成一行，不盖详情 */
+  .ide:not([data-bottom="none"]) #fw-dock{bottom:calc(var(--status-h) + var(--bottom-h) + 10px)}
+  .ide:not([data-bottom="none"]) #fw-dock .scrn{flex-direction:row;padding:6px 8px 6px 10px}
+  .ide:not([data-bottom="none"]) #fw-dock .scrn .dev{display:none}
+  .ide:not([data-bottom="none"]) #fw-dock .scrn.mon .lb{margin-top:0}
 </style>
 </head>
 <body>
@@ -705,7 +727,7 @@
           </div>
           <div class="jm-devs" id="jm-devs"></div>
         </div>
-        <div class="jm-meter" id="jm-meter"></div>
+        <div class="jm-meter"><span id="jm-meter" style="display:contents"></span><span class="sep"></span><button class="abtn ds-btn" id="ds-jr" title="台前调度：一台上台放大回放，其余侧边仍在跑；⇧ 点两台并排对比"></button></div>
         <div class="dm-canvas jm-canvas" id="jm-canvas"><div class="stage" id="jm-stage"></div></div>
       </div>
       <div class="code-wrap" data-for-file="ListPage.ets" hidden><div class="code" id="code"></div></div>
@@ -763,10 +785,10 @@
       +'<button class="abtn" data-a="release" title="释放实例"><svg class="i"><use href="#i-stopSq"/></svg></button>';
   }
   function instHTML(it){
-    return '<div class="inst'+(it.pinned?' pinned':'')+'" data-id="'+it.id+'"><div class="dm-device '+it.kind+'"><span class="tag cloud">'+it.name+'</span><span class="corner">'+cornerHTML(it)+'</span><div class="scr">'+appHTML(it.kind)+'</div></div><div class="acts">'+actsHTML(it)+'</div></div>';
+    return '<div class="inst'+(it.pinned?' pinned':'')+'" data-id="'+it.id+'"><span class="tag dsn">'+it.name+'</span><div class="dm-device '+it.kind+'"><span class="tag cloud">'+it.name+'</span><span class="corner">'+cornerHTML(it)+'</span><div class="scr">'+appHTML(it.kind)+'</div></div><div class="acts">'+actsHTML(it)+'</div></div>';
   }
   function localHTML(){
-    return '<div class="inst" data-id="local"><div class="dm-device phone"><span class="tag local">Mate 70 Pro · 本机</span><span class="corner local"><svg><use href="#i-phone"/></svg>本机 · <span class="ms">6.2</span> GB</span><div class="scr">'+appHTML('phone')+'</div></div>'
+    return '<div class="inst" data-id="local"><span class="tag dsn">Mate 70 Pro · 本机模拟器</span><div class="dm-device phone"><span class="tag local">Mate 70 Pro · 本机</span><span class="corner local"><svg><use href="#i-phone"/></svg>本机 · <span class="ms">6.2</span> GB</span><div class="scr">'+appHTML('phone')+'</div></div>'
       +'<div class="acts"><span class="txt">占本机内存 6.2 GB</span><button class="btn sm" data-a="migrate"><svg class="i"><use href="#i-cloud"/></svg>迁到云端</button></div></div>';
   }
   var stage=$('#stage');
@@ -1197,7 +1219,7 @@
       +'<span class="gh">本地开同样 '+n+' 台 ≈ '+(n*LOCAL).toFixed(1)+' GB</span><span class="sep"></span>'
       +'<span class="it">'+(JM.live?'<span class="dm-dot info pulse"></span>':'<svg><use href="#i-cloud"/></svg>')+'云端 <b>'+JM.live+'</b> 台在跑 · 华东</span><span class="sep"></span>'
       +'<span class="it"><svg><use href="#i-clock"/></svg>云端时长 <b>'+(mm<10?'0':'')+mm+':'+(ss<10?'0':'')+ss+'</b> · 计 <b>'+JM.devMin.toFixed(1)+'</b> 台·分钟</span>'
-      +'<span class="grow"></span><span>步骤 <b>'+done+'</b> / '+tot+'</span><span class="sep"></span><button class="abtn ds-btn'+(jst&&jst.isOn()?' on':'')+'" id="ds-jr" title="台前调度：一台上台放大回放，其余侧边仍在跑；⇧ 点两台并排对比">'+DeviceStage.icon+'</button>';
+      +'<span class="grow"></span><span>步骤 <b>'+done+'</b> / '+tot+'</span>';
   }
 
   /* ---------- 渲染：设备墙 ---------- */
@@ -1225,7 +1247,7 @@
     var multi=apis().length>1,h='',lastApi=null;
     JM.rows.forEach(function(r,i){
       if(multi&&r.api!==lastApi){lastApi=r.api;h+='<div class="jm-rl">API '+r.api+' · '+selDevs().length+' 台</div>'}
-      h+='<div class="jd" data-i="'+i+'"><div class="jd-wrap"></div><div class="jd-cap">'+riHTML(r.dev,12)+'<b>'+r.dev.name+'</b><span class="bp '+r.dev.bp+'">'+r.dev.bp+'</span><button class="abtn jd-pop" data-pop="'+i+'" title="弹出为鸿蒙自由窗口"><svg class="i"><use href="#i-popout"/></svg></button></div><div class="jd-sub">'+r.dev.vp[0]+'×'+r.dev.vp[1]+' vp · API '+r.api+'</div><div class="jd-prog"></div><div class="jd-st"></div></div>';
+      h+='<div class="jd" data-i="'+i+'"><span class="tag dsn">'+r.dev.name+(multi?' · API '+r.api:'')+'</span><div class="jd-wrap"></div><div class="jd-cap">'+riHTML(r.dev,12)+'<b>'+r.dev.name+'</b><span class="bp '+r.dev.bp+'">'+r.dev.bp+'</span><button class="abtn jd-pop" data-pop="'+i+'" title="弹出为鸿蒙自由窗口"><svg class="i"><use href="#i-popout"/></svg></button></div><div class="jd-sub">'+r.dev.vp[0]+'×'+r.dev.vp[1]+' vp · API '+r.api+'</div><div class="jd-prog"></div><div class="jd-st"></div></div>';
     });
     stg.innerHTML=h;
     JM.rows.forEach(function(r,i){paintRow(i)});
@@ -1742,13 +1764,111 @@
     if(w.state==='flung'||w.src==='native')return;var info=fwInfo(w.src,w.key);if(info)fwTitle(w,info);
   })},1600);
 
+
+  /* =====================================================================
+     台前调度（画布内聚焦）：点哪台哪台上台放大回放，其余缩到侧边、弱化但仍在跑
+     与「弹出为自由窗口」分开：台前调度只在画布里换焦点；弹出是离开画布，已弹出的实例不参与调度
+     ===================================================================== */
+  function jdEl(i){return $('#jm-stage .jd[data-i="'+i+'"]')}
+  function dsBtns(){
+    var a=$('#ds-cloud');if(a)a.classList.toggle('on',!!(cst&&cst.isOn()));
+    var b=$('#ds-jr');if(b)b.classList.toggle('on',!!(jst&&jst.isOn()));
+  }
+  function hideCue(){var c=$('#ds-cue');if(c)c.hidden=true}
+  function showCue(t){var cv=$('#jm-canvas'),c=$('#ds-cue');c.innerHTML='<svg class="i"><use href="#i-code"/></svg>'+t;c.style.top=(cv.scrollTop+8)+'px';c.hidden=false}
+  var cst=DeviceStage.init({root:'#canvas',items:'.inst:not(.popped)',rail:'left',maxScale:1.5,
+    onChange:function(f){if(f.length===1&&f[0].dataset.id)select(f[0].dataset.id);dsBtns();requestAnimationFrame(function(){if(cst.isOn())cst.relayout()})}});
+  var jst=DeviceStage.init({root:'#jm-canvas',items:'.jd:not(.popped)',rail:'right',maxScale:2.2,
+    onChange:function(f){
+      JM.dsIdx=f.map(function(el){return +el.dataset.i});
+      if(f.length===1){var i=+f[0].dataset.i;if(!JM.cell||JM.cell.r!==i){var j=pickCell(i);if(j>=0)selectCell(i,j,'none')}}
+      if(!JM.cueing)hideCue();
+      dsBtns();requestAnimationFrame(function(){if(jst.isOn())jst.relayout()});
+    }});
+  function pickCell(i){
+    var r=JM.rows[i];if(!r)return -1;var j=-1;
+    if(r.hot&&r.hot[0]==='broken'){steps().forEach(function(s,q){if(s[0]==='cart'&&r.cells[q].st==='pass')j=q});if(j>=0)return j}
+    r.cells.forEach(function(c,q){if(c.st==='fail')j=q});
+    if(j<0)for(var q=r.cells.length-1;q>=0;q--)if(r.cells[q].st==='pass'){j=q;break}
+    return j;
+  }
+  function dsJr(i,add){
+    if(!jst)return;var el=jdEl(i);if(!el||el.classList.contains('popped'))return;
+    if(add)jst.add(el);
+    else if(!(jst.isOn()&&jst.focused().length===1&&jst.focused()[0]===el))jst.focus(el);
+  }
+  /* 弹出 / 放回窗口后：已弹出的不参与调度 */
+  function dsRefresh(ctl){
+    if(!ctl||!ctl.isOn())return;
+    var root=ctl===cst?$('#canvas'):$('#jm-canvas');
+    $$('.popped',root).forEach(function(el){if(el.classList.contains('ds-side')||el.classList.contains('ds-stage')){el.style.transform='';el.classList.remove('ds-side','ds-stage')}});
+    var f=ctl.focused().filter(function(el){return el.isConnected&&!el.classList.contains('popped')});
+    if(!f.length)ctl.clear();else ctl.focus(f);
+  }
+  /* 这次改动对其余设备的影响（和它上次真跑时的代码比） */
+  function impact(r,nf){
+    var o=r.fx||{},d=r.dev;
+    if(!!o.creaseBad!==!!nf.creaseBad){
+      if(d.kind==='unfold')return ['changed',nf.creaseBad?'按钮移到详情底部':'恢复原布局'];
+      if(d.bp==='lg')return nf.creaseBad?['broken','按钮叠在商品图上']:['changed','不再重叠'];
+    }
+    if(r.hot&&!r.hot[2])return [ 'changed',r.hot[0]==='broken'?'已恢复，不再重叠':'恢复原布局','restored'];
+    return null;
+  }
+  /* 只重跑了一台时，其余设备热重载到改动页（不跑旅程），侧边亮点 */
+  function hotReload(except){
+    var nf=fxNow(),b=0,c=0;
+    JM.rows.forEach(function(r,i){
+      if(i===except||r.st==='idle'||r.st==='boot'||r.st==='run')return;
+      var imp=impact(r,nf);r.hot=imp;if(imp){if(imp[0]==='broken')b++;else c++}
+      r.frame={k:'detail',badge:1,fx:nf};paintRow(i);
+      var el=jdEl(i);if(jst&&el&&!el.classList.contains('ds-stage'))jst.flag(el,imp?imp[0]:null,imp?imp[1]:null);
+    });
+    if(jst&&jst.isOn())jst.relayout();
+    return {b:b,c:c};
+  }
+  function aiRefine(){
+    if(REFINING)return;REFINING=true;renderDetail();
+    setTimeout(function(){
+      REFINING=false;FIXV.crease=2;hotReload(-1);renderDetail();renderMatrix();
+      toast('DevEco Code 细化了 ProductDetail.ets','只在悬停态（HALF_FOLDED）用 FolderStack；侧边红点已变回，Mate X6 展开恢复原布局。可以提交修复了。');
+    },1400);
+  }
+  /* 在失败现场点代码行：只影响某断点 / 形态的代码，对应设备自动上台 */
+  function dsByCode(t){
+    if(!jst)return;var test=null,why='';
+    if(/FolderStack|FOLD_STATUS|HALF_FOLDED|悬停/.test(t)){test=function(r){return r.dev.kind==='hover'};why='悬停态'}
+    else if(/'lg'|1280|maxWidth/.test(t)){test=function(r){return r.dev.bp==='lg'};why='lg'}
+    else return;
+    var els=[],names=[];
+    JM.rows.forEach(function(r,i){var el=jdEl(i);if(test(r)&&el&&!el.classList.contains('popped')){els.push(el);names.push(r.dev.name)}});
+    if(!els.length)return;
+    JM.cueing=true;jst.focus(els);JM.cueing=false;
+    showCue('按光标所在代码 · '+why+' → '+names.filter(function(v,i,a){return a.indexOf(v)===i}).join('、'));
+  }
+  $('#ds-cloud').innerHTML=DeviceStage.icon;
+  $('#ds-cloud').addEventListener('click',function(){
+    if(cst.isOn()){cst.clear();return}
+    var el=(selId&&$('#stage .inst[data-id="'+selId+'"]:not(.popped)'))||$('#stage .inst:not(.popped)');if(el)cst.focus(el);
+  });
+  $('#ds-jr').innerHTML=DeviceStage.icon;
+  $('#ds-jr').addEventListener('click',function(e){
+    if(jst.isOn()){jst.clear();return}
+    var i=JM.cell?JM.cell.r:-1;
+    if(i<0)JM.rows.forEach(function(r,q){if(i<0&&r.st==='fail')i=q});
+    dsJr(i<0?0:i);
+  });
+  $('#jm-canvas').insertAdjacentHTML('beforeend','<div class="ds-cue" id="ds-cue" hidden></div>');
+  $('#mo-go').addEventListener('click',function(){if(cst.isOn())setTimeout(function(){cst.focus(cst.focused())},40)});
+
 DemoGuide.init([
   {"target": "#btn-multi", "kind": "click", "pos": "right", "label": "要看其他形态？勾上就在云端并行起"},
   {"target": ".res .cmp", "kind": "change", "pos": "bottom", "label": "云端多开几台，本机内存几乎不涨"},
   {"target": "#btn-migrate", "kind": "click", "pos": "right", "label": "本机模拟器太占内存？一键迁到云端"},
   {"target": "#stage .inst [data-a=\"pop\"]", "kind": "click", "pos": "bottom", "label": "边改代码边盯这台？弹成窗口贴在 IDE 旁"},
   {"target": "#tabs .tab[data-file=\"Journey Matrix\"]", "kind": "click", "pos": "right", "label": "改完结算页，一条旅程跑遍全部形态"},
-  {"target": "#jm-bsum", "kind": "change", "pos": "left", "label": "哪台、哪一步坏了，点红格看现场"}
+  {"target": "#ds-jr", "kind": "click", "pos": "left", "label": "看不清一台？让它上台放大，其余侧边照跑"},
+  {"target": "#jm-stage .jd.ds-side .ds-flag.broken", "kind": "change", "pos": "right", "label": "修这台带坏了别的台？侧边亮红点，点它上台"}
 ], {scene:{
   at:"你改完结算页，要在手机、折叠、平板上都过一遍",
   goal:"全部形态跑通登录到结算，坏的定位到代码行",

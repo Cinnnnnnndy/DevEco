@@ -1632,7 +1632,7 @@
     var keepSel=quick?selIss:null;
     if(mode==='lint')endLint();
     clearScene();
-    var S=SC[id];scBusy=true;scene={id:id,res:{}};mode='scene';selIss=keepSel;
+    var S=SC[id];scBusy=true;scene={id:id,res:{}};mode='scene';selIss=keepSel;if(dsx&&!quick)cue(null);
     $$('#sc-bar [data-sc]').forEach(function(b){b.classList.toggle('on',b.dataset.sc===id)});
     $('#sc-reset').disabled=false;
     api(S.api);
@@ -1748,6 +1748,7 @@
   }
   function lintOpen(){return Object.keys(ISS).filter(function(id){return ISS[id].lint&&!fixed[id]})}
   function endLint(){
+    if(dsx)cue(null);
     stage.classList.remove('lint-on');mode=null;selIss=null;
     devs().forEach(function(d){setBadge(d,'','');d.classList.remove('scanning')});
     $('#sync-pill').className='dm-pill ok';$('#sync-pill').innerHTML='<svg><use href="#i-sync"/></svg>改一次一起刷 · 上次 0.8 s';
@@ -1773,7 +1774,7 @@
       });
       if(firstDev){select(firstDev);
         var grp=[];I.devs.forEach(function(p){var x=$('#'+p[0]);if(x&&grp.length<2&&grp.indexOf(x)<0)grp.push(x)});
-        setTimeout(function(){dsx.focus(grp);cue('一多检查 · '+'①②③④'.charAt(+I.no-1),grp)},340);
+        setTimeout(function(){cueing=true;dsx.focus(grp);cue('一多检查 · '+'①②③④'.charAt(+I.no-1),grp)},340);
       }
     }
     markLint();renderPanel();
@@ -1926,7 +1927,7 @@
 
 
   /* ================= 台前调度：改哪台哪台上台，其余侧边实时刷新 ================= */
-  var dsx=null,pinned=false,cueOn=false,naive=false;
+  var dsx=null,pinned=false,cueOn=false,naive=false,cueing=false;
   var NAIVE14='        GridCol({ span: 12 }) { ProductList({ lanes: 2 }) }';
   /* 布局指纹：刷新前后对比，侧边设备「也变了」 */
   function sig(d){
@@ -1941,8 +1942,8 @@
     if(!naive||fixed.L_GRID)return null;
     var k=d.dataset.kind;if(['phone','fold','xt','pc','tablet'].indexOf(k)<0)return null;
     if(!$$('.lst',d).some(vis))return null;
-    if(k==='tablet')return '列表栏太窄，被挤成两列';
-    return ['xs','sm','md'].indexOf(d.dataset.bp)>=0?'列表被挤成两列，标题只剩几个字':null;
+    if(k==='tablet')return '列表栏被挤成两列';
+    return ['xs','sm','md'].indexOf(d.dataset.bp)>=0?'列表被挤成两列':null;
   }
   function flagAfter(list,before){
     if(!dsx)return;
@@ -1952,6 +1953,10 @@
       else if(before[d.id||d.dataset.name]!==sig(d))dsx.flag(d,'changed','也变了');
       else dsx.flag(d,null);
     });
+    if(dsx.isOn()){
+      var n=list.filter(function(d){return d.classList.contains('ds-broken')}).length;
+      $('#flow-pill').className='dm-pill '+(n?'err':'ok');$('#flow-pill').textContent=n?'这次改动带坏了 '+n+' 台':'这次改动没带坏别的台';
+    }
   }
   function cue(txt,list,why){
     var c=$('#ds-cue'),cv=$('#canvas');
@@ -1976,7 +1981,7 @@
     FOLLOW.some(function(r){if(r.re.test(txt)||r.at===key||(r.file===file&&r.file)){rule=r;return true}});
     if(!rule)return;
     var list=rule.devs.map(function(p){var d=$('#'+p[0]);if(p[1]&&d.dataset.pose!==p[1])setPose(d,p[1],true);return d});
-    setTimeout(function(){dsx.focus(list);cue('按光标所在代码',list,rule.why)},dsx.isOn()?0:60);
+    setTimeout(function(){cueing=true;dsx.focus(list);cue('按光标所在代码',list,rule.why)},dsx.isOn()?0:60);
   }
   $('#code-wrap').addEventListener('click',function(e){
     if(e.target.closest('.qa'))return;
@@ -2003,8 +2008,6 @@
       markLint();
     },'MainPage.ets:14 热重载 · '+devCount()+' 块屏一起刷新…',function(){
       renderQA();api('hot reload · MainPage.ets:14 · '+devCount()+' 台');
-      var n=$$('#stage .dm-device.ds-broken').length;
-      $('#flow-pill').className='dm-pill '+(n?'err':'ok');$('#flow-pill').textContent=n?'这次改动带坏了侧边 '+n+' 台':'侧边没有被带坏';
       if(mode==='lint'){lintBadges();markLint();renderPanel()}
     });
   }
@@ -2012,7 +2015,8 @@
     $('#stage-ico').innerHTML=DeviceStage.icon;
     dsx=DeviceStage.init({root:'#canvas',items:'.dm-device',rail:'left',onChange:function(f){
       $('#btn-stage').classList.toggle('on',f.length>0);
-      if(!f.length){cue(null);pinned=false}
+      if(!cueing)cue(null);cueing=false;
+      if(!f.length)pinned=false;
     }});
     $('#btn-stage').addEventListener('click',function(){
       if(dsx.isOn()){dsx.clear();return}

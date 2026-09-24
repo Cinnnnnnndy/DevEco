@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='32' y2='32' gradientUnits='userSpaceOnUse'%3E%3Cstop stop-color='%232C8DDD'/%3E%3Cstop offset='1' stop-color='%233357AC'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='32' height='32' rx='7' fill='url(%23g)'/%3E%3Ctext x='16' y='22.5' font-family='Arial,Helvetica,sans-serif' font-size='13' font-weight='700' fill='white' text-anchor='middle'%3EDE%3C/text%3E%3C/svg%3E">
 <title>18 · 分布式调试：两端日志对齐在一条时间轴上</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;500&display=swap">
 <link rel="stylesheet" href="../../deveco-intui-kit/src/tokens.css">
 <link rel="stylesheet" href="../../deveco-intui-kit/src/components.css">
 <link rel="stylesheet" href="../_shared/frame.css">
@@ -46,7 +45,7 @@
   .log{padding:4px 0}
   .log .r{display:flex;align-items:center;gap:8px;height:22px;padding:0 10px;white-space:nowrap;user-select:text;transition:background .15s}
   .log .r .lt{flex:none;width:56px;color:var(--ui-fg-info)}
-  .log .r .ltag{flex:none;color:var(--ui-info)}
+  .log .r .ltag{flex:none;color:var(--ui-fg-info)}
   .log .r .lmsg{min-width:0;overflow:hidden;text-overflow:ellipsis;color:var(--ui-fg)}
   .log .r.hl{background:color-mix(in srgb,var(--ui-accent) 14%,transparent)}
   .log .r.miss .lmsg,.log .r.miss .ltag{color:var(--ui-fg-info);font-style:italic}
@@ -54,32 +53,44 @@
   .log .r.pause .ltag,.log .r.pause .lmsg{color:var(--ui-error)}
   .abtn.done{opacity:.45}
 
+  /* 精修：卡片去描边用填充；蓝色只留主按钮、选中与聚焦 */
+  .dm-tl,.logs{border:0}
+  .dm-tl .ev.info{background:color-mix(in srgb,var(--ui-fg) 8%,transparent);border-color:var(--ui-border)}
+  .dm-tl .ev.info svg{color:var(--ui-fg-info)}
+  .dm-tl .mark.accent{border-left-color:var(--ui-fg-info)}
+  .dm-tl .mark.accent b{color:var(--ui-fg)}
+  #clock-pill{background:var(--ui-tag-bg);color:var(--ui-fg-info);font-weight:400}
+  #clock-pill svg{color:var(--ui-fg-info)}
+  .log .r.hl,.fx-log .log .r.new{background:color-mix(in srgb,var(--ui-fg) 8%,transparent)}
+  .code .ln.hl{background:color-mix(in srgb,var(--ui-fg) 7%,transparent)}
   /* ===== 场景二：键鼠穿越 · 光标走到哪台就在调哪台 ===== */
   .tw-bottom.follow .pair-only{display:none}
   .fol{flex:1;min-height:0;display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;padding:10px 12px;overflow:hidden}
   .fol[hidden]{display:none}
-  .dk{width:676px;min-height:0;display:flex;flex-direction:column;border:1px solid var(--ui-border);border-radius:var(--arc);overflow:hidden;background:var(--ui-editor-bg)}
-  .dk-hd{flex:none;height:30px;display:flex;align-items:center;gap:8px;padding:0 6px 0 10px;border-bottom:1px solid var(--ui-border);background:var(--ui-bg);font-size:var(--fs-sm)}
+  .dk{width:676px;min-height:0;display:flex;flex-direction:column;border-radius:var(--arc);overflow:hidden;background:var(--ui-editor-bg)}
+  .dk-hd{flex:none;height:32px;display:flex;align-items:center;gap:10px;padding:0 6px 0 10px;font-size:var(--fs-sm)}
   .dk-hd b{font-weight:600;color:var(--ui-fg)}
   .dk-hd .grow{flex:1}
-  .dk-hd .dm-seg button{height:22px;padding:0 10px}
+  .dk-hd .dm-seg{border:0;background:var(--ui-tag-bg);padding:2px;border-radius:7px}
+  .dk-hd .dm-seg button{height:22px;padding:0 10px;border-radius:5px}
+  .dk-hd .dm-seg button + button{border-left:0}
+  .dk-hd .dm-seg button.on{background:var(--ui-editor-bg);font-weight:600}
   .dk-hd .dm-seg svg{width:12px;height:12px;vertical-align:-2px;margin-right:4px;color:var(--ui-icon)}
   .dk-desk{position:relative;flex:1;min-height:300px;overflow:hidden;
     background-image:radial-gradient(color-mix(in srgb,var(--ui-fg) 12%,transparent) 1px,transparent 1px);background-size:16px 16px}
   .dk-desk::after{content:"";position:absolute;left:0;right:0;top:232px;height:1px;background:var(--ui-border)}
   .dk-dev{position:absolute;left:var(--x);top:var(--y);padding:var(--bz);background:#0f1012;border-radius:var(--r);box-shadow:0 8px 20px rgba(0,0,0,.28);transition:box-shadow .2s}
   .dk-dev .dk-scr{position:relative;width:var(--w);height:var(--h);overflow:hidden;background:#fff;border-radius:calc(var(--r) - var(--bz));cursor:default}
-  .dk-dev.focus{box-shadow:0 0 0 2px var(--ui-accent),0 0 0 6px color-mix(in srgb,var(--ui-accent) 22%,transparent),0 8px 20px rgba(0,0,0,.28)}
+  .dk-dev.focus{box-shadow:0 0 0 2px var(--ui-accent),0 8px 20px rgba(0,0,0,.28)}
   .dk-dev.paused .dk-scr::after{content:"";position:absolute;inset:0;border:2px solid var(--ui-error);border-radius:inherit;pointer-events:none;z-index:3}
-  .dk-dev .stop{position:absolute;top:-9px;right:-6px;z-index:4;height:16px;padding:0 6px;border-radius:8px;background:var(--ui-error);color:#fff;font-size:10px;line-height:16px;font-weight:600;white-space:nowrap;display:none}
-  .dk-dev.paused .stop{display:block}
   .dk-dev.pc::after{content:"";position:absolute;left:-16px;right:-16px;bottom:-11px;height:11px;border-radius:0 0 10px 10px;background:linear-gradient(#9a9ea6,#5d6168)}
   .dk-dev.pc::before{content:"";position:absolute;left:50%;bottom:-11px;width:40px;margin-left:-20px;height:4px;border-radius:0 0 4px 4px;background:#484b51;z-index:1}
   .dk-lab{position:absolute;left:var(--x);top:244px;width:var(--lw);display:flex;flex-direction:column;align-items:center;gap:2px;text-align:center;font-size:var(--fs-sm);line-height:var(--lh-sm);color:var(--ui-fg-info)}
   .dk-lab b{color:var(--ui-fg);font-weight:600;display:inline-flex;align-items:center;gap:5px;white-space:nowrap;padding:1px 8px;border-radius:10px}
   .dk-lab .spec{font-family:var(--font-code);font-size:11px;white-space:nowrap}
   .dk-lab .st{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
-  .dk-lab.focus b{background:var(--ui-accent);color:var(--ui-accent-fg)}
+  .dk-lab.focus b{background:var(--ui-tag-bg);color:var(--ui-fg)}
+  .dk-lab{cursor:default}
   .dk-lab.paused .st{color:var(--ui-error)}
   /* 电脑屏里的迷你 IDE + 应用的 2in1 自由窗口 */
   .mini-ide{position:absolute;inset:0;background:var(--ui-bg);display:grid;grid-template-rows:12px 1fr 34px;grid-template-columns:34px 1fr}
@@ -117,16 +128,16 @@
   .pad .gbar::before{width:44px}
   /* 光标 / 轨迹 / 目光 / 穿越边 */
   .dk-trail{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible;z-index:5}
-  .dk-trail path{fill:none;stroke:var(--ui-accent);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  .dk-trail path{fill:none;stroke:color-mix(in srgb,var(--ui-fg) 55%,transparent);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
   .dk-trail path.jump{stroke-dasharray:3 4;stroke-width:1.6}
-  .dk-trail path.gaze{stroke-dasharray:2 5;stroke-width:1.6;stroke:var(--ui-info)}
+  .dk-trail path.gaze{stroke-dasharray:2 5;stroke-width:1.6}
   .dk-trail g.old{opacity:.3}
   .dk-trail g.older{opacity:.12}
-  .dk-trail circle{fill:var(--ui-accent)}
+  .dk-trail circle{fill:color-mix(in srgb,var(--ui-fg) 70%,transparent)}
   .dk-cur{position:absolute;left:0;top:0;width:18px;height:18px;margin:-2px 0 0 -3px;z-index:7;pointer-events:none;filter:drop-shadow(0 1px 2px rgba(0,0,0,.45))}
   .dk-cur svg{width:18px;height:18px;display:block}
   .dk-edge{position:absolute;width:3px;border-radius:2px;background:var(--ui-accent);box-shadow:0 0 8px var(--ui-accent);z-index:6;pointer-events:none;animation:dkfade .9s ease-out forwards}
-  .dk-eye{position:absolute;z-index:6;pointer-events:none;width:26px;height:26px;margin:-13px 0 0 -13px;border-radius:50%;display:grid;place-items:center;background:var(--ui-popup-bg);border:1.5px solid var(--ui-info);color:var(--ui-info);animation:dkfade 1.3s ease-out forwards}
+  .dk-eye{position:absolute;z-index:6;pointer-events:none;width:26px;height:26px;margin:-13px 0 0 -13px;border-radius:50%;display:grid;place-items:center;background:var(--ui-popup-bg);box-shadow:0 2px 8px rgba(0,0,0,.3);color:var(--ui-fg);animation:dkfade 1.3s ease-out forwards}
   .dk-eye svg{width:16px;height:16px}
   .dk-rip{position:absolute;z-index:6;width:22px;height:22px;margin:-11px 0 0 -11px;border-radius:50%;border:2px solid var(--ui-error);pointer-events:none;animation:dkrip .5s ease-out forwards}
   @keyframes dkfade{0%{opacity:1}70%{opacity:1}100%{opacity:0}}
@@ -134,30 +145,23 @@
   @media (prefers-reduced-motion:reduce){.dk-edge,.dk-eye,.dk-rip{animation-duration:.01s}}
   /* 调试焦点（右侧） */
   .fx{min-width:0;min-height:0;display:flex;flex-direction:column;gap:8px}
-  .fx-tags{flex:none;display:flex;align-items:center;gap:6px}
-  .fx-tags .grow{flex:1}
-  .fx-tag{height:28px;display:inline-flex;align-items:center;gap:6px;padding:0 10px;border-radius:var(--arc);border:1px solid var(--ui-component-border);background:var(--ui-field-bg);font-size:var(--fs-sm);white-space:nowrap}
-  .fx-tag svg{width:14px;height:14px;color:var(--ui-icon)}
-  .fx-tag .s{color:var(--ui-fg-info);font-size:11px}
-  .fx-tag.on{border-color:var(--ui-accent);background:color-mix(in srgb,var(--ui-accent) 16%,transparent);font-weight:600}
-  .fx-tag.on svg{color:var(--ui-accent)}
-  .fx-tag.paused .s{color:var(--ui-error)}
-  .fx-sw{display:inline-flex;align-items:center;gap:6px;border:0;background:transparent;font-size:var(--fs-sm);color:var(--ui-fg-info);padding:0 4px;white-space:nowrap}
+  .fx-sw{display:inline-flex;align-items:center;gap:6px;border:0;background:transparent;font-size:var(--fs-sm);color:var(--ui-fg-info);padding:0 4px;white-space:nowrap;margin-left:auto}
   .fx-sw i{width:26px;height:14px;border-radius:7px;background:var(--ui-component-border);position:relative;transition:background .15s;flex:none}
   .fx-sw i::after{content:"";position:absolute;top:2px;left:2px;width:10px;height:10px;border-radius:50%;background:#fff;transition:left .15s}
   .fx-sw[aria-checked="true"] i{background:var(--ui-accent)}
   .fx-sw[aria-checked="true"] i::after{left:14px}
-  .fx-bp{flex:none;display:flex;align-items:center;gap:8px;min-height:32px;padding:4px 6px 4px 10px;border-radius:var(--arc);border:1px solid var(--ui-border);background:var(--ui-field-bg);font-size:var(--fs-sm);white-space:nowrap}
+  .fx-bp{flex:none;display:flex;align-items:center;gap:8px;min-height:32px;padding:4px 6px 4px 10px;border-radius:var(--arc);background:var(--ui-editor-bg);font-size:var(--fs-sm);white-space:nowrap}
   .fx-bp .bpd{width:10px;height:10px;border-radius:50%;background:var(--ui-error);flex:none}
   .fx-bp.run .bpd{background:transparent;border:2px solid var(--ui-success)}
   .fx-bp .loc{font-family:var(--font-code);font-size:11px;color:var(--ui-link)}
   .fx-bp .txt{min-width:0;overflow:hidden;text-overflow:ellipsis}
   .fx-bp .grow{flex:1}
   .fx-grid{flex:none;height:176px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:8px}
-  .fx-box{min-width:0;min-height:0;display:flex;flex-direction:column;border:1px solid var(--ui-border);border-radius:var(--arc);overflow:hidden;background:var(--ui-editor-bg);transition:box-shadow .3s}
-  .fx-box.flash{box-shadow:0 0 0 2px color-mix(in srgb,var(--ui-accent) 55%,transparent)}
+  .fx-box{min-width:0;min-height:0;display:flex;flex-direction:column;border-radius:var(--arc);overflow:hidden;background:var(--ui-editor-bg);transition:box-shadow .3s}
+  .fx-box.flash{box-shadow:0 0 0 1px var(--ui-component-border)}
+  .fx-box .dm-pane-hd{background:transparent;border-bottom:0}
   .fx-box .dm-pane-hd b{white-space:nowrap}
-  .fx-box .dm-pane-hd .who{color:var(--ui-accent);font-weight:600;white-space:nowrap}
+  .fx-box .dm-pane-hd .who{color:var(--ui-fg-info);white-space:nowrap}
   .fx-list{flex:1;min-height:0;overflow:auto;padding:2px 0}
   .fx-list .it{display:flex;align-items:center;gap:6px;height:22px;padding:0 10px;white-space:nowrap;font-size:var(--fs-sm)}
   .fx-list .it.sel{background:var(--ui-selection)}
@@ -172,7 +176,7 @@
   .fx-empty{padding:10px 12px;color:var(--ui-fg-info);font-size:var(--fs-sm);line-height:var(--lh-sm);white-space:normal}
   .fx-log{flex:1}
   .fx-log .chip{display:inline-flex;align-items:center;height:18px;padding:0 6px;border-radius:4px;background:var(--ui-tag-bg);color:var(--ui-fg);font-family:var(--font-code);font-size:11px;white-space:nowrap}
-  .fx-log .chip.dev{background:color-mix(in srgb,var(--ui-accent) 16%,transparent);color:var(--ui-info);font-weight:600}
+  .fx-log .chip.dev{font-weight:500}
   .fx-log .log{flex:1;min-height:0;overflow:auto}
   .fx-log .log .r .lt{width:84px}
   .fx-log .log .r.new{background:color-mix(in srgb,var(--ui-accent) 14%,transparent)}
@@ -275,8 +279,9 @@
 
           <div class="fol" data-scene-body="follow" hidden>
             <div class="dk">
-              <div class="dk-hd"><svg class="i" style="width:14px;height:14px"><use href="#i-cursor"/></svg><b>桌面 · 3 台共用一套键鼠</b><span class="grow"></span>
-                <span class="dm-seg" id="dk-mode"><button class="on" data-mode="kvm"><svg><use href="#i-cursor"/></svg>键鼠穿越</button><button data-mode="gaze"><svg><use href="#i-eye"/></svg>手眼同行</button></span></div>
+              <div class="dk-hd">
+                <span class="dm-seg" id="dk-mode"><button class="on" data-mode="kvm"><svg><use href="#i-cursor"/></svg>键鼠穿越</button><button data-mode="gaze"><svg><use href="#i-eye"/></svg>手眼同行</button></span>
+                <button class="fx-sw" id="fx-follow" role="switch" aria-checked="true"><i></i>焦点跟随光标</button></div>
               <div class="dk-desk" id="desk">
                 <div class="dk-dev pc" id="dk-pc" data-dev="pc" style="--x:22px;--y:40px;--w:234px;--h:156px;--bz:6px;--r:9px">
                   <div class="dk-scr">
@@ -285,7 +290,6 @@
                       <div class="hit" data-hit="pc-1"><i class="th"></i><i class="ln1"></i><i class="ln2"></i></div><div class="hit" data-hit="pc-2"><i class="th"></i><i class="ln1"></i><i class="ln2"></i></div>
                       <div class="hit" data-hit="pc-3"><i class="th"></i><i class="ln1"></i><i class="ln2"></i></div><div class="hit" data-hit="pc-4"><i class="th"></i><i class="ln1"></i><i class="ln2"></i></div></div></div>
                   </div>
-                  <span class="stop">已停 · 28 行</span>
                 </div>
                 <div class="dk-dev tab" id="dk-pad" data-dev="pad" style="--x:302px;--y:70px;--w:210px;--h:140px;--bz:6px;--r:10px">
                   <div class="dk-scr"><div class="pad">
@@ -294,7 +298,6 @@
                       <div class="hit" data-hit="pad-1"><i class="th"></i><i class="ln1"></i><i class="ln2"></i></div><div class="hit" data-hit="pad-2"><i class="th"></i><i class="ln1"></i><i class="ln2"></i></div><div class="hit" data-hit="pad-3"><i class="th"></i><i class="ln1"></i><i class="ln2"></i></div>
                       <div class="hit" data-hit="pad-4"><i class="th"></i><i class="ln1"></i><i class="ln2"></i></div><div class="hit" data-hit="pad-5"><i class="th"></i><i class="ln1"></i><i class="ln2"></i></div><div class="hit" data-hit="pad-6"><i class="th"></i><i class="ln1"></i><i class="ln2"></i></div>
                     </div><div class="gbar"></div></div></div>
-                  <span class="stop">已停 · 28 行</span>
                 </div>
                 <div class="dk-dev ph-dev" id="dk-phone" data-dev="phone" style="--x:560px;--y:36px;--w:78px;--h:176px;--bz:4px;--r:14px">
                   <div class="dk-scr"><div class="ph"><i class="hole"></i>
@@ -306,7 +309,6 @@
                       <div class="hit" data-hit="ph-4"><i class="th"></i><span class="tx"><i class="ln1"></i><i class="ln2"></i></span></div>
                       <div class="hit" data-hit="ph-5"><i class="th"></i><span class="tx"><i class="ln1"></i><i class="ln2"></i></span></div>
                     </div><div class="gbar"></div></div></div>
-                  <span class="stop">已停</span>
                 </div>
                 <div class="dk-lab" data-lab="pc" style="--x:22px;--lw:246px"><b><svg class="i" style="width:14px;height:14px;color:inherit"><use href="#i-desktop"/></svg>MateBook Pro · 本机</b><span class="spec">3120×2080 · 应用窗口 720 vp · md</span><span class="st"></span></div>
                 <div class="dk-lab" data-lab="pad" style="--x:290px;--lw:246px"><b><svg class="i" style="width:14px;height:14px;color:inherit"><use href="#i-tablet"/></svg>MatePad Pro 13.2</b><span class="spec">2880×1920 · lg</span><span class="st"></span></div>
@@ -317,19 +319,12 @@
             </div>
 
             <div class="fx">
-              <div class="fx-tags" id="fx-tags">
-                <button class="fx-tag" data-dev="pc"><svg><use href="#i-desktop"/></svg>本机<span class="s"></span></button>
-                <button class="fx-tag" data-dev="pad"><svg><use href="#i-tablet"/></svg>MatePad Pro 13.2<span class="s"></span></button>
-                <button class="fx-tag" data-dev="phone"><svg><use href="#i-phone"/></svg>Mate 70 Pro<span class="s"></span></button>
-                <span class="grow"></span>
-                <button class="fx-sw" id="fx-follow" role="switch" aria-checked="true"><i></i>焦点跟随光标</button>
-              </div>
               <div class="fx-bp" id="fx-bp"></div>
               <div class="fx-grid">
-                <div class="fx-box" id="fx-frames"><div class="dm-pane-hd"><b>调用栈</b><span class="who" data-who></span><span class="grow"></span><span class="dm-mono dm-muted" data-pid></span></div><div class="fx-list"></div></div>
+                <div class="fx-box" id="fx-frames"><div class="dm-pane-hd"><b>调用栈</b><span class="who" data-who></span></div><div class="fx-list"></div></div>
                 <div class="fx-box" id="fx-vars"><div class="dm-pane-hd"><b>变量</b><span class="who" data-who></span><span class="grow"></span><span class="dm-mono dm-muted">ListPage</span></div><div class="fx-list"></div></div>
               </div>
-              <div class="fx-box fx-log" id="fx-log"><div class="dm-pane-hd"><b>HiLog</b><span class="chip dev" data-chip-dev></span><span class="chip" data-chip-pid></span><span class="chip">tag: ListPage|ImageDecode|Debugger</span><span class="grow"></span></div><div class="log dm-mono" id="fx-logbody"></div></div>
+              <div class="fx-box fx-log" id="fx-log"><div class="dm-pane-hd"><b>HiLog</b><span class="chip dev" data-chip-dev></span><span class="chip" data-chip-pid></span><span class="grow"></span></div><div class="log dm-mono" id="fx-logbody"></div></div>
             </div>
           </div>
         </div>
@@ -342,10 +337,9 @@
 (function(){
   var $=DemoFrame.$, $$=DemoFrame.$$;
   document.getElementById('tree-slot').innerHTML=DemoFrame.tree({sel:'ListPage.ets'});
+  $$('#tree .hint').forEach(function(h){h.textContent=h.textContent.replace(/\\/g,'/')});
   document.getElementById('tabs').insertAdjacentHTML('afterbegin',DemoFrame.tabs([{file:'ListPage.ets',on:true},{file:'ItemCard.ets'}]));
-  DemoFrame.init({device:'Mate 70 Pro ⇄ WATCH 5',deviceIcon:'#i-link',onReady:function(){
-    $('#status-slot').innerHTML='<span class="dm-capsule" id="cap"><span class="dm-dot err"></span><span id="cap-txt">两端同停 · 1.31 s</span></span>';
-  }});
+  DemoFrame.init({device:'Mate 70 Pro ⇄ WATCH 5',deviceIcon:'#i-link'});
 
   /* 编辑器：默认停在第 15 行（断点）；手机端事件 → 15 行，手表端事件 → 21 行 */
   function showLine(n,marks){
@@ -377,7 +371,6 @@
       $('.log[data-log="phone"]').insertAdjacentHTML('beforeend','<div class="r pause" data-t="1.600"><span class="lt">[1.600]</span><span class="ltag">Debugger:</span><span class="lmsg">两端同时停 · ListPage.ets:15</span></div>');
       $('.log[data-log="watch"]').insertAdjacentHTML('beforeend','<div class="r pause" data-t="1.600"><span class="lt">[1.600]</span><span class="ltag">Debugger:</span><span class="lmsg">两端同时停 · WatchPage.ets:21</span></div>');
       pick($('#tl .lane[data-lane="phone"] .ev.pause'));
-      var c=$('#cap-txt');if(c)c.textContent='两端同停 · 1.60 s';
     },400);
     this.classList.add('done');this.setAttribute('title','已在 1.60 s 两端同停');
   });
@@ -403,30 +396,26 @@
   function stateTxt(d){return d.paused?'已停 · 28 行':'运行中'}
   function paintStates(){
     ORDER.forEach(function(k){
-      var d=DEV[k],dev=$('#dk-'+k),lab=$('.dk-lab[data-lab="'+k+'"]'),tag=$('.fx-tag[data-dev="'+k+'"]');
+      var d=DEV[k],dev=$('#dk-'+k),lab=$('.dk-lab[data-lab="'+k+'"]');
       dev.classList.toggle('paused',d.paused);dev.classList.toggle('focus',fol.focus===k);
       lab.classList.toggle('paused',d.paused);lab.classList.toggle('focus',fol.focus===k);
       $('.st',lab).innerHTML='<span class="dm-dot '+(d.paused?'err':'ok')+'"></span>'+stateTxt(d);
-      tag.classList.toggle('on',fol.focus===k);tag.classList.toggle('paused',d.paused);
-      $('.s',tag).textContent=d.paused?'已停':'运行中';
       $$('.hit',dev).forEach(function(h){h.classList.toggle('pressed',d.paused&&h.dataset.hit===d.hit)});
     });
   }
   function frames(d){
-    if(!d.paused)return '<div class="it thread"><svg><use href="#i-play"/></svg>主线程 · 运行中</div><div class="it thread"><svg><use href="#i-clock"/></svg>TaskPool · 2 个工作线程空闲</div>'
-      +'<div class="fx-empty">在这台设备的界面上点一下商品，会停在 <b>ListPage.ets:28</b>。</div>';
+    if(!d.paused)return '<div class="it thread"><svg><use href="#i-play"/></svg>主线程 · 运行中</div>'
+      +'<div class="fx-empty">这台滑动掉不掉帧？在它的界面上点一下商品，停在 <b>ListPage.ets:28</b> 看这一帧解码了几张图。</div>';
     return '<div class="it sel"><svg><use href="#i-pause"/></svg><span class="fn">loadCover(id: '+d.id+')</span><span class="at">ListPage.ets:28</span></div>'
       +'<div class="it"><svg><use href="#i-method"/></svg><span class="fn">itemGenerator</span><span class="at">ListPage.ets:17</span></div>'
       +'<div class="it"><svg><use href="#i-method"/></svg><span class="fn">ForEach</span><span class="at">ListPage.ets:15</span></div>'
-      +'<div class="it"><svg><use href="#i-method"/></svg><span class="fn">ListPage.build</span><span class="at">ListPage.ets:10</span></div>'
-      +'<div class="it thread"><svg><use href="#i-clock"/></svg>TaskPool · 2 个工作线程空闲</div>';
+      +'<div class="it"><svg><use href="#i-method"/></svg><span class="fn">ListPage.build</span><span class="at">ListPage.ets:10</span></div>';
   }
   function vars(d){
-    if(!d.paused)return '<div class="fx-empty">运行中，没有可看的局部变量。<br>'+d.name+' · 断点 '+d.bpn+' · lanes '+d.lanes+'</div>';
+    if(!d.paused)return '<div class="fx-empty">运行中 · 断点 '+d.bpn+' · lanes '+d.lanes+'</div>';
     return '<div class="it"><svg><use href="#i-field"/></svg><span class="k">id</span><span class="v">= '+d.id+'</span></div>'
       +'<div class="it"><svg><use href="#i-field"/></svg><span class="k">@StorageProp currentBreakpoint</span><span class="v s">= \''+d.bpn+'\'</span></div>'
       +'<div class="it"><svg><use href="#i-field"/></svg><span class="k">lanes</span><span class="v">= '+d.lanes+'</span></div>'
-      +'<div class="it"><svg><use href="#i-field"/></svg><span class="k">this.source</span><span class="v">ItemSource · length 2000</span></div>'
       +'<div class="it"><svg><use href="#i-field"/></svg><span class="k">.cachedCount</span><span class="v">= 0</span></div>'
       +'<div class="it'+(d.n>1?' warn':'')+'"><svg><use href="#i-warn"/></svg><span class="k">本帧同步解码</span><span class="v">'+d.n+' 张 × '+d.ms+' ms = '+d.cost+' ms</span></div>';
   }
@@ -444,14 +433,11 @@
   function renderFocus(flash){
     var d=DEV[fol.focus];
     $$('[data-who]').forEach(function(w){w.textContent='· '+d.tag});
-    $('#fx-frames [data-pid]').textContent='pid '+d.pid;
     $('#fx-frames .fx-list').innerHTML=frames(d);
     $('#fx-vars .fx-list').innerHTML=vars(d);
     bpBar(d);logs(d);paintStates();
     showLine(d.paused?28:null,FMARKS);
     var hd=$('#hdr-device span');if(hd)hd.textContent=d.tag+' · 调试焦点';
-    var c=$('#cap-txt');if(c)c.textContent='调试焦点 · '+d.tag+(d.paused?' · 已停 28 行':' · 运行中');
-    var dot=$('#cap .dm-dot');if(dot)dot.className='dm-dot '+(d.paused?'err':'ok');
     if(flash){$$('.fx-box').forEach(function(b){b.classList.add('flash');setTimeout(function(){b.classList.remove('flash')},450)})}
   }
   function setFocus(k){var ch=fol.focus!==k;fol.focus=k;renderFocus(ch)}
@@ -535,7 +521,8 @@
     moveTo(k,pt,go);
   });
   $('#dk-mode').addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;fol.mode=b.dataset.mode;$$('#dk-mode button').forEach(function(x){x.classList.toggle('on',x===b)})});
-  $('#fx-tags').addEventListener('click',function(e){var t=e.target.closest('.fx-tag');if(t)setFocus(t.dataset.dev)});
+  /* 焦点锁住时，点设备名签手动换台 */
+  desk.addEventListener('click',function(e){var l=e.target.closest('.dk-lab');if(l)setFocus(l.dataset.lab)});
   $('#fx-follow').addEventListener('click',function(){fol.follow=!fol.follow;this.setAttribute('aria-checked',fol.follow?'true':'false');if(fol.follow&&fol.on!==fol.focus)setFocus(fol.on)});
   $('#fx-bp').addEventListener('click',function(e){
     var b=e.target.closest('[data-fx]');if(!b)return;
@@ -556,17 +543,19 @@
     }else{
       showLine(15);
       var hd=$('#hdr-device span');if(hd)hd.textContent='Mate 70 Pro ⇄ WATCH 5';
-      var c=$('#cap-txt');if(c)c.textContent=paused?'两端同停 · 1.60 s':'两端同停 · 1.31 s';
-      var dot=$('#cap .dm-dot');if(dot)dot.className='dm-dot err';
     }
   }
   $('.tw-bottom .tabbar').addEventListener('click',function(e){var b=e.target.closest('.btab[data-scene]');if(b&&!e.target.closest('.x'))scene(b.dataset.scene)});
-DemoGuide.init([{"target": "#tl .ev[data-t=\"1.240\"]", "kind": "click", "pos": "top", "label": "点时间轴上的事件"}, {"target": ".dm-split.logs", "kind": "change", "pos": "top", "label": "两栏日志同步高亮"}, {"target": ".btab[data-scene=\"follow\"]", "kind": "click", "pos": "top", "label": "切到键鼠穿越"}, {"target": "#dk-pad .hit[data-hit=\"pad-2\"]", "kind": "click", "pos": "top", "label": "光标移过去，点一下商品"}, {"target": "#fx-vars", "kind": "change", "pos": "top", "label": "调用栈 / 变量 / HiLog 跟着换台"}], {scene:{
-  at:"你把商品列表改成了多列瀑布流，手机、平板、电脑三台一起跑，只有平板和电脑滑起来掉帧",
-  goal:"找出是哪台、哪一行、为什么掉帧",
-  pain:"三台各开一个调试会话，断点停在哪台、日志是哪台打的，要自己来回切窗口对",
-  fix:"键鼠穿越过去，光标在哪台就调哪台：调用栈、变量、HiLog 一起换，点一下设备上的商品就停在那台"
-}});
+DemoGuide.init([
+    {target:'#tl .ev[data-t="1.240"]',kind:'click',pos:'top',label:'流转断在哪？从手机发数据这步查'},
+    {target:'.btab[data-scene="follow"]',kind:'click',pos:'top',label:'平板、电脑滑动掉帧？切到这里'},
+    {target:'#dk-pad .hit[data-hit="pad-2"]',kind:'click',pos:'top',label:'光标移到平板，点商品停在那台'}
+  ],{scene:{
+    at:'你在手机、手表、平板上联调同一个商品页',
+    goal:'找出问题出在哪台、哪一步、哪一行',
+    pain:'每台一个调试窗口，日志时间对不上，来回切窗口手抄',
+    fix:'两端日志对齐一条时间轴；光标移到哪台就调哪台'
+  }});
 })();
 </script>
 </body>
