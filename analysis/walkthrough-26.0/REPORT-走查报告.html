@@ -41,7 +41,7 @@ h1{font-size:30px;line-height:1.25;margin:6px 0 10px;font-weight:700}
 
 /* 流程图 */
 h2.sec{font-size:20px;margin:48px 0 14px;font-weight:700}
-.flow{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.flow{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
 .stage{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:14px;box-shadow:var(--shadow)}
 .stage h3{margin:0 0 10px;font-size:14px;display:flex;align-items:center;gap:8px}
 .stage h3 .tag{font-size:11px;font-weight:600;color:var(--ink3);border:1px solid var(--line);border-radius:999px;padding:0 8px}
@@ -192,6 +192,7 @@ var STAGES = [
   { id:'install', title:'安装', tag:'设置 › 插件', flow:[ {step:1}, {step:2}, {step:3}, {gap:'G1'} ] },
   { id:'enter',   title:'进入', tag:'DevEco Code 面板', flow:[ {gap:'G2'}, {step:4} ] },
   { id:'use',     title:'使用', tag:'一句话建工程', flow:[ {step:5}, {step:6}, {step:7}, {gap:'G3'} ] },
+  { id:'switch',  title:'换工程继续', tag:'打开新建的工程', flow:[ {step:8} ] },
 ];
 
 var GAPS = {
@@ -425,6 +426,41 @@ var STEPS = [
         rule:'同一提示同屏出现一次（同 5-7）。',
         fix:'免责声明只放在输入框下；重新生成、复制悬停时出现。',
         boxes:[[816,263,124,15],[816,699,124,15],[816,798,124,15]] },
+    ]},
+
+  { no:8, stage:'switch', shot:'08', title:'打开新建的工程 · 之前的对话没了',
+    goal:'在 Agent 建好的 TimeTracker 工程里继续：打开这个工程，接着让它写 PRD。',
+    issues:[
+      { sev:'s', cat:'会话丢失', title:'对话按工程存，换到它建的工程后整段对话不见了',
+        what:'顶栏已切到 TimeTracker（正是上一段对话建出来的工程），会话列表只剩一个「新对话」：选项目名、建工程、写 PRD 的上下文全没了，用户只能把需求从头再发一遍。',
+        rule:'任务的上下文不能因为切换工程而丢；由对话创建的工程要能回到来源对话。',
+        fix:'会话跟人走、按工程筛选，而不是按工程隔离；对话建出的工程自动带上来源会话；列表里给「其他工程的会话」分组。切工程前提示「当前会话将留在 MyApplication」。',
+        boxes:[[56,202,636,86],[70,6,92,20]] },
+      { sev:'s', cat:'错误反馈', title:'「发送失败: ACP client is not connected」',
+        what:'两次发送都失败，提示是内部英文术语，没说是什么没连上、要不要等、该怎么办；用户只能再发一遍同一句话。',
+        rule:'错误说人话并给出下一步；连接状态这类前置条件要在发送前就看得到。',
+        fix:'未连接时在输入框上方提示「DevEco Code 服务未连接 · 重新连接」并暂停发送；已发出的失败消息给「重新发送」。',
+        boxes:[[994,144,168,34],[994,252,168,34]] },
+      { sev:'m', cat:'消息状态', title:'失败的消息没有标记，重发堆出 3 条一样的',
+        what:'同一句需求出现 3 次，前两条发没发出去只能靠下面的系统消息推断。',
+        rule:'发送失败的消息在自身上标记状态，就地重试。',
+        fix:'失败消息加红色叹号与「重新发送」，重发成功后替换原消息而不是追加。',
+        boxes:[[1392,86,279,32],[1392,194,279,32],[1392,302,279,32]] },
+      { sev:'m', cat:'状态矛盾', title:'一边报错一边「生成中」',
+        what:'编辑器标签、状态栏左下角和右下角都是「!」错误标记，会话列表却在转圈、对话底部是「生成中」，看不出这一次到底成没成。',
+        rule:'同一会话的状态在各处同源（同 5-3、7-3）。',
+        fix:'第三次发送开始后清掉错误标记；只在最近一次失败时显示「!」。',
+        boxes:[[715,40,16,16],[10,1104,16,17],[1971,1104,16,17],[65,262,17,17],[984,351,50,18]] },
+      { sev:'m', cat:'一致性', title:'换个工程，右侧工具窗条顺序就变了',
+        what:'截图 01（MyApplication）里 CodeGenie 排第 2；这里排到第 6，还多出一个「问题反馈」。同一个 IDE 两个工程窗口，入口要重新找。',
+        rule:'工具窗条顺序跨工程一致（Int UI 默认布局随 IDE 保存）。',
+        fix:'新工程沿用 IDE 级的工具窗布局；新增入口排在末尾。',
+        boxes:[[1956,127,42,34],[1956,271,42,34]] },
+      { sev:'l', cat:'布局', title:'DevEco Code 面板被拉到约 660px 宽',
+        what:'截图 01 里面板约 325px；新工程里默认约 660px，编辑区被挤窄，对话内容偏到右侧。',
+        rule:'Int UI 左侧工具窗默认约 300px；面板宽度随 IDE 记住。',
+        fix:'新工程沿用上次宽度，默认 300–360px。',
+        boxes:[[48,66,648,40]] },
     ]},
 ];
 

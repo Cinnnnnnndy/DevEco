@@ -285,7 +285,7 @@ window.DEVECO_CATALOG = {
       items: [
         {
           title: 'DevEco Code 26.0 融合版本 · 上线走查', subtitle: 'v26.0 Walkthrough · Install to First Use',
-          desc: '从安装到使用：设置里从磁盘装插件 → 首次进入 → 一句话建工程写 PRD。7 张截图、38 个问题，左图右文，问题直接框在截图上，悬停联动；附问题总表与待补页面。',
+          desc: '从安装到使用：设置里从磁盘装插件 → 首次进入 → 一句话建工程写 PRD → 打开新建的工程。8 张截图、44 个问题，左图右文，问题直接框在截图上，悬停联动；附问题总表与待补页面。',
           view: 'doc', date: '2026-09-24', href: 'analysis/walkthrough-26.0/REPORT-走查报告.html',
           links: [{ label: '流程清单', href: 'analysis/walkthrough-26.0/flows.md' }, { label: '走查说明', href: 'analysis/walkthrough-26.0/README.md' }],
           tags: ['26.0', '走查', '从安装到使用', 'DevEco Code'],
