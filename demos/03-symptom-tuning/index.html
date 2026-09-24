@@ -45,6 +45,7 @@
   /* Agent 面板里的 diff 卡状态 */
   .diffcard.applied{border-color:color-mix(in srgb,var(--ui-success) 60%,transparent)}
   .diffcard.rejected{opacity:.55}
+  .diffcard .dh .fn,.diffcard .dh .cnt{flex:none;white-space:nowrap}
   .diffcard .dh .note{font-size:11px;color:var(--ui-fg-info);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
   .diffcard pre .l.hunk{color:var(--ui-fg-info)}
   .amsg .step.ok svg.i{color:var(--ui-success)}
@@ -688,8 +689,8 @@
     if(file==='DetailPage.ets'&&ST.leak.applied){if(line>=16&&line<=18)return 16;if(line>=19&&line<=22)return line-2;if(line>=23)return line+8}
     return line;
   }
-  function locate(line,file){
-    file=file||'ListPage.ets';showFile(file);line=mapLine(file,line);
+  function locate(line,file,raw){
+    file=file||'ListPage.ets';showFile(file);if(!raw)line=mapLine(file,line);
     var code=codeEl(file);
     $$('.ln',code).forEach(function(l){var on=+l.dataset.ln===line;l.classList.toggle('cur',on);l.classList.toggle('hl',on)});
     var ln=$('.ln[data-ln="'+line+'"]',code);if(ln)code.scrollTop=Math.max(0,ln.offsetTop-code.clientHeight/2+40);
@@ -797,7 +798,7 @@
   };
   function nodeHTML(id){
     var n=NODES[id],L=ST.leak,k=L.snap,l1=n.l1,l2=n.l2;
-    if(id==='page'){l1='<b>DetailPage</b><span>×'+k+' · 保留 '+(k*6.1).toFixed(1)+' MB</span>';l2='photos: PixelMap[] 每个 5.5 MB'}
+    if(id==='page'){l1='<b>DetailPage</b><span>×'+k+' · 保留 '+(k*LEAK_PER).toFixed(1)+' MB</span>';l2='photos: PixelMap[] 每个 5.5 MB'}
     return '<button class="cn'+(n.cls?' '+n.cls:'')+(L.node===id?' on':'')+'" data-node="'+id+'"><span class="l1">'+l1+'</span><span class="l2"><span>'+l2+'</span><span class="loc">DetailPage.ets:'+n.line+'</span></span></button>';
   }
   function cw(d){return '<svg class="cw" viewBox="0 0 100 14" preserveAspectRatio="none" aria-hidden="true"><path d="'+d+'"/></svg>'}
@@ -818,7 +819,7 @@
     var pill=$('#lk-pill');
     if(done){pill.className='dm-pill err';pill.textContent='+48.6 MB 未回收'}else{pill.className='dm-pill info';pill.textContent='自动操作 '+Math.max(1,started)+' / 8'}
     $('#lk-hint').textContent=done?'点一截台阶看那次快照':'';
-    drawMem($('#svg-mem'),MEM_BEFORE,{h:226,upto:done?null:L.upto,steps:true,per:LEAK_PER,hit:done,sel:done?L.snap:0});
+    drawMem($('#svg-mem'),MEM_BEFORE,{h:226,upto:done?null:L.upto,steps:true,per:LEAK_PER,hit:done,sel:done&&L.picked?L.snap:0});
     renderChain();
     var co=$('#lk-callout'),t=$('#lk-callout-t');
     if(!done){co.className='dm-callout';$('use',co).setAttribute('href','#i-sync');t.innerHTML='每次返回后强制 GC 并抓一次堆快照，已抓 <b>'+doneCycles(L.upto)+' / 8</b> 份。内存回不到进入前，就顺着引用链找是谁拿着页面。'}
@@ -850,7 +851,7 @@
     var n=e.target.closest('.cn');
     if(n){var id=n.dataset.node,nd=NODES[id];L.node=id;L.tip=id==='page'?'第 '+L.snap+' 次返回后还活着 '+L.snap+' 个 <code>DetailPage</code>，每个保留 6.1 MB，其中 <code>photos: PixelMap[]</code> 占 5.5 MB · <b>DetailPage.ets:9</b>':nd.tip;locate(nd.line,'DetailPage.ets');renderLeak();return}
     var c=e.target.closest('rect.cyc');
-    if(c){var k=+c.dataset.cycle,heap=82+LEAK_PER*k;L.snap=k;L.node='page';
+    if(c){var k=+c.dataset.cycle,heap=82+LEAK_PER*k;L.snap=k;L.picked=true;L.node='page';
       L.tip='第 '+k+' 次返回并 GC 后：堆内存 '+heap.toFixed(1)+' MB，比进入前多 '+(heap-82).toFixed(1)+' MB，<code>DetailPage</code> 残留 '+k+' 个 · <b>DetailPage.ets:9</b>';
       locate(9,'DetailPage.ets');renderLeak()}
   });
@@ -858,10 +859,10 @@
   /* ---------- 前后对比：单次 / 多次并排 + 显著性 ---------- */
   var JIT=[0,-10,10,-5,5];
   function drawStrip(svg,bv,av,o){
-    var W=svgW(svg),H=o.h||196,padL=34,padR=14,padT=14,padB=34,pw=W-padL-padR,ph=H-padT-padB,m=o.m;
+    var W=svgW(svg),H=o.h||196,padL=34,padR=14,padT=24,padB=34,pw=W-padL-padR,ph=H-padT-padB,m=o.m;
     var y=function(v){return padT+ph-(v-o.min)/(o.max-o.min)*ph},f1=function(v){return v.toFixed(1)},s='';
     o.ticks.forEach(function(t){s+='<line class="grid" x1="'+padL+'" x2="'+(W-padR)+'" y1="'+f1(y(t))+'" y2="'+f1(y(t))+'"/><text class="lbl" x="'+(padL-6)+'" y="'+f1(y(t)+3)+'" text-anchor="end">'+t+'</text>'});
-    s+='<line class="grid" x1="'+padL+'" x2="'+(W-padR)+'" y1="'+f1(y(o.min))+'" y2="'+f1(y(o.min))+'"/><text class="lbl" x="'+(padL-6)+'" y="'+(padT-4)+'" text-anchor="end">'+esc(m.unit)+'</text>';
+    s+='<line class="grid" x1="'+padL+'" x2="'+(W-padR)+'" y1="'+f1(y(o.min))+'" y2="'+f1(y(o.min))+'"/><text class="lbl" x="'+(padL-6)+'" y="'+(padT-12)+'" text-anchor="end">'+esc(m.unit)+'</text>';
     if(o.lim!=null)s+='<line class="lim" x1="'+padL+'" x2="'+(W-padR)+'" y1="'+f1(y(o.lim))+'" y2="'+f1(y(o.lim))+'"/><text class="lbl" x="'+(W-padR)+'" y="'+f1(y(o.lim)-4)+'" text-anchor="end">'+esc(o.limLabel)+'</text>';
     var cx=[padL+pw*.28,padL+pw*.72],G=[{v:bv,c:'b',name:'改前',ids:o.ids.b},{v:av,c:'a',name:'改后',ids:o.ids.a}],med=[];
     G.forEach(function(g,gi){
@@ -929,7 +930,7 @@
     var pill=$('#mm-pill');
     if(!complete){pill.className='dm-pill info';pill.textContent='运行中 '+Math.min(c.b,c.a)+'/'+n}
     else{var v=primaryVerdict(sc,n),lab={up:'改善显著',few:'样本不足',ns:'差异不显著',down:'显著变差'}[v.k];pill.className='dm-pill '+v.cls;pill.textContent=lab+' · p = '+fmtP(v.p)}
-    drawStrip($('#svg-strip'),P.b.slice(0,c.b),P.a.slice(0,c.a),{m:P,n:n,h:C.metrics.length>4?206:176,min:C.strip.min,max:C.strip.max,ticks:C.strip.ticks,lim:C.strip.lim,limLabel:C.strip.limLabel,ids:st.ids});
+    drawStrip($('#svg-strip'),P.b.slice(0,c.b),P.a.slice(0,c.a),{m:P,n:n,h:C.metrics.length>4?214:184,min:C.strip.min,max:C.strip.max,ticks:C.strip.ticks,lim:C.strip.lim,limLabel:C.strip.limLabel,ids:st.ids});
     var h='<div class="mt-h"><span>指标</span><span>改前 ×'+n+'</span><span>改后 ×'+n+'</span><span>分布</span><span>变化</span><span>判断</span></div>';
     C.metrics.forEach(function(m){
       var b=m.b.slice(0,c.b),a=m.a.slice(0,c.a),vv=complete?verdict(m.b.slice(0,n),m.a.slice(0,n)):null;
@@ -1058,7 +1059,7 @@
     if(name==='leak'){
       setThread('leak');var L=ST.leak;
       if(L.phase==='idle')startLeakRec();
-      else if(L.phase==='done'){locate(L.applied?22:(L.node?NODES[L.node].line:16),'DetailPage.ets');if(!L.applied)revealCard('l1')}
+      else if(L.phase==='done'){locate(L.applied?22:(L.node?NODES[L.node].line:16),'DetailPage.ets',L.applied);if(!L.applied)revealCard('l1')}
     }else{
       setThread('jank');
       var m=SYM[name];$('#ch-title').textContent=m.title;$('#ch-sub').textContent=m.sub;
@@ -1097,7 +1098,7 @@
     var b=e.target.closest('[data-diff]');if(!b)return;var card=b.closest('.diffcard'),id=card.id,act=b.dataset.diff;
     if(act==='accept'){setCard(id,'applied');
       if(id==='d1'){showFile('ListPage.ets');applyToEditor();retestStart('jank')}
-      else if(id==='l1'){ST.leak.applied=true;renderDetail(true);locate(22,'DetailPage.ets');retestStart('leak')}
+      else if(id==='l1'){ST.leak.applied=true;renderDetail(true);locate(22,'DetailPage.ets',true);retestStart('leak')}
       else if(id==='l2'){S.cartFixed=true;renderCart();locate(12,'CartBadge.ets')}}
     else if(act==='revert'){setCard(id,'pending');
       if(id==='d1'){renderCode();locate(28);retestUndo('jank')}
@@ -1112,10 +1113,10 @@
   window.addEventListener('resize',showViews);
 DemoGuide.init([
   {"target": "#d1 [data-diff=\"accept\"]", "kind": "click", "pos": "top", "label": "点 Accept 出补丁"},
-  {"target": "#sym-col .sym[data-sym=\"leak\"]", "kind": "click", "pos": "right", "label": "内存涨：自动走一遍找泄漏链"},
+  {"target": "#sym-col .sym[data-sym=\"leak\"]", "kind": "click", "pos": "bottom", "label": "内存涨：自动走一遍找泄漏链"},
   {"target": ".tw-bottom .btab[data-view=\"top\"]", "kind": "click", "pos": "top", "label": "最重调用栈"},
-  {"target": "#cmp-runs [data-n=\"5\"]", "kind": "click", "pos": "top", "label": "各跑 5 次看显著性"},
-  {"target": "#prof-main", "kind": "change", "pos": "top", "label": "掉帧自动复测"}
+  {"target": "#cmp-runs", "kind": "click", "pos": "top", "label": "各跑 5 次看显著性"},
+  {"target": "#prof-main", "kind": "change", "pos": "left", "label": "掉帧自动复测"}
 ]);
 })();
 </script>
