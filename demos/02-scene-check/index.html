@@ -14,11 +14,13 @@
 <script src="../_shared/frame.js"></script>
 <script src="../_shared/guide.js"></script>
 <style>
-  .ide[data-ide-theme]{--bottom-h:clamp(300px,40vh,400px)} /* 带属性选择器，压过 tokens.css 里按主题写的默认值 */
+  .ide[data-ide-theme]{--bottom-h:clamp(300px,40vh,400px);--ai-w:clamp(280px,20vw,320px)} /* 带属性选择器，压过 tokens.css 里按主题写的默认值 */
+  .ide[data-ide-theme][data-scene="journey"]{--bottom-h:clamp(340px,44vh,440px)} /* 用户旅程：步骤 + 失败现场要多一点高度 */
   /* 底部体检面板标题栏 */
   .tw-bottom .tw-hdr .title{margin-right:4px}
   .btab .cnt{font-family:var(--font-code);font-size:11px;font-weight:400;color:var(--ui-fg-info);margin-left:2px}
   .btab.on .cnt{color:var(--ui-fg-info)}
+  .btab .cnt.bad,.btab.on .cnt.bad{color:var(--ui-error)}
   .btab svg.i{width:14px;height:14px}
   .btab.on svg.i{color:var(--ui-fg)}
   #auto-pill{margin-right:6px}
@@ -54,10 +56,187 @@
   .chk-detail .dt-acts{display:flex;gap:6px;flex:none;padding-top:2px}
   .chk-detail .dt-acts .grow{flex:1}
   .chk-detail .dt-acts .dm-muted{font-size:var(--fs-sm)}
+
+  /* ---------- 上架自检里的「一起跑的旅程」 ---------- */
+  .chk-list .dm-group.jr-grp{margin-top:6px}
+  .chk-list .dm-item.jr-pub svg.i{color:var(--ui-info)}
+  .chk-list .dm-item.jr-pub.err svg.i{color:var(--ui-error)}
+  .chk-list .dm-item.jr-new{color:var(--ui-fg-info)}
+  .chk-list .dm-item.jr-new svg.i{color:var(--ui-fg-info)}
+  .chk-list .dm-item.jr-new:hover{color:var(--ui-fg)}
+
+  /* ---------- 用户旅程：左 步骤，右 详情 ---------- */
+  .jr{flex:1;display:grid;grid-template-columns:minmax(0,1fr) 420px;min-height:0;height:100%}
+  .jr-main{display:flex;flex-direction:column;min-height:0;min-width:0;border-right:1px solid var(--ui-border)}
+  .jr-compose{flex:none;display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--ui-border)}
+  .jr-compose > svg.i{color:var(--ui-info)}
+  .jr-prompt{flex:1;min-width:0;height:28px;border:1px solid var(--ui-component-border);border-radius:6px;background:var(--ui-field-bg);color:var(--ui-fg);font:inherit;font-size:var(--fs-para);padding:0 10px;outline:none;user-select:text}
+  .jr-prompt:focus{border-color:var(--ui-accent)}
+  .jr-tools{display:flex;gap:6px;flex:none}
+  .jr .btn,.jr-foot .btn{height:26px;white-space:nowrap}
+  .jr .btn svg.i,.jr-foot .btn svg.i{width:12px;height:12px}
+  .jr .btn.primary svg.i,.jr-foot .btn.primary svg.i{color:var(--ui-accent-fg)}
+  .jr .btn[disabled],.jr-foot .btn[disabled]{opacity:.5}
+  .jr .dm-pill .spin,.jr-foot .dm-pill .spin,.jr-sum .spin{width:9px;height:9px;border-width:1.5px}
+  .jr-sum{flex:none}
+  .jr-sum .jr-sumr{display:inline-flex;align-items:center;gap:6px;font-weight:400;font-size:var(--fs-sm);color:var(--ui-fg-info)}
+  .jr-sum .bad{color:var(--ui-error);font-weight:600}
+  .jr-sum .good{color:var(--ui-success);font-weight:600}
+  .jr-steps{flex:1;overflow:auto;min-height:0;padding:2px 0 10px}
+  .jr-step{display:grid;grid-template-columns:18px 28px minmax(0,1fr);gap:10px;align-items:start;padding:5px 12px 5px 10px;border-left:2px solid transparent;cursor:default}
+  .jr-step:hover{background:var(--ui-hover-list)}
+  .jr-step.sel{background:var(--ui-selection)}
+  .jr-step.run{border-left-color:var(--ui-accent);background:color-mix(in srgb,var(--ui-accent) 14%,transparent)}
+  .jr-step.fail{border-left-color:var(--ui-error)}
+  .jr-step.skip .jr-body,.jr-step.skip .jr-thumb{opacity:.55}
+  .jr-step.enter{animation:jrin .3s ease-out both;animation-delay:var(--d,0s)}
+  @keyframes jrin{from{opacity:0;transform:translateY(4px)}}
+  .jr-no{width:18px;height:18px;border-radius:50%;display:grid;place-items:center;font-size:11px;font-weight:600;background:var(--ui-tag-bg);color:var(--ui-fg-info);margin-top:3px}
+  .jr-step.pass .jr-no{background:var(--ui-success);color:var(--ui-accent-fg)}
+  .jr-step.fail .jr-no{background:var(--ui-error);color:var(--ui-accent-fg)}
+  .jr-step.run .jr-no{background:var(--ui-accent);color:var(--ui-accent-fg)}
+  .jr-thumb{width:28px;height:61px;border-radius:4px;overflow:hidden;position:relative;border:1px solid var(--ui-component-border);background:var(--ui-tag-bg);display:grid;place-items:center;flex:none}
+  .jr-thumb.empty svg.i{width:12px;height:12px;color:var(--ui-fg-disabled)}
+  .jr-thumb .jr-scr{position:absolute;left:0;top:0;transform:scale(.1707);transform-origin:0 0}
+  .jr-thumb.lg{width:50px;height:108px}
+  .jr-thumb.lg .jr-scr{transform:scale(.305)}
+  .jr-step.pass .jr-thumb{border-color:color-mix(in srgb,var(--ui-success) 70%,transparent)}
+  .jr-step.fail .jr-thumb{border-color:var(--ui-error)}
+  .jr-step.run .jr-thumb{border-color:var(--ui-accent)}
+  .jr-scr{width:164px;height:356px;background:#fff;color:#1a1a1a;font-family:var(--font-ui);font-size:11px;line-height:1.4;overflow:hidden;position:relative}
+  .jr-body{min-width:0;display:flex;flex-direction:column;gap:2px}
+  .jr-l1,.jr-l2,.jr-l3{display:flex;align-items:center;gap:8px;min-width:0}
+  .jr-l1 .grow{flex:1}
+  .jr-name,.jr-exp{min-width:0;height:24px;border:1px solid transparent;border-radius:5px;background:transparent;color:var(--ui-fg);font:inherit;font-size:var(--fs-para);padding:0 6px;outline:none;user-select:text}
+  .jr-name{flex:0 1 380px;font-weight:600;margin-left:-7px}
+  .jr-exp{flex:1 1 auto;max-width:640px;border-color:color-mix(in srgb,var(--ui-component-border) 70%,transparent);background:var(--ui-field-bg)}
+  .jr-name:hover{border-color:var(--ui-component-border)}
+  .jr-name:focus,.jr-exp:focus{border-color:var(--ui-accent);background:var(--ui-field-bg)}
+  .jr-name[readonly],.jr-exp[readonly]{cursor:default}
+  .jr-name::placeholder,.jr-exp::placeholder{color:var(--ui-fg-disabled);font-weight:400}
+  .jr-tag{flex:none;width:26px;font-size:11px;color:var(--ui-fg-info)}
+  .jr-l3{font-size:var(--fs-sm);line-height:var(--lh-sm);color:var(--ui-fg-info)}
+  .jr-l3 .jr-ops{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .jr .loc{font-family:var(--font-code);font-size:11px;color:var(--ui-link);cursor:pointer;white-space:nowrap}
+  .jr .loc.bad{color:var(--ui-error)}
+  .jr-dur{font-family:var(--font-code);font-size:11px;color:var(--ui-fg-info);min-width:36px;text-align:right;white-space:nowrap}
+  .jr-step .dm-pill{flex:none;min-width:44px;justify-content:center}
+  .jr-del{flex:none}
+  .jr-del svg.i{width:14px;height:14px}
+  .jr-del[disabled]{opacity:.35}
+  .jr-add{margin:6px 0 0 68px;height:26px;padding:0 10px;border:1px dashed var(--ui-component-border);border-radius:6px;background:transparent;color:var(--ui-fg-info);font-size:12px;display:inline-flex;align-items:center;gap:4px}
+  .jr-add:hover{color:var(--ui-fg);border-color:var(--ui-fg-info)}
+  .jr-add svg.i{width:14px;height:14px;color:currentColor}
+  .jr-add[disabled]{opacity:.45}
+  .jr-busy{display:flex;align-items:center;gap:8px;padding:14px 16px;color:var(--ui-fg-info);font-size:var(--fs-sm)}
+  .jr-empty{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:var(--ui-fg-info);font-size:var(--fs-sm);text-align:center;padding:16px}
+  .jr-empty svg{width:24px;height:24px;color:var(--ui-info)}
+  /* 右侧详情 */
+  .jr-detail{display:flex;flex-direction:column;min-height:0;min-width:0}
+  .jr-detail .chk-detail{flex:1}
+  .chk-detail .dt-head.ok svg{color:var(--ui-success)}
+  .chk-detail .dt-head.info svg{color:var(--ui-info)}
+  .chk-detail ol{margin:0;padding-left:18px}
+  .jr-foot{flex:none;display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:8px 14px;border-top:1px solid var(--ui-border)}
+  .jr-foot .grow{flex:1}
+  .jr-foot .dm-pill[role="button"]{cursor:pointer}
+  .jr-foot .dm-muted{font-size:var(--fs-sm)}
+  .jr-fail{display:flex;flex-direction:column;gap:10px}
+  .jr-assert{display:grid;grid-template-columns:auto minmax(0,1fr);gap:3px 8px;font-size:var(--fs-sm);line-height:var(--lh-sm)}
+  .jr-assert .k2{color:var(--ui-fg-info)}
+  .jr-assert .bad{color:var(--ui-error)}
+  .jr-cmp{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .jr-crop{position:relative;height:84px;overflow:hidden;border-radius:6px;border:1px solid var(--ui-component-border);background:#fff}
+  .jr-crop .jr-scr{position:absolute;right:0;top:0;transform:scale(1.15);transform-origin:100% 0}
+  .jr-lbl{position:absolute;left:6px;bottom:6px;height:18px;padding:0 7px;border-radius:9px;font-size:11px;line-height:18px;font-weight:600;color:var(--ui-accent-fg);white-space:nowrap}
+  .jr-lbl.ok{background:var(--ui-success)}
+  .jr-lbl.err{background:var(--ui-error)}
+  .jr-log{font-family:var(--font-code);font-size:11px;line-height:17px;background:var(--ui-editor-bg);border:1px solid var(--ui-border);border-radius:6px;padding:5px 8px;color:var(--ui-fg);user-select:text}
+  .jr-log > div{display:flex;gap:6px}
+  .jr-log .jr-lt{flex:none;color:var(--ui-fg-info)}
+  .jr-log .jr-lv{flex:none;width:8px;font-weight:600;color:var(--ui-fg-info)}
+  .jr-log .jr-lm{min-width:0;word-break:break-all}
+  .jr-log .jr-le,.jr-log .jr-le .jr-lv{color:var(--ui-error)}
+  .jr-log mark{background:color-mix(in srgb,var(--ui-warning) 28%,transparent);color:inherit;border-radius:3px;padding:0 2px}
+  .jr-log .jr-dadd{background:var(--diff-add);margin:0 -8px;padding:0 8px}
+  .jr-ctx{display:flex;flex-wrap:wrap;gap:6px}
+  .jr-ctx > span{display:inline-flex;align-items:center;gap:4px;height:20px;padding:0 7px;border-radius:5px;background:var(--ui-tag-bg);color:var(--ui-fg);font-size:11px}
+  .jr-ctx svg.i{width:12px;height:12px}
+  .jr-prog{display:flex;flex-direction:column;gap:4px;font-size:var(--fs-sm);line-height:var(--lh-sm)}
+  .jr-prog > div{display:flex;align-items:center;gap:8px;min-height:20px;color:var(--ui-fg-info)}
+  .jr-prog > div.done,.jr-prog > div.run{color:var(--ui-fg)}
+  .jr-prog .mk{width:14px;height:14px;flex:none;display:grid;place-items:center}
+  .jr-prog .mk svg{width:14px;height:14px;color:var(--ui-success)}
+  .jr-prog .mk .spin{width:10px;height:10px;border-width:1.5px}
+  .jr-prog .mk i{width:9px;height:9px;border-radius:50%;border:1.5px solid var(--ui-component-border)}
+  .jr-verified{display:flex;gap:6px;align-items:flex-start;font-size:var(--fs-sm);line-height:var(--lh-sm)}
+  .jr-verified svg{width:14px;height:14px;flex:none;color:var(--ui-success);margin-top:1px}
+  .jr-film{display:flex;flex-wrap:wrap;gap:10px}
+  .jr-fig{margin:0;width:58px;display:flex;flex-direction:column;align-items:center;gap:4px}
+  .jr-fig figcaption{width:100%;font-size:11px;line-height:14px;color:var(--ui-fg-info);text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .jr-fig.pass .jr-thumb{border-color:color-mix(in srgb,var(--ui-success) 70%,transparent)}
+  .jr-sv{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:start}
+  .jr-sv > div:first-child{display:flex;flex-direction:column;gap:10px;min-width:0}
+
+  /* ---------- 模拟器窗 ---------- */
+  .tw-right .emu-dev{font-size:var(--fs-sm);color:var(--ui-fg-info);margin-left:2px;white-space:nowrap}
+  .emu{flex:1;min-height:0;overflow:auto;display:flex;flex-direction:column;align-items:center;gap:10px;padding:10px 12px 12px;background:var(--ui-editor-bg)}
+  .emu-strip{align-self:stretch;display:flex;align-items:center;gap:6px;min-height:28px;padding:4px 10px;border-radius:6px;background:var(--ui-tag-bg);color:var(--ui-fg);font-size:var(--fs-sm);line-height:var(--lh-sm);flex:none}
+  .emu-strip svg{width:14px;height:14px;flex:none}
+  .emu-strip .spin{width:10px;height:10px;border-width:1.5px}
+  .emu-strip .tx{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .emu-strip.muted{color:var(--ui-fg-info)}
+  .emu-strip.muted svg{color:var(--ui-icon)}
+  .emu-strip.info{background:color-mix(in srgb,var(--ui-accent) 16%,transparent)}
+  .emu-strip.ok{background:color-mix(in srgb,var(--ui-success) 16%,transparent)}
+  .emu-strip.ok svg{color:var(--ui-success)}
+  .emu-strip.err{background:color-mix(in srgb,var(--ui-error) 16%,transparent)}
+  .emu-strip.err svg{color:var(--ui-error)}
+  .emu .dm-device{flex:none}
+  .emu-cap{font-size:var(--fs-sm);line-height:var(--lh-sm);color:var(--ui-fg-info);min-height:16px;text-align:center;flex:none}
+  .jr-tap{position:absolute;width:24px;height:24px;margin:-12px 0 0 -12px;border-radius:50%;background:color-mix(in srgb,var(--ui-accent) 35%,transparent);border:2px solid var(--ui-accent);pointer-events:none;z-index:3;animation:jrtap .7s ease-out both}
+  @keyframes jrtap{0%{transform:scale(.4);opacity:0}40%{opacity:1}100%{transform:scale(1.1);opacity:.85}}
+  @media (prefers-reduced-motion:reduce){.jr-tap,.jr-step.enter{animation:none}}
+
+  /* ---------- 模拟器屏幕里的示例应用（应用自身配色，不随 IDE 主题变） ---------- */
+  .mapp .m-hd{height:30px;flex:none;display:flex;align-items:center;gap:6px;padding:0 10px;font-weight:600;font-size:12px}
+  .mapp .m-sp{flex:1}
+  .mapp .m-cart{position:relative;width:20px;height:20px;display:grid;place-items:center;border-radius:5px;flex:none}
+  .mapp .m-cart svg{width:16px;height:16px;color:#1a1a1a}
+  .mapp .m-cart b{position:absolute;top:-3px;right:-4px;min-width:13px;height:13px;padding:0 3px;border-radius:7px;background:#E84026;color:#fff;font-size:8px;line-height:13px;text-align:center;font-weight:700}
+  .mapp .hot-ok{outline:2px solid var(--ui-success);outline-offset:1px}
+  .mapp .hot-err{outline:2px solid var(--ui-error);outline-offset:1px}
+  .mapp .m-sub{padding:0 12px 8px;font-size:10px;color:#8a8f99}
+  .mapp .m-inp{margin:4px 12px;height:28px;flex:none;border-radius:8px;border:1px solid #d9dce3;display:flex;align-items:center;padding:0 10px;font-size:10px;color:#1a1a1a}
+  .mapp .m-btn{margin:12px 12px 0;height:30px;flex:none;border-radius:15px;background:#3574F0;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:11px}
+  .mapp .m-banner{margin:0 10px 6px;height:60px;flex:none;border-radius:8px;background:linear-gradient(120deg,#3574F0,#8a6cf0);color:#fff;font-weight:600;font-size:12px;padding:10px;line-height:1.35}
+  .mapp .m-banner small{font-size:9px;font-weight:400;opacity:.9}
+  .mapp .search.m-on{color:#1a1a1a}
+  .mapp .m-cnt{padding:0 12px 2px;font-size:9px;color:#8a8f99}
+  .mapp .m-hero{margin:2px 10px 0;height:128px;flex:none;border-radius:10px;background:linear-gradient(160deg,#eef1f6,#d8dee9);display:grid;place-items:center}
+  .mapp .m-hero i{width:58px;height:40px;border-radius:20px;background:#fff;box-shadow:0 4px 12px rgba(0,0,0,.12)}
+  .mapp .m-price{padding:8px 12px 0;color:#E84026;font-size:16px;font-weight:700;line-height:20px}
+  .mapp .m-name{padding:2px 12px 0;font-size:12px;font-weight:600}
+  .mapp .m-spec{padding:2px 12px 0;font-size:9px;color:#8a8f99}
+  .mapp .m-bar{flex:none;display:flex;gap:6px;padding:8px 10px 10px;border-top:1px solid #f0f0f0;align-items:center}
+  .mapp .m-bar > span{flex:1;height:28px;border-radius:14px;display:flex;align-items:center;justify-content:center;gap:3px;font-size:10px;font-weight:600;color:#fff;white-space:nowrap}
+  .mapp .m-bar .m-add{background:#FF9F0A}
+  .mapp .m-bar .m-buy{background:#E84026}
+  .mapp .m-bar .m-buy.m-off{background:#c9ccd6}
+  .mapp .m-bar .m-total{background:none;color:#1a1a1a;justify-content:flex-start;font-weight:400;border-radius:6px;padding-left:2px}
+  .mapp .m-total b{color:#E84026;font-size:13px}
+  .mapp .m-kv{display:flex;justify-content:space-between;padding:5px 12px;font-size:10px;color:#666}
+  .mapp .m-kv b{color:#1a1a1a;font-weight:600}
+  .mapp .m-empty{padding:70px 0 0;text-align:center;color:#8a8f99;font-size:11px}
+  .mapp .row .m-qty{margin-left:auto;flex:none;font-size:9px;color:#8a8f99}
 </style>
 </head>
 <body>
-<div class="ide" id="ide" data-ide-theme="dark" data-left="project" data-right="none" data-bottom="problems" role="application" aria-label="DevEco Studio">
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <symbol id="i-route" viewBox="0 0 16 16"><circle cx="3.8" cy="3.5" r="1.8" stroke="currentColor" fill="none"/><circle cx="12.2" cy="12.5" r="1.8" stroke="currentColor" fill="none"/><path d="M5.6 3.5H10a2.5 2.5 0 0 1 0 5H6a2.5 2.5 0 0 0 0 5h4.4" stroke="currentColor" stroke-linecap="round" fill="none"/></symbol>
+  <symbol id="i-cart" viewBox="0 0 16 16"><path d="M1.5 2.5h2l1.6 7.5h7.4l1.5-5.5H4.3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" fill="none"/><circle cx="6" cy="13" r="1.1" fill="currentColor"/><circle cx="11.5" cy="13" r="1.1" fill="currentColor"/></symbol>
+</defs></svg>
+<div class="ide" id="ide" data-ide-theme="dark" data-left="project" data-right="none" data-bottom="problems" data-scene="publish" role="application" aria-label="DevEco Studio">
   <div class="body">
     <div class="tw tw-left">
       <div class="pane on" data-pane="project">
@@ -77,6 +256,21 @@
       <div class="breadcrumbs" id="crumbs"></div>
     </div>
 
+    <!-- 模拟器：跑用户旅程时自动打开，逐步点给你看 -->
+    <div class="tw tw-right">
+      <div class="pane" data-pane="devices">
+        <div class="tw-hdr"><span class="title">Emulator</span><span class="emu-dev">Mate 70 Pro · API 20</span><span class="grow"></span>
+          <button class="abtn" title="Take Screenshot"><svg class="i"><use href="#i-camera"/></svg></button>
+          <button class="abtn" title="Rotate"><svg class="i"><use href="#i-rotate"/></svg></button>
+          <button class="abtn" title="Hide|Shift+Esc" data-act="hide-right"><svg class="i"><use href="#i-hide"/></svg></button></div>
+        <div class="emu">
+          <div class="emu-strip muted" id="emu-strip"></div>
+          <div class="dm-device phone"><div class="scr" id="emu-scr"></div></div>
+          <div class="emu-cap" id="emu-cap"></div>
+        </div>
+      </div>
+    </div>
+
     <div class="tw tw-bottom">
       <div class="tw-hdr"><span class="title">App Check</span>
         <span class="tabbar" id="scene-tabs"></span>
@@ -86,10 +280,28 @@
         <button class="abtn" title="Options"><svg class="i"><use href="#i-moreV"/></svg></button>
         <button class="abtn" title="Hide|Shift+Esc" data-act="hide-bottom"><svg class="i"><use href="#i-hide"/></svg></button></div>
       <div class="tw-body">
-        <div class="pane on" data-pane="problems"><div class="chk">
-          <div class="chk-list dm-list" id="chk-list"></div>
-          <div class="chk-detail" id="chk-detail"></div>
-        </div></div>
+        <div class="pane on" data-pane="problems">
+          <div class="chk" id="chk">
+            <div class="chk-list dm-list" id="chk-list"></div>
+            <div class="chk-detail" id="chk-detail"></div>
+          </div>
+          <!-- 用户旅程：一句话 → 步骤 + 断言 → 在模拟器上跑 → 失败现场 → 修复 / 存文件 / 加进上架自检 -->
+          <div class="jr" id="jr" hidden>
+            <div class="jr-main">
+              <div class="jr-compose">
+                <svg class="i"><use href="#i-route"/></svg>
+                <input class="jr-prompt" id="jr-prompt" spellcheck="false" aria-label="用一句话写用户旅程" placeholder="用一句话写用户怎么用，比如：登录 → 搜索 → 加购 → 结算">
+                <span class="jr-tools" id="jr-tools"></span>
+              </div>
+              <div class="dm-group jr-sum" id="jr-sum" hidden></div>
+              <div class="jr-steps" id="jr-steps"></div>
+            </div>
+            <div class="jr-detail">
+              <div class="chk-detail" id="jr-dbody"></div>
+              <div class="jr-foot" id="jr-foot" hidden></div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -97,7 +309,7 @@
 
 <script>
 (function(){
-  var $=DemoFrame.$, $$=DemoFrame.$$, FILES=DemoFrame.FILES;
+  var $=DemoFrame.$, $$=DemoFrame.$$, FILES=DemoFrame.FILES, esc=DemoFrame.esc;
 
   /* ---------- 体检结果：按场景分组，每条都带文件与行号 ---------- */
   var SCENES=[
@@ -154,13 +366,140 @@
   ];
   var cur='publish',selIdx=0,ideRoot;
 
+  /* ---------- 示例工程里补两份代码：购物车 store 与结算页（旅程会定位到这里） ---------- */
+  var KW=/^(import|from|export|class|interface|const|let|return|this|if|else|for|of|private|public|static|number|string|boolean|void|new|true|false|struct|async|await|try|catch|undefined)$/;
+  function hl(src){
+    if(/^\s*(\/\*|\*)/.test(src))return '<span class="c">'+esc(src)+'</span>';
+    var re=/(\/\/.*$)|('(?:[^'\\]|\\.)*')|(@\w+)|\b(0x[0-9a-fA-F]+|\d+(?:\.\d+)?)\b|\b([A-Za-z_]\w*)\b(?=\s*\()|(?<=\.)([A-Za-z_]\w*)\b|\b([A-Za-z_]\w*)\b/g;
+    var out='',last=0,m;
+    while((m=re.exec(src))){
+      out+=esc(src.slice(last,m.index));last=re.lastIndex;
+      var cls=m[1]?'c':m[2]?'s':m[3]?'m':m[4]?'n':'';
+      var w=m[5]||m[6]||m[7];
+      if(!cls&&w){cls=KW.test(w)?'k':m[5]?'f':/^[A-Z]/.test(w)?'ty':m[6]?'p':''}
+      out+=cls?'<span class="'+cls+'">'+esc(m[0])+'</span>':esc(m[0]);
+    }
+    return out+esc(src.slice(last));
+  }
+  function hlJson(src){
+    var re=/(\/\/.*$)|('(?:[^'\\]|\\.)*')|\b(\d+)\b|\b(true|false|null)\b|([A-Za-z_]\w*)(?=\s*:)/g,out='',last=0,m;
+    while((m=re.exec(src))){
+      out+=esc(src.slice(last,m.index));last=re.lastIndex;
+      var cls=m[1]?'c':m[2]?'s':m[3]?'n':m[4]?'k':'p';
+      out+='<span class="'+cls+'">'+esc(m[0])+'</span>';
+    }
+    return out+esc(src.slice(last));
+  }
+  function srcLines(arr,fn){return arr.map(function(x){return /\{\s*$/.test(x)?[fn(x),{fold:1}]:[fn(x)]})}
+  var CART_FIX="    AppStorage.setOrCreate('cartCount', this.totalQty());  // 同步角标";
+  FILES['CartStore.ets']={path:['entry','src','main','ets','model'],crumbs:['CartStore','addItem'],lines:srcLines([
+    "import { hilog } from '@kit.PerformanceAnalysisKit';",
+    "import { Sku } from './Sku';",
+    "",
+    "const DOMAIN: number = 0x0100;",
+    "const TAG: string = 'CartStore';",
+    "",
+    "export interface CartItem {",
+    "  sku: string;",
+    "  price: number;",
+    "  qty: number;",
+    "}",
+    "",
+    "/**",
+    " * 购物车。页面上的角标用 @StorageProp('cartCount') 读数量",
+    " */",
+    "export class CartStore {",
+    "  private static instance: CartStore;",
+    "  private items: CartItem[] = [];",
+    "",
+    "  static get(): CartStore {",
+    "    if (!CartStore.instance) {",
+    "      CartStore.instance = new CartStore();",
+    "      AppStorage.setOrCreate('cartCount', 0);",
+    "    }",
+    "    return CartStore.instance;",
+    "  }",
+    "",
+    "  totalQty(): number {",
+    "    let n: number = 0;",
+    "    for (const it of this.items) {",
+    "      n += it.qty;",
+    "    }",
+    "    return n;",
+    "  }",
+    "",
+    "  totalPrice(): number {",
+    "    let sum: number = 0;",
+    "    for (const it of this.items) {",
+    "      sum += it.price * it.qty;",
+    "    }",
+    "    return sum;",
+    "  }",
+    "",
+    "  addItem(sku: Sku, qty: number = 1): void {",
+    "    if (qty <= 0) {",
+    "      return;",
+    "    }",
+    "    this.items.push({ sku: sku.id, price: sku.price, qty: qty });",
+    "    hilog.info(DOMAIN, TAG, 'addItem sku=%{public}s items=%{public}d', sku.id, this.items.length);",
+    "  }",
+    "",
+    "  clear(): void {",
+    "    this.items = [];",
+    "    AppStorage.setOrCreate('cartCount', 0);",
+    "  }",
+    "}"
+  ],hl)};
+  FILES['CheckoutPage.ets']={path:['entry','src','main','ets','pages'],crumbs:['CheckoutPage','build'],lines:srcLines([
+    "import { CartStore } from '../model/CartStore';",
+    "import { AddressCard } from '../components/AddressCard';",
+    "",
+    "@Entry",
+    "@Component",
+    "struct CheckoutPage {",
+    "  @State total: number = 0;",
+    "  @State freight: number = 0;",
+    "  private store: CartStore = CartStore.get();",
+    "",
+    "  aboutToAppear(): void {",
+    "    this.total = this.store.totalPrice() + this.freight;",
+    "  }",
+    "",
+    "  build() {",
+    "    Column() {",
+    "      AddressCard()",
+    "      Row() {",
+    "        Text('商品金额')",
+    "        Blank()",
+    "        Text('¥' + this.store.totalPrice())",
+    "      }",
+    "      .padding(16)",
+    "      Row() {",
+    "        Text('运费')",
+    "        Blank()",
+    "        Text(this.freight === 0 ? '包邮' : '¥' + this.freight)",
+    "      }",
+    "      .padding(16)",
+    "      Row() {",
+    "        Text('合计 ¥' + this.total).fontSize(18).fontColor('#E84026')",
+    "        Blank()",
+    "        Button('提交订单')",
+    "      }",
+    "      .padding(16)",
+    "    }",
+    "  }",
+    "}"
+  ],hl)};
+
   /* ---------- 编辑器：切到某文件某行 ---------- */
-  function openFile(file,line,lv){
+  function openFile(file,line,lv,opt){
     if(!FILES[file])return false;
+    opt=opt||{};
     var tabs=$('#tabs');$$('.tab',tabs).forEach(function(t){t.remove()});
-    tabs.insertAdjacentHTML('afterbegin',DemoFrame.tabs([{file:file,on:true}]));
+    tabs.insertAdjacentHTML('afterbegin',DemoFrame.tabs([{file:file,on:true,icon:/\.json5$/.test(file)?'#i-json':null}]));
     var marks={};if(line&&lv)marks[line]=lv;
-    $('#code').innerHTML=DemoFrame.code(file,{cur:line,hl:line?[line]:[],marks:marks});
+    $('#code').innerHTML=DemoFrame.code(file,{cur:line,hl:(line&&!opt.nohl)?[line]:[],marks:marks});
+    (opt.ok||[]).forEach(function(n){var el=$('#code .ln[data-ln="'+n+'"]');if(el){el.classList.remove('hl');el.classList.add('hl-ok')}});
     $('#crumbs').innerHTML=DemoFrame.crumbs(file);
     $$('#tree .row.sel').forEach(function(x){x.classList.remove('sel')});
     var r=$('#tree .row[data-file="'+file+'"]');if(r)r.classList.add('sel');
@@ -172,11 +511,13 @@
   /* ---------- 场景 tab ---------- */
   function uniqFiles(s){var m={},n=0;s.items.forEach(function(it){if(!m[it.file]){m[it.file]=1;n++}});return n}
   function scene(id){for(var i=0;i<SCENES.length;i++)if(SCENES[i].id===id)return SCENES[i];return SCENES[0]}
+  function jrPubFail(){return JR.inPublish&&JR.result==='fail'?1:0}
   function renderTabs(){
     $('#scene-tabs').innerHTML=SCENES.map(function(s){
-      return '<button class="btab'+(s.id===cur?' on':'')+'" data-scene="'+s.id+'"><svg class="i"><use href="'+s.icon+'"/></svg>'+s.name+'<span class="cnt">'+s.items.length+'</span></button>';
-    }).join('');
-    var total=0;SCENES.forEach(function(s){total+=s.items.length});
+      var c=s.items.length+(s.id==='publish'?jrPubFail():0);
+      return '<button class="btab'+(s.id===cur?' on':'')+'" data-scene="'+s.id+'"><svg class="i"><use href="'+s.icon+'"/></svg>'+s.name+'<span class="cnt">'+c+'</span></button>';
+    }).join('')+jrTab();
+    var total=jrPubFail();SCENES.forEach(function(s){total+=s.items.length});
     var slot=$('#status-slot');if(slot)slot.innerHTML='<span class="dm-capsule" title="App Check"><svg class="i" style="width:12px;height:12px"><use href="#i-tw-problems"/></svg>体检 · '+total+' 条待处理</span>';
   }
   function renderList(){
@@ -193,6 +534,7 @@
         +(it.state==='fixing'?'<span class="dm-pill info"><span class="spin"></span>DevEco Code 在改</span>':'')
         +'<span class="loc'+(dead?' dead':'')+'" title="'+(dead?'点击定位（示例工程里没有这个文件的代码）':'点击定位到这一行')+'">'+it.file+':'+it.line+'</span></div>';
     });
+    if(s.id==='publish')h+=jrPubSection();
     $('#chk-list').innerHTML=h;
   }
   function renderDetail(){
@@ -213,14 +555,23 @@
     var it=s.items[selIdx];
     if(it&&jump!==false)openFile(it.file,it.line,it.lv);
   }
-  function switchScene(id){cur=id;selIdx=0;renderTabs();select(0)}
+  function switchScene(id){
+    cur=id;ideRoot.setAttribute('data-scene',id);
+    var isJ=id==='journey';
+    $('#chk').hidden=isJ;$('#jr').hidden=!isJ;
+    if(isJ){renderTabs();renderJourney();return}
+    selIdx=0;renderTabs();select(0);
+  }
 
   /* 「改完当场跑一遍」：DevEco Code 改完 → 自动重跑 → 这条从列表里消失 */
   function autoRun(after){
     var pill=$('#auto-pill'),t=$('#auto-txt');
     pill.className='dm-pill info';pill.innerHTML='<span class="spin"></span><span id="auto-txt">检测到改动，正在重跑…</span>';
+    var withJr=JR.inPublish&&JR.steps.length&&JR.phase!=='running'&&!JR.fixStage;
+    if(withJr){JR.pubRunning=true;if(cur==='publish')renderList()}
     setTimeout(function(){
       pill.className='dm-pill ok';pill.innerHTML='<svg><use href="#i-check"/></svg><span id="auto-txt">改动后自动跑 · 刚刚</span>';
+      if(withJr){JR.pubRunning=false;if(JR.phase!=='running'&&!JR.fixStage)quickEval();renderTabs();if(cur==='publish'&&!after)renderList()}
       if(after)after();
     },900);
   }
@@ -239,29 +590,459 @@
     s.items.splice(selIdx,1);renderTabs();select(Math.min(selIdx,s.items.length-1));
   }
 
+  /* =====================================================================
+     用户旅程：一句话 → AI 拆步骤 + 断言（可改、可增删）→ 在模拟器上逐步跑
+     → 某步没过给出截图对比 + HiLog + 代码行 → 转成修复任务 / 存成旅程文件 / 加进上架自检
+     ===================================================================== */
+  var PROMPT='登录 → 搜索“耳机” → 加入购物车 → 结算页显示正确总价';
+  var TPL={
+    login:{exp:'3 s 内进入首页，HiLog 无 ERR_AUTH',ops:['打开 LoginPage','手机号填 138 0000 6021、验证码填 246810（mock-config.json5 的测试号）','点 Button(\'登录\')'],file:'LoginPage.ets',line:16,ctl:"Button('登录')",dur:2.3,timeout:5000},
+    search:{exp:'结果至少 1 条，首条标题含「耳机」',ops:['点首页 Search 框','输入「耳机」，按回车','等结果列表加载完'],file:'ListPage.ets',line:12,ctl:'Search',dur:1.6,timeout:5000},
+    cart:{exp:'右上角购物车角标 0 → 1',ops:['点结果第 1 条「无线降噪耳机 Pro」','在详情页点「加入购物车」','最多等 3 s，读右上角角标'],file:'CartStore.ets',line:44,ctl:'CartStore.addItem()',dur:1.2,failDur:3.2,timeout:3000},
+    checkout:{exp:'合计显示 ¥899（¥899 × 1，包邮）',ops:['点右上角购物车','点「去结算」','读结算页合计金额'],file:'CheckoutPage.ets',line:31,ctl:"Text('合计 ¥…')",dur:1.9,timeout:5000}
+  };
+  var JR={prompt:PROMPT,name:'下单结算',file:'checkout.journey.json5',kw:'耳机',steps:[],phase:'empty',sel:0,view:'step',
+    result:null,runIdx:-1,fixed:false,fixStage:0,fixIdx:-1,saved:false,dirty:false,inPublish:false,pubRunning:false,runInLine:0};
+  var uid=0,TM=[];
+  function later(fn,ms){TM.push(setTimeout(fn,ms))}
+  function clearTimers(){TM.forEach(clearTimeout);TM=[]}
+  function mk(id,name){var t=TPL[id];return {id:id,name:name,exp:t.exp,ops:t.ops.slice(),file:t.file,line:t.line,ctl:t.ctl,dur:t.dur,failDur:t.failDur,timeout:t.timeout,st:'',t:0,shot:null}}
+  function parsePrompt(p){
+    var segs=p.split(/\s*(?:→|->|⟶|＞|>|，|,|；|;|然后)\s*/).filter(function(x){return x.trim()}),used={};
+    JR.kw='耳机';
+    return segs.map(function(seg){
+      seg=seg.trim();
+      var id=/登录|登陆/.test(seg)?'login':/搜索|查找/.test(seg)?'search':(/购物车|加购/.test(seg)&&!/结算/.test(seg))?'cart':/结算|总价|下单|支付/.test(seg)?'checkout':null;
+      if(id&&!used[id]){
+        used[id]=1;var s=mk(id,seg);
+        if(id==='search'){var kw=(seg.match(/[“"「『]([^”"」』]+)[”"」』]/)||[])[1];if(kw){JR.kw=kw;s.exp='结果至少 1 条，首条标题含「'+kw+'」';s.ops[1]='输入「'+kw+'」，按回车'}}
+        return s;
+      }
+      return {id:'c'+(++uid),name:seg,exp:'「'+seg+'」之后页面有对应反馈',ops:['按「'+seg+'」在当前页定位控件并操作'],file:null,dur:1.4,timeout:5000,st:'',t:0,shot:null,custom:1};
+    });
+  }
+  function hasStep(id){return JR.steps.some(function(s){return s.id===id})}
+  function failIdx(){for(var i=0;i<JR.steps.length;i++)if(JR.steps[i].st==='fail')return i;return -1}
+  function passN(){return JR.steps.filter(function(s){return s.st==='pass'}).length}
+  function totalT(){var t=0;JR.steps.forEach(function(s){t+=s.t||0});return t.toFixed(1)}
+  function estT(){var t=0;JR.steps.forEach(function(s){t+=s.dur||0});return Math.round(t)}
+  function locText(s){return s.st==='fail'&&s.id==='cart'?'CartStore.ets:48':(s.file?s.file+':'+s.line:'')}
+  function resetResults(){JR.steps.forEach(function(s){s.st='';s.t=0;s.shot=null});JR.result=null;JR.phase=JR.steps.length?'ready':'empty';JR.view='step'}
+
+  /* ---------- 模拟器屏幕（示例应用） ---------- */
+  function sb(){return '<div class="st"><span>9:41</span><span>5G · 86%</span></div>'}
+  function hd(t,right){return '<div class="m-hd"><span>'+t+'</span><span class="m-sp"></span>'+(right||'')+'</div>'}
+  function cartI(n,hot){return '<span class="m-cart'+(hot?' hot-'+hot:'')+'" data-tap="cart"><svg><use href="#i-cart"/></svg>'+(n?'<b>'+n+'</b>':'')+'</span>'}
+  function prow(p,tap){return '<div class="row"'+(tap?' data-tap="'+tap+'"':'')+'><span class="th" style="background:'+p[2]+'"></span><span class="tx"><b>'+p[0]+'</b><span>'+p[1]+'</span></span>'+(p[3]||'')+'</div>'}
+  var G=['linear-gradient(135deg,#e8ecf5,#c3cee6)','linear-gradient(135deg,#f5e9dc,#dfc6a8)','linear-gradient(135deg,#dff3ea,#b1dfc8)','linear-gradient(135deg,#efe3f7,#d3bcea)'];
+  var EAR=[['无线降噪耳机 Pro','¥899 · 已售 2.1 万',G[0]],['头戴式耳机 Max','¥1,499 · 已售 8300',G[1]],['运动耳机 Lite','¥299 · 已售 5.6 万',G[2]],['骨传导耳机','¥599 · 已售 1.2 万',G[3]]];
+  var HOME=[['智能手表 5','¥1,588 · 新品',G[3]],['11 英寸平板','¥2,399 · 已售 3.4 万',G[1]],['蓝牙音箱 Mini','¥199 · 已售 9.8 万',G[2]]];
+  function detail(n,hot){return sb()+hd('‹ 商品详情',cartI(n,hot))+'<div class="m-hero"><i></i></div><div class="m-price">¥899</div><div class="m-name">无线降噪耳机 Pro</div><div class="m-spec">星空黑 · 标准版 · 包邮</div><div class="fill"></div><div class="m-bar"><span class="m-add" data-tap="add">加入购物车</span><span class="m-buy">立即购买</span></div>'}
+  var SCR={
+    login:function(){return sb()+'<div class="title">欢迎回来</div><div class="m-sub">验证码登录</div><div class="m-inp">138 0000 6021</div><div class="m-inp">246810</div><div class="m-btn" data-tap="btn">登录</div>'},
+    home:function(){return sb()+hd('你好，小王',cartI(0))+'<div class="search" data-tap="search">搜索商品</div><div class="m-banner">秋季新品<br><small>满 500 减 50</small></div>'+HOME.map(function(p){return prow(p)}).join('')},
+    search:function(){return sb()+hd('‹ 搜索',cartI(0))+'<div class="search m-on">'+esc(JR.kw)+'</div><div class="m-cnt">共 24 件</div>'+EAR.map(function(p,i){return prow(p,i?null:'row1')}).join('')},
+    detail0:function(hot){return detail(0,hot)},
+    detail1:function(hot){return detail(1,hot)},
+    cartpage:function(){return sb()+hd('购物车')+prow([EAR[0][0],'星空黑 · 标准版',G[0],'<span class="m-qty">×1</span>'])+'<div class="fill"></div><div class="m-bar"><span class="m-total">合计 <b>¥899</b></span><span class="m-buy" data-tap="pay">去结算</span></div>'},
+    checkout:function(hot){return sb()+hd('‹ 确认订单')+'<div class="card">小王 138****6021<br>上海市浦东新区 世纪大道 100 号</div>'+prow([EAR[0][0],'¥899 × 1',G[0]])+'<div class="m-kv"><span>商品金额</span><b>¥899</b></div><div class="m-kv"><span>运费</span><b>包邮</b></div><div class="fill"></div><div class="m-bar"><span class="m-total'+(hot?' hot-'+hot:'')+'">合计 <b>¥899</b></span><span class="m-buy">提交订单</span></div>'},
+    cartEmpty:function(hot){return sb()+hd('购物车')+'<div class="m-empty">购物车是空的</div><div class="fill"></div><div class="m-bar"><span class="m-total">合计 <b>¥0</b></span><span class="m-buy m-off'+(hot?' hot-'+hot:'')+'">去结算</span></div>'}
+  };
+  function mini(shot){return '<div class="jr-scr"><div class="mapp">'+SCR[shot.k](shot.hot)+'</div></div>'}
+  function emuShow(k,tap,hot){
+    var el=$('#emu-scr');if(!el)return;
+    el.innerHTML='<div class="mapp">'+SCR[k](hot)+'</div>';
+    if(!tap)return;
+    var t=el.querySelector('[data-tap="'+tap+'"]');if(!t)return;
+    var x=t.offsetWidth/2,y=t.offsetHeight/2,n=t;
+    while(n&&n!==el){x+=n.offsetLeft;y+=n.offsetTop;n=n.offsetParent}
+    el.insertAdjacentHTML('beforeend','<span class="jr-tap" style="left:'+x+'px;top:'+y+'px"></span>');
+  }
+  function emuStrip(cls,icon,text){var s=$('#emu-strip');if(!s)return;s.className='emu-strip '+cls;s.innerHTML=(icon==='spin'?'<span class="spin"></span>':'<svg class="i"><use href="#'+icon+'"/></svg>')+'<span class="tx">'+text+'</span>'}
+  function emuCap(t){var c=$('#emu-cap');if(c)c.textContent=t||''}
+
+  /* 每一步在模拟器上怎么走：先点哪里、最后停在哪一屏、断言过不过 */
+  function plan(s,last){
+    switch(s.id){
+      case 'login':return {frames:[{k:'login',tap:'btn',cap:'填手机号、验证码，点「登录」'}],ok:true,end:{k:'home'}};
+      case 'search':return {frames:[{k:'home',tap:'search',cap:'点搜索框'},{k:'search',cap:'输入「'+JR.kw+'」，回车'}],ok:true,end:{k:'search'}};
+      case 'cart':return {frames:[{k:'search',tap:'row1',cap:'点第 1 条'},{k:'detail0',tap:'add',cap:'点「加入购物车」'}],ok:JR.fixed,
+        end:JR.fixed?{k:'detail1',hot:'ok'}:{k:'detail0',hot:'err'},why:'等了 3 s，角标还是空的'};
+      case 'checkout':
+        if(hasStep('cart'))return {frames:[{k:'detail1',tap:'cart',cap:'点购物车'},{k:'cartpage',tap:'pay',cap:'点「去结算」'}],ok:true,end:{k:'checkout',hot:'ok'}};
+        return {frames:[{k:'home',tap:'cart',cap:'点购物车'}],ok:false,end:{k:'cartEmpty',hot:'err'},why:'购物车是空的，进不了结算页'};
+      default:return {frames:[{k:last.k,cap:s.name||'按描述操作'}],ok:true,end:{k:last.k}};
+    }
+  }
+  function runJourney(done){
+    if(!JR.steps.length||JR.phase==='running')return;
+    clearTimers();
+    JR.phase='running';JR.result=null;JR.view='step';
+    JR.steps.forEach(function(s){s.st='';s.t=0;s.shot=null});
+    DemoFrame.setSide('right','devices');
+    var i=0,n=JR.steps.length,last={k:'login'};
+    function step(){
+      if(i>=n){finish(true,-1);return}
+      var s=JR.steps[i],pl=plan(s,last),k=0;
+      s.st='run';JR.runIdx=i;JR.sel=i;
+      emuStrip('info','spin','第 '+(i+1)+'/'+n+' 步 · '+esc(s.name||'未命名'));
+      (function frame(){
+        if(k<pl.frames.length){var f=pl.frames[k++];s.shot={k:f.k};renderRun();emuShow(f.k,f.tap);emuCap(f.cap);later(frame,560);return}
+        s.st=pl.ok?'pass':'fail';s.t=pl.ok?s.dur:(s.failDur||3.0);s.shot=pl.end;last=pl.end;
+        emuShow(pl.end.k,null,pl.end.hot);emuCap(pl.ok?'断言通过 · '+s.t.toFixed(1)+' s':pl.why);
+        if(!pl.ok){for(var j=i+1;j<n;j++)JR.steps[j].st='skip';finish(false,i);return}
+        renderRun();i++;later(step,380);
+      })();
+    }
+    function finish(ok,fi){
+      JR.phase=ok?'passed':'failed';JR.result=ok?'pass':'fail';JR.runIdx=-1;
+      if(ok){JR.view='summary';emuStrip('ok','i-check',n+'/'+n+' 通过 · '+totalT()+' s')}
+      else{
+        var s=JR.steps[fi];JR.sel=fi;JR.view='fail';
+        emuStrip('err','i-err','第 '+(fi+1)+' 步没过 · '+(s.id==='cart'?'角标没变':'购物车是空的'));
+        if(cur==='journey'&&s.id==='cart')openFile('CartStore.ets',48,'err');
+      }
+      renderJourney();if(cur==='publish')renderList();
+      if(done)done(ok);
+    }
+    renderJourney();step();
+  }
+  function stopRun(){
+    clearTimers();
+    JR.steps.forEach(function(s){if(s.st==='run'||!s.st)s.st='skip'});
+    JR.phase='ready';JR.result=null;JR.runIdx=-1;
+    emuStrip('muted','i-stopSq','已停止');emuCap('');
+    renderJourney();
+  }
+  /* 上架自检一起跑时：不放动画，直接给结果 */
+  function quickEval(){
+    var last={k:'login'},fi=-1;
+    JR.steps.forEach(function(s,i){
+      if(fi>=0){s.st='skip';s.t=0;return}
+      var pl=plan(s,last);s.st=pl.ok?'pass':'fail';s.t=pl.ok?s.dur:(s.failDur||3.0);s.shot=pl.end;last=pl.end;if(!pl.ok)fi=i;
+    });
+    JR.result=fi<0?'pass':'fail';JR.phase=fi<0?'passed':'failed';
+    if(fi>=0){JR.sel=fi;JR.view='fail'}else JR.view='summary';
+  }
+
+  /* 失败步 → AI 修复任务：带上截图对比、HiLog、代码行；改完在模拟器上重跑这条旅程 */
+  function fixTask(){
+    var fi=failIdx();if(fi<0||JR.fixStage)return;
+    JR.fixIdx=fi;JR.fixStage=1;renderJourney();
+    emuStrip('info','spin','DevEco Code 在改 CartStore.ets');emuCap('');
+    later(function(){
+      JR.fixStage=2;renderJD();
+      openFile('CartStore.ets',48,'err');
+      later(function(){
+        var f=FILES['CartStore.ets'];if(!f.patched){f.lines.splice(48,0,[hl(CART_FIX)]);f.patched=1}
+        JR.fixed=true;
+        openFile('CartStore.ets',49,null,{ok:[49]});
+        var a=$('#auto-pill');if(a){a.className='dm-pill ok';a.innerHTML='<svg><use href="#i-check"/></svg><span id="auto-txt">改动后自动跑 · 刚刚</span>'}
+        JR.fixStage=3;renderJD();
+        later(function(){runJourney(function(){JR.fixStage=0;renderJourney();if(cur==='publish')renderList()})},600);
+      },1300);
+    },700);
+  }
+  function restoreCart(){
+    var ci=-1;JR.steps.forEach(function(s,i){if(s.id==='checkout'&&ci<0)ci=i});
+    JR.steps.splice(ci<0?JR.steps.length:ci,0,mk('cart','加入购物车'));
+    if(JR.saved)JR.dirty=true;resetResults();JR.sel=ci<0?JR.steps.length-1:ci;renderJourney();
+  }
+
+  /* 旅程文件：journeys/<name>.journey.json5，可提交进仓库、在上架自检里重复跑 */
+  function q(s){return String(s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'")}
+  function buildJourneyFile(){
+    var L=['// '+JR.name+' · 由一句话生成，可以手改','{',"  name: '"+q(JR.name)+"',","  prompt: '"+q(JR.prompt)+"',",
+      "  device: 'phone',  // Mate 70 Pro 模拟器 · API 20","  account: 'mock:testUser',  // entry/src/mock/mock-config.json5",'  steps: ['];
+    JR.steps.forEach(function(s){
+      L.push('    {');L.push("      name: '"+q(s.name)+"',");
+      if(s.file)L.push("      locate: '"+s.file+':'+s.line+"',");
+      L.push("      expect: '"+q(s.exp)+"',");L.push('      timeout: '+(s.timeout||5000)+',');L.push('    },');
+    });
+    L.push('  ],');
+    L.push(JR.inPublish?"  runIn: ['appCheck.publish'],  // 上架自检一起跑":'  runIn: [],');
+    JR.runInLine=L.length;
+    L.push('}');
+    FILES[JR.file]={path:['journeys'],crumbs:[JR.file],lines:srcLines(L,hlJson)};
+  }
+  function treeRow(depth,icon,name,o){
+    o=o||{};
+    return '<div class="row" style="padding-left:'+(8+depth*16)+'px"'+(o.dir?' data-dir="1" data-open="1"':'')+(o.file?' data-file="'+name+'"':'')+'><span class="tg">'+(o.dir?'<svg class="i"><use href="#i-chevD"/></svg>':'')+'</span><span class="ico"><svg><use href="'+icon+'"/></svg></span><span class="lbl">'+name+'</span></div>';
+  }
+  function rowByLabel(name){return $$('#tree .row').filter(function(r){var l=$('.lbl',r);return l&&l.textContent===name})[0]}
+  function saveJourney(opt){
+    opt=opt||{};
+    var first=!JR.saved;JR.saved=true;JR.dirty=false;
+    buildJourneyFile();
+    if(first){var oh=rowByLabel('oh_modules');if(oh)oh.insertAdjacentHTML('beforebegin',treeRow(1,'#i-folder','journeys',{dir:1})+'<div class="kids">'+treeRow(2,'#i-json',JR.file,{file:1})+'</div>')}
+    if(opt.runIn)openFile(JR.file,JR.runInLine,null);else openFile(JR.file,1,null,{nohl:true});
+    var r=$('#tree .row[data-file="'+JR.file+'"]');if(r)r.scrollIntoView({block:'nearest'});
+    renderJourney();
+  }
+  function addToPublish(){
+    JR.inPublish=true;saveJourney({runIn:true});
+    renderTabs();
+  }
+
+  /* ---------- 渲染 ---------- */
+  function jrTab(){
+    var c='';
+    if(JR.result&&JR.steps.length)c='<span class="cnt'+(JR.result==='fail'?' bad':'')+'">'+passN()+'/'+JR.steps.length+'</span>';
+    return '<button class="btab'+(cur==='journey'?' on':'')+'" data-scene="journey"><svg class="i"><use href="#i-route"/></svg>用户旅程'+c+'</button>';
+  }
+  function jrPubSection(){
+    var h='<div class="dm-group jr-grp">一起跑的旅程<span class="cnt">'+(JR.inPublish?1:0)+'</span><span class="grow"></span>'+(JR.inPublish?'<span class="dm-small dm-muted" style="font-weight:400">上架自检时在模拟器上跑</span>':'')+'</div>';
+    if(!JR.inPublish)return h+'<div class="dm-item jr-new" id="jr-new" role="button" tabindex="0"><svg class="i"><use href="#i-add"/></svg><span class="msg">用一句话写一条用户旅程</span></div>';
+    var n=JR.steps.length,fi=failIdx(),res=JR.pubRunning||JR.phase==='running'?'run':JR.result,pill;
+    pill=res==='run'?'<span class="dm-pill info"><span class="spin"></span>在模拟器上跑</span>'
+      :res==='fail'?'<span class="dm-pill err">第 '+(fi+1)+' 步没过</span>'
+      :res==='pass'?'<span class="dm-pill ok">'+n+'/'+n+' 通过</span>':'<span class="dm-pill muted">待跑</span>';
+    return h+'<div class="dm-item jr-pub'+(res==='fail'?' err':'')+'" id="jr-pub" role="button" tabindex="0"><svg class="i"><use href="#i-route"/></svg><span class="msg">旅程「'+esc(JR.name)+'」· '+n+' 步</span>'+pill+'<span class="loc" title="journeys/'+JR.file+'">'+JR.file+'</span></div>';
+  }
+  function renderTools(){
+    var h,busy=JR.phase==='running'||JR.fixStage;
+    if(JR.phase==='empty'||JR.phase==='splitting'){
+      h='<button class="btn primary" id="jr-split"'+(JR.phase==='splitting'?' disabled':'')+'><svg class="i"><use href="#i-genie"/></svg>'+(JR.phase==='splitting'?'正在拆…':'拆成步骤')+'</button>';
+    }else{
+      h='<button class="btn primary" id="jr-run"'+(JR.fixStage||!JR.steps.length?' disabled':'')+'>'+(JR.phase==='running'&&!JR.fixStage?'<svg class="i"><use href="#i-stopSq"/></svg>停止':'<svg class="i"><use href="#i-play"/></svg>'+(JR.result?'再跑一遍':'在模拟器上跑'))+'</button>'
+        +'<button class="btn" id="jr-split"'+(busy?' disabled':'')+'>重新拆</button>';
+    }
+    $('#jr-tools').innerHTML=h;
+    $('#jr-prompt').readOnly=!!busy;
+  }
+  function renderSum(){
+    var el=$('#jr-sum');
+    if(!JR.steps.length||JR.phase==='splitting'){el.hidden=true;return}
+    el.hidden=false;
+    var n=JR.steps.length,r,fi=failIdx();
+    if(JR.phase==='running')r='<span class="spin"></span>在 Mate 70 Pro 模拟器上跑 · 第 '+(JR.runIdx+1)+'/'+n+' 步';
+    else if(JR.result==='fail')r='<span class="bad">'+passN()+'/'+n+' 通过 · 第 '+(fi+1)+' 步没过</span>· '+totalT()+' s';
+    else if(JR.result==='pass')r='<span class="good">'+n+'/'+n+' 通过</span>· '+totalT()+' s'+(JR.fixed?' · 修复已验证':'');
+    else r=n+' 条断言 · 预计 '+estT()+' s';
+    el.innerHTML='旅程「'+esc(JR.name)+'」<span class="cnt">'+n+' 步</span><span class="grow"></span><span class="jr-sumr">'+r+'</span>';
+  }
+  function thumbHTML(s){return s.shot?'<div class="jr-thumb">'+mini(s.shot)+'</div>':'<div class="jr-thumb empty"><svg class="i"><use href="#i-camera"/></svg></div>'}
+  function stepRow(s,i,anim){
+    var st=s.st,busy=JR.phase==='running'||JR.fixStage,ro=busy?' readonly':'';
+    var pill=st==='run'?'<span class="dm-pill info"><span class="spin"></span>在跑</span>'
+      :st==='pass'?'<span class="dm-pill ok">通过</span>':st==='fail'?'<span class="dm-pill err">没过</span>'
+      :st==='skip'?'<span class="dm-pill muted">未执行</span>':'<span class="dm-pill muted">待跑</span>';
+    var dur=(st==='pass'||st==='fail')?s.t.toFixed(1)+' s':(st==='run'?'…':'—');
+    var loc=locText(s);
+    return '<div class="jr-step'+(st?' '+st:'')+(i===JR.sel&&JR.view!=='summary'?' sel':'')+(anim?' enter':'')+'" data-i="'+i+'"'+(anim?' style="--d:'+(i*0.08)+'s"':'')+'>'
+      +'<span class="jr-no">'+(i+1)+'</span>'+thumbHTML(s)
+      +'<div class="jr-body">'
+        +'<div class="jr-l1"><input class="jr-name" data-f="name" value="'+esc(s.name)+'" placeholder="这一步做什么"'+ro+' aria-label="第 '+(i+1)+' 步"><span class="grow"></span>'
+          +(loc?'<span class="loc'+(st==='fail'&&s.id==='cart'?' bad':'')+'" data-loc="'+i+'" role="button" tabindex="0" title="跳到代码">'+loc+'</span>':'')
+          +'<span class="jr-dur">'+dur+'</span>'+pill
+          +'<button class="abtn jr-del" data-del="'+i+'" title="删掉这一步"'+(busy?' disabled':'')+'><svg class="i"><use href="#i-closeS"/></svg></button></div>'
+        +'<div class="jr-l2"><span class="jr-tag">断言</span><input class="jr-exp" data-f="exp" value="'+esc(s.exp)+'" placeholder="跑完这一步应该看到什么"'+ro+' aria-label="第 '+(i+1)+' 步的断言"></div>'
+        +'<div class="jr-l3"><span class="jr-tag">操作</span><span class="jr-ops" title="'+esc(s.ops.join(' → '))+'">'+esc(s.ops.join(' → '))+'</span></div>'
+      +'</div></div>';
+  }
+  function renderSteps(anim){
+    var el=$('#jr-steps'),busy=JR.phase==='running'||JR.fixStage;
+    if(JR.phase==='splitting'){el.innerHTML='<div class="jr-busy"><span class="spin"></span>在读 LoginPage.ets、ListPage.ets、CartStore.ets，拆步骤和断言…</div>';return}
+    if(JR.phase==='empty'){el.innerHTML='<div class="jr-empty"><svg><use href="#i-route"/></svg><div>把这句话拆成能在模拟器上跑的步骤，每步带断言</div></div>';return}
+    el.innerHTML=JR.steps.map(function(s,i){return stepRow(s,i,anim)}).join('')
+      +'<button class="jr-add" id="jr-add"'+(busy?' disabled':'')+'><svg class="i"><use href="#i-add"/></svg>加一步</button>';
+  }
+  function renderRun(){renderSteps();renderSum();renderJD();renderTools();renderTabs();if(cur==='publish')renderList()}
+  function markSel(){$$('#jr-steps .jr-step').forEach(function(r){r.classList.toggle('sel',+r.dataset.i===JR.sel&&JR.view!=='summary')})}
+
+  var LOG=[
+    ['10:24:31.201','I','DetailPage','tap addToCart sku=EB-2231'],
+    ['10:24:31.207','I','CartStore','addItem sku=EB-2231 <mark>items=1</mark>'],
+    ['10:24:34.212','E','Journey','等 cartCount=1 超时 3 s，实际 0']
+  ];
+  function logHTML(){return LOG.map(function(l){return '<div'+(l[1]==='E'?' class="jr-le"':'')+'><span class="jr-lt">'+l[0]+'</span><span class="jr-lv">'+l[1]+'</span><span class="jr-lm">'+l[2]+': '+l[3]+'</span></div>'}).join('')}
+  function stepHTML(s,i){
+    var cls=s.st==='pass'?'ok':s.st==='fail'?'err':'info',ic=s.st==='pass'?'i-check':s.st==='fail'?'i-err':s.st==='run'?'i-play':'i-route';
+    var tt=s.st==='pass'||s.st==='fail'?'耗时 '+s.t.toFixed(1)+' s':s.st==='run'?'在跑…':s.st==='skip'?'未执行':'预计 '+(s.dur||1.4).toFixed(1)+' s';
+    var body='<div class="dt-loc">'+(s.file?'<svg class="i"><use href="#i-ets"/></svg><span class="loc" data-jloc="'+i+'" role="button" tabindex="0">'+s.file+':'+s.line+'</span><span>'+esc(s.ctl||'')+'</span>':'<span>跑的时候按描述定位控件</span>')+'<span class="grow"></span><span>'+tt+'</span></div>'
+      +'<div><div class="dt-h">AI 拆出的操作</div><ol>'+s.ops.map(function(o){return '<li>'+esc(o)+'</li>'}).join('')+'</ol></div>'
+      +'<div><div class="dt-h">断言</div><p>'+(s.exp?esc(s.exp):'<span class="dm-muted">还没写</span>')+'</p></div>'
+      +(s.edited&&!s.custom?'<div><span class="dm-pill warn">改过 · 跑的时候按新描述重新定位</span></div>':'');
+    return '<div class="dt-head '+cls+'"><svg><use href="#'+ic+'"/></svg><span>第 '+(i+1)+' 步 · '+esc(s.name||'未命名')+'</span></div>'
+      +(s.shot?'<div class="jr-sv"><div>'+body+'</div><div class="jr-thumb lg">'+mini(s.shot)+'</div></div>':body);
+  }
+  function failHTML(s,i){
+    if(s.id!=='cart')return '<div class="jr-fail" id="jr-fail">'
+      +'<div class="dt-head err"><svg><use href="#i-err"/></svg><span>第 '+(i+1)+' 步「'+esc(s.name)+'」没过：购物车是空的</span></div>'
+      +'<div class="jr-sv"><div><div class="jr-assert"><span class="k2">断言</span><span>'+esc(s.exp)+'</span><span class="k2">实际</span><span class="bad">进不了结算页，「去结算」是灰的</span></div>'
+      +'<div><div class="dt-h">原因</div><p>这一步要先把商品加进购物车，旅程里已经没有「加入购物车」这一步了。</p></div></div>'
+      +'<div class="jr-thumb lg">'+mini(s.shot||{k:'cartEmpty',hot:'err'})+'</div></div></div>';
+    return '<div class="jr-fail" id="jr-fail">'
+      +'<div class="dt-head err"><svg><use href="#i-err"/></svg><span>第 '+(i+1)+' 步「'+esc(s.name)+'」没过：角标没变</span></div>'
+      +'<div class="jr-assert"><span class="k2">断言</span><span>'+esc(s.exp)+'</span><span class="k2">实际</span><span class="bad">等了 3 s，角标还是空的</span></div>'
+      +'<div><div class="dt-h">截图对比</div><div class="jr-cmp">'
+        +'<div class="jr-crop">'+mini({k:'detail1',hot:'ok'})+'<span class="jr-lbl ok">期望 · 角标 1</span></div>'
+        +'<div class="jr-crop">'+mini({k:'detail0',hot:'err'})+'<span class="jr-lbl err">实际 · 没有角标</span></div>'
+      +'</div></div>'
+      +'<div><div class="dt-h">HiLog · 点击后 3 s</div><div class="jr-log">'+logHTML()+'</div></div>'
+      +'<div><div class="dt-h">原因</div><p><span class="loc bad" data-cause role="button" tabindex="0">CartStore.ets:48</span> 只把商品 push 进了 <code>items</code>，没同步 AppStorage 里的 <code>cartCount</code>；角标用 <code>@StorageProp(\'cartCount\')</code> 读，所以一直不变。HiLog 里 items=1 也对得上。</p></div>'
+      +'</div>';
+  }
+  function fixHTML(){
+    var st=JR.fixStage,s=JR.steps[JR.fixIdx]||{name:'加入购物车'},n=JR.steps.length,running=st===3&&JR.phase==='running';
+    function it(state,txt){return '<div class="'+state+'"><span class="mk">'+(state==='done'?'<svg><use href="#i-check"/></svg>':state==='run'?'<span class="spin"></span>':'<i></i>')+'</span><span>'+txt+'</span></div>'}
+    return '<div class="dt-head info"><svg><use href="#i-genie"/></svg><span>修复任务 · 第 '+(JR.fixIdx+1)+' 步「'+esc(s.name)+'」</span></div>'
+      +'<div><div class="dt-h">带给 DevEco Code 的现场</div><div class="jr-ctx"><span><svg class="i"><use href="#i-camera"/></svg>截图对比</span><span>HiLog 3 行</span><span>CartStore.ets:48</span><span>旅程 '+n+' 步</span></div></div>'
+      +'<div class="jr-prog">'
+        +it(st>1?'done':'run','读失败现场：items=1，角标还是 0')
+        +it(st>2?'done':st===2?'run':'wait','改 CartStore.ets：第 48 行后同步 cartCount')
+        +it(st===3?(running?'run':'done'):'wait','在模拟器上重跑这条旅程'+(running?' · 第 '+(JR.runIdx+1)+'/'+n+' 步':''))
+      +'</div>'
+      +(st>=3?'<div><div class="dt-h">改动 · CartStore.ets</div><div class="jr-log"><div><span class="jr-lt">48</span><span class="jr-lm">    this.items.push({ sku: sku.id, … });</span></div><div class="jr-dadd"><span class="jr-lt">49</span><span class="jr-lm">+   AppStorage.setOrCreate(\'cartCount\', this.totalQty());</span></div></div></div>':'');
+  }
+  function summaryHTML(){
+    var n=JR.steps.length,ci=-1;JR.steps.forEach(function(s,i){if(s.id==='cart')ci=i});
+    return '<div class="dt-head ok"><svg><use href="#i-check"/></svg><span>旅程「'+esc(JR.name)+'」'+n+'/'+n+' 通过</span></div>'
+      +'<div class="dt-loc"><span>用时 '+totalT()+' s</span><span>·</span><span>Mate 70 Pro 模拟器 · API 20</span></div>'
+      +(JR.fixed&&ci>=0?'<p class="jr-verified"><svg><use href="#i-check"/></svg><span>修复已在模拟器上验证：<span class="loc" data-fixloc role="button" tabindex="0">CartStore.ets:49</span> 补上 cartCount 同步后，第 '+(ci+1)+' 步角标 0 → 1</span></p>':'')
+      +'<div><div class="dt-h">每步截图</div><div class="jr-film">'+JR.steps.map(function(s,i){return '<figure class="jr-fig pass" data-fig="'+i+'"><div class="jr-thumb lg">'+(s.shot?mini(s.shot):'')+'</div><figcaption title="'+esc(s.name)+'">'+(i+1)+' · '+esc(s.name)+'</figcaption></figure>'}).join('')+'</div></div>';
+  }
+  function renderJD(){
+    var d=$('#jr-dbody'),h;
+    if(JR.phase==='empty'||JR.phase==='splitting')h='<div class="jr-empty"><svg><use href="#i-route"/></svg><div>还没有旅程 · 存下来的放在 journeys/</div></div>';
+    else if(JR.fixStage)h=fixHTML();
+    else if(JR.view==='summary'&&JR.result==='pass')h=summaryHTML();
+    else{var s=JR.steps[JR.sel];h=!s?'':(s.st==='fail'&&JR.view==='fail'?failHTML(s,JR.sel):stepHTML(s,JR.sel))}
+    d.innerHTML=h;renderFoot();
+  }
+  function renderFoot(){
+    var f=$('#jr-foot'),h='';
+    if(JR.phase==='empty'||JR.phase==='splitting'){f.hidden=true;return}
+    f.hidden=false;
+    if(JR.fixStage)h='<span class="dm-pill info"><span class="spin"></span>'+(JR.fixStage<3?'DevEco Code 在改 CartStore.ets':'在模拟器上重跑旅程')+'</span><span class="grow"></span><span class="dm-muted">改完自动验证</span>';
+    else if(JR.phase==='running')h='<span class="dm-pill info"><span class="spin"></span>在模拟器上跑 · 第 '+(JR.runIdx+1)+'/'+JR.steps.length+' 步</span>';
+    else{
+      var fi=failIdx();
+      if(JR.phase==='failed'&&fi>=0)h+=JR.steps[fi].id==='cart'
+        ?'<button class="btn primary" id="jr-fix"><svg class="i"><use href="#i-genie"/></svg>转成修复任务</button>'
+        :'<button class="btn primary" id="jr-restore"><svg class="i"><use href="#i-add"/></svg>补回「加入购物车」</button>';
+      h+=!JR.saved?'<button class="btn" id="jr-save"><svg class="i"><use href="#i-json"/></svg>存为旅程文件</button>'
+        :JR.dirty?'<button class="btn" id="jr-save"><svg class="i"><use href="#i-json"/></svg>保存改动</button>'
+        :'<span class="dm-pill ok" id="jr-open" role="button" tabindex="0" title="打开 journeys/'+JR.file+'"><svg><use href="#i-check"/></svg>已存旅程文件</span>';
+      h+=!JR.inPublish?'<button class="btn" id="jr-pubadd"><svg class="i"><use href="#i-flag"/></svg>加进上架自检</button>'
+        :'<span class="dm-pill ok" id="jr-gopub" role="button" tabindex="0" title="去上架自检看"><svg><use href="#i-check"/></svg>已加进上架自检</span>';
+    }
+    f.innerHTML=h;
+  }
+  function renderJourney(anim){renderTools();renderSum();renderSteps(anim);renderJD();renderTabs()}
+
+  function split(){
+    var p=$('#jr-prompt').value.trim();if(!p||JR.phase==='running'||JR.fixStage||JR.phase==='splitting')return;
+    JR.prompt=p;JR.phase='splitting';JR.steps=[];renderJourney();
+    later(function(){
+      JR.steps=parsePrompt(p);
+      JR.name=/结算|下单|支付/.test(p)?'下单结算':(JR.steps[0]&&JR.steps[0].name)||'新旅程';
+      if(!JR.saved)JR.file=JR.name==='下单结算'?'checkout.journey.json5':'journey-1.journey.json5';
+      else JR.dirty=true;
+      resetResults();JR.sel=0;renderJourney(true);
+    },900);
+  }
+  function selectStep(i,jump){
+    var s=JR.steps[i];if(!s)return;
+    JR.sel=i;JR.view=s.st==='fail'?'fail':'step';markSel();renderJD();
+    if(jump)jumpStep(s);
+  }
+  function jumpStep(s){
+    if(s.st==='fail'&&s.id==='cart')openFile('CartStore.ets',48,'err');
+    else if(s.file&&FILES[s.file])openFile(s.file,s.line,null);
+  }
+  function addStep(){
+    if(JR.phase==='running'||JR.fixStage)return;
+    JR.steps.push({id:'c'+(++uid),name:'',exp:'',ops:['跑的时候按描述定位控件'],file:null,dur:1.4,timeout:5000,st:'',t:0,shot:null,custom:1});
+    if(JR.saved)JR.dirty=true;resetResults();JR.sel=JR.steps.length-1;renderJourney();
+    var inp=$('#jr-steps .jr-step[data-i="'+JR.sel+'"] .jr-name');if(inp)inp.focus();
+  }
+  function delStep(i){
+    if(JR.phase==='running'||JR.fixStage)return;
+    JR.steps.splice(i,1);if(JR.saved)JR.dirty=true;resetResults();JR.sel=Math.max(0,Math.min(JR.sel,JR.steps.length-1));renderJourney();
+  }
+
   /* ---------- 初始：上架自检第一条，编辑器停在 LoginPage.ets:12 ---------- */
   document.getElementById('tree-slot').innerHTML=DemoFrame.tree({sel:'LoginPage.ets'});
+  (function(){ /* 树里补上 model/ 与两张新页面，旅程会定位到这里 */
+    var pages=rowByLabel('pages');
+    if(pages)pages.insertAdjacentHTML('beforebegin',treeRow(5,'#i-folder','model',{dir:1})+'<div class="kids">'+treeRow(6,'#i-ets','CartStore.ets',{file:1})+treeRow(6,'#i-ets','ItemSource.ets')+treeRow(6,'#i-ets','Sku.ets')+'</div>');
+    var idx=rowByLabel('Index.ets');
+    if(idx)idx.insertAdjacentHTML('beforebegin',treeRow(6,'#i-ets','CheckoutPage.ets',{file:1})+treeRow(6,'#i-ets','DetailPage.ets'));
+  })();
   document.getElementById('tabs').insertAdjacentHTML('afterbegin',DemoFrame.tabs([{file:'LoginPage.ets',on:true}]));
   document.getElementById('code').innerHTML=DemoFrame.code('LoginPage.ets',{cur:12,hl:[12],marks:{12:'err'}});
+  document.getElementById('jr-prompt').value=PROMPT;
 
   DemoFrame.init({device:'HUAWEI Mate 70 Pro',deviceIcon:'#i-phone',pos:'12:1',onReady:function(){
     ideRoot=$('#ide');
-    renderTabs();renderList();renderDetail();
+    renderTabs();renderList();renderJD();
+    emuShow('login');emuStrip('muted','i-phone','就绪 · 等旅程开始');
     $('#scene-tabs').addEventListener('click',function(e){var b=e.target.closest('.btab');if(b)switchScene(b.dataset.scene)});
-    $('#chk-list').addEventListener('click',function(e){var r=e.target.closest('.dm-item');if(r)select(+r.dataset.i)});
+    $('#chk-list').addEventListener('click',function(e){
+      if(e.target.closest('#jr-pub')){switchScene('journey');return}
+      if(e.target.closest('#jr-new')){switchScene('journey');var p=$('#jr-prompt');p.focus();p.select();return}
+      var r=e.target.closest('.dm-item[data-i]');if(r)select(+r.dataset.i);
+    });
     $('#chk-detail').addEventListener('click',function(e){
       if(e.target.closest('#btn-fix'))fixCurrent();
       else if(e.target.closest('#btn-ignore'))ignoreCurrent();
       else if(e.target.closest('#dt-loc')){var it=scene(cur).items[selIdx];if(it)openFile(it.file,it.line,it.lv)}
     });
-    $('#i-refresh-btn').addEventListener('click',function(){autoRun()});
+    $('#i-refresh-btn').addEventListener('click',function(){
+      if(cur==='journey'){if(JR.steps.length&&JR.phase!=='running'&&!JR.fixStage)runJourney()}
+      else autoRun();
+    });
     /* 树里点有代码的文件：切编辑器（不带高亮） */
     ideRoot.addEventListener('click',function(e){
       var r=e.target.closest('#tree .row[data-file]');if(!r)return;
       var f=r.dataset.file;if(!$('.tab[data-file="'+f+'"]')&&FILES[f])openFile(f,1,null);
     });
+
+    /* ---------- 用户旅程的交互 ---------- */
+    $('#jr-tools').addEventListener('click',function(e){
+      if(e.target.closest('#jr-split'))split();
+      else if(e.target.closest('#jr-run')){if(JR.phase==='running')stopRun();else runJourney()}
+    });
+    $('#jr-prompt').addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();split()}});
+    $('#jr-steps').addEventListener('click',function(e){
+      if(e.target.closest('#jr-add')){addStep();return}
+      var del=e.target.closest('[data-del]');if(del){if(!del.disabled)delStep(+del.dataset.del);return}
+      var loc=e.target.closest('[data-loc]');if(loc){selectStep(+loc.dataset.loc,true);return}
+      var row=e.target.closest('.jr-step');if(row)selectStep(+row.dataset.i,!e.target.closest('input'));
+    });
+    $('#jr-steps').addEventListener('input',function(e){
+      var inp=e.target.closest('input[data-f]');if(!inp)return;
+      var i=+inp.closest('.jr-step').dataset.i,s=JR.steps[i];if(!s)return;
+      s[inp.dataset.f]=inp.value;s.edited=true;if(JR.saved)JR.dirty=true;
+      if(i===JR.sel&&JR.view!=='summary')renderJD();else renderFoot();
+    });
+    $('#jr-steps').addEventListener('focusin',function(e){
+      var inp=e.target.closest('input[data-f]');if(!inp)return;
+      var i=+inp.closest('.jr-step').dataset.i;if(i!==JR.sel||JR.view==='summary')selectStep(i,false);
+    });
+    $('#jr-dbody').addEventListener('click',function(e){
+      if(e.target.closest('[data-cause]'))openFile('CartStore.ets',48,'err');
+      else if(e.target.closest('[data-fixloc]'))openFile('CartStore.ets',49,null,{ok:[49]});
+      else if(e.target.closest('[data-jloc]')){var s=JR.steps[+e.target.closest('[data-jloc]').dataset.jloc];if(s)jumpStep(s)}
+      else{var fg=e.target.closest('[data-fig]');if(fg)selectStep(+fg.dataset.fig,true)}
+    });
+    $('#jr-foot').addEventListener('click',function(e){
+      if(e.target.closest('#jr-fix'))fixTask();
+      else if(e.target.closest('#jr-restore'))restoreCart();
+      else if(e.target.closest('#jr-save'))saveJourney();
+      else if(e.target.closest('#jr-open'))openFile(JR.file,1,null,{nohl:true});
+      else if(e.target.closest('#jr-pubadd'))addToPublish();
+      else if(e.target.closest('#jr-gopub')){switchScene('publish');var r=$('#jr-pub');if(r)r.scrollIntoView({block:'nearest'})}
+    });
   }});
-DemoGuide.init([{"target": "#chk-list", "kind": "click", "pos": "top", "label": "点一条问题"}, {"target": "#code", "kind": "change", "pos": "top", "label": "自动跳到那一行"}]);
+DemoGuide.init([
+  {"target": "#chk-list", "kind": "click", "pos": "top", "label": "点一条问题"},
+  {"target": "#code", "kind": "change", "pos": "top", "label": "自动跳到那一行"},
+  {"target": ".btab[data-scene=\"journey\"]", "kind": "click", "pos": "top", "label": "一句话写测试旅程"},
+  {"target": "#jr-run, #jr-split", "kind": "click", "pos": "bottom", "label": "拆成步骤，再到模拟器上跑"},
+  {"target": "#jr-fail", "kind": "change", "pos": "left", "label": "没过的一步：截图对比 + HiLog + 代码行"}
+]);
 })();
 </script>
 </body>
