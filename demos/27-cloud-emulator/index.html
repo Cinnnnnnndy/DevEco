@@ -582,7 +582,7 @@
 
             <div class="sec-h"><svg><use href="#i-laptop"/></svg>本机 · MateBook Pro<span class="grow"></span><span class="cnt" id="loc-cnt">原生 1 · 模拟器 1</span></div>
             <div class="dm-card nat" id="nat-card">
-              <div class="dm-card-hd"><svg><use href="#i-laptop"/></svg><div style="display:flex;flex-direction:column;min-width:0"><span>entry · 鸿蒙电脑原生运行</span><span class="sub">2in1 · 3120×2080 · 自由窗口 · 不用模拟器</span></div><span class="grow"></span><span class="dm-pill ok">运行中</span></div>
+              <div class="dm-card-hd"><svg><use href="#i-laptop"/></svg><div style="display:flex;flex-direction:column;min-width:0"><span>entry · 鸿蒙电脑原生运行</span><span class="sub">2in1 · 3120×2080 · 自由窗口</span></div><span class="grow"></span><span class="dm-pill ok">运行中</span></div>
               <div class="dm-card-ft"><button class="btn sm" id="btn-native-win"><svg class="i"><use href="#i-popout"/></svg>弹出窗口</button><span class="grow"></span><span class="dm-small dm-muted">手机、折叠、平板形态交给云端</span></div>
             </div>
             <div class="dm-card loc" id="loc-card">
@@ -1151,7 +1151,7 @@
   function buildRows(){
     JM.rows.forEach(function(r){r.tm.forEach(clearTimeout)});
     JM.rows=[];apis().forEach(function(a){selDevs().forEach(function(d){JM.rows.push(newRow(d,a))})});
-    JM.cell=null;
+    JM.cell=null;fwSync();
   }
   function rowTotal(r){var t=0,any=0;r.cells.forEach(function(c){if(c.t){t+=c.t;any=1}});return any?t.toFixed(1)+' s':'—'}
 
@@ -1521,14 +1521,215 @@
   buildRows();renderAll();
 
 
+
+  /* =====================================================================
+     鸿蒙自由窗口：任一云端实例 / 旅程设备都能弹出成窗口
+     拖标题栏移动 · 右下角缩放（平板类窗口宽度实时换算 vp → 断点切换、重新排版）
+     拖到屏幕右缘或点「吸附」贴在 IDE 旁 · 三指甩到扩展屏 / MatePad（键鼠穿越）
+     ===================================================================== */
+  var FW={list:[],z:60,seq:0,snap:null,SNAPW:440,tipped:false};
+  var RELAY={tab:1,tri:1,unfold:1,pc:1};
+  var CLOUD_DEV={phone:{res:[1260,2844],vp:[360,813],bp:'sm',kind:'bar'},fold:{res:[2440,2240],vp:[813,747],bp:'md',kind:'unfold'},
+    tablet:{res:[2880,1920],vp:[1280,853],bp:'lg',kind:'tab'},watch:{res:[466,466],vp:[233,233],bp:'xs',kind:'watch'}};
+  var TGT={ext:{name:'扩展屏 · 27 英寸',sub:'2560×1440 · 多屏协同',icon:'#i-monitor',w:176,h:99,cls:'mon'},
+    pad:{name:'MatePad Pro 13.2',sub:'键鼠穿越',icon:'#i-tablet',w:150,h:100,cls:'pad'}};
+  var JR_LAT={};
+  var fwLayer=document.createElement('div');fwLayer.id='fw-layer';$('#ide').appendChild(fwLayer);
+  fwLayer.innerHTML='<div id="fw-snapprev"></div><div id="fw-dock"></div>';
+
+  function bpOf(v){return v<320?'xs':v<600?'sm':v<840?'md':v<1440?'lg':'xl'}
+  function fwFind(src,key){for(var i=0;i<FW.list.length;i++)if(FW.list[i].src===src&&FW.list[i].key===key)return FW.list[i];return null}
+  function fwHas(src,key){return !!(FW&&fwFind(src,key))}
+  function fwInfo(src,key){
+    if(src==='cloud'){var it=byId(key);if(!it||it.st==='bye')return null;
+      return {d:Object.assign({id:key,name:it.name},CLOUD_DEV[it.kind]),st:{k:it.kind==='phone'?'search':'detail',fx:{}},lat:it.lat,region:it.region}}
+    if(src==='jr'){var r=null;JM.rows.forEach(function(x){if(x.dev.id+'@'+x.api===key)r=x});if(!r)return null;
+      if(JR_LAT[key]==null)JR_LAT[key]=26+Math.round(Math.random()*8);
+      return {d:r.dev,st:r.frame,lat:JR_LAT[key],region:'华东',api:r.api}}
+    if(src==='native')return {d:{id:'pc',name:'entry · 本机',kind:'pc',res:[3120,2080],vp:[1200,760],bp:'lg'},st:{k:'detail',fx:{}},lat:null,region:'本机'};
+    return null;
+  }
+  /* 按框 bw×bh 画窗口内容：平板类按窗口当前 vp 重新排版，手机类等比缩放 */
+  function fwContent(w,info,bw,bh){
+    var d=info.d;
+    if(d.kind==='watch'){var r=Math.min(bw,bh)-8;return '<div class="fw-watch" style="width:'+r+'px;height:'+r+'px"><div class="mapp">'+appHTML('watch')+'</div></div>'}
+    var vw=d.vp[0],vh=d.vp[1],dd=d;
+    if(RELAY[d.kind]){vw=Math.round(w.vw);vh=Math.round(w.vh);var b=bpOf(vw);dd=Object.assign({},d,{vp:[vw,vh],bp:b==='xs'?'sm':b==='xl'?'lg':b})}
+    var sc=Math.min(bw/vw,bh/vh),ox=(bw-vw*sc)/2,oy=(bh-vh*sc)/2;
+    return '<div class="lv'+(d.kind==='pc'?' pc':'')+'" style="width:'+vw+'px;height:'+vh+'px;transform:translate('+ox.toFixed(1)+'px,'+oy.toFixed(1)+'px) scale('+sc.toFixed(4)+')">'+page(dd,info.st||{k:'home'})+'</div>';
+  }
+  function fwTitle(w,info){
+    var d=info.d,vw=RELAY[d.kind]?Math.round(w.vw):d.vp[0],bl=d.kind==='watch'?'圆屏':bpOf(vw);
+    var h='<b>'+d.name+'</b><span class="bp '+bl+'">'+bl+'</span><span class="mono">'+(d.kind==='watch'?'466×466':vw+' vp')+(info.api?' · API '+info.api:'')+'</span>'
+      +(info.lat!=null?'<span class="lat"><i></i>云端 · '+info.region+' · '+info.lat+' ms</span>':'<span class="lat"><i></i>本机原生运行</span>');
+    var t=$('.fw-tt',w.el);t.innerHTML=h;
+    if(w.lastBp&&w.lastBp!==bl&&bl!=='圆屏'){
+      $('.bp',t).classList.add('flash');
+      var old=$('.fw-bpt',w.el);if(old)old.remove();
+      $('.fw-ct',w.el).insertAdjacentHTML('beforeend','<span class="fw-bpt">断点 '+w.lastBp+' → '+bl+' · 布局已切换</span>');
+    }
+    w.lastBp=bl;
+  }
+  function fwPaint(w){
+    var info=fwInfo(w.src,w.key);if(!info){fwClose(w);return}
+    if(w.state==='flung'){fwDock();return}
+    var ct=$('.fw-ct',w.el);ct.style.width=w.cw+'px';ct.style.height=w.ch+'px';
+    var keep=$('.fw-bpt',ct);
+    ct.innerHTML=fwContent(w,info,w.cw,w.ch);if(keep)ct.appendChild(keep);
+    fwTitle(w,info);
+  }
+  var fwRaf=null;
+  function fwRefresh(src,key){if(!FW)return;var w=fwFind(src,key);if(w)fwPaint(w)}
+  function fwSync(){if(!FW)return;FW.list.slice().forEach(function(w){if(!fwInfo(w.src,w.key))fwClose(w)})}
+  function fwMarks(){
+    $$('#stage .inst').forEach(function(x){
+      var on=fwHas('cloud',x.dataset.id),dv=$('.dm-device',x),v=dv&&$('.popv',dv);
+      x.classList.toggle('popped',on);
+      if(on&&dv&&!v)dv.insertAdjacentHTML('beforeend','<span class="popv">已弹出为窗口</span>');
+      if(!on&&v)v.remove();
+    });
+    $$('#jm-stage .jd').forEach(function(x){var r=JM.rows[+x.dataset.i];if(r)x.classList.toggle('popped',fwHas('jr',r.dev.id+'@'+r.api))});
+    $('#btn-native-win').innerHTML='<svg class="i"><use href="#i-popout"/></svg>'+(fwHas('native','pc')?'窗口已打开':'弹出窗口');
+  }
+  function fwFront(w){w.el.style.zIndex=++FW.z}
+  function fwPop(src,key){
+    var ex=fwFind(src,key);
+    if(ex){if(ex.state==='flung')fwBack(ex);fwFront(ex);return}
+    var info=fwInfo(src,key);if(!info)return;
+    var d=info.d,cw,ch;
+    if(d.kind==='watch'){cw=ch=220}
+    else if(RELAY[d.kind]){cw=d.kind==='unfold'?420:d.kind==='pc'?620:560;ch=Math.round(cw*d.vp[1]/d.vp[0])}
+    else{ch=440;cw=Math.round(ch*d.res[0]/d.res[1])}
+    var n=FW.list.filter(function(x){return x.state==='float'}).length;
+    var w={id:'fw'+(++FW.seq),src:src,key:key,cw:cw,ch:ch,state:'float',x:Math.max(60,Math.min(innerWidth-cw-90,470+n*36)),y:96+n*36};
+    if(RELAY[d.kind]){w.k=cw/d.vp[0];w.vw=d.vp[0];w.vh=d.vp[1]}
+    var menu='<div class="mh">三指甩到（触控板三指上滑）</div>'+Object.keys(TGT).map(function(t){return '<div class="mi" data-t="'+t+'"><svg class="i"><use href="'+TGT[t].icon+'"/></svg>'+TGT[t].name+'<span>'+TGT[t].sub+'</span></div>'}).join('');
+    w.el=document.createElement('div');w.el.className='fw';w.el.dataset.id=w.id;
+    w.el.innerHTML='<div class="fw-tb"><svg class="i ic"><use href="'+(src==='native'?'#i-laptop':'#i-cloud')+'"/></svg><span class="fw-tt"></span><span class="grow"></span>'
+      +'<button class="fw-b" data-fw="fling" title="三指甩到其他屏"><svg class="i"><use href="#i-3f"/></svg></button>'
+      +'<button class="fw-b" data-fw="snap" title="吸附到 IDE 右侧"><svg class="i"><use href="#i-snapR"/></svg></button>'
+      +'<button class="fw-b x" data-fw="close" title="'+(src==='native'?'关闭窗口':'放回设备墙')+'"><svg class="i"><use href="#i-closeS"/></svg></button>'
+      +'<div class="fw-menu" hidden>'+menu+'</div></div><div class="fw-ct"></div><i class="fw-rz"></i>';
+    w.el.style.left=w.x+'px';w.el.style.top=w.y+'px';
+    fwLayer.appendChild(w.el);FW.list.push(w);fwPaint(w);fwFront(w);fwMarks();
+    if(!FW.tipped){FW.tipped=true;toast('已弹出为鸿蒙自由窗口',(RELAY[d.kind]?'拖右下角把窗口拉窄，vp 跨过 840 就从 lg 切到 md，布局跟着重排。':'拖标题栏移动、右下角缩放。')+'拖到屏幕右缘吸附在 IDE 旁，或三指甩到扩展屏 / MatePad。')}
+  }
+  function fwClose(w){
+    if(FW.snap===w)fwUnsnap(w,true);
+    if(w.el)w.el.remove();FW.list=FW.list.filter(function(x){return x!==w});fwDock();fwMarks();
+  }
+  function fwSetSnapBody(on){document.body.classList.toggle('fw-snapped',on);document.body.style.setProperty('--snap-w',on?FW.SNAPW+'px':'0px');window.dispatchEvent(new Event('resize'))}
+  function fwSnap(w){
+    if(FW.snap&&FW.snap!==w)fwUnsnap(FW.snap);
+    if(w.state==='float')w.f={x:w.x,y:w.y,cw:w.cw,ch:w.ch,vw:w.vw,vh:w.vh};
+    w.state='snap';FW.snap=w;w.el.classList.add('snap');
+    var W=FW.SNAPW;w.el.style.left=(innerWidth-W)+'px';w.el.style.top='0px';w.el.style.width=W+'px';w.el.style.height=innerHeight+'px';
+    w.cw=W-12;w.ch=innerHeight-42;
+    if(w.k){w.vw=w.cw/w.k;w.vh=w.ch/w.k}
+    $('[data-fw="snap"]',w.el).classList.add('on');$('[data-fw="snap"]',w.el).setAttribute('data-title','取消吸附');
+    fwSetSnapBody(true);fwPaint(w);
+  }
+  function fwUnsnap(w,silent){
+    var f=w.f||{x:500,y:120,cw:w.cw,ch:w.ch};
+    w.state='float';FW.snap=null;w.el.classList.remove('snap');w.el.style.width='';w.el.style.height='';
+    w.x=Math.max(40,Math.min(f.x,innerWidth-f.cw-60));w.y=Math.max(40,Math.min(f.y,innerHeight-f.ch-80));w.cw=f.cw;w.ch=f.ch;if(w.k){w.vw=f.vw;w.vh=f.vh}
+    w.el.style.left=w.x+'px';w.el.style.top=w.y+'px';
+    var sb=$('[data-fw="snap"]',w.el);if(sb){sb.classList.remove('on');sb.setAttribute('data-title','吸附到 IDE 右侧')}
+    fwSetSnapBody(false);if(!silent)fwPaint(w);
+  }
+  function fwFling(w,t){
+    FW.list.forEach(function(x){if(x!==w&&x.state==='flung'&&x.target===t)fwBack(x)});
+    if(w.state==='snap')fwUnsnap(w);
+    w.target=t;w.state='flung';fwDock();w.state='float';
+    var slot=$('#fw-dock .scrn[data-t="'+t+'"] .sc'),r=w.el.getBoundingClientRect(),q=slot?slot.getBoundingClientRect():{left:innerWidth-200,top:innerHeight-150,width:150,height:100};
+    var dx=q.left+q.width/2-(r.left+r.width/2),dy=q.top+q.height/2-(r.top+r.height/2),s=Math.max(.08,q.width*0.7/r.width);
+    /* 三指上滑的指迹 */
+    fwLayer.insertAdjacentHTML('beforeend','<div class="fw-3f" style="left:'+(r.left+r.width/2-38)+'px;top:'+(r.top+r.height*0.55)+'px;--dx:'+Math.round(dx*0.5)+'px;--dy:'+Math.round(Math.min(-60,dy*0.5))+'px"><i></i><i></i><i></i></div>');
+    setTimeout(function(){var f=$('.fw-3f',fwLayer);if(f)f.remove()},560);
+    w.el.classList.add('flying');w.el.style.transformOrigin='50% 50%';w.el.style.transform='translate('+dx+'px,'+dy+'px) scale('+s+')';
+    setTimeout(function(){
+      w.el.classList.remove('flying');w.el.style.transform='';w.el.style.display='none';w.state='flung';fwDock();fwMarks();
+      toast(t==='pad'?'已甩到 MatePad Pro 13.2':'已甩到扩展屏',t==='pad'?'键鼠穿越：光标移到平板上就能直接操作这台云端实例，HiLog 仍回到这台电脑的 IDE。':'扩展屏上继续看画面，IDE 这块屏全留给代码。点「拿回来」回到这块屏。');
+    },470);
+  }
+  function fwBack(w){
+    w.state='float';w.target=null;w.el.style.display='';w.el.style.animation='none';void w.el.offsetWidth;w.el.style.animation='';
+    fwPaint(w);fwFront(w);fwDock();
+  }
+  function fwDock(){
+    var dk=$('#fw-dock'),h='';
+    Object.keys(TGT).forEach(function(t){
+      var w=null;FW.list.forEach(function(x){if(x.state==='flung'&&x.target===t)w=x});if(!w)return;
+      var T=TGT[t],info=fwInfo(w.src,w.key);if(!info)return;
+      var mw=Math.round(T.w*0.74),mh=Math.round(mw*w.ch/w.cw);if(mh>T.h*0.8){mh=Math.round(T.h*0.8);mw=Math.round(mh*w.cw/w.ch)}
+      var mx=Math.round((T.w-mw)/2),my=Math.round((T.h-mh)/2);
+      h+='<div class="scrn '+T.cls+'" data-t="'+t+'"><div class="dev"><div class="sc" style="width:'+T.w+'px;height:'+T.h+'px"><div class="mini" style="left:'+mx+'px;top:'+my+'px;width:'+mw+'px;height:'+mh+'px"><i class="mtb"></i><div class="mct">'+fwContent(w,info,mw-4,mh-8)+'</div></div>'
+        +(t==='pad'?'<i class="cur" style="left:'+(mx+mw-14)+'px;top:'+(my+mh-10)+'px"></i>':'')+'</div></div>'
+        +'<div class="lb"><svg class="i"><use href="'+T.icon+'"/></svg>'+T.name+'<span>'+T.sub+'</span></div><button class="btn sm" data-back="'+w.id+'">拿回来</button></div>';
+    });
+    dk.innerHTML=h;document.body.classList.toggle('fw-docked',!!h);
+  }
+
+  /* ---------- 交互：拖动 / 缩放 / 吸附 / 甩出 ---------- */
+  function fwById(id){for(var i=0;i<FW.list.length;i++)if(FW.list[i].id===id)return FW.list[i];return null}
+  var drag=null;
+  fwLayer.addEventListener('pointerdown',function(e){
+    var el=e.target.closest('.fw');if(!el)return;var w=fwById(el.dataset.id);if(!w)return;fwFront(w);
+    if(e.target.closest('.fw-b,.fw-menu'))return;
+    if(e.target.closest('.fw-rz')){drag={w:w,mode:'rz',sx:e.clientX,sy:e.clientY,cw:w.cw,ch:w.ch};e.preventDefault();return}
+    if(e.target.closest('.fw-tb')){
+      if(w.state==='snap'){var rx=(e.clientX-(innerWidth-FW.SNAPW))/FW.SNAPW;fwUnsnap(w);w.x=Math.round(e.clientX-rx*(w.cw+12));w.y=Math.max(0,e.clientY-18);w.el.style.left=w.x+'px';w.el.style.top=w.y+'px'}
+      drag={w:w,mode:'mv',ox:e.clientX-w.x,oy:e.clientY-w.y,x0:w.x,y0:w.y};e.preventDefault();
+    }
+  });
+  document.addEventListener('pointermove',function(e){
+    if(!drag)return;var w=drag.w;
+    if(drag.mode==='mv'){
+      w.x=Math.round(Math.max(-w.cw+80,Math.min(innerWidth-80,e.clientX-drag.ox)));w.y=Math.round(Math.max(0,Math.min(innerHeight-40,e.clientY-drag.oy)));
+      w.el.style.left=w.x+'px';w.el.style.top=w.y+'px';
+      $('#fw-snapprev').classList.toggle('on',e.clientX>=innerWidth-14);
+    }else{
+      var d=fwInfo(w.src,w.key);if(!d)return;d=d.d;
+      if(RELAY[d.kind]){w.cw=Math.max(200,Math.round(drag.cw+e.clientX-drag.sx));w.ch=Math.max(150,Math.round(drag.ch+e.clientY-drag.sy));w.vw=w.cw/w.k;w.vh=w.ch/w.k}
+      else{var ratio=d.kind==='watch'?1:d.res[0]/d.res[1];w.ch=Math.max(180,Math.round(drag.ch+e.clientY-drag.sy));w.cw=Math.round(w.ch*ratio)}
+      if(!fwRaf)fwRaf=requestAnimationFrame(function(){fwRaf=null;fwPaint(w)});
+    }
+  });
+  document.addEventListener('pointerup',function(e){
+    if(!drag)return;var w=drag.w,m=drag.mode,drag0=drag;drag=null;
+    var pv=$('#fw-snapprev');if(m==='mv'&&pv.classList.contains('on')){pv.classList.remove('on');w.x=drag0.x0;w.y=drag0.y0;fwSnap(w)}
+  });
+  fwLayer.addEventListener('click',function(e){
+    var bk=e.target.closest('[data-back]');if(bk){var wb=fwById(bk.dataset.back);if(wb)fwBack(wb);return}
+    var el=e.target.closest('.fw');if(!el)return;var w=fwById(el.dataset.id);if(!w)return;
+    var mi=e.target.closest('.fw-menu .mi');if(mi){$('.fw-menu',el).hidden=true;fwFling(w,mi.dataset.t);return}
+    var b=e.target.closest('[data-fw]');if(!b)return;
+    if(b.dataset.fw==='close')fwClose(w);
+    else if(b.dataset.fw==='snap'){if(w.state==='snap')fwUnsnap(w);else fwSnap(w)}
+    else if(b.dataset.fw==='fling'){var m=$('.fw-menu',el);m.hidden=!m.hidden}
+  });
+  document.addEventListener('click',function(e){if(!e.target.closest('[data-fw="fling"],.fw-menu'))$$('.fw-menu',fwLayer).forEach(function(m){m.hidden=true})});
+  window.addEventListener('resize',function(){if(FW.snap){var w=FW.snap;w.el.style.left=(innerWidth-FW.SNAPW)+'px';w.el.style.height=innerHeight+'px';w.ch=innerHeight-42;if(w.k)w.vh=w.ch/w.k;fwPaint(w)}});
+  $('#btn-native-win').addEventListener('click',function(){fwPop('native','pc')});
+  /* 标题栏里的延迟跟着链路抖动 */
+  setInterval(function(){FW.list.forEach(function(w){
+    if(w.src==='jr')JR_LAT[w.key]=Math.max(20,JR_LAT[w.key]+Math.round(Math.random()*4-2));
+    if(w.state==='flung'||w.src==='native')return;var info=fwInfo(w.src,w.key);if(info)fwTitle(w,info);
+  })},1600);
+
 DemoGuide.init([
-  {"target": "#btn-multi", "kind": "click", "pos": "right", "label": "云端多开：勾形态，几台并行启动"},
-  {"target": ".res .cmp", "kind": "change", "pos": "bottom", "label": "云端多开，本机内存几乎不涨"},
-  {"target": "#btn-migrate", "kind": "click", "pos": "right", "label": "本机模拟器一键迁到云端"},
-  {"target": "#tabs .tab[data-file=\"Journey Matrix\"]", "kind": "click", "pos": "right", "label": "一条旅程，全部鸿蒙形态云端并行跑"},
-  {"target": "#jm-bsum", "kind": "change", "pos": "left", "label": "设备 × 步骤矩阵：点红格看截图、HiLog、代码行"},
-  {"target": "#jm-auto", "kind": "click", "pos": "bottom", "label": "每次提交自动跑，结果写回提交记录"}
-]);
+  {"target": "#btn-multi", "kind": "click", "pos": "right", "label": "要看其他形态？勾上就在云端并行起"},
+  {"target": ".res .cmp", "kind": "change", "pos": "bottom", "label": "云端多开几台，本机内存几乎不涨"},
+  {"target": "#btn-migrate", "kind": "click", "pos": "right", "label": "本机模拟器太占内存？一键迁到云端"},
+  {"target": "#stage .inst [data-a=\"pop\"]", "kind": "click", "pos": "bottom", "label": "边改代码边盯这台？弹成窗口贴在 IDE 旁"},
+  {"target": "#tabs .tab[data-file=\"Journey Matrix\"]", "kind": "click", "pos": "right", "label": "改完结算页，一条旅程跑遍全部形态"},
+  {"target": "#jm-bsum", "kind": "change", "pos": "left", "label": "哪台、哪一步坏了，点红格看现场"}
+], {scene:{
+  at:"你改完结算页，要在手机、折叠、平板上都过一遍",
+  goal:"全部形态跑通登录到结算，坏的定位到代码行",
+  pain:"本机开三台模拟器就卡，只能一台台切着手点",
+  fix:"云端并行起、本机只收画面；一条旅程跑遍全形态"
+}});
 })();
 </script>
 </body>

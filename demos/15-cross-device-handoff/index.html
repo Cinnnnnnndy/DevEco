@@ -118,11 +118,6 @@
   .l-lock span{font-size:9px;opacity:.8}
   .lsc[data-st="lock"] .l-lock{opacity:1}
   .lsc[data-st="dim"] .l-ide{filter:brightness(.55)}
-  .l-card{position:absolute;top:18px;right:8px;width:108px;border-radius:7px;background:var(--ui-popup-bg);border:1px solid var(--ui-popup-border);box-shadow:0 6px 16px rgba(0,0,0,.3);padding:5px 6px;display:flex;flex-direction:column;gap:3px;opacity:0;transform:translateY(-6px) scale(.96);transition:opacity .3s,transform .3s;pointer-events:none}
-  .l-card.on{opacity:1;transform:none}
-  .l-card b{font-size:7px;line-height:9px;color:var(--ui-fg);font-weight:600;white-space:nowrap}
-  .l-card i{height:3px;border-radius:2px;background:var(--ui-fg-disabled);opacity:.5}
-  .l-card em{height:9px;border-radius:5px;background:var(--ui-accent);margin-top:1px}
   /* 手机：Pura 70 Pro，屏幕 124 × 280 ≈ 1260 : 2844 */
   .tph{position:absolute;left:calc(50% + 136px);top:40px;width:132px;height:288px;border-radius:22px;background:#0f1012;padding:4px;box-shadow:0 10px 26px rgba(0,0,0,.35),inset 0 0 0 1.5px #2a2c31;z-index:3;cursor:pointer;transform-origin:66px 276px;transition:transform .6s cubic-bezier(.4,.1,.25,1)}
   .tph::after{content:"";position:absolute;right:-2px;top:72px;width:2px;height:30px;border-radius:0 2px 2px 0;background:#2a2c31}
@@ -311,7 +306,7 @@
               <button data-scene="tap" class="on" id="seg-tap"><svg class="i"><use href="#i-tap"/></svg>碰一碰 · 手机</button>
               <button data-scene="ends"><svg class="i"><use href="#i-sync"/></svg>平板 · 手表</button>
             </div>
-            <span class="dm-small dm-muted cv-lbl" id="cv-lbl"><svg><use href="#i-sync"/></svg><span id="tap-hint">任务在这台电脑上 · 手机在桌上</span></span>
+            <span class="dm-small dm-muted cv-lbl" id="cv-lbl"><svg><use href="#i-sync"/></svg><span id="tap-hint">要去开会？锁屏后 AI 进度跟到手机</span></span>
             <span class="grow"></span>
             <button class="btn primary" id="tap-act"><svg class="i"><use href="#i-lock"/></svg><span>锁屏离开</span></button>
           </div>
@@ -331,7 +326,6 @@
                     <div class="bt"><i style="width:70%"></i><i class="hl" style="width:52%"></i><i style="width:64%"></i></div>
                   </div>
                   <div class="l-lock"><svg><use href="#i-lock"/></svg><b>14:06</b><span>已锁屏 · 任务在手机实况窗上</span></div>
-                  <div class="l-card" id="l-card"><b>在电脑上接续调试会话</b><i style="width:90%"></i><i style="width:70%"></i><em></em></div>
                 </div>
               </div>
               <svg class="lap-base" viewBox="0 0 380 58" id="lap-base" aria-hidden="true">
@@ -589,11 +583,11 @@
   }
 
   var ACT={
-    desk:{ic:'#i-lock',t:'锁屏离开',hint:'任务在这台电脑上 · 手机在桌上'},
-    away:{ic:'#i-phone',t:'在手机上打开',hint:'电脑已锁屏 · 任务以实况窗接到手机'},
-    app:{ic:'#i-tap',t:'碰一碰电脑',hint:'手机上在看这个调试会话'},
+    desk:{ic:'#i-lock',t:'锁屏离开',hint:'要去开会？锁屏后 AI 进度跟到手机'},
+    away:{ic:'#i-phone',t:'在手机上打开',hint:'不在工位：实况窗盯 AI，可直接批第 4 步'},
+    app:{ic:'#i-tap',t:'碰一碰电脑',hint:'回到工位：拿手机碰一下电脑触控板'},
     busy:{ic:'#i-tap',t:'等你在电脑上点接续',hint:'碰到了 · 电脑弹出接续卡片',off:1},
-    done:{ic:'#i-refresh',t:'再来一遍',hint:'已在 IDE 里原样接上'}
+    done:{ic:'#i-refresh',t:'再来一遍',hint:'真机、断点、日志行、AI 步骤已原位接上'}
   };
   function setT(st){
     T=st;var a=ACT[st],b=$('#tap-act');
@@ -642,8 +636,7 @@
     renderPhone('link');
     lsc.dataset.st='ide';
     await wait(500);
-    $('#l-card').classList.add('on');
-    flyFrom(tph,$('#l-card'));
+    flyFrom(tph,lsc);
     await wait(650);
     tph.style.transform='';
     await wait(300);
@@ -656,7 +649,7 @@
     $('#tap-hint').textContent='碰到了 · 电脑弹出接续卡片';
     logAct('phone','碰一碰 MateBook Pro：电脑弹出接续卡片','14:16');
   }
-  function hideCard(){var hc=$('#hc');hc.classList.add('out');setTimeout(function(){hc.hidden=true;hc.classList.remove('out')},300);$('#l-card').classList.remove('on')}
+  function hideCard(){var hc=$('#hc');hc.classList.add('out');setTimeout(function(){hc.hidden=true;hc.classList.remove('out')},300)}
 
   /* ④ 在 IDE 里接续：真机、断点、日志位置、AI 步骤原样接上 */
   function restore(){
@@ -742,12 +735,17 @@
   window.addEventListener('resize',placeCaps);
 
 DemoGuide.init([
-  {target:'#tap-act',kind:'click',pos:'top',label:'点这里：锁屏离开 → 手机 → 碰一碰'},
-  {target:'#tph',kind:'change',pos:'left',label:'IDE 任务变成手机实况窗'},
-  {target:'#hc-go',kind:'click',pos:'bottom',label:'点这里：在 IDE 里原样接上'},
+  {target:'#tap-act',kind:'click',pos:'top',label:'要离开工位？点这里，一步步走'},
+  {target:'#tph',kind:'change',pos:'left',label:'离开后在手机上盯 AI、批第 4 步'},
+  {target:'#hc-go',kind:'click',pos:'bottom',label:'回来了：点这里原位接着调'},
   {target:'[data-take="watch"]',kind:'click',pos:'top',label:'点这里交给手表'},
   {target:'#dev-watch',kind:'change',pos:'top',label:'手表变成继续中'}
-]);
+],{scene:{
+  at:'AI 在改 loadCover、停在断点等你批，你得去开会',
+  goal:'离开时不耽误 AI，回来在原处接着调',
+  pain:'回来要重连真机、重找断点、翻日志找行、翻聊天看进度',
+  fix:'锁屏即转手机实况窗；回来碰一下电脑，全部原位接上'
+}});
 })();
 </script>
 </body>

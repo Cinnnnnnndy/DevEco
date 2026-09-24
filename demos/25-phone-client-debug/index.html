@@ -230,8 +230,8 @@
   .dock .dv svg{width:18px;height:18px}
   .dock .dv .bd{position:absolute;right:-5px;top:-5px;width:14px;height:14px;border-radius:50%;background:#0A59F7;color:#fff;display:none;place-items:center;box-shadow:0 0 0 2px rgba(255,255,255,.9)}
   .dock .dv .bd svg{width:9px;height:9px}
-  .mb-in[data-st="card"] .dock .dv .bd{display:grid}
-  .mb-in[data-st="card"] .dock .dv{animation:dockbob 1s ease-in-out infinite}
+  .mb-in[data-st="later"] .dock .dv .bd{display:grid}
+  .mb-in[data-st="later"] .dock .dv{animation:dockbob 1s ease-in-out infinite}
   @keyframes dockbob{50%{transform:translateY(-4px)}}
   .dock .dv.run::after{content:"";position:absolute;bottom:-5px;left:50%;width:4px;height:4px;margin-left:-2px;border-radius:50%;background:#fff}
   .sc{position:absolute;top:26px;right:12px;width:268px;border-radius:14px;background:var(--ui-popup-bg);border:1px solid var(--ui-popup-border);box-shadow:0 14px 36px rgba(0,0,0,.4);padding:10px 12px 12px;display:none;flex-direction:column;gap:8px;color:var(--ui-fg)}
@@ -316,7 +316,7 @@
   .win .wcode .caret{display:inline-block;width:1.5px;height:12px;background:var(--ui-fg);vertical-align:-2px;animation:blink 1s steps(1) infinite}
   @keyframes blink{50%{opacity:0}}
   .win .wcode .tag{margin-left:8px;font-family:var(--font-ui);font-size:9.5px;color:var(--ui-link)}
-  .win .wbt{height:78px;flex:none;border-top:1px solid var(--ui-border);display:flex;flex-direction:column}
+  .win .wbt{height:84px;flex:none;border-top:1px solid var(--ui-border);display:flex;flex-direction:column}
   .win .wbt-tabs{height:20px;flex:none;display:flex;align-items:stretch;gap:2px;padding:0 6px;font-size:10.5px}
   .win .wbt-tabs span{display:flex;align-items:center;padding:0 6px;color:var(--ui-fg-info)}
   .win .wbt-tabs span.on{color:var(--ui-fg);font-weight:600;box-shadow:inset 0 -2px 0 var(--ui-accent)}
@@ -486,7 +486,6 @@
           <button data-mode="pip"><svg class="i"><use href="#i-pip"/></svg>App 小窗</button>
         </div>
         <button class="btn" id="swap" title="对调前台：对话 ⇄ App"><svg class="i"><use href="#i-swap"/></svg>对话 ⇄ App</button>
-        <button class="btn" id="tap-btn" disabled title="补丁草稿出来后可用：拿手机碰一下电脑触控板"><svg class="i"><use href="#i-tap"/></svg>碰一碰电脑</button>
       </div>
     </div>
 
@@ -498,7 +497,7 @@
             <div class="slp"><b>14:02</b><span>MateBook Pro · 休眠中</span></div>
             <div class="dsk">
               <div class="top"><span>Wi-Fi</span><span id="mb-clock">14:04</span></div>
-              <div class="dock"><i style="background:linear-gradient(135deg,#5ec2ff,#2a7de1)"></i><i style="background:linear-gradient(135deg,#ffd36b,#f39b2a)"></i><i class="dv" id="dock-dv" title="应用接续：在电脑上打开手机上的调试会话"><svg><use href="#i-logo"/></svg><span class="bd"><svg><use href="#i-phone"/></svg></span></i><i style="background:linear-gradient(135deg,#9be38a,#3aa55b)"></i><i style="background:linear-gradient(135deg,#c7ccd6,#8a90a0)"></i></div>
+              <div class="dock"><i style="background:linear-gradient(135deg,#5ec2ff,#2a7de1)"></i><i style="background:linear-gradient(135deg,#ffd36b,#f39b2a)"></i><i class="dv" id="dock-dv" title="稍后接：点这里把手机上的调试会话接进 IDE"><svg><use href="#i-logo"/></svg><span class="bd"><svg><use href="#i-phone"/></svg></span></i><i style="background:linear-gradient(135deg,#9be38a,#3aa55b)"></i><i style="background:linear-gradient(135deg,#c7ccd6,#8a90a0)"></i></div>
             </div>
             <div class="sc" id="sc" role="dialog" aria-label="接续卡片">
               <div class="h"><svg class="i"><use href="#i-tap"/></svg>来自 Mate 70 Pro · 碰一碰<span class="grow"></span>刚刚</div>
@@ -724,7 +723,7 @@
     tl('patch','run');$('#tl-total').textContent='等你确认补丁';
     $('#btn-apply').addEventListener('click',function(){apply('phone')});
     $('#btn-later').addEventListener('click',tapToPC);
-    patchReady=true;$('#tap-btn').disabled=false;
+    patchReady=true;
   }
 
   var applied=false;
@@ -732,7 +731,6 @@
     if(applied)return;applied=true;
     var b=$('#btn-apply');if(b){b.disabled=true;b.textContent=src==='pc'?'已在电脑上保存':'已应用';b.removeAttribute('id');}
     var bl=$('#btn-later');if(bl)bl.remove();
-    $('#tap-btn').disabled=true;
     $('#tl-total').textContent='进行中';
     var ai=add('<div class="who"><svg><use href="#i-logo"/></svg>DevEco Code</div>'+(src==='pc'?'<p>电脑上保存了补丁（你加了一行：过期时清空验证码）。我在这台手机上重装、复测。</p>':''));
     var s5=step(ai,src==='pc'?'电脑增量构建 · 推到这台手机重装':'增量构建并重装');
@@ -836,7 +834,7 @@
 
   async function tapToPC(){
     if(!patchReady||handed||applied)return;handed=true;
-    $('#tap-btn').disabled=true;var bl=$('#btn-later');if(bl)bl.disabled=true;
+    var bl=$('#btn-later');if(bl)bl.disabled=true;
     var ph=$('#phone'),z=parseFloat(getComputedStyle($('.phone-wrap')).zoom)||1;
     var pr=ph.getBoundingClientRect(),nr=$('#mb-nfc').getBoundingClientRect(),mr=$('#mb').getBoundingClientRect();
     var tx=nr.left+4,ty=nr.top+10;
@@ -857,7 +855,7 @@
     tl('patch','run','电脑上');
   }
   function openIDE(){
-    if(mbin.dataset.st!=='card')return;
+    if(mbin.dataset.st!=='card'&&mbin.dataset.st!=='later')return;
     mbin.dataset.st='ide';$('#dock-dv').classList.add('run');
     renderCode();hilog();
     pcState('info','审补丁中','LoginPage.ets 补丁在编辑器里待审<br>保存后手机自动重装、复测');
@@ -894,10 +892,9 @@
     var p=$('#msgs .pst.env:last-child .sico');if(p)p.innerHTML='<svg class="i" style="width:14px;height:14px;color:var(--ui-success)"><use href="#i-check"/></svg>';
     apply('pc');
   }
-  $('#tap-btn').addEventListener('click',tapToPC);
   $('#sc-go').addEventListener('click',openIDE);
   $('#dock-dv').addEventListener('click',openIDE);
-  $('#sc-no').addEventListener('click',function(){mbin.dataset.st='desk';handed=false;$('#tap-btn').disabled=false;var bl=$('#btn-later');if(bl)bl.disabled=false;pcState('muted','已唤醒','接续卡片已关 · 再碰一下还能接');tl('patch','run','')});
+  $('#sc-no').addEventListener('click',function(){mbin.dataset.st='later';pcState('muted','稍后接','会话留在 Dock 的 DevEco 图标上<br>想接时点它就行')});
   $('#ide-edit').addEventListener('click',editOnPC);
   $('#ide-save').addEventListener('click',saveOnPC);
   $('#wbt-log').addEventListener('click',hilog);
@@ -907,10 +904,15 @@
     {target:'#chip-login',kind:'click',pos:'top',label:'点这句话发给 AI'},
     {target:'#btn-apply',kind:'click',pos:'top',label:'在手机上应用并重装'},
     {target:'#app',kind:'change',pos:'top',label:'被调试 App：自动复现、修好后再验证'},
-    {target:'#btn-later',kind:'click',pos:'top',label:'点这里：碰一碰，回电脑接着调'},
-    {target:'#sc-go',kind:'click',pos:'bottom',label:'点这里：整个会话接进 IDE'},
-    {target:'#ide-save',kind:'click',pos:'bottom',label:'保存：手机自动重装、复测'}
-  ]);
+    {target:'#btn-later',kind:'click',pos:'top',label:'补丁想在电脑上细看？碰一下电脑'},
+    {target:'#sc-go',kind:'click',pos:'bottom',label:'点这里：在 IDE 里接着审补丁'},
+    {target:'#ide-save',kind:'click',pos:'bottom',label:'改完保存：手机自动重装、复测'}
+  ],{scene:{
+    at:'不在工位，测试说登录点了没反应，手边只有手机',
+    goal:'复现、定位到 ArkTS 行、修好装回手机验证',
+    pain:'得回工位插线复现翻 HiLog，手机上的线索回电脑再找',
+    fix:'手机一句话调到补丁；碰一下电脑接着审，保存即复测'
+  }});
 })();
 </script>
 </body>

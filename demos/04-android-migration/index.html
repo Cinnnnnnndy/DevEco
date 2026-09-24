@@ -62,6 +62,8 @@
   /* 预览：按 Mate 70 Pro 1260 × 2844 比例，挖孔居中 */
   .prev-col .phone::before{width:9px;height:9px;border-radius:50%;top:7px}
   .prev-col .phone .mapp{width:100%;height:100%;padding-top:20px;overflow:hidden;border-radius:21px}
+  .prev-col .prev-tools{white-space:nowrap;overflow:hidden}
+  .prev-col .prev-tools b{display:inline-flex;align-items:center;gap:4px}
   .prev-col .cmp-go{margin:0 10px 10px;justify-content:center;flex:none}
   .prev-col .cmp-go svg.i{width:14px;height:14px}
 
@@ -137,7 +139,7 @@
   .ma .dbox.sel{box-shadow:0 0 0 3px color-mix(in srgb,var(--ui-error) 30%,transparent)}
   .ma .dbox.ok{border-color:var(--ui-success)}
   .ma .dbox.ok > b{background:var(--ui-success)}
-  .desk-log{flex:1;min-height:0;overflow:auto;margin:0 10px;border:1px solid var(--ui-border);border-radius:var(--arc);background:var(--ui-bg)}
+  .desk-log{flex:1;min-height:0;overflow:auto;margin:0 10px 10px;border:1px solid var(--ui-border);border-radius:var(--arc);background:var(--ui-bg)}
   .desk-log .hd{position:sticky;top:0;z-index:1;height:28px;display:flex;align-items:center;gap:6px;padding:0 10px;font-size:var(--fs-sm);background:var(--ui-bg);border-bottom:1px solid var(--ui-border);white-space:nowrap}
   .desk-log .hd b{font-weight:600}
   .desk-log .hd .grow{flex:1}
@@ -148,11 +150,6 @@
   .op .dm-pill{flex:none}
   .op.hint{color:var(--ui-fg-info)}
   .op.hint svg.i{width:12px;height:12px;flex:none}
-  .dock{height:50px;flex:none;display:flex;justify-content:center;align-items:center}
-  .dock > div{display:flex;gap:8px;padding:5px 10px;border-radius:12px;background:var(--ui-bg);border:1px solid var(--ui-border);box-shadow:var(--ui-shadow)}
-  .dock span{width:26px;height:26px;border-radius:7px;display:grid;place-items:center;font-size:11px;font-weight:700;color:#fff;position:relative}
-  .dock span svg{width:18px;height:18px}
-  .dock span.on::after{content:"";position:absolute;bottom:-4px;left:50%;width:4px;height:4px;margin-left:-2px;border-radius:50%;background:var(--ui-fg-info)}
   /* Migration 面板里的差异卡 */
   .cmp-pad{padding-bottom:4px}
   #cmp-diffs{gap:6px;padding:8px}
@@ -215,7 +212,6 @@
             </div>
           </div>
           <div class="desk-log" id="desk-log"></div>
-          <div class="dock"><div><span style="background:#5B6475"><svg viewBox="0 0 16 16" style="color:#fff"><use href="#i-folder"/></svg></span><span class="on" style="background:#fff"><svg viewBox="0 0 64 64"><use href="#i-logo"/></svg></span><span class="on" style="background:#2E9E5B">卓</span><span class="on" style="background:#0A59F7">S</span></div></div>
         </div>
         <div class="code-col">
           <div class="tabs" id="tabs"><span class="grow"></span><span class="tab-tools"><button class="abtn" title="Editor Options"><svg class="i"><use href="#i-moreV"/></svg></button></span></div>
@@ -529,7 +525,7 @@
     });
     if(!h)h='<div class="dm-muted dm-small">两边正在启动…</div>';
     el.innerHTML=h;
-    var o=openDiffs(),c=$('#cmp-cnt');c.className='dm-pill '+(o?'warn':'ok');c.textContent=o?o+' 处待改 · 共 '+CMP.found.length:'已对齐 · 共 '+CMP.found.length;
+    var o=openDiffs(),c=$('#cmp-cnt');c.className='dm-pill '+(o?'warn':'ok');var nf=CMP.found.filter(function(k){return CMP.fixed[k]}).length,nm=CMP.found.filter(function(k){return DIFFS[k].manual}).length;c.textContent=o?o+' 处待改 · 共 '+CMP.found.length:nf+' 处已对齐'+(nm?' · '+nm+' 处需人工':'');
     renderProgress();
   }
   function locateDiff(k){
@@ -581,7 +577,7 @@
     else if(hs==='phone'){CMP.focus=false;logOp('点「手机号」输入框 → 两边都弹出键盘','same')}
     else if(hs==='login'){
       CMP.focus=false;
-      if(CMP.code==='482913'){CMP.screen='list';CMP.aToast=CMP.hToast=CMP.hErr=false;CMP.aRef=CMP.hRef=false;find('radius');logOp('点「登录」→ 两边都进了商品列表 · 截图比对出 1 处界面差异','ui')}
+      if(CMP.code==='482913'){CMP.screen='list';CMP.aToast=CMP.hToast=CMP.hErr=false;CMP.aRef=CMP.hRef=false;if(CMP.fixed.radius)logOp('点「登录」→ 两边都进了商品列表 · 截图比对一致','same');else{find('radius');logOp('点「登录」→ 两边都进了商品列表 · 截图比对出 1 处界面差异','ui')}}
       else{CMP.aToast=true;if(CMP.fixed.toast){CMP.hToast=true;logOp('点「登录」（验证码 '+CMP.code+'）→ 两边都提示「验证码错误」','same')}else{CMP.hErr=true;find('toast');logOp('点「登录」（验证码 '+CMP.code+'）→ 左边弹提示，右边显示错误码','beh')}}
     }else if(hs==='back'){CMP.screen='login';CMP.code='000000';CMP.aRef=CMP.hRef=false;logOp('点返回 → 两边都回到登录页','same')}
     else if(hs==='pull'){
@@ -681,10 +677,15 @@
 DemoGuide.init([
   {"target": "#btn-reviewed", "kind": "click", "pos": "top", "label": "点这里标记已查"},
   {"target": "#tree-prog", "kind": "change", "pos": "top", "label": "进度 4/6→5/6"},
-  {"target": "#btn-cmp", "kind": "click", "pos": "top", "label": "同一台电脑上并排对照安卓原版"},
+  {"target": "#btn-cmp", "kind": "click", "pos": "top", "label": "想确认和安卓版一模一样？两版并排跑"},
   {"target": "#win-a [data-hs=\"login\"]", "kind": "click", "pos": "bottom", "label": "点左边，右边跟着点"},
-  {"target": "#cmp-card", "kind": "change", "pos": "top", "label": "差异自动标出，落到 ArkTS 行"}
-]);
+  {"target": "#cmp-card", "kind": "change", "pos": "top", "label": "哪里不一样、该改哪行，直接列出来"}
+], {scene:{
+  at:'你在把安卓版 Shop 迁到鸿蒙，登录页和列表页已转出',
+  goal:'鸿蒙版和安卓原版做到一样，并跟上安卓的新提交',
+  pain:'两台手机摆桌上各点一遍，肉眼找不同，再翻代码找行',
+  fix:'同屏并排跑两版，点一边两边同动，差异直接落到 ArkTS 行'
+}});
 })();
 </script>
 </body>
