@@ -869,10 +869,552 @@
 
   renderList();renderRes();select('c1');
 
+  /* =====================================================================
+     云端旅程矩阵：一条旅程（journeys/*.journey.json5）× 全部鸿蒙形态，云端并行跑
+     设备按真实分辨率等比画；屏内应用按 vp 逻辑尺寸排版后整体缩放，断点 sm / md / lg 各走各的布局
+     ===================================================================== */
+  var JDEV=[
+    {id:'m70',name:'Mate 70 Pro',res:[1260,2844],vp:[360,813],bp:'sm',kind:'bar',f:1,rs:'1260×2844'},
+    {id:'x6o',name:'Mate X6 外屏',res:[1080,2440],vp:[360,813],bp:'sm',kind:'bar',f:1.07,rs:'1080×2440'},
+    {id:'x6u',name:'Mate X6 展开',res:[2440,2240],vp:[813,747],bp:'md',kind:'unfold',f:1.12,rs:'2440×2240'},
+    {id:'x6h',name:'Mate X6 悬停',res:[2240,2440],vp:[747,813],bp:'md',kind:'hover',f:1.16,rs:'2240×2440 半折'},
+    {id:'xt3',name:'Mate XT 三屏',res:[3184,2232],vp:[1137,797],bp:'lg',kind:'tri',f:1.22,rs:'3184×2232'},
+    {id:'mp13',name:'MatePad Pro 13.2',res:[2880,1920],vp:[1280,853],bp:'lg',kind:'tab',f:1.04,rs:'2880×1920'}
+  ];
+  var JOURNEYS=[
+    {file:'checkout.journey.json5',title:'下单结算',steps:[['login','登录'],['search','搜索耳机'],['cart','加购'],['pay','结算']]},
+    {file:'browse.journey.json5',title:'浏览详情',steps:[['login','登录'],['search','搜索耳机'],['view','看详情']]}
+  ];
+  var EXP={login:'3 s 内进入首页，HiLog 无 ERR_AUTH',search:'结果 ≥ 1 条，首条标题含「耳机」',cart:'购物车角标 0 → 1',pay:'进入确认订单，合计 ¥899',view:'详情页价格 ¥899 可见'};
+  var BASE_T={login:2.1,search:1.6,cart:1.4,pay:1.9,view:1.2};
+  var FIX={crease:0,width:0};          /* 0 未修 · 1 DevEco Code 修改中 · 2 已改（工作区） */
+  var ISS={
+    crease:{dev:'x6h',step:'cart',short:'按钮压在折痕上',title:'「加入购物车」落在折痕上',
+      why:'悬停态折痕 y 394–418 vp 不响应点击；按钮在 y 388–436 vp，点击中心 (574, 412) vp 正落在折痕里，等了 3 s 角标还是 0。展开态、外屏都正常。',
+      cap:'<b>红框</b> 按钮 y 388–436 vp · <b>斜线</b> 折痕 394–418 vp',
+      file:'ProductDetail.ets',line:40,
+      log:[['I','10:41:07.212','A03D00/Journey',"step 3/4 加购 · click Button('加入购物车') @ (574, 412)vp"],
+           ['I','10:41:07.214','C04200/WMS','foldStatus=HALF_FOLDED · creaseRegion y=[394, 418]vp'],
+           ['W','10:41:07.215','C03900/ArkUI','touch y=412 in crease region, no hit target'],
+           ['E','10:41:10.221','A03D00/Journey','expect cartBadge == 1, actual 0 · timeout 3000 ms']],
+      code:[[34,'    <span class="f">Column</span>({ <span class="p">space</span>: <span class="n">12</span> }) {'],
+            [35,'      <span class="f">Image</span>(<span class="f">$r</span>(<span class="s">\'app.media.earbuds_pro\'</span>)).<span class="f">height</span>(<span class="n">200</span>)'],
+            [36,'      <span class="f">Text</span>(<span class="s">`¥${</span><span class="k">this</span>.<span class="p">item</span>.<span class="p">price</span><span class="s">}`</span>).<span class="f">fontSize</span>(<span class="n">30</span>)'],
+            [37,'      <span class="f">Text</span>(<span class="k">this</span>.<span class="p">item</span>.<span class="p">name</span>).<span class="f">fontSize</span>(<span class="n">18</span>)'],
+            [38,'      <span class="f">Row</span>({ <span class="p">space</span>: <span class="n">12</span> }) {'],
+            [39,'        <span class="c">// md 断点：按钮紧跟在名称下面</span>'],
+            [40,'        <span class="f">Button</span>(<span class="s">\'加入购物车\'</span>).<span class="f">layoutWeight</span>(<span class="n">1</span>)',1],
+            [41,'          .<span class="f">onClick</span>(() =&gt; <span class="ty">CartStore</span>.<span class="f">addItem</span>(<span class="k">this</span>.<span class="p">item</span>))'],
+            [42,'        <span class="f">Button</span>(<span class="s">\'立即购买\'</span>).<span class="f">layoutWeight</span>(<span class="n">1</span>)']],
+      diff:[[34,'-','    <span class="f">Column</span>({ <span class="p">space</span>: <span class="n">12</span> }) {'],
+            [34,'+','    <span class="f">FolderStack</span>({ <span class="p">upperItems</span>: [<span class="s">\'detailTop\'</span>] }) {  <span class="c">// 悬停态：上半屏放图和价格</span>'],
+            [35,'+','      <span class="f">Column</span>({ <span class="p">space</span>: <span class="n">12</span> }) {'],
+            [36,' ','        <span class="f">Image</span>(…) · <span class="f">Text</span>(价格) · <span class="f">Text</span>(名称)'],
+            [39,'+','      }.<span class="f">id</span>(<span class="s">\'detailTop\'</span>)'],
+            [40,' ','      <span class="f">Row</span>({ <span class="p">space</span>: <span class="n">12</span> }) {  <span class="c">// 其余落到下半屏，避开折痕</span>'],
+            [41,' ','        <span class="f">Button</span>(<span class="s">\'加入购物车\'</span>).<span class="f">layoutWeight</span>(<span class="n">1</span>)']],
+      fixNote:'悬停态由 FolderStack 把图、价格、名称放上半屏，按钮落到下半屏；展开态、外屏布局不变。',
+      commit:'fix(detail): 悬停态用 FolderStack，按钮避开折痕'},
+    width:{dev:'xt3',step:'pay',short:'按钮在屏幕外',title:'「结算」被挤出屏幕',
+      why:'CartBar 在 lg 断点写死 1280 vp（照 MatePad Pro 13.2 写的）。Mate XT 三屏只有 1137 vp，同属 lg，「结算」落在 x 1156–1256 vp，整个在屏外，5 s 内找不到控件。',
+      cap:'<b>虚线框</b> 「结算」实际位置 x 1156–1256 vp · 屏宽 1137 vp',
+      file:'CartBar.ets',line:25,
+      log:[['I','10:41:09.402','A03D00/Journey',"step 4/4 结算 · find Button('结算')"],
+           ['W','10:41:09.405','C03900/ArkUI','CartBar width 1280vp > window 1137vp (lg), overflow 143vp'],
+           ['E','10:41:14.410','A03D00/Journey',"Button('结算') rect x=[1156, 1256]vp not visible · timeout 5000 ms"]],
+      code:[[18,'  <span class="f">build</span>() {'],
+            [19,'    <span class="f">Row</span>() {'],
+            [20,'      <span class="f">Text</span>(<span class="s">`合计 ¥${</span><span class="k">this</span>.<span class="p">total</span><span class="s">}`</span>).<span class="f">fontSize</span>(<span class="n">16</span>)'],
+            [21,'      <span class="f">Blank</span>()'],
+            [22,'      <span class="f">Button</span>(<span class="s">\'结算\'</span>).<span class="f">width</span>(<span class="n">100</span>)'],
+            [23,'        .<span class="f">onClick</span>(() =&gt; <span class="k">this</span>.<span class="f">goCheckout</span>())'],
+            [24,'    }'],
+            [25,'    .<span class="f">width</span>(<span class="k">this</span>.<span class="p">bp</span> === <span class="s">\'lg\'</span> ? <span class="n">1280</span> : <span class="s">\'100%\'</span>)',1],
+            [26,'    .<span class="f">padding</span>({ <span class="p">left</span>: <span class="n">20</span>, <span class="p">right</span>: <span class="n">24</span> })']],
+      diff:[[24,' ','    }'],
+            [25,'-','    .<span class="f">width</span>(<span class="k">this</span>.<span class="p">bp</span> === <span class="s">\'lg\'</span> ? <span class="n">1280</span> : <span class="s">\'100%\'</span>)'],
+            [25,'+','    .<span class="f">width</span>(<span class="s">\'100%\'</span>)'],
+            [26,'+','    .<span class="f">constraintSize</span>({ <span class="p">maxWidth</span>: <span class="n">1280</span> })  <span class="c">// lg 从 840 vp 起，别写死</span>'],
+            [27,' ','    .<span class="f">padding</span>({ <span class="p">left</span>: <span class="n">20</span>, <span class="p">right</span>: <span class="n">24</span> })']],
+      fixNote:'改成撑满 + 最大 1280 vp：三屏 1137 vp 能完整显示「结算」，13.2 英寸平板外观不变。',
+      commit:'fix(cart): 结算栏改 constraintSize，三折叠 lg 不溢出'}
+  };
+  var FILEPATH={'ProductDetail.ets':'entry/src/main/ets/pages/ProductDetail.ets','CartBar.ets':'entry/src/main/ets/components/CartBar.ets'};
+  var JM={jr:0,sel:{m70:1,x6o:1,x6u:1,x6h:1,xt3:1,mp13:1},api:'20',auto:false,rows:[],running:false,live:0,t0:0,secs:0,devMin:0,
+    cell:null,trigger:null,bt:'mx',committed:{crease:0,width:0},last:null,s:0.08,iv:null};
+  var COMMITS=[
+    {h:'e81c0a4',msg:'feat(cart): 结算栏适配 lg 断点',t:'12 分钟前',res:null},
+    {h:'9b3d27f',msg:'feat(detail): 商品详情 md 断点分栏',t:'1 小时前',res:null},
+    {h:'40c1e8a',msg:'chore: 升级到 API 20 SDK，hvigor 5.1',t:'昨天',res:null}
+  ];
+  function steps(){return JOURNEYS[JM.jr].steps}
+  function apis(){return JM.api==='both'?[20,18]:[+JM.api]}
+  function selDevs(){return JDEV.filter(function(d){return JM.sel[d.id]})}
+  function fxNow(){return {crease:FIX.crease===2,width:FIX.width===2}}
+  function devById(id){for(var i=0;i<JDEV.length;i++)if(JDEV[i].id===id)return JDEV[i]}
+  function riHTML(d,h){
+    h=h||14;
+    if(d==='watch')return '<i class="ri w" style="width:'+h+'px;height:'+h+'px"></i>';
+    if(d.kind==='hover'){var w=Math.round(h*1.25);return '<i class="ri h"><i style="width:'+w+'px;height:'+Math.round(w*1220/2240)+'px"></i><i style="width:'+w+'px;height:'+Math.round(w*1220/2240)+'px"></i></i>'}
+    var r=d.res[0]/d.res[1];var ww=r<1?Math.round(h*r*10)/10:Math.round(h*r);var hh=h;
+    if(ww>22){hh=Math.round(22/r);ww=22}
+    return '<i class="ri'+(d.kind==='unfold'?' u':d.kind==='tri'?' t':'')+'" style="width:'+ww+'px;height:'+hh+'px"></i>';
+  }
+
+  /* ---------- 屏内应用（逻辑 vp 排版） ---------- */
+  var PRD=[['无线降噪耳机 Pro','¥899','linear-gradient(135deg,#dfe6f7,#b7c6ea)','已售 2.1 万'],['头戴式耳机 Max','¥1,499','linear-gradient(135deg,#f5e9dc,#dfc6a8)','已售 8300'],['运动耳机 Lite','¥299','linear-gradient(135deg,#dff3ea,#b1dfc8)','已售 5.6 万'],['骨传导耳机','¥599','linear-gradient(135deg,#efe3f7,#d3bcea)','已售 1.2 万']];
+  var HOMEP=[['智能手表 5','¥1,588'],['平板 11.5','¥2,399'],['蓝牙音箱','¥199'],['无线充电板','¥149'],['折叠键盘','¥329'],['车载支架','¥69'],['智能台灯','¥259'],['运动手环 9','¥269'],['降噪耳机','¥899'],['移动电源','¥199']];
+  var CART_SVG='<svg viewBox="0 0 24 24"><path d="M2.5 3.5h3l2.2 11h10.8l2-8H6.6"/><circle cx="9.5" cy="19" r="1.5"/><circle cx="17" cy="19" r="1.5"/></svg>';
+  var GSP='<div class="a-gsp"></div><i class="a-gb"></i>';
+  function jsb(d){return '<div class="a-sb"><span>9:41</span>'+(d.kind==='bar'?'<i class="a-hole"></i>':'')+'<span class="r"><i class="sig"><b></b><b></b><b></b><b></b></i>'+(d.kind==='tab'?'WLAN':'5G')+'<i class="bat"></i></span></div>'}
+  function jcart(n){return '<span class="a-cart" data-t="cart">'+CART_SVG+(n?'<b>'+n+'</b>':'')+'</span>'}
+  function jhd(t,n,noCart){return '<div class="a-hd"><span>'+t+'</span><span class="sp"></span>'+(noCart?'':jcart(n))+'</div>'}
+  function jrows(sel){return PRD.map(function(p,i){return '<div class="a-row'+(i===sel?' sel':'')+'"'+(i===0?' data-t="row1"':'')+'><i style="background:'+p[2]+'"></i><div class="tx">'+p[0]+'<span>'+p[3]+'</span><em>'+p[1]+'</em></div></div>'}).join('')}
+  function jgrid(c,n){var h='';for(var i=0;i<n;i++)h+='<div class="a-gi"><i style="background:'+PRD[i%4][2]+'"></i>'+HOMEP[i][0]+'<b>'+HOMEP[i][1]+'</b></div>';return '<div class="a-grid" style="--c:'+c+'">'+h+'</div>'}
+  function jside(){return '<div class="a-side"><span class="t">商城</span><span class="on">首页</span><span>分类</span><span>购物车</span><span>我的</span></div>'}
+  function jacts(){return '<div class="a-acts"><span class="a-add" data-t="add">加入购物车</span><span class="a-buy">立即购买</span></div>'}
+  function jdetail(split){
+    var p=PRD[0];
+    if(split)return '<div class="a-dt split"><div class="a-hero" style="height:200px"></div><div class="a-price">¥899</div><div class="a-name">'+p[0]+'</div>'+jacts()+'<div class="a-spec">星空黑 · 标准版 · 顺丰包邮</div></div>';
+    return '<div class="a-dt"><div class="a-hero" style="aspect-ratio:16/9"></div><div class="a-price">¥899</div><div class="a-name">'+p[0]+'</div><div class="a-spec">星空黑 · 标准版 · 顺丰包邮</div></div><div class="fill"></div><div class="a-bar">'+jacts()+'</div>';
+  }
+  function jhover(){
+    var p=PRD[0];
+    return '<div class="a-hvtop"><div class="a-hero" style="width:300px;height:190px"></div><div class="a-hvinfo"><div class="a-price">¥899</div><div class="a-name">'+p[0]+'</div><div class="a-spec">星空黑 · 标准版 · 顺丰包邮</div></div></div><div class="a-hvgap"></div>'
+      +'<div class="a-hvbot">'+jacts()+'<div class="a-kv"><span>服务</span><b>7 天无理由 · 顺丰包邮</b></div><div class="a-kv"><span>已选</span><b>星空黑 · 标准版 × 1</b></div></div>';
+  }
+  function page(d,st){
+    var k=st.k,bp=d.bp,n=st.badge||0,fx=st.fx||{};
+    if(k==='off')return '<div class="a-off" style="font-size:'+Math.round(d.vp[0]*0.07)+'px"><span>'+d.name+'</span><small>待启动</small></div>';
+    if(k==='boot')return '<div class="a-boot" style="font-size:'+Math.round(Math.min(90,d.vp[0]*0.11))+'px"><b>HarmonyOS</b><div class="pb"><i style="width:'+st.pct+'%"></i></div><span>'+st.msg+'</span></div>';
+    var h=jsb(d);
+    if(k==='login')return h+'<div class="a-login"><div class="a-card"><h1>欢迎回来</h1><p>验证码登录 · mock:testUser</p><div class="a-inp">138 0000 6021</div><div class="a-inp">246810</div><div class="a-btn" data-t="login">登录</div></div></div>'+GSP;
+    if(k==='home'){
+      var body=jhd('你好，小王',n)+'<div class="a-search" data-t="search">搜索商品</div><div class="a-banner">秋季新品<small>满 500 减 50 · 限时 3 天</small></div>'+jgrid(bp==='lg'?5:bp==='md'?4:2,bp==='lg'?10:bp==='md'?8:4);
+      if(bp==='lg')return h+'<div class="a-split">'+jside()+'<div class="a-col main">'+body+'</div></div>'+GSP;
+      return h+body+'<div class="fill"></div><div class="a-tab"><b>首页</b><span>分类</span><span>购物车</span><span>我的</span></div><i class="a-gb"></i>';
+    }
+    if(k==='search'||k==='detail'){
+      var det=k==='detail';
+      if(bp==='sm'){
+        if(!det)return h+jhd('‹ 搜索',n)+'<div class="a-search on">耳机</div><div class="a-cnt">共 24 件</div>'+jrows(-1)+'<div class="fill"></div>'+GSP;
+        return h+jhd('‹ 商品详情',n)+jdetail(false)+GSP;
+      }
+      if(det&&d.kind==='hover'&&fx.crease)return h+jhd('商品详情',n)+jhover()+GSP;
+      var list='<div class="a-col list"><div class="a-search on">耳机</div><div class="a-cnt">共 24 件</div>'+jrows(det?0:-1)+'</div>';
+      var main='<div class="a-col main">'+(det?jdetail(true):'<div class="a-empty">选择商品查看详情</div>')+'</div>';
+      if(bp==='lg')return h+'<div class="a-split">'+jside()+'<div class="a-col main">'+jhd('商品',n)+'<div class="a-split">'+list+main+'</div></div></div>'+GSP;
+      return h+jhd('商品',n)+'<div class="a-split">'+list+main+'</div>'+GSP;
+    }
+    if(k==='cart'){
+      var wide=bp==='lg'&&!fx.width;
+      return h+jhd('购物车',0,1)+'<div class="a-row"><i style="background:'+PRD[0][2]+'"></i><div class="tx">'+PRD[0][0]+'<span>星空黑 · 标准版</span><em>¥899</em></div><span class="sp"></span><span class="a-qty">×1</span></div><div class="fill"></div>'
+        +'<div class="a-bar" style="width:'+(wide?'1280px':'100%')+'"><span class="tot">合计 <b>¥899</b></span><span class="sp"></span><span class="a-pay" data-t="pay">结算</span></div>'+GSP;
+    }
+    return h+jhd('‹ 确认订单',0,1)+'<div class="a-addr"><b>小王 138****6021</b><br>上海市浦东新区 世纪大道 100 号</div><div class="a-row"><i style="background:'+PRD[0][2]+'"></i><div class="tx">'+PRD[0][0]+'<span>¥899 × 1</span></div></div>'
+      +'<div class="a-kv"><span>商品金额</span><b>¥899</b></div><div class="a-kv"><span>运费</span><b>包邮</b></div><div class="fill"></div><div class="a-bar"><span class="tot">合计 <b>¥899</b></span><span class="sp"></span><span class="a-pay w">提交订单</span></div>'+GSP;
+  }
+  /* 设备外框：屏幕 = 分辨率 × s；hover 为上下两半，下半屏平放（透视压扁） */
+  function devBox(d,s,st){
+    var W=d.res[0]*s, sc=W/d.vp[0];
+    function lv(ty){return '<div class="lv" data-sc="'+sc+'" style="width:'+d.vp[0]+'px;height:'+d.vp[1]+'px;transform:'+(ty?'translateY(-'+ty+'px) ':'')+'scale('+sc+')">'+page(d,st)+'</div>'}
+    if(d.kind==='hover'){
+      var hh=d.vp[1]/2*sc;
+      return '<div class="jdv hover" style="--sw:'+W.toFixed(1)+'px;--hh:'+hh.toFixed(1)+'px;--pp:'+Math.round(W*2.4)+'px"><div class="hv top"><div class="jscr">'+lv(0)+'</div></div><div class="hinge"></div><div class="hv bot" style="margin-bottom:-'+Math.round((hh+7)*0.46)+'px"><div class="jscr">'+lv(hh)+'</div></div></div>';
+    }
+    return '<div class="jdv '+d.kind+'" style="--sw:'+W.toFixed(1)+'px;--sh:'+(d.res[1]*s).toFixed(1)+'px"><div class="jscr">'+lv(0)+'</div></div>';
+  }
+  function devDispW(d,s){return d.res[0]*s+10}
+  function devDispH(d,s){if(d.kind==='hover'){var hh=d.res[1]/2*s;return hh+7+4+(hh+7)*0.54}return d.res[1]*s+10}
+  function rel(el,root){var x=0,y=0,n=el;while(n&&n!==root){x+=n.offsetLeft;y+=n.offsetTop;n=n.offsetParent}return {x:x,y:y,w:el.offsetWidth,h:el.offsetHeight}}
+  function decorate(wrap,st){
+    $$('.lv',wrap).forEach(function(lv){
+      if(st.tap){var t=lv.querySelector('[data-t="'+st.tap+'"]');if(t){var r=rel(t,lv);lv.insertAdjacentHTML('beforeend','<i class="a-tap" style="left:'+(r.x+r.w/2)+'px;top:'+(r.y+r.h/2)+'px"></i>')}}
+      if(st.hot==='crease'){
+        lv.insertAdjacentHTML('beforeend','<i class="a-crease"></i>');
+        var a=lv.querySelector('[data-t="add"]');if(a){var q=rel(a,lv);lv.insertAdjacentHTML('beforeend','<i class="a-hot" style="left:'+(q.x-7)+'px;top:'+(q.y-7)+'px;width:'+(q.w+14)+'px;height:'+(q.h+14)+'px"></i>')}
+      }
+    });
+    if(st.hot==='offscreen'){
+      var lv=$('.lv',wrap),jv=$('.jdv',wrap),scr=$('.jscr',wrap),b=lv&&lv.querySelector('[data-t="pay"]');
+      if(b&&jv&&scr){var r=rel(b,lv),sc=+lv.dataset.sc;jv.insertAdjacentHTML('beforeend','<i class="jghost" style="left:'+(scr.offsetLeft+r.x*sc-2).toFixed(1)+'px;top:'+(scr.offsetTop+r.y*sc-2).toFixed(1)+'px;width:'+(r.w*sc+4).toFixed(1)+'px;height:'+(r.h*sc+4).toFixed(1)+'px"></i>')}
+    }
+  }
+
+  /* ---------- 行（= 一台云端实例 × 一个 API） ---------- */
+  function newRow(d,api){return {dev:d,api:api,cells:steps().map(function(){return {st:''}}),st:'idle',frame:{k:'off'},tm:[],fx:null}}
+  function buildRows(){
+    JM.rows.forEach(function(r){r.tm.forEach(clearTimeout)});
+    JM.rows=[];apis().forEach(function(a){selDevs().forEach(function(d){JM.rows.push(newRow(d,a))})});
+    JM.cell=null;
+  }
+  function rowTotal(r){var t=0,any=0;r.cells.forEach(function(c){if(c.t){t+=c.t;any=1}});return any?t.toFixed(1)+' s':'—'}
+
+  /* ---------- 渲染：配置区 ---------- */
+  function renderCfg(){
+    var J=JOURNEYS[JM.jr];
+    $('#jm-jr-t').textContent=J.file;
+    $('#jm-steps').innerHTML=J.steps.map(function(s,i){return (i?'<svg class="i"><use href="#i-chevR"/></svg>':'')+'<span class="s">'+s[1]+'</span>'}).join('');
+    $('#jm-menu').innerHTML='<div class="mhead">journeys/ · 可提交进仓库，流水线里重复跑</div>'+JOURNEYS.map(function(j,i){return '<div class="mi'+(i===JM.jr?' on':'')+'" data-j="'+i+'"><b>'+j.file+'</b><span>'+j.title+' · '+j.steps.map(function(s){return s[1]}).join(' → ')+'</span></div>'}).join('');
+    var ch=JDEV.map(function(d){return '<button class="dchip'+(JM.sel[d.id]?' on':'')+'" data-d="'+d.id+'" title="'+d.name+' · '+d.rs+' · '+d.vp[0]+'×'+d.vp[1]+' vp · '+d.bp+' 断点"><span class="cb"></span>'+riHTML(d)+'<b>'+d.name+'</b><span class="bp '+d.bp+'">'+d.bp+'</span><span class="rs">'+d.rs+'</span></button>'}).join('');
+    ch+='<button class="dchip dis" data-d="watch" title="module.json5 的 deviceTypes 没声明 wearable，这条旅程不在手表上跑"><span class="cb"></span>'+riHTML('watch')+'<b>WATCH 5</b><span class="rs">466×466 · 未声明 wearable</span></button>';
+    $('#jm-devs').innerHTML=ch;
+    $$('#jm-api button').forEach(function(b){b.classList.toggle('on',b.dataset.a===JM.api)});
+    var n=selDevs().length*apis().length;
+    var run=$('#jm-run');run.disabled=JM.running||!n;
+    run.querySelector('span').textContent=JM.running?(JM.trigger&&JM.trigger.kind==='commit'?'流水线运行中…':'运行中…'):'并行跑 '+n+' 台';
+    var sw=$('#jm-auto');sw.classList.toggle('on',JM.auto);sw.setAttribute('aria-checked',JM.auto?'true':'false');
+    $$('#jm-devs .dchip,#jm-api button,#jm-jr').forEach(function(b){if(JM.running)b.setAttribute('disabled','');else b.removeAttribute('disabled')});
+    $('#jrc-file').textContent=J.file;
+    $('#jrc-sub').textContent=J.steps.map(function(s){return s[1]}).join(' → ')+' · '+selDevs().length+' 种形态';
+  }
+  function renderMeter(){
+    var alive=insts.filter(function(i){return i.st!=='bye'}).length, loc=localOn?LOCAL:0;
+    var inter=alive*STREAM, jr=JM.live*STREAM, used=SYS+loc+inter+jr, n=JM.rows.length||selDevs().length*apis().length;
+    function p(gb){return (gb/TOTAL*100).toFixed(2)+'%'}
+    var mm=Math.floor(JM.secs/60),ss=Math.floor(JM.secs%60);
+    var done=0,tot=0;JM.rows.forEach(function(r){r.cells.forEach(function(c){tot++;if(c.st==='pass'||c.st==='fail'||c.st==='skip')done++})});
+    $('#jm-meter').innerHTML='<span class="it"><svg><use href="#i-gauge"/></svg>本机内存</span><span class="jm-mb"><i class="sys" style="--l:0;--w:'+p(SYS)+'"></i><i class="loc" style="--l:'+p(SYS)+';--w:'+p(loc)+'"></i><i class="cld" style="--l:'+p(SYS+loc)+';--w:'+p(inter+jr)+'"></i></span>'
+      +'<span><b>'+used.toFixed(1)+'</b> / 32 GB · 旅程画面流 <b>+'+jr.toFixed(1)+'</b> GB</span>'
+      +'<span class="gh">本地开同样 '+n+' 台 ≈ '+(n*LOCAL).toFixed(1)+' GB</span><span class="sep"></span>'
+      +'<span class="it">'+(JM.live?'<span class="dm-dot info pulse"></span>':'<svg><use href="#i-cloud"/></svg>')+'云端 <b>'+JM.live+'</b> 台在跑 · 华东</span><span class="sep"></span>'
+      +'<span class="it"><svg><use href="#i-clock"/></svg>云端时长 <b>'+(mm<10?'0':'')+mm+':'+(ss<10?'0':'')+ss+'</b> · 计 <b>'+JM.devMin.toFixed(1)+'</b> 台·分钟</span>'
+      +'<span class="grow"></span><span>步骤 <b>'+done+'</b> / '+tot+'</span>';
+  }
+
+  /* ---------- 渲染：设备墙 ---------- */
+  function stageScale(devs,W){
+    var s=0.1;
+    for(;s>0.03;s-=0.002){var tot=0;devs.forEach(function(d){tot+=Math.max(devDispW(d,s),124)});tot+=(devs.length-1)*18;if(tot<=W)break}
+    return s;
+  }
+  var lastW=0;
+  function renderStage(){
+    var stg=$('#jm-stage'),W=stg.clientWidth-48;if(W<=0)return;lastW=stg.clientWidth;
+    if(!JM.rows.length)buildRows();
+    JM.s=stageScale(selDevs(),W);
+    drawStage(stg);
+    /* 标签比设备宽时可能折行：逐步缩小直到一行放下 */
+    for(var tries=0;tries<12&&wrapped(stg);tries++){JM.s-=0.003;drawStage(stg)}
+  }
+  function wrapped(stg){
+    var n=selDevs().length,els=$$('.jd',stg).slice(0,n);if(els.length<2)return false;
+    var a=els[0],z=els[els.length-1];return z.offsetTop+z.offsetHeight>a.offsetTop+a.offsetHeight+4;
+  }
+  function drawStage(stg){
+    var multi=apis().length>1,h='',lastApi=null;
+    JM.rows.forEach(function(r,i){
+      if(multi&&r.api!==lastApi){lastApi=r.api;h+='<div class="jm-rl">API '+r.api+' · '+selDevs().length+' 台</div>'}
+      h+='<div class="jd" data-i="'+i+'"><div class="jd-wrap"></div><div class="jd-cap">'+riHTML(r.dev,12)+'<b>'+r.dev.name+'</b><span class="bp '+r.dev.bp+'">'+r.dev.bp+'</span></div><div class="jd-sub">'+r.dev.vp[0]+'×'+r.dev.vp[1]+' vp · API '+r.api+'</div><div class="jd-prog"></div><div class="jd-st"></div></div>';
+    });
+    stg.innerHTML=h;
+    JM.rows.forEach(function(r,i){paintRow(i)});
+  }
+  function paintRow(i){
+    var r=JM.rows[i],el=$('#jm-stage .jd[data-i="'+i+'"]');if(!el)return;
+    var w=$('.jd-wrap',el);
+    var tag='<span class="jtag">API '+r.api+'</span>'+(r.st==='pass'?'<span class="jtag st ok">通过</span>':r.st==='fail'?'<span class="jtag st err">失败</span>':'');
+    w.innerHTML=tag+devBox(r.dev,JM.s,r.frame);decorate(w,r.frame);
+    el.classList.toggle('on',!!(JM.cell&&JM.cell.r===i));
+    capRow(i);
+  }
+  function capRow(i){
+    var r=JM.rows[i],el=$('#jm-stage .jd[data-i="'+i+'"]');if(!el)return;
+    $('.jd-prog',el).innerHTML=r.cells.map(function(c){return '<i class="'+c.st+'"></i>'}).join('');
+    var st=$('.jd-st',el),S=steps(),txt='',cls='';
+    if(r.st==='idle')txt='待启动';
+    else if(r.st==='boot')txt=r.frame.msg||'启动中';
+    else if(r.st==='run'){var ci=-1;r.cells.forEach(function(c,j){if(c.st==='run')ci=j});txt=ci>=0?(ci+1)+'/'+S.length+' '+S[ci][1]+(r.waiting?' · 等待断言…':''):'运行中'}
+    else if(r.st==='pass'){txt='✓ 全部通过 · '+rowTotal(r);cls='ok'}
+    else if(r.st==='fail'){var fi=-1;r.cells.forEach(function(c,j){if(c.st==='fail')fi=j});txt='✗ '+S[fi][1]+' · '+ISS[r.cells[fi].iss].short;cls='err'}
+    st.className='jd-st '+cls;st.textContent=txt;
+  }
+
+  /* ---------- 跑：云端并行拉起 N 台，每台各自回放 ---------- */
+  function plan(r,id,fx){
+    switch(id){
+      case 'login':return {frames:[{k:'login',tap:'login'}],end:{k:'home'}};
+      case 'search':return {frames:[{k:'home',tap:'search'}],end:{k:'search'}};
+      case 'cart':var bad=r.dev.kind==='hover'&&!fx.crease;
+        return {frames:[{k:'search',tap:'row1'},{k:'detail',tap:'add'}],end:bad?{k:'detail',badge:0,hot:'crease'}:{k:'detail',badge:1},fail:bad?'crease':null};
+      case 'pay':var bad2=r.dev.id==='xt3'&&!fx.width;
+        return {frames:[{k:'detail',badge:1,tap:'cart'}].concat(bad2?[{k:'cart'}]:[{k:'cart',tap:'pay'}]),end:bad2?{k:'cart',hot:'offscreen'}:{k:'checkout'},fail:bad2?'width':null};
+      default:return {frames:[{k:'search',tap:'row1'}],end:{k:'detail'}};
+    }
+  }
+  function setFrame(i,st){JM.rows[i].frame=st;paintRow(i)}
+  function runRow(i,delay,done){
+    var r=JM.rows[i];r.tm.forEach(clearTimeout);r.tm=[];
+    var S=steps(),f=r.dev.f*(r.api===18?1.06:1),fx=fxNow();r.fx=fx;
+    r.cells=S.map(function(){return {st:''}});r.st='boot';r.waiting=false;
+    function T(fn,ms){r.tm.push(setTimeout(fn,Math.round(ms)))}
+    var t=delay;
+    setFrame(i,{k:'boot',pct:4,msg:'排队 · 华东'});
+    T(function(){setFrame(i,{k:'boot',pct:20,msg:'分配 ARM 实例 · 华东'})},t+=220);
+    T(function(){setFrame(i,{k:'boot',pct:55,msg:'启动 HarmonyOS · API '+r.api})},t+=460*f);
+    T(function(){setFrame(i,{k:'boot',pct:86,msg:'hdc install entry.hap'})},t+=460*f);
+    T(function(){r.st='run';step(0)},t+=380*f);
+    function step(j){
+      if(j>=S.length){r.st='pass';paintRow(i);renderMatrix();done();return}
+      var id=S[j][0],pl=plan(r,id,fx),c=r.cells[j],k=0;
+      c.st='run';renderMatrix();
+      (function nx(){
+        if(k<pl.frames.length){var fr=pl.frames[k++];fr.fx=fx;setFrame(i,fr);T(nx,540*f);return}
+        var end=pl.end;end.fx=fx;
+        if(pl.fail){
+          r.waiting=true;setFrame(i,{k:end.k,badge:end.badge,fx:fx});
+          T(function(){
+            r.waiting=false;c.st='fail';c.iss=pl.fail;c.t=pl.fail==='crease'?3.0:5.0;c.shot=end;
+            for(var q=j+1;q<S.length;q++)r.cells[q].st='skip';
+            r.st='fail';setFrame(i,end);renderMatrix();done();
+          },900*f);
+          return;
+        }
+        c.st='pass';c.t=+(BASE_T[id]*f*(0.94+Math.random()*0.12)).toFixed(1);c.shot=end;setFrame(i,end);renderMatrix();
+        T(function(){step(j+1)},300*f);
+      })();
+    }
+  }
+  function startTimer(){
+    JM.t0=Date.now();JM.secs=0;clearInterval(JM.iv);
+    JM.iv=setInterval(function(){
+      JM.secs=(Date.now()-JM.t0)/1000;JM.devMin+=JM.live*0.25/60;renderMeter();
+    },250);
+  }
+  function stopTimer(){clearInterval(JM.iv);JM.iv=null}
+  function liveCount(){return JM.rows.filter(function(r){return r.st==='boot'||r.st==='run'}).length}
+  function startRun(trigger){
+    if(JM.running)return;
+    if(!selDevs().length)return;
+    buildRows();JM.trigger=trigger||{kind:'manual'};JM.running=true;JM.devMin=0;
+    renderCfg();renderStage();openBottom(trigger&&trigger.kind==='commit'?'git':'mx');
+    startTimer();
+    var left=JM.rows.length;
+    JM.rows.forEach(function(r,i){runRow(i,i*70,function(){JM.live=liveCount();renderRes();renderMeter();if(--left===0)finishRun()})});
+    JM.live=liveCount();renderRes();renderMeter();
+    renderMatrix();renderDetail();renderLeft();renderGit();
+  }
+  function summary(){
+    var ok=0,fails=[],sp=0,st=0;
+    JM.rows.forEach(function(r){if(r.st==='pass')ok++;else if(r.st==='fail')fails.push(r);r.cells.forEach(function(c){st++;if(c.st==='pass')sp++})});
+    return {ok:ok,n:JM.rows.length,sp:sp,st:st,fails:fails};
+  }
+  function finishRun(){
+    JM.running=false;JM.live=0;stopTimer();renderRes();renderMeter();
+    var sm=summary(),tr=JM.trigger;
+    var res={ok:sm.ok,n:sm.n,sp:sm.sp,st:sm.st,fails:sm.fails.map(function(r){return r.dev.name+(apis().length>1?' · API '+r.api:'')}),jr:JOURNEYS[JM.jr].file};
+    JM.last={res:res,clean:!FIX.crease&&!FIX.width,tr:tr};
+    if(tr.kind==='commit'){tr.c.res=res;tr.c.running=false;renderGit();
+      toast('流水线跑完 · 结果已写回 '+tr.c.h,res.ok===res.n?'「'+tr.c.msg+'」在云端 '+res.n+' 台全部通过（'+res.sp+'/'+res.st+' 步），提交记录已标记 ✓。':res.ok+'/'+res.n+' 台通过，失败：'+res.fails.join('、')+'。');
+    }else if(tr.kind==='row'){
+      var r=JM.rows[tr.i];
+      toast(r.st==='pass'?r.dev.name+' 重跑通过':r.dev.name+' 重跑仍失败',r.st==='pass'?'只在这 1 台上验证，没动其他实例。工作区的修改可以「提交修复」了。':'稳定复现：'+ISS[r.cells.filter(function(c){return c.iss})[0].iss].title+'。');
+    }else{
+      toast(res.ok===res.n?'全部通过 · '+res.n+' 台':res.ok+'/'+res.n+' 台通过 · '+sm.fails.length+' 处失败',res.ok===res.n?'同一条旅程在 sm / md / lg 与悬停态上都走通了，共 '+res.sp+' 步。':'失败集中在折叠与三折叠形态：'+res.fails.join('、')+'。点结果矩阵里的红格看现场。');
+    }
+    JM.trigger=null;renderCfg();renderMatrix();renderDetail();renderLeft();renderGit();
+  }
+  function rerunRow(i){
+    if(JM.running)return;var r=JM.rows[i];if(!r||r.st==='idle')return;
+    JM.running=true;JM.trigger={kind:'row',i:i};JM.devMin=0;renderCfg();startTimer();
+    runRow(i,0,function(){JM.live=0;renderRes();finishRun()});
+    JM.live=1;renderRes();renderMeter();renderMatrix();renderDetail();renderLeft();
+    var el=$('#jm-stage .jd[data-i="'+i+'"]');if(el)el.scrollIntoView({block:'nearest',inline:'nearest'});
+  }
+
+  /* ---------- 底部：结果矩阵 ---------- */
+  function openBottom(bt){
+    DemoFrame.setSide('bottom','journey');
+    if(bt){JM.bt=bt;$$('#jm-btabs .btab').forEach(function(b){b.classList.toggle('on',b.dataset.bt===bt)});$$('.jm-bb').forEach(function(x){x.hidden=x.dataset.bt!==bt})}
+  }
+  function renderMatrix(){
+    var S=steps(),cols='minmax(150px,1.5fr) 36px repeat('+S.length+',minmax(70px,1fr)) 46px 24px';
+    var h='<div class="mx-h" style="grid-template-columns:'+cols+'"><span>设备 · 断点</span><span>API</span>'+S.map(function(s,j){return '<span>'+(j+1)+' '+s[1]+'</span>'}).join('')+'<span class="r">用时</span><span></span></div>';
+    JM.rows.forEach(function(r,i){
+      h+='<div class="mx-r" style="grid-template-columns:'+cols+'"><span class="dv">'+riHTML(r.dev,12)+'<b>'+r.dev.name+'</b><span class="bp '+r.dev.bp+'">'+r.dev.bp+'</span></span><span class="mono">'+r.api+'</span>';
+      r.cells.forEach(function(c,j){
+        var on=JM.cell&&JM.cell.r===i&&JM.cell.c===j?' on':'',inner;
+        if(c.st==='pass')inner='<svg class="i"><use href="#i-checkS"/></svg>'+c.t.toFixed(1)+' s';
+        else if(c.st==='fail')inner='<svg class="i"><use href="#i-err"/></svg>'+ISS[c.iss].short+(FIX[c.iss]===2?'<span class="fx">已改</span>':'');
+        else if(c.st==='run')inner='<span class="spin"></span>'+(r.waiting?'等断言':'进行中');
+        else if(c.st==='skip')inner='跳过';
+        else inner=r.st==='boot'?'启动中':'—';
+        var cls=c.st||'idle';
+        h+=(c.st==='pass'||c.st==='fail')?'<button class="mc '+cls+on+'" data-r="'+i+'" data-c="'+j+'" title="'+(c.st==='fail'?'看截图、HiLog 与代码行':'看这一步的截图')+'">'+inner+'</button>':'<span class="mc '+cls+'">'+inner+'</span>';
+      });
+      h+='<span class="mono r">'+rowTotal(r)+'</span><button class="abtn" data-rr="'+i+'" title="只在这台上重跑"'+(JM.running||r.st==='idle'?' disabled':'')+'><svg class="i"><use href="#i-rerun"/></svg></button></div>';
+    });
+    var sm=summary(),anyRes=JM.rows.some(function(r){return r.st==='pass'||r.st==='fail'});
+    if(anyRes&&!JM.running)h+='<div class="mx-sum"><span><b>'+sm.ok+'</b> / '+sm.n+' 台通过</span><span>· <b>'+sm.sp+'</b> / '+sm.st+' 步</span>'+(sm.fails.length?'<span>· 失败只出现在 '+sm.fails.map(function(r){return r.dev.name}).filter(function(v,i,a){return a.indexOf(v)===i}).join('、')+'</span>':'<span>· sm / md / lg 与悬停态全部走通</span>')+'</div>';
+    $('#jm-mx').innerHTML=h;
+    var b=$('#jm-bsum');
+    if(JM.running){b.className='dm-pill info';b.innerHTML='<span class="spin"></span>'+(JM.trigger&&JM.trigger.kind==='commit'?'流水线 · '+JM.trigger.c.h:JM.trigger&&JM.trigger.kind==='row'?'重跑 1 台':'并行跑 '+JM.rows.length+' 台')}
+    else if(anyRes){b.className='dm-pill '+(sm.ok===sm.n?'ok':'err');b.textContent=sm.ok+'/'+sm.n+' 台通过 · '+sm.sp+'/'+sm.st+' 步'}
+    else{b.className='dm-pill muted';b.textContent='还没跑'}
+  }
+
+  /* ---------- 底部：失败现场（截图 · HiLog · ArkTS 代码行 · 修 · 重跑） ---------- */
+  function logHTML(L){return '<div class="det-log">'+L.map(function(l){return '<div class="lv-'+l[0]+'"><span class="tm">'+l[1]+'</span>  '+l[0]+'  '+l[2]+'  '+l[3]+'</div>'}).join('')+'</div>'}
+  function codeHTML(I){
+    if(FIX[I.key]===2)return '<div class="det-code">'+I.diff.map(function(l){return '<div class="l'+(l[1]==='-'?' del':l[1]==='+'?' add':'')+'"><span class="n">'+l[0]+'</span><span class="g">'+(l[1]===' '?'':l[1])+'</span><span>'+l[2]+'</span></div>'}).join('')+'</div>';
+    return '<div class="det-code">'+I.code.map(function(l){return '<div class="l'+(l[2]?' err':'')+'"><span class="n">'+l[0]+'</span><span class="g">'+(l[2]?'✗':'')+'</span><span>'+l[1]+'</span></div>'}).join('')+'</div>';
+  }
+  function renderDetail(){
+    var el=$('#jm-det'),sel=JM.cell;
+    if(!sel||!JM.rows[sel.r]){
+      var sm=summary(),anyRes=JM.rows.some(function(r){return r.st==='pass'||r.st==='fail'}),h='<div class="det-empty">';
+      if(JM.running)h+='<span class="t">云端 '+JM.live+' 台在跑…</span><span>每台各自回放，步骤进度同步刷新到左边的矩阵。</span>';
+      else if(!anyRes)h+='<span class="t">还没跑</span><span>在 Journey Matrix 里选旅程、设备和系统版本，点「并行跑」。</span>';
+      else if(!sm.fails.length)h+='<span class="t" style="color:var(--ui-success)">全部通过</span><span>'+sm.n+' 台 · '+sm.sp+' 步。点任意格子看那一步的截图。</span>';
+      else{
+        h+='<span class="t">'+sm.fails.length+' 处失败 · 点开看现场</span>';
+        sm.fails.forEach(function(r){var i=JM.rows.indexOf(r),j=-1;r.cells.forEach(function(c,q){if(c.st==='fail')j=q});var I=ISS[r.cells[j].iss];
+          h+='<button class="fl-it" data-r="'+i+'" data-c="'+j+'"><svg class="i"><use href="#i-err"/></svg><b>'+r.dev.name+'</b><span class="bp '+r.dev.bp+'">'+r.dev.bp+'</span><span class="d">API '+r.api+' · '+steps()[j][1]+' · '+I.title+' · '+I.file+':'+I.line+'</span></button>'});
+      }
+      el.innerHTML=h+'</div>';return;
+    }
+    var r=JM.rows[sel.r],c=r.cells[sel.c],S=steps(),d=r.dev;
+    var pill=c.st==='pass'?'<span class="dm-pill ok">通过 · '+c.t.toFixed(1)+' s</span>':c.st==='fail'?'<span class="dm-pill err">失败</span>':'<span class="dm-pill info"><span class="spin"></span>正在这台上重跑</span>';
+    var h='<div class="det-h">'+riHTML(d,12)+'<b>'+d.name+'</b><span class="bp '+d.bp+'">'+d.bp+'</span><span class="mono">'+d.vp[0]+'×'+d.vp[1]+' vp · API '+r.api+'</span><svg class="i"><use href="#i-chevR"/></svg><span>'+(sel.c+1)+' '+S[sel.c][1]+'</span>'+pill+'<span class="grow"></span><button class="abtn" data-x="1" title="Close"><svg class="i"><use href="#i-closeS"/></svg></button></div>';
+    h+='<div class="det-b"><div class="det-shot"><div class="shot" id="det-shot"></div><div class="cap" id="det-cap"></div></div><div class="det-info">';
+    var running=r.st==='boot'||r.st==='run', shot=running?r.frame:(c.shot||r.frame);
+    if(running){
+      h+='<div class="det-why"><b style="color:var(--ui-info)">正在 '+d.name+' 上重跑…</b><span>只拉起这 1 台，其他实例不动。</span></div>';
+    }else if(c.st==='fail'){
+      var I=ISS[c.iss];I.key=c.iss;var fs=FIX[c.iss];
+      h+='<div class="det-why"><b>'+I.title+'</b><span>'+I.why+'</span></div>';
+      h+='<div class="det-sec">HiLog <span class="mono">· 这一步前后 · A03D00 / ArkUI / WMS</span></div>'+logHTML(I.log);
+      h+='<div class="det-sec">ArkTS <span class="mono">· '+FILEPATH[I.file]+':'+I.line+(fs===2?' · 工作区改动':'')+'</span></div>'+codeHTML(I);
+      if(fs===1)h+='<div class="det-ai"><span class="spin"></span>DevEco Code 在读截图、布局树和 HiLog，改 '+I.file+':'+I.line+' …</div>';
+      if(fs===2)h+='<div class="det-ai ok"><svg class="i"><use href="#i-checkS"/></svg>已改 1 处：'+I.fixNote+'</div>';
+      h+='<div class="det-act">'
+        +(fs===0?'<button class="btn primary sm" data-do="fix"><svg class="i"><use href="#i-sparkle"/></svg>交给 AI 修</button>':'')
+        +'<button class="btn sm'+(fs===2?' primary':'')+'" data-do="rerun"'+(fs===1||JM.running?' disabled':'')+'><svg class="i"><use href="#i-rerun"/></svg>只在这台上重跑</button>'
+        +(fs===2&&!JM.committed[c.iss]?'<button class="btn sm" data-do="commit"'+(JM.running?' disabled':'')+'><svg class="i"><use href="#i-tw-commit"/></svg>提交修复</button>':'')
+        +'<span class="note">'+(fs===2?'先在这台上验证，再提交；开了「每次提交自动跑」会在全部形态上再跑一遍':'修完只重跑这一台，不用整轮重来')+'</span></div>';
+    }else{
+      var id=S[sel.c][0],fixedHere=(id==='cart'&&d.kind==='hover'&&r.fx&&r.fx.crease)||(id==='pay'&&d.id==='xt3'&&r.fx&&r.fx.width);
+      h+='<div class="det-why ok"><b>断言通过 · '+c.t.toFixed(1)+' s</b><span>期望：'+EXP[id]+(fixedHere?'。这台上次在这一步失败，改动后已通过。':'')+'</span></div>';
+      h+='<div class="det-sec">HiLog</div>'+logHTML([['I','10:41:0'+(sel.c*2+3)+'.1'+(sel.r%10)+'4','A03D00/Journey','step '+(sel.c+1)+'/'+S.length+' '+S[sel.c][1]+' · assert ok ('+c.t.toFixed(1)+' s)']]);
+      h+='<div class="det-act"><button class="btn sm" data-do="rerun"'+(JM.running?' disabled':'')+'><svg class="i"><use href="#i-rerun"/></svg>只在这台上重跑</button></div>';
+    }
+    el.innerHTML=h+'</div></div>';
+    /* 截图：同一台设备按真实比例放大 */
+    var box=$('#det-shot'),s2=Math.min(270/d.res[0],206/(devDispH(d,1)));
+    box.innerHTML=devBox(d,s2,shot);decorate(box,shot);
+    $('#det-cap').innerHTML=c.st==='fail'&&!running?ISS[c.iss].cap:d.rs+' · '+d.bp+' 断点';
+  }
+  function selectCell(i,j){
+    JM.cell=(i==null)?null:{r:i,c:j};
+    $$('#jm-stage .jd').forEach(function(x){x.classList.toggle('on',!!(JM.cell&&+x.dataset.i===JM.cell.r))});
+    renderMatrix();renderDetail();
+  }
+  function aiFix(key){
+    if(FIX[key])return;FIX[key]=1;renderDetail();
+    setTimeout(function(){
+      FIX[key]=2;renderDetail();renderMatrix();
+      var I=ISS[key];
+      toast('DevEco Code 改了 '+I.file+' 1 处','「'+I.title+'」→ '+I.fixNote+' 点「只在这台上重跑」验证。');
+    },1500);
+  }
+  function commitFix(){
+    var keys=['crease','width'].filter(function(k){return FIX[k]===2&&!JM.committed[k]});if(!keys.length||JM.running)return;
+    keys.forEach(function(k){JM.committed[k]=1});
+    var h=(Math.random().toString(16)+'0000000').slice(2,9);
+    var msg=keys.length>1?'fix(ui): 悬停态按钮避开折痕，结算栏不再溢出三屏':ISS[keys[0]].commit;
+    var c={h:h,msg:msg,t:'刚刚',res:null,fresh:true};COMMITS.unshift(c);
+    if(JM.auto){c.running=true;renderDetail();startRun({kind:'commit',c:c});
+      toast('已提交 '+h+' · 流水线开始','每次提交自动跑：'+JOURNEYS[JM.jr].file+' × '+JM.rows.length+' 台，跑完把结果写回这条提交。');}
+    else{openBottom('git');renderGit();renderDetail();
+      toast('已提交 '+h,'没开「每次提交自动跑」，这次提交没跑旅程。打开后，下一次提交会自动在云端全部形态上跑。');}
+  }
+
+  /* ---------- 底部：提交记录（流水线结果回写） ---------- */
+  function resChip(c){
+    if(c.running)return '<span class="dm-pill info"><span class="spin"></span>云端跑 '+JM.rows.length+' 台…</span>';
+    if(!c.res)return '<span class="dm-pill muted">旅程未跑</span>';
+    var R=c.res;
+    return R.ok===R.n?'<span class="dm-pill ok"><svg><use href="#i-checkS"/></svg>旅程 '+R.ok+'/'+R.n+' 形态 · '+R.sp+'/'+R.st+' 步</span>'
+      :'<span class="dm-pill err"><svg><use href="#i-err"/></svg>旅程 '+R.ok+'/'+R.n+' · '+R.fails.join('、')+'</span>';
+  }
+  function renderGit(){
+    var J=JOURNEYS[JM.jr],n=selDevs().length*apis().length;
+    var h='<div class="git-top"><button class="jm-sw'+(JM.auto?' on':'')+'" data-do="auto" role="switch" aria-checked="'+JM.auto+'"><i></i>每次提交自动跑</button>'
+      +'<span class="flow"><span class="s">git commit</span><svg class="i"><use href="#i-chevR"/></svg><span class="s">hvigor assembleHap</span><svg class="i"><use href="#i-chevR"/></svg><span class="s">云端 '+n+' 台跑 '+J.file+'</span><svg class="i"><use href="#i-chevR"/></svg><span class="s">结果写回提交</span></span><span class="grow"></span>'
+      +'<span class="dm-pill '+(JM.auto?'ok':'muted')+'">'+(JM.auto?'流水线已开':'流水线关')+'</span></div>';
+    COMMITS.forEach(function(c,i){
+      h+='<div class="gr'+(c.fresh?' new':'')+'"><svg><use href="#i-tw-commit"/></svg><span class="h">'+c.h+'</span><span class="msg">'+(i===0?'<span class="head">HEAD</span>':'')+'<span>'+c.msg+'</span></span><span class="t">'+c.t+'</span><span class="res">'+resChip(c)+'</span></div>';
+      c.fresh=false;
+    });
+    $('#jm-git').innerHTML=h;
+    $('#jm-gitn').textContent=COMMITS.length;
+  }
+  function toggleAuto(){
+    JM.auto=!JM.auto;renderCfg();openBottom('git');
+    var head=COMMITS[0],wrote=false;
+    if(JM.auto&&JM.last&&JM.last.clean&&JM.last.tr.kind==='manual'&&!head.res&&head.h==='e81c0a4'){head.res=JM.last.res;wrote=true}
+    renderGit();
+    if(JM.auto)toast('每次提交自动跑：已开','提交后先 hvigor 打包，再在云端 '+selDevs().length*apis().length+' 台上跑 '+JOURNEYS[JM.jr].file+'，结果写回提交记录。'+(wrote?'刚才那轮（HEAD '+head.h+'）已写回。':''));
+    else toast('每次提交自动跑：已关','提交不再触发云端旅程，可以随时在 Journey Matrix 手动跑。');
+  }
+
+  /* ---------- 左栏卡片 ---------- */
+  function renderLeft(){
+    var c=$('#jr-cnt');c.textContent=JM.live?'测试池 · '+JM.live+' 台在跑':'测试池 · 空闲';
+    var L=$('#jrc-last');
+    if(JM.running)L.innerHTML='<span class="dm-pill info"><span class="spin"></span>正在跑</span>'+JM.rows.length+' 台并行';
+    else if(JM.last){var R=JM.last.res;L.innerHTML='上次：<span class="dm-pill '+(R.ok===R.n?'ok':'err')+'">'+R.ok+'/'+R.n+' 台通过</span>'+(R.fails.length?R.fails.length+' 处失败':'全部通过')}
+  }
+
+  /* ---------- 事件 ---------- */
+  function gotoJourneyTab(){var t=$('#tabs .tab[data-file="Journey Matrix"]');if(t)t.click()}
+  $('#btn-journey').addEventListener('click',function(){gotoJourneyTab()});
+  $('#jm-run').addEventListener('click',function(){startRun({kind:'manual'})});
+  $('#jm-rerun-all').addEventListener('click',function(){gotoJourneyTab();startRun({kind:'manual'})});
+  $('#jm-auto').addEventListener('click',toggleAuto);
+  $('#jm-jr').addEventListener('click',function(e){e.stopPropagation();if(JM.running)return;var m=$('#jm-menu');m.hidden=!m.hidden});
+  $('#jm-menu').addEventListener('click',function(e){var mi=e.target.closest('.mi[data-j]');if(!mi)return;JM.jr=+mi.dataset.j;$('#jm-menu').hidden=true;buildRows();renderAll()});
+  document.addEventListener('click',function(e){if(!e.target.closest('.jm-dd'))$('#jm-menu').hidden=true});
+  $('#jm-devs').addEventListener('click',function(e){
+    var b=e.target.closest('.dchip');if(!b||JM.running)return;
+    if(b.dataset.d==='watch'){toast('这条旅程不在手表上跑','entry/src/main/module.json5 的 deviceTypes 只声明了 phone、tablet、2in1；要在 WATCH 5 上跑，先加 wearable 并提供手表页面。');return}
+    JM.sel[b.dataset.d]=JM.sel[b.dataset.d]?0:1;buildRows();renderAll();
+  });
+  $('#jm-api').addEventListener('click',function(e){var b=e.target.closest('button');if(!b||JM.running)return;JM.api=b.dataset.a;buildRows();renderAll()});
+  $('#jm-stage').addEventListener('click',function(e){
+    var jd=e.target.closest('.jd');if(!jd)return;var i=+jd.dataset.i,r=JM.rows[i];
+    var j=-1;r.cells.forEach(function(c,q){if(c.st==='fail')j=q});
+    if(j<0){for(var q=r.cells.length-1;q>=0;q--)if(r.cells[q].st==='pass'){j=q;break}}
+    if(j>=0){openBottom('mx');selectCell(i,j)}
+  });
+  $('#jm-mx').addEventListener('click',function(e){
+    var rr=e.target.closest('[data-rr]');if(rr){rerunRow(+rr.dataset.rr);return}
+    var c=e.target.closest('.mc[data-r]');if(c)selectCell(+c.dataset.r,+c.dataset.c);
+  });
+  $('#jm-det').addEventListener('click',function(e){
+    var it=e.target.closest('.fl-it');if(it){selectCell(+it.dataset.r,+it.dataset.c);return}
+    if(e.target.closest('[data-x]')){selectCell(null);return}
+    var b=e.target.closest('[data-do]');if(!b||b.disabled)return;
+    var sel=JM.cell,c=sel&&JM.rows[sel.r].cells[sel.c];
+    if(b.dataset.do==='fix'&&c&&c.iss)aiFix(c.iss);
+    else if(b.dataset.do==='rerun'&&sel)rerunRow(sel.r);
+    else if(b.dataset.do==='commit')commitFix();
+  });
+  $('#jm-git').addEventListener('click',function(e){if(e.target.closest('[data-do="auto"]'))toggleAuto()});
+  $('#jm-btabs').addEventListener('click',function(e){var b=e.target.closest('.btab');if(b)openBottom(b.dataset.bt)});
+  function renderAll(){renderCfg();renderMeter();renderStage();renderMatrix();renderDetail();renderGit();renderLeft()}
+  if(window.ResizeObserver){new ResizeObserver(function(){var w=$('#jm-stage').clientWidth;if(w&&w!==lastW)renderStage()}).observe($('#jm-canvas'))}
+  else window.addEventListener('resize',function(){renderStage()});
+  buildRows();renderAll();
+
+
 DemoGuide.init([
   {"target": "#btn-multi", "kind": "click", "pos": "right", "label": "云端多开：勾形态，几台并行启动"},
   {"target": ".res .cmp", "kind": "change", "pos": "bottom", "label": "云端多开，本机内存几乎不涨"},
-  {"target": "#btn-migrate", "kind": "click", "pos": "right", "label": "本机模拟器一键迁到云端"}
+  {"target": "#btn-migrate", "kind": "click", "pos": "right", "label": "本机模拟器一键迁到云端"},
+  {"target": "#btn-journey", "kind": "click", "pos": "right", "label": "一条旅程，全部鸿蒙形态云端并行跑"},
+  {"target": "#jm-mx", "kind": "change", "pos": "top", "label": "设备 × 步骤矩阵：点红格看截图、HiLog、代码行"},
+  {"target": "#jm-auto", "kind": "click", "pos": "bottom", "label": "每次提交自动跑，结果写回提交记录"}
 ]);
 })();
 </script>
