@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='32' y2='32' gradientUnits='userSpaceOnUse'%3E%3Cstop stop-color='%232C8DDD'/%3E%3Cstop offset='1' stop-color='%233357AC'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='32' height='32' rx='7' fill='url(%23g)'/%3E%3Ctext x='16' y='22.5' font-family='Arial,Helvetica,sans-serif' font-size='13' font-weight='700' fill='white' text-anchor='middle'%3EDE%3C/text%3E%3C/svg%3E">
-<title>15 · 任务状态跟着人走：PC 写，平板审，手表按</title>
+<title>15 · 任务状态跟着人走：碰一碰接续，平板审，手表按</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;500&display=swap">
 <link rel="stylesheet" href="../../deveco-intui-kit/src/tokens.css">
 <link rel="stylesheet" href="../../deveco-intui-kit/src/components.css">
@@ -14,16 +14,29 @@
 <script src="../_shared/frame.js"></script>
 <script src="../_shared/guide.js"></script>
 <style>
-  .ide[data-ide-theme]{--proj-w:clamp(400px,30vw,460px)}
-  /* 编辑区上下分：上代码，下画布（另外两端） */
-  .dm-split.v.hand{grid-template-rows:minmax(0,1fr) 300px}
+  .ide[data-ide-theme]{--proj-w:clamp(400px,30vw,460px);--bottom-h:188px}
+  /* 编辑区上下分：上代码，下画布（另外几端） */
+  .dm-split.v.hand{grid-template-rows:minmax(0,1fr) 360px}
   .hand .dm-canvas{overflow:auto}
-  .hand .stage{padding:32px 32px 28px;gap:52px;align-items:center}
-  .cv-lbl{position:absolute;top:8px;left:12px;z-index:2;display:inline-flex;align-items:center;gap:6px}
+  .hand .stage{padding:52px 32px 28px;gap:52px;align-items:center;justify-content:center}
+  .hand .stage[hidden]{display:none}
+  .cv-bar{position:absolute;top:8px;left:12px;right:12px;z-index:4;display:flex;align-items:center;gap:10px;pointer-events:none}
+  .cv-bar > *{pointer-events:auto}
+  .cv-lbl{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
   .cv-lbl svg{width:12px;height:12px}
+  .cv-bar .dm-seg{align-self:center}
+  .cv-bar .dm-seg button{height:24px;display:inline-flex;align-items:center;gap:5px}
+  .cv-bar .dm-seg svg{width:13px;height:13px}
+  .cv-bar .grow{flex:1}
+  .cv-bar .btn{display:inline-flex;align-items:center;gap:6px}
+  .cv-bar .btn svg{width:14px;height:14px}
+  .cv-bar .btn[disabled]{opacity:.55;cursor:default}
+  #tap-hint{white-space:nowrap}
   /* 手表外框表带需要自己的层叠上下文才看得见 */
   .dm-device.watch{z-index:0}
   .dm-device.watch .cap{bottom:-34px}
+  /* MatePad Pro 13.2：2880 × 1920，屏幕 3:2 */
+  .hand .dm-device.tablet{width:352px;height:240px}
   .dm-device.tablet .scr,.dm-device.watch .scr{transition:box-shadow .2s}
   .dm-device.live .scr{box-shadow:inset 0 0 0 2px var(--ui-accent)}
   /* 平板屏：断点 + diff + 审批 */
@@ -54,7 +67,7 @@
   .mapp .ring .wb i{width:18px;height:18px;border-radius:50%;background:#f0f1f3;color:#333;font-style:normal;font-size:7px;line-height:1;display:grid;place-items:center;font-weight:600;transition:background .2s,color .2s}
   .mapp .ring .wb i.lit{background:#3574F0;color:#fff}
   .mapp .ring .wb i.stop{color:#DB3B4B}
-  /* 右侧：三端卡片 */
+  /* 右侧：几端卡片 */
   .ai-scroll{padding-top:10px}
   .dm-card .dm-item[data-end]{min-height:30px}
   .dm-card .dm-item[data-end] .grow{font-weight:400}
@@ -62,11 +75,171 @@
   .dm-card-ft .dm-small{white-space:normal;line-height:var(--lh-sm)}
   .dm-card-ft .dm-small b{font-weight:600;color:var(--ui-fg)}
   .stp .st.done svg{width:10px;height:10px}
+  .stp{transition:background .3s}
+  .stp.focus{background:color-mix(in srgb,var(--ui-accent) 16%,transparent)}
   .amsg .md p{color:var(--ui-fg)}
   .ai-input .top .ctx svg{width:12px;height:12px}
+  .code .ln.flash{animation:lnflash 1.6s ease-out 2}
+  @keyframes lnflash{0%{background:color-mix(in srgb,var(--ui-accent) 38%,transparent)}100%{background:var(--ed-caret-row)}}
+
+  /* ---------- 碰一碰场景：MateBook Pro（3120 × 2080，3:2）+ Pura 70 Pro（1260 × 2844） ---------- */
+  .tapst{position:relative;height:100%;min-height:340px;min-width:620px}
+  .tapst[hidden]{display:none}
+  .lap{position:absolute;left:calc(50% - 284px);top:44px;width:380px}
+  .lap-scr{margin:0 auto;width:316px;height:218px;background:#0f1012;border-radius:10px 10px 3px 3px;padding:8px 8px 10px;box-shadow:0 10px 26px rgba(0,0,0,.3),inset 0 0 0 1px #2a2c31;position:relative}
+  .lap-scr::before{content:"";position:absolute;top:3px;left:50%;width:3px;height:3px;margin-left:-1.5px;border-radius:50%;background:#2a2c31}
+  .lsc{position:relative;width:300px;height:200px;border-radius:2px;overflow:hidden;background:var(--ui-editor-bg)}
+  .lap-base{display:block;width:380px;height:58px}
+  .dev-cap{position:absolute;font-size:11px;color:var(--ui-fg-info);white-space:nowrap;text-align:center}
+  /* 电脑屏里的 IDE 缩影 */
+  .l-ide{position:absolute;inset:0;display:flex;flex-direction:column;transition:filter .3s,opacity .3s}
+  .l-ide .h{height:12px;flex:none;background:var(--hdr-bg);display:flex;align-items:center;gap:3px;padding:0 5px}
+  .l-ide .h i{width:14px;height:4px;border-radius:2px;background:var(--hdr-fg-dim);opacity:.6}
+  .l-ide .b{flex:1;display:flex;min-height:0}
+  .l-ide .lp{width:84px;flex:none;background:var(--ui-bg);border-right:1px solid var(--ui-border);padding:6px 5px;display:flex;flex-direction:column;gap:4px}
+  .l-ide .lp i{height:4px;border-radius:2px;background:var(--ui-fg-disabled);opacity:.55}
+  .l-ide .lp i.a{background:var(--ui-accent);opacity:.8}
+  .l-ide .lp .box{border:1px solid var(--ui-accent);border-radius:3px;padding:3px;display:flex;flex-direction:column;gap:3px}
+  .l-ide .ed{flex:1;min-width:0;padding:6px 6px;display:flex;flex-direction:column;gap:4px;position:relative}
+  .l-ide .ed i{height:4px;border-radius:2px;background:var(--ui-fg-disabled);opacity:.45;margin-left:10px}
+  .l-ide .ed i.k{background:var(--ui-accent);opacity:.7}
+  .l-ide .ed i.s{background:var(--ui-success);opacity:.6}
+  .l-ide .ed .bpl{position:relative;height:8px;margin:0 -6px;padding:2px 6px 0;background:color-mix(in srgb,var(--ui-accent) 22%,transparent)}
+  .l-ide .ed .bpl::before{content:"";position:absolute;left:3px;top:2px;width:4px;height:4px;border-radius:50%;background:var(--ui-error)}
+  .l-ide .ed .bpl i{margin-left:10px}
+  .l-ide .rp{width:58px;flex:none;background:var(--ui-bg);border-left:1px solid var(--ui-border)}
+  .l-ide .bt{height:22px;flex:none;background:var(--ui-bg);border-top:1px solid var(--ui-border);padding:3px 6px;display:flex;flex-direction:column;gap:3px}
+  .l-ide .bt i{height:3px;border-radius:2px;background:var(--ui-fg-disabled);opacity:.4}
+  .l-ide .bt i.hl{background:var(--ui-warning);opacity:.8}
+  .lsc[data-st="lock"] .l-ide{opacity:0}
+  .l-lock{position:absolute;inset:0;background:linear-gradient(160deg,#1c2f5c,#3b2d6b 55%,#15182a);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;opacity:0;transition:opacity .35s;pointer-events:none}
+  .l-lock svg{width:14px;height:14px;opacity:.8}
+  .l-lock b{font-size:30px;font-weight:300;line-height:34px;font-variant-numeric:tabular-nums}
+  .l-lock span{font-size:9px;opacity:.8}
+  .lsc[data-st="lock"] .l-lock{opacity:1}
+  .lsc[data-st="dim"] .l-ide{filter:brightness(.55)}
+  .l-card{position:absolute;top:18px;right:8px;width:108px;border-radius:7px;background:var(--ui-popup-bg);border:1px solid var(--ui-popup-border);box-shadow:0 6px 16px rgba(0,0,0,.3);padding:5px 6px;display:flex;flex-direction:column;gap:3px;opacity:0;transform:translateY(-6px) scale(.96);transition:opacity .3s,transform .3s;pointer-events:none}
+  .l-card.on{opacity:1;transform:none}
+  .l-card b{font-size:7px;line-height:9px;color:var(--ui-fg);font-weight:600;white-space:nowrap}
+  .l-card i{height:3px;border-radius:2px;background:var(--ui-fg-disabled);opacity:.5}
+  .l-card em{height:9px;border-radius:5px;background:var(--ui-accent);margin-top:1px}
+  /* 手机：Pura 70 Pro，屏幕 124 × 280 ≈ 1260 : 2844 */
+  .tph{position:absolute;left:calc(50% + 136px);top:40px;width:132px;height:288px;border-radius:22px;background:#0f1012;padding:4px;box-shadow:0 10px 26px rgba(0,0,0,.35),inset 0 0 0 1.5px #2a2c31;z-index:3;cursor:pointer;transform-origin:66px 276px;transition:transform .6s cubic-bezier(.4,.1,.25,1)}
+  .tph::after{content:"";position:absolute;right:-2px;top:72px;width:2px;height:30px;border-radius:0 2px 2px 0;background:#2a2c31}
+  .tsc{position:relative;width:124px;height:280px;border-radius:18px;overflow:hidden;background:#000;color:#1a1a1a;font-family:var(--font-ui);font-size:8px;line-height:1.35}
+  .tsc .hole{position:absolute;top:5px;left:50%;width:6px;height:6px;margin-left:-3px;border-radius:50%;background:#050506;z-index:5}
+  .tsc .sb{position:absolute;left:0;right:0;top:0;height:16px;display:flex;align-items:center;justify-content:space-between;padding:2px 9px 0;font-size:7px;font-weight:600;z-index:4}
+  .tsc .sb .bat{width:10px;height:5px;border:1px solid currentColor;border-radius:1.5px;position:relative}
+  .tsc .sb .bat::after{content:"";position:absolute;inset:.5px;right:2.5px;background:currentColor;border-radius:.5px}
+  .tsc .cap{display:inline-flex;align-items:center;gap:2px;height:10px;padding:0 4px;border-radius:5px;background:#0A59F7;color:#fff;font-size:6.5px;font-weight:600}
+  .tsc .cap i{width:4px;height:4px;border-radius:50%;background:#fff;animation:dmpulse 1.4s ease-in-out infinite}
+  .tsc .bar{position:absolute;bottom:4px;left:50%;width:40px;height:2.5px;margin-left:-20px;border-radius:2px;background:rgba(255,255,255,.7);z-index:5}
+  .tsc .pg{height:3px;border-radius:2px;background:#e3e6eb;overflow:hidden}
+  .tsc .pg i{display:block;height:100%;background:#0A59F7;width:var(--v,0%);transition:width .2s}
+  .t-aod{position:absolute;inset:0;background:#000;color:#8a8f99;display:flex;flex-direction:column;align-items:center;padding-top:96px;gap:2px}
+  .t-aod b{font-size:20px;font-weight:300;color:#c9ccd3;font-variant-numeric:tabular-nums}
+  .t-lock{position:absolute;inset:0;background:linear-gradient(170deg,#23407a,#5a3f93 60%,#1a1d33);color:#fff}
+  .t-lock .sb{color:#fff}
+  .t-lock .tm{position:absolute;top:30px;left:0;right:0;text-align:center}
+  .t-lock .tm b{display:block;font-size:26px;font-weight:300;line-height:30px;font-variant-numeric:tabular-nums}
+  .t-lock .tm span{font-size:7px;opacity:.85}
+  .lv{position:absolute;left:6px;right:6px;top:84px;border-radius:10px;background:rgba(255,255,255,.94);color:#1a1a1a;padding:6px 7px 7px;display:flex;flex-direction:column;gap:3px;animation:lvin .45s cubic-bezier(.2,.8,.2,1)}
+  @keyframes lvin{from{opacity:0;transform:translateY(-14px)}to{opacity:1;transform:none}}
+  .lv .r1{display:flex;align-items:center;gap:3px;font-size:6.5px;color:#666}
+  .lv .r1 svg{width:9px;height:9px}
+  .lv .r1 .grow{flex:1}
+  .lv .r1 em{font-style:normal;font-weight:600;color:#0A59F7}
+  .lv .tt{font-size:9px;font-weight:700;line-height:11px}
+  .lv .sub{font-size:6.5px;color:#666;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .lv .bb{display:flex;gap:4px;margin-top:2px}
+  .lv .bb span{flex:1;height:15px;border-radius:8px;background:#f0f1f3;color:#0A59F7;font-size:7px;font-weight:600;display:grid;place-items:center;cursor:pointer}
+  .lv .bb span.pri{background:#0A59F7;color:#fff}
+  .lv .bb span:hover{filter:brightness(.95)}
+  .t-lock .sw{position:absolute;bottom:14px;left:0;right:0;text-align:center;font-size:6.5px;opacity:.7}
+  .t-app{position:absolute;inset:0;background:#F1F3F5;color:#1a1a1a}
+  .t-app .sb{color:#1a1a1a}
+  .t-app .ah{position:absolute;top:18px;left:0;right:0;padding:0 8px;display:flex;align-items:center;gap:4px}
+  .t-app .ah svg{width:11px;height:11px}
+  .t-app .ah b{font-size:9.5px}
+  .t-app .ah span{font-size:6.5px;color:#8a8f99;margin-left:auto}
+  .t-app .lst{position:absolute;top:38px;left:6px;right:6px;border-radius:8px;background:#fff;padding:2px 7px}
+  .t-app .lst > div{display:flex;flex-direction:column;padding:6px 0;border-bottom:1px solid #eef0f3}
+  .t-app .lst > div:last-child{border-bottom:0}
+  .t-app .lst span{font-size:7px;color:#8a8f99}
+  .t-app .lst b{font-size:10px;font-weight:600;line-height:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .t-app .lst b.mono{font-family:var(--font-code);font-size:9px;font-weight:500}
+  .t-app .lst .pg{margin-top:3px}
+  .t-app .hint{position:absolute;left:6px;right:6px;bottom:14px;border:1px dashed #0A59F7;border-radius:8px;padding:7px 7px;display:flex;align-items:center;gap:6px;color:#0A59F7;background:rgba(10,89,247,.06);font-size:8.5px;line-height:11px;font-weight:600}
+  .t-app .hint svg{width:16px;height:16px;flex:none}
+  .t-app .bar{background:rgba(0,0,0,.45)}
+  .t-link{position:absolute;inset:0;background:#F1F3F5;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:#1a1a1a;font-size:8px;text-align:center;padding:0 10px}
+  .t-link .spin{width:18px;height:18px;border-radius:50%;border:2px solid #d5d9e0;border-top-color:#0A59F7;animation:spin .8s linear infinite}
+  .t-link .ok{width:22px;height:22px;border-radius:50%;background:#2E9E5B;color:#fff;display:grid;place-items:center}
+  .t-link .ok svg{width:12px;height:12px}
+  .t-link b{font-size:9px}
+  .t-link span{color:#8a8f99;font-size:7px}
+  /* 碰一碰：波纹 + 任务飞入 */
+  .ripple{position:absolute;width:0;height:0;pointer-events:none;z-index:4}
+  .ripple i{position:absolute;left:-12px;top:-12px;width:24px;height:24px;border-radius:50%;border:2px solid var(--ui-accent);opacity:0}
+  .ripple.on i{animation:rip 1.2s ease-out infinite}
+  .ripple.on i:nth-child(2){animation-delay:.3s}
+  .ripple.on i:nth-child(3){animation-delay:.6s}
+  @keyframes rip{0%{transform:scale(.3);opacity:.95}100%{transform:scale(3.4);opacity:0}}
+  .fly{position:absolute;width:44px;height:28px;border-radius:6px;background:var(--ui-popup-bg);border:1px solid var(--ui-accent);box-shadow:0 6px 16px rgba(0,0,0,.35);z-index:6;display:grid;place-items:center;pointer-events:none;opacity:0;transition:left .7s cubic-bezier(.4,.1,.25,1),top .7s cubic-bezier(.4,.1,.25,1),transform .7s,opacity .2s}
+  .fly svg{width:14px;height:14px}
+  /* 电脑上弹出的系统接续卡片（碰一碰 / 应用接续） */
+  .hc{position:fixed;top:52px;right:56px;width:344px;z-index:60;background:var(--ui-popup-bg);border:1px solid var(--ui-popup-border);border-radius:16px;box-shadow:var(--ui-shadow),0 18px 48px rgba(0,0,0,.32);padding:12px 14px 14px;display:flex;flex-direction:column;gap:10px;animation:hcin .4s cubic-bezier(.2,.8,.2,1)}
+  .hc[hidden]{display:none}
+  .hc.out{animation:hcout .3s ease-in forwards}
+  @keyframes hcin{from{opacity:0;transform:translateY(-16px) scale(.97)}to{opacity:1;transform:none}}
+  @keyframes hcout{to{opacity:0;transform:translateY(-10px) scale(.97)}}
+  .hc-hd{display:flex;align-items:center;gap:6px;font-size:var(--fs-sm);color:var(--ui-fg-info)}
+  .hc-hd svg{width:14px;height:14px}
+  .hc-hd .grow{flex:1}
+  .hc-tt{display:flex;align-items:center;gap:10px}
+  .hc-tt .ico{width:36px;height:36px;border-radius:10px;background:var(--ui-tag-bg);display:grid;place-items:center;flex:none;position:relative}
+  .hc-tt .ico svg{width:24px;height:24px}
+  .hc-tt .ico .bd{position:absolute;right:-4px;bottom:-4px;width:16px;height:16px;border-radius:50%;background:var(--ui-accent);color:var(--ui-accent-fg);display:grid;place-items:center;box-shadow:0 0 0 2px var(--ui-popup-bg)}
+  .hc-tt .ico .bd svg{width:10px;height:10px}
+  .hc-tt b{display:block;font-size:var(--fs-h2);line-height:var(--lh-h2);font-weight:600}
+  .hc-tt span{font-size:var(--fs-sm);color:var(--ui-fg-info)}
+  .hc-rows{display:grid;grid-template-columns:auto 44px minmax(0,1fr);gap:6px 8px;align-items:center;font-size:var(--fs-sm);line-height:var(--lh-sm);background:var(--ui-field-bg);border:1px solid var(--ui-border);border-radius:10px;padding:8px 10px}
+  .hc-rows svg{width:14px;height:14px;color:var(--ui-icon)}
+  .hc-rows .k{color:var(--ui-fg-info)}
+  .hc-rows .v{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .hc-rows .v.mono{font-family:var(--font-code);font-size:11px}
+  .hc-ft{display:flex;gap:8px}
+  .hc-ft .btn{flex:1;height:30px;border-radius:15px;justify-content:center}
+  /* 接续后在对话里的回执 */
+  .hand-card .dm-item{min-height:28px;font-size:var(--fs-sm)}
+  .hand-card .dm-item svg{width:14px;height:14px;color:var(--ui-icon);flex:none}
+  .hand-card .dm-item .k{width:40px;flex:none;color:var(--ui-fg-info)}
+  .hand-card .dm-item .mono{font-family:var(--font-code);font-size:11px}
+  .hand-card .dm-card-hd svg{width:16px;height:16px}
+  .hand-card .dm-card-hd .dm-small{font-weight:400}
+  /* 底部 HiLog：接续后停在原来的位置 */
+  .lg{height:100%;overflow:auto;padding:4px 0;font-family:var(--font-code);font-size:12px;line-height:20px}
+  .lg .r{display:flex;gap:10px;padding:0 12px 0 0;white-space:pre}
+  .lg .r .no{width:44px;flex:none;text-align:right;color:var(--ed-linenum);user-select:none}
+  .lg .r .ts{color:var(--ui-fg-info)}
+  .lg .r .lv{width:10px;font-weight:600;color:var(--ui-success)}
+  .lg .r.D .lv{color:var(--ui-fg-info)}
+  .lg .r.W .lv{color:var(--ui-warning)}
+  .lg .r .msg{color:var(--ed-text)}
+  .lg .r.here{background:var(--ui-selection)}
+  .lg .r.here .no{color:var(--ui-accent);font-weight:600}
+  .lg .r.bp{background:color-mix(in srgb,var(--ui-error) 12%,transparent)}
+  .tw-bottom .tw-hdr .dm-pill{margin-right:8px}
 </style>
 </head>
 <body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <symbol id="i-tap" viewBox="0 0 16 16"><rect x="2" y="4.5" width="5.5" height="10" rx="1.2" stroke="currentColor" fill="none" transform="rotate(-18 4.75 9.5)"/><path d="M9.5 5.2a2.6 2.6 0 0 1 2.2 2.3M10.2 2.6a5.2 5.2 0 0 1 4.1 4.3" stroke="currentColor" stroke-linecap="round" fill="none"/></symbol>
+  <symbol id="i-live" viewBox="0 0 16 16"><rect x="1.5" y="4.5" width="13" height="7" rx="3.5" stroke="currentColor" fill="none"/><circle cx="5" cy="8" r="1.4" fill="currentColor"/><path d="M8 8h4" stroke="currentColor" stroke-linecap="round"/></symbol>
+  <symbol id="i-laptop" viewBox="0 0 16 16"><rect x="3" y="3" width="10" height="7" rx="1" stroke="currentColor" fill="none"/><path d="M1.5 12.5h13l-1-2h-11z" stroke="currentColor" stroke-linejoin="round" fill="none"/></symbol>
+  <symbol id="i-bpdot" viewBox="0 0 16 16"><circle cx="8" cy="8" r="4.5" fill="#DB3B4B"/></symbol>
+  <symbol id="i-loglines" viewBox="0 0 16 16"><path d="M2.5 4h2M6.5 4h7M2.5 8h2M6.5 8h5M2.5 12h2M6.5 12h7" stroke="currentColor" stroke-linecap="round"/></symbol>
+</defs></svg>
 <div class="ide" id="ide" data-ide-theme="dark" data-left="agent" data-right="project" data-bottom="none" role="application" aria-label="DevEco Studio">
   <div class="body">
     <div class="tw tw-left">
@@ -79,28 +252,29 @@
           <button class="abtn" title="Options"><svg class="i"><use href="#i-moreV"/></svg></button>
           <button class="abtn" title="Hide|Shift+Esc" data-act="hide-left"><svg class="i"><use href="#i-hide"/></svg></button></div>
         <div class="tw-body"><div class="ai">
-          <div class="ai-scroll">
+          <div class="ai-scroll" id="ai-scroll">
 
             <div class="dm-card accent" id="ends">
-              <div class="dm-card-hd"><svg class="i"><use href="#i-sync"/></svg>这个任务也在另外 2 端<span class="grow"></span><span class="dm-small dm-muted" style="font-weight:400" id="ends-when">状态一致 · 2 s 前</span></div>
+              <div class="dm-card-hd"><svg class="i"><use href="#i-sync"/></svg>这个任务也在另外 3 端<span class="grow"></span><span class="dm-small dm-muted" style="font-weight:400" id="ends-when">状态一致 · 2 s 前</span></div>
               <div class="dm-list">
-                <div class="dm-item here" data-end="pc"><svg class="i"><use href="#i-tw-project"/></svg><span class="grow">PC · 写和改</span><span class="dm-pill ok" data-pill>这里</span><button class="btn sm" data-take="pc" hidden>交给它</button></div>
+                <div class="dm-item here" data-end="pc"><svg class="i"><use href="#i-laptop"/></svg><span class="grow">MateBook Pro · 写和改</span><span class="dm-pill ok" data-pill>这里</span><button class="btn sm" data-take="pc" hidden>交给它</button></div>
+                <div class="dm-item" data-end="phone"><svg class="i"><use href="#i-phone"/></svg><span class="grow">Pura 70 Pro · 实况窗 / 碰一碰</span><span class="dm-pill info" data-pill>已同步</span><button class="btn sm" data-take="phone" title="锁屏离开，任务以实况窗接到手机">交给它</button></div>
                 <div class="dm-item" data-end="tablet"><svg class="i"><use href="#i-tablet"/></svg><span class="grow">MatePad · 看和审</span><span class="dm-pill info" data-pill>已同步 · 2 s 前</span><button class="btn sm" data-take="tablet">交给它</button></div>
                 <div class="dm-item" data-end="watch"><svg class="i"><use href="#i-watch"/></svg><span class="grow">WATCH 5 · 继续 / 停 / 看结果</span><span class="dm-pill info" data-pill>已同步</span><button class="btn sm" data-take="watch">交给它</button></div>
               </div>
-              <div class="dm-card-ft"><div class="dm-small dm-muted">同步的是任务状态：连着 <b>Mate 70 Pro</b> · 断点 <b>ListPage.ets:28</b> · 日志看到第 <b>412</b> 行 · AI 第 <b id="step-now">4</b> / 5 步</div></div>
+              <div class="dm-card-ft"><div class="dm-small dm-muted">同步的是任务状态：连着 <b id="dev-now">Mate 70 Pro</b> · 断点 <b>ListPage.ets:28</b> · 日志看到第 <b id="log-now">412</b> 行 · AI 第 <b id="step-now">4</b> / 5 步</div></div>
             </div>
 
-            <div class="ai-thread">
+            <div class="ai-thread" id="thread">
               <div class="umsg"><span class="time">14:02</span><div class="bubble">把 loadCover 改成异步，在 Mate 70 Pro 上跑到断点看一眼。改动我一会儿在平板上审。</div></div>
               <div class="amsg">
-                <div class="md"><p>分 5 步。第 4 步的改动等你审——在平板上点「批准」、在手表上按「继续」、或在这里点，都是同一份状态。</p></div>
+                <div class="md"><p>分 5 步。第 4 步的改动等你审——在平板上点「批准」、在手表上按「继续」、在手机实况窗上点「批准」、或在这里点，都是同一份状态。</p></div>
                 <div class="steps" id="steps">
                   <div class="stp" data-step="1"><span class="st done"><svg><use href="#i-checkS"/></svg></span><span class="txt">读取 ListPage.ets、ItemCard.ets</span><span class="file">只读</span></div>
                   <div class="stp" data-step="2"><span class="st done"><svg><use href="#i-checkS"/></svg></span><span class="txt">把 loadCover 改成异步</span><span class="file">ListPage.ets</span></div>
                   <div class="stp" data-step="3"><span class="st done"><svg><use href="#i-checkS"/></svg></span><span class="txt">在 Mate 70 Pro 上跑到断点 28</span><span class="file">日志 412 行</span></div>
                   <div class="stp" data-step="4"><span class="st run"></span><span class="txt">等你确认第 2 步的改动</span><span class="file" id="s4-file">平板可审</span></div>
-                  <div class="stp" data-step="5"><span class="st todo"></span><span class="txt">继续跑完，收集滑动帧率</span><span class="file" id="s5-file">手表可按</span></div>
+                  <div class="stp" data-step="5"><span class="st todo"></span><span class="txt">继续跑完，加上 Mate X6 收集滑动帧率</span><span class="file" id="s5-file">手表可按</span></div>
                 </div>
                 <div class="ans-foot"><span id="foot-txt">在等你 · 任一端确认即可</span><span class="grow"></span><button class="abtn" title="Copy"><svg class="i"><use href="#i-copy"/></svg></button><button class="abtn" title="Good"><svg class="i"><use href="#i-like"/></svg></button><button class="abtn" title="Bad"><svg class="i"><use href="#i-dislike"/></svg></button></div>
               </div>
@@ -108,7 +282,7 @@
               <div class="dm-card acts-card" id="acts">
                 <div class="dm-card-hd"><svg class="i"><use href="#i-history"/></svg>各端最近的动作<span class="cnt dm-mono dm-muted" style="font-weight:400" id="acts-cnt">4</span><span class="grow"></span><span class="dm-small dm-muted" style="font-weight:400">同一个任务</span></div>
                 <div class="dm-list" id="acts-list">
-                  <div class="dm-item"><span class="t">14:02</span><svg><use href="#i-tw-project"/></svg><span class="who">PC</span><span class="grow">打断点 ListPage.ets:28，改 loadCover</span></div>
+                  <div class="dm-item"><span class="t">14:02</span><svg><use href="#i-laptop"/></svg><span class="who">MateBook</span><span class="grow">打断点 ListPage.ets:28，改 loadCover</span></div>
                   <div class="dm-item"><span class="t">14:03</span><svg><use href="#i-phone"/></svg><span class="who">Mate 70 Pro</span><span class="grow">跑到断点，日志停在第 412 行</span></div>
                   <div class="dm-item"><span class="t">14:04</span><svg><use href="#i-tablet"/></svg><span class="who">MatePad</span><span class="grow">看了第 2 步的 diff，还没批</span></div>
                   <div class="dm-item"><span class="t">14:04</span><svg><use href="#i-watch"/></svg><span class="who">WATCH 5</span><span class="grow">看结果：帧率 58，等你确认</span></div>
@@ -118,7 +292,7 @@
 
           </div>
           <div class="ai-input">
-            <div class="top"><span class="ctx"><svg><use href="#i-at"/></svg>ListPage.ets:28</span><span class="ctx"><svg><use href="#i-phone"/></svg>Mate 70 Pro</span><span class="grow"></span></div>
+            <div class="top"><span class="ctx"><svg><use href="#i-at"/></svg>ListPage.ets:28</span><span class="ctx"><svg><use href="#i-phone"/></svg><span id="ctx-dev">Mate 70 Pro</span></span><span class="grow"></span></div>
             <textarea rows="2" placeholder="换一端接着说，状态跟着走…"></textarea>
             <div class="bot"><button class="mode"><svg class="i"><use href="#i-genie"/></svg>Agent<svg class="i"><use href="#i-chevD"/></svg></button><span id="model-label">DeepSeek-V3</span><span class="grow"></span><button class="send"><svg><use href="#i-send"/></svg></button></div>
           </div>
@@ -129,11 +303,57 @@
 
     <div class="editor">
       <div class="tabs" id="tabs"><span class="grow"></span><span class="tab-tools"><button class="abtn" title="Split Right"><svg class="i"><use href="#i-split"/></svg></button><button class="abtn" title="Editor Options"><svg class="i"><use href="#i-moreV"/></svg></button></span></div>
-      <div class="dm-split v hand">
+      <div class="dm-split v hand" id="split">
         <div class="code-wrap"><div class="code" id="code"></div></div>
         <div class="dm-canvas" id="canvas">
-          <span class="dm-small dm-muted cv-lbl"><svg><use href="#i-sync"/></svg>同一个任务在另外两端</span>
-          <div class="stage">
+          <div class="cv-bar">
+            <div class="dm-seg" id="cv-seg">
+              <button data-scene="tap" class="on" id="seg-tap"><svg class="i"><use href="#i-tap"/></svg>碰一碰 · 手机</button>
+              <button data-scene="ends"><svg class="i"><use href="#i-sync"/></svg>平板 · 手表</button>
+            </div>
+            <span class="dm-small dm-muted cv-lbl" id="cv-lbl"><svg><use href="#i-sync"/></svg><span id="tap-hint">任务在这台电脑上 · 手机在桌上</span></span>
+            <span class="grow"></span>
+            <button class="btn primary" id="tap-act"><svg class="i"><use href="#i-lock"/></svg><span>锁屏离开</span></button>
+          </div>
+
+          <!-- 场景一：碰一碰接续（系统级：锁屏离开 → 实况窗 → 碰一碰 → 接续卡片） -->
+          <div class="tapst" id="tapst">
+            <div class="lap" id="lap">
+              <div class="lap-scr">
+                <div class="lsc" id="lsc" data-st="ide">
+                  <div class="l-ide">
+                    <div class="h"><i></i><i></i><i style="width:24px"></i></div>
+                    <div class="b">
+                      <div class="lp"><div class="box"><i class="a" style="width:70%"></i><i style="width:90%"></i><i style="width:60%"></i></div><i style="width:80%"></i><i style="width:55%"></i><i class="a" style="width:40%"></i><i style="width:75%"></i></div>
+                      <div class="ed"><i class="k" style="width:40%"></i><i style="width:62%"></i><i style="width:48%"></i><i class="s" style="width:70%"></i><i style="width:36%"></i><i class="k" style="width:54%"></i><div class="bpl"><i class="k" style="width:66%"></i></div><i style="width:30%"></i><i style="width:44%"></i><i style="width:22%"></i></div>
+                      <div class="rp"></div>
+                    </div>
+                    <div class="bt"><i style="width:70%"></i><i class="hl" style="width:52%"></i><i style="width:64%"></i></div>
+                  </div>
+                  <div class="l-lock"><svg><use href="#i-lock"/></svg><b>14:06</b><span>已锁屏 · 任务在手机实况窗上</span></div>
+                  <div class="l-card" id="l-card"><b>在电脑上接续调试会话</b><i style="width:90%"></i><i style="width:70%"></i><em></em></div>
+                </div>
+              </div>
+              <svg class="lap-base" viewBox="0 0 380 58" id="lap-base" aria-hidden="true">
+                <polygon points="30,0 350,0 380,48 0,48" fill="#2a2c31" stroke="#3a3d44" stroke-width="1"/>
+                <rect x="0" y="47" width="380" height="9" rx="3" fill="#1c1d20"/>
+                <rect x="168" y="47" width="44" height="3" rx="1.5" fill="#15161a"/>
+                <g id="keys"></g>
+                <polygon points="146,32 234,32 238,45 142,45" fill="#34373d" stroke="#474a52" stroke-width=".8"/>
+                <g id="nfc" transform="translate(221 34.5)"><path d="M1 1.5a4 4 0 0 1 3.5 3.8M1 -1.2a6.6 6.6 0 0 1 6 6.2" stroke="#8FB4FF" stroke-width="1" stroke-linecap="round" fill="none"/><circle cx="1" cy="5.2" r="1.1" fill="#8FB4FF"/></g>
+              </svg>
+            </div>
+            <span class="dev-cap" id="lap-cap">MateBook Pro · 3120×2080 · HarmonyOS 6</span>
+            <div class="ripple" id="ripple"><i></i><i></i><i></i></div>
+            <div class="fly" id="fly"><svg class="i"><use href="#i-genie"/></svg></div>
+            <div class="tph" id="tph" title="拿起手机：看实况窗 / 碰一下电脑触控板">
+              <div class="tsc" id="tsc"></div>
+            </div>
+            <span class="dev-cap" id="ph-cap">Pura 70 Pro · 1260×2844</span>
+          </div>
+
+          <!-- 场景二：平板审、手表按（原有） -->
+          <div class="stage" id="stage-ends" hidden>
 
             <div class="dm-device tablet" id="dev-tablet" data-end="tablet">
               <div class="scr">
@@ -150,7 +370,7 @@
                   <div class="tb" id="tab-tb"><div id="tab-ok" title="在平板上批准这一步">批准第 4 步</div><div class="sec">打回</div></div>
                 </div>
               </div>
-              <span class="cap">MatePad · 看和审</span>
+              <span class="cap">MatePad Pro 13.2 · 2880×1920 · 看和审</span>
             </div>
 
             <div class="dm-device watch" id="dev-watch" data-end="watch">
@@ -159,7 +379,7 @@
                   <div class="ring"><div><b id="w-big">4 / 5</b><span class="ws" id="w-small">等你确认</span><div class="wb"><i id="w-go" title="在手表上按「继续」">继续</i><i class="stop">停</i><i>看</i></div></div></div>
                 </div>
               </div>
-              <span class="cap">WATCH 5 · 继续 / 停 / 看结果</span>
+              <span class="cap">WATCH 5 · 466×466</span>
             </div>
 
           </div>
@@ -179,6 +399,29 @@
         <div class="tw-body" id="tree-slot"></div>
       </div>
     </div>
+
+    <div class="tw tw-bottom">
+      <div class="pane on" data-pane="log">
+        <div class="tw-hdr"><span class="title">Log</span><div class="tabbar"><button class="btab on">HiLog</button><button class="btab">FaultLog</button></div><span class="grow"></span>
+          <span class="dm-pill info" id="log-pill" hidden><svg class="i"><use href="#i-tap"/></svg><span id="log-pill-t">从 Pura 70 Pro 接续</span></span>
+          <span class="dm-small dm-muted" style="margin-right:8px">HUAWEI Mate 70 Pro · com.example.myapplication · A00001</span>
+          <button class="abtn" title="Hide" data-act="hide-bottom"><svg class="i"><use href="#i-hide"/></svg></button></div>
+        <div class="tw-body"><div class="lg" id="lg"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 系统层：碰一碰后电脑上弹出的接续卡片 -->
+  <div class="hc" id="hc" hidden role="dialog" aria-label="接续卡片">
+    <div class="hc-hd"><svg class="i"><use href="#i-tap"/></svg>来自 Pura 70 Pro · 碰一碰<span class="grow"></span><span id="hc-when">刚刚</span></div>
+    <div class="hc-tt"><span class="ico"><svg class="i"><use href="#i-logo"/></svg><span class="bd"><svg class="i"><use href="#i-phone"/></svg></span></span><div><b>在电脑上接续调试会话</b><span>DevEco Code · MyApplication · ListPage 调试</span></div></div>
+    <div class="hc-rows">
+      <svg class="i"><use href="#i-phone"/></svg><span class="k">真机</span><span class="v" id="hc-dev">Mate 70 Pro</span>
+      <svg class="i"><use href="#i-bpdot"/></svg><span class="k">断点</span><span class="v mono">ListPage.ets:28 · 命中 3 次</span>
+      <svg class="i"><use href="#i-loglines"/></svg><span class="k">HiLog</span><span class="v" id="hc-log">看到第 412 行</span>
+      <svg class="i"><use href="#i-genie"/></svg><span class="k">AI</span><span class="v" id="hc-ai">第 4 / 5 步 · 等你确认</span>
+    </div>
+    <div class="hc-ft"><button class="btn primary" id="hc-go">在 IDE 里接续</button><button class="btn" id="hc-no">稍后</button></div>
   </div>
 </div>
 
@@ -189,18 +432,20 @@
   document.getElementById('tabs').insertAdjacentHTML('afterbegin',DemoFrame.tabs([{file:'ListPage.ets',on:true},{file:'ItemCard.ets'}]));
   document.getElementById('code').innerHTML=DemoFrame.code('ListPage.ets',{cur:28,marks:{28:'bp'}});
   DemoFrame.init({device:'HUAWEI Mate 70 Pro',deviceIcon:'#i-phone',stripeLeft:[{left:'agent',icon:'#i-genie',title:'DevEco Code'},{left:'project',icon:'#i-tw-project',title:'Project|Alt+1'},{left:'structure',icon:'#i-tw-structure',title:'Structure|Alt+7'},{more:1},{gap:1},{bottom:'build',icon:'#i-tw-build',title:'Build'},{bottom:'log',icon:'#i-tw-device',title:'Log'},{bottom:'services',icon:'#i-tw-todo',title:'Services|Alt+8'},{bottom:'problems',icon:'#i-tw-problems',title:'Problems|Alt+6'},{bottom:'run',icon:'#i-tw-services',title:'Run|Alt+4'},{bottom:'terminal',icon:'#i-tw-terminal',title:'Terminal|Alt+F12'},{bottom:'debug',icon:'#i-info',title:'Debug|Alt+5'},{bottom:'vcs',icon:'#i-vcs',title:'Version Control|Alt+9'}],stripeRight:[{right:'notifications',icon:'#i-tw-notifications',title:'Notifications',dot:1},{right:'project',icon:'#i-tw-project',title:'Project|Alt+1'},{right:'docs',icon:'#i-hdoc',title:'HarmonyOS Docs'},{right:'inspector',icon:'#i-pen',title:'Code Review'},{right:'web',icon:'#i-puzzle',title:'Extensions'},{right:'previewer',icon:'#i-tw-preview',title:'Previewer'},{more:1},{right:'devices',icon:'#i-phone',title:'Device Manager'}],onReady:function(){
-    $('#status-slot').innerHTML='<span class="dm-capsule" id="cap"><span class="dm-dot ok" id="cap-dot"></span><span id="cap-txt">任务在 PC · 另外 2 端已同步</span></span>';
+    $('#status-slot').innerHTML='<span class="dm-capsule" id="cap"><span class="dm-dot ok" id="cap-dot"></span><span id="cap-txt">任务在 MateBook · 另外 3 端已同步</span></span>';
     var code=$('#code');code.scrollTop=code.scrollHeight;   /* 断点在第 28 行，滚到底让它露出来 */
   }});
 
-  var NAMES={pc:'PC',tablet:'MatePad',watch:'WATCH 5'};
-  var ICONS={pc:'#i-tw-project',tablet:'#i-tablet',watch:'#i-watch'};
+  var NAMES={pc:'MateBook',phone:'Pura 70 Pro',tablet:'MatePad',watch:'WATCH 5'};
+  var ICONS={pc:'#i-laptop',phone:'#i-phone',tablet:'#i-tablet',watch:'#i-watch'};
   var active='pc', continued=false;
+  /* 这份任务状态：各端看到的都是它 */
+  var S={devs:['Mate 70 Pro'],log:412,pct:0};
 
-  function logAct(who,txt){
+  function logAct(who,txt,t){
     var list=$('#acts-list');
     $$('.dm-item.new',list).forEach(function(x){x.classList.remove('new')});
-    list.insertAdjacentHTML('beforeend','<div class="dm-item new"><span class="t">14:05</span><svg><use href="'+ICONS[who]+'"/></svg><span class="who">'+NAMES[who]+'</span><span class="grow">'+txt+'</span></div>');
+    list.insertAdjacentHTML('beforeend','<div class="dm-item new"><span class="t">'+(t||'14:05')+'</span><svg><use href="'+ICONS[who]+'"/></svg><span class="who">'+NAMES[who]+'</span><span class="grow">'+txt+'</span></div>');
     $('#acts-cnt').textContent=$$('.dm-item',list).length;
   }
 
@@ -210,9 +455,10 @@
     $('#cap-dot').className='dm-dot ok'+(wait?' pulse':'');
     $('#cap-txt').textContent=txt;
   }
+  function stepNow(){return +$('#step-now').textContent}
 
   /* 把任务交给某一端：pill 与按钮跟着切，画布上对应设备亮边 */
-  function setActive(id){
+  function setActive(id,msg,t){
     active=id;
     $$('#ends .dm-item[data-end]').forEach(function(it){
       var e=it.dataset.end,pill=$('[data-pill]',it),btn=$('[data-take]',it);
@@ -223,17 +469,46 @@
     });
     $$('#canvas .dm-device').forEach(function(d){d.classList.toggle('live',d.dataset.end===id)});
     $('#ends-when').textContent='状态一致 · 刚刚';
-    capsule(id==='pc'?'任务回到 PC · 状态同步':'任务已交给 '+NAMES[id]+' · 状态同步',id!=='pc');
-    logAct(id,id==='pc'?'接回任务：断点 28、日志 412 行、AI 第 '+$('#step-now').textContent+' 步都还在':'接过任务：断点、日志位置、AI 步骤原样接上');
+    capsule(id==='pc'?'任务回到 MateBook · 状态同步':(id==='phone'?'任务在 Pura 70 Pro 实况窗上 · 状态同步':'任务已交给 '+NAMES[id]+' · 状态同步'),id!=='pc');
+    logAct(id,msg||(id==='pc'?'接回任务：断点 28、日志 '+S.log+' 行、AI 第 '+stepNow()+' 步都还在':'接过任务：断点、日志位置、AI 步骤原样接上'),t);
   }
 
-  /* 第 4 步确认、第 5 步开跑：不管从哪一端按的，三端看到的都是这份状态 */
+  /* 状态变了，各处一起刷新 */
+  function syncState(){
+    $('#dev-now').textContent=S.devs.join('、');
+    $('#log-now').textContent=S.log;
+    var hd=$('#hdr-device span');if(hd)hd.textContent=S.devs.length>1?'HUAWEI Mate 70 Pro +1':'HUAWEI Mate 70 Pro';
+    $('#ctx-dev').textContent=S.devs.length>1?'Mate 70 Pro +1':'Mate 70 Pro';
+    var set=function(id,v,prop){var el=$('#'+id);if(!el)return;if(prop)el.style.setProperty('--v',v);else el.textContent=v};
+    set('pv-step',stepNow()+'/5');
+    set('pv-tt',continued?'收集滑动帧率 · '+S.pct+'%':'等你确认第 4 步');
+    set('pv-sub',continued?S.devs.join(' + ')+' · HiLog '+S.log+' 行':'Mate 70 Pro · ListPage:28');
+    set('pv-bar',(continued?40+S.pct*0.6:72)+'%',1);
+    set('pa-dev',S.devs.length>1?'Mate 70 Pro + X6':'Mate 70 Pro');
+    set('pa-log','第 '+S.log+' 行');
+    set('pa-ai','第 '+stepNow()+'/5 步 · '+(continued?S.pct+'%':'等你'));
+    set('pa-bar',(continued?40+S.pct*0.6:72)+'%',1);
+    var ok=$('#pv-ok');if(ok)ok.hidden=continued;
+  }
+
+  /* 第 5 步：两台真机上跑滑动帧率，日志往下走 */
+  function runStep5(){
+    var t=setInterval(function(){
+      S.pct=Math.min(62,S.pct+4);
+      S.log=412+Math.round(56*S.pct/62);
+      if(S.pct>=20&&S.devs.length<2)S.devs.push('Mate X6');
+      syncState();renderLog(S.log,false);
+      if(S.pct>=62)clearInterval(t);
+    },220);
+  }
+
+  /* 第 4 步确认、第 5 步开跑：不管从哪一端按的，各端看到的都是这份状态 */
   function continueTask(from){
     if(continued)return;continued=true;
     var s4=$('#steps .stp[data-step="4"] .st'),s5=$('#steps .stp[data-step="5"] .st');
     s4.className='st done';s4.innerHTML='<svg><use href="#i-checkS"/></svg>';
     s5.className='st run';s5.innerHTML='';
-    $('#s4-file').textContent=from==='watch'?'手表上按的':(from==='tablet'?'平板上批的':'这里点的');
+    $('#s4-file').textContent=from==='watch'?'手表上按的':(from==='tablet'?'平板上批的':(from==='phone'?'手机实况窗批的':'这里点的'));
     $('#s5-file').textContent='进行中';
     $('#step-now').textContent='5';
     $('#foot-txt').textContent='第 5 / 5 步进行中 · 从 '+NAMES[from]+' 继续';
@@ -242,13 +517,213 @@
     /* 平板 */
     $('#tab-sub').textContent='第 5 步 · 继续跑完，收集滑动帧率 · '+NAMES[from]+' 已确认第 4 步';
     var tb=$('#tab-tb');tb.classList.remove('lit');tb.classList.add('done');$('#tab-ok').textContent='第 4 步已批准';
-    logAct(from,from==='watch'?'按了「继续」：第 4 步确认，第 5 步开跑':(from==='tablet'?'批准了第 4 步，第 5 步开跑':'确认了第 4 步，第 5 步开跑'));
+    logAct(from,from==='watch'?'按了「继续」：第 4 步确认，第 5 步开跑':(from==='tablet'?'批准了第 4 步，第 5 步开跑':(from==='phone'?'实况窗上点「批准」：第 5 步开跑，加上 Mate X6':'确认了第 4 步，第 5 步开跑')),from==='phone'?'14:09':null);
+    syncState();runStep5();
   }
+
+  /* ---------- 底部 HiLog：带行号，接续后停在原来那一行 ---------- */
+  function logLine(n){
+    var s=3.2+(n-400)*0.37,ss=Math.floor(s),ms=Math.round((s-ss)*1000);
+    var ts='14:03:'+(ss<10?'0':'')+ss+'.'+('00'+ms).slice(-3);
+    var id=1000+n;
+    if(n===412)return {lv:'I',cls:'bp',msg:'A00001/Debugger: paused at ListPage.ets:28 loadCover(id='+id+')'};
+    var k=n%4;
+    if(k===0)return {lv:'I',msg:'A00001/ListPage: loadCover id='+id+' done '+(3+n%5)+' ms',ts:ts};
+    if(k===1)return {lv:'D',msg:'A03D00/ArkUI: LazyForEach reuse ItemCard ×'+(4+n%3),ts:ts};
+    if(k===2)return {lv:'I',msg:'A00001/ListPage: createPixelMap async id='+id,ts:ts};
+    return {lv:(n%11===3?'W':'I'),msg:'A03D00/ArkUI: FrameRate '+(n>440?'60':'58')+' fps'+(n>440?' · Mate X6':' · Mate 70 Pro'),ts:ts};
+  }
+  function renderLog(at,scroll){
+    var h='';
+    for(var n=400;n<=Math.max(at,412)+2;n++){
+      var l=logLine(n),ts=l.ts||'14:03:07.642';
+      if(n>at&&n>412)break;
+      h+='<div class="r '+l.lv+(l.cls?' '+l.cls:'')+(n===at&&n!==412?' here':'')+'" data-no="'+n+'"><span class="no">'+n+'</span><span class="ts">'+ts+'</span><span class="lv">'+l.lv+'</span><span class="msg">'+l.msg+'</span></div>';
+    }
+    var lg=$('#lg');lg.innerHTML=h;
+    if(scroll!==false){var r=$('.r[data-no="'+at+'"]',lg);if(r)lg.scrollTop=r.offsetTop-lg.clientHeight/2;}
+    else lg.scrollTop=lg.scrollHeight;
+  }
+  renderLog(412);
+
+  /* ---------- 碰一碰场景 ---------- */
+  var T='desk', lsc=$('#lsc'), tph=$('#tph'), tsc=$('#tsc'), tapst=$('#tapst');
+  var wait=function(ms){return new Promise(function(r){setTimeout(r,ms)})};
+
+  /* 键盘：几排键帽，按透视往前放宽 */
+  (function(){
+    var g='',rows=[[4,40,340],[11,36,344],[18,32,348],[25,28,352]];
+    rows.forEach(function(r){var n=14,w=(r[2]-r[1])/n;for(var i=0;i<n;i++)g+='<rect x="'+(r[1]+i*w+1).toFixed(1)+'" y="'+r[0]+'" width="'+(w-2).toFixed(1)+'" height="5" rx="1" fill="#1c1d20"/>';});
+    $('#keys').innerHTML=g;
+  })();
+
+  function placeCaps(){
+    var lap=$('#lap'),cap=$('#lap-cap'),pc=$('#ph-cap');
+    cap.style.left=(lap.offsetLeft)+'px';cap.style.width=lap.offsetWidth+'px';cap.style.top=(lap.offsetTop+lap.offsetHeight+6)+'px';
+    pc.style.left=(tph.offsetLeft-20)+'px';pc.style.width=(tph.offsetWidth+40)+'px';pc.style.top=(tph.offsetTop+tph.offsetHeight+6)+'px';
+  }
+
+  var SB=function(tm){return '<span class="hole"></span><div class="sb"><span style="display:flex;align-items:center;gap:4px">'+tm+(active==='phone'||T==='app'?'<span class="cap"><i></i>'+stepNow()+'/5</span>':'')+'</span><span class="bat"></span></div>'};
+  function renderPhone(st){
+    tsc.dataset.st=st;
+    var h='';
+    if(st==='aod'){
+      h='<div class="t-aod"><b>14:05</b><span>9月24日 周四</span></div>';
+    }else if(st==='lock'){
+      h='<div class="t-lock">'+SB('14:06')+'<div class="tm"><b>14:06</b><span>9月24日 星期四</span></div>'
+        +'<div class="lv" id="live-card"><div class="r1"><svg><use href="#i-logo"/></svg>DevEco Code · 调试<span class="grow"></span><em id="pv-step">'+stepNow()+'/5</em></div>'
+        +'<div class="tt" id="pv-tt"></div><div class="sub" id="pv-sub"></div><div class="pg"><i id="pv-bar"></i></div>'
+        +'<div class="bb"><span class="pri" id="pv-ok" title="在实况窗上批准第 4 步">批准</span><span id="pv-open" title="在手机上打开这个调试会话">打开</span></div></div>'
+        +'<div class="sw">上滑解锁</div><span class="bar"></span></div>';
+    }else if(st==='app'){
+      h='<div class="t-app">'+SB('14:15')+'<div class="ah"><svg><use href="#i-logo"/></svg><b>调试会话</b><span>ListPage</span></div>'
+        +'<div class="lst"><div><span>真机</span><b id="pa-dev"></b></div><div><span>断点</span><b class="mono">ListPage.ets:28</b></div>'
+        +'<div><span>HiLog</span><b id="pa-log"></b></div><div><span>AI</span><b id="pa-ai"></b><div class="pg"><i id="pa-bar"></i></div></div></div>'
+        +'<div class="hint"><svg><use href="#i-tap"/></svg><span>碰一下电脑<br>在 IDE 里接着调</span></div><span class="bar"></span></div>';
+    }else if(st==='link'){
+      h='<div class="t-link"><span class="spin"></span><b>正在接续到<br>MateBook Pro</b><span>真机、断点、日志位置<br>AI 步骤一起带过去</span></div>';
+    }else if(st==='done'){
+      h='<div class="t-link"><span class="ok"><svg viewBox="0 0 16 16"><path d="M3.5 8.5l3 3 6-7" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg></span><b>已在电脑上接续</b><span>实况窗已收起<br>离开电脑时会再接回来</span></div>';
+    }
+    tsc.innerHTML=h;syncState();
+  }
+
+  var ACT={
+    desk:{ic:'#i-lock',t:'锁屏离开',hint:'任务在这台电脑上 · 手机在桌上'},
+    away:{ic:'#i-phone',t:'在手机上打开',hint:'电脑已锁屏 · 任务以实况窗接到手机'},
+    app:{ic:'#i-tap',t:'碰一碰电脑',hint:'手机上在看这个调试会话'},
+    busy:{ic:'#i-tap',t:'等你在电脑上点接续',hint:'碰到了 · 电脑弹出接续卡片',off:1},
+    done:{ic:'#i-refresh',t:'再来一遍',hint:'已在 IDE 里原样接上'}
+  };
+  function setT(st){
+    T=st;var a=ACT[st],b=$('#tap-act');
+    b.innerHTML='<svg class="i"><use href="'+a.ic+'"/></svg><span>'+a.t+'</span>';b.disabled=!!a.off;
+    b.classList.toggle('primary',!a.off);
+    $('#tap-hint').textContent=a.hint;
+  }
+
+  function flyFrom(a,b,cb){
+    var f=$('#fly'),r=tapst.getBoundingClientRect();
+    var ra=a.getBoundingClientRect(),rb=b.getBoundingClientRect();
+    f.style.transition='none';
+    f.style.left=(ra.left-r.left+ra.width/2-22)+'px';f.style.top=(ra.top-r.top+ra.height/2-14)+'px';f.style.opacity='1';f.style.transform='scale(1)';
+    void f.offsetWidth;f.style.transition='';
+    f.style.left=(rb.left-r.left+rb.width/2-22)+'px';f.style.top=(rb.top-r.top+rb.height/2-14)+'px';f.style.transform='scale(.7)';
+    setTimeout(function(){f.style.opacity='0';if(cb)cb()},720);
+  }
+
+  /* ① 锁屏离开：IDE 里的任务变成手机上的实况窗 */
+  async function leave(){
+    if(T!=='desk')return;
+    setScene('tap');setT('busy');$('#tap-hint').textContent='锁屏中…';
+    lsc.dataset.st='lock';
+    await wait(350);
+    renderPhone('lock');
+    flyFrom(lsc,$('#live-card')||tsc);
+    await wait(250);
+    setActive('phone','实况窗接过任务：第 '+stepNow()+' 步 · 断点 28 · 日志 '+S.log+' 行','14:06');
+    setT('away');
+  }
+  /* ② 拿起手机：打开这个调试会话 */
+  function openOnPhone(){
+    if(T!=='away')return;
+    renderPhone('app');setT('app');
+  }
+  /* ③ 碰一碰：手机贴到触控板的碰一碰区，电脑上弹出接续卡片 */
+  async function tap(){
+    if(T!=='app')return;
+    setT('busy');$('#tap-hint').textContent='碰一碰中…';
+    var r=tapst.getBoundingClientRect(),n=$('#nfc').getBoundingClientRect(),p=tph.getBoundingClientRect();
+    var tx=n.left-r.left+3,ty=n.top-r.top+8;
+    var ox=tph.offsetLeft+66,oy=tph.offsetTop+276;
+    tph.style.transform='translate('+(tx-ox)+'px,'+(ty-oy)+'px) rotate(-12deg) scale(.5)';
+    await wait(620);
+    var rp=$('#ripple');rp.style.left=tx+'px';rp.style.top=ty+'px';rp.classList.add('on');
+    renderPhone('link');
+    lsc.dataset.st='ide';
+    await wait(500);
+    $('#l-card').classList.add('on');
+    flyFrom(tph,$('#l-card'));
+    await wait(650);
+    tph.style.transform='';
+    await wait(300);
+    rp.classList.remove('on');
+    /* 电脑上：系统接续卡片 */
+    $('#hc-dev').textContent=S.devs.join('、')+(S.devs.length>1?' · 2 台':'');
+    $('#hc-log').textContent='看到第 '+S.log+' 行 · A00001/ListPage';
+    $('#hc-ai').textContent='第 '+stepNow()+' / 5 步 · '+(continued?'帧率采集 '+S.pct+'%':'等你确认第 4 步');
+    var hc=$('#hc');hc.classList.remove('out');hc.hidden=false;
+    $('#tap-hint').textContent='碰到了 · 电脑弹出接续卡片';
+    logAct('phone','碰一碰 MateBook Pro：电脑弹出接续卡片','14:16');
+  }
+  function hideCard(){var hc=$('#hc');hc.classList.add('out');setTimeout(function(){hc.hidden=true;hc.classList.remove('out')},300);$('#l-card').classList.remove('on')}
+
+  /* ④ 在 IDE 里接续：真机、断点、日志位置、AI 步骤原样接上 */
+  function restore(){
+    hideCard();
+    setActive('pc','碰一碰接回：'+S.devs.join('、')+' · 断点 28 · 日志 '+S.log+' 行 · AI 第 '+stepNow()+' 步','14:16');
+    capsule('已从 Pura 70 Pro 接续 · 原样接上',false);
+    /* 编辑器：回到 ListPage.ets:28 断点 */
+    var tab=$('.tab[data-file="ListPage.ets"]');if(tab&&!tab.classList.contains('on'))tab.click();
+    var code=$('#code');code.innerHTML=DemoFrame.code('ListPage.ets',{cur:28,marks:{28:'bp'}});
+    var ln=$('.ln[data-ln="28"]',code);if(ln){ln.classList.add('flash');setTimeout(function(){code.scrollTop=ln.offsetTop-code.clientHeight/2},40);}
+    var pos=$('#status-pos');if(pos)pos.textContent='28:5';
+    /* 底部：HiLog 打开到原来那一行 */
+    DemoFrame.setSide('bottom','log');
+    $('#log-pill').hidden=false;$('#log-pill-t').textContent='从 Pura 70 Pro 接续 · 第 '+S.log+' 行';
+    setTimeout(function(){renderLog(S.log,true)},30);
+    /* AI 步骤：聚焦到正在的那一步 */
+    var cur=$('#steps .stp[data-step="'+stepNow()+'"]');
+    $$('#steps .stp.focus').forEach(function(x){x.classList.remove('focus')});
+    if(cur){cur.classList.add('focus');setTimeout(function(){cur.classList.remove('focus')},2600)}
+    /* 对话里留一张回执 */
+    var old=$('#hand-card');if(old)old.remove();
+    $('#thread').insertAdjacentHTML('beforeend','<div class="dm-card accent hand-card" id="hand-card">'
+      +'<div class="dm-card-hd"><svg class="i"><use href="#i-tap"/></svg>从 Pura 70 Pro 碰一碰接续<span class="grow"></span><span class="dm-small dm-muted">14:16 · 原样接上</span></div>'
+      +'<div class="dm-list">'
+      +'<div class="dm-item"><svg><use href="#i-phone"/></svg><span class="k">真机</span><span class="grow">'+S.devs.join('、')+'</span><span class="dm-pill ok">已重连</span></div>'
+      +'<div class="dm-item"><svg><use href="#i-bpdot"/></svg><span class="k">断点</span><span class="grow mono">ListPage.ets:28</span><button class="btn sm" data-jump="code">跳到</button></div>'
+      +'<div class="dm-item"><svg><use href="#i-loglines"/></svg><span class="k">HiLog</span><span class="grow">停在第 '+S.log+' 行</span><button class="btn sm" data-jump="log">打开</button></div>'
+      +'<div class="dm-item"><svg><use href="#i-genie"/></svg><span class="k">AI</span><span class="grow">第 '+stepNow()+' / 5 步 · '+(continued?'帧率采集 '+S.pct+'%':'等你确认第 4 步')+'</span><span class="dm-pill '+(continued?'info':'warn')+'">'+(continued?'继续中':'等你')+'</span></div>'
+      +'</div></div>');
+    var sc=$('#ai-scroll');setTimeout(function(){sc.scrollTop=sc.scrollHeight},40);
+    renderPhone('done');setT('done');
+    setTimeout(function(){if(T==='done')renderPhone('aod')},2600);
+  }
+
+  $('#hc-go').addEventListener('click',restore);
+  $('#hc-no').addEventListener('click',function(){hideCard();renderPhone('app');setT('app')});
+  $('#thread').addEventListener('click',function(e){
+    var b=e.target.closest('[data-jump]');if(!b)return;
+    if(b.dataset.jump==='code'){var code=$('#code'),ln=$('.ln[data-ln="28"]',code);if(ln){code.scrollTop=ln.offsetTop-code.clientHeight/2;ln.classList.remove('flash');void ln.offsetWidth;ln.classList.add('flash')}}
+    else{DemoFrame.setSide('bottom','log');renderLog(S.log,true)}
+  });
+
+  $('#tap-act').addEventListener('click',function(){
+    if(T==='desk')leave();else if(T==='away')openOnPhone();else if(T==='app')tap();
+    else if(T==='done'){renderPhone('aod');lsc.dataset.st='ide';setT('desk')}
+  });
+  tph.addEventListener('click',function(e){
+    if(e.target.closest('#pv-ok')){continueTask('phone');return}
+    if(T==='away')openOnPhone();else if(T==='app')tap();
+  });
+
+  /* ---------- 画布场景切换 ---------- */
+  function setScene(s){
+    $$('#cv-seg button').forEach(function(b){b.classList.toggle('on',b.dataset.scene===s)});
+    tapst.hidden=s!=='tap';$('#stage-ends').hidden=s!=='ends';
+    $('#tap-act').hidden=s!=='tap';
+    $('#tap-hint').textContent=s==='tap'?ACT[T].hint:'同一个任务在平板和手表上';
+    if(s==='tap')placeCaps();
+  }
+  $('#cv-seg').addEventListener('click',function(e){var b=e.target.closest('button');if(b)setScene(b.dataset.scene)});
 
   /* 右侧卡片：交给它 */
   $('#ends').addEventListener('click',function(e){
     var b=e.target.closest('[data-take]');if(!b)return;
     var id=b.dataset.take;
+    if(id==='phone'){setScene('tap');if(T==='desk')leave();return}
+    if(id==='tablet'||id==='watch')setScene('ends');
     setActive(id);
     if(id==='watch')continueTask('watch');
     else if(id==='tablet'&&!continued)$('#tab-tb').classList.add('lit');
@@ -262,7 +737,17 @@
     setActive(d.dataset.end);
     if(d.dataset.end==='tablet'&&!continued)$('#tab-tb').classList.add('lit');
   });
-DemoGuide.init([{"target": "[data-take=\"watch\"]", "kind": "click", "pos": "top", "label": "点这里交给手表"}, {"target": "#dev-watch", "kind": "change", "pos": "top", "label": "手表变成继续中"}]);
+
+  renderPhone('aod');setT('desk');setScene('tap');
+  window.addEventListener('resize',placeCaps);
+
+DemoGuide.init([
+  {target:'#tap-act',kind:'click',pos:'top',label:'点这里：锁屏离开 → 手机 → 碰一碰'},
+  {target:'#tph',kind:'change',pos:'left',label:'IDE 任务变成手机实况窗'},
+  {target:'#hc-go',kind:'click',pos:'bottom',label:'点这里：在 IDE 里原样接上'},
+  {target:'[data-take="watch"]',kind:'click',pos:'top',label:'点这里交给手表'},
+  {target:'#dev-watch',kind:'change',pos:'top',label:'手表变成继续中'}
+]);
 })();
 </script>
 </body>

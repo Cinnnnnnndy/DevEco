@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='32' y2='32' gradientUnits='userSpaceOnUse'%3E%3Cstop stop-color='%232C8DDD'/%3E%3Cstop offset='1' stop-color='%233357AC'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='32' height='32' rx='7' fill='url(%23g)'/%3E%3Ctext x='16' y='22.5' font-family='Arial,Helvetica,sans-serif' font-size='13' font-weight='700' fill='white' text-anchor='middle'%3EDE%3C/text%3E%3C/svg%3E">
 <title>26 · IDE Web：打开链接就能写、就能跑</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;500&display=swap">
 <link rel="stylesheet" href="../../deveco-intui-kit/src/tokens.css">
 <link rel="stylesheet" href="../../deveco-intui-kit/src/components.css">
 <link rel="stylesheet" href="../_shared/frame.css">
@@ -15,7 +14,7 @@
 <script src="../_shared/guide.js"></script>
 <style>
   /* 不用 IDE 外壳：外面是浏览器，里面是轻量 IDE。.ide 只负责主题变量 */
-  .ide.wb{display:flex;flex-direction:column;min-width:1280px}
+  .ide.wb{display:flex;flex-direction:column;min-width:1280px;--card:color-mix(in srgb,var(--ui-fg) 5%,var(--ui-bg));--card2:color-mix(in srgb,var(--ui-fg) 9%,var(--ui-bg));--card3:color-mix(in srgb,var(--ui-fg) 15%,var(--ui-bg))}
   .wb svg.i{width:16px;height:16px}
   /* ---------- 浏览器外壳 ---------- */
   .bz-tabs{height:38px;flex:none;display:flex;align-items:flex-end;gap:2px;padding:0 0 0 10px;background:var(--hdr-bg)}
@@ -40,17 +39,17 @@
   .omni .path{color:var(--ui-fg-info)}
   .omni .grow{flex:1}
   .omni svg{width:14px;height:14px}
-  .bz-addr .me{width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,#5B8CFF,#3357AC);color:#fff;font-size:11px;display:grid;place-items:center;font-weight:600;margin-left:4px}
+  .bz-addr .me{width:26px;height:26px;border-radius:50%;background:var(--card3);color:var(--ui-fg);font-size:11px;display:grid;place-items:center;font-weight:600;margin-left:4px}
 
   /* Lite vs Studio 轻提示 */
-  .lite{height:30px;flex:none;display:flex;align-items:center;gap:14px;padding:0 16px;font-size:var(--fs-sm);background:color-mix(in srgb,var(--ui-accent) 8%,var(--ui-bg));border-bottom:1px solid var(--ui-border);color:var(--ui-fg-info)}
+  .lite{height:30px;flex:none;display:flex;align-items:center;gap:14px;padding:0 16px;font-size:var(--fs-sm);background:var(--card);border-bottom:0;color:var(--ui-fg-info)}
   .lite[hidden]{display:none}
   .lite b{color:var(--ui-fg);font-weight:600}
-  .lite svg{width:14px;height:14px;color:var(--ui-accent)}
+  .lite svg{width:14px;height:14px;color:var(--ui-fg-info)}
   .lite .mt{display:inline-flex;align-items:center;gap:6px}
   .lite .bar{display:inline-flex;align-items:center;gap:3px}
   .lite .bar i{display:block;height:6px;border-radius:3px}
-  .lite .bar i.a{background:var(--ui-accent)}
+  .lite .bar i.a{background:var(--ui-fg)}
   .lite .bar i.b{background:var(--ui-fg-disabled)}
   .lite .grow{flex:1}
   .lite .sep{width:1px;height:14px;background:var(--ui-border)}
@@ -62,7 +61,7 @@
   .wbar{height:44px;flex:none;display:flex;align-items:center;gap:8px;padding:0 12px;border-bottom:1px solid var(--ui-border)}
   .wbar .brand{display:flex;align-items:center;gap:8px;font-weight:600;padding-right:6px}
   .wbar .brand svg{width:20px;height:20px}
-  .wbar .brand em{font-style:normal;font-size:10px;font-weight:600;padding:0 5px;border-radius:4px;background:color-mix(in srgb,var(--ui-accent) 18%,transparent);color:var(--ui-link);line-height:16px}
+  .wbar .brand em{font-style:normal;font-size:10px;font-weight:600;padding:0 5px;border-radius:4px;background:var(--ui-tag-bg);color:var(--ui-fg-info);line-height:16px}
   .wbar .vs{width:1px;height:18px;background:var(--ui-border)}
   .wbar .grow{flex:1}
   .wbar .btn{height:28px;padding:0 10px;gap:6px;flex:none;white-space:nowrap}
@@ -80,9 +79,9 @@
   .tpl .it{display:flex;align-items:center;gap:10px;padding:6px 8px;border-radius:6px;width:100%;border:0;background:transparent;color:var(--ui-fg);text-align:left}
   .tpl .it:hover{background:var(--ui-hover-list)}
   .tpl .it.on{background:var(--ui-selection)}
-  .tpl .it .pv{width:34px;height:44px;border-radius:5px;background:#fff;border:1px solid var(--ui-border);flex:none;padding:4px;display:flex;flex-direction:column;gap:3px}
+  .tpl .it .pv{width:34px;height:44px;border-radius:5px;background:#fff;border:0;flex:none;padding:4px;display:flex;flex-direction:column;gap:3px}
   .tpl .it .pv i{display:block;height:4px;border-radius:2px;background:#d6dbe4}
-  .tpl .it .pv i.a{background:#0A59F7}
+  .tpl .it .pv i.a{background:#6b7280}
   .tpl .it b{display:block;font-weight:600}
   .tpl .it span{font-size:var(--fs-sm);color:var(--ui-fg-info)}
 
@@ -130,7 +129,7 @@
 
   /* 预览屏：设备内部，固定色 */
   .scr .ly{position:absolute;inset:0;display:flex;flex-direction:column;font-family:var(--font-ui)}
-  .desk{background:linear-gradient(160deg,#3a5bd9,#7b5bd6 55%,#c36fb4);color:#fff}
+  .desk{background:linear-gradient(160deg,#343a48,#5d6272 58%,#9a8f86);color:#fff}
   .desk .clk{padding:44px 0 0;text-align:center;font-size:40px;font-weight:300;line-height:1}
   .desk .dt{text-align:center;font-size:11px;opacity:.85;margin-top:6px}
   .desk .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px 10px;padding:36px 18px 0}
@@ -144,7 +143,7 @@
   .bld .sm{font-size:10px;color:#8a8f99}
   @keyframes spin{to{transform:rotate(360deg)}}
   .app{background:#F1F3F5;color:#1a1a1a;padding-top:24px;transition:background .25s}
-  .app .ttl{padding:10px 16px 8px;font-size:22px;font-weight:700;transition:font-size .25s}
+  .app .ttl{padding:10px 16px 8px;font-size:22px;font-weight:600;transition:font-size .25s}
   .app .card{margin:0 12px 10px;background:#fff;border-radius:12px;display:flex;gap:10px;padding:10px;align-items:center}
   .app .card i{width:56px;height:56px;border-radius:8px;flex:none;background:linear-gradient(135deg,#dfe7ff,#b9c9ff)}
   .app .card:nth-child(3) i{background:linear-gradient(135deg,#ffe3d6,#ffc2a8)}
@@ -161,7 +160,7 @@
   .app.fa{background:linear-gradient(180deg,#e9eefb,#f6f7fb)}
   .app .fcard{margin:14px;border-radius:18px;background:#fff;box-shadow:0 4px 14px rgba(0,0,0,.06);padding:14px}
   .app .fcard .h{font-size:11px;color:#8a8f99}
-  .app .fcard .v{font-size:28px;font-weight:700;margin:6px 0 2px}
+  .app .fcard .v{font-size:28px;font-weight:600;margin:6px 0 2px}
   .app .fcard .s{font-size:11px;color:#2E9E5B}
   .app .fgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 14px}
   .app .fgrid div{height:92px;border-radius:16px;background:#fff;box-shadow:0 4px 14px rgba(0,0,0,.06);padding:10px;font-size:11px;color:#555}
@@ -186,7 +185,7 @@
   .share .lk .fld{flex:1;height:28px;border:1px solid var(--ui-component-border);border-radius:6px;background:var(--ui-field-bg);display:flex;align-items:center;padding:0 8px;font-family:var(--font-code);font-size:11px;overflow:hidden;white-space:nowrap}
   .share .lk .btn{height:28px}
   .share .qr{display:flex;gap:12px;align-items:center}
-  .share .qr .box{width:118px;height:118px;border-radius:8px;background:#fff;padding:8px;flex:none;border:1px solid var(--ui-border)}
+  .share .qr .box{width:118px;height:118px;border-radius:8px;background:#fff;padding:8px;flex:none;border:0}
   .share .qr .box svg{width:100%;height:100%;display:block}
   .share .qr .tx{font-size:var(--fs-sm);line-height:var(--lh-sm);color:var(--ui-fg-info);display:flex;flex-direction:column;gap:6px}
   .share .qr .tx b{color:var(--ui-fg);font-weight:600}
@@ -202,7 +201,7 @@
   .dlg .dh svg{width:22px;height:22px}
   .dlg .db{padding:6px 16px 12px;display:flex;flex-direction:column;gap:10px;font-size:var(--fs-para);line-height:var(--lh-para)}
   .dlg .flow{display:grid;grid-template-columns:1fr 28px 1fr;align-items:center;gap:6px}
-  .dlg .flow .nd{border:1px solid var(--ui-border);border-radius:8px;padding:8px 10px;background:var(--ui-field-bg);font-size:var(--fs-sm);line-height:var(--lh-sm)}
+  .dlg .flow .nd{border:0;border-radius:8px;padding:8px 10px;background:var(--card2);font-size:var(--fs-sm);line-height:var(--lh-sm)}
   .dlg .flow .nd b{display:block;font-weight:600;font-size:var(--fs)}
   .dlg .flow .nd span{color:var(--ui-fg-info)}
   .dlg .flow svg{width:18px;height:18px;color:var(--ui-fg-info);margin:auto}
@@ -222,8 +221,7 @@
   .toast svg{width:16px;height:16px;color:var(--ui-success)}
 
   /* =================== 一句话建鸿蒙工程 =================== */
-  .wbar .btn.oneline svg{color:var(--ui-link)}
-  .wbar .brand{cursor:pointer;border-radius:6px}
+    .wbar .brand{cursor:pointer;border-radius:6px}
   .ide.m-home .wbody,.ide.m-new .wbody,.ide.m-ws .nbody,.ide.m-home .nbody,.ide.m-ws .home,.ide.m-new .home{display:none}
   .ide.m-home .wbar .wso{display:none}
   /* 首页 */
@@ -233,20 +231,21 @@
   .hm-t{display:flex;align-items:center;gap:12px;font-size:var(--fs-h1);line-height:var(--lh-h1);font-weight:600}
   .hm-t svg{width:28px;height:28px}
   .hm-s{color:var(--ui-fg-info);font-size:var(--fs-para);line-height:var(--lh-para);margin-top:-4px}
-  .hm-box{border:1px solid var(--ui-accent);border-radius:12px;background:var(--ui-field-bg);padding:12px 12px 10px 14px;box-shadow:0 0 0 3px color-mix(in srgb,var(--ui-accent) 16%,transparent);display:flex;flex-direction:column;gap:8px}
+  .hm-box:focus-within{border-color:var(--ui-accent)}
+  .hm-box{border:1px solid var(--ui-component-border);border-radius:12px;background:var(--ui-field-bg);padding:12px 12px 10px 14px;display:flex;flex-direction:column;gap:8px}
   .hm-box textarea{width:100%;height:64px;resize:none;border:0;outline:0;background:transparent;color:var(--ui-fg);font-family:var(--font-ui);font-size:var(--fs-h2);line-height:26px;padding:0}
   .hm-bar{display:flex;align-items:center;gap:8px}
   .hm-bar .grow{flex:1}
-  .hm-bar .chip{height:24px;font-size:11px;color:var(--ui-fg-info)}
+  .hm-bar .chip{height:24px;font-size:11px;color:var(--ui-fg-info);border-color:transparent;background:var(--card2)}
   .hm-bar .btn{height:30px;padding:0 14px;font-size:var(--fs-para)}
   .hm-bar .btn svg{width:14px;height:14px}
   .hm-add{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:var(--fs-sm);color:var(--ui-fg-info)}
-  .hm-add .chip{height:26px;color:var(--ui-fg)}
-  .hm-add .chip.on{border-color:var(--ui-accent);background:var(--ui-selection)}
+  .hm-add .chip{height:26px;color:var(--ui-fg);border-color:transparent;background:var(--card2)}
+  .hm-add .chip.on{background:var(--card3);font-weight:500}
   .hm-steps{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:8px}
-  .hm-steps div{border:1px solid var(--ui-border);border-radius:var(--arc);background:var(--ui-bg);padding:10px 12px;display:flex;flex-direction:column;gap:4px;font-size:var(--fs-sm);line-height:var(--lh-sm);color:var(--ui-fg-info)}
+  .hm-steps div{border:0;border-radius:var(--arc);background:var(--card2);padding:10px 12px;display:flex;flex-direction:column;gap:4px;font-size:var(--fs-sm);line-height:var(--lh-sm);color:var(--ui-fg-info)}
   .hm-steps b{color:var(--ui-fg);font-weight:600;display:flex;align-items:center;gap:6px}
-  .hm-steps b i{font-style:normal;width:18px;height:18px;border-radius:50%;background:color-mix(in srgb,var(--ui-accent) 18%,transparent);color:var(--ui-link);font-size:11px;display:grid;place-items:center}
+  .hm-steps b i{font-style:normal;width:18px;height:18px;border-radius:50%;background:var(--card3);color:var(--ui-fg);font-size:11px;display:grid;place-items:center}
   .hm-rec{margin-top:10px;display:flex;flex-direction:column;gap:2px}
   .hm-rec .hd{font-size:var(--fs-sm);color:var(--ui-fg-info);padding:0 0 6px}
   .hm-rec button{display:flex;align-items:center;gap:10px;height:36px;padding:0 10px;border:0;border-radius:6px;background:transparent;color:var(--ui-fg);text-align:left;font-size:var(--fs-para)}
@@ -277,9 +276,9 @@
   .msgs{flex:1;min-height:0;overflow:auto;padding:8px 12px 12px;display:flex;flex-direction:column;gap:12px}
   .mg{display:flex;flex-direction:column;gap:6px;font-size:var(--fs-para);line-height:var(--lh-para)}
   .mg.u{align-items:flex-end}
-  .mg.u .bb{max-width:250px;background:var(--ui-selection);border-radius:10px 10px 2px 10px;padding:8px 10px}
+  .mg.u .bb{max-width:250px;background:var(--card2);border-radius:10px 10px 2px 10px;padding:8px 10px}
   .mg .who{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--ui-fg-info)}
-  .mg .who svg{width:14px;height:14px;color:var(--ui-link)}
+  .mg .who svg{width:14px;height:14px;color:var(--ui-fg-info)}
   .mg .tx b{font-weight:600}
   .mg .tx code,.plan code{font-family:var(--font-code);font-size:11px;background:var(--ui-tag-bg);padding:0 4px;border-radius:4px}
   .msgs > *{flex:none}
@@ -288,35 +287,34 @@
   .mg .thk svg{width:12px;height:12px;color:var(--ui-success)}
   .mg .acts{display:flex;flex-wrap:wrap;gap:6px}
   .mg .acts .chip{height:24px;font-size:11px}
-  .mg.sys{flex-direction:row;align-items:center;gap:6px;font-size:11px;color:var(--ui-fg-info);padding:6px 8px;border:1px dashed var(--ui-border);border-radius:6px}
-  .mg.sys svg{width:14px;height:14px;flex:none;color:var(--ui-link)}
+  .mg.sys{flex-direction:row;align-items:center;gap:6px;font-size:11px;color:var(--ui-fg-info);padding:6px 8px;border:0;background:var(--card);border-radius:6px}
+  .mg.sys svg{width:14px;height:14px;flex:none;color:var(--ui-fg-info)}
   .ch-in{flex:none;margin:0 10px 10px;border:1px solid var(--ui-component-border);border-radius:var(--arc);background:var(--ui-field-bg);display:flex;align-items:center;gap:4px;padding:0 4px 0 10px;height:34px}
   .ch-in input{flex:1;min-width:0;border:0;outline:0;background:transparent;color:var(--ui-fg);font:inherit;font-size:var(--fs-para)}
   .ch-in input::placeholder{color:var(--ui-fg-disabled)}
-  .ch-in .abtn svg{width:16px;height:16px;color:var(--ui-link)}
+  .ch-in .abtn svg{width:16px;height:16px;color:var(--ui-fg-info)}
 
   /* 方案卡 */
-  .plan{border:1px solid var(--ui-border);border-radius:10px;background:var(--ui-bg);display:flex;flex-direction:column;font-size:var(--fs-sm);line-height:var(--lh-sm);overflow:hidden}
-  .ide[data-ide-theme="dark"] .plan{background:color-mix(in srgb,var(--ui-fg) 3%,var(--ui-bg))}
-  .plan .ph{display:flex;align-items:center;gap:6px;padding:8px 10px;border-bottom:1px solid var(--ui-border);font-weight:600}
-  .plan .ph svg{width:14px;height:14px;color:var(--ui-link)}
+  .plan{border:0;border-radius:10px;background:var(--card);display:flex;flex-direction:column;font-size:var(--fs-sm);line-height:var(--lh-sm);overflow:hidden}
+  .plan .ph{display:flex;align-items:center;gap:6px;padding:9px 10px 2px;font-weight:600}
+  .plan .ph svg{width:14px;height:14px;color:var(--ui-fg-info)}
   .plan .ph .grow{flex:1}
   .plan .pn{display:flex;align-items:baseline;gap:8px;padding:8px 10px 2px}
   .plan .pn b{font-size:var(--fs-h2);line-height:var(--lh-h2);font-weight:600}
   .plan .sec{padding:8px 10px;display:flex;flex-direction:column;gap:6px}
-  .plan .sec + .sec{border-top:1px solid var(--ui-border)}
+  .plan .sec + .sec{border-top:1px solid color-mix(in srgb,var(--ui-fg) 6%,transparent)}
   .plan .lb{display:flex;align-items:center;gap:6px;color:var(--ui-fg-info);font-size:11px}
   .plan .lb .grow{flex:1}
   .plan .hint{color:var(--ui-fg-info);font-size:11px}
   .plan .dm-seg button{height:24px}
   .plan .devs{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
-  .plan .dev{border:1px solid var(--ui-component-border);border-radius:6px;background:var(--ui-field-bg);color:var(--ui-fg);padding:6px 6px 5px;display:flex;flex-direction:column;align-items:flex-start;gap:1px;text-align:left;position:relative}
+  .plan .dev{border:0;border-radius:6px;background:var(--card2);color:var(--ui-fg);padding:6px 6px 5px;display:flex;flex-direction:column;align-items:flex-start;gap:1px;text-align:left;position:relative}
   .plan .dev svg{width:16px;height:16px;color:var(--ui-fg-info)}
   .plan .dev b{font-weight:600;font-size:var(--fs-sm)}
   .plan .dev span{font-size:10px;line-height:13px;color:var(--ui-fg-info)}
   .plan .dev .ck{position:absolute;right:5px;top:5px;width:14px;height:14px;border-radius:4px;border:1px solid var(--ui-component-border);display:grid;place-items:center}
-  .plan .dev.on{border-color:var(--ui-accent);background:var(--ui-selection)}
-  .plan .dev.on svg{color:var(--ui-link)}
+  .plan .dev.on{background:var(--card3)}
+  .plan .dev.on svg{color:var(--ui-fg)}
   .plan .dev.on .ck{background:var(--ui-accent);border-color:var(--ui-accent)}
   .plan .dev.on .ck::after{content:"";width:6px;height:3px;border-left:1.5px solid #fff;border-bottom:1.5px solid #fff;transform:translateY(-1px) rotate(-45deg)}
   .plan .li{display:flex;align-items:center;gap:6px;min-height:22px}
@@ -338,7 +336,7 @@
   .plan .perm .pr em{font-style:normal;font-family:var(--font-ui);font-size:10px;padding:0 5px;border-radius:4px;background:var(--ui-tag-bg);color:var(--ui-fg-info)}
   .plan .perm .none{color:var(--ui-success);font-size:11px;display:flex;align-items:center;gap:4px}
   .plan .perm .none svg{width:12px;height:12px}
-  .plan .pf{display:flex;align-items:center;gap:8px;padding:8px 10px;border-top:1px solid var(--ui-border);background:var(--ui-bg)}
+  .plan .pf{display:flex;align-items:center;gap:8px;padding:8px 10px;border-top:1px solid color-mix(in srgb,var(--ui-fg) 6%,transparent)}
   .plan .pf .grow{flex:1}
   .plan .pf .btn{height:26px;flex:none;white-space:nowrap}
   .plan .pf .dm-small{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -357,16 +355,16 @@
   .bpr .bar{position:relative;display:flex;height:16px;border-radius:4px;overflow:visible}
   .bpr .bar span{display:grid;place-items:center;border-right:1px solid var(--ui-editor-bg);background:var(--ui-tag-bg);color:var(--ui-fg-info);font-family:var(--font-code);font-size:10px}
   .bpr .bar span:first-child{border-radius:4px 0 0 4px}.bpr .bar span:last-child{border-radius:0 4px 4px 0;border-right:0}
-  .bpr .bar span.hit{background:color-mix(in srgb,var(--ui-accent) 26%,var(--ui-tag-bg));color:var(--ui-fg)}
-  .bpr .mk{position:absolute;top:11px;width:2px;height:10px;background:var(--ui-accent);border-radius:1px}
-  .bpr .mk::after{content:attr(data-n);font-style:normal;position:absolute;top:10px;left:50%;transform:translateX(-50%);white-space:nowrap;font-size:10px;color:var(--ui-link)}
+  .bpr .bar span.hit{background:var(--card3);color:var(--ui-fg)}
+  .bpr .mk{position:absolute;top:11px;width:2px;height:10px;background:var(--ui-fg-info);border-radius:1px}
+  .bpr .mk::after{content:attr(data-n);font-style:normal;position:absolute;top:10px;left:50%;transform:translateX(-50%);white-space:nowrap;font-size:10px;color:var(--ui-fg-info)}
   .bpr .rl{height:14px}
   .drow{display:flex;align-items:flex-start;justify-content:center;gap:18px;flex:none}
   .hslot{display:flex;flex-direction:column;align-items:center;gap:5px;flex:none}
   .hslot[hidden]{display:none}
   .hcap{font-size:11px;color:var(--ui-fg-info);white-space:nowrap;display:flex;align-items:center;gap:6px}
   .hcap b{color:var(--ui-fg);font-weight:600}
-  .hcap .bp{font-family:var(--font-code);font-size:10px;padding:0 5px;border-radius:4px;background:color-mix(in srgb,var(--ui-accent) 18%,transparent);color:var(--ui-link)}
+  .hcap .bp{font-family:var(--font-code);font-size:10px;padding:0 5px;border-radius:4px;background:var(--ui-tag-bg);color:var(--ui-fg-info)}
   .hdv{position:relative;background:#0f1012;box-shadow:0 8px 24px rgba(0,0,0,.35);flex:none}
   .hdv .hs{position:absolute;overflow:hidden;background:#000;color:#1a1a1a;font-family:var(--font-ui)}
   /* MatePad Pro 13.2 2880×1920 → 屏 432×288（3:2） */
@@ -380,8 +378,8 @@
   .hdv.fld{width:286px;height:264px;border-radius:16px}
   .hdv.fld .hs{inset:7px;border-radius:10px}
   .hdv.fld .hs::after{content:"";position:absolute;top:0;bottom:0;left:50%;width:1px;background:rgba(0,0,0,.08);z-index:9;pointer-events:none}
-  .hadd{width:286px;height:264px;border:1px dashed var(--ui-component-border);border-radius:16px;background:transparent;color:var(--ui-fg-info);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;font-size:var(--fs-sm);line-height:var(--lh-sm)}
-  .hadd:hover{border-color:var(--ui-accent);color:var(--ui-fg)}
+  .hadd{width:286px;height:264px;border:0;border-radius:16px;background:var(--card);color:var(--ui-fg-info);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;font-size:var(--fs-sm);line-height:var(--lh-sm)}
+  .hadd:hover{background:var(--card2);color:var(--ui-fg)}
   .hadd svg{width:22px;height:22px}
   .hadd b{color:var(--ui-fg);font-weight:600}
   .hadd[hidden]{display:none}
@@ -399,48 +397,48 @@
   .v.off i{width:18px;height:18px;border-radius:50%;border:2px solid #2a2c31;border-top-color:#6b6f78;display:block}
   .v.off.spin i{animation:spin .9s linear infinite;border-top-color:#0A59F7}
   .v.boot{background:#000;color:#e8e8e8;align-items:center;justify-content:center;font-size:10px;letter-spacing:.14em;font-weight:600}
-  .v.dsk{background:linear-gradient(160deg,#2f5bd8,#6f58d4 55%,#c06fb1)}
+  .v.dsk{background:linear-gradient(160deg,#343a48,#5d6272 58%,#9a8f86)}
   .dsk .dg{display:grid;align-content:start;padding:8px 10px 0}
   .dsk .dg .ic{display:block;aspect-ratio:1;border-radius:26%;background:rgba(255,255,255,.3)}
   .dsk .dg .ic.a{background:linear-gradient(135deg,#fff,#dfe8ff);display:grid;place-items:center}
-  .dsk .dg .ic.a::after{content:"工";font-weight:700;color:#0A59F7;font-size:10px}
+  .dsk .dg .ic.a::after{content:"工";font-weight:600;color:#0A59F7;font-size:10px}
   .dsk .dock{margin:auto auto 12px;display:flex;gap:8px;padding:6px 8px;border-radius:14px;background:rgba(255,255,255,.22)}
   .dsk .dock i{display:block;border-radius:26%;background:rgba(255,255,255,.45)}
   .dsk .dock i.a{background:linear-gradient(135deg,#fff,#dfe8ff);display:grid;place-items:center;font-style:normal}
-  .dsk .dock i.a::after{content:"工";font-weight:700;color:#0A59F7}
+  .dsk .dock i.a::after{content:"工";font-weight:600;color:#0A59F7}
   .wc{grid-column:span 2;grid-row:span 2;border:0;padding:6px 7px;border-radius:12px;background:rgba(255,255,255,.94);color:#1a1a1a;text-align:left;display:flex;flex-direction:column;gap:1px;cursor:pointer;font-family:var(--font-ui);position:relative;animation:cardin .5s cubic-bezier(.2,.9,.3,1.3)}
   @keyframes cardin{from{transform:scale(.4);opacity:0}to{transform:none;opacity:1}}
   .wc .t{font-size:8px;color:#6b7280;display:flex;align-items:center;gap:3px}
   .wc .t .dt{width:5px;height:5px;border-radius:50%;background:#0A59F7}
-  .wc .v{font-size:17px;font-weight:700;line-height:1.05;margin-top:2px}
+  .wc .v{font-size:17px;font-weight:600;line-height:1.05;margin-top:2px}
   .wc .v small{font-size:9px;font-weight:600;margin-left:1px}
   .wc .s{font-size:7.5px;color:#6b7280}
-  .wc .b{margin-top:auto;align-self:stretch;height:14px;border-radius:7px;background:#0A59F7;color:#fff;font-size:7.5px;font-weight:600;display:grid;place-items:center}
+  .wc .b{margin-top:auto;align-self:stretch;height:14px;border-radius:7px;background:#eceef1;color:#1a1a1a;font-size:7.5px;font-weight:600;display:grid;place-items:center}
   .wc.up .v{animation:flash 1s ease}
   .hs[data-dev="pho"] .wc .as,.hs[data-dev="fld"] .wc .as{display:none}
-  .wc .as{position:absolute;right:5px;top:5px;font-size:6.5px;padding:0 3px;border-radius:3px;background:#E8EFFE;color:#0A59F7}
+  .wc .as{position:absolute;right:5px;top:5px;font-size:6.5px;padding:0 3px;border-radius:3px;background:#eceef1;color:#555}
   /* 应用内 */
   .v.ap{background:#F1F3F5;color:#1a1a1a}
   .ap .hd2{display:flex;align-items:flex-end;gap:6px;padding:4px 10px 6px}
-  .ap .hd2 b{font-size:14px;font-weight:700}
+  .ap .hd2 b{font-size:14px;font-weight:600}
   .ap .hd2 span{font-size:8px;color:#8a8f99;padding-bottom:2px}
   .ap .cap{position:absolute;top:19px;right:8px;display:flex;align-items:center;height:14px;border-radius:7px;border:1px solid rgba(0,0,0,.12);background:rgba(255,255,255,.9);z-index:3}
   .ap .cap i{width:16px;height:12px;display:grid;place-items:center;font-style:normal;font-size:8px;color:#333;line-height:1}
   .ap .cap i + i{border-left:1px solid rgba(0,0,0,.12)}
-  .ap .sum{margin:0 8px 6px;border-radius:10px;padding:7px 9px;background:linear-gradient(135deg,#0A59F7,#4E86FF);color:#fff;display:flex;flex-direction:column;gap:2px}
-  .ap .sum .l{font-size:7.5px;opacity:.85}
-  .ap .sum .v{font-size:17px;font-weight:700;line-height:1.1}
+  .ap .sum{margin:0 8px 6px;border-radius:10px;padding:7px 9px;background:#fff;color:#1a1a1a;display:flex;flex-direction:column;gap:2px}
+  .ap .sum .l{font-size:7.5px;color:#8a8f99}
+  .ap .sum .v{font-size:17px;font-weight:600;line-height:1.1}
   .ap .sum .v small{font-size:9px;margin-left:1px}
-  .ap .sum .pg{height:3px;border-radius:2px;background:rgba(255,255,255,.3);overflow:hidden;margin-top:3px}
-  .ap .sum .pg i{display:block;height:100%;background:#fff;border-radius:2px}
+  .ap .sum .pg{height:3px;border-radius:2px;background:#eceef1;overflow:hidden;margin-top:3px}
+  .ap .sum .pg i{display:block;height:100%;background:#0A59F7;border-radius:2px}
   .ap .sec2{font-size:8px;color:#8a8f99;padding:2px 10px 4px}
   .ap .rc{margin:0 8px 5px;background:#fff;border-radius:8px;padding:5px 8px;display:flex;align-items:center;gap:6px}
-  .ap .rc .bar{width:3px;align-self:stretch;border-radius:2px;background:#0A59F7;flex:none}
-  .ap .rc:nth-child(odd) .bar{background:#2E9E5B}
+  .ap .rc .bar{width:3px;align-self:stretch;border-radius:2px;background:#c9ccd6;flex:none}
+  .ap .rc:nth-child(odd) .bar{background:#9ec9ae}
   .ap .rc .m{flex:1;min-width:0}
   .ap .rc .m b{display:block;font-size:9px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .ap .rc .m span{display:block;font-size:7.5px;color:#8a8f99;white-space:nowrap}
-  .ap .rc em{font-style:normal;font-size:9px;font-weight:700;color:#0A59F7}
+  .ap .rc em{font-style:normal;font-size:9px;font-weight:600;color:#1a1a1a}
   .ap .rc.nw{animation:flash 1.2s ease}
   .ap .fab{position:absolute;right:10px;width:26px;height:26px;border-radius:50%;background:#0A59F7;color:#fff;display:grid;place-items:center;font-size:16px;line-height:1;box-shadow:0 3px 8px rgba(10,89,247,.4);cursor:pointer;border:0;padding:0}
   .ap .tb{margin-top:auto;height:34px;flex:none;display:flex;background:#fff;border-top:1px solid #e6e8eb;padding-bottom:6px}
@@ -452,7 +450,7 @@
   .ap .ch .t b{margin-left:auto;color:#1a1a1a;font-size:9px}
   .ap .ch .bs{flex:1;display:flex;align-items:flex-end;gap:5px;min-height:50px}
   .ap .ch .bs div{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;height:100%;justify-content:flex-end;font-size:6.5px;color:#8a8f99}
-  .ap .ch .bs div i{width:100%;border-radius:3px 3px 1px 1px;background:#C9D8FD;display:block}
+  .ap .ch .bs div i{width:100%;border-radius:3px 3px 1px 1px;background:#dcdfe5;display:block}
   .ap .ch .bs div.td i{background:#0A59F7}
   .ap .sc{flex:1;min-height:0;overflow:hidden}
   .ap .cols{overflow:hidden}
@@ -469,7 +467,7 @@
   .ap.lg .side{width:58px;flex:none;background:#fff;border-right:1px solid #e6e8eb;padding:22px 0 0;display:flex;flex-direction:column;gap:4px;align-items:center}
   .ap.lg .side span{width:44px;height:34px;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:7.5px;color:#8a8f99}
   .ap.lg .side span i{width:11px;height:11px;border-radius:3px;border:1.5px solid currentColor}
-  .ap.lg .side span.on{background:#E8EFFE;color:#0A59F7}
+  .ap.lg .side span.on{background:#eceef1;color:#1a1a1a}
   .ap.lg .main{flex:1;min-width:0;display:flex;flex-direction:column}
   .ap.lg .cols{flex:1;min-height:0;display:grid;grid-template-columns:1.1fr 1fr;gap:8px;padding:0 10px 14px}
   .ap.lg .cols .sum,.ap.lg .cols .rc{margin-left:0;margin-right:0}
@@ -485,6 +483,138 @@
   .ap .sheet .f{height:20px;border-radius:6px;background:#F1F3F5;display:flex;align-items:center;padding:0 7px;font-size:8px;color:#1a1a1a;gap:4px}
   .ap .sheet .f span{color:#8a8f99;width:26px}
   .ap .sheet .sv{height:22px;border-radius:11px;background:#0A59F7;color:#fff;border:0;font-size:9px;font-weight:600;margin-top:3px;cursor:pointer;font-family:var(--font-ui)}
+
+  /* =================== 碰一碰：平板接续到鸿蒙电脑 =================== */
+  .ide.m-hof .wbody,.ide.m-hof .nbody,.ide.m-hof .home,.ide:not(.m-hof) .hof{display:none}
+  .ide.m-hof .wbar .wso{display:none}
+  .ide:not(.np-done) #btn-hof,.ide:not(.m-new) #btn-hof{display:none}
+  .hof{flex:1;min-height:0;display:flex;flex-direction:column;background:var(--ui-editor-bg)}
+  .hf-bar{height:44px;flex:none;display:flex;align-items:center;gap:10px;padding:0 14px;background:var(--ui-bg)}
+  .hf-bar .t{font-weight:600}
+  .hf-bar .dim{color:var(--ui-fg-info);font-size:var(--fs-sm)}
+  .hf-bar .grow{flex:1}
+  .hf-bar .btn{height:28px;padding:0 12px;flex:none;white-space:nowrap;gap:6px}
+  .hf-bar .btn svg{width:14px;height:14px}
+  .hf-bar .dm-seg button{height:26px}
+  .hf-stage{flex:1;min-height:0;position:relative;display:flex;align-items:center;justify-content:center;gap:110px;overflow:hidden}
+  .hf-dev{display:flex;flex-direction:column;align-items:center;gap:10px;flex:none;position:relative}
+  .hf-cap{font-size:11px;color:var(--ui-fg-info);white-space:nowrap;display:flex;gap:6px;align-items:center}
+  .hf-cap b{color:var(--ui-fg);font-weight:600}
+  .hf-cap .bp{font-family:var(--font-code);font-size:10px;padding:0 5px;border-radius:4px;background:var(--ui-tag-bg)}
+  .hf-pad{z-index:3;transition:transform .55s cubic-bezier(.3,.7,.3,1)}
+  .hf-pad.tap{transform:translateX(146px) rotate(-3deg)}
+  /* 平板里的 IDE Web：按 864×576 逻辑尺寸排版，缩 0.5 放进 432×288 屏 */
+  .mini{position:absolute;left:0;top:0;width:864px;height:576px;transform:scale(.5);transform-origin:0 0;background:#fff;color:#1a1a1a;font-family:var(--font-ui);font-size:14px;display:flex;flex-direction:column;overflow:hidden}
+  .mini .msb{height:26px;flex:none;display:flex;align-items:center;gap:6px;padding:0 18px;font-size:13px;font-weight:600;background:#f1f3f5}
+  .mini .msb .g{flex:1}
+  .mini .mad{height:40px;flex:none;display:flex;align-items:center;gap:10px;padding:0 14px;background:#f1f3f5}
+  .mini .mad .u{flex:1;height:30px;border-radius:15px;background:#fff;display:flex;align-items:center;padding:0 14px;font-size:13px;color:#6b7280}
+  .mini .mad .u b{color:#1a1a1a;font-weight:400}
+  .mini .mbar{height:42px;flex:none;display:flex;align-items:center;gap:12px;padding:0 14px;font-size:14px;border-bottom:1px solid #eceef1}
+  .mini .mbar .br{font-weight:600}
+  .mini .mbar .g{flex:1}
+  .mini .mbar .mb{height:28px;padding:0 12px;border-radius:7px;background:#f1f3f5;display:flex;align-items:center;font-size:13px}
+  .mini .mbd{flex:1;min-height:0;display:grid;grid-template-columns:250px 1fr 250px}
+  .mini .mch{background:#f7f8fa;padding:12px;display:flex;flex-direction:column;gap:10px;font-size:13px;line-height:19px}
+  .mini .mch .u{align-self:flex-end;max-width:210px;background:#e6e8ec;border-radius:12px 12px 3px 12px;padding:8px 10px}
+  .mini .mch .a{color:#333}
+  .mini .mch .a i{display:block;font-style:normal;font-size:11px;color:#8a8f99;margin-bottom:2px}
+  .mini .mch .sy{font-size:12px;color:#6b7280;background:#eef0f3;border-radius:8px;padding:6px 8px}
+  .mini .mcd{font-family:var(--font-code);font-size:12.5px;line-height:21px;padding:10px 14px;white-space:pre;color:#1a1a1a;overflow:hidden}
+  .mini .mcd .k{color:#0033B3}.mini .mcd .s{color:#067D17}.mini .mcd .m{color:#9E880D}.mini .mcd .f{color:#00627A}.mini .mcd .ty{color:#000}.mini .mcd .n{color:#1750EB}.mini .mcd .p{color:#871094}.mini .mcd .c{color:#8C8C8C}
+  .mini .mpv{background:#f7f8fa;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px}
+  .mini .mpv i{display:block;background:linear-gradient(160deg,#343a48,#5d6272 58%,#9a8f86);border:5px solid #111;border-radius:12px;position:relative}
+  .mini .mpv i::after{content:"";position:absolute;left:8px;top:10px;width:34%;height:34%;border-radius:6px;background:rgba(255,255,255,.92)}
+  .mini .mpv span{font-size:11px;color:#6b7280;margin-top:-8px}
+  .mini .mgb{position:absolute;left:50%;bottom:6px;width:120px;height:4px;margin-left:-60px;border-radius:2px;background:rgba(0,0,0,.45)}
+  .hf-toast{position:absolute;left:50%;top:14px;transform:translate(-50%,-8px);z-index:5;display:flex;align-items:center;gap:6px;padding:5px 10px;border-radius:14px;background:rgba(30,31,34,.9);color:#fff;font-size:10px;white-space:nowrap;opacity:0;transition:opacity .2s,transform .2s}
+  .hf-toast.on{opacity:1;transform:translate(-50%,0)}
+  .hf-toast svg{width:12px;height:12px;color:#7fd39a}
+  /* 鸿蒙电脑：MateBook Pro 3120×2080（3:2）→ 屏 780×520 */
+  .pc{width:800px;height:540px;border-radius:14px 14px 4px 4px;background:#0f1012;padding:10px 10px 10px;box-shadow:0 10px 30px rgba(0,0,0,.35);position:relative}
+  .pc::before{content:"";position:absolute;left:50%;top:3px;width:4px;height:4px;margin-left:-2px;border-radius:50%;background:#2a2c30}
+  .pc-base{width:880px;height:14px;margin-top:-10px;border-radius:2px 2px 10px 10px;background:linear-gradient(#c7c9ce,#9ea1a8);position:relative}
+  .pc-base::after{content:"";position:absolute;left:50%;top:0;width:110px;height:5px;margin-left:-55px;border-radius:0 0 6px 6px;background:#8d9097}
+  .pcs{width:780px;height:520px;position:relative;overflow:hidden;border-radius:4px;background:linear-gradient(160deg,#2c3140,#4b5163 55%,#8a8076);font-family:var(--font-ui);color:#fff}
+  .pcs .psb{position:absolute;left:0;right:0;top:0;height:22px;display:flex;align-items:center;justify-content:flex-end;gap:8px;padding:0 12px;font-size:10px;z-index:4}
+  .pcs .psb svg{display:block}
+  .pcs .dicons{position:absolute;left:18px;top:36px;display:grid;gap:14px}
+  .pcs .dicons span{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:9px;opacity:.9}
+  .pcs .dicons span i{width:34px;height:34px;border-radius:9px;background:rgba(255,255,255,.25)}
+  .pcs .dock{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);display:flex;align-items:center;gap:9px;padding:7px 10px;border-radius:16px;background:rgba(255,255,255,.2);z-index:4}
+  .pcs .dock > i{width:30px;height:30px;border-radius:8px;display:block}
+  .pcs .dock .sep{width:1px;height:24px;background:rgba(255,255,255,.35);border-radius:0}
+  .pcs .hand{width:30px;height:30px;border-radius:8px;background:#fff;border:0;padding:0;display:grid;place-items:center;position:relative;cursor:pointer}
+  .pcs .hand svg{width:18px;height:18px}
+  .pcs .hand em{position:absolute;right:-5px;bottom:-4px;width:15px;height:15px;border-radius:50%;background:#1e1f22;color:#fff;display:grid;place-items:center}
+  .pcs .hand em svg{width:10px;height:10px}
+  .pcs .hand::after{content:"";position:absolute;inset:-4px;border-radius:11px;border:2px solid rgba(255,255,255,.7);animation:hpulse 1.6s ease-out infinite}
+  .pcs .hand[hidden]{display:none}
+  @keyframes hpulse{from{opacity:1;transform:scale(.9)}to{opacity:0;transform:scale(1.25)}}
+  .pcs .dock .dv{background:#2b2d30;display:grid;place-items:center}
+  .pcs .dock .dv svg{width:20px;height:20px}
+  .rip{position:absolute;left:-2px;top:50%;width:0;height:0;z-index:6;pointer-events:none}
+  .rip i{position:absolute;left:-40px;top:-40px;width:80px;height:80px;border-radius:50%;border:2px solid rgba(255,255,255,.8);opacity:0}
+  .rip.on i{animation:rip 1s ease-out}
+  .rip.on i:nth-child(2){animation-delay:.2s}
+  @keyframes rip{from{opacity:1;transform:scale(.2)}to{opacity:0;transform:scale(2.2)}}
+  /* 接续卡（系统通知样式） */
+  .pcard{position:absolute;right:14px;top:32px;width:282px;border-radius:14px;background:rgba(246,247,249,.97);color:#1a1a1a;box-shadow:0 10px 30px rgba(0,0,0,.3);padding:12px;display:flex;flex-direction:column;gap:8px;z-index:7;animation:pcin .3s ease}
+  .pcard[hidden]{display:none}
+  @keyframes pcin{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:none}}
+  .pcard .h{display:flex;align-items:center;gap:6px;font-size:10px;color:#6b7280}
+  .pcard .h svg{width:14px;height:14px;color:#1a1a1a}
+  .pcard .ti{font-size:14px;font-weight:600}
+  .pcard .rows{display:flex;flex-direction:column;gap:4px;background:#eceef1;border-radius:10px;padding:8px 10px}
+  .pcard .rw{display:flex;align-items:center;gap:6px;font-size:11px}
+  .pcard .rw svg{width:12px;height:12px;flex:none;color:#6b7280}
+  .pcard .rw span{flex:1}
+  .pcard .rw em{font-style:normal;color:#6b7280;font-family:var(--font-code);font-size:10px}
+  .pcard .rw.ok svg{color:#2E9E5B}
+  .pcard .bt{display:flex;gap:8px}
+  .pcard .bt button{flex:1;height:28px;border-radius:14px;border:0;font-family:var(--font-ui);font-size:12px;cursor:pointer;background:#e1e3e8;color:#1a1a1a}
+  .pcard .bt button.go{background:#1a1a1a;color:#fff;font-weight:500}
+  .pcard .pg{height:3px;border-radius:2px;background:#e1e3e8;overflow:hidden;display:none}
+  .pcard .pg i{display:block;height:100%;width:0;background:#1a1a1a;transition:width .3s}
+  .pcard.busy .pg{display:block}
+  .pcard.busy .bt{display:none}
+  /* 自由窗口：电脑版 DevEco Studio */
+  .pw{position:absolute;left:30px;top:32px;width:620px;height:410px;min-width:420px;min-height:260px;border-radius:10px;overflow:hidden;background:#1e1f22;color:#bcbec4;box-shadow:0 18px 44px rgba(0,0,0,.5);display:flex;flex-direction:column;font-size:10px;z-index:5;transform-origin:10% 60%}
+  .pw[hidden]{display:none}
+  .pw.in{animation:pwin .45s cubic-bezier(.2,.8,.3,1)}
+  @keyframes pwin{from{opacity:0;transform:scale(.6)}to{opacity:1;transform:none}}
+  .pw-tb{height:30px;flex:none;display:flex;align-items:center;gap:7px;padding:0 6px 0 10px;background:#2b2d30;cursor:move;user-select:none;touch-action:none}
+  .pw-tb svg{width:14px;height:14px;flex:none}
+  .pw-tb b{font-weight:500;font-size:11px;color:#dfe1e5}
+  .pw-tb .d{color:#868a91}
+  .pw-tb .g{flex:1}
+  .pw-tb .wc2{width:26px;height:22px;border-radius:6px;display:grid;place-items:center;color:#9da0a8;font-size:12px;line-height:1}
+  .pw-bd{flex:1;min-height:0;display:grid;grid-template-columns:118px minmax(0,1fr) 196px}
+  .pw-tr{background:#2b2d30;padding:6px 0;overflow:hidden}
+  .pw-tr div{height:17px;display:flex;align-items:center;gap:4px;white-space:nowrap;font-size:9.5px;color:#bcbec4}
+  .pw-tr div.sel{background:#43454a}
+  .pw-tr div i{width:9px;height:9px;border-radius:2px;background:#6f737a;flex:none}
+  .pw-tr div i.e{background:#4e8ad8;border-radius:2px}
+  .pw-ed{display:flex;flex-direction:column;min-width:0}
+  .pw-tab{height:24px;flex:none;display:flex;align-items:center;padding:0 10px;font-size:10px;color:#dfe1e5;border-bottom:1px solid #2b2d30}
+  .pw-cd{flex:1;overflow:hidden;font-family:var(--font-code);font-size:9.5px;line-height:15px;padding:6px 0;white-space:pre;color:#bcbec4}
+  .pw-cd .l{display:flex}
+  .pw-cd .l u{text-decoration:none;width:26px;flex:none;text-align:right;padding-right:8px;color:#4b5059}
+  .pw-cd .k{color:#CF8E6D}.pw-cd .s{color:#6AAB73}.pw-cd .n{color:#2AACB8}.pw-cd .c{color:#7A7E85}.pw-cd .f{color:#56A8F5}.pw-cd .p{color:#C77DBB}.pw-cd .m{color:#B3AE60}.pw-cd .ty{color:#BCBEC4}
+  .pw-ai{background:#2b2d30;display:flex;flex-direction:column;min-height:0;padding:8px;gap:7px;font-size:10px;line-height:15px}
+  .pw-ai .hh{display:flex;align-items:center;gap:5px;color:#dfe1e5;font-weight:500}
+  .pw-ai .hh svg{width:12px;height:12px}
+  .pw-ai .from{display:flex;align-items:center;gap:5px;color:#9da0a8;font-size:9px;background:#393b40;border-radius:6px;padding:4px 6px}
+  .pw-ai .from svg{width:11px;height:11px;flex:none}
+  .pw-ai .u{align-self:flex-end;max-width:160px;background:#43454a;border-radius:8px 8px 2px 8px;padding:5px 7px;color:#dfe1e5}
+  .pw-ai .a{color:#cfd1d6}
+  .pw-ai .a.nw{animation:flash 1.2s ease}
+  .pw-ai .g{flex:1}
+  .pw-ai .in2{height:24px;border-radius:6px;background:#1e1f22;display:flex;align-items:center;padding:0 7px;color:#6f737a}
+  .pw-dv{height:26px;flex:none;display:flex;align-items:center;gap:8px;padding:0 10px;background:#2b2d30;border-top:1px solid #1e1f22;font-size:9.5px;color:#9da0a8;white-space:nowrap;overflow:hidden}
+  .pw-dv span{display:inline-flex;align-items:center;gap:4px;color:#cfd1d6}
+  .pw-dv span i{width:6px;height:6px;border-radius:50%;background:#5fb865}
+  .pw-rs{position:absolute;right:0;bottom:0;width:14px;height:14px;cursor:nwse-resize;touch-action:none;background:linear-gradient(135deg,transparent 50%,#5a5d63 50%,#5a5d63 58%,transparent 58%,transparent 70%,#5a5d63 70%,#5a5d63 78%,transparent 78%)}
 </style>
 </head>
 <body>
@@ -569,6 +699,7 @@
           <div class="nt">7 天有效 · 可随时在「分享管理」里撤销</div>
         </div>
       </div>
+      <button class="btn wso" id="btn-hof"><svg class="i"><use href="#i-tablet"/></svg>碰一碰接续到电脑</button>
       <button class="btn wso" id="btn-studio"><svg class="i"><use href="#i-logo"/></svg>在 DevEco Studio 中打开</button>
       <button class="abtn" id="theme-btn" title="切换深浅色"><svg class="i"><use href="#i-moon"/></svg></button>
     </div>
@@ -660,7 +791,7 @@
     <!-- 新工程：对话 + 工程树 + 编辑器 + 双设备预览 -->
     <div class="nbody" id="nbody">
       <div class="chat">
-        <div class="phd"><svg class="i" style="width:14px;height:14px;color:var(--ui-link)"><use href="#i-genie"/></svg>对话<span class="dim">· 建工程</span><span class="grow"></span><span class="dm-pill muted" id="ch-bind">未绑定工程</span></div>
+        <div class="phd"><svg class="i" style="width:14px;height:14px;color:var(--ui-fg-info)"><use href="#i-genie"/></svg>对话<span class="dim">· 建工程</span><span class="grow"></span><span class="dm-pill muted" id="ch-bind">未绑定工程</span></div>
         <div class="msgs" id="msgs"></div>
         <div class="ch-in"><input id="ch-q" placeholder="接着说，比如「加上折叠屏」" spellcheck="false"><button class="abtn" id="ch-send" title="发送"><svg class="i"><use href="#i-send"/></svg></button></div>
       </div>
@@ -695,6 +826,69 @@
       </div>
     </div>
 
+    <!-- 碰一碰：平板上的 IDE Web 接续到鸿蒙电脑 -->
+    <div class="hof" id="hof">
+      <div class="hf-bar">
+        <button class="btn" id="hf-back"><svg class="i"><use href="#i-back"/></svg>回到 Web IDE</button>
+        <span class="t">接续到鸿蒙电脑</span><span class="dim" id="hf-sub">MatePad Pro 13.2 上的 WorkHours · 附近有 MateBook Pro</span>
+        <span class="grow"></span>
+        <div class="dm-seg" id="hf-way"><button class="on" data-w="tap">碰一碰</button><button data-w="card">应用接续</button></div>
+        <button class="btn primary" id="hf-go"><svg class="i"><use href="#i-tablet"/></svg><span>碰一下电脑</span></button>
+      </div>
+      <div class="hf-stage">
+        <div class="hf-dev hf-pad" id="hf-pad">
+          <div class="hdv pad"><div class="hs" style="background:#fff">
+            <div class="mini" id="mini">
+              <div class="msb"><span>10:33</span><span class="g"></span><span>5G</span><span>86%</span></div>
+              <div class="mad"><span class="u"><b>developer.huawei.com</b>/deveco/web/p/workhours-2c9e</span></div>
+              <div class="mbar"><span class="br">DevEco Web</span><span>WorkHours · main</span><span class="g"></span><span class="mb">重新构建</span><span class="mb">分享</span></div>
+              <div class="mbd">
+                <div class="mch" id="mini-ch"></div>
+                <div class="mcd" id="mini-cd"></div>
+                <div class="mpv"><i style="width:150px;height:100px"></i><span>MatePad Pro · lg</span><i style="width:58px;height:131px"></i><span>Mate 70 Pro · sm</span></div>
+              </div>
+              <i class="mgb"></i>
+            </div>
+            <div class="hf-toast" id="hf-toast"><svg class="i"><use href="#i-check"/></svg><span></span></div>
+          </div></div>
+          <div class="hf-cap"><b>MatePad Pro 13.2</b><span class="bp">lg</span>2880×1920 · 你正在用的设备</div>
+        </div>
+        <div class="hf-dev">
+          <div class="pc">
+            <div class="rip" id="hf-rip"><i></i><i></i></div>
+            <div class="pcs" id="pcs">
+              <div class="psb"><span>9月23日 周三 10:33</span><svg width="12" height="9" viewBox="0 0 16 12"><path d="M1.5 4a9.5 9.5 0 0 1 13 0M4 6.5a6 6 0 0 1 8 0M6.3 9a2.6 2.6 0 0 1 3.4 0" stroke="currentColor" stroke-linecap="round" fill="none"/></svg><svg width="18" height="9" viewBox="0 0 18 9"><rect x=".5" y=".5" width="14" height="8" rx="2" fill="none" stroke="currentColor"/><rect x="2" y="2" width="9" height="5" rx="1" fill="currentColor"/><rect x="15.5" y="3" width="1.5" height="3" rx=".5" fill="currentColor"/></svg></div>
+              <div class="dicons"><span><i></i>文件管理</span><span><i></i>回收站</span></div>
+              <div class="pcard" id="pcard" hidden>
+                <div class="h"><svg class="i"><use href="#i-tablet"/></svg>MatePad Pro 13.2 · DevEco Web</div>
+                <div class="ti">在电脑上接着做 WorkHours</div>
+                <div class="rows" id="pc-rows"></div>
+                <div class="pg"><i id="pc-pg"></i></div>
+                <div class="bt"><button id="pc-no">稍后</button><button class="go" id="pc-go">在电脑上继续</button></div>
+              </div>
+              <div class="pw" id="pw" hidden>
+                <div class="pw-tb" id="pw-tb"><svg><use href="#i-logo"/></svg><b>WorkHours</b><span class="d">— DevEco Studio</span><span class="g"></span><span class="wc2">–</span><span class="wc2">□</span><span class="wc2">×</span></div>
+                <div class="pw-bd">
+                  <div class="pw-tr" id="pw-tr"></div>
+                  <div class="pw-ed"><div class="pw-tab">Index.ets</div><div class="pw-cd" id="pw-cd"></div></div>
+                  <div class="pw-ai" id="pw-ai"></div>
+                </div>
+                <div class="pw-dv" id="pw-dv"></div>
+                <i class="pw-rs" id="pw-rs"></i>
+              </div>
+              <div class="dock">
+                <button class="hand" id="pc-hand" title="应用接续：来自 MatePad Pro"><svg><use href="#i-logo"/></svg><em><svg><use href="#i-tablet"/></svg></em></button>
+                <i class="sep"></i>
+                <i style="background:#e9eaee"></i><i style="background:#6d7384"></i><i style="background:#c9a98f"></i><i class="dv" id="pc-dv" style="position:relative"><svg><use href="#i-logo"/></svg></i><i style="background:#8fa8a0"></i><i style="background:#b9bcc4"></i>
+              </div>
+            </div>
+          </div>
+          <div class="pc-base"></div>
+          <div class="hf-cap"><b>MateBook Pro</b>鸿蒙电脑 · 3120×2080 · DevEco Studio 鸿蒙电脑版</div>
+        </div>
+      </div>
+    </div>
+
     <div class="mask" id="mask" hidden>
       <div class="dlg" id="dlg">
         <div class="dh"><svg><use href="#i-logo"/></svg>在 DevEco Studio 中打开</div>
@@ -702,7 +896,7 @@
           <div class="flow" id="dlg-flow">
             <div class="nd"><b>DevEco Web</b><span>ShopDemo · main · 1 处未提交修改</span></div>
             <svg class="i"><use href="#i-arrowR"/></svg>
-            <div class="nd"><b>本机 DevEco Studio 6.0</b><span>已检测到 · <code>D:\DevEcoProjects\ShopDemo</code></span></div>
+            <div class="nd"><b>本机 DevEco Studio · 鸿蒙电脑版</b><span>已检测到 · <code>~/DevEcoStudioProjects/ShopDemo</code></span></div>
           </div>
           <ul id="dlg-ul">
             <li><svg class="i"><use href="#i-check"/></svg><span>同步 6 个源文件与 <code>build-profile.json5</code>，含 Web 端还没提交的 <code id="dlg-chg">Index.ets</code> 修改</span></li>
@@ -713,7 +907,7 @@
           <div id="dlg-cks"><label class="ck"><input type="checkbox" checked>打开后定位到 <code>Index.ets:10</code></label></div>
           <div class="prog"><span id="dlg-pt">正在同步到本机…</span><div class="dm-progress"><i id="dlg-bar" style="--v:0%"></i></div></div>
         </div>
-        <div class="df"><span class="dm-small dm-muted">没装 DevEco Studio？会先引导下载</span><span class="grow"></span><button class="btn" id="dlg-cancel">取消</button><button class="btn primary" id="dlg-ok">打开</button></div>
+        <div class="df"><span class="dm-small dm-muted" id="dlg-note">没装 DevEco Studio？会先从应用市场安装</span><span class="grow"></span><button class="btn" id="dlg-cancel">取消</button><button class="btn primary" id="dlg-ok">打开</button></div>
       </div>
     </div>
     <div class="toast" id="toast"><svg class="i"><use href="#i-check"/></svg><span id="toast-t"></span></div>
@@ -815,7 +1009,7 @@
   async function run(){
     if(running)return;running=true;
     var b=$('#btn-run');b.disabled=true;$('span',b).textContent='构建中…';
-    $('#pv-st').className='dm-pill info';$('#pv-st').textContent='云端构建中';$('#out-st').textContent='云端构建机 cn-south · 构建中';
+    $('#pv-st').className='dm-pill muted';$('#pv-st').textContent='云端构建中';$('#out-st').textContent='云端构建机 cn-south · 构建中';
     $('#ly-bld').classList.add('on');
     var steps=[
       [10,'<span class="d">[10:24:31]</span> 同步工程到云端构建机 <span class="ok">0.3 s</span>','同步工程'],
@@ -906,7 +1100,8 @@
     e.stopPropagation();
     if(mode==='new'){
       if(stage!=='done'){toast('工程生成、构建完再打开');return}
-      $('#dlg-flow').innerHTML='<div class="nd"><b>DevEco Web</b><span>WorkHours · '+NF.length+' 个文件 · 1 段对话</span></div><svg class="i"><use href="#i-arrowR"/></svg><div class="nd"><b>本机 DevEco Studio 6.0</b><span>已检测到 · <code>D:\\DevEcoProjects\\WorkHours</code></span></div>';
+      $('#dlg-note').innerHTML='<button class="btn" id="dlg-hof"><svg class="i" style="width:14px;height:14px"><use href="#i-tablet"/></svg>在平板上？碰一碰接续到鸿蒙电脑</button>';
+      $('#dlg-flow').innerHTML='<div class="nd"><b>DevEco Web</b><span>WorkHours · '+NF.length+' 个文件 · 1 段对话</span></div><svg class="i"><use href="#i-arrowR"/></svg><div class="nd"><b>本机 DevEco Studio · 鸿蒙电脑版</b><span>已检测到 · <code>~/DevEcoStudioProjects/WorkHours</code></span></div>';
       $('#dlg-ul').innerHTML=dlgLi('i-check','同步 '+NF.length+' 个文件：AppScope、entry 模块'+(NP.kit.form?'、widget 服务卡片':'')+'，方案卡 v'+NP.ver+' 一起带上')
         +dlgLi('i-genie','建工程的这段对话（'+nChat+' 条）跟着过去：CodeGenie 面板从最后一句接着聊，不用再讲一遍需求')
         +dlgLi('i-check',activeDevs().length+' 台云端模拟器保持运行，Studio 的设备列表里直接能选，本机不用再起')
@@ -914,6 +1109,7 @@
         +dlgLi('i-cloud','对话存在工程的 <code>.deveco/sessions/</code>，换台电脑打开也在',1);
       $('#dlg-cks').innerHTML='<label class="ck"><input type="checkbox" checked id="ck-chat">带上这段对话，在 CodeGenie 中继续</label><label class="ck" style="margin-top:6px"><input type="checkbox" checked>打开后定位到 <code>pages/Index.ets</code></label>';
     }else{
+      $('#dlg-note').textContent='没装 DevEco Studio？会先从应用市场安装';
       $('#dlg-flow').innerHTML=DLG0.flow;$('#dlg-ul').innerHTML=DLG0.ul;$('#dlg-cks').innerHTML=DLG0.cks;$('#dlg-chg').textContent=TPL[cur].file;
     }
     $('#dlg').classList.remove('busy');$('#dlg-ok').disabled=false;$('#dlg-bar').style.setProperty('--v','0%');$('#mask').hidden=false;
@@ -927,12 +1123,12 @@
     $('#mask').hidden=true;
     if(isNew){
       toast(chat?'已在 DevEco Studio 中打开 WorkHours · CodeGenie 已接上这段对话':'已在 DevEco Studio 中打开 WorkHours');
-      nlog('<span class="ac">已交给本机 DevEco Studio 6.0 · '+(chat?'对话 '+nChat+' 条已随工程带过去':'未带对话')+'</span>');
+      nlog('<span class="ac">已交给本机 DevEco Studio · '+(chat?'对话 '+nChat+' 条已随工程带过去':'未带对话')+'</span>');
       addMsg('sys','<svg class="i"><use href="#i-logo"/></svg><span>'+(chat?'已交给本机 DevEco Studio：CodeGenie 从这里接着聊，这边的记录保留。':'已在本机 DevEco Studio 打开，对话留在 Web 端。')+'</span>');
       return;
     }
     toast('已在 DevEco Studio 中打开 ShopDemo · 两边保持同步');
-    log('<span class="ac">已交给本机 DevEco Studio 6.0 · 同步保持开启</span>');
+    log('<span class="ac">已交给本机 DevEco Studio · 同步保持开启</span>');
   });
 
   /* =================== 一句话建鸿蒙工程 =================== */
@@ -958,6 +1154,7 @@
   }
   function runBtn(){
     var b=$('#btn-run');if(running)return;
+    b.classList.toggle('primary',mode!=='new'||stage==='done');
     if(mode==='new'){b.disabled=stage!=='done';$('span',b).textContent=stage==='done'?'重新构建':'运行'}
     else{b.disabled=false;$('span',b).textContent=built?'重新运行':'运行'}
   }
@@ -1001,7 +1198,7 @@
   function nlog(html,clear){var l=$('#nlog');l.innerHTML=clear?html:l.innerHTML+'\n'+html;l.scrollTop=l.scrollHeight}
 
   async function startNew(q){
-    NP=parseQ(q);stage='plan';DV={};REC=REC0.slice();NF=[];nChat=0;curFile='';
+    NP=parseQ(q);NP.q=q;stage='plan';DV={};REC=REC0.slice();NF=[];nChat=0;curFile='';
     ide.classList.remove('np-done','np-bound');
     $('#msgs').innerHTML='';$('#ntree').innerHTML='';$('#nt-n').textContent='';$('#nt-empty').hidden=false;
     $('#ncode').hidden=true;$('#ncode').innerHTML='';$('#n-tab').hidden=true;$('#nc-empty').hidden=false;$('#nc-empty').textContent='方案确认前不会写任何文件';
@@ -1480,7 +1677,7 @@
     stage='build';running=true;runBtn();$('#btn-run').disabled=true;$('span',$('#btn-run')).textContent='构建中…';
     var devs=activeDevs();
     devs.forEach(function(d){DV[d]={v:'off',spin:true,extra:DV[d]&&DV[d].extra}});paintDevs();
-    pill('#n-pv-st','info','云端构建中');$('#n-out-st').textContent='云端构建机 cn-south · 构建中';
+    pill('#n-pv-st','muted','云端构建中');$('#n-out-st').textContent='云端构建机 cn-south · 构建中';
     var L=[
       '<span class="d">[10:31:02]</span> ohpm install <span class="d">· @ohos/hypium 1.0.21 缓存命中</span> <span class="ok">0.4 s</span>',
       '<span class="d">[10:31:03]</span> &gt; hvigor :entry:default@PreBuild <span class="ok">0.3 s</span>',
@@ -1585,6 +1782,86 @@
     act.forEach(function(d){segs[hit[DEVS[d].bp]].classList.add('hit');var k=document.createElement('i');k.className='mk';k.style.left=(DEVS[d].vp/1600*100)+'%';k.dataset.n=DEVS[d].n+' vp';$('#bpr').appendChild(k)});
   }
 
+
+  /* ---------- 碰一碰：平板上的 IDE Web 接续到鸿蒙电脑 ---------- */
+  MODES.hof=MODES['new'];
+  var HF={st:'idle',way:'tap'};
+  var DN={pad:'MatePad Pro 13.2 · lg',pho:'Mate 70 Pro · sm',fld:'Mate X6 · md'};
+  function idxLines(n){var f=NF.filter(function(x){return /pages\/Index\.ets$/.test(x.p)})[0];return f?f.src.split('\n').slice(0,n):[]}
+  function hfLabel(t,dis){var b=$('#hf-go');$('span',b).textContent=t;b.disabled=!!dis}
+  function hfToast(t){var e=$('#hf-toast');$('span',e).textContent=t;e.classList.add('on');clearTimeout(hfToast.h);hfToast.h=setTimeout(function(){e.classList.remove('on')},2400)}
+  function hfRows(ok){
+    var R=[['i-module','工程 WorkHours · '+NF.length+' 个文件','方案 v'+NP.ver],['i-genie','建工程的对话，CodeGenie 接着聊',nChat+' 条'],['i-cloud','云端模拟器保持运行',activeDevs().length+' 台']];
+    $('#pc-rows').innerHTML=R.map(function(r,i){var o=i<ok;return '<div class="rw'+(o?' ok':'')+'"><svg class="i"><use href="#'+(o?'i-check':r[0])+'"/></svg><span>'+r[1]+'</span><em>'+r[2]+'</em></div>'}).join('');
+  }
+  function resetHof(){
+    HF.st='idle';$('#hf-pad').classList.remove('tap');$('#pcard').hidden=true;$('#pcard').classList.remove('busy');$('#pc-pg').style.width='0';
+    $('#pw').hidden=true;$('#pc-hand').hidden=false;$('#hf-toast').classList.remove('on');
+    hfLabel(HF.way==='tap'?'碰一下电脑':'在电脑上点接续图标');hfRows(0);
+    $('#mini-ch').innerHTML='<div class="u">'+esc(NP.q||'')+'</div><div class="a"><i>CodeGenie</i>构建通过，'+activeDevs().length+' 台云端模拟器已拉起'+(NP.kit.form?'，服务卡片已上桌面':'')+'。</div><div class="sy">这段对话已和工程 WorkHours 绑定</div>';
+    $('#mini-cd').innerHTML=idxLines(19).map(function(l){return hl(l,'ets')}).join('\n');
+  }
+  function openHof(){
+    if(mode!=='new'||stage!=='done'){toast('工程生成、构建完再接续');return}
+    setMode('hof');resetHof();
+  }
+  async function hfTap(){
+    if(HF.st!=='idle')return;HF.st='tap';hfLabel('正在碰…',1);
+    $('#hf-pad').classList.add('tap');await wait(560);
+    var r=$('#hf-rip');r.classList.remove('on');void r.offsetWidth;r.classList.add('on');hfToast('已碰到 MateBook Pro');
+    await wait(650);$('#hf-pad').classList.remove('tap');
+    $('#pcard').hidden=false;HF.st='card';hfLabel('在电脑上点「在电脑上继续」',1);
+  }
+  async function hfAccept(){
+    if(HF.st==='busy'||HF.st==='done')return;HF.st='busy';hfLabel('接续中…',1);
+    var c=$('#pcard');c.hidden=false;c.classList.add('busy');$('#pc-hand').hidden=true;
+    for(var i=1;i<=3;i++){await wait(380);hfRows(i);$('#pc-pg').style.width=(i*33.4)+'%'}
+    await wait(300);c.hidden=true;
+    var tr=[[0,'WorkHours'],[1,'AppScope'],[1,'entry'],[2,'src/main'],[3,'ets'],[4,'pages'],[5,'Index.ets','e sel']];
+    NP.pages.forEach(function(p){if(p.id!=='Index')tr.push([5,p.id+'.ets','e'])});
+    if(NP.kit.form)tr.push([4,'widget/pages'],[5,'WorkHoursCard.ets','e']);
+    tr.push([3,'module.json5']);
+    $('#pw-tr').innerHTML=tr.map(function(t){return '<div class="'+(t[2]&&t[2].indexOf('sel')>=0?'sel':'')+'" style="padding-left:'+(6+t[0]*8)+'px"><i class="'+(t[2]?'e':'')+'"></i>'+t[1]+'</div>'}).join('');
+    $('#pw-cd').innerHTML=idxLines(30).map(function(l,i){return '<div class="l"><u>'+(i+1)+'</u><span>'+hl(l,'ets')+'</span></div>'}).join('');
+    var q=NP.q||'';
+    $('#pw-ai').innerHTML='<div class="hh"><svg><use href="#i-genie"/></svg>CodeGenie</div>'
+      +'<div class="from"><svg><use href="#i-tablet"/></svg>接续自 MatePad Pro · '+nChat+' 条对话 · 方案 v'+NP.ver+'</div>'
+      +'<div class="u">'+esc(q.length>30?q.slice(0,30)+'…':q)+'</div>'
+      +'<div class="a">构建通过，'+activeDevs().length+' 台云端模拟器已拉起'+(NP.kit.form?'，卡片已上桌面':'')+'。</div>'
+      +'<div class="a nw">接上了。工程、对话和云端模拟器都在，这里改一次代码，'+activeDevs().length+' 台同时生效。下一步要不要补 Mate X6 的 md 双栏？</div>'
+      +'<div class="g"></div><div class="in2">接着说…</div>';
+    $('#pw-dv').innerHTML='运行设备'+activeDevs().map(function(d){return '<span><i></i>'+DN[d]+' · 云端</span>'}).join('');
+    var pw=$('#pw');pw.hidden=false;pw.classList.remove('in');void pw.offsetWidth;pw.classList.add('in');
+    hfToast('已在 MateBook Pro 上继续');HF.st='done';hfLabel('已接续到电脑',1);
+    nlog('<span class="ac">碰一碰 → MateBook Pro · DevEco Studio 鸿蒙电脑版已打开 WorkHours · 对话 '+nChat+' 条接上 · 云端模拟器 '+activeDevs().length+' 台继续运行</span>');
+    addMsg('sys','<svg class="i"><use href="#i-tablet"/></svg><span>已从 MatePad 接续到 MateBook Pro：工程、这段对话和云端模拟器一起过去，CodeGenie 在电脑上接着聊。</span>');
+  }
+  $('#btn-hof').addEventListener('click',function(e){e.stopPropagation();openHof()});
+  $('#hf-back').addEventListener('click',function(){setMode('new')});
+  $('#hf-way').addEventListener('click',function(e){
+    var b=e.target.closest('button');if(!b)return;HF.way=b.dataset.w;$$('#hf-way button').forEach(function(x){x.classList.toggle('on',x===b)});
+    if(HF.st==='idle')hfLabel(HF.way==='tap'?'碰一下电脑':'在电脑上点接续图标');
+  });
+  $('#hf-go').addEventListener('click',function(){if(HF.way==='tap')hfTap();else hfAccept()});
+  $('#pc-hand').addEventListener('click',hfAccept);
+  $('#pc-go').addEventListener('click',hfAccept);
+  $('#pc-no').addEventListener('click',function(){$('#pcard').hidden=true;HF.st='idle';hfLabel(HF.way==='tap'?'碰一下电脑':'在电脑上点接续图标')});
+  $('#dlg').addEventListener('click',function(e){if(e.target.closest('#dlg-hof')){$('#mask').hidden=true;openHof()}});
+  /* 自由窗口：拖标题栏移动，拖右下角缩放，双击标题栏最大化 */
+  (function(){
+    var pw=$('#pw'),sx,sy,ox,oy,ow,oh,m2,W=780,H=520,prev=null;
+    function down(e,m){e.preventDefault();m2=m;sx=e.clientX;sy=e.clientY;ox=pw.offsetLeft;oy=pw.offsetTop;ow=pw.offsetWidth;oh=pw.offsetHeight;document.addEventListener('pointermove',move);document.addEventListener('pointerup',up)}
+    function move(e){var dx=e.clientX-sx,dy=e.clientY-sy;
+      if(m2==='mv'){pw.style.left=Math.max(80-ow,Math.min(W-80,ox+dx))+'px';pw.style.top=Math.max(22,Math.min(H-40,oy+dy))+'px'}
+      else{pw.style.width=Math.max(420,Math.min(W-ox,ow+dx))+'px';pw.style.height=Math.max(260,Math.min(H-oy,oh+dy))+'px'}}
+    function up(){document.removeEventListener('pointermove',move);document.removeEventListener('pointerup',up)}
+    $('#pw-tb').addEventListener('pointerdown',function(e){down(e,'mv')});
+    $('#pw-rs').addEventListener('pointerdown',function(e){down(e,'rs')});
+    $('#pw-tb').addEventListener('dblclick',function(){
+      if(prev){pw.style.cssText=prev;prev=null}else{prev=pw.style.cssText;pw.style.left='0px';pw.style.top='22px';pw.style.width=W+'px';pw.style.height=(H-22)+'px'}
+    });
+  })();
+
   renderCode();setMode('ws');paintDevs();
   DemoGuide.init([
     {target:'#btn-run',kind:'click',pos:'left',label:'点运行：云端构建'},
@@ -1592,7 +1869,8 @@
     {target:'#ly-app:not([hidden]), #ly-desk:not([hidden])',kind:'change',pos:'left',label:'云端模拟器画面'},
     {target:'.ide.m-ws #btn-new, .ide.m-home #home-go',kind:'click',pos:'bottom',label:'一句话建鸿蒙工程'},
     {target:'#plan-go',kind:'click',pos:'right',label:'改好方案，点这里生成'},
-    {target:'.ide.np-done #dual .drow',kind:'change',pos:'left',label:'sm 手机 + lg 平板，卡片已上桌面'}
+    {target:'.ide.np-done #dual .drow',kind:'change',pos:'left',label:'sm 手机 + lg 平板，卡片已上桌面'},
+    {target:'.ide.m-new.np-done #btn-hof, .ide.m-hof #hf-go:not([disabled])',kind:'click',pos:'bottom',label:'碰一碰，电脑上接着做'}
   ]);
 })();
 </script>

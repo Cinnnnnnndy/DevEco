@@ -258,13 +258,15 @@
   .hp-live .ico{width:13px;height:13px;border-radius:4px;background:linear-gradient(135deg,#2C8DDD,#3357AC);display:grid;place-items:center;font-size:7px;font-weight:700}
   .hp-live .rg{width:12px;height:12px;border-radius:50%;background:conic-gradient(#3BA3FF var(--v,0%),rgba(255,255,255,.22) 0)}
   .hp-live.ok .rg{background:#3ec07a}
-  .hp-clock{position:absolute;top:58px;left:0;right:0;text-align:center;font-size:34px;font-weight:300;line-height:1;letter-spacing:.5px}
+  .hp-clock{position:absolute;top:56px;left:0;right:0;text-align:center;font-size:30px;font-weight:300;line-height:1;letter-spacing:.5px}
   .hp-clock small{display:block;margin-top:6px;font-size:10px;font-weight:400;letter-spacing:0;opacity:.8}
-  .hp-card{position:absolute;left:8px;right:8px;top:128px;padding:9px 10px 10px;border-radius:14px;background:rgba(255,255,255,.94);color:#191a1c;font-size:10px;line-height:14px;box-shadow:0 6px 18px rgba(0,0,0,.25);animation:hpin .4s cubic-bezier(.2,.8,.2,1)}
+  .hp-card{position:absolute;left:8px;right:8px;top:112px;padding:9px 10px 10px;border-radius:14px;background:rgba(255,255,255,.94);color:#191a1c;font-size:10px;line-height:14px;box-shadow:0 6px 18px rgba(0,0,0,.25);animation:hpin .4s cubic-bezier(.2,.8,.2,1)}
   @keyframes hpin{from{opacity:0;transform:translateY(-14px) scale(.96)}}
   .hp-card .ah{display:flex;align-items:center;gap:5px;font-size:9.5px;color:#6b6e75}
   .hp-card .ah .ico{width:14px;height:14px;border-radius:4px;background:linear-gradient(135deg,#2C8DDD,#3357AC);color:#fff;display:grid;place-items:center;font-size:7px;font-weight:700;flex:none}
   .hp-card .ah .grow{flex:1}
+  .hp-card .ah span{white-space:nowrap}
+  .hp-card .ah span:nth-child(2){min-width:0;overflow:hidden;text-overflow:ellipsis}
   .hp-card h4{margin:6px 0 1px;font-size:12.5px;line-height:17px;font-weight:600}
   .hp-card .rq{color:#4a4d54;margin-bottom:6px}
   .hp-card ul{list-style:none;margin:0;padding:6px 0 0;border-top:1px solid rgba(0,0,0,.08);display:flex;flex-direction:column;gap:4px}
@@ -673,7 +675,7 @@
       +'<button class="abtn pl-del" title="删掉这步" aria-label="删掉这步"><svg class="i"><use href="#i-closeS"/></svg></button></div>';
   }
   function rows(){return $$('#pl-steps .pl-step')}
-  function stepNo(id){var i=rows().map(function(r){return r.dataset.id}).indexOf(id);return i<0?0:i+1}
+  function stepNo(id){var i=$$('#pl-steps > [data-id]').map(function(r){return r.dataset.id}).indexOf(id);return i<0?0:i+1}
   function edit(key){if(!P.ready)return;P.edits[key]=1;updateMeta()}
 
   function updateMeta(){
@@ -962,10 +964,11 @@
     $('.pl-main',e).insertAdjacentHTML('beforeend','<div class="px-dev"><span class="dm-pill warn"><svg><use href="#i-warn"/></svg>偏离计划 · 换了做法</span><span>顶栏不在 <code>DetailPage.ets</code> 里，是 common HAR 的公共组件 <code>NavBar.ets</code>，feature_cart 等另 3 个页面在用。改成给它加 <code>showFavorite</code> 参数（默认关）、只在详情页打开，别的页面不受影响；多改 1 个文件，改动地图已同步标出。</span></div>');
     treeMark('NavBar.ets','vcs-out');
     var no=$('.pl-no',e).textContent;
-    $('#plc-devs').insertAdjacentHTML('beforeend','<div class="plc-dev"><b>偏离计划 · 第 '+no+' 步</b>：顶栏是公共组件 NavBar.ets，改成加参数，多改 1 个文件</div>');
+    $('#plc-devs').insertAdjacentHTML('beforeend','<div class="plc-dev"><b>偏离计划 · 第 '+no+' 步</b>：顶栏在 common HAR 的 NavBar.ets，改成加参数，多改 1 个文件</div>');
     planLine('<b>偏离计划 · 第 '+no+' 步</b> 顶栏是 common HAR 的公共组件 NavBar.ets，改成给它加 showFavorite 参数，详情页只传参数','warn');
-    MAP.dev=true;
+    MAP.dev=true;MAP.sel=selKey('common','');
     updateMeta();phoneSync();
+    mapTip('执行中发现：顶栏在 common HAR，拓扑图里 common 已标成计划外 · 第 <b>'+no+'</b> 步',1);
   }
   function finish(){
     P.done=true;P.exec=true;
@@ -1127,7 +1130,7 @@
     var card=$('#hp-card'),live=$('#hp-live'),h='';
     if(!P.exec){
       var s=sumNow();live.hidden=true;card.classList.remove('ok');
-      h='<div class="ah"><span class="ico">DE</span><span>DevEco Studio · 来自 MateBook Fold</span><span class="grow"></span><span>刚刚</span></div>'
+      h='<div class="ah"><span class="ico">DE</span><span>DevEco Studio · MateBook Fold</span><span class="grow"></span><span>刚刚</span></div>'
         +'<h4>计划等你确认</h4><div class="rq">'+esc($('#pl-h1').textContent)+'</div>'
         +'<ul><li><i>步骤</i><span>'+s.n+' 步 · 改 '+s.nm+' 个文件，新建 '+s.na+' 个'+(s.ne?' · 你改了 '+s.ne+' 处':'')+'</span></li>'
         +QS.map(function(q){return '<li><i>'+(q.id==='guest'?'未登录':'冲突')+'</i><span>'+esc(decidedText(q))+'</span></li>'}).join('')
@@ -1183,17 +1186,19 @@
   if('IntersectionObserver' in window){
     var io=new IntersectionObserver(function(es){es.forEach(function(en){en.target.classList.toggle('gd-in',en.isIntersecting&&en.intersectionRatio>0.97)})},{root:scroller,threshold:[0,0.97,1]});
     $$('[data-gd-watch]').forEach(function(x){io.observe(x)});
+    var io2=new IntersectionObserver(function(es){es.forEach(function(en){en.target.classList.toggle('gd-in',en.isIntersecting&&en.intersectionRatio>0.97)})},{root:$('#pl-doc'),threshold:[0,0.97,1]});
+    io2.observe($('#pl-svg'));
   }
 
 DemoGuide.init([
   {"target": "#btn-go.gd-in", "kind": "click", "pos": "top", "label": "点这里确认理解"},
   {"target": "#mode-btn", "kind": "click", "pos": "bottom", "label": "切到 Plan 规划，再点发送"},
-  {"target": "#pl-run", "kind": "click", "pos": "left", "label": "改完计划，点这里按计划执行"},
+  {"target": "#pl-run", "kind": "click", "pos": "bottom", "label": "改完计划，点这里按计划执行"},
   {"target": "#ic-card.gd-in", "kind": "change", "pos": "top", "label": "收起变成一步"},
   {"target": "#pl-state", "kind": "change", "pos": "bottom", "label": "执行到第几步、偏离几处，这里跟着变"},
-  {"target": "#pl-svg g[data-go=\"bar\"]", "kind": "click", "pos": "right", "label": "点图里的节点，跳到那一步和文件"},
-  {"target": "#pl-phone", "kind": "click", "pos": "bottom", "label": "不在电脑前？推到手机上确认"},
-  {"target": "#hp-ok", "kind": "click", "pos": "left", "label": "在手机上点确认，IDE 接着执行"}
+  {"target": "#pl-svg.gd-in g[data-go=\"test\"]", "kind": "click", "pos": "bottom", "label": "点图里的节点，跳到那一步和文件"},
+  {"target": "#pl-phone", "kind": "click", "pos": "left", "label": "不在电脑前？推到手机上确认"},
+  {"target": "#hp-ok", "kind": "click", "pos": "bottom", "label": "在手机上点确认"}
 ]);
 })();
 </script>

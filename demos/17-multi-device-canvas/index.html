@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='32' y2='32' gradientUnits='userSpaceOnUse'%3E%3Cstop stop-color='%232C8DDD'/%3E%3Cstop offset='1' stop-color='%233357AC'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='32' height='32' rx='7' fill='url(%23g)'/%3E%3Ctext x='16' y='22.5' font-family='Arial,Helvetica,sans-serif' font-size='13' font-weight='700' fill='white' text-anchor='middle'%3EDE%3C/text%3E%3C/svg%3E">
-<title>17 · 模拟器多端：鸿蒙特征 · 跨屏 · 手势</title>
+<title>17 · 模拟器多端：场景模拟 · 一多检查 · 跨屏 · 手势</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;500&display=swap">
 <link rel="stylesheet" href="../../deveco-intui-kit/src/tokens.css">
 <link rel="stylesheet" href="../../deveco-intui-kit/src/components.css">
@@ -14,16 +14,18 @@
 <script src="../_shared/frame.js"></script>
 <script src="../_shared/guide.js"></script>
 <style>
-  /* 编辑区左右分：左代码，右 Previewer 画布（画布占大头，放得下 5 块屏） */
-  .dm-split.mdc{grid-template-columns:minmax(0,.8fr) minmax(0,2fr)}
+  /* 编辑区左右分：左 代码 + 多端问题面板，右 Previewer 画布（按真实尺寸放 6 块屏） */
+  .dm-split.mdc{grid-template-columns:minmax(0,1fr) minmax(0,2.45fr)}
+  .lcol .code-wrap{flex:1;min-height:0}
   .prev-tools{flex:none;background:var(--ui-bg)}
-  .prev-tools b{color:var(--ui-fg);font-weight:600;display:inline-flex;align-items:center;gap:6px}
+  .prev-tools b{color:var(--ui-fg);font-weight:600;display:inline-flex;align-items:center;gap:6px;margin-right:6px}
   .prev-tools .grow{flex:1}
   .prev-tools .sel-lbl{display:inline-flex;align-items:center;gap:4px;color:var(--ui-fg);padding:0 6px;height:20px;border-radius:4px;background:color-mix(in srgb,var(--ui-accent) 14%,transparent)}
   .prev-tools .sel-lbl svg{width:12px;height:12px;color:var(--ui-accent)}
-  .dm-canvas .stage{flex-wrap:wrap;gap:40px 36px;padding:30px 28px 36px;align-content:flex-start}
+  .dm-canvas .stage{flex-direction:column;align-items:flex-start;gap:46px;padding:24px 22px 40px}
+  .drow{display:flex;flex-wrap:wrap;align-items:flex-start;gap:46px 28px}
 
-  /* 特征条 / 手势条 */
+  /* 特征条 / 手势条 / 场景条 */
   .xbar{flex:none;display:flex;align-items:center;gap:6px;height:34px;padding:0 10px;border-bottom:1px solid var(--ui-border);background:var(--ui-bg);font-size:12px;white-space:nowrap;overflow:hidden;color:var(--ui-fg)}
   .xbar .grow{flex:1}
   .xbar .xl{display:inline-flex;align-items:center;gap:4px;color:var(--ui-fg-info);margin-right:2px}
@@ -38,15 +40,58 @@
   .xb.on{background:var(--ui-accent);border-color:var(--ui-accent);color:var(--ui-accent-fg)}
   .xb.on svg{color:inherit}
   .xb[disabled]{opacity:.45}
+  .xb.pri{border-color:var(--ui-accent);font-weight:600}
+  .xb.pri svg{color:var(--ui-accent)}
+  .xb.pri.on svg{color:inherit}
   .xseg{display:inline-flex}
   .xseg .xb{border-radius:0}
   .xseg .xb + .xb{margin-left:-1px}
   .xseg .xb:first-child{border-radius:5px 0 0 5px}
   .xseg .xb:last-child{border-radius:0 5px 5px 0}
   #api-pill,#flow-pill{font-family:var(--font-code)}
+  #sc-bar .xl + .xseg{margin-right:4px}
+
+  /* ============ 设备外框：按真实比例（屏幕 px = vp × 0.36） ============ */
+  .dm-device{cursor:default;transition:box-shadow .15s,width .3s,height .3s,margin .3s;--fz:1;padding:5px}
+  .dm-device.phone{width:140px;height:303px;border-radius:21px}          /* 1260×2844 → 360×813 vp */
+  .dm-device.phone .scr{border-radius:16px}
+  .dm-device.fold{width:303px;height:279px;border-radius:14px;margin:0}   /* 2440×2240 → 813×747 vp */
+  .dm-device.fold .scr{border-radius:10px}
+  .dm-device.fold[data-pose="closed"]{width:140px;height:304px;margin:0 81.5px;border-radius:20px} /* 1080×2440 → 360×813 vp */
+  .dm-device.fold[data-pose="closed"] .scr{border-radius:15px}
+  .dm-device.xt{width:392px;height:278px;border-radius:12px}              /* 3184×2232 → 1061×744 vp */
+  .dm-device.xt[data-pose="2"]{width:256px;margin:0 68px}                 /* 2048×2232 → 683×744 vp */
+  .dm-device.xt[data-pose="1"]{width:131px;margin:0 130.5px;border-radius:18px} /* 1008×2232 → 336×744 vp */
+  .dm-device.xt .scr{border-radius:8px}
+  .dm-device.xt[data-pose="1"] .scr{border-radius:14px}
+  .dm-device.xt .scr::after{content:"";position:absolute;inset:0;z-index:5;pointer-events:none;background:linear-gradient(90deg,transparent calc(33.33% - .5px),rgba(0,0,0,.13) calc(33.33% - .5px) calc(33.33% + .5px),transparent calc(33.33% + .5px) calc(66.67% - .5px),rgba(0,0,0,.13) calc(66.67% - .5px) calc(66.67% + .5px),transparent calc(66.67% + .5px))}
+  .dm-device.xt[data-pose="2"] .scr::after{background:linear-gradient(90deg,transparent calc(50% - .5px),rgba(0,0,0,.13) calc(50% - .5px) calc(50% + .5px),transparent calc(50% + .5px))}
+  .dm-device.xt[data-pose="1"] .scr::after{display:none}
+  .dm-device.tablet{width:473px;height:319px;padding:6px;border-radius:14px} /* 2880×1920 → 1280×853 vp */
+  .dm-device.tablet .scr{border-radius:9px}
+  .dm-device.tablet::before{content:"";position:absolute;top:2px;left:50%;width:3px;height:3px;margin-left:-1.5px;border-radius:50%;background:#2c2e34}
+  .dm-device.watch{width:100px;height:100px;padding:8px}                  /* 466×466 → 233 vp 圆屏 */
+  .dm-device.watch::before,.dm-device.watch::after{left:30px;right:30px}
+  .dm-device.car{width:471px;height:183px;padding:5px}                    /* 1920×720 */
+  .dm-device.tv{width:471px;height:269px;padding:5px}                     /* 3840×2160 */
+  .dm-device .cap .bpk{margin-right:5px}
+  .bpk{display:inline-block;font-style:normal;font-family:var(--font-code);font-size:10px;line-height:15px;padding:0 4px;border-radius:3px;background:color-mix(in srgb,var(--ui-accent) 18%,transparent);color:var(--ui-info);vertical-align:1px}
+
+  /* 鸿蒙状态栏：左时间，中挖孔，右信号电量；底部手势横条 */
+  .mapp{box-sizing:border-box}
+  .mapp .st{position:relative;height:14px;flex:none;font-size:7px;font-weight:600;padding:0 9px}
+  .mapp .st .hole{position:absolute;left:50%;top:3.5px;width:7px;height:7px;margin-left:-3.5px;border-radius:50%;background:#0b0c0e}
+  .mapp .st .sig{display:inline-flex;align-items:center;gap:3px}
+  .mapp .st .bars{width:9px;height:6px;background:currentColor;clip-path:polygon(0 100%,100% 0,100% 100%)}
+  .mapp .st .bat{width:12px;height:6px;border:1px solid currentColor;border-radius:2px;position:relative;box-sizing:border-box}
+  .mapp .st .bat::after{content:"";position:absolute;left:1px;top:1px;bottom:1px;width:62%;background:currentColor;border-radius:1px}
+  .dm-device.fold:not([data-pose="closed"]) .st .hole,.dm-device.xt:not([data-pose="1"]) .st .hole{left:auto;right:17%;margin:0}
+  .dm-device.tablet .st .hole{display:none}
+  .scr > .gbar{position:absolute;left:50%;bottom:3px;width:34%;max-width:92px;height:3px;transform:translateX(-50%);border-radius:2px;background:rgba(0,0,0,.72);z-index:6;pointer-events:none}
+  .dm-device.dk .scr > .gbar{background:rgba(255,255,255,.7)}
+  .dm-device:is(.phone,.fold,.xt,.tablet) .mapp:not(.pg-detail){padding-bottom:7px}
 
   /* 设备可点选 */
-  .dm-device{cursor:default;transition:box-shadow .15s,width .3s,margin .3s;--fz:1}
   .dm-device.sel{outline:2px solid var(--ui-accent);outline-offset:3px}
   .dm-device.drop-ok{outline:2px dashed var(--ui-success);outline-offset:5px}
   .dm-device.drop-hot{outline-style:solid;box-shadow:0 0 0 8px color-mix(in srgb,var(--ui-success) 22%,transparent)}
@@ -54,32 +99,75 @@
   @keyframes recv{0%{box-shadow:inset 0 0 0 3px #3574F0}100%{box-shadow:inset 0 0 0 0 transparent}}
   .dm-device .scr{transition:opacity .25s}
   .dm-device.refreshing .scr{opacity:.55}
-  .dm-device .sync{position:absolute;left:0;right:0;top:0;height:3px;z-index:6;border-radius:0}
+  .dm-device .sync{position:absolute;left:0;right:0;top:0;height:3px;z-index:9;border-radius:0}
   .dm-device .tag{white-space:nowrap}
-  /* 折叠屏两栏 */
+  .dm-device.bad{box-shadow:0 0 0 2px var(--ui-error),0 0 0 7px color-mix(in srgb,var(--ui-error) 22%,transparent),0 8px 24px rgba(0,0,0,.35)}
+  .dm-device.scanning{box-shadow:0 0 0 2px var(--ui-accent),0 0 0 7px color-mix(in srgb,var(--ui-accent) 24%,transparent),0 8px 24px rgba(0,0,0,.35)}
+  .dm-device.scanning .scr::before{content:"";position:absolute;left:0;right:0;height:34%;top:-34%;z-index:8;pointer-events:none;background:linear-gradient(transparent,color-mix(in srgb,var(--ui-accent) 38%,transparent));animation:scan .42s linear forwards}
+  @keyframes scan{to{top:100%}}
+  .scb{position:absolute;left:50%;bottom:-23px;transform:translateX(-50%);z-index:3;display:inline-flex;align-items:center;gap:4px;height:18px;padding:0 7px;border-radius:9px;font-size:11px;line-height:18px;white-space:nowrap;cursor:pointer;background:color-mix(in srgb,var(--ui-accent) 18%,var(--ui-editor-bg));color:var(--ui-fg)}
+  .scb svg{width:11px;height:11px;flex:none}
+  .scb.ok{background:color-mix(in srgb,var(--ui-success) 20%,var(--ui-editor-bg));color:var(--ui-success)}
+  .scb.bad{background:var(--ui-error);color:#fff;font-weight:600}
+  .dm-device.has-scb .cap{visibility:hidden}
+
+  /* 一多检查：问题标记 */
+  .nav,.blank{position:relative}
+  .lint{outline:2px dashed var(--ui-error)!important;outline-offset:-2px}
+  .lint::after{content:attr(data-lt);position:absolute;right:3px;top:3px;z-index:9;height:13px;padding:0 5px;border-radius:7px;background:var(--ui-error);color:#fff;font:600 8px/13px var(--font-ui);white-space:nowrap;pointer-events:none}
+  .nav.lint::after{top:auto;bottom:calc(100% + 3px);right:4px}
+  .scr.lint::after{right:auto;left:50%;top:auto;bottom:9px;transform:translateX(-50%)}
+  .lint.cur{outline-style:solid!important;animation:lintp .9s ease-in-out 3}
+  @keyframes lintp{50%{outline-color:transparent}}
+
+  /* 通用：列表容器、底部 Tab、侧边栏 */
+  .mapp .lst{flex:1;min-height:0;overflow:hidden}
+  .mapp .row{flex:none}
+  .mapp .nav{height:24px;border-top:1px solid #f0f0f0;display:flex;align-items:center;justify-content:space-around;font-size:calc(8px*var(--fzt,var(--fz)));color:#8a8f99;flex:none;white-space:nowrap}
+  .mapp .nav b{color:#3574F0;font-weight:600}
+  .mapp .xbody{flex:1;display:flex;min-height:0}
+  .mapp .side{display:none;flex:none;width:34px;flex-direction:column;align-items:center;gap:9px;padding:8px 0 0;border-right:1px solid #f0f0f0;font-size:7px;color:#8a8f99;background:#fafbfc}
+  .mapp .side b,.mapp .side span{display:flex;flex-direction:column;align-items:center;gap:2px;font-weight:400}
+  .mapp .side b{color:#3574F0;font-weight:600}
+  .mapp .side b::before,.mapp .side span::before{content:"";width:11px;height:11px;border-radius:4px;background:currentColor;opacity:.28}
+  .mapp .side b::before{opacity:.9}
+  #stage.fx-side .dm-device:not([data-bp="sm"]) .side{display:flex}
+  #stage.fx-side .dm-device:not([data-bp="sm"]) .nav{display:none}
+  .dm-device.tablet .mapp .side{width:46px}
+
+  /* 手机 */
+  .dm-device.phone .mapp .row,.dm-device.fold .v-closed .row,.dm-device.xt .row{padding:5px 8px;gap:6px}
+  .dm-device.phone .mapp .row .th,.dm-device.fold .v-closed .row .th,.dm-device.xt .row .th{width:28px;height:28px}
+  .dm-device:is(.phone,.fold,.xt) .mapp .hd{height:26px}
+  .dm-device:is(.phone,.fold,.xt) .mapp .search{margin:2px 8px 6px;height:20px}
   .mapp .cols{flex:1;display:flex;min-height:0}
   .mapp .col{flex:1;min-width:0;display:flex;flex-direction:column}
-  .mapp .detail{padding:10px;display:flex;flex-direction:column;gap:5px}
-  .mapp .detail .pic,.mapp .pic{height:88px;border-radius:8px;background:linear-gradient(135deg,#dfe7ff,#b9c9ff);transition:transform .35s;flex:none}
+  .mapp .detail{padding:8px;display:flex;flex-direction:column;gap:4px}
+  .mapp .detail .pic,.mapp .pic{height:88px;border-radius:8px;background:linear-gradient(135deg,#dfe7ff,#b9c9ff);transition:transform .35s;flex:none;position:relative}
+  .dm-device:is(.fold,.xt) .detail .pic{height:64px}
   .mapp .detail b{font-size:12px;font-weight:600}
   .mapp .detail span{font-size:9px;color:#8a8f99;line-height:1.4}
   .mapp .detail .price{font-size:14px;font-weight:600;color:#DB3B4B}
-  .mapp .detail .btn{margin:2px 0 0;height:26px;border-radius:13px}
+  .mapp .detail .btn{margin:2px 0 0;height:24px;border-radius:12px}
   .mapp .detail em.from{font-style:normal;align-self:flex-start;font-size:8px;padding:1px 6px;border-radius:7px;background:#e8f0ff;color:#3574F0}
-  /* 手机底栏 */
-  .mapp .nav{height:28px;border-top:1px solid #f0f0f0;display:flex;align-items:center;justify-content:space-around;font-size:8px;color:#8a8f99;flex:none}
-  .mapp .nav b{color:#3574F0;font-weight:600}
   /* 手表 */
+  .dm-device.watch .mapp{position:relative}
   .mapp .ring > div{transition:transform .35s}
-  .mapp .ring .ws{display:inline-block;margin-top:6px;padding:1px 8px;border-radius:8px;background:#f0f1f3;color:#888;font-size:8px}
+  .mapp .ring .ws{display:inline-block;margin-top:5px;padding:1px 8px;border-radius:8px;background:#f0f1f3;color:#888;font-size:8px}
+  .wnv{position:absolute;inset:0;padding:9px 0 0 3px;display:flex;flex-direction:column;gap:3px;text-align:left;white-space:nowrap;font-size:calc(8px*var(--fz))}
+  .wnv .wt{font-weight:600;color:#3574F0;padding-left:2px}
+  .wnv .wr{padding:2px 4px;border-radius:5px;background:#f0f1f3;width:112%}
+  #stage.fx-round .wnv{display:none}
+  #stage:not(.fx-round) .dm-device.watch .ring{display:none}
   /* 车机：大字横排三个卡片 */
   .mapp.dark .hd{font-size:13px;gap:10px}
   .mapp.dark .hd .search{flex:1;margin:0;height:20px;background:#22252c;color:#8a8f99}
   .mapp.dark .cards{display:flex;gap:8px;padding:2px 10px 0}
   .mapp.dark .cards .cd{flex:1;min-width:0;border-radius:8px;background:#1b1e26;padding:8px}
-  .mapp.dark .cards .cd .th{height:40px;border-radius:6px;background:linear-gradient(135deg,#3b4a7a,#5a6fb0);margin-bottom:5px;transition:transform .35s}
+  .mapp.dark .cards .cd .th{height:44px;border-radius:6px;background:linear-gradient(135deg,#3b4a7a,#5a6fb0);margin-bottom:5px;transition:transform .35s}
   .mapp.dark .cards .cd b{display:block;font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .mapp.dark .cards .cd span{display:block;font-size:9px;color:#8a8f99}
+  .dm-device.tv .mapp.dark .cards .cd .th{height:92px}
   .mapp .row .th{transition:transform .35s}
   .zoomed{transform:scale(1.6);position:relative;z-index:3}
   .mapp .ring > div.zoomed{transform:scale(1.35)}
@@ -93,33 +181,36 @@
   .dm-device.phone .pa .row{cursor:grab}
   .pg-detail{background:#fff;z-index:2}
   .pg-detail[hidden]{display:none!important}
-  .pg-detail .bk{height:26px;display:flex;align-items:center;gap:4px;padding:0 10px;font-size:10px;color:#3574F0}
+  .pg-detail .bk{height:24px;display:flex;align-items:center;gap:4px;padding:0 10px;font-size:10px;color:#3574F0}
   .pb .mapp .hd{height:24px;font-size:11px}
-  .pb .note{margin:3px 10px;padding:5px 7px;border-radius:6px;background:#fff3c4;font-size:9px;color:#5b4a12}
-  .fw{position:absolute;right:8px;top:74px;width:86px;border-radius:10px;background:#fff;box-shadow:0 6px 18px rgba(0,0,0,.28);z-index:4;overflow:hidden;display:none;font-size:9px}
+  .pb .note{margin:3px 8px;padding:4px 6px;border-radius:6px;background:#fff3c4;font-size:8px;color:#5b4a12}
+  .fw{position:absolute;right:6px;top:62px;width:66px;border-radius:9px;background:#fff;box-shadow:0 6px 18px rgba(0,0,0,.28);z-index:4;overflow:hidden;display:none;font-size:9px}
   .dm-device.phone.float .fw{display:block;animation:fwin .25s ease-out}
   @keyframes fwin{from{opacity:0;transform:scale(.85)}to{opacity:1;transform:none}}
-  .fw .fh{height:14px;display:flex;align-items:center;justify-content:center}
-  .fw .fh i{width:22px;height:3px;border-radius:2px;background:#c9ccd3}
-  .fw .res{padding:0 8px;text-align:right;font-size:15px;font-weight:600}
-  .fw .keys{display:grid;grid-template-columns:repeat(4,1fr);gap:3px;padding:4px 6px 7px}
-  .fw .keys span{height:13px;border-radius:4px;background:#f0f1f3;display:grid;place-items:center;font-size:7px;color:#555}
+  .fw .fh{height:12px;display:flex;align-items:center;justify-content:center}
+  .fw .fh i{width:20px;height:3px;border-radius:2px;background:#c9ccd3}
+  .fw .res{padding:0 6px;text-align:right;font-size:12px;font-weight:600}
+  .fw .keys{display:grid;grid-template-columns:repeat(4,1fr);gap:2px;padding:3px 4px 5px}
+  .fw .keys span{height:11px;border-radius:3px;background:#f0f1f3;display:grid;place-items:center;font-size:7px;color:#555}
   .fw .keys span.op{background:#3574F0;color:#fff}
 
   /* 折叠屏三种姿态 */
   .dm-device.fold .v{display:none}
   .dm-device.fold[data-pose="open"] .v-open,.dm-device.fold[data-pose="half"] .v-half,.dm-device.fold[data-pose="closed"] .v-closed{display:flex}
-  .dm-device.fold[data-pose="closed"]{width:150px;margin:0 75px}
   .dm-device.fold[data-pose="closed"] .scr::after{display:none}
-  .dm-device.fold[data-pose="half"] .scr::after{top:50%;bottom:auto;left:0;right:0;width:auto;height:2px;background:rgba(0,0,0,.22)}
+  .dm-device.fold[data-pose="half"] .scr::after{top:50%;bottom:auto;left:0;right:0;width:auto;height:2px;background:rgba(0,0,0,.22);z-index:5}
   .v-closed{position:relative}
   .v-closed .pg-detail{position:absolute;inset:0}
   .v-half{flex-direction:column}
+  .hv-fs,.hv-nv{flex:1;min-height:0}
+  .hv-fs{display:flex;flex-direction:column}
+  #stage:not(.fx-folder) .hv-fs{display:none}
+  #stage.fx-folder .hv-nv{display:none}
   .v-half .up{height:50%;display:flex;flex-direction:column;padding:0 0 4px;overflow:hidden}
   .v-half .up .media{flex:1;margin:4px 10px 0;border-radius:8px;display:flex;align-items:flex-end;gap:8px;padding:8px;min-height:0;background:linear-gradient(135deg,#dfe7ff,#b9c9ff);transition:transform .35s}
   .v-half .up .media b{font-size:12px;font-weight:600}
   .v-half .up .media span{font-size:12px;font-weight:600;color:#DB3B4B;margin-left:auto}
-  .v-half .lo{height:50%;display:flex;flex-direction:column;gap:6px;padding:10px 12px;background:#f6f7f9;transform:perspective(420px) rotateX(16deg);transform-origin:top center}
+  .v-half .lo{height:50%;display:flex;flex-direction:column;gap:6px;padding:10px 12px 12px;background:#f6f7f9;transform:perspective(420px) rotateX(16deg);transform-origin:top center}
   .v-half .lo .chips{display:flex;gap:5px}
   .v-half .lo .chips span{padding:2px 8px;border-radius:9px;background:#fff;border:1px solid #dfe2e8;font-size:9px}
   .v-half .lo .chips span.on{border-color:#3574F0;color:#3574F0}
@@ -127,8 +218,33 @@
   .v-half .lo .acts div{flex:1;height:26px;border-radius:13px;display:grid;place-items:center;font-size:10px;font-weight:600;background:#fff;border:1px solid #dfe2e8}
   .v-half .lo .acts div.p{background:#3574F0;border-color:#3574F0;color:#fff}
   .v-half .lo .lbl{font-size:9px;color:#8a8f99}
+  /* 悬停：没用 FolderStack 的原样布局（按钮压在折痕上） */
+  .hv-nv{position:relative}
+  .hv-nv .nv-pic{margin:4px 10px 0;height:calc(50% - 52px);border-radius:8px;background:linear-gradient(135deg,#dfe7ff,#b9c9ff);transition:transform .35s}
+  .hv-nv .nv-tx{display:flex;align-items:baseline;gap:6px;padding:5px 12px 0}
+  .hv-nv .nv-tx b{font-size:calc(12px*var(--fz));font-weight:600}
+  .hv-nv .nv-tx span{margin-left:auto;font-size:12px;font-weight:600;color:#DB3B4B}
+  .hv-nv .acts{position:absolute;left:12px;right:12px;top:calc(50% - 13px);display:flex;gap:6px}
+  .hv-nv .acts div{flex:1;height:26px;border-radius:13px;display:grid;place-items:center;font-size:10px;font-weight:600;background:#fff;border:1px solid #dfe2e8}
+  .hv-nv .acts div.pri{background:#3574F0;border-color:#3574F0;color:#fff}
+  .hv-nv .nv-desc{position:absolute;left:12px;right:12px;top:calc(50% + 22px);font-size:9px;color:#8a8f99;line-height:1.5}
+  .hv-nv::before{content:"";position:absolute;left:0;right:0;top:50%;bottom:0;background:linear-gradient(rgba(0,0,0,.07),transparent 50%);pointer-events:none}
 
-  /* 平板：左列表右详情 */
+  /* 三折叠 Mate XT */
+  .xapp .main{flex:1;min-width:0;display:flex;flex-direction:column}
+  .xapp .xdet{display:none;flex:1;min-width:0;border-left:1px solid #f0f0f0}
+  .xapp .blank{display:none;flex:1}
+  #d-xt[data-pose="2"] .xdet{display:block}
+  #d-xt[data-pose="3"] .main{flex:0 0 50%}
+  #stage:not(.fx-grid) #d-xt[data-pose="3"] .blank{display:block}
+  #stage.fx-grid #d-xt[data-pose="3"] .main{flex:1}
+  #stage.fx-grid #d-xt[data-pose="3"] .lst{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;padding:2px 8px;align-content:start}
+  #stage.fx-grid #d-xt[data-pose="3"] .row{flex-direction:column;align-items:stretch;gap:4px;padding:5px;border:0;border-radius:8px;background:#f6f7f9}
+  #stage.fx-grid #d-xt[data-pose="3"] .row .th{width:auto;height:38px}
+  .dm-device.dk#d-xt .row{background:transparent}
+  #stage.fx-grid .dm-device.dk#d-xt[data-pose="3"] .row{background:#1d2026}
+
+  /* 平板：侧栏 + 左列表 + 右详情 */
   .dm-device.tablet .mapp .col.l{flex:.85;border-right:1px solid #f0f0f0}
   .dm-device.tablet .mapp .row{padding:5px 8px}
   .dm-device.tablet .mapp .row .th{width:26px;height:26px}
@@ -141,12 +257,13 @@
   /* 深色模式（设备里的应用） */
   .dm-device.dk .scr{background:#15171c;color:#e6e6e6}
   .dm-device.dk .mapp .st{color:#b8bcc4}
-  .dm-device.dk .mapp .search,.dm-device.dk .mapp .ring .ws{background:#262a31;color:#8a8f99}
-  .dm-device.dk .mapp .row,.dm-device.dk .mapp .nav,.dm-device.dk.tablet .mapp .col.l{border-color:#262a31}
-  .dm-device.dk .mapp .row .th,.dm-device.dk .mapp .pic,.dm-device.dk .v-half .up .media{filter:brightness(.62)}
+  .dm-device.dk .mapp .search,.dm-device.dk .mapp .ring .ws,.dm-device.dk .wnv .wr{background:#262a31;color:#8a8f99}
+  .dm-device.dk .mapp .row,.dm-device.dk .mapp .nav,.dm-device.dk.tablet .mapp .col.l,.dm-device.dk .mapp .side,.dm-device.dk .xapp .xdet{border-color:#262a31}
+  .dm-device.dk .mapp .side{background:#1a1c21}
+  .dm-device.dk .mapp .row .th,.dm-device.dk .mapp .pic,.dm-device.dk .v-half .up .media,.dm-device.dk .nv-pic{filter:brightness(.62)}
   .dm-device.dk .pg-detail{background:#15171c}
   .dm-device.dk .v-half .lo{background:#1d2026}
-  .dm-device.dk .v-half .lo .chips span,.dm-device.dk .v-half .lo .acts div:not(.p){background:#262a31;border-color:#33373f}
+  .dm-device.dk .v-half .lo .chips span,.dm-device.dk .v-half .lo .acts div:not(.p),.dm-device.dk .hv-nv .acts div:not(.pri){background:#262a31;border-color:#33373f}
   .dm-device.dk .pb{background:#1b1d22}
   .dm-device.dk .pb .note{background:#3a3522;color:#e8d9a0}
   .dm-device.dk .fw{background:#23262d;color:#e6e6e6}
@@ -166,7 +283,74 @@
   .dm-device .mapp .ring b{font-size:calc(18px*var(--fz))}
   .dm-device .mapp.dark .hd{font-size:calc(13px*var(--fz))}
   .dm-device .mapp.dark .cards .cd b{font-size:calc(12px*var(--fz))}
-  .dm-device .mapp .nav{font-size:calc(8px*var(--fz))}
+  .dm-device.fz-tab-bad .mapp .nav{height:13px;overflow:hidden;align-items:flex-start;line-height:1.25}
+
+  /* ============ 场景：设备内的反应层 ============ */
+  .sov{position:absolute;inset:0;z-index:7;pointer-events:none;font-family:var(--font-ui);font-size:8px;line-height:1.3}
+  .sov .cov{position:absolute;left:0;right:0;top:14px;bottom:0;background:#fff;display:flex;flex-direction:column;gap:7px;padding:8px 8px 0;overflow:hidden}
+  .dk .sov .cov{background:#15171c}
+  .car .sov .cov,.tv .sov .cov{top:0;background:#111318;flex-direction:row;align-items:flex-start;padding:36px 10px 0;gap:8px}
+  .watch .sov .cov{top:0;border-radius:50%;align-items:center;justify-content:center;padding:0;gap:6px}
+  .sk-r{display:flex;gap:6px;align-items:center;flex:none}
+  .sk-r > div{flex:1;display:flex;flex-direction:column;gap:5px}
+  .sk{display:block;height:7px;border-radius:4px;background:linear-gradient(90deg,#eceef2 30%,#f8f9fb 50%,#eceef2 70%);background-size:300% 100%;animation:shim 1.2s linear infinite}
+  .sk.sq{width:24px;height:24px;border-radius:6px;flex:none}
+  .sk.half{width:55%}
+  .sk.card{flex:1;height:84px;border-radius:8px}
+  .dk .sk,.car .sk,.tv .sk{background:linear-gradient(90deg,#23262d 30%,#30343c 50%,#23262d 70%);background-size:300% 100%}
+  @keyframes shim{from{background-position:100% 0}to{background-position:0 0}}
+  .sov .spin-c{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:4px;color:#6d727c;font-size:8px;white-space:nowrap;background:rgba(255,255,255,.9);padding:6px 8px;border-radius:8px}
+  .sov .spin-c i{width:14px;height:14px;border-radius:50%;border:2px solid #3574F0;border-right-color:transparent;animation:spin 1s linear infinite}
+  .sbn{position:absolute;left:5px;right:5px;top:17px;z-index:2;display:flex;align-items:center;gap:4px;padding:3px 6px;border-radius:6px;background:rgba(24,26,31,.88);color:#fff;font-size:8px;line-height:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;box-shadow:0 2px 8px rgba(0,0,0,.18)}
+  .sbn.warn{background:#C26F00}.sbn.err{background:#D33A48}.sbn.ok{background:#1E8E4E}.sbn.info{background:#3574F0}
+  .sbn svg{width:9px;height:9px;flex:none}
+  .car .sbn,.tv .sbn{top:6px;left:auto;right:8px;max-width:60%}
+  .sloc{position:absolute;left:0;right:0;top:14px;height:26px;z-index:2;display:flex;align-items:center;gap:3px;padding:0 8px;background:#e8f0ff;color:#2a5fc9;font-size:8px;font-weight:600;white-space:nowrap;overflow:hidden}
+  .dk .sloc{background:#1d2b48;color:#8fb4ff}
+  .sloc i.sp{width:7px;height:7px;border-radius:50%;border:1.5px solid currentColor;border-right-color:transparent;animation:spin 1s linear infinite;flex:none}
+  .sloc svg{width:9px;height:9px;flex:none}
+  .car .sloc,.tv .sloc{top:0;height:30px;padding:0 12px;font-size:10px;background:#1d2b48;color:#8fb4ff}
+  .sroute{position:absolute;right:10px;bottom:10px;width:150px;height:64px;z-index:2;border-radius:8px;background:#1b2230}
+  .sroute path{fill:none;stroke:#4f8cff;stroke-width:2.5;stroke-linecap:round}
+  .sroute circle{fill:#fff;stroke:#4f8cff;stroke-width:2}
+  .scall{position:absolute;left:5px;right:5px;top:17px;z-index:2;display:flex;align-items:center;gap:5px;padding:5px 6px;border-radius:10px;background:#20232a;color:#fff;box-shadow:0 4px 12px rgba(0,0,0,.3);max-width:170px;margin:0 auto}
+  .scall .av{width:16px;height:16px;border-radius:50%;background:linear-gradient(135deg,#f5b36b,#e9795f);flex:none}
+  .scall .tx{flex:1;min-width:0;font-size:7px;color:#b8bcc4;white-space:nowrap;overflow:hidden}
+  .scall .tx b{font-size:9px;font-weight:600;display:block;color:#fff}
+  .scall i{width:13px;height:13px;border-radius:50%;flex:none}
+  .scall i.no{background:#E84545}.scall i.yes{background:#2DB55D}
+  .car .scall,.tv .scall{left:auto;right:10px;top:10px;width:170px}
+  .sperm{position:absolute;left:6px;right:6px;bottom:14px;z-index:2;margin:0 auto;max-width:150px;padding:7px 8px 6px;border-radius:12px;background:#fff;color:#1a1a1a;box-shadow:0 6px 18px rgba(0,0,0,.3);font-size:8px}
+  .sperm b{display:block;font-size:8px;font-weight:600;margin-bottom:5px;line-height:1.35}
+  .sperm .ops{display:flex;gap:4px}
+  .sperm .ops span{flex:1;height:16px;border-radius:8px;display:grid;place-items:center;background:#f0f1f3;color:#3574F0;font-weight:600;white-space:nowrap}
+  .sperm .ops span.hit{background:#3574F0;color:#fff;box-shadow:0 0 0 2px rgba(53,116,240,.3)}
+  .srec{position:absolute;inset:0;z-index:3;background:rgba(14,15,18,.8);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;text-align:center;font-size:8px}
+  .srec b{font-size:9px}
+  .srec code{font-family:var(--font-code);font-size:7px;color:#b8bcc4}
+  .schip{position:absolute;left:50%;bottom:30px;transform:translateX(-50%);z-index:2;display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:9px;background:#D33A48;color:#fff;font-size:8px;white-space:nowrap}
+  .schip.ok{background:#1E8E4E}
+  .schip svg{width:9px;height:9px}
+  .sblank{position:absolute;left:0;right:0;top:14px;bottom:0;z-index:1;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;color:#8a8f99;font-size:8px}
+  .dk .sblank{background:#15171c}
+  .sblank .eic{width:24px;height:24px;border-radius:50%;border:1.5px solid #c7cbd3;display:grid;place-items:center}
+  .sblank .eic svg{width:12px;height:12px}
+  .sblank .rt{padding:2px 12px;border-radius:9px;background:#3574F0;color:#fff;font-weight:600}
+  .wmsg{position:absolute;inset:0;z-index:2;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(14,15,18,.93);color:#fff;font-size:7px;text-align:center;gap:2px;padding:10px}
+  .wmsg b{font-size:9px}
+  .wmsg .yes{width:14px;height:14px;border-radius:50%;background:#2DB55D;margin-top:3px}
+  .snear{position:absolute;right:8px;bottom:36px;width:38%;max-width:132px;z-index:2;border-radius:8px;background:#f6f7f9;border:1px solid #e3e5ea;padding:5px 6px;font-size:8px;color:#1a1a1a;box-shadow:0 3px 10px rgba(0,0,0,.12)}
+  .dk .snear{background:#1d2026;border-color:#33373f;color:#e6e6e6}
+  .snear b{display:block;font-size:8px}
+  .snear .emp{height:22px;border:1px dashed #c7cbd3;border-radius:5px;margin-top:3px;display:grid;place-items:center;color:#a0a5b0}
+  .snear .emp i{width:9px;height:9px;border-radius:50%;border:1.5px solid #a0a5b0;border-right-color:transparent;animation:spin 1s linear infinite}
+  .snear .it{margin-top:3px;color:#6d727c}
+  .snear .go{color:#3574F0;font-weight:600}
+  .dm-device.sc-broken .detail .pic,.dm-device.sc-broken .hv-fs .media,.dm-device.sc-broken .nv-pic{background:transparent!important;border:1px dashed #c7cbd3;filter:none}
+  .dm-device.sc-broken .hv-fs .media > *{visibility:hidden}
+  .dm-device.sc-alt .detail .pic,.dm-device.sc-alt .hv-fs .media,.dm-device.sc-alt .nv-pic{background:#eceef2!important;filter:none}
+  .dm-device.sc-alt .detail .pic::after{content:"占位图";position:absolute;inset:0;display:grid;place-items:center;font-size:8px;color:#9aa0ab}
+  .dm-device.sc-darkbad .detail,.dm-device.sc-darkbad #tab-right{background:#fff;color:#1a1a1a}
 
   /* 手势轨迹 / 屏内反馈 */
   .gfx{position:absolute;left:0;top:0;z-index:9;pointer-events:none;overflow:visible}
@@ -179,13 +363,13 @@
   @keyframes flash{from{opacity:.95}to{opacity:0}}
   .shot{position:absolute;inset:8px;border:2px solid #fff;border-radius:8px;z-index:11;pointer-events:none;background:linear-gradient(160deg,#e9eefb,#c6d3f3);box-shadow:0 4px 14px rgba(0,0,0,.35);transform-origin:12px calc(100% - 12px);animation:shotfly .55s ease-in forwards}
   @keyframes shotfly{from{transform:scale(1)}to{transform:scale(.24)}}
-  .hand{position:absolute;left:50%;top:44%;width:46px;height:46px;margin:-23px 0 0 -23px;border-radius:50%;background:rgba(53,116,240,.18);border:1.5px solid #3574F0;display:grid;place-items:center;z-index:10;pointer-events:none;animation:grab .7s ease-in-out forwards}
-  .hand svg{width:26px;height:26px;color:#3574F0}
+  .hand{position:absolute;left:50%;top:44%;width:40px;height:40px;margin:-20px 0 0 -20px;border-radius:50%;background:rgba(53,116,240,.18);border:1.5px solid #3574F0;display:grid;place-items:center;z-index:10;pointer-events:none;animation:grab .7s ease-in-out forwards}
+  .hand svg{width:22px;height:22px;color:#3574F0}
   @keyframes grab{0%{opacity:0;transform:translateY(-18px) scale(1.25)}35%{opacity:1;transform:none}70%{transform:scale(.78)}100%{opacity:0;transform:scale(.7)}}
   .ripple{position:absolute;left:50%;top:44%;width:20px;height:20px;margin:-10px 0 0 -10px;border-radius:50%;border:2px solid #3574F0;z-index:9;pointer-events:none;animation:ripple .7s ease-out forwards}
   @keyframes ripple{from{opacity:.9;transform:scale(1)}to{opacity:0;transform:scale(7)}}
-  .stoast{position:absolute;left:50%;bottom:34px;transform:translateX(-50%);max-width:88%;padding:4px 10px;border-radius:10px;background:rgba(20,22,26,.82);color:#fff;font-size:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;z-index:12;pointer-events:none;animation:stoast 1.9s ease forwards}
-  .dm-device.watch .stoast{bottom:18px;font-size:8px;padding:2px 7px}
+  .stoast{position:absolute;left:50%;bottom:30px;transform:translateX(-50%);max-width:88%;padding:4px 10px;border-radius:10px;background:rgba(20,22,26,.82);color:#fff;font-size:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;z-index:12;pointer-events:none;animation:stoast 1.9s ease forwards}
+  .dm-device.watch .stoast{bottom:16px;font-size:7px;padding:2px 6px}
   .dm-device.car .stoast,.dm-device.tv .stoast{bottom:12px}
   @keyframes stoast{0%{opacity:0;transform:translate(-50%,6px)}12%,80%{opacity:1;transform:translate(-50%,0)}100%{opacity:0}}
 
@@ -200,14 +384,85 @@
   .fly b,.ghost b{font-weight:600}
   .ghost{position:fixed;z-index:1000;pointer-events:none;display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:8px;background:#fff;color:#1a1a1a;box-shadow:0 10px 26px rgba(0,0,0,.4);font:11px/1.4 var(--font-ui);transform:translate(-30%,-50%) rotate(-3deg);white-space:nowrap}
   .ghost small{display:block;font-size:9px;color:#3574F0}
-  @media (prefers-reduced-motion:reduce){.fly{transition:none}.flow-svg path{animation:none}}
+  @media (prefers-reduced-motion:reduce){.fly{transition:none}.flow-svg path,.sk,.lint.cur{animation:none}}
 
-  /* 代码：第 12 行可点 */
-  .code .ln[data-ln="12"]{cursor:pointer}
-  .code .ln[data-ln="12"]:hover .t{text-decoration:underline dotted var(--ui-fg-info)}
+  /* 代码：第 12 行可点；问题行 */
+  #code .ln[data-ln="12"]{cursor:pointer}
+  #code .ln[data-ln="12"]:hover .t{text-decoration:underline dotted var(--ui-fg-info)}
+  .code .ln.hl-bad{background:color-mix(in srgb,var(--ui-error) 15%,transparent)}
+  .code .ln.hl-bad .g,.code .ln.hl-ok .g{background:transparent}
+
+  /* ============ 多端问题面板（编辑器下半） ============ */
+  .ip{flex:0 0 64%;min-height:0;display:flex;flex-direction:column;border-top:1px solid var(--ui-border);background:var(--ui-bg);color:var(--ui-fg)}
+  .ip-hd{height:32px;flex:none;display:flex;align-items:center;gap:8px;padding:0 6px 0 12px;border-bottom:1px solid var(--ui-border);font-size:var(--fs-sm);line-height:var(--lh-sm);white-space:nowrap;overflow:hidden}
+  .ip-hd > svg{width:14px;height:14px;color:var(--ui-icon);flex:none}
+  .ip-hd b{font-weight:600}
+  .ip-hd .grow{flex:1}
+  .ip-bd{flex:1;min-height:0;overflow:auto;position:relative;padding:4px 0 10px;font-size:var(--fs-sm);line-height:var(--lh-sm)}
+  .ip-ft{flex:none;display:flex;align-items:center;justify-content:flex-end;gap:8px;padding:7px 12px 7px 110px;border-top:1px solid var(--ui-border);font-size:var(--fs-sm)}
+  .ip-ft .grow{display:none}
+  .ip-ft .btn,.ic-a .btn{white-space:nowrap;flex:none}
+  .ip-ft .dm-muted{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+  .ip-sec{display:flex;align-items:center;gap:6px;padding:6px 12px 3px;color:var(--ui-fg-info);font-size:11px;white-space:nowrap}
+  .ip-sec .grow{flex:1}
+  .ip-sec code{font-family:var(--font-code);font-size:10px;overflow:hidden;text-overflow:ellipsis}
+  .ipd{display:flex;align-items:center;gap:7px;height:26px;padding:0 12px;white-space:nowrap}
+  .ipd:hover{background:var(--ui-hover-list)}
+  .ipd.sel{background:var(--ui-selection)}
+  .ipd .dn{font-weight:600;flex:none}
+  .ipd .nt{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;color:var(--ui-fg-info)}
+  .ipd.bad .nt{color:var(--ui-fg)}
+  .ipd .loc{font-family:var(--font-code);font-size:11px;color:var(--ui-link);flex:none}
+  .icard{margin:6px 12px 2px;border:1px solid var(--ui-border);border-radius:var(--arc);background:var(--ui-editor-bg);overflow:hidden}
+  .icard.bad{border-color:color-mix(in srgb,var(--ui-error) 55%,var(--ui-border))}
+  .icard.done{border-color:color-mix(in srgb,var(--ui-success) 55%,var(--ui-border))}
+  .ic-h{display:flex;align-items:flex-start;gap:6px;padding:8px 10px 4px;font-size:var(--fs-para);line-height:var(--lh-para);font-weight:600}
+  .ic-h svg{width:14px;height:14px;flex:none;margin-top:2px;color:var(--ui-error)}
+  .icard.done .ic-h svg{color:var(--ui-success)}
+  .ic-r{display:grid;grid-template-columns:28px minmax(0,1fr);gap:8px;padding:2px 10px}
+  .ic-r .ic-k{color:var(--ui-fg-info)}
+  .ic-r code{font-family:var(--font-code);font-size:11px}
+  .ic-code{margin:6px 10px 2px;border:1px solid var(--ui-border);border-radius:4px;overflow:hidden;font-family:var(--font-code);font-size:11px;line-height:17px}
+  .ic-f{display:flex;align-items:center;gap:6px;padding:2px 8px;background:var(--ui-bg);color:var(--ui-fg-info);border-bottom:1px solid var(--ui-border)}
+  .ic-f svg{width:12px;height:12px}
+  .dl{display:flex;padding:1px 0}
+  .dl .lnn{width:26px;flex:none;text-align:right;color:var(--ed-linenum);padding-right:4px}
+  .dl .sg{width:12px;flex:none;text-align:center;color:var(--ui-fg-info)}
+  .dl code{flex:1;min-width:0;font:inherit;color:var(--ed-text);white-space:pre-wrap;word-break:break-all;padding-right:6px}
+  .dl.del{background:color-mix(in srgb,var(--ui-error) 14%,transparent)}
+  .dl.add{background:var(--diff-add)}
+  .ic-a{display:flex;align-items:center;gap:6px;padding:7px 10px 8px}
+  .ic-a .grow{flex:1}
+  .ipi{display:flex;align-items:center;gap:8px;padding:5px 12px}
+  .ipi:hover{background:var(--ui-hover-list)}
+  .ipi.sel{background:var(--ui-selection)}
+  .ipi .no{width:18px;height:18px;border-radius:50%;display:grid;place-items:center;background:var(--ui-error);color:#fff;font-size:11px;font-weight:600;flex:none}
+  .ipi.done .no{background:var(--ui-success)}
+  .ipi .it{flex:1;min-width:0;display:flex;flex-direction:column}
+  .ipi .it b{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .ipi .it span{color:var(--ui-fg-info);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .ipi .ist{font-size:11px;flex:none}
+  .forms{display:flex;flex-wrap:wrap;gap:4px;padding:2px 12px 6px}
+  .fchip{display:inline-flex;align-items:center;gap:4px;height:20px;padding:0 6px;border-radius:4px;border:1px solid var(--ui-border);font-size:11px;white-space:nowrap;background:var(--ui-editor-bg)}
+  .fchip em{font-style:normal;font-family:var(--font-code);font-size:10px;color:var(--ui-fg-info)}
+  .fchip svg{width:11px;height:11px}
+  .fchip.ok svg{color:var(--ui-success)}
+  .fchip.bad{border-color:color-mix(in srgb,var(--ui-error) 60%,transparent)}
+  .fchip.bad svg{color:var(--ui-error)}
+  .fchip.wait{opacity:.45}
+  .fchip.run{border-color:var(--ui-accent);box-shadow:0 0 0 1px var(--ui-accent)}
+  .fchip.run .spin{width:9px;height:9px;border-width:1.5px}
 </style>
 </head>
 <body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <symbol id="i-loc" viewBox="0 0 16 16"><path d="M8 14.5s4.5-4.2 4.5-7.8a4.5 4.5 0 0 0-9 0c0 3.6 4.5 7.8 4.5 7.8z" stroke="currentColor" stroke-linejoin="round" fill="none"/><circle cx="8" cy="6.6" r="1.6" stroke="currentColor" fill="none"/></symbol>
+  <symbol id="i-mem" viewBox="0 0 16 16"><rect x="3.5" y="3.5" width="9" height="9" rx="1.2" stroke="currentColor" fill="none"/><rect x="6" y="6" width="4" height="4" rx=".5" fill="currentColor"/><path d="M6 1.5v2M10 1.5v2M6 12.5v2M10 12.5v2M1.5 6h2M1.5 10h2M12.5 6h2M12.5 10h2" stroke="currentColor" stroke-linecap="round"/></symbol>
+  <symbol id="i-call" viewBox="0 0 16 16"><path d="M5.5 2.5l1.6 3-1.3 1.2a7.5 7.5 0 0 0 3.5 3.5l1.2-1.3 3 1.6-.6 2.2c-.2.6-.8 1-1.4.9C6.7 13 3 9.3 2.4 4.5c-.1-.6.3-1.2.9-1.4z" stroke="currentColor" stroke-linejoin="round" fill="none"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 16 16"><path d="M8 1.5l5.5 2v4c0 3.3-2.3 5.8-5.5 7-3.2-1.2-5.5-3.7-5.5-7v-4z" stroke="currentColor" stroke-linejoin="round" fill="none"/><path d="M5.8 5.8l4.4 4.4M10.2 5.8l-4.4 4.4" stroke="currentColor" stroke-linecap="round"/></symbol>
+  <symbol id="i-font" viewBox="0 0 16 16"><path d="M1.5 13l3.5-9h1l3.5 9M3 9.5h5" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M10.5 13l2-5h.6l2 5M11.1 11.3h3" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
+  <symbol id="i-yiduo" viewBox="0 0 16 16"><rect x="1.5" y="4" width="4" height="8" rx="1" stroke="currentColor" fill="none"/><rect x="7" y="2.5" width="7.5" height="6" rx="1" stroke="currentColor" fill="none"/><path d="M8 11.5l1.8 1.8 3.7-3.7" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
+</defs></svg>
 <div class="ide" id="ide" data-ide-theme="dark" data-left="none" data-right="none" data-bottom="none" role="application" aria-label="DevEco Studio">
   <div class="body">
     <div class="tw tw-left">
@@ -225,10 +480,19 @@
     <div class="editor">
       <div class="tabs" id="tabs"><span class="grow"></span><span class="tab-tools"><button class="abtn" title="Split Right"><svg class="i"><use href="#i-split"/></svg></button><button class="abtn" title="Editor Options"><svg class="i"><use href="#i-moreV"/></svg></button></span></div>
       <div class="dm-split mdc">
-        <div class="code-wrap"><div class="code" id="code"></div></div>
+        <div class="lcol">
+          <div class="code-wrap" id="code-wrap"><div class="code" id="code" data-for-file="ListPage.ets"></div><div class="code" id="code-card" data-for-file="ItemCard.ets" hidden></div></div>
+          <div class="ip" id="ip" hidden>
+            <div class="ip-hd"><svg id="ip-ico"><use href="#i-scene"/></svg><b id="ip-title">多端问题</b><span id="ip-sum"></span><span class="grow"></span>
+              <button class="abtn" id="ip-close" title="收起并复原"><svg class="i"><use href="#i-closeS"/></svg></button></div>
+            <div class="ip-bd" id="ip-bd"></div>
+            <div class="ip-ft" id="ip-ft"></div>
+          </div>
+        </div>
         <div class="prev">
           <div class="prev-tools">
-            <b><svg class="i"><use href="#i-layout"/></svg>Multi-device · <span id="cnt">5</span> 块屏</b>
+            <b><svg class="i"><use href="#i-layout"/></svg>Multi-device · <span id="cnt">6</span> 块屏</b>
+            <button class="xb pri" id="btn-check" title="按 sm / md / lg 断点扫一遍所有设备形态"><svg><use href="#i-yiduo"/></svg>一多检查</button>
             <span class="grow"></span>
             <span class="dm-pill ok" id="sync-pill"><svg><use href="#i-sync"/></svg>改一次一起刷 · 上次 0.8 s</span>
             <span class="sel-lbl" id="sel-lbl" hidden><svg><use href="#i-checkS"/></svg><span id="sel-txt"></span></span>
@@ -259,8 +523,25 @@
             <span class="grow"></span>
             <span class="dm-pill muted" id="flow-pill">也可直接拖手机上的商品卡</span>
           </div>
+          <div class="xbar" id="sc-bar">
+            <span class="xl"><svg><use href="#i-scene"/></svg>场景</span>
+            <span class="xdev"><svg><use href="#i-layout"/></svg>全部 <span id="sc-n">6</span> 台同时</span>
+            <span class="xsep"></span>
+            <span class="xl"><svg><use href="#i-wifi"/></svg>弱网</span>
+            <span class="xseg"><button class="xb" data-sc="2g">2G</button><button class="xb" data-sc="loss">高丢包</button><button class="xb" data-sc="off">断网</button></span>
+            <span class="xl"><svg><use href="#i-loc"/></svg>定位</span>
+            <span class="xseg"><button class="xb" data-sc="city">乌鲁木齐</button><button class="xb" data-sc="track">移动轨迹</button></span>
+            <button class="xb" data-sc="mem"><svg><use href="#i-mem"/></svg>内存告警</button>
+            <button class="xb" data-sc="call"><svg><use href="#i-call"/></svg>来电打断</button>
+            <button class="xb" data-sc="perm"><svg><use href="#i-shield"/></svg>权限被拒</button>
+            <button class="xb" data-sc="font"><svg><use href="#i-font"/></svg>字号 1.75×</button>
+            <button class="xb" data-sc="dark"><svg><use href="#i-moon"/></svg>深色</button>
+            <span class="grow"></span>
+            <button class="xb" id="sc-reset" disabled><svg><use href="#i-undo"/></svg>复原</button>
+          </div>
           <div class="dm-canvas" id="canvas">
             <div class="stage" id="stage">
+             <div class="drow" id="row-a">
 
               <div class="dm-device phone" id="d-phone" data-kind="phone" data-name="Mate 70 Pro · 本机">
                 <span class="tag">Mate 70 Pro · 本机</span>
@@ -268,16 +549,17 @@
                   <div class="dm-progress indet sync" hidden><i></i></div>
                   <div class="pa">
                     <div class="mapp" id="p-list">
-                      <div class="st"><span>9:41</span><span>5G ▮▮▮</span></div>
+                      <div class="st" data-net="5G"></div>
                       <div class="hd">商品</div>
                       <div class="search" data-search>搜索</div>
-                      <div class="row" data-i="0"><span class="th"></span><div class="tx"><b>无线降噪耳机 Pro</b><span>¥899 · 已售 1.2 万</span></div></div>
-                      <div class="row" data-i="1"><span class="th"></span><div class="tx"><b>智能手表 5 · 46mm</b><span>¥2199 · 已售 8600</span></div></div>
-                      <div class="row" data-i="2"><span class="th"></span><div class="tx"><b>便携充电宝 20000</b><span>¥199 · 已售 3.4 万</span></div></div>
-                      <div class="row" data-i="3"><span class="th"></span><div class="tx"><b>折叠键盘 · 蓝牙</b><span>¥329 · 已售 5200</span></div></div>
-                      <div class="row" data-i="4"><span class="th"></span><div class="tx"><b>车载支架 · 磁吸</b><span>¥69 · 已售 2.1 万</span></div></div>
-                      <div class="fill"></div>
-                      <div class="nav"><b>首页</b><span>分类</span><span>购物车</span><span>我的</span></div>
+                      <div class="lst">
+                        <div class="row" data-i="0"><span class="th"></span><div class="tx"><b>无线降噪耳机 Pro</b><span>¥899 · 已售 1.2 万</span></div></div>
+                        <div class="row" data-i="1"><span class="th"></span><div class="tx"><b>智能手表 5 · 46mm</b><span>¥2199 · 已售 8600</span></div></div>
+                        <div class="row" data-i="2"><span class="th"></span><div class="tx"><b>便携充电宝 20000</b><span>¥199 · 已售 3.4 万</span></div></div>
+                        <div class="row" data-i="3"><span class="th"></span><div class="tx"><b>折叠键盘 · 蓝牙</b><span>¥329 · 已售 5200</span></div></div>
+                        <div class="row" data-i="4"><span class="th"></span><div class="tx"><b>车载支架 · 磁吸</b><span>¥69 · 已售 2.1 万</span></div></div>
+                      </div>
+                      <div class="nav" data-l="2" data-lt="② 底部 Tab"><b>首页</b><span>分类</span><span>购物车</span><span>我的</span></div>
                     </div>
                     <div class="mapp pg-detail" id="p-detail" hidden></div>
                   </div>
@@ -289,8 +571,9 @@
                     </div>
                   </div>
                   <div class="fw"><div class="fh"><i></i></div><div class="res">1,098</div><div class="keys"><span>7</span><span>8</span><span>9</span><span class="op">÷</span><span>4</span><span>5</span><span>6</span><span class="op">×</span><span>1</span><span>2</span><span>3</span><span class="op">+</span></div></div>
+                  <i class="gbar"></i>
                 </div>
-                <span class="cap">1080×2340 · API 20</span>
+                <span class="cap"></span>
               </div>
 
               <div class="dm-device fold" id="d-fold" data-kind="fold" data-pose="open" data-name="Mate X6 · 展开">
@@ -298,77 +581,137 @@
                 <div class="scr">
                   <div class="dm-progress indet sync" hidden><i></i></div>
                   <div class="mapp v v-open">
-                    <div class="st"><span>9:41</span><span>5G ▮▮▮</span></div>
-                    <div class="cols">
-                      <div class="col">
-                        <div class="hd">商品</div>
-                        <div class="search" data-search>搜索</div>
-                        <div class="row" data-i="0"><span class="th"></span><div class="tx"><b>无线降噪耳机 Pro</b><span>¥899</span></div></div>
-                        <div class="row" data-i="1"><span class="th"></span><div class="tx"><b>智能手表 5</b><span>¥2199</span></div></div>
-                        <div class="row" data-i="2"><span class="th"></span><div class="tx"><b>便携充电宝</b><span>¥199</span></div></div>
-                        <div class="row" data-i="3"><span class="th"></span><div class="tx"><b>折叠键盘</b><span>¥329</span></div></div>
-                      </div>
-                      <div class="col">
-                        <div class="detail" id="fold-detail"></div>
+                    <div class="st" data-net="5G"></div>
+                    <div class="xbody">
+                      <div class="side"><b>首页</b><span>分类</span><span>购物车</span><span>我的</span></div>
+                      <div class="cols">
+                        <div class="col">
+                          <div class="hd">商品</div>
+                          <div class="search" data-search>搜索</div>
+                          <div class="lst">
+                            <div class="row" data-i="0"><span class="th"></span><div class="tx"><b>无线降噪耳机 Pro</b><span>¥899</span></div></div>
+                            <div class="row" data-i="1"><span class="th"></span><div class="tx"><b>智能手表 5</b><span>¥2199</span></div></div>
+                            <div class="row" data-i="2"><span class="th"></span><div class="tx"><b>便携充电宝</b><span>¥199</span></div></div>
+                            <div class="row" data-i="3"><span class="th"></span><div class="tx"><b>折叠键盘</b><span>¥329</span></div></div>
+                          </div>
+                        </div>
+                        <div class="col">
+                          <div class="detail" id="fold-detail"></div>
+                        </div>
                       </div>
                     </div>
+                    <div class="nav" data-l="2" data-lt="② 底部 Tab"><b>首页</b><span>分类</span><span>购物车</span><span>我的</span></div>
                   </div>
                   <div class="mapp v v-half">
-                    <div class="up">
-                      <div class="st"><span>9:41</span><span>5G ▮▮▮</span></div>
-                      <div class="media" id="fold-media"></div>
+                    <div class="hv-fs">
+                      <div class="up">
+                        <div class="st" data-net="5G"></div>
+                        <div class="media" id="fold-media"></div>
+                      </div>
+                      <div class="lo">
+                        <span class="lbl">悬停操作区</span>
+                        <div class="chips"><span class="on">曜石黑</span><span>冰霜银</span><span>× 1</span></div>
+                        <div class="acts"><div>加入购物车</div><div class="p">立即购买</div></div>
+                      </div>
                     </div>
-                    <div class="lo">
-                      <span class="lbl">悬停操作区</span>
-                      <div class="chips"><span class="on">曜石黑</span><span>冰霜银</span><span>× 1</span></div>
-                      <div class="acts"><div>加入购物车</div><div class="p">立即购买</div></div>
+                    <div class="hv-nv">
+                      <div class="st" data-net="5G"></div>
+                      <div class="nv-pic" id="fold-nvpic"></div>
+                      <div class="nv-tx" id="fold-nvtx"></div>
+                      <div class="acts" data-l="3" data-lt="③ 按钮压折痕"><div>加入购物车</div><div class="pri">立即购买</div></div>
+                      <div class="nv-desc" id="fold-nvdesc"></div>
                     </div>
                   </div>
                   <div class="mapp v v-closed">
-                    <div class="st"><span>9:41</span><span>5G</span></div>
+                    <div class="st" data-net="5G"></div>
                     <div class="hd">商品</div>
                     <div class="search" data-search>搜索</div>
-                    <div class="row" data-i="0"><span class="th"></span><div class="tx"><b>无线降噪耳机 Pro</b><span>¥899</span></div></div>
-                    <div class="row" data-i="1"><span class="th"></span><div class="tx"><b>智能手表 5</b><span>¥2199</span></div></div>
-                    <div class="row" data-i="2"><span class="th"></span><div class="tx"><b>便携充电宝</b><span>¥199</span></div></div>
-                    <div class="row" data-i="3"><span class="th"></span><div class="tx"><b>折叠键盘</b><span>¥329</span></div></div>
-                    <div class="fill"></div>
+                    <div class="lst">
+                      <div class="row" data-i="0"><span class="th"></span><div class="tx"><b>无线降噪耳机 Pro</b><span>¥899</span></div></div>
+                      <div class="row" data-i="1"><span class="th"></span><div class="tx"><b>智能手表 5</b><span>¥2199</span></div></div>
+                      <div class="row" data-i="2"><span class="th"></span><div class="tx"><b>便携充电宝</b><span>¥199</span></div></div>
+                      <div class="row" data-i="3"><span class="th"></span><div class="tx"><b>折叠键盘</b><span>¥329</span></div></div>
+                      <div class="row" data-i="4"><span class="th"></span><div class="tx"><b>车载支架</b><span>¥69</span></div></div>
+                    </div>
+                    <div class="nav" data-l="2" data-lt="② 底部 Tab"><b>首页</b><span>分类</span><span>购物车</span><span>我的</span></div>
                     <div class="mapp pg-detail" id="fold-cd" hidden></div>
                   </div>
+                  <i class="gbar"></i>
                 </div>
-                <span class="cap">2200×2480 · API 20</span>
+                <span class="cap"></span>
               </div>
 
-              <div class="dm-device tablet" id="d-tab" data-kind="tablet" data-name="MatePad Pro · 远端">
-                <span class="tag remote">MatePad Pro · 远端</span>
+              <div class="dm-device xt" id="d-xt" data-kind="xt" data-pose="3" data-name="Mate XT · 三屏">
+                <span class="tag remote">Mate XT · 三屏 · 远端</span>
                 <div class="scr">
                   <div class="dm-progress indet sync" hidden><i></i></div>
-                  <div class="mapp">
-                    <div class="st"><span>9:41</span><span>WLAN</span></div>
-                    <div class="cols">
-                      <div class="col l">
+                  <div class="mapp xapp">
+                    <div class="st" data-net="5G"></div>
+                    <div class="xbody">
+                      <div class="side"><b>首页</b><span>分类</span><span>购物车</span><span>我的</span></div>
+                      <div class="main">
                         <div class="hd">商品</div>
                         <div class="search" data-search>搜索</div>
-                        <div class="row" data-i="0"><span class="th"></span><div class="tx"><b>无线降噪耳机 Pro</b><span>¥899</span></div></div>
-                        <div class="row" data-i="1"><span class="th"></span><div class="tx"><b>智能手表 5</b><span>¥2199</span></div></div>
-                        <div class="row" data-i="2"><span class="th"></span><div class="tx"><b>便携充电宝</b><span>¥199</span></div></div>
+                        <div class="lst">
+                          <div class="row" data-i="0"><span class="th"></span><div class="tx"><b>无线降噪耳机 Pro</b><span>¥899 · 已售 1.2 万</span></div></div>
+                          <div class="row" data-i="1"><span class="th"></span><div class="tx"><b>智能手表 5</b><span>¥2199 · 已售 8600</span></div></div>
+                          <div class="row" data-i="2"><span class="th"></span><div class="tx"><b>便携充电宝</b><span>¥199 · 已售 3.4 万</span></div></div>
+                          <div class="row" data-i="3"><span class="th"></span><div class="tx"><b>折叠键盘</b><span>¥329 · 已售 5200</span></div></div>
+                          <div class="row" data-i="4"><span class="th"></span><div class="tx"><b>车载支架</b><span>¥69 · 已售 2.1 万</span></div></div>
+                        </div>
                       </div>
-                      <div class="col" id="tab-right"><div class="ph">从手机拖商品卡到这里<br>或点「流转到平板」</div></div>
+                      <div class="xdet"><div class="detail" id="xt-detail"></div></div>
+                      <div class="blank" data-l="1" data-lt="① 右半空白"></div>
                     </div>
+                    <div class="nav" data-l="2" data-lt="② 底部 Tab"><b>首页</b><span>分类</span><span>购物车</span><span>我的</span></div>
                   </div>
+                  <i class="gbar"></i>
                 </div>
-                <span class="cap">2800×1840 · API 20</span>
+                <span class="cap"></span>
               </div>
 
               <div class="dm-device watch" id="d-watch" data-kind="watch" data-name="WATCH 5 · 远端">
                 <span class="tag remote">WATCH 5 · 远端</span>
-                <div class="scr">
+                <div class="scr" data-l="4" data-lt="④ 圆屏裁字">
                   <div class="dm-progress indet sync" hidden><i></i></div>
                   <div class="mapp">
                     <div class="ring"><div><b>3</b>条新消息<br><span class="ws" data-search>搜索</span></div></div>
+                    <div class="wnv"><div class="wt">消息 · 3</div><div class="wr">降噪耳机 Pro 已发货</div><div class="wr">智能手表 5 降价 ¥200</div><div class="wr">充电宝 20000 到货提醒</div></div>
                   </div>
                 </div>
-                <span class="cap">466×466 · API 20</span>
+                <span class="cap"></span>
+              </div>
+             </div>
+
+             <div class="drow" id="row-b">
+              <div class="dm-device tablet" id="d-tab" data-kind="tablet" data-name="MatePad Pro · 远端">
+                <span class="tag remote">MatePad Pro 13.2 · 远端</span>
+                <div class="scr">
+                  <div class="dm-progress indet sync" hidden><i></i></div>
+                  <div class="mapp">
+                    <div class="st" data-net="WLAN"></div>
+                    <div class="xbody">
+                      <div class="side"><b>首页</b><span>分类</span><span>购物车</span><span>我的</span></div>
+                      <div class="cols">
+                        <div class="col l">
+                          <div class="hd">商品</div>
+                          <div class="search" data-search>搜索</div>
+                          <div class="lst">
+                            <div class="row" data-i="0"><span class="th"></span><div class="tx"><b>无线降噪耳机 Pro</b><span>¥899</span></div></div>
+                            <div class="row" data-i="1"><span class="th"></span><div class="tx"><b>智能手表 5</b><span>¥2199</span></div></div>
+                            <div class="row" data-i="2"><span class="th"></span><div class="tx"><b>便携充电宝</b><span>¥199</span></div></div>
+                            <div class="row" data-i="3"><span class="th"></span><div class="tx"><b>折叠键盘</b><span>¥329</span></div></div>
+                            <div class="row" data-i="4"><span class="th"></span><div class="tx"><b>车载支架</b><span>¥69</span></div></div>
+                          </div>
+                        </div>
+                        <div class="col" id="tab-right"><div class="ph">从手机拖商品卡到这里<br>或点「流转到平板」</div></div>
+                      </div>
+                    </div>
+                    <div class="nav" data-l="2" data-lt="② 底部 Tab"><b>首页</b><span>分类</span><span>购物车</span><span>我的</span></div>
+                  </div>
+                  <i class="gbar"></i>
+                </div>
+                <span class="cap"></span>
               </div>
 
               <div class="dm-device car" id="d-car" data-kind="car" data-name="HiCar · 远端">
@@ -384,8 +727,9 @@
                     </div>
                   </div>
                 </div>
-                <span class="cap">1920×720 · API 20</span>
+                <span class="cap"></span>
               </div>
+             </div>
 
             </div>
           </div>
@@ -398,45 +742,245 @@
 
 <script>
 (function(){
-  var $=DemoFrame.$, $$=DemoFrame.$$;
+  var $=DemoFrame.$, $$=DemoFrame.$$, esc=DemoFrame.esc, FILES=DemoFrame.FILES;
+
+  /* ================= ArkTS 迷你高亮 + 示例工程文件 ================= */
+  var KW='import|from|export|struct|class|private|static|return|const|let|await|async|try|catch|if|else|new|this|true|false|null|number|string|boolean|void|as';
+  var RE=new RegExp("(\\/\\/.*$)|('(?:[^'\\\\]|\\\\.)*'|`[^`]*`)|(@\\w+)|\\b("+KW+")\\b|\\b(\\d+(?:\\.\\d+)?)\\b|([A-Za-z_$][\\w$]*)(?=\\s*\\()|\\b([A-Z]\\w*)\\b","g");
+  function hl(src){
+    var out='',last=0,m;RE.lastIndex=0;
+    while((m=RE.exec(src))){
+      out+=esc(src.slice(last,m.index));var t=esc(m[0]);
+      out+=m[1]?'<span class="c">'+t+'</span>':m[2]?'<span class="s">'+t+'</span>':m[3]?'<span class="m">'+t+'</span>':m[4]?'<span class="k">'+t+'</span>':m[5]?'<span class="n">'+t+'</span>':m[6]?'<span class="f">'+t+'</span>':'<span class="ty">'+t+'</span>';
+      last=m.index+m[0].length;if(!m[0].length)RE.lastIndex++;
+    }
+    return out+esc(src.slice(last));
+  }
+  var RAW={};
+  function defFile(name,path,crumbs,src,folds){
+    RAW[name]={};
+    FILES[name]={path:path,crumbs:crumbs,lines:src.map(function(l,i){RAW[name][i+1]=l;return (folds&&folds.indexOf(i+1)>=0)?[hl(l),{fold:1}]:[hl(l)]})};
+  }
+  /* ListPage.ets：沿用原文件（第 12 行不动），补上断点、aboutToAppear 与请求 */
+  (function(){
+    var LP=FILES['ListPage.ets'].lines;RAW['ListPage.ets']={};
+    var s9="  @StorageProp('currentBreakpoint') bp: string = 'sm';";LP[8]=[hl(s9)];
+    var add=['','  aboutToAppear() {',"    this.keyword = '';",'    this.source.load(this.bp);','  }','',
+      '  async fetchPage(page: number): Promise<void> {','    try {',
+      '      const resp = await this.req.request(`${API}/items?page=${page}&size=${PAGE_SIZE[this.bp]}`);',
+      '      this.source.append(JSON.parse(resp.result as string) as Item[]);','    } catch (e) {',
+      "      hilog.error(0x0000, 'ListPage', 'fetch failed %{public}s', JSON.stringify(e));",'    }','  }'];
+    LP.splice.apply(LP,[29,0].concat(add.map(function(l,i){return (i===1||i===6)?[hl(l),{fold:1}]:[hl(l)]})));
+    add.forEach(function(l,i){RAW['ListPage.ets'][30+i]=l});
+  })();
+  var P_PAGES=['entry','src','main','ets','pages'];
+  defFile('ItemCard.ets',['entry','src','main','ets','components'],['ItemCard','build'],[
+    '@Component','export struct ItemCard {','  @ObjectLink item: Item;','  @Prop cover: PixelMap;','','  build() {','    Row({ space: 12 }) {',
+    '      Image(this.cover).width(48).height(48).borderRadius(8)','      Column({ space: 4 }) {',
+    '        Text(this.item.name).fontSize(15).maxLines(1).textOverflow({ overflow: TextOverflow.Ellipsis })',
+    "        Text(`¥${this.item.price} · 已售 ${this.item.sold}`).fontSize(12).fontColor($r('sys.color.font_secondary'))",
+    '      }.alignItems(HorizontalAlign.Start).layoutWeight(1)','    }','    .padding(12)',
+    "    .onClick(() => router.pushUrl({ url: 'pages/DetailPage', params: { id: this.item.id } }))",'  }','}'],[2,6,7,9]);
+  defFile('MainPage.ets',P_PAGES,['MainPage','build'],[
+    "import { BreakpointSystem } from '../common/BreakpointSystem';","import { ProductList } from '../components/ProductList';",'',
+    '@Entry','@Component','struct MainPage {',"  @StorageProp('currentBreakpoint') bp: string = 'sm';",'  @State tab: number = 0;',
+    '  private bps: BreakpointSystem = new BreakpointSystem();','','  build() {','    Column() {',
+    '      GridRow({ columns: 12 }) {','        GridCol({ span: 6 }) { ProductList() }','      }','      .layoutWeight(1)',
+    '      Tabs({ barPosition: BarPosition.End, index: this.tab }) {',
+    '        ForEach(TABS, (t: TabItem) => { TabContent() {}.tabBar(this.TabBtn(t)) })','      }','      .barHeight(56)',
+    '    }','  }','','  aboutToAppear() { this.bps.register(); }','  aboutToDisappear() { this.bps.unregister(); }','',
+    '  @Builder TabBtn(t: TabItem) {','    Column() { Image(t.icon).width(24); Text(t.label).fontSize(10) }','  }','}'],[6,11,12]);
+  defFile('DetailPage.ets',P_PAGES,['DetailPage','build'],[
+    "import { media } from '@kit.MediaKit';","import { audio } from '@kit.AudioKit';",'','@Component','export struct DetailPage {',
+    '  @Prop item: Item;','  private player?: media.AVPlayer;','','  build() {','    Column() {',
+    '      Image(this.item.bigCover)',"        .width('100%').aspectRatio(1.2).id('media')",
+    '      Text(this.item.name).fontSize(18).fontWeight(FontWeight.Medium)','      Row({ space: 12 }) {',
+    "        Button('加入购物车').layoutWeight(1)","        Button('立即购买').layoutWeight(1)",'      }','    }',
+    "    .backgroundColor('#FFFFFF')",'  }','','  async aboutToAppear() {','    this.player = await media.createAVPlayer();',
+    '    this.player.url = this.item.videoUrl;','    this.player.play();','  }','}'],[5,9,10,22]);
+  defFile('WatchHome.ets',['wearable','src','main','ets','pages'],['WatchHome','build'],[
+    '@Entry','@Component','struct WatchHome {',"  @StorageLink('msgs') msgs: Msg[] = [];",'','  build() {',
+    '    List({ space: 4 }) {','      ForEach(this.msgs, (m: Msg) => {','        ListItem() { Text(m.title).fontSize(15) }','      })','    }',
+    '    .padding(8)','  }','}'],[3,6,7]);
+  defFile('LocationUtil.ets',['entry','src','main','ets','common'],['LocationUtil','city'],[
+    "import { geoLocationManager } from '@kit.LocationKit';",'','export class LocationUtil {','  static async city(): Promise<string> {',
+    '    const req: geoLocationManager.SingleLocationRequest = {','      locatingPriority: geoLocationManager.LocatingPriority.PRIORITY_LOCATING_SPEED','    };',
+    '    const loc = await geoLocationManager.getCurrentLocation(req);',
+    '    const addr = await geoLocationManager.getAddressesFromLocation({ latitude: loc.latitude, longitude: loc.longitude });',
+    "    return addr[0]?.locality ?? '';",'  }','}'],[3,4]);
+  defFile('NearbyStore.ets',['entry','src','main','ets','components'],['NearbyStore','aboutToAppear'],[
+    "import { abilityAccessCtrl, common } from '@kit.AbilityKit';",'',"const PERM: Permissions[] = ['ohos.permission.APPROXIMATELY_LOCATION'];",'',
+    '@Component','export struct NearbyStore {','  @State stores: Store[] = [];','  private ctx = getContext(this) as common.UIAbilityContext;','',
+    '  async aboutToAppear() {','    const atm = abilityAccessCtrl.createAtManager();','    const r = await atm.requestPermissionsFromUser(this.ctx, PERM);',
+    '    if (r.authResults[0] !== 0) {','      await atm.requestPermissionsFromUser(this.ctx, PERM);','      return;','    }',
+    '    this.stores = await StoreApi.nearby(await LocationUtil.city());','  }','}'],[6,10]);
+
+  /* ================= 问题库：一多布局 ①–④ + 场景问题 ================= */
+  var ISS={
+    L_GRID:{no:'1',lint:1,cls:'fx-grid',file:'MainPage.ets',t:'lg 下列表只占左半，右半空白',where:'Mate XT 三屏 · lg 1061 vp',
+      why:'GridRow 写死 12 列、GridCol 写死 span 6，lg 下列表只占 6/12，右半屏什么都没有。',
+      sug:'GridRow 按断点给列数 sm 4 / md 8 / lg 12，GridCol 在 lg 占满 12 列；列表在 lg 用 lanes(3) 排三列卡片。',
+      fix:{13:"      GridRow({ columns: { sm: 4, md: 8, lg: 12 }, breakpoints: { value: ['320vp', '600vp', '840vp'] } }) {",
+           14:"        GridCol({ span: { sm: 4, md: 8, lg: 12 } }) { ProductList({ lanes: this.bp === 'lg' ? 3 : 1 }) }"},
+      devs:[['d-xt',['3']]]},
+    L_SIDE:{no:'2',lint:1,cls:'fx-side',file:'MainPage.ets',t:'md / lg 仍用底部 Tab，该换侧边栏',where:'Mate X6 展开 md · Mate XT 双屏 / 三屏 · MatePad lg',
+      why:'Tabs 固定 BarPosition.End：宽屏上 4 个 Tab 拉得很散、拇指够不着，还压矮了内容区。',
+      sug:'用 BreakpointSystem 把断点写进 AppStorage；sm 保留底部 Tabs，md / lg 换 SideBarContainer(Embed) 侧边栏。',
+      fix:{17:"      if (this.bp === 'sm') {",18:'        this.BottomTabs()',19:'      } else {',
+           20:"        SideBarContainer(SideBarContainerType.Embed) { this.SideNav(); this.Content() }.sideBarWidth(this.bp === 'lg' ? 200 : 160) }"},
+      devs:[['d-fold',['open']],['d-xt',['2','3']],['d-tab']]},
+    L_FOLD:{no:'3',lint:1,cls:'fx-folder',file:'DetailPage.ets',t:'悬停态按钮压在折痕上',where:'Mate X6 悬停 · md',
+      why:'详情页是一整列 Column，没用 FolderStack：半折时「立即购买」正好落在折痕上，点不准也看不清。',
+      sug:"用 FolderStack({ upperItems: ['media'] })：图片 / 视频上移到上半屏，按钮自动落到下半屏，避开折痕。",
+      fix:{10:"    FolderStack({ upperItems: ['media'] }) {"},devs:[['d-fold',['half']]]},
+    L_ROUND:{no:'4',lint:1,cls:'fx-round',file:'WatchHome.ets',t:'圆屏文字被裁',where:'WATCH 5 · 466×466 圆屏',
+      why:'方屏列表直接搬到圆屏，只留 8 px 边距，每行首尾文字被圆弧切掉。',
+      sug:'内容收进内切正方形（边距 ≈ 68 px，即 466×(1−√½)/2），列表换 ArcList，首尾项随弧缩小。',
+      fix:{7:'    ArcList({ initialIndex: 0 }) {',12:'    .padding(68)'},devs:[['d-watch']]},
+    I_TIMEOUT:{file:'ListPage.ets',t:'http 请求没设超时，lg 一次拉 60 条原图',
+      sug:'request 加 connectTimeout 5 s / readTimeout 8 s，超时给「重试」；lg 首屏也按 20 条分页。',
+      fix:{38:'      const resp = await this.req.request(`${API}/items?page=${page}&size=20`, { connectTimeout: 5000, readTimeout: 8000 });'}},
+    I_OFFLINE:{file:'ListPage.ets',t:'断网只打日志，没有空态',
+      sug:'catch 里按 connection.hasDefaultNetSync() 切到 OFFLINE 空态并给「重试」，联网后自动刷新。',
+      fix:{41:'      this.loadState = connection.hasDefaultNetSync() ? LoadState.RETRY : LoadState.OFFLINE;'}},
+    I_RESTORE:{file:'ListPage.ets',t:'aboutToAppear 没从 AppStorage 恢复状态',
+      sug:'onPageHide 把搜索词和浏览位置写进 AppStorage（配 PersistentStorage），aboutToAppear 读回并 scrollToIndex。',
+      fix:{32:"    this.keyword = AppStorage.get<string>('list.keyword') ?? ''; this.scroller.scrollToIndex(AppStorage.get<number>('list.index') ?? 0);"}},
+    I_ALT:{file:'DetailPage.ets',t:'大图加载失败没占位，也不重试',
+      sug:'Image 加 .alt() 占位图，onError 里退避重试 2 次。',
+      fix:{11:"      Image(this.item.bigCover).alt($r('app.media.cover_placeholder')).onError(() => this.retry())"}},
+    I_LOC:{file:'LocationUtil.ets',t:'定位没设超时，也不降级',
+      sug:'SingleLocationRequest 加 locatingTimeoutMs: 5000；失败时退回 getLastLocation() / 网络定位。',
+      fix:{6:'      locatingPriority: geoLocationManager.LocatingPriority.PRIORITY_LOCATING_SPEED, locatingTimeoutMs: 5000',
+           8:'    const loc = await geoLocationManager.getCurrentLocation(req).catch(() => geoLocationManager.getLastLocation());'}},
+    I_AUDIO:{file:'DetailPage.ets',t:'讲解视频没处理来电打断',
+      sug:'AVPlayer 监听 audioInterrupt：INTERRUPT_HINT_PAUSE 时暂停，挂断后 RESUME 续播。',
+      fix:{25:"    this.player.on('audioInterrupt', (e: audio.InterruptEvent) => this.onInterrupt(e)); this.player.play();"}},
+    I_PERM:{file:'NearbyStore.ets',t:'定位权限被拒后反复申请、没有兜底',
+      sug:'被拒后改用 requestPermissionOnSetting 引导去设置；先按默认城市出附近门店。',
+      fix:{14:'      await atm.requestPermissionOnSetting(this.ctx, PERM);',
+           15:"      this.stores = await StoreApi.byCity(AppStorage.get<string>('lastCity') ?? '深圳'); return;"}},
+    I_FONT_TAB:{file:'MainPage.ets',t:'1.75× 字号下底部 Tab 文字被截',
+      sug:'Tab 标签 Text 加 .maxFontScale(1.45)，正文继续跟随系统字号。',
+      fix:{28:'    Column() { Image(t.icon).width(24); Text(t.label).fontSize(10).maxFontScale(1.45) }'}},
+    I_FONT_WATCH:{file:'WatchHome.ets',t:'手表 1.75× 字号撑出圆屏',
+      sug:'手表文字 .maxFontScale(1.2) + 单行跑马灯，圆屏内切区放得下。',
+      fix:{9:'        ListItem() { Text(m.title).fontSize(15).maxFontScale(1.2).textOverflow({ overflow: TextOverflow.MARQUEE }) }'}},
+    I_DARK:{file:'DetailPage.ets',t:'详情容器白底写死，深色下刺眼',
+      sug:"背景改用 $r('sys.color.comp_background_primary')，深浅色自动切换。",
+      fix:{19:"    .backgroundColor($r('sys.color.comp_background_primary'))"}}
+  };
+  var LMAP={'1':'L_GRID','2':'L_SIDE','3':'L_FOLD','4':'L_ROUND'};
+  var fixed={},found={};
+  function lns(id){return Object.keys(ISS[id].fix).map(Number)}
+
+  /* ================= 编辑器：多文件、问题行、就地修复 ================= */
   document.getElementById('tree-slot').innerHTML=DemoFrame.tree({sel:'ListPage.ets'});
   document.getElementById('tabs').insertAdjacentHTML('afterbegin',DemoFrame.tabs([{file:'ListPage.ets',on:true},{file:'ItemCard.ets'}]));
   document.getElementById('code').innerHTML=DemoFrame.code('ListPage.ets',{cur:12,marks:{12:'bulb'}});
-  DemoFrame.init({device:'Multi-device (5)',deviceIcon:'#i-layout',onReady:function(){
-    $('#status-slot').innerHTML='<span class="dm-capsule" id="cap"><span class="dm-dot ok"></span><span id="cap-txt">5 块屏 · 已同步</span></span>';
+  document.getElementById('code-card').innerHTML=DemoFrame.code('ItemCard.ets',{});
+  var fileBox={'ListPage.ets':$('#code'),'ItemCard.ets':$('#code-card')};
+  var ERR_M='<svg class="i" style="width:14px;height:14px;color:var(--ui-error)"><use href="#i-err"/></svg>';
+  function lineEl(name,n){var b=fileBox[name];return b&&$('.ln[data-ln="'+n+'"]',b)}
+  function markCode(id){
+    var I=ISS[id];if(!fileBox[I.file])return;
+    lns(id).forEach(function(n){var l=lineEl(I.file,n);if(!l)return;var m=$('.g .m',l);if(m)m.innerHTML=fixed[id]?'':ERR_M});
+  }
+  function ensureFile(name){
+    if(fileBox[name])return fileBox[name];
+    var el=document.createElement('div');el.className='code';el.dataset.forFile=name;el.hidden=true;
+    el.innerHTML=DemoFrame.code(name,{});
+    $('#code-wrap').appendChild(el);fileBox[name]=el;
+    Object.keys(ISS).forEach(function(id){if(ISS[id].file===name&&found[id])markCode(id)});
+    return el;
+  }
+  function openFile(id){
+    var I=ISS[id],name=I.file,box=ensureFile(name);
+    var tab=$('#tabs .tab[data-file="'+name+'"]');
+    if(!tab){
+      var old=$('#tabs .tab.dyn');if(old)old.remove();
+      var last=$$('#tabs .tab');last[last.length-1].insertAdjacentHTML('afterend',DemoFrame.tabs([{file:name}]));
+      tab=$('#tabs .tab[data-file="'+name+'"]');tab.classList.add('dyn');
+    }
+    tab.click();
+    $$('.ln.hl-bad,.ln.cur',box).forEach(function(x){x.classList.remove('hl-bad','cur')});
+    var first=null;
+    lns(id).forEach(function(n){var l=lineEl(name,n);if(!l)return;if(!first)first=l;if(!fixed[id])l.classList.add('hl-bad')});
+    if(first){first.classList.add('cur');box.scrollTop=Math.max(0,first.offsetTop-box.clientHeight*.3);var p=$('#status-pos');if(p)p.textContent=first.dataset.ln+':1'}
+  }
+  function patchCode(id){
+    var I=ISS[id];
+    lns(id).forEach(function(n){
+      FILES[I.file].lines[n-1][0]=hl(I.fix[n]);
+      var l=lineEl(I.file,n);if(!l)return;
+      $('.t',l).innerHTML=hl(I.fix[n]);l.classList.remove('hl-bad');
+      var m=$('.g .m',l);if(m)m.innerHTML='';
+      l.classList.remove('hl-ok');void l.offsetWidth;l.classList.add('hl-ok');
+      setTimeout(function(){l.classList.remove('hl-ok')},1800);
+    });
+  }
+
+  DemoFrame.init({device:'Multi-device (6)',deviceIcon:'#i-layout',onReady:function(){
+    $('#status-slot').innerHTML='<span class="dm-capsule" id="cap"><span class="dm-dot ok"></span><span id="cap-txt">6 块屏 · 已同步</span></span>';
   }});
+
+  /* ================= 设备规格：真实分辨率 → vp → 断点 ================= */
+  var stage=$('#stage');
+  var POSE={open:{n:'展开',api:'FoldStatus.EXPANDED',bp:'md',res:'2440×2240',tail:'813 vp'},
+            half:{n:'悬停',api:'FoldStatus.HALF_FOLDED',bp:'md',res:'2440×2240',tail:'悬停'},
+            closed:{n:'折叠',api:'FoldStatus.FOLDED',bp:'sm',res:'1080×2440',tail:'360 vp'}};
+  var XPOSE={'1':{n:'单屏',api:'FoldStatus.FOLDED · 单屏',bp:'sm',res:'1008×2232',tail:'336 vp'},
+             '2':{n:'双屏',api:'FoldStatus.EXPANDED · 双屏',bp:'md',res:'2048×2232',tail:'683 vp'},
+             '3':{n:'三屏',api:'FoldStatus.EXPANDED_WITH_SECOND_EXPANDED · 三屏',bp:'lg',res:'3184×2232',tail:'1061 vp'}};
+  var SPEC={'d-phone':{bp:'sm',res:'1260×2844',tail:'360 vp'},'d-tab':{bp:'lg',res:'2880×1920',tail:'1280 vp'},
+            'd-watch':{bp:'xs',res:'466×466',tail:'圆屏'},'d-car':{bp:'lg',res:'1920×720',tail:'1280 vp'},'d-tv':{bp:'lg',res:'3840×2160',tail:'1280 vp'}};
+  function applySpec(d,s){d.dataset.bp=s.bp;d.dataset.res=s.res;$('.cap',d).innerHTML='<em class="bpk">'+s.bp+'</em>'+s.res+' · '+s.tail}
+  function stInner(net){return '<span>9:41</span><i class="hole"></i><span class="sig">'+net+'<i class="bars"></i><i class="bat"></i></span>'}
+  function ST(net){return '<div class="st">'+stInner(net||'5G')+'</div>'}
+  $$('#stage .st').forEach(function(s){s.innerHTML=stInner(s.dataset.net||'5G')});
+  Object.keys(SPEC).forEach(function(id){var d=$('#'+id);if(d)applySpec(d,SPEC[id])});
 
   /* ================= 原有：第 12 行改代码 → 所有屏一起刷 ================= */
   var LINE_A='      <span class="f">Search</span>({ <span class="p">value</span>: <span class="k">this</span>.<span class="p">keyword</span> })';
   var LINE_B='      <span class="f">Search</span>({ <span class="p">value</span>: <span class="k">this</span>.<span class="p">keyword</span>, <span class="p">placeholder</span>: <span class="s">\'搜索商品\'</span> })';
   var edited=false, busy=false;
-  var ln12=$('.code .ln[data-ln="12"]');
-  function devCount(){return $$('#stage .dm-device').length}
+  var ln12=$('#code .ln[data-ln="12"]');
+  function devs(){return $$('#stage .dm-device')}
+  function devCount(){return devs().length}
   ln12.setAttribute('title','改这一行：画布上 '+devCount()+' 块屏一起刷');
+  function placeholder(){return edited?'搜索商品':'搜索'}
 
-  function sync(text){
-    if(busy)return;busy=true;
-    var devs=$$('#stage .dm-device');
-    devs.forEach(function(d){d.classList.add('refreshing');$('.sync',d).hidden=false});
-    $('#sync-pill').className='dm-pill info';$('#sync-pill').innerHTML='<span class="spin" style="width:10px;height:10px"></span>'+devs.length+' 块屏刷新中…';
-    var cap=$('#cap');if(cap){cap.className='dm-capsule wait';$('#cap-txt').textContent=devs.length+' 块屏 · 刷新中';$('.dm-dot',cap).className='dm-dot info pulse'}
+  function refreshAll(mut,label,done){
+    if(busy)return false;busy=true;
+    var ds=devs();
+    ds.forEach(function(d){d.classList.add('refreshing');$('.sync',d).hidden=false});
+    $('#sync-pill').className='dm-pill info';$('#sync-pill').innerHTML='<span class="spin" style="width:10px;height:10px"></span>'+(label||ds.length+' 块屏刷新中…');
+    var cap=$('#cap');if(cap){cap.className='dm-capsule wait';$('#cap-txt').textContent=ds.length+' 块屏 · 刷新中';$('.dm-dot',cap).className='dm-dot info pulse'}
     setTimeout(function(){
-      $$('#stage [data-search]').forEach(function(s){s.textContent=text});
-      devs.forEach(function(d){d.classList.remove('refreshing');$('.sync',d).hidden=true});
+      if(mut)mut();
+      ds.forEach(function(d){d.classList.remove('refreshing');$('.sync',d).hidden=true});
       $('#sync-pill').className='dm-pill ok';$('#sync-pill').innerHTML='<svg><use href="#i-sync"/></svg>改一次一起刷 · 刚刚 0.8 s';
-      if(cap){cap.className='dm-capsule';$('#cap-txt').textContent=devs.length+' 块屏 · 已同步';$('.dm-dot',cap).className='dm-dot ok'}
-      busy=false;
+      busy=false;capStatus();
+      if(done)done();
     },800);
+    return true;
   }
+  function sync(text){refreshAll(function(){$$('#stage [data-search]').forEach(function(s){s.textContent=text})})}
   ln12.addEventListener('click',function(){
     if(busy)return;
     edited=!edited;
     $('.t',ln12).innerHTML=edited?LINE_B:LINE_A;
     ln12.classList.remove('hl-ok');void ln12.offsetWidth;ln12.classList.add('hl-ok');
     setTimeout(function(){ln12.classList.remove('hl-ok')},1600);
-    sync(edited?'搜索商品':'搜索');
+    sync(placeholder());
   });
-  $('#btn-refresh').addEventListener('click',function(){sync(edited?'搜索商品':'搜索')});
+  $('#btn-refresh').addEventListener('click',function(){sync(placeholder())});
+  function capStatus(){
+    var cap=$('#cap');if(!cap||busy)return;
+    var n=devCount(),b=$$('#stage .dm-device.bad').length;
+    cap.className='dm-capsule';$('#cap-txt').textContent=n+' 块屏 · '+(b?b+' 台有问题':'已同步');
+    $('.dm-dot',cap).className='dm-dot '+(b?'err':'ok');
+  }
 
   /* ================= 商品数据 / 详情渲染 ================= */
   var ITEMS=[
@@ -448,7 +992,7 @@
   ];
   function detailHTML(i,from,back){
     var it=ITEMS[i];
-    return (back?'<div class="st"><span>9:41</span><span>5G ▮▮▮</span></div><div class="bk">‹ 商品</div>':'')
+    return (back?ST('5G')+'<div class="bk">‹ 商品</div>':'')
       +'<div class="detail"><div class="pic" style="background:linear-gradient(135deg,'+it.g+')"></div>'
       +(from?'<em class="from">来自 '+from+' · 流转</em>':'')
       +'<b>'+it.n+'</b><span>'+it.d+'</span><span class="price">¥'+it.p+'</span><div class="btn">加入购物车</div></div>';
@@ -464,9 +1008,13 @@
     $('#fold-detail').innerHTML=detailInner(foldItem,from);
     $('#fold-media').style.background='linear-gradient(135deg,'+it.g+')';
     $('#fold-media').innerHTML='<b>'+it.n+'</b><span>¥'+it.p+'</span>';
+    $('#fold-nvpic').style.background='linear-gradient(135deg,'+it.g+')';
+    $('#fold-nvtx').innerHTML='<b>'+it.n+'</b><span>¥'+it.p+'</span>';
+    $('#fold-nvdesc').textContent=it.d;
     $('#fold-cd').innerHTML=detailHTML(foldItem,from,true);
   }
   renderFold();
+  $('#xt-detail').innerHTML=detailInner(0);
   function pageDetail(i){return detailHTML(i,null,true)}
 
   /* ================= 状态提示 ================= */
@@ -477,14 +1025,30 @@
     var el=$('.stoast',s);setTimeout(function(){if(el.parentNode)el.remove()},2000);
   }
   function shortName(d){return d.dataset.name.split(' · ')[0]}
+  function longName(d){
+    var k=d.dataset.kind;
+    if(k==='fold')return 'Mate X6 '+POSE[d.dataset.pose].n;
+    if(k==='xt')return 'Mate XT '+XPOSE[d.dataset.pose].n;
+    return {phone:'Mate 70 Pro',tablet:'MatePad Pro 13.2',watch:'WATCH 5',car:'HiCar',tv:'智慧屏 V5'}[k]||shortName(d);
+  }
+  function vis(el){return !!el&&el.offsetParent!==null}
 
   /* ================= 选中设备 → 特征条 ================= */
   var selDev=null;
-  var KIND_ICON={phone:'#i-phone',fold:'#i-fold',tablet:'#i-tablet',watch:'#i-watch',car:'#i-car',tv:'#i-tv'};
-  var POSE={open:['展开','FoldStatus.EXPANDED'],half:['悬停','FoldStatus.HALF_FOLDED'],closed:['折叠','FoldStatus.FOLDED']};
+  var KIND_ICON={phone:'#i-phone',fold:'#i-fold',xt:'#i-fold',tablet:'#i-tablet',watch:'#i-watch',car:'#i-car',tv:'#i-tv'};
+  function setPose(d,p,quiet){
+    var k=d.dataset.kind,P=k==='fold'?POSE[p]:XPOSE[p];if(!P)return;
+    d.dataset.pose=p;
+    var nm=(k==='fold'?'Mate X6 · ':'Mate XT · ')+P.n;d.dataset.name=nm;
+    $('.tag',d).textContent=nm+(k==='xt'?' · 远端':'');
+    applySpec(d,P);
+    if(selDev===d)$('#sel-txt').textContent='已选 · '+nm;
+    if(!quiet)api(P.api+(k==='fold'?(p==='half'?' · 上显示 下操作':p==='closed'?' · 切外屏单栏':' · 双栏'):''));
+    markLint();
+  }
   function select(d){
     selDev=d||null;
-    $$('#stage .dm-device').forEach(function(x){x.classList.toggle('sel',x===d)});
+    devs().forEach(function(x){x.classList.toggle('sel',x===d)});
     var lbl=$('#sel-lbl');
     if(d){$('#sel-txt').textContent='已选 · '+d.dataset.name;lbl.hidden=false}else lbl.hidden=true;
     renderFeat();
@@ -497,7 +1061,10 @@
     $('#feat-name').textContent=shortName(d);$('#feat-ico').setAttribute('href',KIND_ICON[k]||'#i-phone');
     if(k==='fold'){
       var p=d.dataset.pose;
-      spec.innerHTML='<span class="xseg">'+['open','half','closed'].map(function(x){return '<button class="xb'+(p===x?' on':'')+'" data-pose="'+x+'">'+POSE[x][0]+'</button>'}).join('')+'</span>';
+      spec.innerHTML='<span class="xseg">'+['open','half','closed'].map(function(x){return '<button class="xb'+(p===x?' on':'')+'" data-pose="'+x+'">'+POSE[x].n+'</button>'}).join('')+'</span>';
+    }else if(k==='xt'){
+      var q=d.dataset.pose;
+      spec.innerHTML='<span class="xseg">'+['1','2','3'].map(function(x){return '<button class="xb'+(q===x?' on':'')+'" data-pose="'+x+'">'+XPOSE[x].n+'</button>'}).join('')+'</span>';
     }else if(k==='phone'){
       spec.innerHTML='<button class="xb'+(d.classList.contains('split')?' on':'')+'" data-pf="split"><svg><use href="#i-split"/></svg>分屏</button>'
         +'<button class="xb'+(d.classList.contains('float')?' on':'')+'" data-pf="float"><svg><use href="#i-plus-box"/></svg>悬浮窗</button>';
@@ -510,19 +1077,16 @@
   }
   $('#canvas').addEventListener('click',function(e){
     if(dragJustEnded)return;
-    select(e.target.closest('.dm-device'));
+    var d=e.target.closest('.dm-device');
+    select(d);
+    if(d)pickIssueForDevice(d);
   });
 
   $('#feat-spec').addEventListener('click',function(e){
     var b=e.target.closest('.xb');if(!b||!selDev)return;
     var d=selDev;
-    if(b.dataset.pose){
-      var p=b.dataset.pose;d.dataset.pose=p;
-      var nm='Mate X6 · '+POSE[p][0];d.dataset.name=nm;$('.tag',d).textContent=nm;
-      $('.cap',d).textContent=(p==='closed'?'1080×2504':p==='half'?'2200×2480 · 上下分区':'2200×2480')+' · API 20';
-      $('#sel-txt').textContent='已选 · '+nm;
-      api(POSE[p][1]+(p==='half'?' · 上显示 下操作':p==='closed'?' · 切外屏单栏':' · 双栏'));
-    }else if(b.dataset.pf){
+    if(b.dataset.pose){setPose(d,b.dataset.pose)}
+    else if(b.dataset.pf){
       var on=d.classList.toggle(b.dataset.pf);
       api(b.dataset.pf==='split'?(on?'WindowStatusType.SPLIT_SCREEN':'WindowStatusType.FULL_SCREEN'):(on?'WindowStatusType.FLOATING · 计算器':'WindowStatusType.FULL_SCREEN'));
     }
@@ -540,7 +1104,6 @@
 
   /* ================= 手势模拟 ================= */
   var NS='http://www.w3.org/2000/svg';
-  function vis(el){return el&&el.offsetParent!==null}
   function trails(dev,list,dur,done){
     var scr=$('.scr',dev),w=scr.clientWidth,h=scr.clientHeight;
     var svg=document.createElementNS(NS,'svg');svg.setAttribute('class','gfx');svg.setAttribute('width',w);svg.setAttribute('height',h);svg.setAttribute('viewBox','0 0 '+w+' '+h);
@@ -564,13 +1127,14 @@
     var list=$$('.pg-detail',dev).filter(function(x){return !x.hidden&&vis(x)});
     return list[0]||null;
   }
+  var PH='<div class="ph">从手机拖商品卡到这里<br>或点「流转到平板」</div>';
   var GEST={
     back:function(dev){
       var scr=$('.scr',dev),w=scr.clientWidth,h=scr.clientHeight,y=h*.5;
       var svg=trails(dev,['M2 '+y+' C '+w*.12+' '+y+' '+w*.22+' '+(y-4)+' '+w*.36+' '+(y-8)],520,function(){
         var pg=openDetailEl(dev);
         if(pg){pg.hidden=true;stoast(dev,'已返回上一页');done('侧滑返回 → 回到商品列表','onBackPress() · router.back()')}
-        else if(dev.id==='d-tab'&&$('#tab-right .detail')){$('#tab-right').innerHTML='<div class="ph">从手机拖商品卡到这里<br>或点「流转到平板」</div>';stoast(dev,'已返回上一页');done('侧滑返回 → 关闭流转详情','onBackPress()')}
+        else if(dev.id==='d-tab'&&$('#tab-right .detail')){$('#tab-right').innerHTML=PH;stoast(dev,'已返回上一页');done('侧滑返回 → 关闭流转详情','onBackPress()')}
         else{stoast(dev,'已在首页 · 再滑一次退出');done('侧滑返回 → 已在首页','onBackPress() · 返回 false')}
       });
       var g=document.createElementNS(NS,'g');g.setAttribute('class','bkind');
@@ -580,7 +1144,7 @@
       var scr=$('.scr',dev),w=scr.clientWidth,h=scr.clientHeight,cx=w/2,cy=h*.42,r=Math.min(w,h)*.28;
       trails(dev,['M'+(cx-6)+' '+(cy+6)+' L'+(cx-r)+' '+(cy+r),'M'+(cx+6)+' '+(cy-6)+' L'+(cx+r)+' '+(cy-r)],560,function(){
         var t=null;
-        ['.pg-detail:not([hidden]) .pic','.v-half .media','.detail .pic','.ring > div','.cd .th','.row .th'].some(function(q){t=$$(q,dev).filter(vis)[0];return !!t});
+        ['.pg-detail:not([hidden]) .pic','.v-half .media','.nv-pic','.detail .pic','.ring > div','.wnv .wr','.cd .th','.row .th'].some(function(q){t=$$(q,dev).filter(vis)[0];return !!t});
         if(!t){done('双指捏合 → 无可缩放内容','PinchGesture');return}
         var on=t.classList.toggle('zoomed');
         stoast(dev,on?'图片放大 1.6×':'图片还原');
@@ -594,7 +1158,7 @@
         var f=$('.flash',scr),s=$('.shot',scr);
         setTimeout(function(){f.remove()},380);setTimeout(function(){s.remove()},1900);
         stoast(dev,'截屏已保存到图库');
-        done('三指下滑 → 截屏已保存','系统手势 · 截屏 '+($('.cap',dev).textContent.split(' ')[0]));
+        done('三指下滑 → 截屏已保存','系统手势 · 截屏 '+(dev.dataset.res||''));
       });
     },
     air:function(dev){
@@ -639,7 +1203,7 @@
   var flowing=false;
   function flow(i,target,fromEl,how,fromRect){
     if(flowing||!target)return;flowing=true;
-    var stage=$('#stage'),sr=stage.getBoundingClientRect();
+    var sr=stage.getBoundingClientRect();
     var fr=fromRect||fromEl.getBoundingClientRect(),tr=$('.scr',target).getBoundingClientRect();
     var x1=fr.left+fr.width/2-sr.left,y1=fr.top+fr.height/2-sr.top;
     var x2=tr.left+tr.width/2-sr.left,y2=tr.top+tr.height*.4-sr.top;
@@ -711,38 +1275,504 @@
     if(d.hot){phoneCur=d.i;flow(d.i,d.hot,null,'分布式拖拽',gr)}
     else{$('#flow-pill').className='dm-pill muted';$('#flow-pill').textContent='没落到目标设备上，已取消'}
   });
-  /* 平板 / 折叠屏的列表行：点一下切右栏详情 */
-  $('#stage').addEventListener('click',function(e){
-    var r=e.target.closest('#d-fold .v-open .row,#d-tab .col.l .row,#d-fold .v-closed .row');if(!r)return;
+  /* 平板 / 折叠屏 / 三折叠的列表行：点一下切详情 */
+  stage.addEventListener('click',function(e){
+    var r=e.target.closest('#d-fold .v-open .row,#d-tab .col.l .row,#d-fold .v-closed .row,#d-xt .row');if(!r)return;
     var i=+r.dataset.i;
     if(r.closest('#d-tab'))$('#tab-right').innerHTML='<div class="detail">'+detailInner(i)+'</div>';
+    else if(r.closest('#d-xt'))$('#xt-detail').innerHTML=detailInner(i);
     else{foldItem=i;renderFold();if(r.closest('.v-closed'))$('#fold-cd').hidden=false}
   });
 
   /* ================= 原有：加设备（智慧屏） ================= */
   $('#btn-add').addEventListener('click',function(){
-    if($('#stage .dm-device.tv'))return;
-    $('#stage').insertAdjacentHTML('beforeend',
-      '<div class="dm-device tv" data-kind="tv" data-name="智慧屏 V5 · 远端"><span class="tag remote">智慧屏 V5 · 远端</span><div class="scr"><div class="dm-progress indet sync"><i></i></div>'
-      +'<div class="mapp dark"><div class="hd">商品<div class="search" data-search>'+(edited?'搜索商品':'搜索')+'</div></div><div class="cards">'
+    if($('#d-tv'))return;
+    $('#row-b').insertAdjacentHTML('beforeend',
+      '<div class="dm-device tv" id="d-tv" data-kind="tv" data-name="智慧屏 V5 · 远端"><span class="tag remote">智慧屏 V5 · 远端</span><div class="scr"><div class="dm-progress indet sync"><i></i></div>'
+      +'<div class="mapp dark"><div class="hd">商品<div class="search" data-search>'+placeholder()+'</div></div><div class="cards">'
       +'<div class="cd"><div class="th"></div><b>无线降噪耳机 Pro</b><span>¥899</span></div><div class="cd"><div class="th"></div><b>智能手表 5</b><span>¥2199</span></div><div class="cd"><div class="th"></div><b>便携充电宝</b><span>¥199</span></div><div class="cd"><div class="th"></div><b>折叠键盘</b><span>¥329</span></div>'
-      +'</div></div></div><span class="cap">3840×2160 · API 20</span></div>');
-    var tv=$('#stage .dm-device.tv');tv.classList.add('refreshing');
+      +'</div></div></div><span class="cap"></span></div>');
+    var tv=$('#d-tv');applySpec(tv,SPEC['d-tv']);tv.classList.add('refreshing');
     setTimeout(function(){tv.classList.remove('refreshing');$('.sync',tv).hidden=true},800);
-    var n=devCount();$('#cnt').textContent=n;
+    var n=devCount();$('#cnt').textContent=n;$('#sc-n').textContent=n;
     var hd=$('#hdr-device span');if(hd)hd.textContent='Multi-device ('+n+')';
-    var cap=$('#cap-txt');if(cap)cap.textContent=n+' 块屏 · 已同步';
-    var t=$('.code .ln[data-ln="12"]');if(t)t.setAttribute('data-title','改这一行：画布上 '+n+' 块屏一起刷');
+    capStatus();
+    ln12.setAttribute('data-title','改这一行：画布上 '+n+' 块屏一起刷');
     tv.scrollIntoView({block:'nearest'});
+  });
+
+  /* ================= 设备徽标 / 标红 ================= */
+  function setBadge(d,kind,txt){
+    var b=$('.scb',d);
+    if(!txt){if(b)b.remove();d.classList.remove('has-scb');return}
+    if(!b){d.insertAdjacentHTML('beforeend','<span class="scb"></span>');b=$('.scb',d)}
+    b.className='scb '+kind;
+    b.innerHTML=(kind==='bad'?'<svg><use href="#i-err"/></svg>':kind==='ok'?'<svg><use href="#i-checkS"/></svg>':'<span class="spin" style="width:9px;height:9px;border-width:1.5px"></span>')+esc(txt);
+    d.classList.add('has-scb');
+  }
+  function paintBad(){
+    devs().forEach(function(d){
+      var b=$$('.lint',d).some(vis)||d.classList.contains('sc-bad');
+      d.classList.toggle('bad',b);var t=$('.tag',d);if(t)t.classList.toggle('err',b);
+    });
+    capStatus();
+  }
+  function markLint(){
+    var on=stage.classList.contains('lint-on');
+    $$('#stage [data-l]').forEach(function(el){
+      var id=LMAP[el.dataset.l],dev=el.closest('.dm-device');
+      var show=on&&!fixed[id]&&(el.dataset.l!=='2'||dev.dataset.bp!=='sm');
+      el.classList.toggle('lint',show);el.classList.toggle('cur',show&&selIss===id);
+    });
+    paintBad();
+  }
+
+  /* ================= 场景：一次作用于画布上所有设备 ================= */
+  var scene=null,scBusy=false,trackTimer=null,selIss=null,mode=null,lintBusy=false;
+  function kindOf(d){return {'d-phone':'phone','d-fold':'fold','d-xt':'xt','d-tab':'pad','d-watch':'watch','d-car':'car','d-tv':'tv'}[d.id]||'tv'}
+  function isCar(k){return k==='car'||k==='tv'}
+  function ok(badge,note,ov,cls){return {st:'ok',badge:badge,note:note,ov:ov||'',cls:cls||''}}
+  function bad(iss,badge,note,ov,cls){return {st:'bad',iss:iss,badge:badge,note:note,ov:ov||'',cls:cls||''}}
+  function rep(s,n){var o='';for(var i=0;i<n;i++)o+=s;return o}
+  function skel(k){
+    if(isCar(k))return '<div class="cov">'+rep('<i class="sk card"></i>',3)+'</div>';
+    if(k==='watch')return '<div class="cov"><i class="sk" style="width:46%"></i><i class="sk" style="width:62%"></i><i class="sk" style="width:40%"></i></div>';
+    return '<div class="cov">'+rep('<div class="sk-r"><i class="sk sq"></i><div><i class="sk"></i><i class="sk half"></i></div></div>',8)+'</div>';
+  }
+  function bn(kind,txt,ico){return '<div class="sbn '+kind+'">'+(ico?'<svg><use href="#'+ico+'"/></svg>':'')+txt+'</div>'}
+  function spinC(txt){return '<div class="spin-c"><i></i>'+txt+'</div>'}
+  function loc(txt,spin){return '<div class="sloc">'+(spin?'<i class="sp"></i>':'<svg><use href="#i-loc"/></svg>')+txt+'</div>'}
+  function wm(t,sub,extra){return '<div class="wmsg"><b>'+t+'</b>'+(sub?'<span>'+sub+'</span>':'')+(extra||'')+'</div>'}
+  function chip(kind,txt){return '<div class="schip '+kind+'"><svg><use href="#i-speaker"/></svg>'+txt+'</div>'}
+  function hasMedia(d){return $$('.detail .pic,.hv-fs .media,.nv-pic',d).some(vis)}
+  function setSearch(d,t){$$('[data-search]',d).forEach(function(s){s.textContent=t})}
+  var SC={
+    '2g':{name:'弱网 · 2G',api:'netem · 2G · 下行 48 kbps · RTT 820 ms',
+      p1:function(k){return skel(k)+(k==='watch'?'':bn('info','2G · 48 kbps','i-wifi'))},
+      res:function(k){
+        if(k==='pad')return fixed.I_TIMEOUT?ok('4.2 s 出首屏','8 s 超时兜底，lg 首屏改 20 条分页，4.2 s 出首屏',bn('warn','网络较慢 · 已切 20 条/页','i-wifi'))
+          :bad('I_TIMEOUT','42 s 仍在转','lg 首屏一次拉 60 条原图，42 s 还在转圈，没有超时也没有重试',skel(k)+spinC('加载中… 42 s'));
+        if(k==='watch')return ok('0.9 s 出','只拉 3 条摘要，0.9 s 出');
+        if(isCar(k))return ok('先显示缓存','车机走手机网络，先显示缓存，后台慢慢刷新',bn('info','弱网 · 显示缓存','i-wifi'));
+        var t={phone:'3.1',fold:'3.4',xt:'3.6'}[k];
+        return ok(t+' s 出首屏','骨架屏 → '+t+' s 出首屏，图片降为低清',bn('info','2G · 图片已降为低清','i-wifi'));
+      }},
+    'loss':{name:'弱网 · 高丢包 30%',api:'netem · loss 30% · RTT 260 ms',
+      p1:function(k){return skel(k)+(k==='watch'?'':bn('info','丢包 30%','i-wifi'))},
+      res:function(k,d){
+        if(hasMedia(d))return fixed.I_ALT?ok('占位 → 重试成功','大图先出占位图，onError 重试 2 次后出图','','sc-alt')
+          :bad('I_ALT','大图空白','详情大图 2.4 MB 丢包后加载失败：没设 .alt() 占位也没重试，整块空白','','sc-broken');
+        if(k==='watch')return ok('纯文字无影响','手表只有文字，丢包重传即可');
+        return ok('重试后正常',(isCar(k)?'卡片':'列表')+'小图 2 张重试一次后出图',bn('info','丢包 30% · 已重试','i-wifi'));
+      }},
+    'off':{name:'弱网 · 断网',api:'connection · NET_UNAVAILABLE',
+      p1:function(k){return k==='watch'?wm('已断网','',''):bn('err','网络已断开','i-wifi')},
+      res:function(k){
+        if(k==='pad')return fixed.I_OFFLINE?ok('空态 + 重试','没网时出空态页和「重试」，联网后自动刷新','<div class="sblank"><span class="eic"><svg><use href="#i-wifi"/></svg></span>网络不可用<span class="rt">重试</span></div>')
+          :bad('I_OFFLINE','白屏','远端刚拉起、没有缓存；catch 里只打 HiLog，整页白屏','<div class="sblank"></div>');
+        if(k==='watch')return ok('显示缓存','离线，显示手机同步过来的 3 条消息');
+        if(isCar(k))return ok('离线缓存','车机显示离线缓存',bn('warn','离线 · 显示缓存','i-wifi'));
+        return ok('断网提示','顶部出「网络不可用」，列表用本地缓存',bn('warn','网络不可用 · 点此重试','i-wifi'));
+      }},
+    'city':{name:'定位 · 切到乌鲁木齐',api:'geoLocationManager · mock 43.83°N 87.62°E',
+      p1:function(k){return k==='watch'?'':loc('定位中…',1)},
+      res:function(k){
+        if(k==='pad')return fixed.I_LOC?ok('5 s 降级成功','5 s 超时后降级到网络定位，显示乌鲁木齐',loc('送至 乌鲁木齐 · 网络定位'))
+          :bad('I_LOC','一直定位中','Wi-Fi 版平板没有 GNSS，getCurrentLocation 没设超时也不降级，一直「定位中」',loc('定位中… 38 s',1));
+        if(k==='watch')return ok('用手机定位','定位来自手机，显示乌鲁木齐',wm('乌鲁木齐','天山区'));
+        if(isCar(k))return ok('车机定位','车机 GNSS 定位到乌鲁木齐 天山区',loc('乌鲁木齐 · 天山区'));
+        return ok('已切城市','配送地址切到乌鲁木齐，时效改为 3 天达',loc('送至 乌鲁木齐 · 3 天达'));
+      }},
+    'track':{name:'定位 · 移动轨迹',api:'geoLocationManager · 轨迹回放 12 点 · 1 s/点',
+      p1:function(k){return k==='watch'?'':loc('定位中…',1)},
+      res:function(k){
+        if(k==='pad')return fixed.I_LOC?ok('降级后跟随','5 s 超时后降级到网络定位，距离随轨迹刷新',loc('距门店 <span class="km">1.2</span> km · 网络定位'))
+          :bad('I_LOC','一直定位中','Wi-Fi 版平板没有 GNSS，getCurrentLocation 没设超时也不降级，轨迹一个点都没收到',loc('定位中… 38 s',1));
+        if(k==='watch')return ok('跟随手机','手表显示手机回传的距离',wm('距门店','<span class="km">1.2</span> km'));
+        if(isCar(k))return ok('导航跟随','车机按轨迹移动，路线实时重算',loc('去门店 · <span class="km">1.2</span> km')+'<svg class="sroute" viewBox="0 0 150 64"><path id="rp" d="M10 52 C 40 52, 50 16, 82 22 S 128 12, 140 10"/><circle r="4"><animateMotion dur="3.6s" repeatCount="indefinite" path="M10 52 C 40 52, 50 16, 82 22 S 128 12, 140 10"/></circle></svg>');
+        return ok('距离实时更新','按轨迹回放 12 个点，距门店 1.2 → 0.3 km 实时刷新',loc('距门店 <span class="km">1.2</span> km · 骑行中'));
+      },
+      after:function(){
+        var v=1.2;trackTimer=setInterval(function(){v=Math.max(.3,v-.1);$$('#stage .sov .km').forEach(function(x){x.textContent=v.toFixed(1)});if(v<=.3){clearInterval(trackTimer);trackTimer=null}},320);
+      }},
+    'mem':{name:'内存告警 · 低内存回收',api:'onMemoryLevel · MEMORY_LEVEL_CRITICAL → 进程回收',
+      pre:function(k,d){if(k!=='watch'&&!isCar(k))setSearch(d,'降噪')},
+      p1:function(k){return k==='watch'?wm('已回收','onMemoryLevel'):'<div class="srec"><b>进程已回收</b><code>MEMORY_LEVEL_CRITICAL</code>1.2 s 后重新进入</div>'},
+      res:function(k,d){
+        if(k==='watch')return ok('无页面状态','手表页无状态，重进即最新');
+        if(isCar(k))return ok('未被回收','HiCar 投屏进程常驻，未被回收');
+        if(fixed.I_RESTORE)return ok('状态已恢复','从 AppStorage 恢复搜索词「降噪」和第 12 条的浏览位置',bn('ok','已恢复「降噪」· 第 12 条'));
+        setSearch(d,placeholder());
+        return bad('I_RESTORE','状态丢失','被回收后重进：搜索词「降噪」和第 12 条的浏览位置都丢了，回到列表顶部',bn('err','重进后：搜索词、浏览位置都丢了'));
+      }},
+    'call':{name:'来电打断',api:'call · 来电 → 接听 → 挂断 · 通话 1 s',dur:1700,
+      p1:function(k){
+        if(k==='watch')return wm('妈妈','来电','<i class="yes"></i>');
+        if(k==='pad')return bn('info','畅连来电 · 妈妈','i-call');
+        return '<div class="scall"><span class="av"></span><span class="tx"><b>妈妈</b>来电 · 138****0126</span><i class="no"></i><i class="yes"></i></div>';
+      },
+      res:function(k,d){
+        if(hasMedia(d))return fixed.I_AUDIO?ok('自动暂停','来电时讲解视频暂停，挂断后续播',chip('ok','讲解已暂停 · 挂断后续播'))
+          :bad('I_AUDIO','通话中出声','接听后详情页的讲解视频没暂停，声音盖住通话',chip('','讲解视频还在响'));
+        if(k==='watch')return ok('手表可接听','来电转到手表，可直接接听');
+        if(isCar(k))return ok('车机接听','HiCar 接管通话，挂断后回到导航');
+        if(k==='pad')return ok('畅连横幅','畅连来电只出横幅，不打断当前页');
+        return ok('回到原页','当前页没有音视频，挂断后回到原页面');
+      }},
+    'perm':{name:'权限被拒 · 位置',api:'abilityAccessCtrl · APPROXIMATELY_LOCATION → 拒绝',
+      p1:function(k,d){return needLoc(k,d)?'<div class="sperm"><b>允许「好物」获取你的大致位置？</b><div class="ops"><span class="hit">禁止</span><span>仅使用期间允许</span></div></div>':''},
+      res:function(k,d){
+        if(needLoc(k,d))return fixed.I_PERM?ok('兜底 + 引导','被拒后按默认城市出门店，并给「去设置开启」入口','<div class="snear"><b>附近门店 · 深圳</b><div class="it">福田旗舰店 · 3.2 km</div><div class="go">去设置开启定位 ›</div></div>')
+          :bad('I_PERM','门店空白','拒绝后又直接调 requestPermissionsFromUser（系统不会再弹），附近门店一直空白','<div class="snear"><b>附近门店</b><div class="emp"><i></i></div></div>'+bn('err','附近门店加载失败','i-shield'));
+        if(k==='watch')return ok('不申请','手表页不用定位');
+        if(isCar(k))return ok('用车机定位','HiCar 用车机定位，不向手机申请');
+        return ok('sm 不申请','sm 不展示附近门店，不触发定位权限');
+      }},
+    'font':{name:'系统字号 1.75×',api:'fontSizeScale = 1.75 · 全部设备',dur:900,
+      pre:function(k,d){
+        if(isCar(k))return;
+        d.style.setProperty('--fz',k==='watch'&&fixed.I_FONT_WATCH?'1.2':'1.75');
+        if(fixed.I_FONT_TAB)d.style.setProperty('--fzt','1.45');
+      },
+      p1:function(){return ''},
+      res:function(k,d){
+        if(isCar(k))return ok('字号不跟随','HiCar 用车机自己的字号设置，不受手机 1.75× 影响');
+        if(k==='watch')return fixed.I_FONT_WATCH?ok('限到 1.2×','手表文字 maxFontScale(1.2)，圆屏内切区放得下')
+          :bad('I_FONT_WATCH','圆屏溢出','1.75× 后消息标题撑出圆屏，首尾被切掉');
+        if($$('.nav',d).some(vis))return fixed.I_FONT_TAB?ok('Tab 限 1.45×','Tab 标签 maxFontScale(1.45)，正文仍跟随 1.75×')
+          :bad('I_FONT_TAB','Tab 字被截','Tab 文字 10fp × 1.75 塞不进 56vp 高的 TabBar，下半截被切','','fz-tab-bad');
+        return ok('正常换行','侧边栏 + 列表按 1.75× 正常换行');
+      }},
+    'dark':{name:'深色模式',api:'ConfigurationConstant.ColorMode.DARK · 全部设备',dur:900,
+      pre:function(k,d){if(!isCar(k))d.classList.add('dk')},
+      p1:function(){return ''},
+      res:function(k,d){
+        if(k==='watch')return ok('跟随深色','手表默认深色，无变化');
+        if(isCar(k))return ok('本就深色','车机界面常驻深色');
+        if(k==='pad'||$$('.detail',d).some(vis))return fixed.I_DARK?ok('跟随深色','详情容器改用 sys.color 资源，深浅色自动切换')
+          :bad('I_DARK','白底刺眼',(k==='pad'?'右栏':'详情区')+'容器 backgroundColor 写死 #FFFFFF，深色下还是一整块白','','sc-darkbad');
+        return ok('跟随深色','全部走 $r 颜色资源，深色正常');
+      }}
+  };
+  function needLoc(k,d){return (k==='fold'||k==='xt'||k==='pad')&&d.dataset.bp!=='sm'}
+
+  function setOv(d,html){
+    var s=$('.scr',d),o=$('.sov',s);
+    if(!o){s.insertAdjacentHTML('beforeend','<div class="sov"></div>');o=$('.sov',s)}
+    o.innerHTML=html||'';
+  }
+  function clearScene(){
+    if(trackTimer){clearInterval(trackTimer);trackTimer=null}
+    devs().forEach(function(d){
+      var o=$('.sov',d);if(o)o.remove();
+      d.classList.remove('sc-on','sc-bad','sc-broken','sc-alt','sc-darkbad','fz-tab-bad');
+      if(d.dataset.pdk!=null){d.classList.toggle('dk',d.dataset.pdk==='1');delete d.dataset.pdk}
+      if(d.dataset.pfz!=null){if(d.dataset.pfz)d.style.setProperty('--fz',d.dataset.pfz);else d.style.removeProperty('--fz');delete d.dataset.pfz}
+      d.style.removeProperty('--fzt');
+      setBadge(d,'','');
+    });
+    $$('#stage [data-search]').forEach(function(s){s.textContent=placeholder()});
+    scene=null;
+    $$('#sc-bar [data-sc]').forEach(function(b){b.classList.remove('on')});
+    $('#sc-reset').disabled=true;
+    paintBad();renderFeat();
+  }
+  function runScene(id,quick){
+    if(scBusy||lintBusy||busy)return;
+    var keepSel=quick?selIss:null;
+    if(mode==='lint')endLint();
+    clearScene();
+    var S=SC[id];scBusy=true;scene={id:id,res:{}};mode='scene';selIss=keepSel;
+    $$('#sc-bar [data-sc]').forEach(function(b){b.classList.toggle('on',b.dataset.sc===id)});
+    $('#sc-reset').disabled=false;
+    api(S.api);
+    devs().forEach(function(d){
+      var k=kindOf(d);
+      d.dataset.pdk=d.classList.contains('dk')?'1':'0';d.dataset.pfz=d.style.getPropertyValue('--fz');
+      d.classList.add('sc-on');
+      if(S.pre)S.pre(k,d);
+      setOv(d,S.p1(k,d));
+      setBadge(d,'info','模拟中…');
+    });
+    renderFeat();
+    panelScanning(S);
+    setTimeout(function(){
+      devs().forEach(function(d){
+        var k=kindOf(d),r=S.res(k,d);scene.res[d.id]=r;
+        setOv(d,r.ov);
+        if(r.cls)d.classList.add(r.cls);
+        d.classList.toggle('sc-bad',r.st==='bad');
+        setBadge(d,r.st==='bad'?'bad':'ok',r.badge);
+        if(r.st==='bad'){found[r.iss]=true;markCode(r.iss)}
+      });
+      if(S.after)S.after();
+      scBusy=false;paintBad();
+      var bads=sceneIssues();
+      if(!selIss||bads.indexOf(selIss)<0&&!fixed[selIss])selIss=bads[0]||selIss;
+      renderPanel();
+      if(selIss&&!quick)openFile(selIss);
+    },quick?650:(S.dur||1300));
+  }
+  function sceneIssues(){
+    if(!scene)return [];var o=[];
+    devs().forEach(function(d){var r=scene.res[d.id];if(r&&r.st==='bad'&&o.indexOf(r.iss)<0)o.push(r.iss)});
+    return o;
+  }
+  $('#sc-bar').addEventListener('click',function(e){
+    var b=e.target.closest('[data-sc]');
+    if(b){if(scene&&scene.id===b.dataset.sc&&!scBusy){endAll();return}runScene(b.dataset.sc);return}
+    if(e.target.closest('#sc-reset'))endAll();
+  });
+
+  /* ================= 一多检查：一键扫所有断点 ================= */
+  function forms(){
+    var f=[
+      {dev:'d-phone',lbl:'Mate 70 Pro',bp:'sm'},
+      {dev:'d-fold',pose:'closed',lbl:'X6 外屏',bp:'sm'},
+      {dev:'d-fold',pose:'open',lbl:'X6 展开',bp:'md',iss:['L_SIDE']},
+      {dev:'d-fold',pose:'half',lbl:'X6 悬停',bp:'md',iss:['L_FOLD']},
+      {dev:'d-xt',pose:'1',lbl:'XT 单屏',bp:'sm'},
+      {dev:'d-xt',pose:'2',lbl:'XT 双屏',bp:'md',iss:['L_SIDE']},
+      {dev:'d-xt',pose:'3',lbl:'XT 三屏',bp:'lg',iss:['L_GRID','L_SIDE']},
+      {dev:'d-tab',lbl:'MatePad 13.2',bp:'lg',iss:['L_SIDE']},
+      {dev:'d-watch',lbl:'WATCH 5',bp:'圆屏',iss:['L_ROUND']},
+      {dev:'d-car',lbl:'HiCar',bp:'lg'}
+    ];
+    if($('#d-tv'))f.push({dev:'d-tv',lbl:'智慧屏 V5',bp:'lg'});
+    return f;
+  }
+  var scanList=null,scanAt=0;
+  function devIssues(id){
+    var o=[];forms().forEach(function(f){if(f.dev===id)(f.iss||[]).forEach(function(x){if(o.indexOf(x)<0)o.push(x)})});
+    return o;
+  }
+  function lintBadges(){
+    devs().forEach(function(d){
+      var all=devIssues(d.id),open=all.filter(function(x){return !fixed[x]});
+      setBadge(d,open.length?'bad':'ok',open.length?open.length+' 个问题':(all.length?'已修复':'通过'));
+    });
+  }
+  function runLint(){
+    if(lintBusy||scBusy||busy)return;
+    if(mode==='scene'||scene)clearScene();
+    lintBusy=true;mode='lint';selIss=null;
+    stage.classList.remove('lint-on');markLint();
+    devs().forEach(function(d){setBadge(d,'','')});
+    var fold=$('#d-fold'),xt=$('#d-xt'),save={fold:fold.dataset.pose,xt:xt.dataset.pose};
+    scanList=forms();scanAt=0;
+    $('#btn-check').classList.add('on');
+    api('一多检查 · 断点 sm / md / lg · 逐形态扫描');
+    renderPanel();
+    (function step(){
+      devs().forEach(function(x){x.classList.remove('scanning')});
+      if(scanAt>=scanList.length){
+        setPose(fold,save.fold,true);setPose(xt,save.xt,true);
+        lintBusy=false;$('#btn-check').classList.remove('on');
+        stage.classList.add('lint-on');
+        Object.keys(ISS).forEach(function(id){if(ISS[id].lint){found[id]=true;markCode(id)}});
+        var first=Object.keys(ISS).filter(function(id){return ISS[id].lint&&!fixed[id]})[0];
+        selIss=first||null;
+        lintBadges();markLint();renderPanel();
+        api('一多检查 · '+scanList.length+' 种形态 · sm / md / lg / 圆屏');
+        $('#sync-pill').className='dm-pill '+(first?'err':'ok');
+        $('#sync-pill').innerHTML='<svg><use href="#i-yiduo"/></svg>一多检查 · '+lintOpen().length+' 个问题';
+        if(first)openFile(first);
+        return;
+      }
+      var f=scanList[scanAt],d=$('#'+f.dev);
+      if(f.pose)setPose(d,f.pose,true);
+      void d.offsetWidth;d.classList.add('scanning');
+      scanAt++;
+      $('#sync-pill').className='dm-pill info';
+      $('#sync-pill').innerHTML='<span class="spin" style="width:10px;height:10px"></span>一多检查 '+scanAt+'/'+scanList.length+' · '+f.lbl+' '+f.bp;
+      renderPanel();
+      setTimeout(step,430);
+    })();
+  }
+  function lintOpen(){return Object.keys(ISS).filter(function(id){return ISS[id].lint&&!fixed[id]})}
+  function endLint(){
+    stage.classList.remove('lint-on');mode=null;selIss=null;
+    devs().forEach(function(d){setBadge(d,'','');d.classList.remove('scanning')});
+    $('#sync-pill').className='dm-pill ok';$('#sync-pill').innerHTML='<svg><use href="#i-sync"/></svg>改一次一起刷 · 上次 0.8 s';
+    markLint();
+  }
+  function endAll(){
+    if(scBusy||lintBusy)return;
+    if(mode==='lint')endLint();
+    clearScene();mode=null;selIss=null;$('#ip').hidden=true;
+  }
+  $('#btn-check').addEventListener('click',runLint);
+  $('#ip-close').addEventListener('click',endAll);
+
+  /* 选中问题：切到出问题的形态、标记闪烁、打开代码行 */
+  function focusIssue(id,open){
+    selIss=id;var I=ISS[id];
+    if(I.lint&&I.devs){
+      var firstDev=null;
+      I.devs.forEach(function(p){
+        var d=$('#'+p[0]);if(!d)return;if(!firstDev)firstDev=d;
+        if(p[1]&&p[1].indexOf(d.dataset.pose)<0)setPose(d,p[1][0],true);
+      });
+      if(firstDev){select(firstDev);firstDev.scrollIntoView({block:'nearest',inline:'nearest'})}
+    }
+    markLint();renderPanel();
+    if(open!==false)openFile(id);
+  }
+  function pickIssueForDevice(d){
+    if(mode==='scene'&&scene&&!scBusy){
+      var r=scene.res[d.id];if(r&&r.st==='bad'){selIss=r.iss;renderPanel();openFile(r.iss)}
+    }else if(mode==='lint'&&!lintBusy){
+      var list=devIssues(d.id).filter(function(x){return !fixed[x]});
+      if(list.length){selIss=list[0];markLint();renderPanel();openFile(list[0])}
+    }
+  }
+
+  /* 修复：改 ArkTS 行 → 所有设备一起刷新 → 复验 */
+  function applyFix(ids){
+    ids=ids.filter(function(id){return !fixed[id]});if(!ids.length)return;
+    refreshAll(function(){
+      ids.forEach(function(id){fixed[id]=true;if(ISS[id].cls)stage.classList.add(ISS[id].cls);patchCode(id)});
+    },'应用 '+ids.length+' 处修复 · '+devCount()+' 块屏一起刷新…',function(){
+      if(mode==='scene'&&scene)runScene(scene.id,true);
+      else if(mode==='lint'){lintBadges();markLint();renderPanel();
+        var left=lintOpen().length;
+        $('#sync-pill').className='dm-pill '+(left?'err':'ok');
+        $('#sync-pill').innerHTML='<svg><use href="#i-yiduo"/></svg>一多检查 · '+(left?left+' 个问题':'全部通过 · 已在 '+devCount()+' 台复验');
+        api(ids.map(function(x){return ISS[x].file}).filter(function(v,i,a){return a.indexOf(v)===i}).join(' · ')+' · 已热刷新到 '+devCount()+' 台');
+      }
+    });
+    if(mode==='scene')panelBusy();
+  }
+
+  /* ================= 面板渲染 ================= */
+  function trimInd(lines){
+    var m=Math.min.apply(null,lines.map(function(l){return l.match(/^ */)[0].length}));
+    return lines.map(function(l){return l.slice(m)});
+  }
+  function diffHTML(id){
+    var I=ISS[id],ns=lns(id),olds=trimInd(ns.map(function(n){return RAW[I.file][n]||''})),news=trimInd(ns.map(function(n){return I.fix[n]}));
+    var h='<div class="ic-code"><div class="ic-f"><svg><use href="#i-ets"/></svg>'+I.file+' <span>:'+ns[0]+(ns.length>1?'–'+ns[ns.length-1]:'')+'</span></div>';
+    ns.forEach(function(n,i){h+='<div class="dl del"><span class="lnn">'+n+'</span><span class="sg">-</span><code>'+hl(olds[i])+'</code></div>'});
+    ns.forEach(function(n,i){h+='<div class="dl add"><span class="lnn">'+n+'</span><span class="sg">+</span><code>'+hl(news[i])+'</code></div>'});
+    return h+'</div>';
+  }
+  function cardHTML(id){
+    var I=ISS[id],done=!!fixed[id],rows='';
+    if(I.lint){rows+='<div class="ic-r"><span class="ic-k">问题</span><span>'+I.why+'</span></div><div class="ic-r"><span class="ic-k">形态</span><span>'+I.where+'</span></div>'}
+    else{
+      var ds=devs().filter(function(d){var r=scene&&scene.res[d.id];return r&&r.iss===id});
+      var r0=ds[0]&&scene.res[ds[0].id];
+      if(r0)rows+='<div class="ic-r"><span class="ic-k">现象</span><span>'+r0.note+'</span></div>';
+      if(ds.length)rows+='<div class="ic-r"><span class="ic-k">设备</span><span>'+ds.map(function(d){return longName(d)+' <em class="bpk">'+d.dataset.bp+'</em>'}).join('　')+'</span></div>';
+    }
+    rows+='<div class="ic-r"><span class="ic-k">建议</span><span>'+I.sug+'</span></div>';
+    var n=devCount();
+    return '<div class="icard '+(done?'done':'bad')+'"><div class="ic-h"><svg><use href="#'+(done?'i-checkS':'i-err')+'"/></svg>'+(I.lint?'<span>'+'①②③④'.charAt(+I.no-1)+'</span>':'')+'<span>'+I.t+'</span></div>'+rows+diffHTML(id)
+      +'<div class="ic-a"><button class="btn sm" data-open="'+id+'"><svg class="i"><use href="#i-code"/></svg>定位到代码</button><span class="grow"></span>'
+      +(done?'<span class="dm-pill ok"><svg><use href="#i-checkS"/></svg>已修复 · 已在 '+n+' 台复验</span>'
+            :'<button class="btn sm primary" data-fix="'+id+'">'+(I.lint?'接受 · '+n+' 台一起刷新':'应用修复 · '+n+' 台复验')+'</button>')+'</div></div>';
+  }
+  function panelScanning(S){
+    $('#ip').hidden=false;$('#ip-ico').innerHTML='<use href="#i-scene"/>';
+    $('#ip-title').textContent='场景 · '+S.name;
+    $('#ip-sum').innerHTML='<span class="dm-pill info"><span class="spin" style="width:9px;height:9px;border-width:1.5px"></span>'+devCount()+' 台同时进入</span>';
+    $('#ip-bd').innerHTML='<div class="ip-sec">设备反应<span class="grow"></span><code>'+S.api+'</code></div>'+devs().map(function(d){
+      return '<div class="ipd"><span class="spin" style="width:9px;height:9px;border-width:1.5px"></span><span class="dn">'+longName(d)+'</span><em class="bpk">'+d.dataset.bp+'</em><span class="nt">模拟中…</span></div>'}).join('');
+    $('#ip-ft').innerHTML='<span class="dm-muted">'+S.api+'</span>';
+  }
+  function panelBusy(){
+    $('#ip-sum').innerHTML='<span class="dm-pill info"><span class="spin" style="width:9px;height:9px;border-width:1.5px"></span>热刷新 · 复验中</span>';
+    var b=$('#ip-ft .btn.primary');if(b)b.disabled=true;
+    $$('#ip-bd [data-fix]').forEach(function(x){x.disabled=true});
+  }
+  function renderPanel(){
+    var ip=$('#ip');ip.hidden=false;
+    if(mode==='scene'&&scene){
+      var S=SC[scene.id],rows='',bads=sceneIssues(),nb=0;
+      devs().forEach(function(d){
+        var r=scene.res[d.id];if(!r)return;
+        var b=r.st==='bad';if(b)nb++;
+        rows+='<div class="ipd'+(b?' bad':'')+(b&&r.iss===selIss?' sel':'')+'" data-dev="'+d.id+'"'+(b?' data-iss="'+r.iss+'"':'')+'>'
+          +'<span class="dm-dot '+(b?'err':'ok')+'"></span><span class="dn">'+longName(d)+'</span><em class="bpk">'+d.dataset.bp+'</em>'
+          +'<span class="nt">'+r.note+'</span>'+(b?'<span class="loc">'+ISS[r.iss].file+':'+lns(r.iss)[0]+'</span>':'')+'</div>';
+      });
+      $('#ip-ico').innerHTML='<use href="#i-scene"/>';
+      $('#ip-title').textContent='场景 · '+S.name;
+      $('#ip-sum').innerHTML=nb?'<span class="dm-pill err">'+nb+' 台有问题</span>':'<span class="dm-pill ok">'+devCount()+' 台全部通过</span>';
+      var card=selIss&&(bads.indexOf(selIss)>=0||fixed[selIss])?cardHTML(selIss):'';
+      $('#ip-bd').innerHTML='<div class="ip-sec">设备反应 · '+devCount()+' 台<span class="grow"></span><code>'+S.api+'</code></div>'+rows+card;
+      var open=bads.filter(function(x){return !fixed[x]});
+      $('#ip-ft').innerHTML=open.length>1?'<span class="dm-muted">'+open.length+' 处问题 · '+nb+' 台</span><button class="btn sm primary" id="ip-fixall">全部修复 · '+devCount()+' 台复验</button>'
+        :(nb?'<span class="dm-muted">点红色设备看 ArkTS 代码行</span>':'<span class="dm-pill ok"><svg><use href="#i-checkS"/></svg>'+S.name+' · '+devCount()+' 台全部通过</span>');
+      revealSel();return;
+    }
+    if(mode==='lint'){
+      var scanning=lintBusy,list=scanList||forms(),chips='';
+      list.forEach(function(f,i){
+        var st=scanning&&i>=scanAt?'wait':scanning&&i===scanAt-1?'run':((f.iss||[]).some(function(x){return !fixed[x]})?'bad':'ok');
+        chips+='<span class="fchip '+st+'" data-dev="'+f.dev+'"'+(f.pose?' data-pose="'+f.pose+'"':'')+'>'
+          +(st==='run'?'<span class="spin"></span>':st==='bad'?'<svg><use href="#i-err"/></svg>':st==='ok'?'<svg><use href="#i-checkS"/></svg>':'')
+          +f.lbl+' <em>'+f.bp+'</em></span>';
+      });
+      $('#ip-ico').innerHTML='<use href="#i-yiduo"/>';
+      $('#ip-title').textContent='一多检查';
+      var left=lintOpen();
+      $('#ip-sum').innerHTML=scanning?'<span class="dm-pill info"><span class="spin" style="width:9px;height:9px;border-width:1.5px"></span>扫描 '+scanAt+'/'+list.length+'</span>'
+        :(left.length?'<span class="dm-pill err">'+left.length+' 个问题</span>':'<span class="dm-pill ok">全部通过</span>');
+      var h='<div class="ip-sec">'+list.length+' 种形态 · 断点 xs &lt;320 · sm 320–600 · md 600–840 · lg ≥840 vp</div><div class="forms">'+chips+'</div>';
+      if(!scanning){
+        h+='<div class="ip-sec">问题 · 点一条切到对应形态</div>';
+        Object.keys(ISS).filter(function(id){return ISS[id].lint}).forEach(function(id){
+          var I=ISS[id],dn=!!fixed[id];
+          h+='<div class="ipi'+(dn?' done':'')+(id===selIss?' sel':'')+'" data-iss="'+id+'"><span class="no">'+I.no+'</span><div class="it"><b>'+I.t+'</b><span>'+I.where+'</span></div>'
+            +'<span class="ist '+(dn?'dm-pill ok':'dm-pill err')+'">'+(dn?'已接受':'待处理')+'</span></div>';
+          if(id===selIss)h+=cardHTML(id);
+        });
+      }
+      $('#ip-bd').innerHTML=h;
+      $('#ip-ft').innerHTML=scanning?'<span class="dm-muted">逐个形态切换并扫描布局…</span>'
+        :(left.length?'<span class="dm-muted">'+left.length+' 处修改</span><button class="btn sm primary" id="ip-acceptall">全部接受 · '+devCount()+' 台一起刷新</button>'
+          :'<span class="dm-pill ok"><svg><use href="#i-checkS"/></svg>'+list.length+' 种形态 · 0 个问题 · 已在 '+devCount()+' 台复验</span>');
+      if(!scanning)revealSel();
+    }
+  }
+  function revealSel(){
+    var bd=$('#ip-bd'),row=$('.ipi.sel',bd),card=$('.icard',bd);
+    var top=row||card;if(!top)return;
+    var end=card||row,bot=end.offsetTop+end.offsetHeight-bd.clientHeight+8;
+    if(bot>bd.scrollTop)bd.scrollTop=Math.min(top.offsetTop-6,bot);
+    else if(top.offsetTop<bd.scrollTop)bd.scrollTop=top.offsetTop-6;
+  }
+  $('#ip').addEventListener('click',function(e){
+    var t;
+    if((t=e.target.closest('[data-fix]'))){if(!t.disabled)applyFix([t.dataset.fix]);return}
+    if((t=e.target.closest('[data-open]'))){openFile(t.dataset.open);return}
+    if(e.target.closest('#ip-fixall')){applyFix(sceneIssues());return}
+    if(e.target.closest('#ip-acceptall')){applyFix(lintOpen());return}
+    if((t=e.target.closest('.ipi[data-iss]'))){focusIssue(t.dataset.iss);return}
+    if((t=e.target.closest('.ipd[data-dev]'))){
+      var d=$('#'+t.dataset.dev);if(d){select(d);d.scrollIntoView({block:'nearest',inline:'nearest'})}
+      if(t.dataset.iss){selIss=t.dataset.iss;renderPanel();openFile(t.dataset.iss)}
+      return;
+    }
+    if((t=e.target.closest('.fchip[data-dev]'))&&!lintBusy){
+      var dv=$('#'+t.dataset.dev);if(!dv)return;
+      if(t.dataset.pose)setPose(dv,t.dataset.pose);
+      select(dv);dv.scrollIntoView({block:'nearest',inline:'nearest'});
+    }
   });
 
   /* 默认选中折叠屏，特征条首屏可见 */
   select($('#d-fold'));
+  setPose($('#d-fold'),'open',true);setPose($('#d-xt'),'3',true);
 DemoGuide.init([
-  {"target": ".code .ln[data-ln=\"12\"]", "kind": "click", "pos": "top", "label": "点这一行改代码，几块屏一起刷"},
+  {"target": "#code .ln[data-ln=\"12\"]", "kind": "click", "pos": "top", "label": "点这一行改代码，几块屏一起刷"},
   {"target": "#feat-spec", "kind": "click", "pos": "top", "label": "切折叠姿态：展开 / 悬停 / 折叠"},
   {"target": "#gest-bar [data-g=\"back\"]", "kind": "click", "pos": "bottom", "label": "选设备后点手势，屏上出轨迹和结果"},
-  {"target": "#gest-bar [data-to=\"d-tab\"]", "kind": "click", "pos": "bottom", "label": "商品卡流转到平板（也可直接拖）"}
+  {"target": "#gest-bar [data-to=\"d-tab\"]", "kind": "click", "pos": "bottom", "label": "商品卡流转到平板（也可直接拖）"},
+  {"target": "#sc-bar [data-sc=\"2g\"]", "kind": "click", "pos": "bottom", "label": "选一个场景，6 台设备同时进入"},
+  {"target": "#btn-check", "kind": "click", "pos": "bottom", "label": "一键扫 sm / md / lg 全部形态"},
+  {"target": "#ip", "kind": "change", "pos": "right", "label": "问题定位到 ArkTS 行，修复后各设备一起刷新复验"}
 ]);
 })();
 </script>
