@@ -198,7 +198,7 @@
             <b><svg class="i"><use href="#i-layout"/></svg>Multi-device · <span id="cnt">2</span> 块屏</b>
             <span class="grow"></span>
             <button class="abtn" id="btn-stage" title="台前调度|Esc 回到平铺" aria-pressed="false"></button>
-            <button class="btn primary sm" id="btn-reload" title="Apply Changes · 热重载|⇧⌘R"><svg class="i"><use href="#i-bolt"/></svg>热重载</button>
+            <button class="btn primary sm" id="btn-reload" title="Apply Changes · 所有设备一起热重载"><svg class="i"><use href="#i-bolt"/></svg>热重载</button>
           </div>
           <div class="dm-canvas" id="canvas">
             <div class="stage" id="stage">
@@ -305,12 +305,25 @@
 <script>
 (function(){
   var $=DemoFrame.$, $$=DemoFrame.$$;
-  document.getElementById('tree-slot').innerHTML=DemoFrame.tree({sel:'ListPage.ets'});
-  document.getElementById('tabs').insertAdjacentHTML('afterbegin',DemoFrame.tabs([{file:'ListPage.ets',on:true},{file:'ItemCard.ets'}]));
-  document.getElementById('code').innerHTML=DemoFrame.code('ListPage.ets',{cur:12});
-  DemoFrame.init({device:'Multi-device (2)',deviceIcon:'#i-layout',onReady:function(){
-    $('#status-slot').innerHTML='<span class="dm-capsule" id="cap"><span class="dm-dot ok"></span><span id="cap-txt">2 块屏 · 本机 2</span></span>';
-  }});
+  /* 你正在改的文件：ProductPage.ets（17、21 行改了栅格跨度，还没热重载） */
+  var L17=function(sm){return '      <span class="f">GridCol</span>({ <span class="p">span</span>: { <span class="p" data-bp="sm">sm</span>: <span class="n">'+sm+'</span>, <span class="p" data-bp="md">md</span>: <span class="n">3</span>, <span class="p" data-bp="lg">lg</span>: <span class="n">4</span> } }) {'};
+  var PL=[["<span class=\"k\">import</span> { <span class=\"ty\">display</span> } <span class=\"k\">from</span> <span class=\"s\">'@kit.ArkUI'</span>;"], [""], ["<span class=\"m\">@Entry</span>"], ["<span class=\"m\">@Component</span>"], ["<span class=\"k\">struct</span> <span class=\"ty\">ProductPage</span> {", {"fold": 1}], ["  <span class=\"m\">@StorageProp</span>(<span class=\"s\">'currentBreakpoint'</span>) <span class=\"p\">bp</span>: <span class=\"k\">string</span> = <span class=\"s\">'sm'</span>;"], ["  <span class=\"m\">@State</span> <span class=\"p\">folded</span>: <span class=\"k\">boolean</span> = <span class=\"k\">false</span>;"], [""], ["  <span class=\"f\">aboutToAppear</span>() {", {"fold": 1}], ["    <span class=\"p\">display</span>.<span class=\"f\">on</span>(<span class=\"s\">'foldStatusChange'</span>, (<span class=\"p\">s</span>: <span class=\"ty\">display.FoldStatus</span>) =&gt; {"], ["      <span class=\"k\">this</span>.<span class=\"p\">folded</span> = <span class=\"p\">s</span> === <span class=\"ty\">display.FoldStatus</span>.<span class=\"p\">FOLD_STATUS_FOLDED</span>;"], ["    });"], ["  }"], [""], ["  <span class=\"f\">build</span>() {", {"fold": 1, "at": 1}], ["    <span class=\"f\">GridRow</span>({ <span class=\"p\">columns</span>: { <span class=\"p\" data-bp=\"sm\">sm</span>: <span class=\"n\">4</span>, <span class=\"p\" data-bp=\"md\">md</span>: <span class=\"n\">8</span>, <span class=\"p\" data-bp=\"lg\">lg</span>: <span class=\"n\">12</span> } }) {", {"fold": 1}], ["@@L17@@"], ["        <span class=\"ty\">ProductList</span>()"], ["      }"], ["      <span class=\"k\">if</span> (<span class=\"k\">this</span>.<span class=\"p\">bp</span> !== <span class=\"s\">'sm'</span>) {"], ["        <span class=\"f\">GridCol</span>({ <span class=\"p\">span</span>: { <span class=\"p\" data-bp=\"md\">md</span>: <span class=\"n\">5</span>, <span class=\"p\" data-bp=\"lg\">lg</span>: <span class=\"n\">8</span> } }) { <span class=\"ty\">ProductDetail</span>() }"], ["      }"], ["    }"], ["  }"], [""], ["  <span class=\"m\">@Builder</span> <span class=\"f\">WatchCard</span>() {", {"fold": 1}], ["    <span class=\"f\">ArcList</span>() {"], ["      <span class=\"f\">ArcListItem</span>() { <span class=\"ty\">PriceRing</span>({ <span class=\"p\">price</span>: <span class=\"n\">899</span> }) }"], ["    }"], ["  }"], ["}"]];
+  PL[16]=[L17(8)];
+  DemoFrame.FILES['ProductPage.ets']={path:['entry','src','main','ets','pages'],crumbs:['ProductPage','build'],lines:PL};
+  document.getElementById('tree-slot').innerHTML=DemoFrame.tree({sel:'ProductPage.ets'});
+  $$('#tree .hint').forEach(function(h){h.textContent=h.textContent.replace(/\\/g,'/')});
+  document.getElementById('tabs').insertAdjacentHTML('afterbegin',DemoFrame.tabs([{file:'ProductPage.ets',on:true},{file:'ListPage.ets'}]));
+  var ed={file:'ProductPage.ets',cur:17,mod:[17,21],marks:{}};
+  function renderCode(){
+    var c=$('#code');
+    if(ed.file!=='ProductPage.ets'){c.innerHTML=DemoFrame.code(ed.file,{cur:12});return}
+    c.innerHTML=DemoFrame.code('ProductPage.ets',{cur:ed.cur,marks:ed.marks});
+    ed.mod.forEach(function(n){var l=$('#code .ln[data-ln="'+n+'"]');if(l){l.classList.add('mod');$('.g',l).title='已改，未热重载'}});
+    var p=$('#status-pos');if(p)p.textContent=ed.cur+':1';
+  }
+  renderCode();
+  DemoFrame.init({device:'Multi-device (2)',deviceIcon:'#i-layout',pos:'17:1'});
+  $('#tabs').addEventListener('click',function(e){var t=e.target.closest('.tab[data-file]');if(!t||e.target.closest('.x'))return;ed.file=t.dataset.file;renderCode()});
 
   /* 远端设备模板：加进画布后是一扇鸿蒙自由窗口（标题栏带延迟与机位） */
   var PHONE_SCR='<div class="scr"><i class="hole"></i><div class="mapp"><div class="st"><span>9:41</span><span>5G ▮▮▮</span></div><div class="hd">商品</div><div class="search">搜索</div>'
@@ -337,7 +350,7 @@
       +'<button class="wb fw-max" data-wb="max" title="窗口布局 · 吸附 / 甩屏" aria-expanded="false"><svg class="i"><use href="#i-win-max"/></svg></button>'
       +'<button class="wb x" data-wb="close" title="断开并关闭"><svg class="i"><use href="#i-win-close"/></svg></button></div>'
       +'<div class="fw-body"><div class="dm-progress indet sync"><i></i></div><div class="fw-dev" style="--bw:'+m.bw+';--bh:'+m.bh+';--oy:'+m.oy+'px">'+m.dev+'</div></div>'
-      +'<div class="fw-ft"><span>'+m.spec+'</span><span class="grow"></span><span>hdc -t remote://'+m.host+'</span></div>'
+      +'<div class="fw-ft"><span>'+m.spec+'</span><span class="grow"></span><span>'+m.city+'机房</span></div>'
       +'<span class="fw-rz" title="拖动缩放"></span></div>';
   }
   var ide=$('#ide'),layer=$('#fw-layer'),canvas=$('#canvas');
@@ -347,22 +360,20 @@
     var n=$$('#stage .dm-device').length+$$('#fw-layer .fw').length;
     $('#cnt').textContent=n;
     var hd=$('#hdr-device span');if(hd)hd.textContent='Multi-device ('+n+')';
-    var free=Object.keys(WIN).filter(function(k){return WIN[k].loc!=='canvas'}).length;
-    var cap=$('#cap-txt');if(cap)cap.textContent=n+' 块屏 · 本机 2'+(remote?' · 远端 '+remote:'')+(free?' · 自由窗口 '+free:'');
-    var rp=$('#remote-pill');rp.className=remote?'dm-pill info':'dm-pill muted';rp.textContent='远端 '+remote+' 台';
     paintCard();
+    if(stg&&stg.isOn())stg.relayout();
   }
   var LOC={canvas:'画布内',float:'浮在桌面',snap:'吸附 IDE 旁',lower:'在下屏',min:'已最小化'};
   function paintCard(){
     var ks=Object.keys(WIN);
-    $('#fw-n').textContent=ks.length+' 个';$('#fw-n').className=ks.length?'dm-pill info':'dm-pill muted';
+    $('#fw-n').textContent=ks.length+' 个';$('#fw-n').className='dm-pill muted';
     if(ks.length){
       $('#fw-list').innerHTML=ks.map(function(k){
         var w=WIN[k],m=META[k],act='';
         if(w.loc==='lower')act='<button class="btn sm" data-fwa="up" data-k="'+k+'"><svg class="i"><use href="#i-undo"/></svg>甩回上屏</button>';
         else if(w.loc==='min')act='<button class="btn sm" data-fwa="restore" data-k="'+k+'">还原</button>';
         else if(w.loc!=='canvas')act='<button class="btn sm" data-fwa="canvas" data-k="'+k+'">放回画布</button>';
-        return '<div class="row"><svg class="i"><use href="'+m.icon+'"/></svg><span class="nm">'+m.name+'</span><span class="dm-pill '+(w.loc==='canvas'?'muted':'info')+'">'+LOC[w.loc]+(w.loc==='snap'?(w.side==='r'?' · 右':' · 左'):'')+'</span><span class="dm-mono dm-muted">'+w.rtt+' ms</span><span class="grow"></span>'+act+'</div>';
+        return '<div class="row"><svg class="i"><use href="'+m.icon+'"/></svg><span class="nm">'+m.name+'</span><span class="dm-pill muted">'+LOC[w.loc]+(w.loc==='snap'?(w.side==='r'?' · 右':' · 左'):'')+'</span><span class="dm-mono dm-muted">'+w.rtt+' ms</span><span class="grow"></span>'+act+'</div>';
       }).join('');
     }
     /* 小地图：上屏是 IDE，吸附时 IDE 让出一条；下屏放甩过去的窗口 */
@@ -397,6 +408,7 @@
     el.style.left=x+'px';el.style.top=y+'px';var w=WIN[el.dataset.kind];w.x=x;w.y=y;
   }
   function toLayer(el){
+    if(stg&&stg.isOn())stg.clear();
     var ir=ide.getBoundingClientRect(),r=el.getBoundingClientRect();
     layer.appendChild(el);el.classList.remove('new');el.classList.add('float');
     placeFloat(el,r.left-ir.left,r.top-ir.top);WIN[el.dataset.kind].loc='float';
@@ -443,7 +455,7 @@
     var b=e.target.closest('[data-add]');if(!b||b.disabled)return;
     var kind=b.dataset.add,card=b.closest('.dm-card'),st=$('[data-state]',card);
     b.className='btn';b.disabled=true;b.textContent='画布里';
-    st.className='dm-pill info';st.innerHTML='<span class="spin" style="width:10px;height:10px"></span>接入中';
+    st.className='dm-pill muted';st.innerHTML='<span class="spin" style="width:10px;height:10px"></span>接入中';
     $('.dm-progress',card).hidden=false;
     setTimeout(function(){
       $('.dm-progress',card).hidden=true;
@@ -488,7 +500,7 @@
     if(drag.rz){setScale(el,Math.max(.7,Math.min(2,drag.s0+(e.clientX-drag.sx)/META[k].bw)));return}
     if(!drag.moved){if(Math.hypot(e.clientX-drag.sx,e.clientY-drag.sy)<5)return;drag.moved=true;
       if(WIN[k].loc==='snap'){ide.classList.remove('snapped-r','snapped-l');restoreLeft();el.classList.remove('snap','r','l');el.classList.add('float');setScale(el,1);WIN[k].loc='float';drag.dx=Math.min(drag.dx,el.offsetWidth-60);drag.dy=16}
-      else if(WIN[k].loc==='canvas')toLayer(el);
+      else if(WIN[k].loc==='canvas'){toLayer(el);drag.dx=Math.min(drag.dx,el.offsetWidth-80);drag.dy=16}
       el.classList.add('drag');recount();}
     var ir=ide.getBoundingClientRect();
     el.style.left=(e.clientX-ir.left-drag.dx)+'px';el.style.top=(e.clientY-ir.top-drag.dy)+'px';
@@ -532,7 +544,7 @@
     else if(b.dataset.wb==='close'){
       closeMenus();if(WIN[k].loc==='snap')unsnap();el.remove();delete WIN[k];remote--;
       var card=$('#rd-'+k),st=$('[data-state]',card),ab=$('[data-add]',card);
-      st.className='dm-pill ok';st.textContent='空闲';ab.disabled=false;ab.className='btn primary';ab.innerHTML='<svg class="i"><use href="#i-plus-box"/></svg>加进画布';
+      st.className='dm-pill ok';st.textContent='空闲';ab.disabled=false;ab.className='btn';ab.innerHTML='<svg class="i"><use href="#i-plus-box"/></svg>加进画布';
       recount();
     }
   });
@@ -547,12 +559,106 @@
   },1600);
   window.addEventListener('resize',function(){paintCard()});
 
+
+  /* ================= 台前调度：改哪台哪台上台，其余缩到侧边、仍实时刷新 ================= */
+  var NAME={'dev-phone':'Mate 70 Pro','dev-fold':'Mate X6 展开','fw-phone':'Pura 70 Pro','fw-watch':'WATCH 5','fw-car':'HiCar'};
+  var BP={sm:['dev-phone','fw-phone'],md:['dev-fold'],lg:['fw-car'],watch:['fw-watch'],fold:['dev-fold'],nsm:['dev-fold','fw-car']};
+  var LINE={10:'fold',11:'fold',17:'md',20:'nsm',21:'md',26:'watch',27:'watch',28:'watch'};
+  var WHY={sm:'sm',md:'md',lg:'lg',watch:'ArcList',fold:'折叠态',nsm:"bp !== 'sm'"};
+  var stg=null,pinned=false,home=null,built=1;
+  var tagEl=document.createElement('div');tagEl.className='st-tag';tagEl.hidden=true;$('.mdc .prev').appendChild(tagEl);
+  function inCanvas(id){var el=document.getElementById(id);return el&&el.closest('#canvas')?el:null}
+  function names(els){return els.map(function(e){return NAME[e.id]||e.dataset.name}).join('、')}
+  function showTag(html,cls){tagEl.className='st-tag'+(cls?' '+cls:'');tagEl.innerHTML=html;tagEl.hidden=false}
+  function pinBtn(){return '<button class="btn sm" data-st="pin" aria-pressed="'+pinned+'">'+(pinned?'已固定':'固定')+'</button>'}
+  stg=DeviceStage.init({root:'#canvas',items:'#stage > .dm-device, #stage > .fw',rail:'left',onChange:function(f){
+    $('#btn-stage').setAttribute('aria-pressed',f.length?'true':'false');
+    if(!f.length){tagEl.hidden=true;pinned=false}
+    else if(built===2&&f.some(function(el){return el.classList.contains('ds-broken')||el.dataset.bk})){brokenTag(f)}
+  }});
+  $('#btn-stage').innerHTML=DeviceStage.icon;
+  $('#btn-stage').addEventListener('click',function(){
+    if(stg.isOn()){stg.clear();return}
+    var t=targetsFor(ed.cur,null);stg.focus(t.els.length?t.els:$('#dev-fold'));
+  });
+  function targetsFor(ln,bp){
+    var key=bp||LINE[ln];if(!key)return {key:null,els:[]};
+    return {key:key,els:BP[key].map(inCanvas).filter(Boolean)};
+  }
+  /* 光标落在只影响某断点 / 形态的代码上：对应设备自动上台 */
+  $('#code').addEventListener('click',function(e){
+    if(ed.file!=='ProductPage.ets')return;
+    var ln=e.target.closest('.ln');if(!ln)return;ed.cur=+ln.dataset.ln;
+    var tok=e.target.closest('[data-bp]'),t=targetsFor(ed.cur,tok&&tok.dataset.bp);
+    if(!t.key||pinned)return;
+    if(!t.els.length){showTag('<svg class="i"><use href="#i-info"/></svg><span class="tx">'+WHY[t.key]+' 对应的 '+BP[t.key].map(function(i){return NAME[i]}).join('、')+' 不在画布 · 从右侧远端真机池加进来</span>');return}
+    home=t.els;stg.focus(t.els);
+    showTag('<svg class="i"><use href="#i-cursor"/></svg><span class="tx">按光标所在代码 · <code>'+WHY[t.key]+'</code> → '+names(t.els)+'</span>'+pinBtn());
+  });
+  /* 点任意一台设备，直接上台 */
+  $('#canvas').addEventListener('click',function(e){
+    if(stg.isOn()||e.target.closest('.fw-bar'))return;
+    var it=e.target.closest('#stage > .dm-device, #stage > .fw');if(!it)return;
+    home=[it];stg.focus(it);showTag('<svg class="i"><use href="#i-cursor"/></svg><span class="tx">'+names([it])+' 上台 · 其余缩到左侧仍实时刷新</span>'+pinBtn());
+  });
+  function brokenTag(f){
+    showTag('<svg class="i"><use href="#i-err"/></svg><span class="tx">'+names(f)+' 被带坏 · <code>ProductPage.ets:17</code> sm: 8 超出 4 列栅格</span><button class="btn sm" data-st="fix">改回 sm: 4 并热重载</button>','err');
+  }
+  tagEl.addEventListener('click',function(e){
+    var b=e.target.closest('[data-st]');if(!b)return;
+    if(b.dataset.st==='pin'){pinned=!pinned;b.setAttribute('aria-pressed',pinned);b.textContent=pinned?'已固定':'固定'}
+    else if(b.dataset.st==='fix'){PL[16]=[L17(4)];ed.mod=[17];ed.marks={};ed.cur=17;renderCode();reload(true)}
+  });
+  /* 热重载：所有设备一起刷新；侧边里布局也变了的亮绿点，被带坏的亮红点 */
+  function devOf(id){var el=document.getElementById(id);if(!el)return null;return el.classList.contains('dm-device')?el:$('.dm-device',el)}
+  function reload(fix){
+    var btn=$('#btn-reload');btn.disabled=true;
+    var all=$$('#stage > .dm-device, .fw .dm-device');
+    all.forEach(function(d){d.classList.add('refreshing')});
+    setTimeout(function(){
+      all.forEach(function(d){d.classList.remove('refreshing')});
+      btn.disabled=false;ed.mod=[];
+      var sm=['dev-phone','fw-phone'];
+      if(!fix){
+        built=2;
+        devOf('dev-fold').classList.add('v2');var car=devOf('fw-car');if(car)car.classList.add('v2');
+        sm.forEach(function(id){var d=devOf(id);if(d){d.classList.add('bk');document.getElementById(id).dataset.bk=1}});
+        ed.marks={17:'err'};renderCode();
+        var line=$('#code .ln[data-ln="17"] .g');if(line)line.title='sm: 8 超出 GridRow 的 4 列';
+      }else{
+        built=3;
+        sm.forEach(function(id){var d=devOf(id);if(d){d.classList.remove('bk');delete document.getElementById(id).dataset.bk}});
+        renderCode();
+      }
+      if(!stg.isOn()){home=[$('#dev-fold')];stg.focus(home)}
+      var onStage=stg.focused();
+      [['dev-fold','changed','详情栏变宽'],['fw-car','changed','列表变宽，少一张卡'],['dev-phone','broken','列表撑出屏宽'],['fw-phone','broken','sm 同样被裁']].forEach(function(f){
+        var el=inCanvas(f[0]);if(!el)return;
+        if(fix){stg.flag(el,f[1]==='broken'?'changed':null,f[1]==='broken'?'恢复单列':null);return}
+        if(onStage.indexOf(el)<0)stg.flag(el,f[1],f[2]);
+      });
+      if(fix){stg.focus(home&&home[0]&&home[0].id!=='dev-phone'?home:[$('#dev-fold')]);showTag('<svg class="i"><use href="#i-checkS"/></svg><span class="tx">已热重载 · 手机恢复单列，X6 详情变宽</span>','ok')}
+      else if(onStage.some(function(el){return el.dataset.bk}))brokenTag(onStage);
+      else showTag('<svg class="i"><use href="#i-bolt"/></svg><span class="tx">已热重载 '+all.length+' 台 · 左侧红点是被这次改动带坏的</span>'+pinBtn());
+    },700);
+  }
+  $('#btn-reload').addEventListener('click',function(){reload(false)});
+
   /* 智慧屏在用：排队 */
   $('#btn-queue').addEventListener('click',function(){
     this.disabled=true;this.textContent='已排队';
     var st=$('#rd-tv [data-state]');st.className='dm-pill warn';st.textContent='排队中 · 第 2 位';
   });
-DemoGuide.init([{"target": "[data-add=\"watch\"]", "kind": "click", "pos": "top", "label": "点这里加进画布"}, {"target": "#stage", "kind": "change", "pos": "top", "label": "画布多一块屏"}, {"target": "#fw-watch .fw-bar .seat", "kind": "click", "pos": "bottom", "label": "按住标题栏拖出画布"}, {"target": "#fw-watch .fw-max", "kind": "click", "pos": "bottom", "label": "吸附 IDE 旁 / 三指甩到下屏"}, {"target": "#fmap", "kind": "change", "pos": "left", "label": "窗口在哪块屏"}]);
+DemoGuide.init([
+    {target:'[data-add="watch"]',kind:'click',pos:'top',label:'手表不在手边？从远端池拉一块'},
+    {target:'#code .ln[data-ln="17"] .g',kind:'click',pos:'bottom',label:'光标放在改过的第 17 行，X6 自动上台'},
+    {target:'#canvas .ds-side.ds-broken',kind:'click',pos:'right',label:'红点：这次改动带坏了它，点它上台'}
+  ],{scene:{
+    at:'你改了商品页栅格，要在手机、X6、手表、车机上都看',
+    goal:'把 X6 展开态改对，且不把手机和其他台带坏',
+    pain:'手边没手表车机；平铺太小看不清，改完挨个点开查',
+    fix:'远端真机拉进画布；改哪台哪台上台，带坏的亮红点'
+  }});
 })();
 </script>
 </body>
