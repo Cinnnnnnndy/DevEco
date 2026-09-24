@@ -284,10 +284,11 @@ window.DEVECO_CATALOG = {
       note: '按版本对已上线 / 待发布的界面做体验走查：先按用户任务流把页面串起来，再逐页、逐步记问题，给出严重度与改法。',
       items: [
         {
-          title: '26.0 版本走查报告', subtitle: 'v26.0 UX Walkthrough Report',
-          desc: '26.0 版本的界面走查：按任务流梳理页面与步骤，逐页记录问题、严重度与改法，汇总成报告。走查页面待提供。',
-          view: 'sketch', date: '2026-09-24',
-          tags: ['26.0', '走查', '任务流'], note: '走查页面待提供，素材放 analysis/walkthrough-26.0/input/',
+          title: 'DevEco Code 26.0 融合版本 · 上线走查', subtitle: 'v26.0 Walkthrough · Install to First Use',
+          desc: '从安装到使用：设置里从磁盘装插件 → 首次进入 → 一句话建工程写 PRD。6 张截图、32 个问题，左图右文，问题直接框在截图上，悬停联动；附问题总表与待补页面。',
+          view: 'doc', date: '2026-09-24', href: 'analysis/walkthrough-26.0/REPORT-走查报告.html',
+          links: [{ label: '流程清单', href: 'analysis/walkthrough-26.0/flows.md' }, { label: '走查说明', href: 'analysis/walkthrough-26.0/README.md' }],
+          tags: ['26.0', '走查', '从安装到使用', 'DevEco Code'],
         },
       ],
     },
