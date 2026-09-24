@@ -430,6 +430,12 @@
     thread.insertAdjacentHTML('beforeend','<div class="umsg"><span class="time">2026/9/14 10:'+(clock++)+' · <span class="mtag">'+m.en+' '+m.zh+'</span></span><div class="bubble">'+esc(txt)+'</div></div>');
   }
   function reply(html,cls){thread.insertAdjacentHTML('beforeend','<div class="amsg"><div class="step pl-line '+(cls||'ok')+'"><svg class="i"><use href="#i-checkS"/></svg><span>'+html+'</span></div></div>');toBottom(true)}
+  function planLine(html,cls){
+    var last=thread.lastElementChild;
+    if(!last||!last.hasAttribute('data-plan')){thread.insertAdjacentHTML('beforeend','<div class="amsg" data-plan></div>');last=thread.lastElementChild}
+    last.insertAdjacentHTML('beforeend','<div class="step pl-line '+(cls||'ok')+'"><svg class="i"><use href="'+(cls==='warn'?'#i-warn':'#i-checkS')+'"/></svg><span>'+html+'</span></div>');
+    toBottom();
+  }
   function send(){
     var ta=$('#ai-text'),txt=ta.value.trim();if(!txt)return;
     ta.value='';$('#send').classList.remove('ready');
@@ -591,7 +597,7 @@
   function startPlan(txt){
     P.started=true;
     addUser(txt);
-    thread.insertAdjacentHTML('beforeend','<div class="amsg" id="pl-amsg">'
+    thread.insertAdjacentHTML('beforeend','<div class="amsg" id="pl-amsg" data-plan>'
       +'<div class="step pl-line"><svg class="i"><use href="#i-plan"/></svg>先出方案，写在编辑器「'+PLAN_FILE+'」里，能直接改；写的这会儿我接着读文件</div>'
       +'<div class="dm-card accent" id="pl-chat"><div class="dm-card-hd"><svg class="i"><use href="#i-plan"/></svg>计划 · 收藏同步<span class="grow"></span><span class="dm-pill info" id="plc-state">生成中</span></div>'
       +'<div class="dm-card-bd"><div class="ic-grid plc-grid"><div class="ic-main" id="plc-main">'
@@ -643,7 +649,7 @@
     $('#pl-writing').hidden=true;$('#pl-add').hidden=false;
     setState('待你确认','warn');cap2('等你确认计划 · 收藏同步',60,true);
     $('#plc-tip').textContent='在编辑器里改好再执行';
-    P.pending.splice(0).forEach(function(t){addStep(t,true)});
+    P.pending.splice(0).forEach(function(t){var id=addStep(t,true);planLine('已把「'+esc(t)+'」加成计划第 '+stepNo(id)+' 步')});
     updateMeta();
   }
 
@@ -733,7 +739,7 @@
   function runPlan(){
     if(!P.ready||P.exec)return;
     /* 空的步骤不执行 */
-    rows().forEach(function(r){if(!S[r.dataset.id].t)r.remove()});
+    rows().forEach(function(r){var id=r.dataset.id;if(!S[id].t){r.remove();if(S[id].user)delete P.edits['add:'+id]}});
     var ids=rows().map(function(r){return r.dataset.id});if(!ids.length)return;
     P.exec=true;document.activeElement&&document.activeElement.blur&&document.activeElement.blur();
     var ne=Object.keys(P.edits).length;
@@ -749,7 +755,7 @@
     $('#pl-run').hidden=true;$('#pl-pause').hidden=false;$('#pl-prog').hidden=false;
     $('#plc-run').hidden=true;$('#plc-tip').textContent='执行视图在编辑器里';
     $('#plc-main').innerHTML='<div class="plc-prog"><div class="plc-now" id="plc-now">准备执行…</div><div class="dm-progress" id="plc-bar"><i style="--v:0%"></i></div><div id="plc-devs" class="dm-col" style="gap:6px"></div></div>';
-    $('#pl-amsg').insertAdjacentHTML('beforeend','<div class="step ok pl-line" id="plc-go"><svg class="i"><use href="#i-checkS"/></svg><span>按'+(ne?'你改过的':'')+'计划执行 · '+ids.length+' 步'+(ne?'（你改了 '+ne+' 处）':'')+' · 验证 '+P.queue.filter(function(t){return t.k==='verify'&&t.on}).length+' 项</span></div>');
+    planLine('按'+(ne?'你改过的':'')+'计划执行 · '+ids.length+' 步'+(ne?'（你改了 '+ne+' 处）':'')+' · 验证 '+P.queue.filter(function(t){return t.k==='verify'&&t.on}).length+' 项');
     toBottom(true);
     if($('.tab.on[data-file="'+PLAN_FILE+'"]'))planCrumbs();
     updateMeta();
@@ -804,21 +810,20 @@
     treeMark('NavBar.ets','vcs-out');
     var no=$('.pl-no',e).textContent;
     $('#plc-devs').insertAdjacentHTML('beforeend','<div class="plc-dev"><b>偏离计划 · 第 '+no+' 步</b>：顶栏是公共组件 NavBar.ets，改成加参数，多改 1 个文件</div>');
-    $('#pl-amsg').insertAdjacentHTML('beforeend','<div class="step warn pl-line"><svg class="i"><use href="#i-warn"/></svg><span><b>偏离计划 · 第 '+no+' 步</b> 顶栏是公共组件 NavBar.ets，改成给它加 showFavorite 参数，详情页只传参数</span></div>');
-    toBottom();updateMeta();
+    planLine('<b>偏离计划 · 第 '+no+' 步</b> 顶栏是公共组件 NavBar.ets，改成给它加 showFavorite 参数，详情页只传参数','warn');
+    updateMeta();
   }
   function finish(){
     P.done=true;P.exec=true;
     var ns=stepsTotal(),vs=P.queue.filter(function(t){return t.k==='verify'}),von=vs.filter(function(t){return t.on}).length,dev=P.devShown?1:0;
     setState('已完成 · '+(dev?'偏离 1 处':'无偏离'),'ok');
     $('#pl-pause').hidden=true;$('#pl-prog i').style.setProperty('--v','100%');
-    var sum='按计划做完 '+ns+' / '+ns+' 步 · '+(dev?'偏离 1 处（第 '+$('.px-step[data-id="bar"] .pl-no',stepsEl).textContent+' 步，原因已写在步骤下）':'没有偏离')+' · 验证 '+von+' / '+von+' 通过';
+    var sum='按计划做完 '+ns+' / '+ns+' 步 · '+(dev?'偏离 1 处（第 '+$('.px-step[data-id="bar"] .pl-no',stepsEl).textContent+' 步，原因已写在步骤下）':'没有偏离')+' · 验证 '+von+' / '+von+' 通过'+(vs.length>von?'（跳过 '+(vs.length-von)+' 项）':'');
     $('#pl-sum').innerHTML='<div class="dm-callout ok pl-sum"><svg class="i"><use href="#i-checkS"/></svg><span>'+esc(sum)+'</span></div>';
     $('#plc-now').textContent='做完了 · '+ns+' 步 · 验证 '+von+' / '+von+' 通过';
     $('#plc-bar i').style.setProperty('--v','100%');
-    $('#pl-amsg').insertAdjacentHTML('beforeend','<div class="step ok pl-line"><svg class="i"><use href="#i-checkS"/></svg><span>'+esc(sum)+'</span></div>');
+    planLine(esc(sum));
     cap2('收藏同步 · 已完成',100);
-    toBottom();
   }
   $('#pl-pause').addEventListener('click',function(){
     if(P.done)return;

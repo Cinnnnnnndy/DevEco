@@ -34,21 +34,127 @@
   .dm-chart .lbl.err{fill:var(--ui-error);font-weight:600}
   .dm-chart .lbl.ok{fill:var(--ui-success);font-weight:600}
   .dm-chart .lbl.warn{fill:var(--ui-warning)}
+  .dm-chart .lbl.strong{fill:var(--ui-fg);font-weight:600}
   .dm-chart .band{fill:color-mix(in srgb,var(--ui-success) 12%,transparent);stroke:color-mix(in srgb,var(--ui-success) 50%,transparent);stroke-dasharray:3 3}
   .cmp{flex:none;gap:8px}
   .cmp > * + *{border-left:1px solid var(--ui-border)}
-  .rec-list .dm-item .loc{width:34px}
+  .rec-list .dm-item .loc{width:46px}
+  .ch-t .dm-seg{align-self:center}
+  .ch-t .dm-seg button,.cmp-bar .dm-seg button{height:22px;font-size:11px;padding:0 10px}
+  .dm-seg button:disabled{opacity:.45}
   /* Agent 面板里的 diff 卡状态 */
   .diffcard.applied{border-color:color-mix(in srgb,var(--ui-success) 60%,transparent)}
   .diffcard.rejected{opacity:.55}
   .diffcard .dh .note{font-size:11px;color:var(--ui-fg-info);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+  .diffcard pre .l.hunk{color:var(--ui-fg-info)}
   .amsg .step.ok svg.i{color:var(--ui-success)}
   .amsg .step.run svg.i{color:var(--ui-accent)}
+
+  /* 内存涨 / 泄漏：曲线 + 泄漏链 */
+  .leak-grid{display:grid;grid-template-columns:minmax(0,1.12fr) minmax(0,1fr);gap:8px;flex:none}
+  .dm-chart .mem-line{fill:none;stroke:var(--ui-accent);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+  .dm-chart .mem-area{fill:color-mix(in srgb,var(--ui-accent) 11%,transparent)}
+  .dm-chart .mem-in{fill:color-mix(in srgb,var(--ui-fg) 5%,transparent)}
+  .dm-chart .floor{fill:none;stroke:var(--ui-error);stroke-width:1.5;stroke-dasharray:4 3}
+  .dm-chart .base{stroke:var(--ui-success);stroke-width:1;stroke-dasharray:4 3}
+  .dm-chart .mcur{stroke:var(--ui-accent);stroke-width:1}
+  .dm-chart .mend{fill:var(--ui-accent);stroke:var(--ui-editor-bg);stroke-width:2}
+  .dm-chart .cyc{fill:transparent;cursor:pointer;pointer-events:all}
+  .dm-chart .cyc:hover{fill:color-mix(in srgb,var(--ui-accent) 8%,transparent)}
+  .dm-chart .cyc.on{fill:color-mix(in srgb,var(--ui-error) 7%,transparent);stroke:var(--ui-error);stroke-width:1.5}
+  .chain-card{gap:6px}
+  .chain{display:flex;flex-direction:column;padding-top:2px}
+  .cn{display:flex;flex-direction:column;gap:1px;align-items:stretch;min-width:0;padding:5px 9px;border:1px solid var(--ui-component-border);border-radius:6px;background:var(--ui-field-bg);color:var(--ui-fg);text-align:left;font-size:var(--fs-sm);line-height:var(--lh-sm);cursor:pointer}
+  .cn:hover{background:var(--ui-hover)}
+  .cn.on{border-color:var(--ui-accent);background:color-mix(in srgb,var(--ui-accent) 14%,transparent)}
+  .cn .l1{display:flex;align-items:center;gap:6px;white-space:nowrap;min-width:0;overflow:hidden}
+  .cn .l1 b{font-weight:600;flex:none}
+  .cn .l1 > span,.cn .l1 code{min-width:0;overflow:hidden;text-overflow:ellipsis}
+  .cn .l1 > span{color:var(--ui-fg-info)}
+  .cn .l2{display:flex;gap:8px;font-size:11px;line-height:15px;color:var(--ui-fg-info);white-space:nowrap;min-width:0}
+  .cn .l2 > span:first-child{min-width:0;overflow:hidden;text-overflow:ellipsis}
+  .cn .l2 .loc{margin-left:auto;flex:none;font-family:var(--font-code);color:var(--ui-link)}
+  .cn.root,.cn.leaked{align-self:center;width:62%}
+  .cn.leaked{border-color:color-mix(in srgb,var(--ui-error) 60%,transparent);background:color-mix(in srgb,var(--ui-error) 9%,transparent)}
+  .cn.leaked.on{border-color:var(--ui-accent);background:color-mix(in srgb,var(--ui-accent) 14%,transparent)}
+  .cn-row{display:grid;grid-template-columns:1fr 1fr}
+  .cn-row > .cn{margin:0 6px}
+  .dm-chart svg.cw{height:14px;width:100%;overflow:visible}
+  .cw path{fill:none;stroke:color-mix(in srgb,var(--ui-error) 55%,var(--ui-component-border));stroke-width:1.5;vector-effect:non-scaling-stroke}
+  .chain-wait{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;min-height:200px;color:var(--ui-fg-info);font-size:var(--fs-sm)}
+
+  /* 多次运行对比 */
+  .cmp-head{display:flex;gap:8px;flex:none}
+  .cmp-head > .dm-callout{flex:1;min-width:0}
+  .cmp-bar{display:flex;align-items:center;gap:8px;height:26px;flex:none;font-size:var(--fs-sm);color:var(--ui-fg-info);white-space:nowrap}
+  .cmp-bar .grow{flex:1}
+  .cmp-bar .path{display:inline-flex;align-items:center;gap:4px}
+  .cmp-bar .path span{height:20px;display:inline-flex;align-items:center;padding:0 7px;border-radius:5px;background:var(--ui-tag-bg);font-size:11px;color:var(--ui-fg)}
+  .cmp-bar .path i{font-style:normal;font-family:var(--font-code);font-size:11px;color:var(--ui-fg)}
+  .cmp-bar .path svg.i{width:12px;height:12px;color:var(--ui-fg-info)}
+  .cmp-multi{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr);gap:8px;flex:none}
+  .dm-chart .sp-dot{stroke:var(--ui-editor-bg);stroke-width:2}
+  .dm-chart .sp-dot.b{fill:var(--ui-error)}.dm-chart .sp-dot.a{fill:var(--ui-success)}
+  .dm-chart .sp-rg.b{fill:color-mix(in srgb,var(--ui-error) 16%,transparent)}.dm-chart .sp-rg.a{fill:color-mix(in srgb,var(--ui-success) 18%,transparent)}
+  .dm-chart .sp-md{stroke-width:2;stroke-linecap:round}.dm-chart .sp-md.b{stroke:var(--ui-error)}.dm-chart .sp-md.a{stroke:var(--ui-success)}
+  .dm-chart .sp-link{fill:none;stroke:var(--ui-fg-info);stroke-width:1;stroke-dasharray:3 3}
+  .dm-chart .glbl{font-family:var(--font-ui);font-size:11px;font-weight:600;fill:var(--ui-fg)}
+  .mt{display:flex;flex-direction:column;min-width:0}
+  .mt-h,.mt-r{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr) minmax(0,1fr) 120px 58px 78px;align-items:center;gap:8px;padding:0 6px}
+  .mt-h{height:22px;font-size:11px;color:var(--ui-fg-info);border-bottom:1px solid var(--ui-border)}
+  .mt-r{height:32px;border-bottom:1px solid var(--ui-border);font-size:var(--fs-sm)}
+  .mt-r:last-child{border-bottom:0}
+  .mt-r > span{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .mt-r .v{font-variant-numeric:tabular-nums}
+  .mt-r .v b{font-weight:600}
+  .mt-r .v small{font-size:11px;color:var(--ui-fg-info);margin-left:5px}
+  .mt-r .d{font-family:var(--font-code);font-size:11px}
+  .dm-chart svg.rg{width:120px;height:22px}
+  .rg .tk{stroke:var(--ui-border);stroke-width:1}
+  .rg .tb,.rg .ta{stroke-width:3;stroke-linecap:round}
+  .rg .tb{stroke:var(--ui-error)}.rg .ta{stroke:var(--ui-success)}
+  .rg circle{stroke:var(--ui-editor-bg);stroke-width:1.5}
+  .rg circle.b{fill:var(--ui-error)}.rg circle.a{fill:var(--ui-success)}
+
+  /* 最重调用栈 */
+  .top-card{gap:6px}
+  .top-grid{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(0,1fr);gap:10px}
+  .tf{display:flex;flex-direction:column;min-width:0}
+  .tf-h,.tf-row{display:grid;grid-template-columns:18px minmax(0,1fr) 150px 96px 96px;align-items:center;gap:10px;padding:0 8px}
+  .tf-h{height:22px;font-size:11px;color:var(--ui-fg-info);border-bottom:1px solid var(--ui-border)}
+  .tf-h .on{color:var(--ui-fg);font-weight:600}
+  .tf-row{height:30px;width:100%;border:0;border-radius:4px;background:transparent;color:var(--ui-fg);text-align:left;font-size:var(--fs-sm);cursor:pointer}
+  .tf-row:hover{background:var(--ui-hover-list)}
+  .tf-row.sel{background:var(--ui-selection)}
+  .tf-row .rk{font-family:var(--font-code);font-size:11px;color:var(--ui-fg-info)}
+  .tf-row .fnm{display:flex;align-items:center;gap:6px;min-width:0;white-space:nowrap}
+  .tf-row .fnm > span:first-child{font-family:var(--font-code);font-size:11.5px;overflow:hidden;text-overflow:ellipsis;min-width:0}
+  .tf-row .at{font-family:var(--font-code);font-size:11px;color:var(--ui-link);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .tf-row .at em{font-style:normal;font-family:var(--font-ui);color:var(--ui-fg-info);margin-left:4px}
+  .tf-row .ms{display:flex;flex-direction:column;gap:3px;font-family:var(--font-code);font-size:11px;font-variant-numeric:tabular-nums;color:var(--ui-fg-info)}
+  .tf-row .ms.on{color:var(--ui-fg)}
+  .tf-row .ms .bar{height:3px;border-radius:2px;background:var(--ui-progress-track);overflow:hidden}
+  .tf-row .ms .bar i{display:block;height:100%;border-radius:2px;background:var(--ui-fg-disabled);width:var(--v)}
+  .tf-row .ms.on .bar i{background:var(--ui-accent)}
+  .tf-stack{display:flex;flex-direction:column;min-width:0;padding-left:10px;border-left:1px solid var(--ui-border)}
+  .tf-stack .sh{height:22px;display:flex;align-items:center;gap:6px;font-size:11px;color:var(--ui-fg-info);border-bottom:1px solid var(--ui-border);margin-bottom:4px;white-space:nowrap;overflow:hidden}
+  .tf-stack .sh b{color:var(--ui-fg);font-weight:600;font-family:var(--font-code);overflow:hidden;text-overflow:ellipsis}
+  .sf{display:flex;align-items:center;gap:6px;height:26px;width:100%;flex:none;padding:0 8px 0 calc(8px + var(--d,0) * 14px);border:0;border-radius:4px;background:transparent;color:var(--ui-fg);font-family:var(--font-code);font-size:11px;text-align:left;white-space:nowrap;cursor:pointer}
+  .sf:hover{background:var(--ui-hover-list)}
+  .sf.on{background:var(--ui-selection)}
+  .sf.hot{box-shadow:inset 2px 0 0 var(--ui-error)}
+  .sf .nm{min-width:0;overflow:hidden;text-overflow:ellipsis}
+  .sf .loc{margin-left:auto;flex:none;color:var(--ui-link)}
+  .sf.root{color:var(--ui-fg-info);font-family:var(--font-ui);cursor:default}
+  .sf.root:hover{background:transparent}
+  .sf:not(.root)::before{content:"";width:7px;height:7px;flex:none;margin-top:-5px;border-left:1px solid var(--ui-fg-disabled);border-bottom:1px solid var(--ui-fg-disabled)}
+  .tf-wait{display:flex;align-items:center;justify-content:center;gap:8px;min-height:180px;color:var(--ui-fg-info);font-size:var(--fs-sm)}
 </style>
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
   <symbol id="i-therm" viewBox="0 0 16 16"><path d="M6.5 9.3V3.5a1.5 1.5 0 0 1 3 0v5.8a2.5 2.5 0 1 1-3 0Z" stroke="currentColor" stroke-linejoin="round" fill="none"/><path d="M8 7v4" stroke="currentColor" stroke-linecap="round"/></symbol>
+  <symbol id="i-mem" viewBox="0 0 16 16"><path d="M2.5 4.5h11v6h-11z" stroke="currentColor" stroke-linejoin="round" fill="none"/><path d="M5 6.5v2M8 6.5v2M11 6.5v2" stroke="currentColor" stroke-linecap="round"/><path d="M4 10.5v2.5M6.5 10.5v2.5M9.5 10.5v2.5M12 10.5v2.5M7 2.5v2M9 2.5v2" stroke="currentColor" stroke-linecap="round"/></symbol>
 </defs></svg>
 <div class="ide" id="ide" data-ide-theme="dark" data-left="agent" data-right="project" data-bottom="run" role="application" aria-label="DevEco Studio">
   <div class="body">
@@ -63,7 +169,8 @@
           <button class="abtn" title="Options"><svg class="i"><use href="#i-moreV"/></svg></button>
           <button class="abtn" title="Hide|Shift+Esc" data-act="hide-left"><svg class="i"><use href="#i-hide"/></svg></button></div>
         <div class="tw-body"><div class="ai">
-          <div class="ai-scroll"><div class="ai-thread">
+          <div class="ai-scroll" id="ai-scroll">
+          <div class="ai-thread" data-thread="jank">
             <div class="umsg"><div class="bubble">列表滑起来卡</div></div>
             <div class="amsg" id="amsg">
               <div class="step ok"><svg class="i"><use href="#i-locate"/></svg>已定位：ListPage.ets:28 同步解码 · 真机记录 #12</div>
@@ -83,14 +190,37 @@
 
               <div class="step" id="retest-note"><svg class="i"><use href="#i-phone"/></svg>接受后会在 Mate 70 Pro 上自动重跑记录 #12，给你前后对比</div>
             </div>
-          </div></div>
+          </div>
+
+          <div class="ai-thread" data-thread="leak" hidden>
+            <div class="umsg"><div class="bubble">进出几次详情页，内存就涨上去了</div></div>
+            <div class="amsg" id="amsg-leak">
+              <div class="step run" id="lk-s1"><span class="spin" style="width:10px;height:10px"></span><span id="lk-s1-t">在 Mate 70 Pro 上自动走「列表 → 详情 → 返回」…</span></div>
+              <div class="dm-col" id="lk-body" hidden>
+                <div class="md"><p>8 次返回后 <code>DetailPage</code> 还剩 8 个没回收：全局 <code>emitter</code> 订阅和 <code>setInterval</code> 的回调都捕获了 <code>this</code>。补丁在 <code>aboutToDisappear()</code> 里把两处都解掉：</p></div>
+                <div class="diffcard" id="l1">
+                  <div class="dh"><svg class="i"><use href="#i-ets"/></svg><span class="fn">DetailPage.ets</span><span class="cnt"><span class="add">+11</span> <span class="del">−3</span></span><span class="note">aboutToDisappear() 里解除订阅、清定时器</span><span class="grow"></span><span class="dm-pill ok" data-state hidden></span></div>
+                  <pre id="l1-pre"></pre>
+                  <div class="actions" data-actions><button class="btn" data-diff="reject">Reject</button><button class="btn primary" data-diff="accept">Accept</button></div>
+                </div>
+                <div class="md"><p>同样的写法还有一处，一起改：</p></div>
+                <div class="diffcard" id="l2">
+                  <div class="dh"><svg class="i"><use href="#i-ets"/></svg><span class="fn">CartBadge.ets</span><span class="cnt"><span class="add">+4</span> <span class="del">−0</span></span><span class="note">订阅了 cart_changed 没有 off</span><span class="grow"></span><span class="dm-pill ok" data-state hidden></span></div>
+                  <pre id="l2-pre"></pre>
+                  <div class="actions" data-actions><button class="btn" data-diff="reject">Reject</button><button class="btn primary" data-diff="accept">Accept</button></div>
+                </div>
+                <div class="step" id="lk-retest"><svg class="i"><use href="#i-phone"/></svg>接受后会在 Mate 70 Pro 上自动重跑同一条「列表 → 详情 → 返回 ×8」，给你前后对比</div>
+              </div>
+            </div>
+          </div>
+          </div>
         </div></div>
       </div>
     </div>
 
     <div class="editor">
       <div class="tabs" id="tabs"><span class="grow"></span><span class="tab-tools"><button class="abtn" title="Editor Options"><svg class="i"><use href="#i-moreV"/></svg></button></span></div>
-      <div class="code-wrap"><div class="code" id="code"></div></div>
+      <div class="code-wrap" data-for-file="ListPage.ets"><div class="code" id="code"></div></div>
       <div class="breadcrumbs" id="crumbs"></div>
     </div>
 
@@ -108,7 +238,7 @@
 
     <div class="tw tw-bottom">
       <div class="tw-hdr"><span class="title">Profiler</span>
-        <span class="tabbar"><button class="btab on" data-view="sym">症状</button><button class="btab" data-view="rec">记录</button></span>
+        <span class="tabbar"><button class="btab on" data-view="sym">症状</button><button class="btab" data-view="top">最重调用栈</button><button class="btab" data-view="rec">记录</button></span>
         <span class="grow"></span>
         <span class="dm-pill muted" id="rec-pill"><svg><use href="#i-phone"/></svg>Mate 70 Pro · 记录 #12</span>
         <button class="abtn" title="Options" style="margin-left:6px"><svg class="i"><use href="#i-moreV"/></svg></button>
@@ -120,6 +250,7 @@
             <button class="sym" data-sym="power"><svg class="i"><use href="#i-bolt"/></svg>耗电快<span class="sub">电流</span></button>
             <button class="sym" data-sym="launch"><svg class="i"><use href="#i-clock"/></svg>启动慢<span class="sub">冷启动</span></button>
             <button class="sym" data-sym="heat"><svg class="i"><use href="#i-therm"/></svg>发热<span class="sub">温度</span></button>
+            <button class="sym" data-sym="leak"><svg class="i"><use href="#i-mem"/></svg>内存涨 / 泄漏<span class="sub">堆内存</span></button>
             <div class="sym-hint">不用先知道该看哪个指标</div>
           </div>
           <div class="prof-main" id="prof-main">
@@ -130,20 +261,56 @@
               </div>
               <div class="dm-callout info" id="loc-callout"><svg><use href="#i-locate"/></svg><div id="loc-text">这 9 帧都卡在 <code>loadCover</code> 的同步解码上（每帧 38 ms）· 已定位到 <b>ListPage.ets:28</b></div></div>
             </div>
+
+            <div id="view-leak" class="dm-col" hidden>
+              <div class="leak-grid">
+                <div class="dm-chart">
+                  <div class="ch-t"><b>堆内存</b><span id="lk-sub"></span><span class="grow"></span><span class="dm-pill info" id="lk-pill"></span><span class="dm-muted" id="lk-hint"></span></div>
+                  <svg id="svg-mem"></svg>
+                </div>
+                <div class="dm-chart chain-card">
+                  <div class="ch-t"><b>泄漏链</b><span id="chain-sub"></span><span class="grow"></span><span class="dm-pill err" id="chain-pill" hidden></span></div>
+                  <div class="chain" id="chain"></div>
+                </div>
+              </div>
+              <div class="dm-callout info" id="lk-callout"><svg><use href="#i-locate"/></svg><div id="lk-callout-t"></div></div>
+            </div>
+
             <div id="view-compare" class="dm-col" hidden>
-              <div class="dm-callout info" id="cmp-run"><svg><use href="#i-sync"/></svg><div>已应用改动，正在 Mate 70 Pro 上自动重跑同一条滑动记录…<div class="dm-progress indet" style="margin-top:6px"><i></i></div></div></div>
-              <div class="dm-callout ok" id="cmp-ok" hidden><svg><use href="#i-check"/></svg><div>改完在 Mate 70 Pro 上自动重跑了同一条滑动记录：<b>掉帧 9 → 0</b>，平均帧耗时 <b>21.4 → 9.8 ms</b>。差异集中在第 23–31 帧。</div></div>
-              <div class="dm-split cmp">
-                <div class="dm-chart"><div class="ch-t"><b>before</b>· 记录 #12<span class="grow"></span><span class="dm-pill err">掉帧 9</span></div><svg id="svg-before"></svg></div>
-                <div class="dm-chart"><div class="ch-t"><b>after</b>· 记录 #13（自动复测）<span class="grow"></span><span class="dm-pill muted" id="after-pill">复测中…</span></div><svg id="svg-after"></svg></div>
+              <div class="cmp-head">
+                <div class="dm-callout info" id="cmp-run"><svg><use href="#i-sync"/></svg><div><span id="cmp-run-t"></span><div class="dm-progress indet" id="cmp-prog" style="margin-top:6px"><i></i></div></div></div>
+                <div class="dm-callout ok" id="cmp-ok" hidden><svg><use href="#i-check"/></svg><div id="cmp-ok-t"></div></div>
+              </div>
+              <div class="cmp-bar">
+                <span>同一条操作路径</span><span class="path" id="cmp-path"></span><span>· Mate 70 Pro</span>
+                <span class="grow"></span>
+                <span>改前 / 改后每边跑</span>
+                <span class="dm-seg" id="cmp-runs"><button data-n="1" class="on">1 次</button><button data-n="3">3 次</button><button data-n="5">5 次</button></span>
+              </div>
+              <div class="dm-split cmp" id="cmp-single">
+                <div class="dm-chart"><div class="ch-t"><b>before</b><span id="cb-sub">· 记录 #12</span><span class="grow"></span><span class="dm-pill err" id="cb-pill">掉帧 9</span></div><svg id="svg-before"></svg></div>
+                <div class="dm-chart"><div class="ch-t"><b>after</b><span id="ca-sub">· 自动复测</span><span class="grow"></span><span class="dm-pill muted" id="after-pill">复测中…</span></div><svg id="svg-after"></svg></div>
+              </div>
+              <div class="cmp-multi" id="cmp-multi" hidden>
+                <div class="dm-chart"><div class="ch-t"><b id="mm-title"></b><span id="mm-sub"></span><span class="grow"></span><span class="dm-pill" id="mm-pill"></span></div><svg id="svg-strip"></svg></div>
+                <div class="dm-chart"><div class="ch-t"><b>各项指标</b><span>· 中位数，后面是最小–最大</span><span class="grow"></span><span>秩和检验 p &lt; 0.05 记为显著</span></div><div class="mt" id="mm-table"></div></div>
               </div>
             </div>
+
+            <div id="view-top" class="dm-col" hidden>
+              <div class="dm-chart top-card">
+                <div class="ch-t"><b>最重调用栈</b><span id="top-sub"></span><span class="grow"></span><span class="dm-muted">点一行定位到代码</span>
+                  <span class="dm-seg" id="top-sort"><button data-k="self" class="on">按自耗时</button><button data-k="total">按总耗时</button></span></div>
+                <div class="top-grid">
+                  <div class="tf" id="tf-list"></div>
+                  <div class="tf-stack" id="tf-stack"></div>
+                </div>
+              </div>
+            </div>
+
             <div id="view-rec" class="dm-list rec-list" hidden>
-              <div class="dm-group">这台设备上的记录<span class="cnt">4</span></div>
-              <div class="dm-item" id="rec-13" hidden><span class="loc">#13</span><svg class="i"><use href="#i-gauge"/></svg><span class="grow">滑动 ListPage · 自动复测（和 #12 同一条操作）</span><span class="dm-pill ok">掉帧 0</span><span class="dm-muted dm-small">刚刚</span></div>
-              <div class="dm-item sel"><span class="loc">#12</span><svg class="i"><use href="#i-gauge"/></svg><span class="grow">滑动 ListPage · 60 帧</span><span class="dm-pill err">掉帧 9</span><span class="dm-muted dm-small">10:41</span></div>
-              <div class="dm-item"><span class="loc">#11</span><svg class="i"><use href="#i-clock"/></svg><span class="grow">冷启动 · 1.9 s</span><span class="dm-pill ok">正常</span><span class="dm-muted dm-small">10:38</span></div>
-              <div class="dm-item"><span class="loc">#10</span><svg class="i"><use href="#i-gauge"/></svg><span class="grow">滑动 ListPage · 60 帧</span><span class="dm-pill err">掉帧 11</span><span class="dm-muted dm-small">昨天 18:02</span></div>
+              <div class="dm-group">这台设备上的记录<span class="cnt" id="rec-cnt">3</span></div>
+              <div id="rec-rows"></div>
             </div>
           </div>
         </div></div>
@@ -154,8 +321,153 @@
 
 <script>
 (function(){
-  var $=DemoFrame.$, $$=DemoFrame.$$, esc=DemoFrame.esc;
+  var $=DemoFrame.$, $$=DemoFrame.$$, esc=DemoFrame.esc, FILES=DemoFrame.FILES;
+
+  /* ---------- 本页补充的源码（详情页 / 卡片 / 购物车角标 / Ability），简单着色后挂进 DemoFrame.FILES ---------- */
+  var KW=/^(import|from|export|default|class|extends|struct|private|const|let|return|if|else|new|this|void|number|string|boolean|as|async|await|try|catch|true|false|undefined|null)$/;
+  function hl(src){
+    var re=/(\/\/.*$)|('(?:[^'\\]|\\.)*'|`(?:[^`\\]|\\.)*`)|(@[A-Za-z]+)|(0x[0-9A-Fa-f]+|\b\d+(?:\.\d+)?\b)|([A-Za-z_$][\w$]*)|([\s\S])/g,m,out='';
+    while((m=re.exec(src))){
+      if(m[1])out+='<span class="c">'+esc(m[1])+'</span>';
+      else if(m[2])out+='<span class="s">'+esc(m[2])+'</span>';
+      else if(m[3])out+='<span class="m">'+esc(m[3])+'</span>';
+      else if(m[4])out+='<span class="n">'+esc(m[4])+'</span>';
+      else if(m[5]){var w=m[5],rest=src.slice(re.lastIndex),cls=KW.test(w)?'k':(/^\s*\(/.test(rest)?'f':(/^[A-Z]/.test(w)?'ty':'p'));out+='<span class="'+cls+'">'+esc(w)+'</span>'}
+      else out+=esc(m[6]);
+    }
+    return out;
+  }
+  function addFile(name,path,crumbs,src,meta){FILES[name]={path:path,crumbs:crumbs,lines:src.map(function(l,i){return [hl(l),(meta&&meta[i+1])||{}]})}}
+  var PAGES=['entry','src','main','ets','pages'];
+  var DETAIL=[
+    "import { emitter } from '@kit.BasicServicesKit';",
+    "import { router } from '@kit.ArkUI';",
+    "import { CART_CHANGED } from '../common/Events';",
+    "import { PhotoLoader } from '../model/PhotoLoader';",
+    "",
+    "@Entry",
+    "@Component",
+    "struct DetailPage {",
+    "  @State photos: PixelMap[] = [];",
+    "  @State cartCount: number = 0;",
+    "  @State leftSec: number = 600;",
+    "  private timer: number = -1;",
+    "",
+    "  aboutToAppear() {",
+    "    this.photos = PhotoLoader.decodeAll(router.getParams());",
+    "    emitter.on(CART_CHANGED, (e: emitter.EventData) => {",
+    "      this.cartCount = e.data?.['count'] as number;",
+    "    });",
+    "    this.timer = setInterval(() => {",
+    "      this.leftSec--;",
+    "    }, 1000);",
+    "  }",
+    "",
+    "  build() {",
+    "    Column({ space: 12 }) {",
+    "      Swiper() {",
+    "        ForEach(this.photos, (pm: PixelMap) => { Image(pm).objectFit(ImageFit.Cover) })",
+    "      }.height(320)",
+    "      Text(`购物车 ${this.cartCount} 件`).fontSize(14)",
+    "      Text(`限时优惠 ${this.leftSec} s`).fontColor('#E84026')",
+    "    }",
+    "  }",
+    "}"
+  ];
+  var DETAIL_FIX=DETAIL.slice(0,15).concat(["    emitter.on(CART_CHANGED, this.onCart);"],DETAIL.slice(18,22),[
+    "",
+    "  aboutToDisappear() {",
+    "    // 退出时解绑，DetailPage 才能被回收",
+    "    emitter.off(CART_CHANGED, this.onCart);",
+    "    clearInterval(this.timer);",
+    "  }",
+    "",
+    "  private onCart = (e: emitter.EventData): void => {",
+    "    this.cartCount = e.data?.['count'] as number;",
+    "  };"
+  ],DETAIL.slice(22));
+  var DETAIL_FIX_NEW=[16,21,22,23,24,25,26,27,28,29,30];
+  addFile('DetailPage.ets',PAGES,['DetailPage','aboutToAppear'],DETAIL,{8:{fold:1},14:{fold:1},24:{fold:1,at:1}});
+  addFile('DetailPage.ets#fix',PAGES,['DetailPage','aboutToDisappear'],DETAIL_FIX,{8:{fold:1},14:{fold:1},22:{fold:1},32:{fold:1,at:1}});
+  var CART=[
+    "import { emitter } from '@kit.BasicServicesKit';",
+    "import { CART_CHANGED } from '../common/Events';",
+    "",
+    "@Component",
+    "export struct CartBadge {",
+    "  @State count: number = 0;",
+    "",
+    "  aboutToAppear() {",
+    "    emitter.on(CART_CHANGED, this.onCart);",
+    "  }",
+    "",
+    "  private onCart = (e: emitter.EventData): void => {",
+    "    this.count = e.data?.['count'] as number;",
+    "  };",
+    "",
+    "  build() {",
+    "    Badge({ count: this.count, style: { badgeSize: 16 } }) {",
+    "      Image($r('app.media.ic_cart')).width(24).height(24)",
+    "    }",
+    "  }",
+    "}"
+  ];
+  var CART_FIX=CART.slice(0,10).concat(["","  aboutToDisappear() {","    emitter.off(CART_CHANGED, this.onCart);","  }"],CART.slice(10));
+  var COMP=['entry','src','main','ets','components'];
+  addFile('CartBadge.ets',COMP,['CartBadge','aboutToAppear'],CART,{5:{fold:1},8:{fold:1},16:{fold:1,at:1}});
+  addFile('CartBadge.ets#fix',COMP,['CartBadge','aboutToDisappear'],CART_FIX,{5:{fold:1},8:{fold:1},12:{fold:1},20:{fold:1,at:1}});
+  addFile('ItemCard.ets',COMP,['ItemCard','build'],[
+    "import { hilog } from '@kit.PerformanceAnalysisKit';",
+    "",
+    "@Component",
+    "export struct ItemCard {",
+    "  @Prop item: Item;",
+    "  @Prop cover: PixelMap | undefined;",
+    "",
+    "  build() {",
+    "    Row() {",
+    "      Image(this.cover).width(56).height(56)",
+    "      Column({ space: 4 }) {",
+    "        Text(this.item.title).fontSize(15).maxLines(1)",
+    "        Text(this.item.desc).fontSize(12).fontColor($r('app.color.text_secondary'))",
+    "      }.alignItems(HorizontalAlign.Start).layoutWeight(1)",
+    "    }",
+    "    .padding(12)",
+    "    .onAppear(() => hilog.info(0x0000, 'ItemCard', 'appear %{public}d', this.item.id))",
+    "  }",
+    "}"
+  ],{4:{fold:1},8:{fold:1,at:1}});
+  addFile('EntryAbility.ets',['entry','src','main','ets','entryability'],['EntryAbility','onCreate'],[
+    "import { AbilityConstant, UIAbility, Want } from '@kit.AbilityKit';",
+    "import { hilog } from '@kit.PerformanceAnalysisKit';",
+    "import { window } from '@kit.ArkUI';",
+    "import { preferences } from '@kit.ArkData';",
+    "import { ItemSource } from '../model/ItemSource';",
+    "",
+    "export default class EntryAbility extends UIAbility {",
+    "  onCreate(want: Want, launchParam: AbilityConstant.LaunchParam): void {",
+    "    hilog.info(0x0000, 'Entry', 'onCreate');",
+    "    const prefs = preferences.getPreferencesSync(this.context, { name: 'settings' });",
+    "    AppStorage.setOrCreate('theme', prefs.getSync('theme', 'auto'));",
+    "    ItemSource.warmUp(this.context);",
+    "  }",
+    "",
+    "  onWindowStageCreate(windowStage: window.WindowStage): void {",
+    "    windowStage.loadContent('pages/ListPage', (err) => {",
+    "      if (err.code) {",
+    "        hilog.error(0x0000, 'Entry', 'loadContent failed: %{public}s', JSON.stringify(err));",
+    "      }",
+    "    });",
+    "  }",
+    "}"
+  ],{7:{fold:1},8:{fold:1},15:{fold:1}});
+
+  /* ---------- 外壳 ---------- */
   document.getElementById('tree-slot').innerHTML=DemoFrame.tree({sel:'ListPage.ets'});
+  (function(){
+    function inject(before,name){var r0=$('#tree .row[data-file="'+before+'"]');if(!r0)return;var r=r0.cloneNode(true);r.dataset.file=name;r.classList.remove('sel');$('.lbl',r).textContent=name;r0.parentNode.insertBefore(r,r0)}
+    inject('Index.ets','DetailPage.ets');inject('ItemCard.ets','CartBadge.ets');
+  })();
   document.getElementById('tabs').insertAdjacentHTML('afterbegin',DemoFrame.tabs([{file:'ListPage.ets',on:true}]));
   DemoFrame.init({device:'HUAWEI Mate 70 Pro',deviceIcon:'#i-phone',pos:'28:12',stripeLeft:[{left:'agent',icon:'#i-genie',title:'DevEco Code'},{left:'project',icon:'#i-tw-project',title:'Project|Alt+1'},{left:'structure',icon:'#i-tw-structure',title:'Structure|Alt+7'},{more:1},{gap:1},{bottom:'build',icon:'#i-tw-build',title:'Build'},{bottom:'log',icon:'#i-tw-device',title:'Log'},{bottom:'services',icon:'#i-tw-todo',title:'Services|Alt+8'},{bottom:'problems',icon:'#i-tw-problems',title:'Problems|Alt+6'},{bottom:'run',icon:'#i-tw-services',title:'Run|Alt+4'},{bottom:'terminal',icon:'#i-tw-terminal',title:'Terminal|Alt+F12'},{bottom:'debug',icon:'#i-info',title:'Debug|Alt+5'},{bottom:'vcs',icon:'#i-vcs',title:'Version Control|Alt+9'}],stripeRight:[{right:'notifications',icon:'#i-tw-notifications',title:'Notifications',dot:1},{right:'project',icon:'#i-tw-project',title:'Project|Alt+1'},{right:'docs',icon:'#i-hdoc',title:'HarmonyOS Docs'},{right:'inspector',icon:'#i-pen',title:'Code Review'},{right:'web',icon:'#i-puzzle',title:'Extensions'},{right:'previewer',icon:'#i-tw-preview',title:'Previewer'},{more:1},{right:'devices',icon:'#i-phone',title:'Device Manager'}],onReady:function(){
     $('#status-slot').innerHTML='<span class="dm-capsule" id="cap"><span class="dm-dot err"></span>记录 #12 · 掉帧 9 · Mate 70 Pro</span>';
@@ -170,10 +482,31 @@
   }
   var FLAT=[];for(var j=0;j<60;j++)FLAT.push(8+Math.round(rnd()*5));
 
+  /* 堆内存：列表 → 详情 → 返回 ×8，每次返回后 GC；泄漏时每次多留 6.1 MB */
+  var CYC=8,T_END=28,LEAK_PER=6.075;
+  function te(k){return 2+3*k}function tx(k){return te(k)+1.6}function tg(k){return te(k)+2.3}
+  function memSeries(per,sd){
+    var s=sd,r=function(){s=(s*9301+49297)%233280;return s/233280},pts=[];
+    for(var i=0;i<=T_END*4;i++){
+      var t=i/4,k=-1,v=82;for(var q=0;q<CYC;q++)if(t>=te(q))k=q;
+      if(k>=0){var f=82+per*k;
+        if(t<tx(k))v=f+13*(1-Math.exp(-(t-te(k))*4));
+        else if(t<tg(k))v=f+13-2.5*(t-tx(k))/(tg(k)-tx(k));
+        else v=f+per;}
+      pts.push([t,v+(r()-.5)*.9]);
+    }
+    return pts;
+  }
+  var MEM_BEFORE=memSeries(LEAK_PER,11),MEM_AFTER=memSeries(.15,23);
+  function doneCycles(t){var n=0;for(var k=0;k<CYC;k++)if(tg(k)<=t)n++;return n}
+  function startedCycles(t){var n=0;for(var k=0;k<CYC;k++)if(te(k)<=t)n++;return n}
+
+  function svgW(svg){return Math.round(svg.getBoundingClientRect().width)||Math.round(svg.parentNode.getBoundingClientRect().width-20)||800}
+
   /* ---------- 柱状图：内联 SVG，按容器实际宽度画 ---------- */
   function drawBars(svg,vals,o){
-    o=o||{};var W=Math.round(svg.getBoundingClientRect().width)||Math.round(svg.parentNode.getBoundingClientRect().width-20)||800,H=o.h||200;
-    var padL=34,padR=12,padT=16,padB=18,pw=W-padL-padR,ph=H-padT-padB,n=vals.length,gap=2,bw=(pw-gap*(n-1))/n,max=o.max||48,lim=o.lim||16.7;
+    o=o||{};var W=svgW(svg),H=o.h||200;
+    var padL=34,padR=12,padT=16,padB=18,pw=W-padL-padR,ph=H-padT-padB,n=vals.length,gap=2,bw=n?(pw-gap*(n-1))/n:pw/60,max=o.max||48,lim=o.lim||16.7;
     var y=function(v){return padT+ph-(v/max)*ph};var x=function(i){return padL+i*(bw+gap)};
     var s='';
     [10,20,30,40].forEach(function(v){s+='<line class="grid" x1="'+padL+'" x2="'+(W-padR)+'" y1="'+y(v).toFixed(1)+'" y2="'+y(v).toFixed(1)+'"/><text class="lbl" x="'+(padL-6)+'" y="'+(y(v)+3).toFixed(1)+'" text-anchor="end">'+v+'</text>'});
@@ -183,22 +516,187 @@
       if(o.bandLabel)s+='<text class="lbl ok" x="'+(b2+8).toFixed(1)+'" y="'+(padT+12)+'">'+esc(o.bandLabel)+'</text>'}
     vals.forEach(function(v,i){var bad=v>lim;s+='<rect class="bar'+(bad?' bad':'')+'" data-frame="'+(i+1)+'" data-ms="'+v+'" x="'+x(i).toFixed(1)+'" y="'+y(v).toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+(padT+ph-y(v)).toFixed(1)+'" rx="1"><title>第 '+(i+1)+' 帧 · '+v+' ms</title></rect>'});
     s+='<line class="lim" x1="'+padL+'" x2="'+(W-padR)+'" y1="'+y(lim).toFixed(1)+'" y2="'+y(lim).toFixed(1)+'"/><text class="lbl warn" x="'+(W-padR)+'" y="'+(y(lim)-4).toFixed(1)+'" text-anchor="end">16.7 ms · 60 fps 门槛</text>';
-    [1,10,20,30,40,50,60].forEach(function(f){s+='<text class="lbl" x="'+(x(f-1)+bw/2).toFixed(1)+'" y="'+(H-5)+'" text-anchor="middle">'+f+'</text>'});
-    if(o.anom){var a1=x(o.anom[0]-1)-4,a2=x(o.anom[1]-1)+bw+4,top=Math.min.apply(null,vals.slice(o.anom[0]-1,o.anom[1]).map(y))-6;
+    if(n)[1,10,20,30,40,50,60].forEach(function(f){s+='<text class="lbl" x="'+(x(f-1)+bw/2).toFixed(1)+'" y="'+(H-5)+'" text-anchor="middle">'+f+'</text>'});
+    if(o.anom&&n){var a1=x(o.anom[0]-1)-4,a2=x(o.anom[1]-1)+bw+4,top=Math.min.apply(null,vals.slice(o.anom[0]-1,o.anom[1]).map(y))-6;
       s+='<rect class="anom" data-anom="1" x="'+a1.toFixed(1)+'" y="'+top.toFixed(1)+'" width="'+(a2-a1).toFixed(1)+'" height="'+(padT+ph-top+3).toFixed(1)+'" rx="5"/>';
       if(o.anomLabel)s+='<text class="lbl err" x="'+(a2+8).toFixed(1)+'" y="'+(top+11).toFixed(1)+'">'+esc(o.anomLabel)+'</text>'}
     svg.setAttribute('viewBox','0 0 '+W+' '+H);svg.style.height=H+'px';svg.innerHTML=s;
   }
 
-  /* ---------- 编辑器：定位 / 应用 diff / 退回 ---------- */
-  var CUR=28;
-  function renderCode(){$('#code').innerHTML=DemoFrame.code('ListPage.ets',{cur:28,hl:[28],marks:{28:'warn'}});}
-  function locate(line){
-    $$('#code .ln').forEach(function(l){var on=+l.dataset.ln===line;l.classList.toggle('cur',on);l.classList.toggle('hl',on)});
-    var code=$('#code'),ln=$('#code .ln[data-ln="'+line+'"]');if(ln)code.scrollTop=Math.max(0,ln.offsetTop-code.clientHeight/2+40);
-    var p=$('#status-pos');if(p)p.textContent=line+':12';
-    $('#crumbs').innerHTML=DemoFrame.crumbs('ListPage.ets');
+  /* ---------- 堆内存曲线：详情页停留段打底色，GC 后的地板画成台阶 ---------- */
+  function drawMem(svg,pts,o){
+    o=o||{};var W=svgW(svg),H=o.h||220,padL=34,padR=12,padT=18,padB=18,pw=W-padL-padR,ph=H-padT-padB,ymin=70,ymax=150;
+    var x=function(t){return padL+t/T_END*pw},y=function(v){return padT+ph-(v-ymin)/(ymax-ymin)*ph},f1=function(v){return v.toFixed(1)};
+    var up=o.empty?-1:(o.upto==null?T_END:o.upto),s='';
+    [80,100,120,140].forEach(function(v){s+='<line class="grid" x1="'+padL+'" x2="'+(W-padR)+'" y1="'+f1(y(v))+'" y2="'+f1(y(v))+'"/><text class="lbl" x="'+(padL-6)+'" y="'+f1(y(v)+3)+'" text-anchor="end">'+v+'</text>'});
+    s+='<text class="lbl" x="'+(padL-6)+'" y="'+(padT-6)+'" text-anchor="end">MB</text>';
+    s+='<line class="grid" x1="'+padL+'" x2="'+(W-padR)+'" y1="'+(padT+ph)+'" y2="'+(padT+ph)+'"/>';
+    [0,5,10,15,20,25].forEach(function(t){s+='<text class="lbl" x="'+f1(x(t))+'" y="'+(H-5)+'" text-anchor="middle">'+t+(t===25?' s':'')+'</text>'});
+    for(var k=0;k<CYC;k++){if(te(k)>up)break;var a=x(te(k)),b=x(Math.min(tx(k),up));
+      s+='<rect class="mem-in" x="'+f1(a)+'" y="'+padT+'" width="'+f1(Math.max(1,b-a))+'" height="'+ph+'"/>';
+      s+='<text class="lbl" x="'+f1((x(te(k))+x(tx(k)))/2)+'" y="'+(padT-6)+'" text-anchor="middle">'+(k+1)+'</text>'}
+    if(!o.empty){s+='<line class="base" x1="'+padL+'" x2="'+(W-padR)+'" y1="'+f1(y(82))+'" y2="'+f1(y(82))+'"/><text class="lbl" x="'+(padL+4)+'" y="'+f1(y(82)+12)+'">进入前 82 MB</text>'}
+    var vis=pts.filter(function(p){return p[0]<=up+1e-9});
+    if(vis.length>1){
+      var d=vis.map(function(p,i){return (i?'L':'M')+f1(x(p[0]))+','+f1(y(p[1]))}).join('');
+      s+='<path class="mem-area" d="'+d+'L'+f1(x(vis[vis.length-1][0]))+','+(padT+ph)+'L'+f1(x(vis[0][0]))+','+(padT+ph)+'Z"/>';
+      s+='<path class="mem-line" d="'+d+'"/>';
+    }
+    if(o.steps){var sd='',lastF=82;
+      for(var q=0;q<CYC;q++){if(tg(q)>up)break;var fl=82+o.per*(q+1),xa=x(tg(q)),xb=x(q<CYC-1?Math.min(tg(q+1),up):up);sd+=(sd?'L':'M')+f1(xa)+','+f1(y(fl))+'H'+f1(Math.max(xa,xb));lastF=fl}
+      if(sd)s+='<path class="floor" d="'+sd+'"/>';
+      if(up>=T_END)s+='<text class="lbl strong" x="'+(W-padR-2)+'" y="'+f1(y(lastF)-7)+'" text-anchor="end">GC 后仍有 '+lastF.toFixed(1)+' MB</text>';
+    }
+    if(o.flat&&up>=T_END)s+='<text class="lbl strong" x="'+(W-padR-2)+'" y="'+f1(y(83.2)-12)+'" text-anchor="end">GC 后回到 83.2 MB</text>';
+    if(o.upto!=null&&up<T_END&&vis.length){var lp=vis[vis.length-1];s+='<line class="mcur" x1="'+f1(x(lp[0]))+'" x2="'+f1(x(lp[0]))+'" y1="'+padT+'" y2="'+(padT+ph)+'"/><circle class="mend" cx="'+f1(x(lp[0]))+'" cy="'+f1(y(lp[1]))+'" r="4"/>'}
+    if(o.hit)for(var h=0;h<CYC;h++){var ha=x(te(h)),hb=x(h<CYC-1?te(h+1):T_END);s+='<rect class="cyc'+(o.sel===h+1?' on':'')+'" data-cycle="'+(h+1)+'" x="'+f1(ha)+'" y="'+padT+'" width="'+f1(hb-ha)+'" height="'+ph+'" rx="3"><title>第 '+(h+1)+' 次进出 · 返回并 GC 后 '+(82+o.per*(h+1)).toFixed(1)+' MB</title></rect>'}
+    svg.setAttribute('viewBox','0 0 '+W+' '+H);svg.style.height=H+'px';svg.innerHTML=s;
   }
+
+  /* ---------- 统计：中位数 / 范围 / 精确秩和检验（小样本全枚举） ---------- */
+  function stats(a){var s=a.slice().sort(function(p,q){return p-q}),n=s.length,med=n?(n%2?s[(n-1)/2]:(s[n/2-1]+s[n/2])/2):0;return {med:med,min:s[0],max:s[n-1],n:n}}
+  function mwp(a,b){
+    var all=a.concat(b),n=all.length,n1=a.length;if(!n1||!b.length)return 1;
+    function U(idx){var u=0;for(var i=0;i<n;i++)if(idx[i])for(var j=0;j<n;j++)if(!idx[j]){if(all[i]<all[j])u+=1;else if(all[i]===all[j])u+=.5}return u}
+    var idx=[];for(var i=0;i<n;i++)idx.push(i<n1);
+    var mean=n1*(n-n1)/2,d0=Math.abs(U(idx)-mean),cnt=0,tot=0,cur=[];for(var k=0;k<n;k++)cur.push(false);
+    (function rec(start,left){if(!left){tot++;if(Math.abs(U(cur)-mean)>=d0-1e-9)cnt++;return}for(var i=start;i<=n-left;i++){cur[i]=true;rec(i+1,left-1);cur[i]=false}})(0,n1);
+    return cnt/tot;
+  }
+  function verdict(b,a){
+    var n=Math.min(b.length,a.length);if(n<2)return {k:'na',t:'—',cls:'muted',p:1};
+    var p=mwp(b,a),sb=stats(b),sa=stats(a),sep=sa.max<sb.min||sa.min>sb.max,better=sa.med<sb.med;
+    if(p<.05)return better?{k:'up',t:'显著改善',cls:'ok',p:p,sep:sep}:{k:'down',t:'显著变差',cls:'warn',p:p,sep:sep};
+    if(sep)return {k:'few',t:'样本不足',cls:'warn',p:p,sep:sep};
+    return {k:'ns',t:'无显著差异',cls:'muted',p:p,sep:sep};
+  }
+  function fmtP(p){return p<.001?'< 0.001':p.toFixed(p<.01?3:2)}
+  function fv(m,v){return v.toFixed(m.dec)}
+  function chg(m,b,a){var d=a-b,sg=d<0?'−':'+';if(m.chg==='pct')return sg+Math.abs(Math.round(d/b*100))+'%';return sg+Math.abs(d).toFixed(m.dec)+(m.cu||' '+m.unit)}
+
+  /* ---------- 多次运行：各指标每边 5 次（第 1 次就是原记录 / 第一次复测） ---------- */
+  var SC={
+    jank:{
+      path:['ListPage','上滑 60 帧'],pathName:'滑动路径',
+      runText:'已应用改动，正在 Mate 70 Pro 上自动重跑同一条滑动记录…',
+      okText:function(){return '改完在 Mate 70 Pro 上自动重跑了同一条滑动记录：<b>掉帧 9 → 0</b>，平均帧耗时 <b>21.4 → 9.8 ms</b>。差异集中在第 23–31 帧。'},
+      beforePill:['err','掉帧 9'],afterPill:['ok','掉帧 0'],
+      drawBefore:function(svg,h){drawBars(svg,BEFORE,{h:h,anom:[23,31],anomLabel:'掉帧 9'})},
+      drawAfter:function(svg,h,done){if(done)drawBars(svg,AFTER,{h:h,band:[23,31],bandLabel:'原掉帧区间 · 已无掉帧'});else drawBars(svg,[],{h:h})},
+      noteIdle:'接受后会在 Mate 70 Pro 上自动重跑记录 #12，给你前后对比',
+      noteRun:function(){return '正在 Mate 70 Pro 上重跑记录 #12 的滑动…'},
+      noteDone:function(st){return '已在 Mate 70 Pro 上重跑同一条记录：#12 → '+st.rec1+'，掉帧 9 → 0'},
+      noteUndo:function(){return '已退回 ListPage.ets 的改动，真机上还是记录 #12 的样子'},
+      capBase:function(){return '记录 #12 · 掉帧 9 · Mate 70 Pro'},
+      capDone:function(st){return '记录 '+st.rec1+' · 掉帧 0 · 已复测'},
+      recRow:function(st){return {icon:'#i-gauge',text:'滑动 ListPage · 自动复测（和 #12 同一条操作）',pill:['ok','掉帧 0']}},
+      recIcon:'#i-gauge',batchText:'滑动 ListPage',
+      metrics:[
+        {label:'平均帧耗时',unit:'ms',dec:1,chg:'pct',b:[21.4,20.6,22.9,21.9,21.1],a:[9.8,9.4,10.3,9.6,10.0]},
+        {label:'掉帧',short:'掉帧',unit:'帧',dec:0,chg:'abs',b:[9,8,11,10,9],a:[0,0,1,0,0]},
+        {label:'P95 帧耗时',unit:'ms',dec:1,chg:'pct',b:[39.6,37.8,41.2,40.1,38.9],a:[12.4,11.9,13.1,12.2,12.6]},
+        {label:'主线程 CPU',unit:'%',dec:0,chg:'abs',cu:' pt',b:[34,31,37,33,35],a:[32,29,36,31,33]},
+        {label:'内存峰值',unit:'MB',dec:0,chg:'abs',note:'封面缓存',b:[212,209,216,211,213],a:[219,217,222,218,220]}
+      ],
+      strip:{min:0,max:25,ticks:[5,10,15,20,25]}
+    },
+    leak:{
+      path:['ListPage','DetailPage','返回'],suffix:'×8',pathName:'进出路径',
+      runText:'已应用改动，正在 Mate 70 Pro 上自动重跑同一条「列表 → 详情 → 返回 ×8」…',
+      okText:function(){return '改完在 Mate 70 Pro 上自动重跑了同一条「列表 → 详情 → 返回 ×8」：内存增量 <b>+48.6 → +1.2 MB</b>，<code>DetailPage</code> 残留 <b>8 → 0</b>，GC 后回到 83.2 MB。'},
+      beforePill:['err','+48.6 MB'],afterPill:['ok','+1.2 MB'],
+      drawBefore:function(svg,h){drawMem(svg,MEM_BEFORE,{h:h,steps:true,per:LEAK_PER})},
+      drawAfter:function(svg,h,done){if(done)drawMem(svg,MEM_AFTER,{h:h,flat:true});else drawMem(svg,[],{h:h,empty:true})},
+      noteIdle:'接受后会在 Mate 70 Pro 上自动重跑同一条「列表 → 详情 → 返回 ×8」，给你前后对比',
+      noteRun:function(){return '正在 Mate 70 Pro 上重跑「列表 → 详情 → 返回 ×8」…'},
+      noteDone:function(st){return '已在 Mate 70 Pro 上重跑同一条操作：'+st.rec0+' → '+st.rec1+'，DetailPage 残留 8 → 0'},
+      noteUndo:function(st){return '已退回 DetailPage.ets 的改动，真机上还是记录 '+st.rec0+' 的样子'},
+      capBase:function(st){return '记录 '+st.rec0+' · DetailPage 残留 8 · +48.6 MB'},
+      capDone:function(st){return '记录 '+st.rec1+' · 残留 0 · 已复测'},
+      recRow:function(st){return {icon:'#i-mem',text:'列表 → 详情 → 返回 ×8 · 自动复测（和 '+st.rec0+' 同一条操作）',pill:['ok','+1.2 MB']}},
+      recIcon:'#i-mem',batchText:'列表 → 详情 → 返回 ×8',
+      metrics:[
+        {label:'内存增量（进出 8 次）',unit:'MB',dec:1,chg:'pct',b:[48.6,46.9,51.3,49.2,47.8],a:[1.2,0.6,2.1,0.9,1.4]},
+        {label:'DetailPage 残留',short:'<code>DetailPage</code> 残留',unit:'个',dec:0,chg:'abs',b:[8,8,8,8,8],a:[0,0,0,0,0]},
+        {label:'GC 后堆内存',unit:'MB',dec:0,chg:'abs',b:[131,129,134,131,130],a:[84,83,85,83,84]},
+        {label:'详情页打开耗时',unit:'ms',dec:0,chg:'pct',b:[212,204,223,208,216],a:[209,201,220,211,205]}
+      ],
+      strip:{min:0,max:60,ticks:[10,20,30,40,50,60],lim:5,limLabel:'5 MB · 泄漏判定线'}
+    }
+  };
+  function newSt(){return {applied:false,retested:false,timer:null,n:1,done:0,batch:null,prog:{b:0,a:0},ids:{b:[],a:[]},rec0:null,rec1:null}}
+  var ST={jank:newSt(),leak:newSt()};
+  ST.jank.rec0='#12';
+  ST.leak.phase='idle';ST.leak.upto=0;ST.leak.snap=8;ST.leak.node=null;ST.leak.line=16;
+  var S={sym:'jank',view:'sym',topSort:'self',topSel:{},cartFixed:false};
+  var nextRec=13;
+  var REC=[
+    {id:'#12',icon:'#i-gauge',text:'滑动 ListPage · 60 帧',pill:['err','掉帧 9'],when:'10:41',sel:1},
+    {id:'#11',icon:'#i-clock',text:'冷启动 · 1.9 s',pill:['ok','正常'],when:'10:38'},
+    {id:'#10',icon:'#i-gauge',text:'滑动 ListPage · 60 帧',pill:['err','掉帧 11'],when:'昨天 18:02'}
+  ];
+  function addRec(r){REC.unshift(r)}
+  function dropRec(prefix){REC=REC.filter(function(r){return !(r.key&&r.key.indexOf(prefix)===0)})}
+
+  /* ---------- 最重调用栈：按记录给前几个函数，每行落到代码 ---------- */
+  var VS=['UI 主线程 · vsync 帧回调'];
+  var TOPD={
+    '#12':{sub:'· 记录 #12 · 主线程 · 滑动 60 帧 · 1.28 s',total:1284,rows:[
+      {fn:'image.createPixelMapSync',tag:'系统',file:'ListPage.ets',line:28,site:1,self:331.2,total:331.2,stack:[VS,['ListPage.build › ForEach','ListPage.ets',15],['ItemCard({ cover: … })','ListPage.ets',17],['ListPage.loadCover','ListPage.ets',27],['image.createPixelMapSync','ListPage.ets',28]]},
+      {fn:'ItemCard.build',file:'ItemCard.ets',line:8,self:37.5,total:49.8,stack:[VS,['ListPage.build › ForEach','ListPage.ets',15],['ItemCard.build','ItemCard.ets',8]]},
+      {fn:'ListPage.build › ForEach',file:'ListPage.ets',line:15,self:18.4,total:415.7,stack:[VS,['ListPage.build','ListPage.ets',10],['ListPage.build › ForEach','ListPage.ets',15]]},
+      {fn:'ItemSource.all',file:'ListPage.ets',line:15,site:1,self:12.1,total:12.1,stack:[VS,['ListPage.build › ForEach','ListPage.ets',15],['ItemSource.all','ListPage.ets',15]]},
+      {fn:'hilog.info',tag:'系统',file:'ItemCard.ets',line:17,site:1,self:8.7,total:8.7,stack:[VS,['ListPage.build › ForEach','ListPage.ets',15],['ItemCard.onAppear','ItemCard.ets',17],['hilog.info','ItemCard.ets',17]]},
+      {fn:'ListPage.loadCover',file:'ListPage.ets',line:27,self:4.2,total:335.4,stack:[VS,['ListPage.build › ForEach','ListPage.ets',15],['ItemCard({ cover: … })','ListPage.ets',17],['ListPage.loadCover','ListPage.ets',27]]}
+    ]},
+    '#11':{sub:'· 记录 #11 · 主线程 · 冷启动 1.9 s',total:1904,rows:[
+      {fn:'ItemSource.warmUp',file:'EntryAbility.ets',line:12,site:1,self:318.0,total:318.0,stack:[['UI 主线程 · 应用启动'],['EntryAbility.onCreate','EntryAbility.ets',8],['ItemSource.warmUp','EntryAbility.ets',12]]},
+      {fn:'windowStage.loadContent',tag:'系统',file:'EntryAbility.ets',line:16,site:1,self:212.4,total:684.3,stack:[['UI 主线程 · 应用启动'],['EntryAbility.onWindowStageCreate','EntryAbility.ets',15],['windowStage.loadContent','EntryAbility.ets',16]]},
+      {fn:'ListPage.build',file:'ListPage.ets',line:10,self:96.2,total:471.9,stack:[['UI 主线程 · 应用启动'],['EntryAbility.onWindowStageCreate','EntryAbility.ets',15],['windowStage.loadContent','EntryAbility.ets',16],['ListPage.build','ListPage.ets',10]]},
+      {fn:'ItemCard.build',file:'ItemCard.ets',line:8,self:58.1,total:71.0,stack:[['UI 主线程 · 首帧'],['ListPage.build › ForEach','ListPage.ets',15],['ItemCard.build','ItemCard.ets',8]]},
+      {fn:'preferences.getPreferencesSync',tag:'系统',file:'EntryAbility.ets',line:10,site:1,self:41.3,total:41.3,stack:[['UI 主线程 · 应用启动'],['EntryAbility.onCreate','EntryAbility.ets',8],['preferences.getPreferencesSync','EntryAbility.ets',10]]},
+      {fn:'EntryAbility.onCreate',file:'EntryAbility.ets',line:8,self:7.4,total:366.7,stack:[['UI 主线程 · 应用启动'],['EntryAbility.onCreate','EntryAbility.ets',8]]}
+    ]},
+    leak:{sub:function(){return '· 记录 '+ST.leak.rec0+' · 主线程 · 列表 → 详情 → 返回 ×8 · 3.9 s'},total:3900,rows:[
+      {fn:'PhotoLoader.decodeAll',file:'DetailPage.ets',line:15,site:1,self:1184.0,total:1184.0,stack:[['UI 主线程 · 页面切换'],['DetailPage.aboutToAppear','DetailPage.ets',14],['PhotoLoader.decodeAll','DetailPage.ets',15]]},
+      {fn:'() => this.leftSec--',tag:'残留 ×8',tagc:'warn',file:'DetailPage.ets',line:20,self:212.6,total:486.1,stack:[['UI 主线程 · 定时器'],['setInterval 回调 · 8 个残留页面','DetailPage.ets',19],['() => this.leftSec--','DetailPage.ets',20]]},
+      {fn:'(e) => this.cartCount = …',tag:'残留 ×8',tagc:'warn',file:'DetailPage.ets',line:17,self:96.3,total:318.4,stack:[['UI 主线程 · emitter 派发'],['emitter · cart_changed → 8 个订阅','DetailPage.ets',16],['(e) => this.cartCount = …','DetailPage.ets',17]]},
+      {fn:'DetailPage.build',file:'DetailPage.ets',line:24,self:88.2,total:142.7,stack:[VS,['DetailPage.build','DetailPage.ets',24]]},
+      {fn:'ListPage.build › ForEach',file:'ListPage.ets',line:15,self:61.0,total:104.3,stack:[VS,['ListPage.build','ListPage.ets',10],['ListPage.build › ForEach','ListPage.ets',15]]},
+      {fn:'DetailPage.aboutToAppear',file:'DetailPage.ets',line:14,self:6.1,total:1262.4,stack:[['UI 主线程 · 页面切换'],['router.pushUrl → DetailPage'],['DetailPage.aboutToAppear','DetailPage.ets',14]]}
+    ]}
+  };
+
+  /* ---------- 编辑器：多文件标签 + 定位 ---------- */
+  function codeEl(file){return file==='ListPage.ets'?$('#code'):$('.code-wrap[data-for-file="'+file+'"] .code')}
+  function renderFixable(file,fixed,marks,newLines){
+    var el=codeEl(file);if(!el)return;
+    el.innerHTML=DemoFrame.code(fixed?file+'#fix':file,fixed?{}:{marks:marks});
+    if(fixed)newLines.forEach(function(n){var l=$('.ln[data-ln="'+n+'"]',el);if(l)l.classList.add('hl-ok')});
+  }
+  function renderDetail(fixed){renderFixable('DetailPage.ets',fixed,{16:'warn',19:'warn'},DETAIL_FIX_NEW)}
+  function renderCart(){renderFixable('CartBadge.ets',S.cartFixed,{9:'warn'},[11,12,13,14])}
+  function ensureFile(name){
+    if(!$('#tabs .tab[data-file="'+name+'"]'))$('#tabs > .grow').insertAdjacentHTML('beforebegin',DemoFrame.tabs([{file:name}]));
+    if(!$('.code-wrap[data-for-file="'+name+'"]')){
+      $('#crumbs').insertAdjacentHTML('beforebegin','<div class="code-wrap" data-for-file="'+esc(name)+'" hidden><div class="code"></div></div>');
+      if(name==='DetailPage.ets')renderDetail(ST.leak.applied);else if(name==='CartBadge.ets')renderCart();else codeEl(name).innerHTML=DemoFrame.code(name,{});
+    }
+  }
+  function showFile(name){ensureFile(name);var t=$('#tabs .tab[data-file="'+name+'"]');if(!t.classList.contains('on'))t.click()}
+  function mapLine(file,line){
+    if(file==='DetailPage.ets'&&ST.leak.applied){if(line>=16&&line<=18)return 16;if(line>=19&&line<=22)return line-2;if(line>=23)return line+8}
+    return line;
+  }
+  function locate(line,file){
+    file=file||'ListPage.ets';showFile(file);line=mapLine(file,line);
+    var code=codeEl(file);
+    $$('.ln',code).forEach(function(l){var on=+l.dataset.ln===line;l.classList.toggle('cur',on);l.classList.toggle('hl',on)});
+    var ln=$('.ln[data-ln="'+line+'"]',code);if(ln)code.scrollTop=Math.max(0,ln.offsetTop-code.clientHeight/2+40);
+    var p=$('#status-pos');if(p)p.textContent=line+':'+(file==='ListPage.ets'?12:5);
+    $('#crumbs').innerHTML=DemoFrame.crumbs(file);
+  }
+  function renderCode(){$('#code').innerHTML=DemoFrame.code('ListPage.ets',{cur:28,hl:[28],marks:{28:'warn'}});}
   var NEW28=[
     '    <span class="c">// 解码挪到后台，帧里只查缓存</span>',
     '    <span class="k">const</span> <span class="p">hit</span> = <span class="k">this</span>.<span class="p">coverCache</span>.<span class="f">get</span>(<span class="p">id</span>);',
@@ -214,9 +712,11 @@
     $$('#code .ln').forEach(function(l,i){l.dataset.ln=i+1;$('.g .n',l).textContent=i+1});
     $$('#code .ln').forEach(function(l){l.classList.toggle('cur',+l.dataset.ln===28)});
   }
+  /* 树上点文件：没开标签的就开一个 */
+  $('#ide').addEventListener('click',function(e){var r=e.target.closest('#tree .row[data-file]');if(r&&FILES[r.dataset.file]&&!$('#tabs .tab[data-file="'+r.dataset.file+'"]'))showFile(r.dataset.file)});
 
   /* ---------- diff 行 ---------- */
-  function diffPre(el,lines){el.innerHTML=lines.map(function(t){var c=t[0]==='+'?' add':(t[0]==='-'?' del':'');return '<span class="l'+c+'">'+esc(t)+'</span>'}).join('')}
+  function diffPre(el,lines){el.innerHTML=lines.map(function(t){var c=t[0]==='+'?' add':(t[0]==='-'?' del':(t[0]==='@'?' hunk':''));return '<span class="l'+c+'">'+esc(t)+'</span>'}).join('')}
   diffPre($('#d1-pre'),[
     '  loadCover(id: number): PixelMap {',
     '-   return image.createPixelMapSync(this.source.rawCover(id));',
@@ -234,40 +734,348 @@
     '+     }',
     '      Image(this.cover).width(56).height(56)'
   ]);
+  diffPre($('#l1-pre'),[
+    '   aboutToAppear() {',
+    '-    emitter.on(CART_CHANGED, (e: emitter.EventData) => {',
+    '-      this.cartCount = e.data?.[\'count\'] as number;',
+    '-    });',
+    '+    emitter.on(CART_CHANGED, this.onCart);',
+    '@@ …',
+    '   }',
+    '+',
+    '+  aboutToDisappear() {',
+    '+    // 退出时解绑，DetailPage 才能被回收',
+    '+    emitter.off(CART_CHANGED, this.onCart);',
+    '+    clearInterval(this.timer);',
+    '+  }',
+    '+',
+    '+  private onCart = (e: emitter.EventData): void => {',
+    '+    this.cartCount = e.data?.[\'count\'] as number;',
+    '+  };'
+  ]);
+  diffPre($('#l2-pre'),[
+    '   aboutToAppear() {',
+    '     emitter.on(CART_CHANGED, this.onCart);',
+    '   }',
+    '+',
+    '+  aboutToDisappear() {',
+    '+    emitter.off(CART_CHANGED, this.onCart);',
+    '+  }'
+  ]);
 
-  /* ---------- 底部面板视图 ---------- */
-  var state={sym:'jank',applied:false,retested:false,view:'sym',timer:null};
+  /* ---------- 底部面板：症状视图 ---------- */
   var SYM={jank:{title:'帧耗时',sub:'· 真机记录 #12 · Mate 70 Pro · 滑动 ListPage'},power:{title:'电流',sub:'· 真机记录 #12 · Mate 70 Pro · 每帧采样'},launch:{title:'冷启动各阶段',sub:'· 真机记录 #11 · Mate 70 Pro'},heat:{title:'温度',sub:'· 真机记录 #12 · Mate 70 Pro · 每帧采样'}};
   function drawMain(){
     var svg=$('#svg-main');
-    if(state.sym==='jank')drawBars(svg,BEFORE,{h:240,anom:[23,31],anomLabel:"连续掉帧 · 第 23–31 帧"});
+    if(S.sym==='jank')drawBars(svg,BEFORE,{h:240,anom:[23,31],anomLabel:"连续掉帧 · 第 23–31 帧"});
     else drawBars(svg,FLAT,{h:240});
   }
+  function scOf(sym){return sym==='leak'?'leak':'jank'}
   function showViews(){
-    var sym=state.view==='sym';
-    $('#view-rec').hidden=sym;
-    $('#view-before').hidden=!(sym&&!(state.applied&&state.sym==='jank'));
-    $('#view-compare').hidden=!(sym&&state.applied&&state.sym==='jank');
+    var v=S.view,sym=S.sym,cmp=(sym==='jank'&&ST.jank.applied)?'jank':((sym==='leak'&&ST.leak.applied)?'leak':null);
+    $('#view-rec').hidden=v!=='rec';
+    $('#view-top').hidden=v!=='top';
+    $('#view-before').hidden=!(v==='sym'&&sym!=='leak'&&!cmp);
+    $('#view-leak').hidden=!(v==='sym'&&sym==='leak'&&!cmp);
+    $('#view-compare').hidden=!(v==='sym'&&cmp);
+    $$('.tw-bottom .btab').forEach(function(b){b.classList.toggle('on',b.dataset.view===v)});
     if(!$('#view-before').hidden)drawMain();
-    if(!$('#view-compare').hidden){drawBars($('#svg-before'),BEFORE,{h:240,anom:[23,31],anomLabel:"掉帧 9"});
-      if(state.retested)drawBars($('#svg-after'),AFTER,{h:240,band:[23,31],bandLabel:'原掉帧区间 · 已无掉帧'});else drawBars($("#svg-after"),[],{h:240});}
+    if(!$('#view-leak').hidden)renderLeak();
+    if(!$('#view-compare').hidden)renderCompare(cmp);
+    if(v==='top')renderTop();
+    if(v==='rec')renderRec();
+  }
+
+  /* ---------- 内存涨 / 泄漏 ---------- */
+  var NODES={
+    root:{line:14,cls:'root',l1:'<b>GC Root</b><span>运行时 · 进程常驻</span>',l2:'emitter 订阅表 · UI 线程定时器队列',tip:'GC Root 在运行时里：<code>emitter</code> 的订阅表和定时器队列跟进程同生命周期，两条链都是在 <code>aboutToAppear()</code> 里接上的 · <b>DetailPage.ets:14</b>'},
+    sub:{line:16,l1:'<b>全局事件订阅</b><code>emitter · cart_changed</code>',l2:'on 了没有 off',tip:'<code>emitter.on(CART_CHANGED, …)</code> 把回调登记进全局订阅表，页面退出时没有 <code>off</code>，订阅表一直拿着它 · <b>DetailPage.ets:16</b>'},
+    timer:{line:19,l1:'<b>定时器</b><code>setInterval · 1000 ms</code>',l2:'没有 clearInterval',tip:'<code>setInterval</code> 的句柄存在 <code>this.timer</code>，但没有地方 <code>clearInterval</code>，页面退出后还每秒跑一次 · <b>DetailPage.ets:19</b>'},
+    cbA:{line:17,l1:'<b>回调闭包</b><code>(e) =&gt; this.cartCount = …</code>',l2:'捕获了 this',tip:'回调里写了 <code>this.cartCount</code>，闭包把整个 <code>DetailPage</code> 带上了 · <b>DetailPage.ets:17</b>'},
+    cbB:{line:20,l1:'<b>回调闭包</b><code>() =&gt; this.leftSec--</code>',l2:'捕获了 this',tip:'<code>this.leftSec--</code> 同样捕获了 <code>this</code>，定时器不停，页面就回收不掉 · <b>DetailPage.ets:20</b>'},
+    page:{line:9,cls:'leaked'}
+  };
+  function nodeHTML(id){
+    var n=NODES[id],L=ST.leak,k=L.snap,l1=n.l1,l2=n.l2;
+    if(id==='page'){l1='<b>DetailPage</b><span>×'+k+' · 保留 '+(k*6.1).toFixed(1)+' MB</span>';l2='photos: PixelMap[] 每个 5.5 MB'}
+    return '<button class="cn'+(n.cls?' '+n.cls:'')+(L.node===id?' on':'')+'" data-node="'+id+'"><span class="l1">'+l1+'</span><span class="l2"><span>'+l2+'</span><span class="loc">DetailPage.ets:'+n.line+'</span></span></button>';
+  }
+  function cw(d){return '<svg class="cw" viewBox="0 0 100 14" preserveAspectRatio="none" aria-hidden="true"><path d="'+d+'"/></svg>'}
+  function renderChain(){
+    var L=ST.leak,el=$('#chain');
+    if(L.phase!=='done'){
+      el.innerHTML='<div class="chain-wait"><span class="spin"></span>已抓 '+doneCycles(L.upto)+' / 8 份堆快照，比对残留对象…</div>';
+      $('#chain-sub').textContent='';$('#chain-pill').hidden=true;return;
+    }
+    $('#chain-sub').textContent='· 第 '+L.snap+' 次返回后的堆快照 · GC Root → DetailPage';
+    var cp=$('#chain-pill');cp.hidden=false;cp.textContent='DetailPage 残留 '+L.snap+' 个';
+    el.innerHTML=nodeHTML('root')+cw('M50 0V6H25V14M50 6H75V14')+'<div class="cn-row">'+nodeHTML('sub')+nodeHTML('timer')+'</div>'+cw('M25 0V14M75 0V14')+'<div class="cn-row">'+nodeHTML('cbA')+nodeHTML('cbB')+'</div>'+cw('M25 0V8H75V0M50 8V14')+nodeHTML('page');
+  }
+  function leakDefaultTip(){return '8 次返回后 <code>DetailPage</code> 还有 8 个实例没被回收，被两条引用链挂着 · 已定位到 <b>DetailPage.ets:16</b>'}
+  function renderLeak(){
+    var L=ST.leak,done=L.phase==='done',started=startedCycles(L.upto);
+    $('#lk-sub').textContent=done?'· 真机记录 '+L.rec0+' · Mate 70 Pro · 列表 → 详情 → 返回 ×8':'· Mate 70 Pro · 列表 → 详情 → 返回 ×8 · 自动操作中';
+    var pill=$('#lk-pill');
+    if(done){pill.className='dm-pill err';pill.textContent='+48.6 MB 未回收'}else{pill.className='dm-pill info';pill.textContent='自动操作 '+Math.max(1,started)+' / 8'}
+    $('#lk-hint').textContent=done?'点一截台阶看那次快照':'';
+    drawMem($('#svg-mem'),MEM_BEFORE,{h:226,upto:done?null:L.upto,steps:true,per:LEAK_PER,hit:done,sel:done?L.snap:0});
+    renderChain();
+    var co=$('#lk-callout'),t=$('#lk-callout-t');
+    if(!done){co.className='dm-callout';$('use',co).setAttribute('href','#i-sync');t.innerHTML='每次返回后强制 GC 并抓一次堆快照，已抓 <b>'+doneCycles(L.upto)+' / 8</b> 份。内存回不到进入前，就顺着引用链找是谁拿着页面。'}
+    else{co.className='dm-callout info';$('use',co).setAttribute('href','#i-locate');t.innerHTML=L.tip||leakDefaultTip()}
+  }
+  function startLeakRec(){
+    var L=ST.leak;L.phase='rec';L.upto=0;
+    L.recT=setInterval(function(){
+      L.upto=Math.min(T_END,L.upto+.5);
+      $('#lk-s1-t').textContent='在 Mate 70 Pro 上自动走「列表 → 详情 → 返回」，第 '+Math.max(1,startedCycles(L.upto))+' / 8 遍，每次返回后 GC 并抓堆快照…';
+      if(L.upto>=T_END){clearInterval(L.recT);L.recT=null;finishLeakRec();return}
+      if(S.sym==='leak'){updateCap();if(!$('#view-leak').hidden)renderLeak();if(S.view==='top')renderTop()}
+    },45);
+  }
+  function finishLeakRec(){
+    var L=ST.leak;L.phase='done';L.rec0='#'+(nextRec++);
+    addRec({id:L.rec0,icon:'#i-mem',text:'列表 → 详情 → 返回 ×8 · 自动操作',pill:['err','+48.6 MB'],when:'刚刚',key:'leak-rec'});
+    var s1=$('#lk-s1');s1.className='step ok';s1.innerHTML='<svg class="i"><use href="#i-locate"/></svg>已定位：DetailPage.ets:16 订阅未解除 · 真机记录 '+L.rec0;
+    $('#lk-body').hidden=false;
+    if(S.sym==='leak'){locate(16,'DetailPage.ets');revealCard('l1')}
+    updateCap();updateRecPill();showViews();
+  }
+  function revealCard(id){
+    var sc=$('#ai-scroll'),el=$('#'+id+' [data-actions]');if(!sc||!el)return;
+    var d=el.getBoundingClientRect().bottom-sc.getBoundingClientRect().bottom+12;if(d>0)sc.scrollTop+=d;
+  }
+  $('#view-leak').addEventListener('click',function(e){
+    var L=ST.leak;if(L.phase!=='done')return;
+    var n=e.target.closest('.cn');
+    if(n){var id=n.dataset.node,nd=NODES[id];L.node=id;L.tip=id==='page'?'第 '+L.snap+' 次返回后还活着 '+L.snap+' 个 <code>DetailPage</code>，每个保留 6.1 MB，其中 <code>photos: PixelMap[]</code> 占 5.5 MB · <b>DetailPage.ets:9</b>':nd.tip;locate(nd.line,'DetailPage.ets');renderLeak();return}
+    var c=e.target.closest('rect.cyc');
+    if(c){var k=+c.dataset.cycle,heap=82+LEAK_PER*k;L.snap=k;L.node='page';
+      L.tip='第 '+k+' 次返回并 GC 后：堆内存 '+heap.toFixed(1)+' MB，比进入前多 '+(heap-82).toFixed(1)+' MB，<code>DetailPage</code> 残留 '+k+' 个 · <b>DetailPage.ets:9</b>';
+      locate(9,'DetailPage.ets');renderLeak()}
+  });
+
+  /* ---------- 前后对比：单次 / 多次并排 + 显著性 ---------- */
+  var JIT=[0,-10,10,-5,5];
+  function drawStrip(svg,bv,av,o){
+    var W=svgW(svg),H=o.h||196,padL=34,padR=14,padT=14,padB=34,pw=W-padL-padR,ph=H-padT-padB,m=o.m;
+    var y=function(v){return padT+ph-(v-o.min)/(o.max-o.min)*ph},f1=function(v){return v.toFixed(1)},s='';
+    o.ticks.forEach(function(t){s+='<line class="grid" x1="'+padL+'" x2="'+(W-padR)+'" y1="'+f1(y(t))+'" y2="'+f1(y(t))+'"/><text class="lbl" x="'+(padL-6)+'" y="'+f1(y(t)+3)+'" text-anchor="end">'+t+'</text>'});
+    s+='<line class="grid" x1="'+padL+'" x2="'+(W-padR)+'" y1="'+f1(y(o.min))+'" y2="'+f1(y(o.min))+'"/><text class="lbl" x="'+(padL-6)+'" y="'+(padT-4)+'" text-anchor="end">'+esc(m.unit)+'</text>';
+    if(o.lim!=null)s+='<line class="lim" x1="'+padL+'" x2="'+(W-padR)+'" y1="'+f1(y(o.lim))+'" y2="'+f1(y(o.lim))+'"/><text class="lbl" x="'+(W-padR)+'" y="'+f1(y(o.lim)-4)+'" text-anchor="end">'+esc(o.limLabel)+'</text>';
+    var cx=[padL+pw*.28,padL+pw*.72],G=[{v:bv,c:'b',name:'改前',ids:o.ids.b},{v:av,c:'a',name:'改后',ids:o.ids.a}],med=[];
+    G.forEach(function(g,gi){
+      var c=cx[gi];
+      if(g.v.length){
+        var st=stats(g.v);med[gi]=st.med;
+        s+='<rect class="sp-rg '+g.c+'" x="'+f1(c-13)+'" y="'+f1(y(st.max)-2)+'" width="26" height="'+f1(Math.max(4,y(st.min)-y(st.max)+4))+'" rx="4"/>';
+        s+='<line class="sp-md '+g.c+'" x1="'+f1(c-22)+'" x2="'+f1(c+22)+'" y1="'+f1(y(st.med))+'" y2="'+f1(y(st.med))+'"/>';
+        s+='<text class="lbl strong" x="'+f1(gi?c+28:c-28)+'" y="'+f1(y(st.med)+3)+'" text-anchor="'+(gi?'start':'end')+'">中位 '+fv(m,st.med)+'</text>';
+        g.v.forEach(function(v,i){s+='<circle class="sp-dot '+g.c+'" cx="'+f1(c+JIT[i])+'" cy="'+f1(y(v))+'" r="4.5"><title>'+g.name+' 第 '+(i+1)+' 次 · '+fv(m,v)+' '+esc(m.unit)+(g.ids[i]?' · 记录 '+g.ids[i]:'')+'</title></circle>'});
+      }
+      s+='<text class="glbl" x="'+f1(c)+'" y="'+(H-18)+'" text-anchor="middle">'+g.name+' ×'+o.n+(g.v.length<o.n?'（'+g.v.length+'/'+o.n+'）':'')+'</text>';
+      s+='<text class="lbl" x="'+f1(c)+'" y="'+(H-5)+'" text-anchor="middle">'+(g.v.length?'范围 '+fv(m,stats(g.v).min)+'–'+fv(m,stats(g.v).max)+' '+esc(m.unit):'等待运行')+'</text>';
+    });
+    if(med[0]!=null&&med[1]!=null){var x1=cx[0]+22,x2=cx[1]-22,y1=y(med[0]),y2=y(med[1]);
+      s+='<path class="sp-link" d="M'+f1(x1)+','+f1(y1)+'L'+f1(x2)+','+f1(y2)+'"/>';
+      s+='<text class="lbl strong" x="'+f1((x1+x2)/2+8)+'" y="'+f1((y1+y2)/2-6)+'">'+chg(m,med[0],med[1])+'</text>'}
+    svg.setAttribute('viewBox','0 0 '+W+' '+H);svg.style.height=H+'px';svg.innerHTML=s;
+  }
+  function miniRange(m,b,a){
+    var all=b.concat(a);if(!all.length)return '<svg class="rg"></svg>';
+    var lo=Math.min.apply(null,all),hi=Math.max.apply(null,all),pd=(hi-lo)*.08||1,x=function(v){return (6+(v-lo+pd)/(hi-lo+2*pd)*108).toFixed(1)},s='<line class="tk" x1="4" x2="116" y1="11" y2="11"/>';
+    [[b,'b',7],[a,'a',15]].forEach(function(g){if(!g[0].length)return;var st=stats(g[0]);s+='<line class="t'+g[1]+'" x1="'+x(st.min)+'" x2="'+x(st.max)+'" y1="'+g[2]+'" y2="'+g[2]+'"/><circle class="'+g[1]+'" cx="'+x(st.med)+'" cy="'+g[2]+'" r="3"/>'});
+    return '<svg class="rg" viewBox="0 0 120 22" aria-hidden="true">'+s+'</svg>';
+  }
+  function cells(m,v){if(!v.length)return '<span class="v dm-muted">—</span>';var st=stats(v);return '<span class="v"><b>'+fv(m,st.med)+'</b> '+esc(m.unit)+'<small>'+fv(m,st.min)+'–'+fv(m,st.max)+'</small></span>'}
+  function counts(st){return st.batch?{b:st.prog.b,a:st.prog.a}:{b:Math.min(st.n,st.done),a:Math.min(st.n,st.done)}}
+  function primaryVerdict(sc,n){var P=SC[sc].metrics[0];return verdict(P.b.slice(0,n),P.a.slice(0,n))}
+  function multiText(sc){
+    var C=SC[sc],st=ST[sc],n=st.n,P=C.metrics[0],M2=C.metrics[1],b=stats(P.b.slice(0,n)),a=stats(P.a.slice(0,n)),b2=stats(M2.b.slice(0,n)),a2=stats(M2.a.slice(0,n)),v=primaryVerdict(sc,n);
+    var s='改前 / 改后交替各跑 '+n+' 次：'+P.label.replace(/（.*）/,'')+'中位数 <b>'+fv(P,b.med)+' → '+fv(P,a.med)+' '+P.unit+'</b>，'+M2.short+' <b>'+fv(M2,b2.med)+' → '+fv(M2,a2.med)+'</b>';
+    if(v.k==='up')s+='，'+(v.sep?n+' 次全部更好，':'')+'<b>改善显著</b>（p = '+fmtP(v.p)+'）';
+    else if(v.k==='few')s+='，'+n+' 次全部更好，但 '+n+' 次还下不了结论（p = '+fmtP(v.p)+'），跑到 5 次再看';
+    else if(v.k==='ns')s+='，<b>差异不显著</b>（p = '+fmtP(v.p)+'）';
+    else s+='，<b>显著变差</b>（p = '+fmtP(v.p)+'）';
+    C.metrics.slice(2).forEach(function(m){var vv=verdict(m.b.slice(0,n),m.a.slice(0,n));if(vv.k==='down')s+='；'+m.label+' <b>'+chg(m,stats(m.b.slice(0,n)).med,stats(m.a.slice(0,n)).med)+'</b>（'+esc(m.note||'')+'）'});
+    return {html:s+'。',v:v};
+  }
+  function renderCompare(sc){
+    var C=SC[sc],st=ST[sc],running=!st.retested,batching=!!st.batch,multi=st.n>1;
+    var run=$('#cmp-run'),ok=$('#cmp-ok'),prog=$('#cmp-prog');
+    run.hidden=!(running||batching);ok.hidden=running||batching;
+    if(running){$('#cmp-run-t').textContent=C.runText;prog.className='dm-progress indet';prog.style.removeProperty('--v')}
+    else if(batching){$('#cmp-run-t').textContent='正在 Mate 70 Pro 上交替装改前 / 改后两个包，同一条'+C.pathName+'各跑 '+st.n+' 次… 改前 '+st.prog.b+'/'+st.n+' · 改后 '+st.prog.a+'/'+st.n;
+      prog.className='dm-progress';prog.style.setProperty('--v',Math.round((st.prog.a+st.prog.b)/(2*st.n)*100)+'%')}
+    else{
+      var t=$('#cmp-ok-t'),icon=$('use',ok);
+      if(multi&&st.done>=st.n){var mt=multiText(sc);t.innerHTML=mt.html;ok.className='dm-callout '+(mt.v.k==='up'?'ok':'warn');icon.setAttribute('href',mt.v.k==='up'?'#i-check':'#i-warn')}
+      else{t.innerHTML=C.okText();ok.className='dm-callout ok';icon.setAttribute('href','#i-check')}
+    }
+    $('#cmp-path').innerHTML=C.path.map(function(p){return '<span>'+esc(p)+'</span>'}).join('<svg class="i"><use href="#i-arrowR"/></svg>')+(C.suffix?'<i>'+C.suffix+'</i>':'');
+    $$('#cmp-runs button').forEach(function(b){b.classList.toggle('on',+b.dataset.n===st.n);b.disabled=running||batching});
+    $('#cmp-single').hidden=multi;$('#cmp-multi').hidden=!multi;
+    if(!multi){
+      $('#cb-sub').textContent='· 记录 '+st.rec0;
+      $('#ca-sub').textContent=st.retested?'· 记录 '+st.rec1+'（自动复测）':'· 自动复测';
+      var bp=$('#cb-pill');bp.className='dm-pill '+C.beforePill[0];bp.textContent=C.beforePill[1];
+      var ap=$('#after-pill');if(st.retested){ap.className='dm-pill '+C.afterPill[0];ap.textContent=C.afterPill[1]}else{ap.className='dm-pill muted';ap.textContent='复测中…'}
+      C.drawBefore($('#svg-before'),226);C.drawAfter($('#svg-after'),226,st.retested);
+    }else renderMulti(sc);
+  }
+  function renderMulti(sc){
+    var C=SC[sc],st=ST[sc],n=st.n,c=counts(st),P=C.metrics[0],complete=c.b>=n&&c.a>=n;
+    $('#mm-title').textContent=P.label;$('#mm-sub').textContent='· 改前 ×'+n+' vs 改后 ×'+n+' · 交替运行';
+    var pill=$('#mm-pill');
+    if(!complete){pill.className='dm-pill info';pill.textContent='运行中 '+Math.min(c.b,c.a)+'/'+n}
+    else{var v=primaryVerdict(sc,n),lab={up:'改善显著',few:'样本不足',ns:'差异不显著',down:'显著变差'}[v.k];pill.className='dm-pill '+v.cls;pill.textContent=lab+' · p = '+fmtP(v.p)}
+    drawStrip($('#svg-strip'),P.b.slice(0,c.b),P.a.slice(0,c.a),{m:P,n:n,h:C.metrics.length>4?206:176,min:C.strip.min,max:C.strip.max,ticks:C.strip.ticks,lim:C.strip.lim,limLabel:C.strip.limLabel,ids:st.ids});
+    var h='<div class="mt-h"><span>指标</span><span>改前 ×'+n+'</span><span>改后 ×'+n+'</span><span>分布</span><span>变化</span><span>判断</span></div>';
+    C.metrics.forEach(function(m){
+      var b=m.b.slice(0,c.b),a=m.a.slice(0,c.a),vv=complete?verdict(m.b.slice(0,n),m.a.slice(0,n)):null;
+      h+='<div class="mt-r"><span>'+esc(m.label)+'</span>'+cells(m,b)+cells(m,a)+'<span>'+miniRange(m,b,a)+'</span><span class="d">'+(b.length&&a.length?chg(m,stats(b).med,stats(a).med):'—')+'</span><span>'+(vv?'<span class="dm-pill '+vv.cls+'" title="p = '+fmtP(vv.p)+' · '+n+' vs '+n+'">'+vv.t+'</span>':'<span class="dm-pill muted">运行中</span>')+'</span></div>';
+    });
+    $('#mm-table').innerHTML=h;
+  }
+
+  /* ---------- 胶囊 / 记录号 ---------- */
+  var SPIN='<span class="spin" style="width:10px;height:10px"></span>';
+  function dot(c){return '<span class="dm-dot '+c+'"></span>'}
+  function capFor(sc){
+    var C=SC[sc],st=ST[sc];
+    if(sc==='leak'&&st.phase!=='done')return SPIN+'录制中 · 进出详情 '+Math.max(1,startedCycles(st.upto))+'/8 · Mate 70 Pro';
+    if(st.batch)return SPIN+'各跑 '+st.n+' 次 · 改前 '+st.prog.b+'/'+st.n+' · 改后 '+st.prog.a+'/'+st.n;
+    if(st.applied&&!st.retested)return SPIN+'自动复测中 · Mate 70 Pro';
+    if(st.retested&&st.done>1){var v=primaryVerdict(sc,st.done);return dot(v.k==='up'?'ok':'warn')+'各跑 '+st.done+' 次 · '+(v.k==='up'?'改善显著':v.t)+' · Mate 70 Pro'}
+    if(st.retested)return dot('ok')+C.capDone(st);
+    return dot('err')+C.capBase(st);
+  }
+  function updateCap(){var c=$('#cap');if(c)c.innerHTML=capFor(scOf(S.sym))}
+  function updateRecPill(){
+    var s=S.sym,id;
+    if(s==='leak'){var L=ST.leak;id=L.phase!=='done'?null:(L.retested?L.rec1:L.rec0)}
+    else if(s==='launch')id='#11';
+    else id=ST.jank.retested?ST.jank.rec1:'#12';
+    $('#rec-pill').innerHTML='<svg><use href="#i-phone"/></svg>Mate 70 Pro · '+(id?'记录 '+id:'录制中…');
+  }
+  function noteEl(sc){return $(sc==='jank'?'#retest-note':'#lk-retest')}
+  function setNote(sc,cls,icon,html){var n=noteEl(sc);n.className='step'+(cls?' '+cls:'');n.innerHTML=(icon==='spin'?SPIN:'<svg class="i"><use href="'+icon+'"/></svg>')+html}
+
+  /* ---------- 自动复测 / 多次运行 / 退回 ---------- */
+  function retestStart(sc){
+    var C=SC[sc],st=ST[sc];
+    st.applied=true;st.retested=false;st.n=1;st.done=0;st.ids={b:[st.rec0],a:[]};
+    setNote(sc,'run','spin',C.noteRun(st));
+    updateCap();showViews();
+    st.timer=setTimeout(function(){
+      st.timer=null;st.retested=true;st.done=1;if(!st.rec1)st.rec1='#'+(nextRec++);st.ids.a=[st.rec1];
+      var r=C.recRow(st);r.id=st.rec1;r.when='刚刚';r.key=sc+'-rt';addRec(r);
+      setNote(sc,'ok','#i-checkS',C.noteDone(st));
+      updateCap();updateRecPill();showViews();
+    },1300);
+  }
+  function runBatch(sc){
+    var C=SC[sc],st=ST[sc],need=st.n-st.done;if(need<=0){showViews();return}
+    var first=nextRec,step=0,total=need*2;st.prog={b:st.done,a:st.done};
+    function tick(){
+      step++;var id='#'+(nextRec++);
+      if(step%2){st.prog.b++;st.ids.b.push(id)}else{st.prog.a++;st.ids.a.push(id)}
+      if(step<total){st.batch=setTimeout(tick,260)}
+      else{
+        st.batch=null;st.done=st.n;
+        var v=primaryVerdict(sc,st.n),last=nextRec-1;
+        addRec({id:'#'+first+'–'+String(last).slice(-2),icon:C.recIcon,text:C.batchText+' · 改前 / 改后各补跑 '+need+' 次（交替）',pill:[v.k==='up'?'ok':'warn',v.k==='up'?'改善显著':v.t],when:'刚刚',key:sc+'-bt'});
+        var P=C.metrics[0],b=stats(P.b.slice(0,st.n)),a=stats(P.a.slice(0,st.n));
+        setNote(sc,v.k==='up'?'ok':'',v.k==='up'?'#i-checkS':'#i-warn','已在 Mate 70 Pro 上把同一条'+C.pathName+'改前 / 改后各跑 '+st.n+' 次：'+P.label.replace(/（.*）/,'')+'中位数 '+fv(P,b.med)+' → '+fv(P,a.med)+' '+P.unit+' · '+(v.k==='up'?'改善显著（p = '+fmtP(v.p)+'）':(v.k==='few'?'样本不足，建议跑到 5 次':v.t)));
+      }
+      updateCap();showViews();
+    }
+    st.batch=setTimeout(tick,260);updateCap();showViews();
+  }
+  function retestUndo(sc){
+    var C=SC[sc],st=ST[sc];
+    if(st.timer){clearTimeout(st.timer);st.timer=null}
+    if(st.batch){clearTimeout(st.batch);st.batch=null}
+    st.applied=false;st.retested=false;st.n=1;st.done=0;st.prog={b:0,a:0};st.ids={b:[],a:[]};
+    dropRec(sc+'-rt');dropRec(sc+'-bt');
+    setNote(sc,'','#i-undo',C.noteUndo(st));
+    updateCap();updateRecPill();showViews();
+  }
+  $('#cmp-runs').addEventListener('click',function(e){
+    var b=e.target.closest('button[data-n]');if(!b||b.disabled)return;
+    var sc=scOf(S.sym),st=ST[sc];if(!st.retested||st.batch)return;
+    st.n=+b.dataset.n;if(st.n>st.done)runBatch(sc);else{updateCap();showViews()}
+  });
+
+  /* ---------- 最重调用栈视图 ---------- */
+  function topKey(){return S.sym==='launch'?'#11':(S.sym==='leak'?'leak':'#12')}
+  function renderTop(){
+    var key=topKey(),d=TOPD[key],L=ST.leak,list=$('#tf-list'),stk=$('#tf-stack');
+    $$('#top-sort button').forEach(function(b){b.classList.toggle('on',b.dataset.k===S.topSort)});
+    if(key==='leak'&&L.phase!=='done'){
+      $('#top-sub').textContent='· 正在录制「列表 → 详情 → 返回 ×8」';
+      list.innerHTML='<div class="tf-wait"><span class="spin"></span>这条操作录完就出结果（'+doneCycles(L.upto)+' / 8）</div>';stk.innerHTML='';return;
+    }
+    $('#top-sub').textContent=typeof d.sub==='function'?d.sub():d.sub;
+    var k=S.topSort,rows=d.rows.slice().sort(function(a,b){return b[k]-a[k]}),mx={self:Math.max.apply(null,d.rows.map(function(r){return r.self})),total:Math.max.apply(null,d.rows.map(function(r){return r.total}))};
+    var sel=S.topSel[key]||rows[0].fn,cur=d.rows.filter(function(r){return r.fn===sel})[0]||rows[0];
+    function ms(r,kk){return '<span class="ms'+(k===kk?' on':'')+'"><span>'+r[kk].toFixed(1)+' ms</span><span class="bar"><i style="--v:'+Math.max(2,r[kk]/mx[kk]*100).toFixed(1)+'%"></i></span></span>'}
+    var h='<div class="tf-h"><span>#</span><span>函数</span><span>位置</span><span class="'+(k==='self'?'on':'')+'">自耗时'+(k==='self'?' ↓':'')+'</span><span class="'+(k==='total'?'on':'')+'">总耗时'+(k==='total'?' ↓':'')+'</span></div>';
+    rows.forEach(function(r,i){
+      h+='<button class="tf-row'+(r===cur?' sel':'')+'" data-fn="'+esc(r.fn)+'"><span class="rk">'+(i+1)+'</span><span class="fnm"><span>'+esc(r.fn)+'</span>'+(r.tag?'<span class="dm-pill '+(r.tagc||'muted')+'">'+esc(r.tag)+'</span>':'')+'</span><span class="at">'+r.file+':'+mapLine(r.file,r.line)+(r.site?'<em>调用处</em>':'')+'</span>'+ms(r,'self')+ms(r,'total')+'</button>';
+    });
+    list.innerHTML=h;
+    var share=(cur.total/d.total*100).toFixed(1);
+    var sh='<div class="sh">最重调用路径<b>'+esc(cur.fn)+'</b><span>· 占主线程 '+share+'%</span></div>';
+    cur.stack.forEach(function(f,i){
+      var last=i===cur.stack.length-1;
+      if(!f[1])sh+='<div class="sf root" style="--d:'+i+'"><span class="nm">'+esc(f[0])+'</span></div>';
+      else sh+='<button class="sf'+(last?' hot on':'')+'" style="--d:'+i+'" data-file="'+f[1]+'" data-line="'+f[2]+'"><span class="nm">'+esc(f[0])+'</span><span class="loc">'+f[1]+':'+mapLine(f[1],f[2])+'</span></button>';
+    });
+    stk.innerHTML=sh;
+  }
+  $('#top-sort').addEventListener('click',function(e){var b=e.target.closest('button[data-k]');if(!b)return;S.topSort=b.dataset.k;renderTop()});
+  $('#view-top').addEventListener('click',function(e){
+    var r=e.target.closest('.tf-row');
+    if(r){var key=topKey(),row=TOPD[key].rows.filter(function(x){return x.fn===r.dataset.fn})[0];S.topSel[key]=row.fn;renderTop();locate(row.line,row.file);return}
+    var f=e.target.closest('.sf[data-file]');
+    if(f){$$('#tf-stack .sf').forEach(function(x){x.classList.toggle('on',x===f)});locate(+f.dataset.line,f.dataset.file)}
+  });
+
+  /* ---------- 记录视图 ---------- */
+  function renderRec(){
+    $('#rec-cnt').textContent=REC.length;
+    $('#rec-rows').innerHTML=REC.map(function(r){return '<div class="dm-item'+(r.sel?' sel':'')+'"><span class="loc">'+esc(r.id)+'</span><svg class="i"><use href="'+r.icon+'"/></svg><span class="grow">'+esc(r.text)+'</span><span class="dm-pill '+r.pill[0]+'">'+esc(r.pill[1])+'</span><span class="dm-muted dm-small">'+esc(r.when)+'</span></div>'}).join('');
+  }
+
+  /* ---------- 症状切换 ---------- */
+  function setThread(name){
+    var changed=false;$$('.ai-thread[data-thread]').forEach(function(t){var h=t.dataset.thread!==name;if(t.hidden!==h){t.hidden=h;changed=true}});
+    if(changed)$('#ai-scroll').scrollTop=0;
   }
   function pickSym(name){
-    state.sym=name;$$('#sym-col .sym').forEach(function(b){b.classList.toggle('on',b.dataset.sym===name)});
-    var m=SYM[name];$('#ch-title').textContent=m.title;$('#ch-sub').textContent=m.sub;
-    var pill=$('#ch-pill'),co=$('#loc-callout');
-    if(name==='jank'){pill.className='dm-pill err';pill.textContent='掉帧 9 / 60';$('#ch-hint').textContent='点柱子定位到代码';
-      co.className='dm-callout info';co.innerHTML='<svg><use href="#i-locate"/></svg><div>这 9 帧都卡在 <code>loadCover</code> 的同步解码上（每帧 38 ms）· 已定位到 <b>ListPage.ets:28</b></div>';locate(28);}
-    else{pill.className='dm-pill ok';pill.textContent='正常';$('#ch-hint').textContent='';
-      co.className='dm-callout';co.innerHTML='<svg><use href="#i-info"/></svg><div>这条记录里没看到「'+esc($('#sym-col .sym[data-sym="'+name+'"]').textContent.replace(/(电流|帧耗时|冷启动|温度)$/,''))+'」对应的异常。要查它，在真机上录一条对应场景的记录就行，指标会自动选好。</div>';}
-    showViews();
+    S.sym=name;$$('#sym-col .sym').forEach(function(b){b.classList.toggle('on',b.dataset.sym===name)});
+    if(name==='leak'){
+      setThread('leak');var L=ST.leak;
+      if(L.phase==='idle')startLeakRec();
+      else if(L.phase==='done'){locate(L.applied?22:(L.node?NODES[L.node].line:16),'DetailPage.ets');if(!L.applied)revealCard('l1')}
+    }else{
+      setThread('jank');
+      var m=SYM[name];$('#ch-title').textContent=m.title;$('#ch-sub').textContent=m.sub;
+      var pill=$('#ch-pill'),co=$('#loc-callout');
+      if(name==='jank'){pill.className='dm-pill err';pill.textContent='掉帧 9 / 60';$('#ch-hint').textContent='点柱子定位到代码';
+        co.className='dm-callout info';co.innerHTML='<svg><use href="#i-locate"/></svg><div>这 9 帧都卡在 <code>loadCover</code> 的同步解码上（每帧 38 ms）· 已定位到 <b>ListPage.ets:28</b></div>';locate(28);}
+      else{pill.className='dm-pill ok';pill.textContent='正常';$('#ch-hint').textContent='';
+        co.className='dm-callout';co.innerHTML='<svg><use href="#i-info"/></svg><div>这条记录里没看到「'+esc($('#sym-col .sym[data-sym="'+name+'"]').textContent.replace(/(电流|帧耗时|冷启动|温度)$/,''))+'」对应的异常。要查它，在真机上录一条对应场景的记录就行，指标会自动选好。</div>';}
+    }
+    updateCap();updateRecPill();showViews();
   }
   $('#sym-col').addEventListener('click',function(e){var b=e.target.closest('.sym');if(b)pickSym(b.dataset.sym)});
-  $$('.tw-bottom .btab').forEach(function(b){b.addEventListener('click',function(){$$('.tw-bottom .btab').forEach(function(x){x.classList.toggle('on',x===b)});state.view=b.dataset.view;showViews()})});
+  $$('.tw-bottom .btab').forEach(function(b){b.addEventListener('click',function(){S.view=b.dataset.view;showViews()})});
 
   /* 点柱子：掉帧那段 → 定位到代码；其它柱子 → 只报数 */
   $('#prof-main').addEventListener('click',function(e){
-    var r=e.target.closest('rect.bar,rect.anom');if(!r||state.sym!=='jank')return;
+    var r=e.target.closest('rect.bar,rect.anom');if(!r||S.sym!=='jank')return;
     var co=$('#loc-callout');
     if(r.dataset.anom||(+r.dataset.frame>=23&&+r.dataset.frame<=31)){
       locate(28);co.className='dm-callout info';
@@ -285,43 +1093,30 @@
     else if(st==='rejected'){pill.hidden=false;pill.className='dm-pill muted';pill.textContent='已拒绝';acts.innerHTML='<button class="btn" data-diff="restore">重新考虑</button>'}
     else{pill.hidden=true;acts.innerHTML='<button class="btn" data-diff="reject">Reject</button><button class="btn primary" data-diff="accept">Accept</button>'}
   }
-  function retestStart(){
-    state.applied=true;state.retested=false;
-    $('#cmp-run').hidden=false;$('#cmp-ok').hidden=true;var ap=$('#after-pill');ap.className='dm-pill muted';ap.textContent='复测中…';
-    $('#retest-note').className='step run';$('#retest-note').innerHTML='<span class="spin" style="width:10px;height:10px"></span>正在 Mate 70 Pro 上重跑记录 #12 的滑动…';
-    $('#cap').innerHTML='<span class="spin" style="width:10px;height:10px"></span>自动复测中 · Mate 70 Pro';
-    showViews();
-    state.timer=setTimeout(function(){
-      state.retested=true;state.timer=null;
-      $('#cmp-run').hidden=true;$('#cmp-ok').hidden=false;ap.className='dm-pill ok';ap.textContent='掉帧 0';
-      $('#retest-note').className='step ok';$('#retest-note').innerHTML='<svg class="i"><use href="#i-checkS"/></svg>已在 Mate 70 Pro 上重跑同一条记录：#12 → #13，掉帧 9 → 0';
-      $('#cap').innerHTML='<span class="dm-dot ok"></span>记录 #13 · 掉帧 0 · 已复测';
-      $('#rec-pill').innerHTML='<svg><use href="#i-phone"/></svg>Mate 70 Pro · 记录 #13';
-      $('#rec-13').hidden=false;$('#view-rec .dm-group .cnt').textContent='5';
-      showViews();
-    },1300);
-  }
-  function retestUndo(){
-    if(state.timer){clearTimeout(state.timer);state.timer=null}
-    state.applied=false;state.retested=false;
-    $('#retest-note').className='step';$('#retest-note').innerHTML='<svg class="i"><use href="#i-undo"/></svg>已退回 ListPage.ets 的改动，真机上还是记录 #12 的样子';
-    $('#cap').innerHTML='<span class="dm-dot err"></span>记录 #12 · 掉帧 9 · Mate 70 Pro';
-    $('#rec-pill').innerHTML='<svg><use href="#i-phone"/></svg>Mate 70 Pro · 记录 #12';
-    $('#rec-13').hidden=true;$('#view-rec .dm-group .cnt').textContent='4';
-    showViews();
-  }
-  $('#amsg').addEventListener('click',function(e){
+  $('#ai-scroll').addEventListener('click',function(e){
     var b=e.target.closest('[data-diff]');if(!b)return;var card=b.closest('.diffcard'),id=card.id,act=b.dataset.diff;
-    if(act==='accept'){setCard(id,'applied');if(id==='d1'){applyToEditor();retestStart()}}
-    else if(act==='revert'){setCard(id,'pending');if(id==='d1'){renderCode();locate(28);retestUndo()}}
+    if(act==='accept'){setCard(id,'applied');
+      if(id==='d1'){showFile('ListPage.ets');applyToEditor();retestStart('jank')}
+      else if(id==='l1'){ST.leak.applied=true;renderDetail(true);locate(22,'DetailPage.ets');retestStart('leak')}
+      else if(id==='l2'){S.cartFixed=true;renderCart();locate(12,'CartBadge.ets')}}
+    else if(act==='revert'){setCard(id,'pending');
+      if(id==='d1'){renderCode();locate(28);retestUndo('jank')}
+      else if(id==='l1'){ST.leak.applied=false;renderDetail(false);locate(16,'DetailPage.ets');retestUndo('leak')}
+      else if(id==='l2'){S.cartFixed=false;renderCart();locate(9,'CartBadge.ets')}}
     else if(act==='reject'){setCard(id,'rejected')}
     else if(act==='restore'){setCard(id,'pending')}
   });
 
   /* ---------- 初始：已经“点进去”的状态 ---------- */
-  renderCode();locate(28);showViews();
+  renderCode();locate(28);renderRec();showViews();
   window.addEventListener('resize',showViews);
-DemoGuide.init([{"target": "#d1 [data-diff=\"accept\"]", "kind": "click", "pos": "top", "label": "点 Accept 出补丁"}, {"target": "#prof-main", "kind": "change", "pos": "top", "label": "掉帧自动复测"}]);
+DemoGuide.init([
+  {"target": "#d1 [data-diff=\"accept\"]", "kind": "click", "pos": "top", "label": "点 Accept 出补丁"},
+  {"target": "#sym-col .sym[data-sym=\"leak\"]", "kind": "click", "pos": "right", "label": "内存涨：自动走一遍找泄漏链"},
+  {"target": ".tw-bottom .btab[data-view=\"top\"]", "kind": "click", "pos": "top", "label": "最重调用栈"},
+  {"target": "#cmp-runs [data-n=\"5\"]", "kind": "click", "pos": "top", "label": "各跑 5 次看显著性"},
+  {"target": "#prof-main", "kind": "change", "pos": "top", "label": "掉帧自动复测"}
+]);
 })();
 </script>
 </body>
