@@ -29,9 +29,9 @@
    `python3 site/tools/thumb.py <slug>` 出缩略图；然后在这里把对应条目的 view 改成 'ready'、补 href 与 thumb。
    ===================================================================== */
 window.DEVECO_CATALOG = {
-  updated: '2026-09-23',
+  updated: '2026-09-24',
   title: '鸿蒙开发工具体验',
-  lede: '围绕 DevEco Studio / DevEco Code / DevEco CLI 的体验设计：26 条创新点各一个可点的界面稿 demo，其中 9 条是新一轮规划重点；加上设计系统、分析与汇报材料。全部是本地静态文件，双击即开。',
+  lede: '围绕 DevEco Studio / DevEco Code / DevEco CLI 的体验设计：27 条创新点各一个可点的界面稿 demo，其中 9 条是新一轮规划重点；加上设计系统、分析与汇报材料。全部是本地静态文件，双击即开。',
 
   /* 一年节奏，来自《创新方向》deck 的落地页。date 用于判断是否已过 */
   milestones: [
@@ -58,14 +58,14 @@ window.DEVECO_CATALOG = {
         },
         {
           no: '02', title: '场景化应用体检', subtitle: 'Scenario App Check', mark: '投',
-          desc: '按场景跑检查（上架自检 / 首次启动 / 低端机 / 无网弱网），改完代码当场跑；每条结论给到文件和行号，点一下落到那一行。把上架会被打回的问题提前到写代码的时候。',
-          view: 'ready', date: '2026-09-14', href: 'demos/02-scene-check/index.html',
+          desc: '按场景跑检查（上架自检 / 首次启动 / 低端机 / 无网弱网），改完代码当场跑；每条结论给到文件和行号，点一下落到那一行。把上架会被打回的问题提前到写代码的时候。新增用户旅程：一句话拆成步骤和断言，在模拟器上逐步跑，失败给截图对比、HiLog 与代码行，可转修复任务或加进上架自检。',
+          view: 'ready', date: '2026-09-24', href: 'demos/02-scene-check/index.html',
           tags: ['步数与切换次数'], note: '第二批：上架问题提前暴露', thumb: { type: 'image', src: 'site/thumbs/02-scene-check.jpg' },
         },
         {
           no: '03', title: '调优：从「症状」进入，AI 修复闭环', subtitle: 'Symptom-first Tuning Loop', mark: '投',
-          desc: '从「卡了 / 耗电 / 启动慢」进入，指标画成看得懂的图；AI 出补丁可逐条审、可退回；改完自动在真机重跑同一条记录，给前后对比。全行业停在「帮你找问题」，没人做「帮你确认这一下有没有用」。',
-          view: 'ready', date: '2026-09-14', href: 'demos/03-symptom-tuning/index.html',
+          desc: '从「卡了 / 耗电 / 启动慢」进入，指标画成看得懂的图；AI 出补丁可逐条审、可退回；改完自动在真机重跑同一条记录，给前后对比。差异在从症状进、AI 出补丁、真机按同一条操作路径自动复测并判显著性。新增内存泄漏：自动进出页面画出上涨曲线和泄漏链；最重调用栈落到代码行；改前改后各跑 5 次判断改善是否显著。',
+          view: 'ready', date: '2026-09-24', href: 'demos/03-symptom-tuning/index.html',
           tags: ['步数与切换次数', '审阅与回退'], note: '空位是立论支点，建议实机复现一次再对外讲', thumb: { type: 'image', src: 'site/thumbs/03-symptom-tuning.jpg' },
         },
         {
@@ -82,12 +82,12 @@ window.DEVECO_CATALOG = {
       id: 'ai',
       title: 'AI 辅助开发',
       icon: 'i-cat-ai',
-      note: '这一类竞争最挤。七家都在解「让 AI 干得更多」，没人解「人对这一串过程能不能看清楚、挑着退回去」——十条里的空位集中在这儿。',
+      note: '这一类竞争最挤。七家都在解「让 AI 干得更多」，没人解「人对这一串过程能不能看清楚、挑着退回去」——十一条里的空位集中在这儿。',
       items: [
         {
           no: '05', title: '就地对话：从编辑器长进 Build、Debug、HiLog', subtitle: 'Inline AI · Editor / Build / Debug / HiLog', mark: '半投', key: 'AI 和 IDE 的深度融合',
-          desc: '选中一段就地问、就地改，覆盖代码、界面预览和 Markdown 文档。新增 AI 与 IDE 深度融合：Build 失败时在 Build 面板里读完 hvigor 报错，一键补权限并重建成功；断点停下时在变量旁回答「为什么是 undefined」并加条件断点；HiLog 里选中崩溃栈就解释并跳到代码；回答里的按钮直接调试到设备、打开 Profiler，不用去找菜单。',
-          view: 'ready', date: '2026-09-23', href: 'demos/05-inline-chat-everywhere/index.html',
+          desc: '选中一段就地问、就地改，覆盖代码、界面预览和 Markdown 文档。新增 AI 与 IDE 深度融合：Build 失败时在 Build 面板里读完 hvigor 报错，一键补权限并重建成功；断点停下时在变量旁回答「为什么是 undefined」并加条件断点；HiLog 里选中崩溃栈就解释并跳到代码；回答里的按钮直接调试到设备、打开 Profiler，不用去找菜单。新增下一处编辑预测：改一处类型，文件里其余要跟着改的位置一起给出，Tab 逐处接受，可跨文件，本机模型离线也能用。',
+          view: 'ready', date: '2026-09-24', href: 'demos/05-inline-chat-everywhere/index.html',
           tags: ['步数与切换次数'], note: '补齐，并进日常迭代', thumb: { type: 'image', src: 'site/thumbs/05-inline-chat-everywhere.jpg' },
         },
         {
@@ -116,14 +116,14 @@ window.DEVECO_CATALOG = {
         },
         {
           no: '10', title: '可视化调优：图上一处异常，直接落到代码行', subtitle: 'Visual Profiling', mark: '半投',
-          desc: '把指标画成看得懂的图，点进去直接落到代码行；和 03 连成闭环：症状进入 → 看图定位 → AI 出补丁 → 自动复测前后对比。看图这一半是补齐，价值在于它是 03 的前半段。',
-          view: 'ready', date: '2026-09-14', href: 'demos/10-visual-profiling/index.html',
+          desc: '把指标画成看得懂的图，点进去直接落到代码行；和 03 连成闭环：症状进入 → 看图定位 → AI 出补丁 → 自动复测前后对比。看图这一半是补齐，价值在于它是 03 的前半段。新增并发视图：主线程等 TaskPool、任务排队、锁竞争自动标出，点一段落到代码行，结论可交给 03 出补丁。',
+          view: 'ready', date: '2026-09-24', href: 'demos/10-visual-profiling/index.html',
           tags: ['步数与切换次数'], thumb: { type: 'image', src: 'site/thumbs/10-visual-profiling.jpg' },
         },
         {
           no: '11', title: '互动式意图确认：问你的时候它不停', subtitle: 'Confirm Without Stopping', mark: '补齐',
-          desc: '动手前把理解的意思摆出来让人确认或直接改，问题给选项也能自己写；关键是确认的时候它不停下来——边等回答边继续读文件。Cursor 是问了不停，我们现在是停了不说。',
-          view: 'ready', date: '2026-09-14', href: 'demos/11-intent-confirm/index.html',
+          desc: '动手前把理解的意思摆出来让人确认或直接改，问题给选项也能自己写；关键是确认的时候它不停下来——边等回答边继续读文件。Cursor 是问了不停，我们现在是停了不说。新增 Build / Goal / Plan 三种工作方式；Plan 先出能拖动、增删的计划，边写边读文件，执行时逐项打勾、标出偏离。',
+          view: 'ready', date: '2026-09-24', href: 'demos/11-intent-confirm/index.html',
           tags: ['审阅与回退'], note: '补齐，并进日常迭代；与 07 是同一个题', thumb: { type: 'image', src: 'site/thumbs/11-intent-confirm.jpg' },
         },
         {
@@ -134,8 +134,8 @@ window.DEVECO_CATALOG = {
         },
         {
           no: '13', title: '设计稿到代码、模拟器上直接改，全部写回源码', subtitle: 'D2C · Live Emulator Edit · Round Trip', mark: '投', key: 'D2C、模拟器直接修改与调试',
-          desc: '导入 Figma / 即时设计 / MasterGo 画板生成 ArkTS 页面，悬停图层时设计稿、预览、代码行一起亮，并标出复用组件、资源 token、新建组件；在运行中的模拟器上点元素直接改文字、间距、颜色，热重载后写回源码行；看运行态组件树与状态变量，在事件上加断点。原有「预览上拖、写回源码」保留。',
-          view: 'ready', date: '2026-09-23', href: 'demos/13-ui-code-roundtrip/index.html',
+          desc: '导入 Figma / 即时设计 / MasterGo 画板生成 ArkTS 页面，悬停图层时设计稿、预览、代码行一起亮，并标出复用组件、资源 token、新建组件；在运行中的模拟器上点元素直接改文字、间距、颜色，热重载后写回源码行；看运行态组件树与状态变量，在事件上加断点。原有「预览上拖、写回源码」保留。新增一句话改界面（选中组件出 diff）、一键生成多状态 @Preview、对照设计稿圈差异一键修正。',
+          view: 'ready', date: '2026-09-24', href: 'demos/13-ui-code-roundtrip/index.html',
           tags: ['步数与切换次数'], thumb: { type: 'image', src: 'site/thumbs/13-ui-code-roundtrip.jpg' },
         },
         {
@@ -143,6 +143,12 @@ window.DEVECO_CATALOG = {
           desc: '时间轴的刻度落在 AI 自己的执行步骤上，每一步改了什么、对应计划里哪一条绑在一起；能挑着退：只退掉第三步，保留第四第五步。',
           view: 'ready', date: '2026-09-14', href: 'demos/14-ai-timeline/index.html',
           tags: ['审阅与回退'], note: '补齐，并进日常迭代；21 跟着它一起做', thumb: { type: 'image', src: 'site/thumbs/14-ai-timeline.jpg' },
+        },
+        {
+          no: '29', title: '多语言：让 Agent 做本地化', subtitle: 'Agent-driven Localization · Review, Plurals & RTL',
+          desc: '在 DevEco Code 说一句「加英文和阿拉伯语」，Agent 扫出 42 条字符串（含 3 处硬编码），抽成 $r 资源，补齐 en_US / ar 的 string.json 与 plural.json。审阅时每条都带页面截图上下文，复数按各语言规则分开；改了风格指南或术语表，只重译受影响的条目。切到阿拉伯语看 RTL 镜像，自动标出没镜像的图标和被截断的文案，一键修复后应用到工程。',
+          view: 'ready', date: '2026-09-24', href: 'demos/29-agent-localization/index.html',
+          tags: ['审阅与回退'], note: '对照友商 2026 年新增的 Agent 本地化能力补齐', thumb: { type: 'image', src: 'site/thumbs/29-agent-localization.jpg' },
         },
       ],
     },
@@ -186,8 +192,8 @@ window.DEVECO_CATALOG = {
         },
         {
           no: '20', title: '模拟器 · 连接状态体验创新', subtitle: 'Connection as Five Visible Steps', mark: '投',
-          desc: '这条不管画布里连上之后的事，管「连上」这一步本身——17/19 里设备要先连上才能进画布，这条把连接拆成看得见的几步：认出设备 → 授权 → 建立通道 → 版本匹配 → 就绪，当前卡在第几步标出来；每一步失败给一个能当场做的动作，不是错误码；等待有进度，不是一个转圈。',
-          view: 'ready', date: '2026-09-14', href: 'demos/20-connect-status/index.html',
+          desc: '这条不管画布里连上之后的事，管「连上」这一步本身——17/19 里设备要先连上才能进画布，这条把连接拆成看得见的几步：认出设备 → 授权 → 建立通道 → 版本匹配 → 就绪，当前卡在第几步标出来；每一步失败给一个能当场做的动作，不是错误码；等待有进度，不是一个转圈。新增设备中心：五类设备一张表，连接中看五步、就绪看电量与崩溃；一键打包诊断，崩溃在同型号云端或远端真机回放复现。',
+          view: 'ready', date: '2026-09-24', href: 'demos/20-connect-status/index.html',
           tags: ['等待可见'], note: '第一批：成本最低，新人第一印象在这里定', thumb: { type: 'image', src: 'site/thumbs/20-connect-status.jpg' },
         },
         {
@@ -208,8 +214,8 @@ window.DEVECO_CATALOG = {
       items: [
         {
           no: '23', title: '开放 MCP 与 Skill：把真机这段开给外部 Agent', subtitle: 'DevEco MCP Server & Skills', key: 'DevEco Code / Studio 开放 MCP、Skill',
-          desc: '把构建、签名、装机、截图、HiLog、性能采集、上架自检做成 MCP 工具，逐项可开关，敏感项调用时在 IDE 里弹授权；Claude Code、Cursor 等外部客户端一键接入，调用过程实时可见。官方鸿蒙 Skill 包可装进项目，也能导出给其他 Agent。',
-          view: 'ready', date: '2026-09-23', href: 'demos/23-mcp-skill-open/index.html',
+          desc: '把构建、签名、装机、截图、HiLog、性能采集、上架自检做成 MCP 工具，逐项可开关，敏感项调用时在 IDE 里弹授权；Claude Code、Cursor 等外部客户端一键接入，调用过程实时可见。官方鸿蒙 Skill 包可装进项目，也能导出给其他 Agent。新增模型来源（内置 / 自带 Key / 本地离线，按场景指定）、技能按任务自动调入、MCP 一键安装市场、按工具授权与可撤销的授权记录。',
+          view: 'ready', date: '2026-09-24', href: 'demos/23-mcp-skill-open/index.html',
           tags: ['步数与切换次数'], note: '对标 Xcode 27 mcpbridge；DevEco CLI 已有 serve mcp', thumb: { type: 'image', src: 'site/thumbs/23-mcp-skill-open.jpg' },
         },
         {
