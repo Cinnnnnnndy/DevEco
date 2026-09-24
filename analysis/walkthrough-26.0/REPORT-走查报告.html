@@ -1,0 +1,737 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DevEco Code 26.0 走查</title>
+<style>
+:root{
+  --bg:#f5f6f8; --paper:#ffffff; --ink:#15171a; --ink2:#4a4f57; --ink3:#7a808a; --line:#e3e5e9; --line2:#eef0f3;
+  --accent:#3574f0; --accent-bg:#edf3ff;
+  --sev-s:#d93a3a; --sev-s-bg:#fdecec; --sev-m:#e08419; --sev-m-bg:#fdf1e3; --sev-l:#3574f0; --sev-l-bg:#eaf1fe;
+  --shot-bg:#1e1f22; --shadow:0 1px 2px rgba(16,24,40,.06),0 4px 16px rgba(16,24,40,.06);
+  --mono:ui-monospace,"JetBrains Mono",Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --bg:#16171a; --paper:#1e2024; --ink:#e6e8eb; --ink2:#b3b8c0; --ink3:#868b94; --line:#30333a; --line2:#272a30;
+    --accent:#6b9bfa; --accent-bg:#233150;
+    --sev-s:#f06b6b; --sev-s-bg:#3a2224; --sev-m:#f0a052; --sev-m-bg:#3a2d1e; --sev-l:#6b9bfa; --sev-l-bg:#22304a;
+    --shot-bg:#0f1012; --shadow:none;
+  }
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:16px}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.65 -apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+code{font-family:var(--mono);font-size:.9em;background:var(--line2);padding:1px 5px;border-radius:4px}
+.wrap{max-width:1480px;margin:0 auto;padding:40px 32px 80px}
+
+/* 头部 */
+.eyebrow{font-size:12px;letter-spacing:.08em;color:var(--ink3);text-transform:uppercase}
+h1{font-size:30px;line-height:1.25;margin:6px 0 10px;font-weight:700}
+.meta{display:flex;flex-wrap:wrap;gap:6px 18px;color:var(--ink2);font-size:13px}
+.meta b{color:var(--ink);font-weight:600}
+.stats{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px;margin:28px 0 0}
+.stat{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:14px 16px;box-shadow:var(--shadow)}
+.stat .n{font-size:28px;font-weight:700;line-height:1.1;font-variant-numeric:tabular-nums}
+.stat .l{font-size:12px;color:var(--ink3);margin-top:4px}
+.stat.s .n{color:var(--sev-s)} .stat.m .n{color:var(--sev-m)} .stat.l .n{color:var(--sev-l)}
+
+/* 流程图 */
+h2.sec{font-size:20px;margin:48px 0 14px;font-weight:700}
+.flow{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.stage{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:14px;box-shadow:var(--shadow)}
+.stage h3{margin:0 0 10px;font-size:14px;display:flex;align-items:center;gap:8px}
+.stage h3 .tag{font-size:11px;font-weight:600;color:var(--ink3);border:1px solid var(--line);border-radius:999px;padding:0 8px}
+.chain{display:flex;flex-direction:column;gap:6px}
+.node{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:8px;padding:8px 10px;color:var(--ink);background:var(--paper)}
+a.node:hover{border-color:var(--accent);text-decoration:none}
+.node .no{font-weight:700;font-size:12px;color:var(--accent);min-width:34px}
+.node .t{flex:1;min-width:0}
+.node .t small{display:block;color:var(--ink3);font-size:12px}
+.node .cnt{display:flex;gap:4px}
+.dot{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:18px;padding:0 5px;border-radius:9px;font-size:11px;font-weight:700;color:#fff}
+.dot.s{background:var(--sev-s)} .dot.m{background:var(--sev-m)} .dot.l{background:var(--sev-l)}
+.node.gap{border-style:dashed;color:var(--ink3);background:transparent}
+.node.gap .no{color:var(--ink3)}
+.arrow{align-self:center;color:var(--ink3);font-size:12px;line-height:1}
+
+/* 步骤：左图右文 */
+.step{margin-top:44px;padding-top:4px}
+.step-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px;margin-bottom:6px}
+.step-head .stg{font-size:12px;font-weight:600;color:var(--accent);background:var(--accent-bg);border-radius:6px;padding:1px 8px}
+.step-head h3{font-size:18px;margin:0;font-weight:700}
+.step-head .src{font-size:12px;color:var(--ink3);font-family:var(--mono)}
+.goal{color:var(--ink2);margin:0 0 14px;font-size:13px}
+.split{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(340px,1fr);gap:20px;align-items:start}
+.figcol{position:sticky;top:16px}
+
+.shot{position:relative;margin:0;border-radius:10px;overflow:hidden;background:var(--shot-bg);border:1px solid var(--line);aspect-ratio:2000/1125;cursor:zoom-in;box-shadow:var(--shadow)}
+.shot img{display:block;width:100%;height:100%;object-fit:contain}
+.shot .miss{position:absolute;inset:0;display:none;flex-direction:column;align-items:flex-start;justify-content:flex-start;gap:4px;color:#9da0a8;font-size:13px;padding:14px 16px;
+  background:repeating-linear-gradient(45deg,#1e1f22 0 14px,#232428 14px 28px)}
+.shot .miss code{background:#2b2d30;color:#dfe1e5}
+.shot.missing .miss{display:flex}
+.shot.missing img{visibility:hidden}
+.box{position:absolute;border:2px solid var(--c);border-radius:4px;background:color-mix(in srgb,var(--c) 10%,transparent);transition:opacity .15s,box-shadow .15s,background .15s;cursor:pointer}
+.box .pin{position:absolute;top:50%;transform:translateY(-50%);width:17px;height:17px;border-radius:50%;background:var(--c);color:#fff;font:700 10px/17px -apple-system,"PingFang SC",sans-serif;text-align:center;box-shadow:0 0 0 1.5px rgba(0,0,0,.45)}
+.box .pin.r{left:calc(100% + 3px)} .box .pin.l{right:calc(100% + 3px)}
+.lb .box .pin{width:22px;height:22px;font-size:12px;line-height:22px}
+.box.s{--c:#f04848} .box.m{--c:#f59a2b} .box.l{--c:#4d8bff}
+.shot.focus .box{opacity:.18}
+.shot.focus .box.on{opacity:1;background:color-mix(in srgb,var(--c) 22%,transparent);box-shadow:0 0 0 3px color-mix(in srgb,var(--c) 45%,transparent)}
+.figcap{display:flex;justify-content:space-between;gap:8px;font-size:12px;color:var(--ink3);margin-top:6px}
+
+.issues{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+.issue{background:var(--paper);border:1px solid var(--line);border-left:3px solid var(--c);border-radius:10px;padding:12px 14px;box-shadow:var(--shadow);cursor:default;transition:border-color .15s,box-shadow .15s}
+.issue.s{--c:var(--sev-s);--cb:var(--sev-s-bg)} .issue.m{--c:var(--sev-m);--cb:var(--sev-m-bg)} .issue.l{--c:var(--sev-l);--cb:var(--sev-l-bg)}
+.issue.on{box-shadow:0 0 0 2px var(--c)}
+.issue.flash{animation:flash 1s}
+@keyframes flash{0%,40%{background:var(--cb)}100%{background:var(--paper)}}
+.ih{display:flex;align-items:flex-start;gap:10px}
+.ih .num{flex:none;width:22px;height:22px;border-radius:50%;background:var(--c);color:#fff;font-weight:700;font-size:12px;line-height:22px;text-align:center;margin-top:1px}
+.ih .tt{flex:1;min-width:0;font-weight:600;font-size:14px;line-height:1.5}
+.chips{display:flex;gap:6px;margin:6px 0 0 32px;flex-wrap:wrap}
+.chip{font-size:11px;font-weight:600;border-radius:5px;padding:0 7px;line-height:19px}
+.chip.sev{color:var(--c);background:var(--cb)}
+.chip.cat{color:var(--ink2);background:var(--line2)}
+.issue dl{margin:8px 0 0 32px;display:grid;grid-template-columns:auto 1fr;gap:3px 10px;font-size:13px}
+.issue dt{color:var(--ink3);white-space:nowrap}
+.issue dd{margin:0;color:var(--ink2)}
+.issue dd b{color:var(--ink);font-weight:600}
+
+/* 总表 */
+.tablewrap{background:var(--paper);border:1px solid var(--line);border-radius:12px;overflow:auto;box-shadow:var(--shadow)}
+table{border-collapse:collapse;width:100%;font-size:13px;min-width:860px}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line2);vertical-align:top}
+th{font-size:12px;color:var(--ink3);font-weight:600;background:var(--line2);position:sticky;top:0}
+tr:last-child td{border-bottom:none}
+td.id{font-family:var(--mono);white-space:nowrap}
+td .dot{margin-right:0}
+.filters{display:flex;gap:6px;margin:0 0 10px;flex-wrap:wrap}
+.filters button{font:inherit;font-size:12px;border:1px solid var(--line);background:var(--paper);color:var(--ink2);border-radius:999px;padding:3px 12px;cursor:pointer}
+.filters button[aria-pressed="true"]{border-color:var(--accent);color:var(--accent);background:var(--accent-bg)}
+
+.gaps{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.gapcard{border:1px dashed var(--line);border-radius:12px;padding:12px 14px;background:transparent}
+.gapcard b{display:block;margin-bottom:2px}
+.gapcard span{color:var(--ink2);font-size:13px}
+.note{color:var(--ink3);font-size:12px;margin-top:10px}
+
+/* 放大查看 */
+.lb{position:fixed;inset:0;background:rgba(8,9,11,.86);display:none;align-items:center;justify-content:center;z-index:50;padding:24px}
+.lb.open{display:flex}
+.lb .shot{width:min(96vw,calc(92vh*2000/1125));cursor:zoom-out;box-shadow:none;border-color:#333}
+.lb .hint{position:fixed;top:12px;right:18px;color:#cfd2d8;font-size:12px}
+
+@media (max-width:1100px){
+  .split{grid-template-columns:1fr}
+  .figcol{position:static}
+  .stats{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .flow{grid-template-columns:1fr}
+  .gaps{grid-template-columns:1fr}
+}
+@media (max-width:560px){
+  .wrap{padding:24px 16px 60px}
+  h1{font-size:24px}
+  .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">版本走查 · v26.0</div>
+    <h1>DevEco Code 26.0 融合版本 · 上线走查</h1>
+    <div class="meta">
+      <span>主线 <b>从安装到使用</b></span>
+      <span>走查日期 <b>2026-09-24</b></span>
+      <span>对象 <b>DevEco Studio 内的 DevEco Code 插件 1.0.0-SNAPSHOT</b></span>
+      <span>模型 <b>DevEco Code/GLM-5.1</b></span>
+      <span>环境 <b>macOS · 深色主题</b></span>
+    </div>
+    <div class="stats" id="stats"></div>
+  </header>
+
+  <h2 class="sec">流程</h2>
+  <div class="flow" id="flow"></div>
+  <p class="note">虚线是这条流程上还没有截图的页面，见文末「待补页面」。截图编号按收到的顺序，步骤编号按流程顺序。</p>
+
+  <div id="steps"></div>
+
+  <h2 class="sec" id="all">问题总表</h2>
+  <div class="filters" id="filters"></div>
+  <div class="tablewrap"><table><thead><tr><th>编号</th><th>严重度</th><th>步骤</th><th>分类</th><th>问题</th><th>改法</th></tr></thead><tbody id="tbody"></tbody></table></div>
+
+  <h2 class="sec" id="gaps">待补页面</h2>
+  <div class="gaps" id="gapcards"></div>
+
+  <h2 class="sec">口径</h2>
+  <div class="tablewrap"><table style="min-width:0"><tbody>
+    <tr><td style="width:120px"><span class="dot s">严重</span></td><td>影响用户完成任务或误导判断：状态说错、失败无反馈、入口选错。上线前必须改。</td></tr>
+    <tr><td><span class="dot m">一般</span></td><td>能完成任务，但多走弯路、看不清或不符合 Int UI 规范。建议本版本改。</td></tr>
+    <tr><td><span class="dot l">建议</span></td><td>体验打磨、一致性细节，可排入后续版本。</td></tr>
+    <tr><td>规范依据</td><td>DevEco Studio 6.0.2 安装包提取的 Int UI token 与字号阶梯（<code>deveco-intui-kit</code>、<code>deveco-windows-ui</code> skill）、CodeGenie 面板现状、WCAG 2.1 对比度 4.5:1。对比度数值由截图取色估算，截图压缩会让小字偏低，按「约」看。</td></tr>
+  </tbody></table></div>
+</div>
+
+<div class="lb" id="lb" role="dialog" aria-label="放大查看"><span class="hint">点击任意处或按 Esc 关闭</span></div>
+
+<script>
+/* ============================================================
+   走查数据：新增截图或问题只改这里。
+   box 坐标按截图原始像素（2000 × 1125）写 [x, y, w, h]，渲染时换算成百分比。
+   截图放 images/<shot>.webp（也认 .png / .jpg）。
+   sev: s 严重 · m 一般 · l 建议
+   ============================================================ */
+var W = 2000, H = 1125;
+
+var STAGES = [
+  { id:'install', title:'安装', tag:'设置 › 插件', flow:[ {step:1}, {step:2}, {step:3}, {gap:'G1'} ] },
+  { id:'enter',   title:'进入', tag:'DevEco Code 面板', flow:[ {gap:'G2'}, {step:4} ] },
+  { id:'use',     title:'使用', tag:'一句话建工程', flow:[ {step:5}, {step:6}, {step:7}, {gap:'G3'} ] },
+  { id:'switch',  title:'换工程继续', tag:'打开新建的工程', flow:[ {step:8}, {step:9}, {step:10}, {step:11}, {step:12}, {step:13} ] },
+];
+
+var GAPS = {
+  G1:{ title:'安装过程与结果', desc:'选中安装包之后：安装进度、安装成功 / 失败提示、是否需要重启 IDE。' },
+  G2:{ title:'安装后首次进入', desc:'重启后第一次打开 DevEco Code：欢迎、登录、协议授权、模型选择。截图 01 里插件已在侧栏，这次走的是升级安装。' },
+  G3:{ title:'完成态', desc:'工程创建完成、PRD 文档产出、在 DevEco Studio 中打开工程；中途出错时的错误详情。' },
+  G4:{ title:'侧栏「技能」「模型」', desc:'DevEco Code 侧栏菜单里的两个入口，点进去的页面。' },
+};
+
+var STEPS = [
+  { no:1, stage:'install', shot:'02', title:'设置 › 插件 › 已安装',
+    goal:'打开设置里的插件页，确认 DevEco Code 当前装的是哪个版本。',
+    issues:[
+      { sev:'m', cat:'操作风险', title:'每个分组右侧都有高亮的「全部禁用」，一点就停用整组',
+        what:'「AI 赋能」「IDE 设置」「主题」「平台开发」四个分组标题右侧都是蓝色链接「全部禁用」，视觉权重比插件名还高；AI 赋能组里包括 MCP Server，点一下 DevEco Code 的能力会一起失效，页面上看不到撤销。',
+        rule:'破坏性的批量操作应弱化、需要确认或可撤销。',
+        fix:'收进分组右侧的 ⋮ 菜单；执行后给「已禁用 N 个插件 · 撤销」。',
+        boxes:[[1436,499,52,16],[1436,577,52,16],[1436,757,52,16],[1436,835,52,16]] },
+      { sev:'m', cat:'文案', title:'DevEco Code 的详情描述是英文',
+        what:'中文界面下，右侧详情只有一句英文「DevEco Code coding-agent integration for DevEco Studio, with isolated sessions and configuration.」，也没说它和右侧栏的 CodeGenie 是什么关系。',
+        rule:'IDE 外壳英文、新功能用中文（工作台约定）；融合版本需要说清新旧能力的关系。',
+        fix:'给中文描述：它是什么、能做什么、和 CodeGenie 的关系。',
+        boxes:[[1508,519,304,40]] },
+      { sev:'m', cat:'上线规范', title:'版本号显示 1.0.0-SNAPSHOT',
+        what:'列表和详情两处都是「1.0.0-SNAPSHOT」，和 IDE 的 26.0 版本号也对不上，用户判断不了装的是不是最新版。',
+        rule:'上线包不带 SNAPSHOT，插件版本与 IDE 版本能对应。',
+        fix:'上线包用正式版本号；如果这是内测包，本条忽略。',
+        boxes:[[1268,464,114,14],[1606,453,92,17]] },
+      { sev:'l', cat:'可读性', title:'插件版本号字太小、太灰',
+        what:'「261.23567.138.36.2600821」约 9px 灰字压在深底上，读不清；且和 DevEco Code 自己的版本号是两套体系。',
+        rule:'Int UI 小字最小 12/16（Medium 阶）。',
+        fix:'版本号用 12px 次要文字色；列表里只显示主版本。',
+        boxes:[[1268,542,116,13]] },
+      { sev:'l', cat:'状态', title:'「评价」「其他信息」置灰还在',
+        what:'详情页签里这两项是灰的点不了，但占着位置。',
+        rule:'没有内容的页签不显示。',
+        fix:'本地安装的插件隐藏这两个页签。',
+        boxes:[[1602,486,90,15]] },
+      { sev:'l', cat:'信息层级', title:'设置左侧树一级项全部加粗',
+        what:'「HarmonyOS SDK」「插件」「ArkUI-X」「AI」等一级项都是粗体，有没有子项只能看箭头，扫读时层级不清。',
+        rule:'Int UI 树行用 Default 13 Regular，只有强调才用 Semibold。',
+        fix:'一级项恢复常规字重。',
+        boxes:[[1080,397,142,272]] },
+    ]},
+
+  { no:2, stage:'install', shot:'03', title:'齿轮菜单 › 从磁盘安装插件',
+    goal:'找到从本地安装包安装插件的入口。',
+    issues:[
+      { sev:'m', cat:'可发现性', title:'「从磁盘安装插件」藏在无文字的齿轮里，排第 5 项',
+        what:'如果融合版本靠离线包分发，这就是安装主路径；但入口是页签旁一个 16px 的齿轮，打开后还要在 7 项里找。',
+        rule:'主路径操作应在页面上直接可见。',
+        fix:'「已安装」页顶部放「从磁盘安装…」按钮；下载页 / 发布说明写明这条路径。',
+        boxes:[[1562,365,22,22],[1570,480,122,18]] },
+      { sev:'m', cat:'状态', title:'「自动更新插件」看不出是开还是关',
+        what:'它是一个开关项，但和其他动作项长得一样，没有勾选标记。',
+        rule:'开关类菜单项要显示当前状态。',
+        fix:'前面加勾选标记（✓）。',
+        boxes:[[1586,391,102,17]] },
+    ]},
+
+  { no:3, stage:'install', shot:'04', title:'选择插件安装包',
+    goal:'在文件选择框里找到 DevEco Code 的安装包并打开。',
+    issues:[
+      { sev:'m', cat:'引导', title:'文件选择框没说要选什么',
+        what:'没有标题和说明，列表里只有 .zip 能选，其余 pdf / png / xlsx 全部置灰，但用户不知道为什么灰、该找哪个文件。',
+        rule:'系统选择框应带标题或提示文案说明文件类型。',
+        fix:'标题写「选择 DevEco Code 插件安装包（.zip）」。',
+        boxes:[[822,224,514,30],[826,266,158,244]] },
+      { sev:'l', cat:'布局', title:'选择框没有贴着设置对话框弹出',
+        what:'选择框从左侧弹出，压住设置对话框的一半，看起来像另一个应用的窗口。',
+        rule:'模态子窗口应附着在父对话框上（sheet）或居中于父对话框。',
+        fix:'改为附着在设置对话框上。',
+        boxes:[[656,212,688,350]] },
+    ]},
+
+  { no:4, stage:'enter', shot:'01', title:'DevEco Code · 新对话空态',
+    goal:'装好后打开 DevEco Code，准备发第一条需求。',
+    issues:[
+      { sev:'s', cat:'融合入口', title:'三个 AI 入口并存，不知道该用哪个',
+        what:'左侧有「DevEco Code」，右侧还有「CodeGenie」「Application Agent」。融合版本上线后，用户分不清三者的区别，也不知道会话和模型是否共享。',
+        rule:'融合方案要求统一入口（KIT + IDE + Agent 统一入口）。',
+        fix:'融合后只留一个主入口；其余并入，或在名称与 tooltip 上写明分工。需要产品决策。',
+        boxes:[[3,80,40,48],[1956,83,42,32],[1956,171,42,44]] },
+      { sev:'m', cat:'重复', title:'「新对话」同屏出现 5 次',
+        what:'顶栏「+ 新对话」、侧栏主按钮、会话列表、编辑器标签、状态栏左下角，都写着「新对话」。',
+        rule:'同一操作一个主入口；状态栏放状态，不放标题。',
+        fix:'新建只留侧栏按钮（顶栏可保留为快捷方式）；状态栏改为显示会话运行状态。',
+        boxes:[[259,6,52,20],[58,69,298,33],[62,260,294,20],[582,38,80,22],[7,1103,58,19]] },
+      { sev:'m', cat:'可读性', title:'侧栏分组标题几乎看不见，命名也空泛',
+        what:'「菜单」「会话」「今天」对比度约 1.8–1.9 : 1。「菜单」说不出里面是什么（技能、模型）；「会话」「今天」两级标题连排，中间没内容。',
+        rule:'Int UI 次要文字用 Gray7 #6F737A（深色面板上约 2.9 : 1），正文对比度 WCAG 4.5 : 1。',
+        fix:'分组标题用 Gray7 以上；「菜单」改为「能力」或直接去掉分组；「会话」与「今天」合成一级。',
+        boxes:[[57,113,42,18],[55,204,30,46]] },
+      { sev:'m', cat:'状态', title:'当前会话没有选中态，按钮反而像被选中',
+        what:'正在打开的「新对话」在列表里没有底色，而「+ 新对话」按钮整块蓝底，看上去是它被选中。',
+        rule:'列表选中行用 Blue2 #2E436E（失焦 Gray4）；按钮不要用选中行的样式。',
+        fix:'列表当前项加选中底色；新建按钮改为次要按钮或描边按钮。',
+        boxes:[[58,69,298,33],[62,260,294,20]] },
+      { sev:'m', cat:'图标', title:'会话状态图标含义不明',
+        what:'进行中是空心圆（像单选框），已完成是方框里打勾（像复选框）；同一图标又出现在编辑器标签和状态栏上。',
+        rule:'状态图标不要和表单控件同形。',
+        fix:'会话用对话图标，状态用右侧小点或转圈；完成态不加方框。',
+        boxes:[[65,262,17,17],[65,292,17,17],[586,40,17,17],[10,1104,17,17]] },
+      { sev:'m', cat:'空态', title:'空态没有任何引导',
+        what:'编辑区只有底部一个输入框，没说 DevEco Code 能做什么、没有示例需求、也没有技能入口，第一次打开不知道从哪开始。',
+        rule:'CodeGenie 欢迎态有 logo、一句说明和功能 chip；融合版本不应比它少。',
+        fix:'空态放一句定位 + 3–4 个示例需求（建工程、写页面、排查报错）+ 技能入口。',
+        boxes:[[700,380,600,320]] },
+      { sev:'l', cat:'工具窗条', title:'工具窗条标签被截断，中英混排',
+        what:'「ArkUI检查」「CodeGen…」「Applicati Agent」「AppAnaly…」都截断或折行；一边是「项目 / 日志」一边是「Profiler / Hvigor」。',
+        rule:'Int UI 工具窗条只放 16px 图标，名称放 tooltip。',
+        fix:'默认用纯图标模式（截图 13 里就是这种模式，不再截断），名称放 tooltip；保留文字标签时统一中文短名。',
+        boxes:[[1,855,44,15],[1956,99,42,15],[1956,189,42,26],[1956,289,42,15]] },
+      { sev:'l', cat:'输入框', title:'输入框底栏的灰色圆圈看不见',
+        what:'模型选择器右边有一个无标签的空心圆，对比度约 1.2 : 1，看不出是字数、上下文用量还是加载中。',
+        rule:'图标需要可辨认（非文字对比度 3 : 1），含义不明时加 tooltip。',
+        fix:'提高对比度，悬停显示「上下文已用 x%」。',
+        boxes:[[1055,1042,22,20]] },
+      { sev:'l', cat:'文案', title:'还没回复就写「该内容由AI生成」',
+        what:'空态下输入框下方就显示「该内容由AI生成，仅供参考」，此时屏幕上并没有 AI 内容。',
+        rule:'免责声明跟随 AI 内容出现。',
+        fix:'空态不显示，或改成「回复由 AI 生成，仅供参考」。',
+        boxes:[[1061,1072,112,17]] },
+    ]},
+
+  { no:5, stage:'use', shot:'05', title:'发出需求 · 首次无响应后重试',
+    goal:'发一句需求「开发工时记录鸿蒙 app，写 PRD 并建工程」，第一次失败后点重试。',
+    issues:[
+      { sev:'s', cat:'错误反馈', title:'失败只是一行灰色小字',
+        what:'「系统 · 智能体未产生响应，请重试。(model: deveco/GLM-5.1)」和普通消息长得一样，没有错误样式、没有原因，还露出内部模型 id。',
+        rule:'错误要可识别（错误色 #DB5C5C 状态图标）并给出下一步。',
+        fix:'改成错误卡片：图标 + 一句原因（网络 / 配额 / 模型不可用）+ 卡片内「重试」；模型 id 收进详情。',
+        boxes:[[824,158,244,36]] },
+      { sev:'m', cat:'布局', title:'「重试」按钮像用户发的一条消息',
+        what:'「重试」右对齐，和上方用户气泡同一位置、同一样式，和它对应的错误信息隔了一段。',
+        rule:'操作按钮贴着它作用的对象。',
+        fix:'放进错误卡片内，左对齐。',
+        boxes:[[1456,209,48,32]] },
+      { sev:'s', cat:'状态矛盾', title:'回复停在半句，会话却显示已完成',
+        what:'回复以「先加载创建工程的技能：」冒号结尾，后面没有任何动作；左侧会话和编辑器标签却都打了勾。',
+        rule:'完成态只在任务真正结束后给出。',
+        fix:'中断时显示「已中断 · 继续」；完成勾只在最后一步结束后出现。',
+        boxes:[[816,454,124,18],[65,262,17,17],[588,40,15,15]] },
+      { sev:'m', cat:'意图确认', title:'给了候选又替用户定了',
+        what:'列出 3 个项目名候选，下一句就「我先用 WorkTracker 作为项目名」。截图 06 里同一需求它又停下来问，两次行为不一致。',
+        rule:'给出选项时要等用户选，或明确说「默认用 X，可随时改」并提供一键改。',
+        fix:'候选做成可点的选项；默认值写明并可改。',
+        boxes:[[816,426,318,19]] },
+      { sev:'m', cat:'过程信息', title:'过程行英文、低对比，「(5)」意义不明',
+        what:'「Thinking」「Loaded skill: deveco-create-project (5)」是英文灰字，看不出 5 指什么。',
+        rule:'新功能面板用中文；过程信息要能读懂。',
+        fix:'改为「思考」「已加载技能：创建工程」，数字说明含义或去掉。',
+        boxes:[[816,257,198,46]] },
+      { sev:'m', cat:'标题', title:'整句需求直接当标题，三处都被截断',
+        what:'编辑器标签、会话列表、状态栏都用整句需求当标题；标签页宽 370px 仍放不下。',
+        rule:'标题应短且可区分。',
+        fix:'自动生成 ≤ 12 字的短标题（如「工时记录 App」），可重命名。',
+        boxes:[[603,39,346,20],[86,261,226,18],[27,1104,344,18]] },
+      { sev:'l', cat:'重复', title:'「该内容由AI生成，仅供参考」同屏两次',
+        what:'回复下方一次、输入框下方一次。',
+        rule:'同一提示同屏出现一次。',
+        fix:'保留回复下方那条。',
+        boxes:[[816,478,124,16],[1061,1072,112,17]] },
+    ]},
+
+  { no:6, stage:'use', shot:'06', title:'执行中 · 授权与待办清单',
+    goal:'选定项目名后，看 Agent 建工程、读目录、推进待办清单。',
+    issues:[
+      { sev:'s', cat:'状态矛盾', title:'待办清单的顺序和状态对不上',
+        what:'「待办清单 2/3」里第 1 项「创建 TimeTracker 鸿蒙工程」还在转圈，第 2、3 项「写 PRD」「验证构建」已经打勾；对话里却写着「项目创建成功」。',
+        rule:'清单状态和执行日志同源。',
+        fix:'状态从执行事件派生，按真实完成顺序更新。',
+        boxes:[[818,864,684,118]] },
+      { sev:'m', cat:'冗余', title:'4 条一模一样的授权提示',
+        what:'连续 4 条绿色「已授权调用external_directory工具：总会允许」，占约 150px 高，看不出每次读的是哪个目录。',
+        rule:'重复事件合并显示。',
+        fix:'合成一行「已授权 读取外部目录 × 4」，展开看每次的路径。',
+        boxes:[[818,583,684,151]] },
+      { sev:'m', cat:'文案', title:'「总会允许」用词不对，工具名直接露出',
+        what:'「总会允许」应为「始终允许」；「external_directory」是内部工具名，中英文之间也没空格。',
+        rule:'文案用用户语言；中英文之间加空格。',
+        fix:'「已授权读取外部目录：始终允许」。',
+        boxes:[[842,591,198,15]] },
+      { sev:'m', cat:'过程信息', title:'过程行直接露内部工具名',
+        what:'「execute」「Deveco_Studio_list_directory_tree」「read (3)」是工具的内部名称。',
+        rule:'过程信息说人话，技术细节放展开里。',
+        fix:'「执行命令」「查看工程目录」「读取 3 个文件」，展开看原始调用。',
+        boxes:[[816,462,62,17],[816,511,178,17],[816,561,58,17]] },
+      { sev:'m', cat:'下一步', title:'「尚未在 DevEco Studio 中打开」没有给打开按钮',
+        what:'Agent 说项目已创建但没在 Studio 中打开，只是一句话，用户还得自己去找目录。这是融合版本最该一键打通的一步。',
+        rule:'告知状态的同时给出下一步操作。',
+        fix:'这一行后面加「在 DevEco Studio 中打开」按钮。',
+        boxes:[[816,533,378,18]] },
+      { sev:'l', cat:'停止', title:'会话列表里的红色小方块没有说明',
+        what:'运行中的会话条目后面有一个红色小方块（停止），没有文字和 tooltip，离删除、更多按钮很近，容易误点。',
+        rule:'危险操作要可辨认并远离常用操作。',
+        fix:'悬停显示「停止生成」；停止只保留输入框里那一个。',
+        boxes:[[317,262,16,16]] },
+    ]},
+
+  { no:7, stage:'use', shot:'07', title:'继续执行 · 要用户一句句推',
+    goal:'同一会话往下走：等 Agent 把工程打开、把 PRD 写出来。',
+    issues:[
+      { sev:'s', cat:'自主执行', title:'一句话里说清的两件事，Agent 停了几次要人推',
+        what:'需求里已经写明「写 PRD + 建工程」，Agent 却在「我将直接使用文件工具来操作。」「现在让我查看项目结构并编写 PRD 文档。」这样的句子后结束本轮，用户只好再发「使用文件工具来操作打开」「编写 PRD 文档」才能继续。',
+        rule:'说了「接下来做 X」就接着做；真要停，必须是向用户提问或请求授权，并说明在等什么。',
+        fix:'需求范围内的步骤连续执行；需要用户决定时用明确的提问卡（选项 + 默认值），不以陈述句结束本轮。',
+        boxes:[[816,675,382,18],[816,774,282,18],[1359,725,145,32],[1407,823,97,32]] },
+      { sev:'m', cat:'前后矛盾', title:'用户同意「用文件工具」，它转头去 Studio 里打开',
+        what:'Agent 自己说「尚未在 DevEco Studio 中打开，我将直接使用文件工具来操作」，用户照着回了「使用文件工具来操作打开」，下一轮却是「我来先在 DevEco Studio 中打开 TimeTracker 项目」，调用了 Deveco_Studio_open_file_in_editor。',
+        rule:'执行与已确认的方案一致；改方案要先说明原因。',
+        fix:'沿用已确认的方案；需要改时先说一句「改为在 Studio 中打开，因为…」。',
+        boxes:[[816,892,432,18],[816,920,182,16]] },
+      { sev:'m', cat:'状态矛盾', title:'还在生成中，标签页和状态栏已经打勾',
+        what:'对话底部是「生成中」，会话列表是转圈，但编辑器标签和状态栏左下角已经是完成的勾。同一个会话三处状态三个样。',
+        rule:'同一会话的状态在各处同源（同 5-3）。',
+        fix:'标签页、会话列表、状态栏共用一个状态：进行中转圈、完成打勾、中断带提示。',
+        boxes:[[588,40,15,15],[10,1104,17,17],[816,940,50,18],[65,262,17,17]] },
+      { sev:'m', cat:'一致性', title:'同样的 4 条授权记录，换了一种样子',
+        what:'截图 06 里这 4 条是带勾的绿色条；这里（同一会话往下滚）变成灰色小字，下面又重复一行「external_directory」。同一事件在执行中和执行后是两种样式。',
+        rule:'同一类消息一种样式，状态变化只改图标或颜色。',
+        fix:'统一成一种授权记录组件，并合并重复项（见 6-2）。',
+        boxes:[[822,458,206,204]] },
+      { sev:'m', cat:'进度', title:'任务没做完，待办清单不见了',
+        what:'截图 06 里输入框上方有「待办清单 2/3」；这里仍在生成中，清单却没有了，用户看不出现在做到第几步。',
+        rule:'长任务进行中要一直能看到进度。',
+        fix:'待办清单在任务结束前常驻，可以折叠成一行「2/3 · 正在编写 PRD」。',
+        boxes:[[818,956,684,28]] },
+      { sev:'l', cat:'重复', title:'每段回复都挂一遍免责声明和操作按钮',
+        what:'一屏里「该内容由AI生成，仅供参考」加「重新生成 / 复制」出现 3 次，输入框下方还有一次。',
+        rule:'同一提示同屏出现一次（同 5-7）。',
+        fix:'免责声明只放在输入框下；重新生成、复制悬停时出现。',
+        boxes:[[816,263,124,15],[816,699,124,15],[816,798,124,15]] },
+    ]},
+
+  { no:8, stage:'switch', shot:'08', title:'打开新建的工程 · 之前的对话没了',
+    goal:'在 Agent 建好的 TimeTracker 工程里继续：打开这个工程，接着让它写 PRD。',
+    issues:[
+      { sev:'s', cat:'会话丢失', title:'对话按工程存，换到它建的工程后整段对话不见了',
+        what:'顶栏已切到 TimeTracker（正是上一段对话建出来的工程），会话列表只剩一个「新对话」：选项目名、建工程、写 PRD 的上下文全没了，用户只能把需求从头再发一遍。',
+        rule:'任务的上下文不能因为切换工程而丢；由对话创建的工程要能回到来源对话。',
+        fix:'会话跟人走、按工程筛选，而不是按工程隔离；对话建出的工程自动带上来源会话；列表里给「其他工程的会话」分组。切工程前提示「当前会话将留在 MyApplication」。',
+        boxes:[[56,202,636,86],[70,6,92,20]] },
+      { sev:'s', cat:'错误反馈', title:'「发送失败: ACP client is not connected」',
+        what:'两次发送都失败，提示是内部英文术语，没说是什么没连上、要不要等、该怎么办；用户只能再发一遍同一句话。',
+        rule:'错误说人话并给出下一步；连接状态这类前置条件要在发送前就看得到。',
+        fix:'未连接时在输入框上方提示「DevEco Code 服务未连接 · 重新连接」并暂停发送；已发出的失败消息给「重新发送」。',
+        boxes:[[994,144,168,34],[994,252,168,34]] },
+      { sev:'m', cat:'消息状态', title:'失败的消息没有标记，重发堆出 3 条一样的',
+        what:'同一句需求出现 3 次，前两条发没发出去只能靠下面的系统消息推断。',
+        rule:'发送失败的消息在自身上标记状态，就地重试。',
+        fix:'失败消息加红色叹号与「重新发送」，重发成功后替换原消息而不是追加。',
+        boxes:[[1392,86,279,32],[1392,194,279,32],[1392,302,279,32]] },
+      { sev:'m', cat:'状态矛盾', title:'一边报错一边「生成中」',
+        what:'编辑器标签、状态栏左下角和右下角都是「!」错误标记，会话列表却在转圈、对话底部是「生成中」，看不出这一次到底成没成。',
+        rule:'同一会话的状态在各处同源（同 5-3、7-3）。',
+        fix:'第三次发送开始后清掉错误标记；只在最近一次失败时显示「!」。',
+        boxes:[[715,40,16,16],[10,1104,16,17],[1971,1104,16,17],[65,262,17,17],[984,351,50,18]] },
+      { sev:'m', cat:'一致性', title:'换个工程，右侧工具窗条顺序就变了',
+        what:'截图 01（MyApplication）里 CodeGenie 排第 2；这里排到第 6，还多出一个「问题反馈」。同一个 IDE 两个工程窗口，入口要重新找。',
+        rule:'工具窗条顺序跨工程一致（Int UI 默认布局随 IDE 保存）。',
+        fix:'新工程沿用 IDE 级的工具窗布局；新增入口排在末尾。',
+        boxes:[[1956,127,42,34],[1956,271,42,34]] },
+      { sev:'l', cat:'布局', title:'DevEco Code 面板被拉到约 660px 宽',
+        what:'截图 01 里面板约 325px；新工程里默认约 660px，编辑区被挤窄，对话内容偏到右侧。',
+        rule:'Int UI 左侧工具窗默认约 300px；面板宽度随 IDE 记住。',
+        fix:'新工程沿用上次宽度，默认 300–360px。',
+        boxes:[[48,66,648,40]] },
+    ]},
+
+  { no:9, stage:'switch', shot:'09', title:'再开新会话重发 · 输入「/」调命令',
+    goal:'上一段发不出去，新开一个会话把需求再发一遍；等待时输入「/」看有哪些命令和技能。',
+    issues:[
+      { sev:'m', cat:'内容准确', title:'命令说明和命令名对不上，还有错字',
+        what:'「/arkts-grammar-standards」的说明是「编写首个入口前的必要步骤」；「/arkts-runtime-fix」写的是「加载 ArkTS/JavaScript jscrah 运行环境」（jscrah 疑为错字，且「加载环境」不是「修复」）；「/debug」的「调试 ArkTS 运行时评估问题」读不通。',
+        rule:'说明一句话讲清这个命令做什么，与名称一致。',
+        fix:'逐条校对说明文案；技能说明从技能描述里取，上线前过一遍文案走查。',
+        boxes:[[977,856,110,15],[958,943,110,16],[913,965,155,16]] },
+      { sev:'m', cat:'分组', title:'命令和技能混在一个列表',
+        what:'/compact、/new、/debug、/init、/review 是会话命令，/arkts-… 是技能，混排在一起，只靠行尾一个很小的蓝色「Skill」区分。',
+        rule:'不同类型的条目分组，组标题说明类型。',
+        fix:'分「命令」「技能」两组；技能组显示来源（内置 / 工程 / 用户）。',
+        boxes:[[1066,923,24,14],[1066,945,24,14],[1066,967,24,14]] },
+      { sev:'m', cat:'布局', title:'菜单最后一项被输入框压住',
+        what:'第 9 项只露出半行，被输入框盖住；也没有滚动条或「还有 N 项」，看不出下面还有多少。',
+        rule:'弹出菜单不被触发它的控件遮挡；可滚动时要有提示。',
+        fix:'菜单底边贴在输入框上沿之上；超出高度时显示滚动条，输入字符即时筛选。',
+        boxes:[[782,983,312,12]] },
+      { sev:'m', cat:'状态矛盾', title:'发送失败的会话被标成完成，且没有标题',
+        what:'截图 08 那段两次报「ACP client is not connected」的会话，现在列表里是完成的勾、标题还是「新对话」；当前会话却用需求原文命名。',
+        rule:'失败的会话显示失败状态；会话标题规则一致（同 5-6）。',
+        fix:'失败会话标「!」并可一键重试；所有会话按首条需求自动生成短标题。',
+        boxes:[[65,292,17,17],[86,292,40,16],[86,262,136,16]] },
+      { sev:'l', cat:'进度', title:'只有「生成中」三个字',
+        what:'发出后只有「生成中」，没有已用时长，也没说在做什么；上一次就是卡在这里然后失败的，用户分不清在跑还是挂了。',
+        rule:'等待超过数秒要给出进展或已用时间。',
+        fix:'显示「正在连接 / 正在思考 · 12s」，超过阈值给「仍在等待模型响应 · 取消」。',
+        boxes:[[772,135,48,16]] },
+      { sev:'l', cat:'可读性', title:'命令说明是小号灰字、右对齐',
+        what:'说明约 9px 灰字贴在最右，和左边的命令名隔了半个菜单宽，扫读要来回跳。',
+        rule:'Int UI 菜单项 Default 13；次要说明用 Gray7 并紧跟主文字。',
+        fix:'说明紧跟命令名，或放在命令名下方一行。',
+        boxes:[[1020,812,68,14]] },
+      { sev:'l', cat:'布局', title:'同一工程里面板宽度又变了',
+        what:'截图 08 里 DevEco Code 面板约 660px，这里约 235px，对话区左右位置也跟着跳。',
+        rule:'面板宽度随 IDE 记住（同 8-6）。',
+        fix:'记住用户最后一次拖拽的宽度。',
+        boxes:[[48,66,220,40]] },
+    ]},
+
+  { no:10, stage:'switch', shot:'10', title:'没有结果 · 试 /compact、换模型',
+    goal:'需求发出去后没有下文，用户先发「/compact」，再准备输「/debug」并打开模型下拉看能不能换模型。',
+    issues:[
+      { sev:'s', cat:'无结果', title:'只跑了一次读目录就停了，没有任何回复',
+        what:'需求下面只有折叠的「Thinking」和一次「Deveco_Studio_list_directory_tree」，之后既没有回答也没有报错；会话列表已经打上完成的勾。',
+        rule:'每轮结束都要给出结果、问题或错误说明，不能静默结束。',
+        fix:'没有产出就结束时显示「本轮未完成 · 原因 · 继续」；完成勾只在有产出后给。',
+        boxes:[[774,134,174,38],[65,262,17,17]] },
+      { sev:'m', cat:'命令反馈', title:'「/compact」发出去像一句普通消息，没有反馈',
+        what:'「/compact」以用户气泡显示，之后什么都没发生：压缩了没有、压缩前后上下文多大，都看不到。',
+        rule:'命令执行要有结果反馈，并和对话消息区分。',
+        fix:'命令显示成一行系统记录，如「已压缩上下文 · 18k → 4k tokens」；失败时说明原因。',
+        boxes:[[1386,175,74,32]] },
+      { sev:'m', cat:'状态矛盾', title:'标签页还在转圈，列表已完成，状态栏是空心圆',
+        what:'同一个会话：编辑器标签是加载转圈，会话列表是完成的勾，状态栏左下角是空心圆。',
+        rule:'同一会话的状态在各处同源（同 5-3、7-3、8-4）。',
+        fix:'三处共用一个状态源。',
+        boxes:[[290,40,16,16],[65,262,17,17],[10,1104,17,17]] },
+      { sev:'m', cat:'模型菜单', title:'展开态和选中项同样蓝底，两个模型看不出区别',
+        what:'模型下拉展开后，触发按钮和当前选中项都是蓝色实底，分不清哪个是按钮、哪个是选项；GLM-5.1 和 GLM-5.3 只有名字，看不出新旧、快慢、能力或额度。',
+        rule:'Int UI 下拉展开态用聚焦描边，选中项用勾；选项需要足够信息做选择。',
+        fix:'触发按钮展开时只加描边；当前项前加 ✓；每个模型下方一行说明（如「更强推理 · 较慢」）。',
+        boxes:[[872,979,136,60],[872,1042,136,21]] },
+    ]},
+
+  { no:11, stage:'switch', shot:'11', title:'切换模式 · Build / Goal / Plan',
+    goal:'打开输入框左下的模式下拉，看 Build、Goal、Plan 有什么区别。',
+    issues:[
+      { sev:'m', cat:'遮挡', title:'模式菜单盖住输入框里的文字',
+        what:'菜单向上弹出，正好压在输入内容上，「/debug」被截成「/debu」。',
+        rule:'弹出菜单不遮挡正在编辑的内容。',
+        fix:'菜单从触发按钮向下或向外侧弹出，或整体上移到输入框上沿之外。',
+        boxes:[[814,980,52,60],[780,992,36,16]] },
+      { sev:'m', cat:'模式说明', title:'三个模式只有英文名，没有说明',
+        what:'Build、Goal、Plan 没有任何描述，用户不知道三者差在哪里、各自适合什么任务；其余新功能都是中文。',
+        rule:'新功能面板用中文；选项给一句说明。',
+        fix:'每项加中文名和一句说明，如「Plan 规划 · 先出方案再动手」「Goal 目标 · 自动连续完成」。',
+        boxes:[[818,1001,44,36]] },
+      { sev:'l', cat:'一致性', title:'展开时按钮和选中项同样蓝底',
+        what:'同 10-4：Build 按钮展开时整块蓝底，和菜单里选中的 Build 一样。',
+        rule:'Int UI 下拉展开态用聚焦描边。',
+        fix:'同 10-4。',
+        boxes:[[812,1042,54,21]] },
+    ]},
+
+  { no:12, stage:'switch', shot:'12', title:'点「+」添加上下文',
+    goal:'点输入框左下的「+」，想给 Agent 补充文件等上下文。',
+    issues:[
+      { sev:'m', cat:'添加上下文', title:'「+」里只有一个「添加文件」，和「@」两套入口',
+        what:'点「+」只弹出一个「添加文件」，只有一项却要多点一次；图片、文件夹、代码选区、设备截图都加不了。占位符又说「输入 @ 添加上下文」，两个入口能加的东西不一样，用户不知道该用哪个。',
+        rule:'同一功能一个主入口；只有一项时不做成菜单。',
+        fix:'「+」与「@」合并成同一个上下文选择器，列出文件、文件夹、图片、选区、设备截图；只剩一项时点「+」直接打开文件选择。',
+        boxes:[[781,1014,78,26],[780,1041,28,23]] },
+      { sev:'l', cat:'命令输入', title:'输入框里的「/debug」没有识别成命令',
+        what:'选了「/debug」后，它在输入框里还是普通文字，看不出发出去是执行命令还是当成一句话发给模型。',
+        rule:'命令与普通文本在输入时就区分开。',
+        fix:'选中后变成命令 chip（带说明 tooltip），可整体删除。',
+        boxes:[[779,992,40,17]] },
+    ]},
+
+  { no:13, stage:'switch', shot:'13', title:'面板「⋮」更多菜单',
+    goal:'点 DevEco Code 面板标题栏的「⋮」，找设置或会话管理。',
+    issues:[
+      { sev:'m', cat:'设置入口', title:'「⋮」里只有 IDE 通用的窗口选项',
+        what:'菜单只有「视图模式 / 移至 / 调整大小 / 从边栏中移除」这些 IntelliJ 工具窗通用项，DevEco Code 自己的设置（模型、技能、MCP、权限、清空或导出会话）一个都没有。',
+        rule:'CodeGenie 面板标题栏有新会话、历史、MCP、Skills、设置等入口；融合版本不应比它少。',
+        fix:'「⋮」里在通用项之上加 DevEco Code 分组：设置、MCP 与技能、权限、导出会话；或在标题栏放一个设置齿轮。',
+        boxes:[[340,39,12,18],[343,55,92,93]] },
+      { sev:'l', cat:'误操作', title:'「从边栏中移除」一点就把唯一入口拿掉',
+        what:'融合版本里 DevEco Code 是 AI 的主入口，这里一键就能从边栏移除，没有确认，也没说移除后从哪里找回。',
+        rule:'移除核心入口需要确认并告知恢复路径。',
+        fix:'移除前确认；移除后通知栏提示「可在 视图 › 工具窗口 › DevEco Code 恢复」。',
+        boxes:[[349,125,74,16]] },
+    ]},
+];
+
+/* ============================================================ */
+var SEV = { s:{t:'严重'}, m:{t:'一般'}, l:{t:'建议'} };
+var CIRCLED = '①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮';
+function esc(s){ return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+function pct(v,t){ return (v/t*100).toFixed(3)+'%'; }
+function sevCount(list){ var c={s:0,m:0,l:0}; list.forEach(function(i){c[i.sev]++;}); return c; }
+function dots(c){ return ['s','m','l'].filter(function(k){return c[k];}).map(function(k){return '<span class="dot '+k+'" title="'+SEV[k].t+'">'+c[k]+'</span>';}).join(''); }
+var stepById = {}; STEPS.forEach(function(s){ stepById[s.no]=s; });
+var ALL = []; STEPS.forEach(function(s){ s.issues.forEach(function(i,k){ i.step=s; i.k=k+1; i.id=s.no+'-'+(k+1); ALL.push(i); }); });
+
+/* 统计 */
+(function(){
+  var c = sevCount(ALL);
+  var cells = [
+    ['',STEPS.length,'走查截图'],['',ALL.length,'问题'],
+    ['s',c.s,'严重'],['m',c.m,'一般'],['l',c.l,'建议'],['',Object.keys(GAPS).length,'待补页面']
+  ];
+  document.getElementById('stats').innerHTML = cells.map(function(x){
+    return '<div class="stat '+x[0]+'"><div class="n">'+x[1]+'</div><div class="l">'+x[2]+'</div></div>'; }).join('');
+})();
+
+/* 流程 */
+document.getElementById('flow').innerHTML = STAGES.map(function(st){
+  var nodes = st.flow.map(function(f){
+    if (f.gap){ var g=GAPS[f.gap];
+      return '<a class="node gap" href="#gaps"><span class="no">缺页</span><span class="t">'+esc(g.title)+'</span></a>'; }
+    var s = stepById[f.step];
+    return '<a class="node" href="#step-'+s.no+'"><span class="no">步骤 '+s.no+'</span><span class="t">'+esc(s.title)+'<small>截图 '+s.shot+'</small></span><span class="cnt">'+dots(sevCount(s.issues))+'</span></a>';
+  }).join('<span class="arrow">↓</span>');
+  return '<div class="stage"><h3>'+esc(st.title)+'<span class="tag">'+esc(st.tag)+'</span></h3><div class="chain">'+nodes+'</div></div>';
+}).join('');
+
+/* 一张带标注的截图 */
+function figureHTML(s){
+  var boxes = '', seen = {};
+  s.issues.forEach(function(i,k){
+    i.boxes.forEach(function(b){
+      /* 同一个框被多个问题共用时，编号圆标往下错开 */
+      var key = b.join(','), n = seen[key] = (seen[key]||0) + 1, dy = (n-1)*20;
+      boxes += '<div class="box '+i.sev+'" data-i="'+i.id+'" style="left:'+pct(b[0],W)+';top:'+pct(b[1],H)+';width:'+pct(b[2],W)+';height:'+pct(b[3],H)+'" title="'+esc(CIRCLED[k]+' '+i.title)+'"><span class="pin '+(b[0]+b[2]/2 < W/2 ? 'r' : 'l')+'"'+(dy?' style="margin-top:'+dy+'px"':'')+'>'+(k+1)+'</span></div>';
+    });
+  });
+  return '<figure class="shot" data-shot="'+s.shot+'">'
+    + '<img alt="截图 '+s.shot+'：'+esc(s.title)+'" data-base="images/'+s.shot+'" data-ext="0" src="images/'+s.shot+'.webp">'
+    + '<div class="miss"><b>截图 '+s.shot+' 待上传</b><span>放到 <code>images/'+s.shot+'.webp</code>（或 .png / .jpg），标注会自动对齐</span></div>'
+    + boxes + '</figure>';
+}
+
+/* 步骤：左图右文 */
+document.getElementById('steps').innerHTML = STEPS.map(function(s){
+  var stage = STAGES.filter(function(x){return x.id===s.stage;})[0];
+  var list = s.issues.map(function(i,k){
+    return '<li class="issue '+i.sev+'" id="i-'+i.id+'" data-i="'+i.id+'">'
+      + '<div class="ih"><span class="num">'+(k+1)+'</span><span class="tt">'+esc(i.title)+'</span></div>'
+      + '<div class="chips"><span class="chip sev">'+SEV[i.sev].t+'</span><span class="chip cat">'+esc(i.cat)+'</span></div>'
+      + '<dl><dt>现象</dt><dd>'+esc(i.what)+'</dd><dt>依据</dt><dd>'+esc(i.rule)+'</dd><dt>改法</dt><dd><b>'+esc(i.fix)+'</b></dd></dl>'
+      + '</li>';
+  }).join('');
+  return '<section class="step" id="step-'+s.no+'">'
+    + '<div class="step-head"><span class="stg">'+esc(stage.title)+'</span><h3>步骤 '+s.no+' · '+esc(s.title)+'</h3><span class="src">截图 '+s.shot+'</span></div>'
+    + '<p class="goal">用户要做：'+esc(s.goal)+'</p>'
+    + '<div class="split"><div class="figcol">'+figureHTML(s)
+    + '<div class="figcap"><span>'+dots(sevCount(s.issues))+'</span><span>点图放大 · 点框看对应问题</span></div></div>'
+    + '<ol class="issues">'+list+'</ol></div></section>';
+}).join('');
+
+/* 截图缺失：依次试 .webp → .png → .jpg，都没有就显示占位 */
+var EXTS = ['.webp','.png','.jpg'];
+document.querySelectorAll('.shot img').forEach(function(img){
+  img.addEventListener('error', function(){
+    var n = +img.dataset.ext + 1;
+    if (n < EXTS.length){ img.dataset.ext = n; img.src = img.dataset.base + EXTS[n]; }
+    else img.closest('.shot').classList.add('missing');
+  });
+});
+
+/* 图文联动 */
+function setFocus(id, on){
+  var li = document.getElementById('i-'+id); if (!li) return;
+  var fig = li.closest('.step').querySelector('.shot');
+  fig.classList.toggle('focus', on);
+  li.classList.toggle('on', on);
+  fig.querySelectorAll('.box').forEach(function(b){ b.classList.toggle('on', on && b.dataset.i===id); });
+}
+document.querySelectorAll('.issue').forEach(function(li){
+  li.addEventListener('mouseenter', function(){ setFocus(li.dataset.i, true); });
+  li.addEventListener('mouseleave', function(){ setFocus(li.dataset.i, false); });
+});
+document.getElementById('steps').addEventListener('click', function(e){
+  var box = e.target.closest('.box');
+  if (box){
+    e.stopPropagation();
+    var li = document.getElementById('i-'+box.dataset.i);
+    li.scrollIntoView({behavior:'smooth', block:'center'});
+    li.classList.remove('flash'); void li.offsetWidth; li.classList.add('flash');
+    return;
+  }
+  var fig = e.target.closest('.shot');
+  if (fig) openLB(fig);
+});
+document.getElementById('steps').addEventListener('mouseover', function(e){
+  var box = e.target.closest('.box'); if (!box) return;
+  setFocus(box.dataset.i, true);
+  box.addEventListener('mouseleave', function h(){ setFocus(box.dataset.i, false); box.removeEventListener('mouseleave', h); });
+});
+
+/* 放大查看 */
+var lb = document.getElementById('lb');
+function openLB(fig){
+  var c = fig.cloneNode(true); c.classList.remove('focus');
+  lb.querySelectorAll('.shot').forEach(function(n){ n.remove(); });
+  lb.appendChild(c); lb.classList.add('open');
+}
+lb.addEventListener('click', function(e){
+  var box = e.target.closest('.box');
+  lb.classList.remove('open');
+  if (box){ var li=document.getElementById('i-'+box.dataset.i); li.scrollIntoView({block:'center'}); li.classList.add('flash'); }
+});
+document.addEventListener('keydown', function(e){ if (e.key==='Escape') lb.classList.remove('open'); });
+
+/* 总表 */
+var filter = 'all';
+function renderTable(){
+  var order = {s:0,m:1,l:2};
+  var rows = ALL.filter(function(i){ return filter==='all' || i.sev===filter; })
+    .slice().sort(function(a,b){ return order[a.sev]-order[b.sev] || a.step.no-b.step.no || a.k-b.k; });
+  document.getElementById('tbody').innerHTML = rows.map(function(i){
+    return '<tr><td class="id"><a href="#i-'+i.id+'">'+i.id+'</a></td><td><span class="dot '+i.sev+'">'+SEV[i.sev].t+'</span></td>'
+      + '<td>'+i.step.no+' · '+esc(i.step.title)+'</td><td>'+esc(i.cat)+'</td><td>'+esc(i.title)+'</td><td>'+esc(i.fix)+'</td></tr>';
+  }).join('');
+}
+(function(){
+  var c = sevCount(ALL), opts = [['all','全部 '+ALL.length],['s','严重 '+c.s],['m','一般 '+c.m],['l','建议 '+c.l]];
+  var el = document.getElementById('filters');
+  el.innerHTML = opts.map(function(o){ return '<button type="button" data-f="'+o[0]+'" aria-pressed="'+(o[0]==='all')+'">'+o[1]+'</button>'; }).join('');
+  el.addEventListener('click', function(e){
+    var b = e.target.closest('button'); if (!b) return;
+    filter = b.dataset.f;
+    el.querySelectorAll('button').forEach(function(x){ x.setAttribute('aria-pressed', x===b); });
+    renderTable();
+  });
+  renderTable();
+})();
+document.getElementById('tbody').addEventListener('click', function(e){
+  var a = e.target.closest('a'); if (!a) return;
+  var li = document.querySelector(a.getAttribute('href'));
+  setTimeout(function(){ li.classList.remove('flash'); void li.offsetWidth; li.classList.add('flash'); }, 350);
+});
+
+/* 待补页面 */
+document.getElementById('gapcards').innerHTML = Object.keys(GAPS).map(function(k){
+  return '<div class="gapcard"><b>'+esc(GAPS[k].title)+'</b><span>'+esc(GAPS[k].desc)+'</span></div>';
+}).join('');
+</script>
+</body>
+</html>
