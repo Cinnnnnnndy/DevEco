@@ -121,7 +121,7 @@
   .top-card{gap:6px}
   .top-grid{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(0,1fr);gap:10px}
   .tf{display:flex;flex-direction:column;min-width:0}
-  .tf-h,.tf-row{display:grid;grid-template-columns:18px minmax(0,1fr) 150px 96px 96px;align-items:center;gap:10px;padding:0 8px}
+  .tf-h,.tf-row{display:grid;grid-template-columns:18px minmax(0,1fr) 184px 96px 96px;align-items:center;gap:10px;padding:0 8px}
   .tf-h{height:22px;font-size:11px;color:var(--ui-fg-info);border-bottom:1px solid var(--ui-border)}
   .tf-h .on{color:var(--ui-fg);font-weight:600}
   .tf-row{height:30px;width:100%;border:0;border-radius:4px;background:transparent;color:var(--ui-fg);text-align:left;font-size:var(--fs-sm);cursor:pointer}
@@ -546,9 +546,9 @@
     if(o.steps){var sd='',lastF=82;
       for(var q=0;q<CYC;q++){if(tg(q)>up)break;var fl=82+o.per*(q+1),xa=x(tg(q)),xb=x(q<CYC-1?Math.min(tg(q+1),up):up);sd+=(sd?'L':'M')+f1(xa)+','+f1(y(fl))+'H'+f1(Math.max(xa,xb));lastF=fl}
       if(sd)s+='<path class="floor" d="'+sd+'"/>';
-      if(up>=T_END)s+='<text class="lbl strong" x="'+(W-padR-2)+'" y="'+f1(y(lastF)-7)+'" text-anchor="end">GC 后仍有 '+lastF.toFixed(1)+' MB</text>';
+      if(up>=T_END)s+='<line class="floor" x1="'+(W-padR-18)+'" x2="'+(W-padR-2)+'" y1="'+(padT+7)+'" y2="'+(padT+7)+'"/><text class="lbl strong" x="'+(W-padR-24)+'" y="'+(padT+10)+'" text-anchor="end">GC 后仍有 '+lastF.toFixed(1)+' MB</text>';
     }
-    if(o.flat&&up>=T_END)s+='<text class="lbl strong" x="'+(W-padR-2)+'" y="'+f1(y(83.2)-12)+'" text-anchor="end">GC 后回到 83.2 MB</text>';
+    if(o.flat&&up>=T_END)s+='<text class="lbl strong" x="'+(W-padR-2)+'" y="'+f1(y(82)+12)+'" text-anchor="end">GC 后回到 83.2 MB</text>';
     if(o.upto!=null&&up<T_END&&vis.length){var lp=vis[vis.length-1];s+='<line class="mcur" x1="'+f1(x(lp[0]))+'" x2="'+f1(x(lp[0]))+'" y1="'+padT+'" y2="'+(padT+ph)+'"/><circle class="mend" cx="'+f1(x(lp[0]))+'" cy="'+f1(y(lp[1]))+'" r="4"/>'}
     if(o.hit)for(var h=0;h<CYC;h++){var ha=x(te(h)),hb=x(h<CYC-1?te(h+1):T_END);s+='<rect class="cyc'+(o.sel===h+1?' on':'')+'" data-cycle="'+(h+1)+'" x="'+f1(ha)+'" y="'+padT+'" width="'+f1(hb-ha)+'" height="'+ph+'" rx="3"><title>第 '+(h+1)+' 次进出 · 返回并 GC 后 '+(82+o.per*(h+1)).toFixed(1)+' MB</title></rect>'}
     svg.setAttribute('viewBox','0 0 '+W+' '+H);svg.style.height=H+'px';svg.innerHTML=s;
@@ -573,6 +573,7 @@
   }
   function fmtP(p){return p<.001?'< 0.001':p.toFixed(p<.01?3:2)}
   function fv(m,v){return v.toFixed(m.dec)}
+  function un(m){return m.unit==='%'?'%':' '+m.unit}
   function chg(m,b,a){var d=a-b,sg=d<0?'−':'+';if(m.chg==='pct')return sg+Math.abs(Math.round(d/b*100))+'%';return sg+Math.abs(d).toFixed(m.dec)+(m.cu||' '+m.unit)}
 
   /* ---------- 多次运行：各指标每边 5 次（第 1 次就是原记录 / 第一次复测） ---------- */
@@ -875,7 +876,7 @@
         g.v.forEach(function(v,i){s+='<circle class="sp-dot '+g.c+'" cx="'+f1(c+JIT[i])+'" cy="'+f1(y(v))+'" r="4.5"><title>'+g.name+' 第 '+(i+1)+' 次 · '+fv(m,v)+' '+esc(m.unit)+(g.ids[i]?' · 记录 '+g.ids[i]:'')+'</title></circle>'});
       }
       s+='<text class="glbl" x="'+f1(c)+'" y="'+(H-18)+'" text-anchor="middle">'+g.name+' ×'+o.n+(g.v.length<o.n?'（'+g.v.length+'/'+o.n+'）':'')+'</text>';
-      s+='<text class="lbl" x="'+f1(c)+'" y="'+(H-5)+'" text-anchor="middle">'+(g.v.length?'范围 '+fv(m,stats(g.v).min)+'–'+fv(m,stats(g.v).max)+' '+esc(m.unit):'等待运行')+'</text>';
+      s+='<text class="lbl" x="'+f1(c)+'" y="'+(H-5)+'" text-anchor="middle">'+(g.v.length?'范围 '+fv(m,stats(g.v).min)+'–'+fv(m,stats(g.v).max)+esc(un(m)):'等待运行')+'</text>';
     });
     if(med[0]!=null&&med[1]!=null){var x1=cx[0]+22,x2=cx[1]-22,y1=y(med[0]),y2=y(med[1]);
       s+='<path class="sp-link" d="M'+f1(x1)+','+f1(y1)+'L'+f1(x2)+','+f1(y2)+'"/>';
@@ -888,7 +889,7 @@
     [[b,'b',7],[a,'a',15]].forEach(function(g){if(!g[0].length)return;var st=stats(g[0]);s+='<line class="t'+g[1]+'" x1="'+x(st.min)+'" x2="'+x(st.max)+'" y1="'+g[2]+'" y2="'+g[2]+'"/><circle class="'+g[1]+'" cx="'+x(st.med)+'" cy="'+g[2]+'" r="3"/>'});
     return '<svg class="rg" viewBox="0 0 120 22" aria-hidden="true">'+s+'</svg>';
   }
-  function cells(m,v){if(!v.length)return '<span class="v dm-muted">—</span>';var st=stats(v);return '<span class="v"><b>'+fv(m,st.med)+'</b> '+esc(m.unit)+'<small>'+fv(m,st.min)+'–'+fv(m,st.max)+'</small></span>'}
+  function cells(m,v){if(!v.length)return '<span class="v dm-muted">—</span>';var st=stats(v);return '<span class="v"><b>'+fv(m,st.med)+'</b>'+esc(un(m))+'<small>'+fv(m,st.min)+'–'+fv(m,st.max)+'</small></span>'}
   function counts(st){return st.batch?{b:st.prog.b,a:st.prog.a}:{b:Math.min(st.n,st.done),a:Math.min(st.n,st.done)}}
   function primaryVerdict(sc,n){var P=SC[sc].metrics[0];return verdict(P.b.slice(0,n),P.a.slice(0,n))}
   function multiText(sc){
