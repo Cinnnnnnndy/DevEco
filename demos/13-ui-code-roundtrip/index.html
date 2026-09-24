@@ -347,7 +347,7 @@
   #mode-seg svg.i{width:12px;height:12px}
 
   /* ---- 右侧栏：M-Pen 工具条 / 设备面板 ---- */
-  .pv-side{position:absolute;right:12px;top:12px;width:280px;display:flex;flex-direction:column;gap:8px;z-index:12}
+  .pv-side{position:absolute;right:12px;top:12px;width:256px;display:flex;flex-direction:column;gap:8px;z-index:12}
   .pv-side[hidden],.pv-side > [hidden]{display:none}
   .sd-card{border:1px solid var(--ui-popup-border);border-radius:var(--arc);background:var(--ui-popup-bg);box-shadow:var(--ui-shadow);font-size:var(--fs-sm);line-height:var(--lh-sm)}
   .sd-hd{display:flex;align-items:center;gap:6px;height:30px;padding:0 10px;border-bottom:1px solid var(--ui-border);font-weight:600;color:var(--ui-fg);white-space:nowrap}
@@ -594,7 +594,7 @@
               <div class="sd-card" id="pen-pal" hidden>
                 <div class="sd-hd"><svg class="i"><use href="#i-pen"/></svg>M-Pen 3 · 已连接<span class="grow"></span><span class="bat"><i></i>86%</span></div>
                 <div class="sd-bd">
-                  <div class="sd-kv"><svg class="i"><use href="#i-lasso"/></svg><span>圈一块 = 提问</span><span class="grow"></span><svg class="i"><use href="#i-hand-w"/></svg><span>圈旁写字 = 指令</span></div>
+                  <div class="sd-kv"><svg class="i"><use href="#i-lasso"/></svg><span>圈一块 = 提问</span><span class="grow"></span><svg class="i"><use href="#i-hand-w"/></svg><span>旁边写字 = 指令</span></div>
                   <div class="sd-kv"><span id="pen-stat">在 <b id="pen-dev">模拟器</b> 上画</span><span class="grow"></span><button class="btn" id="pen-clear">清除笔迹</button></div>
                 </div>
               </div>
@@ -885,7 +885,7 @@
     var h='';
     if(sel==='btn'){
       h='<div class="ev"><span class="bpd'+(bp?' on':'')+'"></span><span class="grow"><code>onClick</code> → <code>this.submit()</code> · 第 19 行</span>'
-        +(bp?'<button class="btn primary" id="ev-fire">在模拟器上点一下「登录」</button>':'<button class="btn" id="ev-bp">在此事件加断点</button>')+'</div>';
+        +(bp?'<button class="btn primary" id="ev-fire">在'+(mode==='mir'?'真机':'模拟器')+'上点一下「登录」</button>':'<button class="btn" id="ev-bp">在此事件加断点</button>')+'</div>';
     }else if(sel==='phone'||sel==='code'){
       h='<div class="ev"><span class="bpd"></span><span class="grow"><code>onChange</code> 未绑定</span><button class="btn">绑定到 @State '+sel+'</button></div>';
     }else h='<div class="pnote" style="padding:4px 0">这个组件没有事件，选中 Button 看 onClick</div>';
@@ -1873,7 +1873,11 @@
   });
   /* 自由窗口：拖标题栏移动、拖右下角缩放（锁 1260:2844）、最小化 / 最大化 / 关闭 */
   function deskR(){return $('#mir-desk').getBoundingClientRect();}
-  function maxS(top){return Math.max(.8,(deskR().height-(top||0)-32-6-10)/528);}
+  function maxS(top){
+    var d=deskR(),w=$('#mir-win'),side=$('#pv-side'),room=d.width-w.offsetLeft-12-10;
+    if(!side.hidden)room=side.getBoundingClientRect().left-d.left-w.offsetLeft-12-10;
+    return Math.max(.8,Math.min((d.height-(top||0)-32-6-10)/528,room/234));
+  }
   function setS(s){$('#mir-win').style.setProperty('--s',s.toFixed(3));mir.s=s;placePq();}
   $('#mir-bar').addEventListener('pointerdown',function(e){
     if(e.target.closest('.wc')||e.button!==0)return;e.preventDefault();
