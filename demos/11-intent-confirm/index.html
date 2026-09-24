@@ -383,7 +383,7 @@
             <div class="pl-mapbox" id="pl-map">
               <div class="pl-maphd">
                 <div class="dm-seg" id="pl-mapseg" role="tablist" aria-label="改动地图"><button class="on" data-v="topo" role="tab" aria-selected="true">模块拓扑</button><button data-v="flow" role="tab" aria-selected="false">关键流程</button></div>
-                <span class="grow"></span><span class="src" id="pl-mapsrc">按 <code>build-profile.json5</code> · 5 个模块</span>
+                <span class="grow"></span><span class="src" id="pl-mapsrc">按 <code>build-profile.json5</code> · 4 个模块 + 1 个新依赖</span>
               </div>
               <svg class="pl-svg" id="pl-svg" viewBox="0 0 480 232" role="group" aria-label="模块拓扑图"></svg>
               <div class="pl-maptip" id="pl-maptip"><svg class="i"><use href="#i-cursor"/></svg><span>高亮的是本次要改的模块；点里面的文件，跳到那一步</span></div>
@@ -587,14 +587,34 @@
   function pad(r){return parseInt(r.style.paddingLeft,10)||8}
   function fileRow(name,p,cls){return '<div class="row'+(cls?' '+cls:'')+'" style="padding-left:'+p+'px"><span class="tg"></span><span class="ico"><svg><use href="#i-ets"/></svg></span><span class="lbl">'+name+'</span></div>'}
   function dirRow(name,p,kids,cls){return '<div class="row'+(cls?' '+cls:'')+'" style="padding-left:'+p+'px" data-dir="1" data-open="1"><span class="tg"><svg class="i"><use href="#i-chevD"/></svg></span><span class="ico"><svg><use href="#i-folder"/></svg></span><span class="lbl">'+name+'</span></div><div class="kids">'+kids+'</div>'}
+  /* 收起的目录 / 模块（工程里另外 3 个模块：account HSP、common HAR、feature_cart feature HAP） */
+  function dirRowC(name,p,kids,icon){return '<div class="row" style="padding-left:'+p+'px" data-dir="1" data-open="0"><span class="tg"><svg class="i"><use href="#i-chevR"/></svg></span><span class="ico"><svg><use href="'+(icon||'#i-folder')+'"/></svg></span><span class="lbl">'+(icon?'<b>'+name+'</b>':name)+'</span></div><div class="kids" hidden>'+kids+'</div>'}
   (function(){
-    var pages=findRow('pages'),comp=findRow('components'),cg=findRow('.codegenie');
+    var pages=findRow('pages'),cg=findRow('.codegenie'),ent=findRow('entry');
     if(pages){var pp=pad(pages);pages.nextElementSibling.insertAdjacentHTML('afterbegin',fileRow('DetailPage.ets',pp+16));
       pages.insertAdjacentHTML('beforebegin',dirRow('model',pp,fileRow('ItemSource.ets',pp+16)))}
-    if(comp){comp.nextElementSibling.insertAdjacentHTML('beforeend',fileRow('NavBar.ets',pad(comp)+16))}
     if(cg){cg.nextElementSibling.insertAdjacentHTML('afterbegin','<div class="row" style="padding-left:'+(pad(cg)+16)+'px" data-dir="1" data-open="0"><span class="tg"><svg class="i"><use href="#i-chevR"/></svg></span><span class="ico"><svg><use href="#i-folder"/></svg></span><span class="lbl">plans</span></div><div class="kids" hidden id="tree-plans"></div>')}
+    if(ent){var ep=pad(ent);
+      ent.insertAdjacentHTML('beforebegin',dirRowC('account',ep,dirRowC('service',ep+16,fileRow('AccountService.ets',ep+32)),'#i-module')
+        +dirRowC('common',ep,dirRowC('components',ep+16,fileRow('NavBar.ets',ep+32)+fileRow('PriceTag.ets',ep+32)),'#i-module'));
+      ent.nextElementSibling.insertAdjacentHTML('afterend',dirRowC('feature_cart',ep,dirRowC('pages',ep+16,fileRow('CartPage.ets',ep+32)),'#i-module'));
+    }
   })();
-  function treeMark(name,cls){var r=findRow(name);if(r){r.classList.remove('vcs-mod','vcs-add','vcs-out');r.classList.add(cls);flash(r)}}
+  /* 让某一行露出来：沿路把收起的目录都打开 */
+  function reveal(r){
+    var k=r&&r.parentElement;
+    while(k&&k.classList&&k.classList.contains('kids')){
+      if(k.hidden){k.hidden=false;var h=k.previousElementSibling;if(h&&h.dataset.dir){h.dataset.open='1';var u=$('.tg use',h);if(u)u.setAttribute('href','#i-chevD')}}
+      k=k.parentElement;
+    }
+  }
+  /* 只滚指定容器，不让外层跟着滚 */
+  function scrollWithin(box,elm,center){
+    if(!box||!elm)return;var b=box.getBoundingClientRect(),r=elm.getBoundingClientRect();
+    if(!center&&r.top>=b.top+4&&r.bottom<=b.bottom-4)return;
+    box.scrollTop+=r.top-b.top-(box.clientHeight-r.height)/2;
+  }
+  function treeMark(name,cls){var r=findRow(name);if(r){reveal(r);r.classList.remove('vcs-mod','vcs-add','vcs-out');r.classList.add(cls);flash(r)}}
   function treeAdd(dir,name){var d=findRow(dir);if(!d)return;var k=d.nextElementSibling;if(!findRow(name,k)){k.insertAdjacentHTML('beforeend',fileRow(name,pad(d)+16,'vcs-add'));flash(findRow(name,k))}}
   function flash(el){if(!el)return;el.classList.remove('flash');void el.offsetWidth;el.classList.add('flash');setTimeout(function(){el.classList.remove('flash')},1500)}
 
@@ -631,6 +651,7 @@
     'pages/DetailPage.ets · 318 行',
     'pages/LoginPage.ets · 登录成功在第 26 行',
     'model/ 下还没有收藏相关的类',
+    'build-profile.json5 · 4 个模块，依赖画进计划',
     'module.json5 · 还没声明 INTERNET 权限',
     {h:'oh-package.json5 · 没装 <code>@hw-agconnect/cloud</code>',fn:readPkg},
     'agconnect-services.json · CloudDB 已开通',
@@ -675,6 +696,7 @@
       $('#plc-q').textContent=P.ready?(pending?pending+' 处，已按推荐预选':'都定了'):'写到这一步再问你';
     }
     $('#pl-run').disabled=$('#plc-run').disabled=!P.ready||P.exec||!ids.length;
+    renderMap();phoneSync();
   }
   function setState(txt,cls){
     [$('#pl-state'),$('#plc-state')].forEach(function(el){if(el){el.className='dm-pill '+(cls||'info');el.textContent=txt}});
@@ -729,7 +751,7 @@
       +'<div class="step pl-line"><svg class="i"><use href="#i-plan"/></svg>先出方案，写在编辑器「'+PLAN_FILE+'」里，能直接改；写的这会儿我接着读文件</div>'
       +'<div class="dm-card accent" id="pl-chat"><div class="dm-card-hd"><svg class="i"><use href="#i-plan"/></svg>计划 · 收藏同步<span class="grow"></span><span class="dm-pill info" id="plc-state">生成中</span></div>'
       +'<div class="dm-card-bd"><div class="ic-grid plc-grid"><div class="ic-main" id="plc-main">'
-      +'<dl class="dm-kv plc-kv" id="plc-kv"><dt>步骤</dt><dd id="plc-steps">—</dd><dt>文件</dt><dd id="plc-files">—</dd><dt>待你决定</dt><dd id="plc-q">写到这一步再问你</dd><dt>验证</dt><dd>Mate 70 Pro 真机 · MatePad 模拟器 · 单测</dd></dl>'
+      +'<dl class="dm-kv plc-kv" id="plc-kv"><dt>步骤</dt><dd id="plc-steps">—</dd><dt>文件</dt><dd id="plc-files">—</dd><dt>待你决定</dt><dd id="plc-q">写到这一步再问你</dd><dt>图</dt><dd id="plc-map">写完步骤再画</dd><dt>验证</dt><dd>Mate 70 Pro 真机 · MatePad 模拟器 · 单测</dd></dl>'
       +'</div><div class="dm-col ic-side"><div class="dm-small dm-h"><svg class="i" style="width:12px;height:12px;color:var(--ui-info)"><use href="#i-bolt"/></svg>写计划时没停</div><div class="dm-progress indet" id="plc-prog"><i></i></div><div class="ic-list" id="plc-list"></div></div></div></div>'
       +'<div class="dm-card-ft"><button class="btn primary" id="plc-run" disabled><svg class="i"><use href="#i-play"/></svg>按计划执行</button><button class="btn" id="plc-open">打开计划</button><span class="grow"></span><span class="dm-small dm-muted" id="plc-tip">在编辑器里改好再执行</span></div></div>'
       +'</div>');
@@ -744,9 +766,10 @@
     ORDER.forEach(function(id,i){setTimeout(function(){
       $('#pl-steps').insertAdjacentHTML('beforeend',stepHTML(id));k++;
       setState('生成中 · '+k+' / 6');cap2('写计划 · '+k+' / 6',Math.round(k/6*60));
-      $('#pl-writing-t').textContent=k<6?'正在写第 '+(k+1)+' 步…':'正在写风险与要你决定的…';
+      $('#pl-writing-t').textContent=k<6?'正在写第 '+(k+1)+' 步…':'正在画模块拓扑与流程图…';
       updateMeta();
     },400+i*500)});
+    setTimeout(showMap,3000);
     setTimeout(showRisks,3400);
     setTimeout(showVerify,3900);
     setTimeout(ready,4300);
@@ -776,6 +799,7 @@
     P.ready=true;
     $('#pl-writing').hidden=true;$('#pl-add').hidden=false;
     setState('待你确认','warn');cap2('等你确认计划 · 收藏同步',60,true);
+    $('#pl-phone').hidden=false;
     $('#plc-tip').textContent='在编辑器里改好再执行';
     P.pending.splice(0).forEach(function(t){var id=addStep(t,true);planLine('已把「'+esc(t)+'」加成计划第 '+stepNo(id)+' 步')});
     updateMeta();
@@ -880,7 +904,7 @@
     $$('#pl-qs .pl-q').forEach(function(qe){var q=QS.filter(function(x){return x.id===qe.dataset.q})[0];
       qe.outerHTML='<div class="pl-decided"><svg><use href="#i-checkS"/></svg><span><span class="q">'+esc(q.q)+'</span> '+esc(decidedText(q))+'</span></div>'});
     $$('#pl-verify .pl-v').forEach(function(l){var on=$('input',l).checked;$('input',l).outerHTML='<span class="px-st"><svg><use href="#i-checkS"/></svg></span>';l.classList.add(on?'todo':'skip');if(!on)$('.res',l).textContent='已跳过（你取消了）'});
-    $('#pl-run').hidden=true;$('#pl-pause').hidden=false;$('#pl-prog').hidden=false;
+    $('#pl-run').hidden=true;$('#pl-phone').hidden=true;$('#pl-pause').hidden=false;$('#pl-prog').hidden=false;
     $('#plc-run').hidden=true;$('#plc-tip').textContent='执行视图在编辑器里';
     $('#plc-main').innerHTML='<div class="plc-prog"><div class="plc-now" id="plc-now">准备执行…</div><div class="dm-progress" id="plc-bar"><i style="--v:0%"></i></div><div id="plc-devs" class="dm-col" style="gap:6px"></div></div>';
     planLine('按'+(ne?'你改过的':'')+'计划执行 · '+ids.length+' 步'+(ne?'（你改了 '+ne+' 处）':'')+' · 验证 '+P.queue.filter(function(t){return t.k==='verify'&&t.on}).length+' 项');
@@ -893,6 +917,7 @@
   function progress(){
     var total=P.queue.length,doneN=P.i,ns=stepsTotal(),cur=P.queue[P.i];
     var pct=Math.round(doneN/total*100);
+    renderMap();phoneSync();
     $('#pl-prog i').style.setProperty('--v',pct+'%');$('#plc-bar i').style.setProperty('--v',pct+'%');
     if(!cur)return;
     var label=cur.k==='step'?'第 '+(P.i+1)+' / '+ns+' 步':'验证 '+(P.i-ns+1)+' / '+(total-ns);
@@ -932,14 +957,15 @@
   function showDeviation(){
     P.devShown=true;
     var e=$('.px-step[data-id="bar"]',stepsEl);if(!e)return;
-    e.classList.add('dev');S.bar.f.unshift(['out','components/NavBar.ets']);
+    e.classList.add('dev');S.bar.f.unshift(['out','common/components/NavBar.ets']);
     $('.pl-files',e).innerHTML=S.bar.f.map(chip).join('');
-    $('.pl-main',e).insertAdjacentHTML('beforeend','<div class="px-dev"><span class="dm-pill warn"><svg><use href="#i-warn"/></svg>偏离计划 · 换了做法</span><span>顶栏不在 <code>DetailPage.ets</code> 里，是公共组件 <code>NavBar.ets</code>，另有 3 个页面在用。改成给它加 <code>showFavorite</code> 参数、只在详情页打开，别的页面不受影响；多改 1 个文件。</span></div>');
+    $('.pl-main',e).insertAdjacentHTML('beforeend','<div class="px-dev"><span class="dm-pill warn"><svg><use href="#i-warn"/></svg>偏离计划 · 换了做法</span><span>顶栏不在 <code>DetailPage.ets</code> 里，是 common HAR 的公共组件 <code>NavBar.ets</code>，feature_cart 等另 3 个页面在用。改成给它加 <code>showFavorite</code> 参数（默认关）、只在详情页打开，别的页面不受影响；多改 1 个文件，改动地图已同步标出。</span></div>');
     treeMark('NavBar.ets','vcs-out');
     var no=$('.pl-no',e).textContent;
     $('#plc-devs').insertAdjacentHTML('beforeend','<div class="plc-dev"><b>偏离计划 · 第 '+no+' 步</b>：顶栏是公共组件 NavBar.ets，改成加参数，多改 1 个文件</div>');
-    planLine('<b>偏离计划 · 第 '+no+' 步</b> 顶栏是公共组件 NavBar.ets，改成给它加 showFavorite 参数，详情页只传参数','warn');
-    updateMeta();
+    planLine('<b>偏离计划 · 第 '+no+' 步</b> 顶栏是 common HAR 的公共组件 NavBar.ets，改成给它加 showFavorite 参数，详情页只传参数','warn');
+    MAP.dev=true;
+    updateMeta();phoneSync();
   }
   function finish(){
     P.done=true;P.exec=true;
@@ -952,6 +978,7 @@
     $('#plc-bar i').style.setProperty('--v','100%');
     planLine(esc(sum));
     cap2('收藏同步 · 已完成',100);
+    renderMap();phoneSync();
   }
   $('#pl-pause').addEventListener('click',function(){
     if(P.done)return;
@@ -961,6 +988,196 @@
     else tick();
   });
   $('#pl-run').addEventListener('click',runPlan);
+
+  /* =====================================================================
+     改动地图：出计划时一起画（读 build-profile.json5 的模块依赖 + 代码调用链）
+     模块拓扑：entry / feature_cart / common HAR / account HSP / 新增的 ohpm 依赖，改动模块高亮
+     关键流程：收藏 → 登录拦截 → 云同步，跟着「未登录怎么办」的选择变
+     点节点：计划里跳到那一步 + 项目树选中那个文件
+     ===================================================================== */
+  var MAP={view:'topo',shown:false,dev:false,sel:''};
+  var ENTRY_FILES=[['store','add','model/FavoriteStore.ets'],['bar','mod','pages/DetailPage.ets'],['sync','add','service/FavoriteSync.ets'],['merge','mod','pages/LoginPage.ets'],['perm','mod','module.json5'],['test','add','test/FavoriteStore.test.ets']];
+  function r1(n){return Math.round(n*10)/10}
+  function edge(pts,cls){
+    var a=pts[pts.length-2],b=pts[pts.length-1],ang=Math.atan2(b[1]-a[1],b[0]-a[0]),L=6,W=3.2,c=Math.cos(ang),s=Math.sin(ang);
+    var bx=[b[0]-L*c,b[1]-L*s],q=pts.slice(0,-1).concat([bx]);
+    return '<path class="eg '+(cls||'')+'" d="M'+q.map(function(p){return r1(p[0])+' '+r1(p[1])}).join(' L')+'"/>'
+      +'<polygon class="ah '+(cls||'')+'" points="'+b.join(',')+' '+r1(bx[0]+W*s)+','+r1(bx[1]-W*c)+' '+r1(bx[0]-W*s)+','+r1(bx[1]+W*c)+'"/>';
+  }
+  function stState(id){var r=$('[data-id="'+id+'"]',stepsEl);if(!r)return 'gone';return r.classList.contains('done')?'done':r.classList.contains('run')?'run':''}
+  function selKey(go,file){return go+'|'+(file||'')}
+  function box(go,file,x,y,w,h,title,sub,cls,label){
+    var k=selKey(go,file);
+    return '<g class="mn '+cls+(MAP.sel===k?' sel':'')+'" data-go="'+go+'"'+(file?' data-file="'+esc(file)+'"':'')+' tabindex="0" role="button" aria-label="'+esc(label||title)+'">'
+      +'<rect class="bx" x="'+x+'" y="'+y+'" width="'+w+'" height="'+h+'" rx="6"/>'
+      +'<text class="b'+(/^@/.test(title)?' mono':'')+'" x="'+(x+12)+'" y="'+(y+17)+'">'+esc(title)+'</text>'
+      +'<text class="sub'+(/\.ets|json5/.test(sub)?' mono':'')+'" x="'+(x+12)+'" y="'+(y+32)+'">'+esc(sub)+'</text></g>';
+  }
+  function entryCounts(){
+    var add={},mod={};
+    rows().forEach(function(r){var s=S[r.dataset.id];if(s)s.f.forEach(function(f){if(/^common\//.test(f[1]))return;if(f[0]==='add')add[f[1]]=1;else if(f[0]==='mod'||f[0]==='out')mod[f[1]]=1})});
+    if(P.exec)P.queue.forEach(function(t){if(t.k==='step')S[t.id].f.forEach(function(f){if(/^common\//.test(f[1]))return;if(f[0]==='add')add[f[1]]=1;else if(f[0]==='mod'||f[0]==='out')mod[f[1]]=1})});
+    return {nm:Object.keys(mod).length,na:Object.keys(add).length};
+  }
+  function topoSVG(){
+    var dv=MAP.dev?'out':'',c=entryCounts(),h='';
+    h+=edge([[252,87],[298,87]],'')+edge([[252,145],[298,145]],dv)+edge([[252,203],[298,203]],'new')
+      +'<text class="lb" x="275" y="197" text-anchor="middle">新增</text>'
+      +edge([[375,50],[375,65]],'')+edge([[450,29],[468,29],[468,145],[451,145]],dv);
+    h+='<g class="mn chg"><rect class="bx" x="8" y="8" width="244" height="216" rx="7"/>'
+      +'<text class="b" x="20" y="28">entry</text><text class="sub" x="58" y="28">HAP · entry</text>'
+      +'<text class="sub" x="240" y="28" text-anchor="end">改 '+c.nm+' · 新建 '+c.na+'</text>'
+      +'<line class="hd-sep" x1="8" y1="38" x2="252" y2="38"/>';
+    ENTRY_FILES.forEach(function(f,i){
+      var y=44+i*28,st=stState(f[0]),no=stepNo(f[0]),k=selKey(f[0],f[2]);
+      h+='<g data-go="'+f[0]+'" data-file="'+f[2]+'" tabindex="0" role="button" aria-label="'+(no?'第 '+no+' 步 ':'已删的步骤 ')+f[2]+'" class="'+(st?'st-'+st:'')+(MAP.sel===k?' sel':'')+'">'
+        +'<rect class="fr" x="13" y="'+y+'" width="234" height="24" rx="4"/>'
+        +'<circle class="no" cx="27" cy="'+(y+12)+'" r="8"/><text class="no-t" x="27" y="'+(y+15.5)+'" text-anchor="middle">'+(st==='done'?'✓':(no||'–'))+'</text>'
+        +'<text class="k-'+f[1]+'" x="41" y="'+(y+16)+'">'+(f[1]==='add'?'新建':'改')+'</text>'
+        +'<text class="mono" x="70" y="'+(y+16)+'">'+f[2]+'</text></g>';
+    });
+    h+='</g>';
+    h+=box('feature_cart','',300,8,150,42,'feature_cart','HAP · feature · 不改','idle')
+      +box('account','',300,66,150,42,'account','HSP · 登录态 · 只读','idle')
+      +box('common','',300,124,150,42,'common',MAP.dev?'HAR · 计划外 · 改 NavBar':'HAR · 公共组件 · 不改',MAP.dev?'out':'idle')
+      +box('perm','oh-package.json5',300,182,150,42,'@hw-agconnect/cloud','ohpm 包 · 新增依赖','new','@hw-agconnect/cloud 新增依赖，第 '+(stepNo('perm')||'–')+' 步');
+    return h;
+  }
+  function flowSVG(){
+    var login=P.q.guest==='login',h='',n2,n3,n4;
+    if(login){n2=['merge','pages/LoginPage.ets','登录拦截 · 拉起登录','LoginPage.ets'];n3=['merge','pages/LoginPage.ets','登录后回来收藏','LoginPage.ets:26'];n4=['store','model/FavoriteStore.ets','只存已登录用户','FavoriteStore.ets']}
+    else{n2=['store','model/FavoriteStore.ets','先存本地','FavoriteStore.ets'];n3=['merge','pages/LoginPage.ets','登录拦截 · 提示登录','LoginPage.ets'];n4=['merge','pages/LoginPage.ets','登录成功 · 合并本地','LoginPage.ets:26']}
+    function nd(a,x,y){var st=stState(a[0]);return box(a[0],a[1]+'#'+y,x,y,176,38,(st==='done'?'✓ ':'')+a[2],a[3],'chg'+(st==='gone'?' st-gone':''))}
+    h+=edge([[110,44],[110,56]],'')+edge([[110,100],[110,130]],'')+'<text class="lb" x="118" y="119">已登录</text>'
+      +edge([[174,78],[282,78]],'')+'<text class="lb" x="228" y="72" text-anchor="middle">未登录</text>'
+      +edge([[370,97],[370,116]],'')+edge([[370,154],[370,173]],'')
+      +edge([[282,192],[240,192],[240,149],[198,149]],'')+edge([[110,168],[110,186]],'new');
+    h+=nd(['bar','pages/DetailPage.ets','点收藏','DetailPage.ets · 顶栏'],22,6);
+    var dk=selKey('account','');
+    h+='<g class="mn idle'+(MAP.sel===dk?' sel':'')+'" data-go="account" tabindex="0" role="button" aria-label="已登录？读 account HSP"><polygon class="bx" points="110,56 174,78 110,100 46,78"/><text class="b" x="110" y="82" text-anchor="middle">已登录？</text></g>';
+    h+=nd(n2,282,59)+nd(n3,282,116)+nd(n4,282,173)
+      +nd(['sync','service/FavoriteSync.ets','云同步 · TaskPool','FavoriteSync.ets'],22,130)
+      +box('perm','module.json5',22,186,176,38,'CloudDB','module.json5 · 网络权限','new','CloudDB，第 '+(stepNo('perm')||'–')+' 步');
+    return h;
+  }
+  function renderMap(){
+    if(!MAP.shown)return;
+    var svg=$('#pl-svg'),f=document.activeElement&&svg.contains(document.activeElement)?document.activeElement.getAttribute('aria-label'):null;
+    svg.innerHTML=MAP.view==='topo'?topoSVG():flowSVG();
+    svg.setAttribute('aria-label',MAP.view==='topo'?'模块拓扑图':'关键流程图');
+    if(f){var back=$$('[aria-label]',svg).filter(function(x){return x.getAttribute('aria-label')===f})[0];if(back)back.focus()}
+  }
+  function mapTip(html,go){var t=$('#pl-maptip');t.innerHTML='<svg class="i"><use href="#i-'+(go?'arrowR':'cursor')+'"/></svg><span>'+html+'</span>';t.classList.toggle('go',!!go);flash(t)}
+  function selectTree(name){
+    var r=findRow(name);if(!r)return;reveal(r);
+    $$('#tree .row.sel').forEach(function(x){x.classList.remove('sel')});r.classList.add('sel');
+    scrollWithin($('#tree-slot'),r,true);flash(r);
+  }
+  function jumpStep(id){var r=$('[data-id="'+id+'"]',stepsEl);if(!r)return null;scrollWithin($('#pl-doc'),r,true);flash(r);return r}
+  function mapGo(go,file){
+    MAP.sel=selKey(go,file);file=(file||'').split('#')[0];
+    if(S[go]){
+      var r=jumpStep(go),fn=file.split('/').pop();
+      if(!r)mapTip('这一步你删了 · <code>'+esc(fn)+'</code> 这次不会改');
+      else mapTip('第 <b>'+stepNo(go)+'</b> 步 · '+esc(S[go].t)+' · <code>'+esc(fn)+'</code> 已在项目树选中',1);
+      selectTree(fn);
+    }else if(go==='account'){
+      jumpStep('merge');selectTree('AccountService.ets');
+      mapTip('account HSP 只读：第 <b>'+(stepNo('merge')||'–')+'</b> 步调 <code>AccountService.isLogin()</code>，不改它',1);
+    }else if(go==='feature_cart'){
+      selectTree('CartPage.ets');
+      mapTip('feature_cart 不改；它也依赖 common HAR'+(MAP.dev?'，NavBar 新参数默认关，购物车页不受影响':'，要动 common 会先标出来'),1);
+    }else if(go==='common'){
+      if(MAP.dev){jumpStep('bar');selectTree('NavBar.ets');mapTip('计划外 · 第 <b>'+stepNo('bar')+'</b> 步：顶栏在 common HAR 的 <code>NavBar.ets</code>，改成加 <code>showFavorite</code> 参数',1)}
+      else{selectTree('common');mapTip('common HAR 不改 · entry 和 feature_cart 都依赖它，执行时发现要动会标成计划外',1)}
+    }
+    renderMap();
+  }
+  function showMap(){
+    MAP.shown=true;$('#pl-sec-map').hidden=false;renderMap();
+    $('#pl-writing-t').textContent='正在写风险与要你决定的…';
+    var m=$('#plc-map');if(m)m.textContent='模块拓扑 · 收藏流程，在计划里';
+  }
+  $('#pl-mapseg').addEventListener('click',function(e){
+    var b=e.target.closest('button');if(!b)return;MAP.view=b.dataset.v;
+    $$('button',this).forEach(function(x){var on=x===b;x.classList.toggle('on',on);x.setAttribute('aria-selected',on?'true':'false')});
+    $('#pl-mapsrc').innerHTML=MAP.view==='topo'?'按 <code>build-profile.json5</code> · 4 个模块 + 1 个新依赖':'按调用链 · 跟着你的选择变';
+    renderMap();
+  });
+  $('#pl-svg').addEventListener('click',function(e){var g=e.target.closest('[data-go]');if(g)mapGo(g.dataset.go,g.dataset.file)});
+  $('#pl-svg').addEventListener('keydown',function(e){if(e.key!=='Enter'&&e.key!==' ')return;var g=e.target.closest('[data-go]');if(g){e.preventDefault();mapGo(g.dataset.go,g.dataset.file)}});
+
+  /* =====================================================================
+     应用接续：在等你的时候，把计划摘要推到同一华为账号的手机上
+     手机上点「确认执行」→ 这边接着跑；执行进度回到手机的实况窗
+     ===================================================================== */
+  var PH={shown:false};
+  function sumNow(){
+    var ids=rows().map(function(r){return r.dataset.id}),add={},mod={};
+    ids.forEach(function(id){S[id].f.forEach(function(f){if(f[0]==='add')add[f[1]]=1;else if(f[0]==='mod'||f[0]==='out')mod[f[1]]=1})});
+    return {n:ids.length,nm:Object.keys(mod).length,na:Object.keys(add).length,ne:Object.keys(P.edits).length,nv:$$('#pl-verify .pl-v input:checked').length};
+  }
+  function curLabel(){
+    var ns=stepsTotal(),cur=P.queue[P.i],total=P.queue.length;
+    if(!cur)return {t:'收尾',v:100};
+    return {t:cur.k==='step'?'第 '+(P.i+1)+' / '+ns+' 步':'验证 '+(P.i-ns+1)+' / '+(total-ns),s:cur.k==='step'?S[cur.id].t:VERIFY.filter(function(v){return v.id===cur.id})[0].dev,v:Math.round(P.i/total*100)};
+  }
+  function phoneSync(){
+    if(!PH.shown)return;
+    var card=$('#hp-card'),live=$('#hp-live'),h='';
+    if(!P.exec){
+      var s=sumNow();live.hidden=true;card.classList.remove('ok');
+      h='<div class="ah"><span class="ico">DE</span><span>DevEco Studio · 来自 MateBook Fold</span><span class="grow"></span><span>刚刚</span></div>'
+        +'<h4>计划等你确认</h4><div class="rq">'+esc($('#pl-h1').textContent)+'</div>'
+        +'<ul><li><i>步骤</i><span>'+s.n+' 步 · 改 '+s.nm+' 个文件，新建 '+s.na+' 个'+(s.ne?' · 你改了 '+s.ne+' 处':'')+'</span></li>'
+        +QS.map(function(q){return '<li><i>'+(q.id==='guest'?'未登录':'冲突')+'</i><span>'+esc(decidedText(q))+'</span></li>'}).join('')
+        +'<li><i>验证</i><span>'+s.nv+' 项 · Mate 70 Pro 真机优先</span></li></ul>'
+        +'<div class="flowl">'+(P.q.guest==='login'?'点收藏 → 登录拦截 → 回来收藏 → 云同步':'点收藏 → 存本地 → 登录拦截 → 合并 → 云同步')+'</div>'
+        +'<div class="acts"><button class="s" id="hp-edit">回电脑改</button><button class="p" id="hp-ok">确认执行</button></div>';
+    }else if(!P.done){
+      var c=curLabel();live.hidden=false;live.classList.remove('ok');$('#hp-live-t').textContent='按计划 '+c.t.replace(/ /g,'');$('#hp-live-rg').style.setProperty('--v',c.v+'%');card.classList.remove('ok');
+      h='<div class="ah"><span class="ico">DE</span><span>DevEco Studio · 实况窗</span><span class="grow"></span><span>'+(P.paused?'已暂停':'执行中')+'</span></div>'
+        +'<h4>按计划执行 · '+esc(c.t)+'</h4><div class="pr"><b style="--v:'+c.v+'%"></b></div><div class="now">'+esc(c.s||'')+'</div>'
+        +(MAP.dev?'<div class="dv">偏离 1 处：顶栏在 common HAR 的 NavBar.ets，改成加参数</div>':'');
+    }else{
+      var ns=stepsTotal(),von=P.queue.filter(function(t){return t.k==='verify'&&t.on}).length;
+      live.hidden=false;live.classList.add('ok');$('#hp-live-t').textContent='收藏同步 · 已完成';card.classList.add('ok');
+      h='<div class="ah"><span class="ico">DE</span><span>DevEco Studio · 实况窗</span><span class="grow"></span><span>10:34</span></div>'
+        +'<h4>做完了 · '+ns+' / '+ns+' 步</h4><div class="pr"><b style="--v:100%"></b></div>'
+        +'<div class="okl">✓ 验证 '+von+' / '+von+' 通过'+(MAP.dev?' · 偏离 1 处':'')+'</div><div class="rq" style="margin:4px 0 0">回到电脑看改动与偏离原因</div>';
+    }
+    card.innerHTML=h;
+  }
+  function phoneBtn(){var b=$('#pl-phone');b.classList.toggle('sent',PH.shown);$('span',b).textContent=PH.shown?'已推到手机':'到手机上确认'}
+  function phoneShow(){
+    var d=$('#hp-dock'),hp=$('#hp');
+    if(!PH.shown){PH.shown=true;d.hidden=false;d.classList.add('enter');void d.offsetWidth;d.classList.remove('enter')}
+    hp.classList.remove('buzz');void hp.offsetWidth;hp.classList.add('buzz');
+    var c=$('#hp-card'),nc=c.cloneNode(false);c.parentNode.replaceChild(nc,c);
+    phoneSync();phoneBtn();
+  }
+  function phoneHide(){PH.shown=false;$('#hp-dock').hidden=true;phoneBtn()}
+  $('#pl-phone').addEventListener('click',function(){
+    if(!P.ready||P.exec)return;
+    var first=!PH.shown;
+    $('.body').insertAdjacentHTML('beforeend','<div class="hp-beam" id="hp-beam"><svg class="i"><use href="#i-plan"/></svg>计划摘要 → Mate 70 Pro</div>');
+    setTimeout(function(){var b=$('#hp-beam');if(b)b.remove()},1150);
+    setTimeout(phoneShow,380);
+    if(first)planLine('已推到 HUAWEI Mate 70 Pro（同一华为账号 · 应用接续）：手机上点「确认执行」，这边接着跑；在电脑上改了，手机上的摘要跟着变');
+    cap2('等你确认计划 · 已推到手机',60,true);
+  });
+  $('#hp-card').parentNode.addEventListener('click',function(e){
+    if(e.target.closest('#hp-ok')){
+      if(!P.ready||P.exec)return;
+      planLine('你在 HUAWEI Mate 70 Pro 上确认了计划 · 这边接着执行，进度同步到手机实况窗');
+      runPlan();
+    }else if(e.target.closest('#hp-edit')){
+      $('#hp-card').innerHTML='<div class="ah"><span class="ico">DE</span><span>DevEco Studio</span></div><h4>已在电脑上打开计划</h4><div class="rq" style="margin:0">改好在电脑上点「按计划执行」</div>';
+      openPlanTab();var d=$('#pl-doc');d.scrollTop=0;flash($('#pl-h1'));
+      setTimeout(phoneHide,900);
+    }
+  });
+  $('#hp-x').addEventListener('click',phoneHide);
 
   /* 标注跟着对话滚动：目标整块露出来才显示，免得半截的框压到面板标题上 */
   if('IntersectionObserver' in window){
@@ -973,7 +1190,10 @@ DemoGuide.init([
   {"target": "#mode-btn", "kind": "click", "pos": "bottom", "label": "切到 Plan 规划，再点发送"},
   {"target": "#pl-run", "kind": "click", "pos": "left", "label": "改完计划，点这里按计划执行"},
   {"target": "#ic-card.gd-in", "kind": "change", "pos": "top", "label": "收起变成一步"},
-  {"target": "#pl-state", "kind": "change", "pos": "bottom", "label": "执行到第几步、偏离几处，这里跟着变"}
+  {"target": "#pl-state", "kind": "change", "pos": "bottom", "label": "执行到第几步、偏离几处，这里跟着变"},
+  {"target": "#pl-svg g[data-go=\"bar\"]", "kind": "click", "pos": "right", "label": "点图里的节点，跳到那一步和文件"},
+  {"target": "#pl-phone", "kind": "click", "pos": "bottom", "label": "不在电脑前？推到手机上确认"},
+  {"target": "#hp-ok", "kind": "click", "pos": "left", "label": "在手机上点确认，IDE 接着执行"}
 ]);
 })();
 </script>

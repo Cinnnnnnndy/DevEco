@@ -381,7 +381,7 @@
   .ph-s{position:relative;width:100%;height:100%;border-radius:31px;overflow:hidden;background:linear-gradient(165deg,#c9dcff 0%,#e3d9ff 48%,#fbe3ec 100%);color:#1b1d22;font-family:var(--font-ui);font-size:11px;line-height:15px}
   .ph-s.app{background:#f3f4f7}
   .ph-hole{position:absolute;top:9px;left:50%;width:11px;height:11px;margin-left:-5.5px;border-radius:50%;background:#050506;z-index:6}
-  .ph-sb{position:relative;z-index:5;height:30px;display:flex;align-items:center;gap:6px;padding:0 18px 0 22px;font-size:11px;font-weight:600}
+  .ph-sb{position:relative;z-index:5;height:30px;display:flex;align-items:center;gap:5px;padding:0 18px 0 20px;font-size:11px;font-weight:600}
   .ph-sb .grow{flex:1}
   .ph-sb .ico{display:inline-flex;align-items:center;gap:4px}
   .ph-sb .sig{display:inline-flex;align-items:flex-end;gap:1px;height:9px}
@@ -1388,6 +1388,200 @@
     })();
   }
 
+  /* ---------------- 系统意图：开放给鸿蒙智能体框架 ---------------- */
+  var PHONE_CLI='小艺 · Mate 70 Pro';
+  CLI_LG[PHONE_CLI]=['艺','linear-gradient(135deg,#7B5CFF,#2E8BFF 60%,#27C8D8)'];
+  HUMAN['intent.InstallLatest']=['在它自己这台手机上装最新包','会先增量构建 entry，用调试证书签名，再经无线调试装到发起请求的这台手机。只用调试证书，不碰发布证书。'];
+  var INTENTS=[
+    {id:'BuildProject',cn:'构建',say:'帮我把 entry 打个包',tools:['deveco.build'],reg:true,n:3},
+    {id:'InstallLatest',cn:'装机',say:'在我这台手机上装最新包',tools:['deveco.build','deveco.sign.auto','deveco.install'],reg:true,n:5},
+    {id:'CaptureScreen',cn:'截图',say:'把模拟器的当前画面发我',tools:['deveco.screenshot'],reg:true,n:2},
+    {id:'CollectLogs',cn:'抓日志',say:'把刚才的卡顿日志发我',tools:['deveco.hilog','deveco.faultlog'],reg:true,n:4},
+    {id:'RunJourney',cn:'跑旅程',say:'跑一遍登录到下单',tools:['deveco.launch','deveco.input','deveco.screenshot'],reg:true,n:1},
+    {id:'AppCheck',cn:'上架自检',say:'现在能提交上架吗',tools:['deveco.appcheck'],reg:false,n:0}
+  ];
+  var CALLERS=[
+    {id:'xy-pc',nm:'小艺 · 本机',sub:'MateBook Fold · HarmonyOS 6.1',scope:'全部意图',lg:['艺','xy'],on:true},
+    {id:'xy-phone',nm:'小艺 · HUAWEI Mate 70 Pro',sub:'同一华为账号 · 无线调试已配对',scope:'全部意图',lg:['艺','xy'],on:true},
+    {id:'ag-rel',nm:'智能体「版本发布助手」',sub:'团队发布在小艺智能体平台',scope:'只开放 构建 · 抓日志',lg:['发','#E0643B'],on:true},
+    {id:'ag-any',nm:'其他鸿蒙智能体',sub:'第一次调用某个意图时问你',scope:'逐个询问',lg:['智','#5A5F69'],on:true}
+  ];
+  var ILOG=[
+    {who:'版本发布助手',lg:['发','#E0643B'],it:'BuildProject',ms:'今天 09:12',st:'ok',steps:[['hvigor assembleHap','BUILD SUCCESSFUL · 18.4s']]},
+    {who:'小艺 · 本机',lg:['艺','xy'],it:'CaptureScreen',ms:'昨天 20:31',st:'ok',steps:[['截取 Pura X Emulator','已存到 图库 › DevEco']]}
+  ];
+  var itById=function(id){return find(INTENTS,id)};
+  function itPol(it){
+    var xs=it.tools.map(function(t){return TOOL[t]});
+    if(xs.some(function(x){return !x.on}))return 'off';
+    if(xs.some(function(x){return x.pol==='deny'}))return 'deny';
+    if(xs.some(function(x){return x.pol==='ask'}))return 'ask';
+    return 'allow';
+  }
+  function grantOf(tool,cli){return GR.filter(function(r){return r.tool===tool&&r.cli===cli&&!r.revoked})[0]}
+  function lgSpan(lg,cls){return '<span class="lgt'+(cls?' '+cls:'')+(lg[1]==='xy'?' xylg':'')+'"'+(lg[1]==='xy'?'':' style="background:'+lg[1]+'"')+'>'+lg[0]+'</span>'}
+  function renderIntents(){
+    var h='<div class="cap-gh">DevEco Studio 意图<span class="sub">HarmonyOS 智能体框架 · insight_intent.json</span><span class="grow"></span><span class="sub dm-mono">'+INTENTS.filter(function(i){return i.reg}).length+' / '+INTENTS.length+'</span></div>';
+    INTENTS.forEach(function(it){
+      var p=itPol(it),tag;
+      var g=grantOf('intent.'+it.id,PHONE_CLI);
+      if(p==='off')tag='<span class="dm-pill muted need">工具已关闭</span>';
+      else if(p==='deny')tag='<span class="dm-pill err need">不允许</span>';
+      else if(p==='ask')tag=g?'<span class="dm-pill '+(g.scope==='always'?'ok':'info')+' need">手机 · '+(g.scope==='always'?'始终允许':'本会话')+'</span>':'<span class="dm-pill warn need"><svg><use href="#i-lock"/></svg>需确认</span>';
+      else tag='<span class="dm-pill muted need">直接允许</span>';
+      h+='<div class="it-r'+(it.reg?'':' off')+'" data-it="'+it.id+'"><div style="min-width:0"><div class="l1"><b>'+esc(it.cn)+'</b><code>'+it.id+'</code></div>'
+        +'<div class="l2">「'+esc(it.say)+'」 · <span class="tl">'+it.tools.map(function(t){return t.replace('deveco.','')}).join(' → ')+'</span></div></div>'
+        +tag+'<span class="n">'+it.n+' 次</span><button class="tgl'+(it.reg?' on':'')+'" data-itsw="'+it.id+'" aria-pressed="'+it.reg+'" title="'+(it.reg?'撤下':'注册')+'这个意图"></button></div>';
+    });
+    $('#it-tbl').innerHTML=h;
+    $('#it-cnt').textContent='已注册 '+INTENTS.filter(function(i){return i.reg}).length+' / '+INTENTS.length;
+    $('#it-callers').innerHTML=CALLERS.map(function(c){
+      return '<div class="ic'+(c.on?'':' off')+'" data-caller="'+c.id+'">'+lgSpan(c.lg)+'<span class="tx"><b>'+esc(c.nm)+'</b><span>'+esc(c.sub)+'</span></span><span class="dm-pill '+(c.id==='ag-any'?'warn':'muted')+'">'+esc(c.scope)+'</span><button class="tgl'+(c.on?' on':'')+'" data-csw="'+c.id+'" aria-pressed="'+c.on+'" title="'+(c.on?'不再允许':'允许')+'它调用"></button></div>';
+    }).join('');
+    $('#ic-cnt').textContent=CALLERS.filter(function(c){return c.on}).length+' 个来源可调用';
+    renderItLog();
+  }
+  function renderItLog(){
+    $('#it-log').innerHTML=ILOG.map(function(e){
+      var it=itById(e.it);
+      var pill=e.st==='ok'?'<span class="dm-pill ok">完成</span>':e.st==='run'?'<span class="dm-pill info"><span class="spin" style="width:10px;height:10px"></span>进行中</span>':e.st==='wait'?'<span class="dm-pill warn"><svg><use href="#i-lock"/></svg>等你授权</span>':'<span class="dm-pill err">未执行</span>';
+      return '<div class="il'+(e.st==='wait'?' wait':e.st==='err'?' err':'')+(e.live?' live':'')+'">'
+        +'<div class="h">'+lgSpan(e.lg)+'<b>'+esc(e.who)+'</b><span class="dm-muted">·</span><span>'+esc(it.cn)+'</span><code>'+it.id+'</code><span class="grow"></span><span class="ms">'+esc(e.ms)+'</span>'+pill+'</div>'
+        +(e.say?'<div class="nt" style="color:var(--ui-fg)">「'+esc(e.say)+'」</div>':'')
+        +e.steps.map(function(s){return '<div class="st">'+(s[2]==='run'?'<span class="spin"></span>':s[2]==='err'?'<svg style="color:var(--ui-error)"><use href="#i-err"/></svg>':'<svg><use href="#i-check"/></svg>')+'<span>'+esc(s[0])+'</span><span class="d">'+esc(s[1])+'</span></div>'}).join('')
+        +(e.note?'<div class="nt"><svg><use href="#i-shield"/></svg>'+e.note+'</div>':'')+'</div>';
+    }).join('');
+    ILOG.forEach(function(e){e.live=false});
+    $('#il-cnt').textContent='今天 '+(ILOG.length+6)+' 次';
+  }
+  $('#it-tbl').addEventListener('click',function(e){
+    var b=e.target.closest('[data-itsw]');if(!b)return;
+    var it=itById(b.dataset.itsw);it.reg=!it.reg;renderIntents();
+    toast(it.reg?'已注册「'+it.cn+'」意图':'已撤下「'+it.cn+'」意图',it.reg?'小艺和鸿蒙智能体听到「'+it.say+'」这类说法，会交给 DevEco Studio。':'再对小艺说「'+it.say+'」，不会再找到 DevEco Studio。');
+  });
+  $('#it-callers').addEventListener('click',function(e){
+    var b=e.target.closest('[data-csw]');if(!b)return;
+    var c=find(CALLERS,b.dataset.csw);c.on=!c.on;renderIntents();
+    toast(c.on?'允许 '+c.nm+' 调用':'不再允许 '+c.nm+' 调用',c.on?'它能按意图调用已注册的 DevEco 能力，写入类仍按 权限 页的策略问你。':'它发来的意图会直接被拒绝。');
+  });
+  $('#it-goperm').addEventListener('click',function(){setView('perm');});
+
+  /* 手机画面 */
+  var PH={phase:'home',xy:[],lw:null},itBusy=false;
+  function sbHTML(){
+    var cap=PH.lw?(PH.lw.done?'<span class="ph-cap ok">✓</span>':'<span class="ph-cap">'+PH.lw.pct+'%</span>'):'';
+    return '<div class="ph-sb"><span>10:58</span>'+cap+'<span class="grow"></span><span class="ico"><span class="sig"><i style="height:3px"></i><i style="height:5px"></i><i style="height:7px"></i><i style="height:9px"></i></span><svg style="width:11px;height:11px"><use href="#i-wifi"/></svg><span class="bat"><i></i></span></span></div>';
+  }
+  function lwHTML(){
+    var L=PH.lw;if(!L)return '';
+    var names=['找最新包','构建','签名','安装'];
+    if(L.done)return '<div class="lw"><div class="r"><span class="lg">DE</span><span class="grow"><b>已装好 MyApplication</b><span class="s">1.0.0 debug · 10:58 构建</span></span><button class="open" data-ph="open">打开</button></div></div>';
+    return '<div class="lw"><div class="r"><span class="lg">DE</span><span class="grow"><b>DevEco · 装最新包</b><span class="s">'+esc(L.text)+'</span></span><span class="pct">'+L.pct+'%</span></div><div class="bar"><i style="width:'+L.pct+'%"></i></div>'
+      +'<div class="dots">'+names.map(function(n,i){return '<span class="'+(i<L.step?'ok':i===L.step?'on':'')+'">'+(i<L.step?'✓ ':'')+n+'</span>'}).join('')+'</div></div>';
+  }
+  function xyHTML(){
+    if(!PH.xy.length)return '';
+    var busy=PH.xy.some(function(m){return m.k==='w'});
+    return '<div class="xy">'+PH.xy.map(function(m){
+      if(m.k==='u')return '<div class="xy-u">'+esc(m.t)+'</div>';
+      if(m.k==='a')return '<div class="xy-a">'+m.t+'</div>';
+      if(m.k==='w')return '<div class="xy-w"><span class="sp"></span>'+esc(m.t)+'</div>';
+      if(m.k==='c')return '<div class="xy-c"><span class="lg">DE</span><span class="tx"><b>DevEco Studio · '+esc(m.it.cn)+'</b><span>在 MateBook Fold 上执行</span></span></div>';
+      if(m.k==='log')return '<div class="xy-log"><div class="w">W decode cover on UI thread 38ms</div><div class="w">W frame dropped ×6 · fling</div><div>FaultLog 无崩溃 · AppFreeze 0</div><div>→ ListPage.ets:28 loadCover()</div></div><div class="xy-acts"><button data-ph="code">在电脑上打开 ListPage.ets:28</button></div>';
+      return '';
+    }).join('')+'<span class="xy-orb'+(busy?'':' idle')+'"></span></div>';
+  }
+  function homeHTML(){
+    var apps=[['相机','#3C3F46','◉'],['图库','#E0643B','▦'],['设置','#6C7280','⚙'],['应用市场','#D8343E','A'],['畅连','#1E9E5A','✆'],['备忘录','#E8A317','✎'],['天气','#2E8BFF','☀'],['MyApp','#2C8DDD','M']];
+    return '<div class="ph-card"><span class="big">10:58</span><span class="sub">9月24日 周四 · 晴 22°</span></div>'
+      +'<div class="ph-apps">'+apps.map(function(a){return '<span class="ph-app"><i style="background:'+a[1]+'">'+a[2]+'</i>'+a[0]+'</span>'}).join('')+'</div>'
+      +'<div class="ph-dock"><i style="background:#1E9E5A"></i><i style="background:#2E8BFF"></i><i style="background:#F2F3F5"></i><i style="background:#7B5CFF"></i></div>';
+  }
+  function appHTML(){
+    var it=[['#F4B28E','深夜食堂 · 第 3 集','刚刚更新 · 1.2 万看过'],['#9CC2FF','城市骑行路线','周末推荐 · 3.4 km'],['#B8E0C2','折叠屏上的双栏阅读','一多适配 · 2 分钟'],['#D9C2FF','元服务：扫码点单','免安装 · 服务卡片'],['#FFD58A','碰一碰分享照片','隔空传送 · 鸿蒙']];
+    return '<div class="pa-h">发现</div><div class="pa-q">搜索</div>'+it.map(function(x){return '<div class="pa-it"><i style="background:'+x[0]+'"></i><span><b>'+x[1]+'</b><span>'+x[2]+'</span></span></div>'}).join('');
+  }
+  function renderPhone(){
+    var s=$('#ph-s');
+    s.className='ph-s'+(PH.phase==='app'?' app':'')+(PH.xy.length&&PH.phase!=='app'?' dim':'');
+    s.innerHTML='<span class="ph-hole"></span>'+sbHTML()+(PH.phase==='app'?appHTML():homeHTML())+lwHTML()+(PH.phase==='app'?'':xyHTML())+'<span class="ph-gb"></span>';
+    var link=$('#it-link');link.style.opacity=find(CALLERS,'xy-phone').on?'':'.5';
+  }
+  $('#ph-s').addEventListener('click',function(e){
+    var b=e.target.closest('[data-ph]');if(!b)return;
+    if(b.dataset.ph==='open'){PH.phase='app';PH.xy=[];PH.lw.opened=true;renderPhone();toast('MyApplication 已在手机上打开','EntryAbility onForeground · 刚装的 1.0.0 (debug)。');}
+    if(b.dataset.ph==='code'){openTab('ListPage.ets');toast('已在 DevEco Studio 打开 ListPage.ets:28','loadCover() 在 UI 线程同步解码封面，可挪到 TaskPool。');}
+  });
+  function phSay(k,t){PH.xy.push({k:k,t:t});renderPhone();}
+  function phUnwait(){PH.xy=PH.xy.filter(function(m){return m.k!=='w'});}
+  function itEnd(){itBusy=false;$('#it-say-install').disabled=false;$('#it-say-log').disabled=false;}
+  function sayIntent(id){
+    if(itBusy)return;
+    if(authCb){toast('电脑上还有一个授权没处理','先在弹窗里选一个，再让小艺发请求。');return;}
+    itBusy=true;$('#it-say-install').disabled=true;$('#it-say-log').disabled=true;
+    var it=itById(id),caller=find(CALLERS,'xy-phone');
+    PH.phase='home';PH.lw=null;PH.xy=[{k:'u',t:it.say}];renderPhone();
+    setTimeout(function(){
+      var e={who:PHONE_CLI,lg:['艺','xy'],it:it.id,ms:'刚刚',st:'run',say:it.say,steps:[],live:true};
+      var stop=function(msg,note){phSay('a',msg);e.st='err';e.note=note;if(ILOG.indexOf(e)<0)ILOG.unshift(e);renderItLog();itEnd();};
+      if(!caller.on){stop('MateBook Fold 上的 DevEco Studio 没允许这台手机调用。','来源「小艺 · HUAWEI Mate 70 Pro」已关闭，意图被拒绝');return;}
+      if(!it.reg){stop('没找到能处理「'+esc(it.cn)+'」的应用：DevEco Studio 没注册这个意图。','意图 '+it.id+' 未注册');return;}
+      var p=itPol(it);
+      if(p==='off'||p==='deny'){stop('电脑上的权限设置不允许这样做，没有执行。',p==='off'?'MCP 能力清单里有工具是关闭的':'权限 页里有工具设成了「不允许」');return;}
+      PH.xy.push({k:'a',t:'好的，交给 <b>MateBook Fold</b> 上的 DevEco Studio。'});PH.xy.push({k:'c',it:it});
+      ILOG.unshift(e);
+      var go=function(note){e.st='run';e.note=note||'';phUnwait();renderPhone();renderItLog();(id==='InstallLatest'?runInstall:runLogs)(it,e);};
+      if(p==='ask'){
+        var g=grantOf('intent.'+it.id,PHONE_CLI);
+        if(g){bumpGrant('intent.'+it.id,PHONE_CLI);go('按已授权记录放行（'+(g.scope==='always'?'始终允许':'本会话')+'），没再问你');return;}
+        PH.xy.push({k:'w',t:'等你在电脑上确认…'});e.st='wait';renderPhone();renderItLog();
+        askIntent(it,function(dec){
+          if(dec==='deny'){phUnwait();stop('电脑上拒绝了这次请求。','你拒绝了，小艺收到 permission_denied');return;}
+          if(dec==='session'||dec==='always'){addGrant('intent.'+it.id,PHONE_CLI,dec);renderIntents();go('已记住：'+(dec==='always'?'始终允许':'本会话内不再问')+'，可在 权限 页撤销');}
+          else go('仅这一次，下次还会问你');
+        });
+      }else{renderPhone();go('默认策略「直接允许」，只读，不改文件和设备');}
+    },700);
+  }
+  function askIntent(it,cb){
+    authCb=cb;var hm=HUMAN['intent.'+it.id];
+    $('#dlg-title').textContent='小艺（HUAWEI Mate 70 Pro）想'+hm[0];
+    $('#dlg-desc').textContent=hm[1];$('#dlg-desc').hidden=false;
+    var perms=it.tools.map(function(t){return TOOL[t].perms}).join('');
+    $('#dlg-needs').innerHTML='需要'+permChips(perms);
+    $('#dlg-args').textContent='intent: '+it.id+'（鸿蒙系统意图）\nfrom:   小艺 · HUAWEI Mate 70 Pro（同一华为账号）\ndevice: 发起请求的这台手机 · 无线调试 192.168.3.27:5555\ntools:  '+it.tools.join(' → ');
+    $('#mask').hidden=false;
+  }
+  function bumpTools(names){names.forEach(function(n){TOOL[n].n++});renderCaps();}
+  function runSteps(e,steps,onStep,done){
+    var i=0;
+    (function next(){
+      if(i>=steps.length){done();return;}
+      var s=steps[i];e.steps.push([s[0],s[1],'run']);renderItLog();onStep&&onStep(i,s);
+      setTimeout(function(){e.steps[i][2]='ok';if(s[3])e.steps[i][1]=s[3];i++;renderItLog();next();},s[2]);
+    })();
+  }
+  function runInstall(it,e){
+    var steps=[['找最新包','entry 源码 10:51 有改动，比 10:42 的包新',500,'需要增量构建'],['增量构建 entry','hvigor assembleHap …',1500,'BUILD SUCCESSFUL · 6.2s · 4.3 MB'],['调试签名','deveco.sign.auto …',600,'entry-default-signed.hap'],['无线安装','hdc -t 192.168.3.27:5555 install …',1300,'install bundle successfully']];
+    var pct=[8,62,74,96],txt=['找到 entry 模块的改动','增量构建 entry · hvigor','用调试证书签名','经无线调试安装到这台手机'];
+    PH.lw={pct:3,step:0,text:'准备中'};renderPhone();
+    runSteps(e,steps,function(i){PH.lw.step=i;PH.lw.pct=pct[i];PH.lw.text=txt[i];renderPhone();},function(){
+      PH.lw.step=4;PH.lw.pct=100;PH.lw.done=true;
+      phSay('a','装好了：<b>MyApplication 1.0.0（debug）</b>，10:58 构建。点上面的实况窗就能打开。');
+      e.st='ok';e.ms='刚刚 · 3.9s';it.n++;bumpTools(it.tools);renderIntents();itEnd();
+      toast('小艺的请求已完成','最新包已装到 HUAWEI Mate 70 Pro，手机上的实况窗可以直接打开。');
+    });
+  }
+  function runLogs(it,e){
+    runSteps(e,[['读取 HiLog','domain 0xA0001 · 近 10 分钟',700,'14 条 · 2 条 W'],['读取 FaultLog','近 10 分钟',600,'无崩溃 · 0 条 AppFreeze']],null,function(){
+      PH.xy.push({k:'a',t:'这是刚才滑动 ListPage 时的日志，卡顿出在封面解码：'});PH.xy.push({k:'log'});renderPhone();
+      e.st='ok';e.ms='刚刚 · 1.3s';it.n++;bumpTools(it.tools);renderIntents();itEnd();
+    });
+  }
+  $('#it-say-install').addEventListener('click',function(){sayIntent('InstallLatest');});
+  $('#it-say-log').addEventListener('click',function(){sayIntent('CollectLogs');});
+  $('#it-reset').addEventListener('click',function(){if(itBusy)return;PH={phase:'home',xy:[],lw:null};renderPhone();});
+
   /* ---------------- 状态栏 ---------------- */
   function renderStatus(){
     var slot=$('#status-slot');if(!slot)return;
@@ -1403,7 +1597,7 @@
   document.getElementById('code').innerHTML=DemoFrame.code('ListPage.ets',{cur:28});
   DemoFrame.init({device:'HUAWEI Mate 70 Pro',deviceIcon:'#i-phone',pos:'1:1',
     stripeRight:[{right:'notifications',icon:'#i-tw-notifications',title:'Notifications'},{right:'agent',icon:'#i-genie',title:'DevEco Code'},{right:'docs',icon:'#i-hdoc',title:'HarmonyOS Docs'},{right:'web',icon:'#i-puzzle',title:'Extensions'},{more:1},{right:'devices',icon:'#i-phone',title:'Device Manager'}],
-    onReady:function(){renderCaps();renderClis();renderSk();renderMk();renderTl();renderPerm();renderGrants();renderModels();setTimeout(function(){scanLocal(['ollama','lmstudio'],true);},1200);}});
+    onReady:function(){renderCaps();renderClis();renderSk();renderMk();renderTl();renderPerm();renderGrants();renderModels();renderIntents();renderPhone();setTimeout(function(){scanLocal(['ollama','lmstudio'],true);},1200);}});
 
   DemoGuide.init([
     {target:'#btn-sim',kind:'click',pos:'bottom',label:'点这里：外部 Agent 调一遍'},
@@ -1411,7 +1605,10 @@
     {target:'.cap[data-tool="deveco.install"] .tgl',kind:'click',pos:'left',label:'关掉某项再模拟试试'},
     {target:'#rp-seg',kind:'click',pos:'right',label:'会话里试：技能自动调入'},
     {target:'#view-seg',kind:'click',pos:'bottom',label:'MCP 市场一键装 · 权限可撤销'},
-    {target:'.tab[data-file="Models"]',kind:'click',pos:'right',label:'模型：内置 / 自带 Key / 本地'}
+    {target:'.tab[data-file="Models"]',kind:'click',pos:'right',label:'模型：内置 / 自带 Key / 本地'},
+    {target:'#view-seg [data-v="intent"]',kind:'click',pos:'top',label:'系统意图：小艺和鸿蒙智能体也能调'},
+    {target:'#it-say-install',kind:'click',pos:'bottom',label:'点这里：在手机上对小艺说'},
+    {target:'#it-phone',kind:'change',pos:'left',label:'实况窗走完构建 → 签名 → 安装'}
   ]);
 })();
 </script>
