@@ -136,7 +136,7 @@ window.DemoFrame = (function(){
   /* ---------- 项目树 ---------- */
   var ICON={folder:'#i-folder',module:'#i-module',sourceRoot:'#i-sourceRoot',testRoot:'#i-testRoot',resRoot:'#i-resRoot',ets:'#i-ets',json:'#i-json',gitignore:'#i-gitignore',hvigor:'#i-hvigor',text:'#i-text',cog:'#i-cog',lib:'#i-lib',scratch:'#i-scratch',md:'#i-text',ts:'#i-ts'};
   var TREE=[
-    ['module','MyApplication',{b:1,hint:'~\\DevEcoStudioProjects\\MyApplication',open:1},[
+    ['module','MyApplication',{b:1,hint:'~/DevEcoStudioProjects/MyApplication',open:1},[
       ['folder','.codegenie',{},[['json','codegenie.json']]],
       ['folder','.hvigor',{tint:1},[['folder','cache'],['text','.hvigor.lock']]],
       ['folder','.idea',{},[['text','.gitignore'],['text','misc.xml'],['text','modules.xml']]],

@@ -51,15 +51,15 @@
   /* ---------- 桌面与设备 ---------- */
   .desk{flex:1;min-width:0;position:relative;overflow:hidden;
     background:radial-gradient(ellipse 70% 60% at 50% 38%,color-mix(in srgb,var(--ui-fg) 7%,var(--ui-editor-bg)),var(--ui-editor-bg))}
-  .fold{position:absolute;left:0;right:0;top:17px;margin:0 auto;width:max-content;transition:opacity .22s,transform .22s}
-  .fold.morph{opacity:0;transform:scale(.97)}
+  .fdev{position:absolute;left:0;right:0;top:17px;margin:0 auto;width:max-content;transition:opacity .22s,transform .22s}
+  .fdev.morph{opacity:0;transform:scale(.97)}
   .half{position:relative;background:#101113;box-shadow:0 18px 50px rgba(0,0,0,.35),inset 0 0 0 1px rgba(255,255,255,.06)}
   .half .scr{position:relative;width:100%;height:100%;overflow:hidden;border-radius:9px;
     background:radial-gradient(ellipse 90% 80% at 20% 0%,color-mix(in srgb,var(--ui-accent) 30%,var(--ui-editor-bg)),transparent 70%),
                radial-gradient(ellipse 80% 90% at 100% 100%,color-mix(in srgb,var(--ui-success) 18%,var(--ui-editor-bg)),var(--ui-editor-bg))}
   .half.up{width:1280px;height:966px;padding:12px;border-radius:22px}
   .hinge,.half.lo{display:none}
-  .stage[data-pose="hover"] .fold{top:18px}
+  .stage[data-pose="hover"] .fdev{top:18px}
   .stage[data-pose="hover"] .half.up{width:800px;height:540px;padding:10px;border-radius:18px 18px 5px 5px}
   .stage[data-pose="hover"] .hinge{display:block;width:776px;height:12px;margin:0 auto;border-radius:0 0 7px 7px;background:linear-gradient(#34363b,#0c0d0f 70%)}
   .stage[data-pose="hover"] .half.lo{display:block;width:800px;height:540px;padding:10px;border-radius:5px 5px 18px 18px;transform-origin:50% 0;transform:perspective(3600px) rotateX(46deg)}
@@ -281,7 +281,7 @@
   .stk span{color:var(--ui-fg-info);overflow:hidden;text-overflow:ellipsis;min-width:0;font-family:var(--font-code);font-size:10.5px}
   .stk.cur{background:var(--ui-selection)}
   .stk.fw b,.stk.fw span{color:var(--ui-fg-disabled);font-weight:400}
-  .keys{display:grid;grid-template-columns:1fr;gap:6px;padding:2px 8px 6px}
+  .dkeys{display:grid;grid-template-columns:1fr;gap:6px;padding:2px 8px 6px}
   .dkey{height:36px;border-radius:8px;border:1px solid var(--ui-component-border);background:var(--ui-field-bg);color:var(--ui-fg);display:flex;align-items:center;justify-content:center;gap:6px;font-size:12px;line-height:16px;cursor:pointer;padding:0}
   .dkey:hover{background:var(--ui-hover)}
   .dkey:active{background:var(--ui-action-pressed)}
@@ -293,7 +293,7 @@
   .tw-bottom .dbg{border-radius:0}
   .stage[data-pose="flat"] .dbg-grid{grid-template-columns:minmax(0,1.4fr) minmax(0,1fr) 150px}
 
-  @media (prefers-reduced-motion:reduce){.fold,.ide-win,.vkbd,.dock .dbg{transition:none}.win.enter,.hr-pill,.toast,.hud{animation:none}}
+  @media (prefers-reduced-motion:reduce){.fdev,.ide-win,.vkbd,.dock .dbg{transition:none}.win.enter,.hr-pill,.toast,.hud{animation:none}}
 </style>
 </head>
 <body>
@@ -317,8 +317,9 @@
   <aside class="rail" id="rail" aria-label="设备与姿态">
     <div class="rl-dev">
       <div class="nm"><svg class="i"><use href="#i-fold"/></svg>MateBook Fold</div>
-      <div class="os">本机 · 18″ · HarmonyOS 6.1</div>
+      <div class="os">本机 · HarmonyOS 6.1</div>
       <dl id="rl-spec">
+        <dt>屏幕</dt><dd>18″ 柔性 OLED</dd>
         <dt>展开</dt><dd>3296×2472 · 4:3</dd>
         <dt>悬停</dt><dd>2472×1648 ×2 · 3:2</dd>
       </dl>
@@ -338,7 +339,7 @@
   </aside>
 
   <main class="desk" id="desk">
-    <div class="fold" id="fold">
+    <div class="fdev" id="fold">
       <!-- 上屏（展开时 = 整块屏） -->
       <div class="half up"><div class="scr" id="scr-up">
         <div class="sysbar"><b>DevEco Studio</b><span class="grow"></span>
@@ -436,7 +437,7 @@
                 <div class="dbg-col"><div class="dbg-h">变量</div><div class="dbg-list" id="dbg-vars"></div></div>
                 <div class="dbg-col"><div class="dbg-h">调用栈</div><div class="dbg-list" id="dbg-stack"></div></div>
                 <div class="dbg-col"><div class="dbg-h">手机窗口按键</div>
-                  <div class="keys">
+                  <div class="dkeys">
                     <button type="button" class="dkey" data-key="back" title="发返回键：看暂停后返回会不会丢购物车"><svg><use href="#i-back"/></svg>返回</button>
                     <button type="button" class="dkey" data-key="rotate" title="转横屏：继续后看横屏布局"><svg><use href="#i-rotate"/></svg>旋转</button>
                   </div></div>
@@ -655,6 +656,8 @@
       +'<div class="grid" style="--cols:4">'+GOODS.slice(0,4).map(cardHTML).join('')+'</div><div class="gbar"><i></i></div>';
   }
   function ov(kind){return $('#win-'+kind+' [data-ov]')}
+  /* 一次性的提示放完就删：窗口换屏（挪 DOM）时动画会重放 */
+  document.addEventListener('animationend',function(e){var t=e.target;if(t.classList&&(t.classList.contains('toast')||t.classList.contains('hud')||t.classList.contains('hr-pill')))t.remove()});
   function flash(kind,label){
     var w=$('#win-'+kind);w.classList.remove('reload');void w.offsetWidth;w.classList.add('reload');
     var o=ov(kind);$$('.hr-pill',o).forEach(function(x){x.remove()});
@@ -733,7 +736,7 @@
       +'<div class="amsg" id="a-run"><div class="step info"><svg class="i"><use href="#i-fold"/></svg><span>本机：<b>MateBook Fold</b> · HarmonyOS 6.1 · 展开 180°</span></div>'
       +'<div class="dm-card" id="run-card"><div class="dm-card-hd"><svg class="i"><use href="#i-run"/></svg>在本机运行<span class="grow"></span><span class="dm-pill ok">免连线 · 免模拟器</span></div>'
       +'<div class="dm-card-bd"><div class="tgt"><svg><use href="#i-phone"/></svg><b>Mate 70 Pro 窗口</b><span>1260×2844 · sm</span></div>'
-      +'<div class="tgt"><svg><use href="#i-tablet"/></svg><b>MatePad Pro 13.2 窗口</b><span>2880×1920 · lg</span></div>'
+      +'<div class="tgt"><svg><use href="#i-tablet"/></svg><b>MatePad Pro 窗口</b><span>2880×1920 · lg</span></div>'
       +'<div class="dm-small dm-muted">不用连手机、不开模拟器：两种屏直接在这台电脑上跑，改完保存就刷新。</div></div>'
       +'<div class="dm-card-ft" id="run-ft"><button class="btn primary" id="btn-run"><svg class="i"><use href="#i-run"/></svg>在本机运行</button><span class="dm-small dm-muted">折到悬停：上屏写码，下屏运行</span></div></div></div>';
     $('#btn-run').addEventListener('click',function(){run()});
@@ -1013,7 +1016,7 @@
     slot.innerHTML='<span class="dm-capsule'+(kind==='wait'?' wait':'')+'" id="cap">'+dot+'<span>'+esc(t)+'</span></span>';
   }
   function syncScene(){
-    var sc=S.pen>0?4:(S.paused?3:(S.pose==='hover'?2:1));S.scene=sc;
+    var sc=S.paused?3:(S.pen>0?4:(S.pose==='hover'?2:1));S.scene=sc;
     $$('#rl-scenes button').forEach(function(b){var n=+b.dataset.scene;b.classList.toggle('on',n===sc);
       b.classList.toggle('done',n<sc||(n===2&&S.span!==12&&sc!==2)||(n===3&&S.debugged&&sc!==3)||(n===4&&S.pen===5&&sc!==4))});
     /* 标注：只亮当下能做的那一两条 */
