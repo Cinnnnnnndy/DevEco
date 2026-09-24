@@ -53,30 +53,27 @@
       + '</svg><span class="sketch-label">原型 · 待排期</span></div>';
   }
 
-  /* ---- 卡片 ---- */
+  /* ---- 卡片：参照 DevEco Studio 官网「新增特性」——渐变底上嵌一张截图，下面居中大标题 ---- */
   function card(it){
     var v = it.view || (it.href ? 'ready' : 'sketch'), vinfo = VIEW[v] || VIEW.doc;
-    var primary = it.href
-      ? '<a class="primary" href="'+url(it.href)+'">打开<svg><use href="#i-ext"/></svg></a>'
-      : '<span class="ph">待排期，暂无链接</span>';
     var links = (it.links||[]).map(function(l){ return '<a href="'+url(l.href)+'">'+esc(l.label)+'</a>'; }).join('');
     var text = ((it.no||'')+' '+it.title+' '+(it.subtitle||'')+' '+it.desc+' '+(it.tags||[]).join(' ')+' '+(it.mark||'')+' '+(it.note||'')+' '+it._group.title).toLowerCase();
     if(it.key) text += ' 重点 '+String(it.key).toLowerCase();
-    return '<article class="card '+v+(it.key?' key':'')+'"'+(it.no?' id="card-'+esc(it.no)+'"':'')+' data-view="'+v+'" data-key="'+(it.key?'1':'')+'" data-cat="'+esc(it._group.id)+'" data-href="'+(it.href?url(it.href):'')+'" data-text="'+esc(text)+'">'
-      + thumbHTML(it)
-      + '<div class="body">'
-      + '<div class="row1"><span class="cat-lbl"><span class="dot"></span>'+esc(it._group.title)+(it.no?' <span class="no">'+esc(it.no)+'</span>':'')+'</span>'
+    var chips = (it.no?'<span class="no">'+esc(it.no)+'</span>':'')
       + (it.key?'<span class="keyb" title="规划重点">重点</span>':'')
-      + '<span class="grow"></span>'
-      + '<span class="status '+v+'">'+vinfo.label+'</span></div>'
+      + (v!=='ready'?'<span class="status '+v+'">'+vinfo.label+'</span>':'');
+    return '<article class="card '+v+(it.key?' key':'')+'"'+(it.no?' id="card-'+esc(it.no)+'"':'')+' data-view="'+v+'" data-key="'+(it.key?'1':'')+'" data-cat="'+esc(it._group.id)+'" data-href="'+(it.href?url(it.href):'')+'" data-text="'+esc(text)+'">'
+      + '<div class="hero">'+thumbHTML(it)+'</div>'
+      + '<div class="body">'
+      + (chips?'<div class="chips">'+chips+'</div>':'')
       + '<h4 class="title">'+(it.href?'<a href="'+url(it.href)+'">'+esc(it.title)+'</a>':esc(it.title))+'</h4>'
-      + '<div class="links">'+primary+links+'</div>'
+      + (links?'<div class="links">'+links+'</div>':'')
       + '</div></article>';
   }
 
   /* ---- 分组渲染（全部视图下逐段展示；选中某个分类时只留那一段） ---- */
   groupsEl.innerHTML = C.groups.map(function(g){
-    return '<section class="grp" id="'+esc(g.id)+'">'
+    return '<section class="grp" id="'+esc(g.id)+'" data-g="'+esc(g.id)+'">'
       + '<div class="ghead"><h3>'+esc(g.title)+'</h3><span class="cnt" data-cnt></span></div>'
       + '<div class="grid">'+g.items.map(card).join('')+'</div></section>';
   }).join('') + '<div class="empty" id="empty" hidden>没有匹配的条目</div>';
