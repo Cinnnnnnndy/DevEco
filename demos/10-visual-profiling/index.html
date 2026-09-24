@@ -20,8 +20,12 @@
   .dm-split.v.prof-split{grid-template-rows:minmax(0,1fr) 320px}
   .ed-top{display:flex;flex-direction:column;min-height:0}
   .ed-top .code-wrap{flex:1;min-height:0}
-  .code-wrap .dm-pill.loc-pill{position:absolute;right:16px;top:8px;z-index:3;box-shadow:var(--ui-shadow);display:inline-flex;width:auto;height:18px}
-  .loc-pill svg{width:12px;height:12px}
+  /* 定位条放在面包屑这一行的右端，不压代码 */
+  .crumb-row{flex:none;display:flex;align-items:center;gap:8px;height:26px;padding-right:10px;border-top:1px solid var(--ui-border);min-width:0}
+  .crumb-row .breadcrumbs{flex:1;min-width:0;border-top:0;overflow:hidden;white-space:nowrap}
+  .crumb-row .dm-pill.loc-pill{flex:0 1 auto;min-width:0;max-width:62%;display:inline-flex;height:18px;overflow:hidden}
+  .loc-pill svg{width:12px;height:12px;flex:none}
+  .loc-pill #loc-text{min-width:0;overflow:hidden;text-overflow:ellipsis}
   /* Profiler 视图区 */
   .prof{display:flex;flex-direction:column;min-height:0;background:var(--ui-editor-bg)}
   .prof-body{flex:1;display:flex;min-height:0}
@@ -29,7 +33,9 @@
   .prof-r{flex:1;min-width:0;display:flex;flex-direction:column;gap:8px;padding:10px 12px;overflow:hidden}
   .prof-r .dm-chart{flex:1;min-height:0;overflow:hidden}
   .prof-l .dm-chart{flex:1;min-height:0;overflow:hidden}
-  .dm-pane-hd .dm-seg{align-self:center;margin-left:6px}
+  .dm-pane-hd .dm-seg{align-self:center;margin-left:6px;flex:none}
+  .prof > .dm-pane-hd > .dm-pill{flex:none}
+  .prof > .dm-pane-hd > .dm-pill.muted{flex:0 1 auto;min-width:0;overflow:hidden}
   .dm-pane-hd .dm-seg button{height:20px;padding:0 10px;font-size:11px}
   .dm-pane-hd .dm-pill svg{width:12px;height:12px}
   .flame-ft{display:block;font-size:var(--fs-sm);line-height:var(--lh-sm);color:var(--ui-fg-info);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -51,6 +57,9 @@
   .dm-chart .line.after{stroke:var(--ui-success)}
   .dm-legend i.after{background:var(--ui-success)}
   .dm-legend{margin-top:auto}
+  .prof .ch-t b{white-space:nowrap;flex:none}
+  .prof .ch-t > span:not(.grow):not(.dm-pill){min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .prof .ch-t .dm-muted{flex:none}
   /* Agent 面板 */
   .amsg .step.ok svg.i{color:var(--ui-success)}
   .amsg .step.run svg.i{color:var(--ui-accent)}
@@ -58,6 +67,97 @@
   .chips-row .chip.on{background:var(--ui-selection);border-color:var(--ui-accent)}
   .chips-row .chip[disabled]{opacity:.5}
   .md code{color:var(--ui-fg)}
+
+  /* ---------- 并发视图：主线程 / TaskPool / Worker / 异步回调 ---------- */
+  .dm-split.v.prof-split.conc{grid-template-rows:minmax(0,1fr) 360px}
+  .prof-conc{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px;padding:8px 12px 10px;overflow:hidden}
+  .cc-top{display:flex;align-items:center;gap:6px;height:24px;flex:none;min-width:0}
+  .cc-top .grow{flex:1}
+  .cc-scan{display:inline-flex;align-items:center;gap:6px;color:var(--ui-fg-info);font-size:var(--fs-sm)}
+  .cc-found{font-size:var(--fs-sm);color:var(--ui-fg-info);white-space:nowrap;margin-right:2px}
+  .cc-found b{color:var(--ui-fg)}
+  .cc-issues{display:flex;gap:6px;min-width:0;overflow:hidden}
+  .cc-iss > .t{min-width:0;overflow:hidden;text-overflow:ellipsis}
+  .cc-iss .dm-dot{flex:none}
+  .cc-iss{flex:0 1 auto;min-width:0;display:inline-flex;align-items:center;gap:5px;height:22px;padding:0 8px;border:1px solid var(--ui-component-border);border-radius:6px;background:var(--ui-field-bg);color:var(--ui-fg);font:inherit;font-size:var(--fs-sm);white-space:nowrap;cursor:pointer}
+  .cc-iss:hover{background:var(--ui-hover)}
+  .cc-iss.on{background:var(--ui-selection);border-color:var(--ui-accent)}
+  .cc-iss .ok-mk{display:inline-flex;color:var(--ui-success)}
+  .cc-iss .ok-mk svg{width:12px;height:12px}
+  #conc.fresh .cc-issues{animation:ccin .35s ease-out}
+  @keyframes ccin{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}}
+
+  .cc-tl{flex:1;min-height:0;display:grid;grid-template-columns:78px minmax(0,1fr);
+    grid-template-rows:18px minmax(28px,1.5fr) repeat(5,minmax(16px,1fr)) minmax(26px,1.35fr) minmax(26px,1.35fr);
+    border:1px solid var(--ui-code-border);border-radius:var(--arc);overflow:hidden;background:var(--ui-editor-bg)}
+  .cc-lh{grid-column:1;background:var(--ui-bg);border-right:1px solid var(--ui-code-border);padding:0 8px;display:flex;flex-direction:column;justify-content:center;gap:1px;
+    font-size:11px;line-height:13px;font-weight:600;color:var(--ui-fg);min-width:0;overflow:hidden;white-space:nowrap}
+  .cc-lh small{font-weight:400;font-size:10px;line-height:12px;color:var(--ui-fg-info);font-family:var(--font-code);overflow:hidden;text-overflow:ellipsis}
+  .cc-lh.r0{justify-content:center;align-items:flex-end;font-weight:400;color:var(--ui-fg-info);font-family:var(--font-code);font-size:10px}
+  .cc-lh.sep,.cc-lane.sep{border-bottom:1px solid var(--ui-code-border)}
+  .cc-under{grid-column:2;grid-row:1 / -1;position:relative;z-index:0;pointer-events:none;
+    background:repeating-linear-gradient(90deg,var(--ui-code-border) 0 1px,transparent 1px calc(100% * 50 / 270))}
+  .cc-ruler{grid-column:2;grid-row:1;position:relative;border-bottom:1px solid var(--ui-code-border);background:var(--ui-bg)}
+  .cc-rl{position:absolute;top:2px;left:calc(var(--a) * 100% / 270);transform:translateX(-50%);font-family:var(--font-code);font-size:10px;line-height:14px;color:var(--ui-fg-info);white-space:nowrap}
+  .cc-rl.first{transform:translateX(3px)}
+  .cc-rl.end{transform:translateX(calc(-100% - 4px));color:var(--ui-fg)}
+  .cc-drop{position:absolute;top:1px;left:calc(33.4 * 100% / 270);height:15px;padding:0 5px;border-radius:4px;font-size:10px;line-height:15px;font-weight:600;white-space:nowrap;
+    background:color-mix(in srgb,var(--ui-error) 22%,var(--ui-bg));color:var(--ui-error);display:none}
+  #conc.analyzed .cc-drop{display:block}
+  .cc-lane{grid-column:2;position:relative;min-width:0}
+  .cc-main{background:repeating-linear-gradient(90deg,color-mix(in srgb,var(--ui-fg-info) 16%,transparent) 0 1px,transparent 1px calc(100% * 16.667 / 270))}
+  .cc-band{position:absolute;top:0;bottom:0;left:calc(33.4 * 100% / 270);width:calc(16.7 * 100% / 270);background:color-mix(in srgb,var(--ui-error) 14%,transparent);display:none}
+  #conc.analyzed .cc-band{display:block}
+  .cc-over{grid-column:2;grid-row:2 / -1;position:relative;z-index:3;pointer-events:none}
+  .cc-mk{position:absolute;top:0;bottom:0;left:calc(var(--a) * 100% / 270);border-left:1px dashed var(--ui-fg-info)}
+  .cc-dot{position:absolute;bottom:3px;left:calc(var(--a) * 100% / 270);width:5px;height:5px;margin-left:-2.5px;border-radius:50%;background:var(--ui-accent);pointer-events:none;z-index:1}
+
+  /* 色块：优先级只用强调色的深浅（有序），问题一律红框 */
+  .sg{position:absolute;left:calc(var(--a) * 100% / 270);width:calc((var(--b) - var(--a)) * 100% / 270);min-width:2px;top:5px;bottom:5px;box-sizing:border-box;
+    border-radius:3px;display:flex;align-items:center;padding:0 3px;overflow:hidden;cursor:pointer;
+    font-family:var(--font-code);font-size:10px;line-height:12px;color:var(--ui-fg);white-space:nowrap;--pa:50%}
+  .sg > span{min-width:0;overflow:hidden;text-overflow:ellipsis}
+  .sg.nolbl > span{visibility:hidden}
+  .sg:hover{filter:brightness(1.14)}
+  .cc-tp .sg{top:2px;bottom:2px}
+  .sg.p-h{--pa:82%}.sg.p-m{--pa:50%}.sg.p-l{--pa:26%}
+  .sg.run{background:var(--ui-tag-bg);box-shadow:inset 0 0 0 1px var(--ui-component-border)}
+  .sg.ex{background:color-mix(in srgb,var(--ui-accent) var(--pa),transparent)}
+  .sg.p-h.ex{color:var(--ui-accent-fg)}
+  .sg.q{background:repeating-linear-gradient(135deg,color-mix(in srgb,var(--ui-accent) var(--pa),transparent) 0 2px,transparent 2px 6px),color-mix(in srgb,var(--ui-accent) 8%,transparent)}
+  .sg.wait{background:repeating-linear-gradient(135deg,color-mix(in srgb,var(--ui-fg-info) 45%,transparent) 0 2px,transparent 2px 5px)}
+  .sg.pend{background:color-mix(in srgb,var(--ui-accent) 6%,transparent);border:1px dashed color-mix(in srgb,var(--ui-accent) 55%,transparent);top:4px;bottom:8px}
+  #conc.analyzed .sg.bad.run{background:color-mix(in srgb,var(--ui-error) 45%,transparent);box-shadow:inset 0 0 0 1.5px var(--ui-error)}
+  #conc.analyzed .sg.bad.q{outline:1px dashed var(--ui-error);outline-offset:-1px}
+  #conc.analyzed .sg.bad.q > span b{color:var(--ui-error)}
+  #conc.analyzed .sg.wait{background:repeating-linear-gradient(135deg,color-mix(in srgb,var(--ui-error) 55%,transparent) 0 2px,transparent 2px 5px),color-mix(in srgb,var(--ui-error) 10%,transparent)}
+  #conc.analyzed .sg.cause{box-shadow:inset 0 0 0 1.5px var(--ui-warning)}
+  .sg > span b{font-weight:600}
+  .cc-tl.focus .sg:not(.rel){opacity:.32}
+  .sg.sel{box-shadow:0 0 0 1.5px var(--ui-editor-bg),0 0 0 3px var(--ui-accent)!important;z-index:2;opacity:1!important}
+
+  .cc-verdict{flex:none;display:flex;align-items:center;gap:10px;min-height:44px;padding:5px 8px 5px 10px;border:1px solid var(--ui-code-border);border-radius:var(--arc);background:var(--ui-bg)}
+  .cc-verdict .ico{width:16px;height:16px;flex:none;color:var(--ui-fg-info)}
+  .cc-verdict.err .ico{color:var(--ui-error)}.cc-verdict.warn .ico{color:var(--ui-warning)}.cc-verdict.ok .ico{color:var(--ui-success)}
+  .cc-verdict .vt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+  .cc-verdict .v1{font-weight:600;font-size:var(--fs-para);line-height:var(--lh-para);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .cc-verdict .v2{font-size:var(--fs-sm);line-height:var(--lh-sm);color:var(--ui-fg-info);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .cc-verdict .v2 .loc{font-family:var(--font-code);font-size:11px;color:var(--ui-link);cursor:pointer}
+  .cc-verdict .v2 .loc:hover{text-decoration:underline}
+  .cc-verdict .btn{flex:none;height:26px;white-space:nowrap}
+  .cc-verdict .btn svg.i{width:14px;height:14px}
+  .cc-verdict .btn.sent{background:color-mix(in srgb,var(--ui-success) 16%,transparent);border-color:color-mix(in srgb,var(--ui-success) 55%,transparent);color:var(--ui-success);opacity:1}
+  .cc-verdict .btn[disabled]{cursor:default}
+  .cc-verdict .btn .spin{width:10px;height:10px;border-color:currentColor;border-right-color:transparent}
+
+  .dm-toast.cc-toast{bottom:34px;width:380px}
+  .dm-toast.cc-toast .th svg.ok{color:var(--ui-success)}
+  .dm-toast.cc-toast .th .abtn svg{width:16px;height:16px;color:var(--ui-icon)}
+  .dm-toast.cc-toast .tb{display:flex;flex-direction:column;gap:4px}
+  .dm-toast.cc-toast .tb .q{font-weight:600}
+  .dm-toast.cc-toast .tb .s{font-size:var(--fs-sm);line-height:var(--lh-sm);color:var(--ui-fg-info)}
+  .dm-toast.cc-toast .tb code{font-family:var(--font-code);font-size:11px;background:var(--ui-tag-bg);padding:1px 4px;border-radius:4px;color:var(--ui-fg)}
+  @media (prefers-reduced-motion:reduce){#conc.fresh .cc-issues{animation:none}}
 </style>
 </head>
 <body>
@@ -95,12 +195,12 @@
       <div class="tabs" id="tabs"><span class="grow"></span><span class="tab-tools"><span class="toggle on" title="图上选中什么，代码就跳到哪一行"><svg class="i"><use href="#i-link"/></svg>图 ↔ 代码联动</span><button class="abtn" title="Editor Options"><svg class="i"><use href="#i-moreV"/></svg></button></span></div>
       <div class="dm-split v prof-split">
         <div class="ed-top">
-          <div class="code-wrap"><div class="code" id="code"></div><span class="dm-pill err loc-pill" id="loc-pill"><svg><use href="#i-locate"/></svg><span id="loc-text">ListPage.ets:28 · 38 ms / 帧</span></span></div>
-          <div class="breadcrumbs" id="crumbs"></div>
+          <div class="code-wrap"><div class="code" id="code" data-for-file="ListPage.ets"></div><div class="code" id="code-il" data-for-file="ImageLoader.ets" hidden></div><div class="code" id="code-tw" data-for-file="ThumbWorker.ets" hidden></div></div>
+          <div class="crumb-row"><div class="breadcrumbs" id="crumbs"></div><span class="dm-pill err loc-pill" id="loc-pill"><svg><use href="#i-locate"/></svg><span id="loc-text">ListPage.ets:28 · 38 ms / 帧</span></span></div>
         </div>
         <div class="prof">
           <div class="dm-pane-hd"><b>Profiler</b>
-            <span class="dm-seg" id="seg"><button class="on" data-v="cpu">CPU</button><button data-v="mem">内存</button><button data-v="pow">电量</button></span>
+            <span class="dm-seg" id="seg"><button class="on" data-v="cpu">CPU</button><button data-v="mem">内存</button><button data-v="pow">电量</button><button data-v="conc">并发</button></span>
             <span class="dm-pill muted" style="margin-left:6px"><svg><use href="#i-phone"/></svg>Mate 70 Pro · 记录 #12</span>
             <span class="grow"></span>
             <span class="dm-pill ok" id="re-state"><svg><use href="#i-sync"/></svg>复测就绪 · 会用同一条记录</span>
@@ -126,6 +226,21 @@
                 <div class="dm-legend"><span><i class="before"></i>before · #12</span><span><i class="after"></i>after · #13 自动复测</span></div>
               </div>
             </div>
+            <div class="prof-conc" id="conc" hidden>
+              <div class="cc-top">
+                <span class="cc-scan" id="cc-scan"><span class="spin"></span>正在分析并发轨迹：主线程等待、TaskPool 排队、锁竞争…</span>
+                <span class="cc-found" id="cc-found" hidden>发现 <b>3</b> 处</span>
+                <span class="cc-issues" id="cc-issues" hidden></span>
+                <span class="grow"></span>
+              </div>
+              <div class="cc-tl" id="cc-tl"></div>
+              <div class="cc-verdict" id="cc-verdict">
+                <svg class="i ico" id="cc-ico"><use href="#i-info"/></svg>
+                <div class="vt"><div class="v1" id="cc-v1">轨迹已载入 · 记录 #12 · 首屏 270 ms</div><div class="v2" id="cc-v2">点任意一段，落到代码行</div></div>
+                <button class="btn primary sm" id="cc-send" hidden><svg class="i"><use href="#i-sparkle"/></svg><span>交给调优出补丁</span></button>
+                <span class="dm-pill ok" id="cc-okpill" hidden><svg><use href="#i-checkS"/></svg>这一段正常</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -143,12 +258,25 @@
       </div>
     </div>
   </div>
+  <div class="dm-toast cc-toast" id="cc-toast" role="status" hidden>
+    <div class="th"><svg class="ok"><use href="#i-checkS"/></svg><span>已发送到调优</span><span class="grow"></span><button class="abtn" id="cc-toast-x" title="Close"><svg class="i"><use href="#i-closeS"/></svg></button></div>
+    <div class="tb"><div class="q" id="cc-toast-q"></div><div class="s" id="cc-toast-s"></div></div>
+    <div class="tf"><a href="#" id="cc-toast-ok">知道了</a></div>
+  </div>
 </div>
 
 <script>
 (function(){
   var $=DemoFrame.$, $$=DemoFrame.$$, esc=DemoFrame.esc;
   document.getElementById('tree-slot').innerHTML=DemoFrame.tree({sel:'ListPage.ets'});
+  /* 工程树补两个文件：utils/ImageLoader.ets、workers/ThumbWorker.ets（并发视图会落到这里） */
+  (function(){
+    var ets=null;$$('#tree-slot .row[data-dir]').forEach(function(r){var l=$('.lbl',r);if(l&&l.textContent==='ets')ets=r;});
+    if(!ets||!ets.nextElementSibling)return;
+    function folder(name,file){return '<div class="row" style="padding-left:88px" data-dir="1" data-open="1"><span class="tg"><svg class="i"><use href="#i-chevD"/></svg></span><span class="ico"><svg><use href="#i-folder"/></svg></span><span class="lbl">'+name+'</span></div>'
+      +'<div class="kids"><div class="row" style="padding-left:104px" data-file="'+file+'"><span class="tg"></span><span class="ico"><svg><use href="#i-ets"/></svg></span><span class="lbl">'+file+'</span></div></div>';}
+    ets.nextElementSibling.insertAdjacentHTML('beforeend',folder('utils','ImageLoader.ets')+folder('workers','ThumbWorker.ets'));
+  })();
   document.getElementById('tabs').insertAdjacentHTML('afterbegin',DemoFrame.tabs([{file:'ListPage.ets',on:true}]));
   DemoFrame.init({device:'HUAWEI Mate 70 Pro',deviceIcon:'#i-phone',pos:'28:12',stripeLeft:[{left:'agent',icon:'#i-genie',title:'DevEco Code'},{left:'project',icon:'#i-tw-project',title:'Project|Alt+1'},{left:'structure',icon:'#i-tw-structure',title:'Structure|Alt+7'},{more:1},{gap:1},{bottom:'build',icon:'#i-tw-build',title:'Build'},{bottom:'log',icon:'#i-tw-device',title:'Log'},{bottom:'services',icon:'#i-tw-todo',title:'Services|Alt+8'},{bottom:'problems',icon:'#i-tw-problems',title:'Problems|Alt+6'},{bottom:'run',icon:'#i-tw-services',title:'Run|Alt+4'},{bottom:'terminal',icon:'#i-tw-terminal',title:'Terminal|Alt+F12'},{bottom:'debug',icon:'#i-info',title:'Debug|Alt+5'},{bottom:'vcs',icon:'#i-vcs',title:'Version Control|Alt+9'}],stripeRight:[{right:'notifications',icon:'#i-tw-notifications',title:'Notifications',dot:1},{right:'project',icon:'#i-tw-project',title:'Project|Alt+1'},{right:'docs',icon:'#i-hdoc',title:'HarmonyOS Docs'},{right:'inspector',icon:'#i-pen',title:'Code Review'},{right:'web',icon:'#i-puzzle',title:'Extensions'},{right:'previewer',icon:'#i-tw-preview',title:'Previewer'},{more:1},{right:'devices',icon:'#i-phone',title:'Device Manager'}],onReady:function(){
     $('#status-slot').innerHTML='<span class="dm-capsule" id="cap"><span class="dm-dot err"></span>记录 #12 · 掉帧 9 · Mate 70 Pro</span>';
@@ -171,11 +299,21 @@
   var state={patched:false,retested:false,view:'cpu',timer:null};
 
   function renderCode(){$('#code').innerHTML=DemoFrame.code('ListPage.ets',{cur:28,hl:[28],marks:{28:'warn'}});}
-  function locate(line){
-    $$('#code .ln').forEach(function(l){var on=+l.dataset.ln===line;l.classList.toggle('cur',on);l.classList.toggle('hl',on)});
-    var code=$('#code'),ln=$('#code .ln[data-ln="'+line+'"]');if(ln)code.scrollTop=Math.max(0,ln.offsetTop-code.clientHeight/2+40);
-    var p=$('#status-pos');if(p)p.textContent=line+':12';
+  /* 编辑器：按文件切标签（没开的先开一个），再跳到行 */
+  var CODE_EL={'ListPage.ets':'#code','ImageLoader.ets':'#code-il','ThumbWorker.ets':'#code-tw'};
+  function openFile(name){
+    var tb=$('#tabs .tab[data-file="'+name+'"]');
+    if(!tb){$('#tabs > .grow').insertAdjacentHTML('beforebegin',DemoFrame.tabs([{file:name}]));tb=$('#tabs .tab[data-file="'+name+'"]');}
+    if(!tb.classList.contains('on'))tb.click();
   }
+  function gotoLine(file,line,col){
+    openFile(file);
+    var code=$(CODE_EL[file]);if(!code)return;
+    $$('.ln',code).forEach(function(l){var on=+l.dataset.ln===line;l.classList.toggle('cur',on);l.classList.toggle('hl',on)});
+    var ln=$('.ln[data-ln="'+line+'"]',code);if(ln)code.scrollTop=Math.max(0,ln.offsetTop-code.clientHeight/2+40);
+    var p=$('#status-pos');if(p)p.textContent=line+':'+(col||12);
+  }
+  function locate(line){gotoLine('ListPage.ets',line,12);}
   function setPill(cls,text){var pl=$('#loc-pill');pl.className='dm-pill loc-pill '+cls;$('#loc-text').textContent=text;}
   function selectSpan(sp){
     $$('#flame span').forEach(function(x){x.classList.toggle('sel',x===sp)});
@@ -252,8 +390,16 @@
 
   /* ---------- CPU / 内存 / 电量 ---------- */
   function switchView(v){
-    state.view=v;if(state.retested){$('#ch-mem').hidden=v!=='mem';$('#ch-re').hidden=v==='mem';drawAll();}$$('#seg button').forEach(function(b){b.classList.toggle('on',b.dataset.v===v)});
+    var was=state.view,conc=v==='conc';state.view=v;
+    $$('#seg button').forEach(function(b){b.classList.toggle('on',b.dataset.v===v)});
+    $('.prof-split').classList.toggle('conc',conc);
+    $('.prof-l').hidden=conc;$('.prof-r').hidden=conc;$('#conc').hidden=!conc;
+    if(conc){enterConc();return;}
+    if(state.retested){$('#ch-mem').hidden=v!=='mem';$('#ch-re').hidden=v==='mem';}
     $('#flame-box').hidden=v!=='cpu';$('#mem-note').hidden=v!=='mem';$('#pow-note').hidden=v!=='pow';
+    drawAll();
+    /* 从并发视图切回来：编辑器回到火焰图选中的那一格 */
+    if(was==='conc'){var cur=$('#flame span.sel')||$('#flame span[data-hot]');if(cur)selectSpan(cur);}
   }
   $('#seg').addEventListener('click',function(e){var b=e.target.closest('button');if(b)switchView(b.dataset.v)});
 
@@ -291,7 +437,7 @@
       rs.className='dm-pill ok';rs.innerHTML='<svg><use href="#i-checkS"/></svg>已复测 · 记录 #13 · 掉帧 0';
       $('#cap').innerHTML='<span class="dm-dot ok"></span>记录 #13 · 掉帧 0 · 已复测';
       $('#ch-mem').hidden=true;$('#ch-re').hidden=false;drawAll();
-      renderFlame();var hot=$('#flame span[data-hot]');if(hot)selectSpan(hot);
+      renderFlame();var hot=$('#flame span[data-hot]');if(hot){if(state.view==='conc')hot.classList.add('sel');else selectSpan(hot);}
     },1500);
   });
   $('#chip-stack').addEventListener('click',function(){
@@ -301,11 +447,257 @@
     var sc=$('.ai-scroll');sc.scrollTop=sc.scrollHeight;
   });
 
+  /* =====================================================================
+     并发视图（ArkTS）：主线程 / TaskPool（排队 → 执行，按优先级着色）/ Worker / 异步回调
+     点任意一段落到代码行；自动标出主线程等 TaskPool、排队过长、@Sendable 锁等待；结论可交给调优
+     ===================================================================== */
+  var hs=function(c,t){return '<span class="'+c+'">'+t+'</span>'};
+  var K=function(t){return hs('k',t)},S=function(t){return hs('s',t)},N=function(t){return hs('n',t)},Cm=function(t){return hs('c',t)},
+      Fn=function(t){return hs('f',t)},P=function(t){return hs('p',t)},Ty=function(t){return hs('ty',t)},Me=function(t){return hs('m',t)};
+  var LT='&lt;',GT='&gt;';
+  DemoFrame.FILES['ImageLoader.ets']={path:['entry','src','main','ets','utils'],crumbs:['ImageLoader','get'],lines:[
+    [K('import')+' { '+Ty('taskpool')+', '+Ty('ArkTSUtils')+', '+Ty('collections')+' } '+K('from')+' '+S("'@kit.ArkTS'")+';'],
+    [K('import')+' { '+Ty('image')+' } '+K('from')+' '+S("'@kit.ImageKit'")+';'],
+    [K('import')+' { '+Ty('ItemSource')+' } '+K('from')+' '+S("'../model/ItemSource'")+';'],
+    [K('import')+' { '+Ty('decodeBatch')+', '+Ty('readIndex')+', '+Ty('COVER_SIZE')+' } '+K('from')+' '+S("'./decoders'")+';'],
+    [''],
+    [Me('@Concurrent')],
+    [K('async function')+' '+Fn('decodeImage')+'('+P('buf')+': '+Ty('ArrayBuffer')+', '+P('c')+': '+Ty('CoverCache')+', '+P('id')+': '+K('number')+') {',{fold:1}],
+    ['  '+K('const')+' '+P('src')+' = '+P('image')+'.'+Fn('createImageSource')+'('+P('buf')+');'],
+    ['  '+K('const')+' '+P('pm')+' = '+K('await')+' '+P('src')+'.'+Fn('createPixelMap')+'({ '+P('desiredSize')+': '+P('COVER_SIZE')+' });'],
+    ['  '+K('await')+' '+P('c')+'.'+Fn('put')+'('+P('id')+', '+P('pm')+');  '+Cm('// 写回缓存，要拿锁')],
+    ['}'],
+    [''],
+    [Me('@Sendable')],
+    [K('export class')+' '+Ty('CoverCache')+' {',{fold:1}],
+    ['  '+K('private')+' '+P('lock')+' = '+K('new')+' '+Ty('ArkTSUtils')+'.'+P('locks')+'.'+Ty('AsyncLock')+'();'],
+    ['  '+K('private')+' '+P('map')+' = '+K('new')+' '+Ty('collections')+'.'+Ty('Map')+LT+K('number')+', '+Ty('image')+'.'+Ty('PixelMap')+GT+'();'],
+    [''],
+    ['  '+K('async')+' '+Fn('put')+'('+P('id')+': '+K('number')+', '+P('pm')+': '+Ty('image')+'.'+Ty('PixelMap')+'): '+Ty('Promise')+LT+K('void')+GT+' {',{fold:1}],
+    ['    '+K('await')+' '+K('this')+'.'+P('lock')+'.'+Fn('lockAsync')+'(() =&gt; { '+K('this')+'.'+P('map')+'.'+Fn('set')+'('+P('id')+', '+P('pm')+'); });'],
+    ['  }'],
+    ['  '+K('async')+' '+Fn('trim')+'('+P('max')+': '+K('number')+'): '+Ty('Promise')+LT+K('void')+GT+' {  '+Cm('// ThumbWorker 每 20 张调一次'),{fold:1}],
+    ['    '+K('await')+' '+K('this')+'.'+P('lock')+'.'+Fn('lockAsync')+'(() =&gt; {',{fold:1}],
+    ['      '+K('while')+' ('+K('this')+'.'+P('map')+'.'+P('size')+' &gt; '+P('max')+') { '+K('this')+'.'+Fn('evictOldest')+'(); }  '+Cm('// 整段持锁')],
+    ['    });'],
+    ['  }'],
+    ['}'],
+    [''],
+    [K('export class')+' '+Ty('ImageLoader')+' {',{fold:1}],
+    ['  '+K('private')+' '+P('cache')+': '+Ty('CoverCache')+' = '+K('new')+' '+Ty('CoverCache')+'();'],
+    ['  '+K('private')+' '+P('src')+': '+Ty('ItemSource')+' = '+Ty('ItemSource')+'.'+Fn('shared')+'();'],
+    [''],
+    ['  '+Fn('prefetchNextPage')+'('+P('ids')+': '+K('number')+'[]): '+K('void')+' {',{fold:1}],
+    ['    '+P('taskpool')+'.'+Fn('execute')+'('+P('decodeBatch')+', '+P('ids')+', '+K('this')+'.'+P('cache')+');  '+Cm('// 默认 MEDIUM')],
+    ['  }'],
+    ['  '+Cm('// ItemCard.build() 里调用，首屏 3 张同时进来')],
+    ['  '+K('async')+' '+Fn('get')+'('+P('id')+': '+K('number')+'): '+Ty('Promise')+LT+Ty('image')+'.'+Ty('PixelMap')+' | '+K('undefined')+GT+' {',{fold:1}],
+    ['    '+K('await')+' '+P('taskpool')+'.'+Fn('execute')+'('+P('decodeImage')+', '+K('this')+'.'+P('src')+'.'+Fn('raw')+'('+P('id')+'), '+K('this')+'.'+P('cache')+', '+P('id')+');'],
+    ['    '+K('return')+' '+K('this')+'.'+P('cache')+'.'+Fn('peek')+'('+P('id')+');'],
+    ['  }'],
+    ['  '+Fn('warmDiskCache')+'(): '+K('void')+' {',{fold:1}],
+    ['    '+K('const')+' '+P('t')+' = '+K('new')+' '+P('taskpool')+'.'+Ty('Task')+'('+P('readIndex')+', '+K('this')+'.'+P('src')+'.'+P('dir')+');'],
+    ['    '+P('taskpool')+'.'+Fn('execute')+'('+P('t')+', '+P('taskpool')+'.'+Ty('Priority')+'.'+P('LOW')+');'],
+    ['  }'],
+    ['}']
+  ]};
+  DemoFrame.FILES['ThumbWorker.ets']={path:['entry','src','main','ets','workers'],crumbs:['ThumbWorker','onmessage'],lines:[
+    [K('import')+' { '+Ty('worker')+', '+Ty('MessageEvents')+' } '+K('from')+' '+S("'@kit.ArkTS'")+';'],
+    [K('import')+' { '+Ty('fileIo')+' } '+K('from')+' '+S("'@kit.CoreFileKit'")+';'],
+    [K('import')+' { '+Ty('ThumbJob')+', '+Ty('thumbPath')+' } '+K('from')+' '+S("'../model/ThumbJob'")+';'],
+    [''],
+    [K('const')+' '+P('port')+' = '+P('worker')+'.'+P('workerPort')+';'],
+    [''],
+    [Cm('// 主线程用 postMessageWithSharedSendable 把 CoverCache 传进来')],
+    [P('port')+'.'+Fn('onmessage')+' = '+K('async')+' ('+P('e')+': '+Ty('MessageEvents')+') =&gt; {',{fold:1}],
+    ['  '+K('const')+' '+P('job')+' = '+P('e')+'.'+P('data')+' '+K('as')+' '+Ty('ThumbJob')+';'],
+    ['  '+K('await')+' '+Fn('writeThumb')+'('+P('job')+'.'+P('id')+', '+P('job')+'.'+P('buf')+');'],
+    ['  '+K('if')+' ('+P('job')+'.'+P('id')+' % '+N('20')+' === '+N('0')+') {',{fold:1}],
+    ['    '+K('await')+' '+P('job')+'.'+P('cache')+'.'+Fn('trim')+'('+N('120')+');  '+Cm('// 和解码任务抢同一把锁')],
+    ['  }'],
+    ['};'],
+    [''],
+    [K('async function')+' '+Fn('writeThumb')+'('+P('id')+': '+K('number')+', '+P('buf')+': '+Ty('ArrayBuffer')+') {',{fold:1}],
+    ['  '+K('const')+' '+P('f')+' = '+K('await')+' '+P('fileIo')+'.'+Fn('open')+'('+Fn('thumbPath')+'('+P('id')+'), '+N('0o102')+');'],
+    ['  '+K('await')+' '+P('fileIo')+'.'+Fn('write')+'('+P('f')+'.'+P('fd')+', '+P('buf')+');'],
+    ['  '+K('await')+' '+P('fileIo')+'.'+Fn('close')+'('+P('f')+');'],
+    ['}']
+  ]};
+  $('#code-il').innerHTML=DemoFrame.code('ImageLoader.ets',{marks:{37:'err',33:'warn',22:'warn'}});
+  $('#code-tw').innerHTML=DemoFrame.code('ThumbWorker.ets',{marks:{12:'warn'}});
+
+  /* 轨迹数据：记录 #12 进入 ListPage 的前 270 ms（单位 ms） */
+  var T=270;
+  var IL='ImageLoader.ets',TW='ThumbWorker.ets',LP='ListPage.ets';
+  var SEGS=[
+    {id:'m-init',lane:'main',a:0,b:12,k:'run',lb:'aboutToAppear',file:LP,line:7,t:'ListPage.aboutToAppear · 12 ms',v:'页面初始化 12 ms，在首帧之前，正常',ev:'new ItemSource(2000) · 主线程'},
+    {id:'m-build',lane:'main',a:17,b:26,k:'run',lb:'build',file:LP,line:10,t:'ListPage.build · 9 ms',v:'首帧 build 9 ms，本身不慢',ev:'紧接着 3 个 ItemCard 走进 loader.get()，在主线程提交解码'},
+    {id:'m-exec',lane:'main',a:26,b:44,k:'run bad',lb:'18 ms',file:IL,line:37,iss:'block',t:'await taskpool.execute ×3 · 主线程 18 ms · 丢 1 帧',pill:'阻塞 18 ms'},
+    {id:'m-lay',lane:'main',a:44,b:48,k:'run',file:LP,line:17,t:'布局 · 占位图 · 4 ms',v:'布局 4 ms，画的是占位图',ev:'ItemCard({ cover }) · 封面还没解码出来'},
+    {id:'m-cv1',lane:'main',a:225,b:231,k:'run',file:IL,line:38,t:'then · 刷新封面 #1 #2 · 6 ms',v:'封面 #1 #2 回到主线程刷新，6 ms，正常',ev:'cache.peek(id) → ItemCard 重建'},
+    {id:'m-cv3',lane:'main',a:244,b:249,k:'run',file:IL,line:38,t:'then · 刷新封面 #3 · 5 ms',v:'最后一张封面 249 ms 才出来',ev:'cache.peek(id) → ItemCard 重建 · 首屏封面到齐'},
+    {id:'t-pre',lane:'tp0',a:3,b:188,k:'ex p-m cause',lb:'prefetchNextPage · MEDIUM · 185 ms',file:IL,line:33,iss:'queue',t:'prefetchNextPage · MEDIUM · 执行 185 ms',v:'第 2 页 12 张封面预取，默认 MEDIUM，占住 1 个线程 185 ms',ev:'首屏解码和它同级，只能排在后面 · 预取该降到 IDLE',pill:'MEDIUM · 占线程 185 ms'},
+    {id:'t-warm',lane:'tp1',a:7,b:204,k:'ex p-l cause',lb:'warmDiskCache · LOW · 197 ms',file:IL,line:42,iss:'queue',t:'warmDiskCache · LOW · 执行 197 ms',v:'warmDiskCache 是 LOW，但线程空着就先跑了，占住 197 ms',ev:'TaskPool 不会中途把线程让给后来的任务',pill:'LOW · 占线程 197 ms'},
+    {id:'d1-q',lane:'tp2',a:32,b:188,k:'q p-m bad',lb:'decodeImage #1 · MEDIUM · <b>排队 156 ms</b>',file:IL,line:37,iss:'queue',t:'decodeImage #1 · 排队 156 ms',v:'decodeImage #1 排队 156 ms：2 个线程都被预取和预热占着',ev:'32 ms 提交 → 188 ms 才开始 · 默认 MEDIUM',pill:'排队 156 ms'},
+    {id:'d1-x',lane:'tp2',a:188,b:204,k:'ex p-m',lb:'#1',file:IL,line:9,t:'decodeImage #1 · 解码 16 ms',v:'decodeImage #1 解码 16 ms，本身正常',ev:'createPixelMap · 360×240'},
+    {id:'d1-w',lane:'tp2',a:204,b:222,k:'wait',lb:'等锁 18 ms',file:IL,line:19,iss:'lock',t:'decodeImage #1 · 等 CoverCache 锁 18 ms',v:'#1 在 put() 等锁 18 ms，锁被 ThumbWorker 的 trim() 占着',ev:'lockAsync · trim()（:22）整段持锁 30 ms',pill:'等锁 18 ms'},
+    {id:'d1-p',lane:'tp2',a:222,b:224,k:'ex p-m',file:IL,line:19,t:'decodeImage #1 · 写回缓存 2 ms',v:'写回缓存 2 ms，正常',ev:'map.set(id, pm)'},
+    {id:'d2-q',lane:'tp3',a:38,b:204,k:'q p-m bad',lb:'decodeImage #2 · MEDIUM · <b>排队 166 ms</b>',file:IL,line:37,iss:'queue',t:'decodeImage #2 · 排队 166 ms',v:'decodeImage #2 排队 166 ms，等 warmDiskCache 让出线程',ev:'38 ms 提交 → 204 ms 才开始 · 默认 MEDIUM',pill:'排队 166 ms'},
+    {id:'d2-x',lane:'tp3',a:204,b:220,k:'ex p-m',lb:'#2',file:IL,line:9,t:'decodeImage #2 · 解码 16 ms',v:'decodeImage #2 解码 16 ms，本身正常',ev:'createPixelMap · 360×240'},
+    {id:'d2-w',lane:'tp3',a:220,b:224,k:'wait',file:IL,line:19,iss:'lock',t:'decodeImage #2 · 等锁 4 ms',v:'#2 在 put() 等锁 4 ms，排在 #1 后面',ev:'同一把 CoverCache 锁 · #1 刚拿到',pill:'等锁 4 ms'},
+    {id:'d2-p',lane:'tp3',a:224,b:226,k:'ex p-m',file:IL,line:19,t:'decodeImage #2 · 写回缓存 2 ms',v:'写回缓存 2 ms，正常',ev:'map.set(id, pm)'},
+    {id:'d3-q',lane:'tp4',a:44,b:224,k:'q p-m bad',lb:'decodeImage #3 · MEDIUM · <b>排队 180 ms</b>',file:IL,line:37,iss:'queue',t:'decodeImage #3 · 排队 180 ms',v:'decodeImage #3 排队 180 ms，是首屏最后一张封面',ev:'44 ms 提交 → 224 ms 才开始 · 等 #1 让出线程',pill:'排队 180 ms'},
+    {id:'d3-x',lane:'tp4',a:224,b:242,k:'ex p-m',lb:'#3',file:IL,line:9,t:'decodeImage #3 · 解码 18 ms',v:'decodeImage #3 解码 18 ms，本身正常',ev:'createPixelMap · 360×240'},
+    {id:'d3-p',lane:'tp4',a:242,b:243,k:'ex p-m',file:IL,line:19,t:'decodeImage #3 · 写回缓存 1 ms',v:'写回缓存 1 ms，没碰上锁',ev:'map.set(id, pm)'},
+    {id:'w1',lane:'wk',a:58,b:70,k:'run',lb:'writeThumb',file:TW,line:10,t:'ThumbWorker · writeThumb 12 ms',v:'写缩略图 12 ms，在 Worker 线程上，正常',ev:'fileIo.write · 不占主线程'},
+    {id:'w2',lane:'wk',a:116,b:128,k:'run',lb:'writeThumb',file:TW,line:10,t:'ThumbWorker · writeThumb 12 ms',v:'写缩略图 12 ms，在 Worker 线程上，正常',ev:'fileIo.write · 不占主线程'},
+    {id:'w3',lane:'wk',a:162,b:172,k:'run',lb:'writeThumb',file:TW,line:10,t:'ThumbWorker · writeThumb 10 ms',v:'写缩略图 10 ms，在 Worker 线程上，正常',ev:'fileIo.write · 不占主线程'},
+    {id:'w-trim',lane:'wk',a:192,b:222,k:'run cause',lb:'trim 持锁',file:TW,line:12,iss:'lock',t:'ThumbWorker · cache.trim() 持锁 30 ms',v:'ThumbWorker 调 trim()，整段持锁 30 ms，正好撞上首屏解码写回',ev:'每 20 张缩略图收一次缓存 · 锁在 ImageLoader.ets:22',pill:'持锁 30 ms'},
+    {id:'a-pend',lane:'as',a:32,b:243,k:'pend',lb:'await taskpool.execute ×3 · 挂起 188–199 ms',file:IL,line:37,iss:'queue',t:'await taskpool.execute ×3 · 挂起 188–199 ms',v:'3 个 await 挂起 188–199 ms，这段时间首屏封面一直是占位图',ev:'32 / 38 / 44 ms 提交 → 224 / 226 / 243 ms 返回',pill:'await 挂起 199 ms'}
+  ];
+  /* 封面没到的这 10 帧，主线程每帧画一次占位动画 */
+  for(var fk=4;fk<=13;fk++){var fa=Math.round(fk*16.667*10)/10;SEGS.push({id:'m-sh'+fk,lane:'main',a:fa,b:fa+2.5,k:'run',file:LP,line:17,rel:'queue',t:'第 '+(fk+1)+' 帧 · 占位图动画 2.5 ms',v:'封面没到，这一帧在画占位图动画（2.5 ms），本身不贵',ev:'第 '+(fk+1)+' 帧 · 首屏封面占位约 200 ms'});}
+  var SEG={};SEGS.forEach(function(x){SEG[x.id]=x});
+  var ISS={
+    block:{cls:'err',chip:'主线程阻塞 1 帧',file:IL,line:37,main:'m-exec',segs:['m-exec','a-pend','d1-q','d2-q','d3-q'],pill:'await 阻塞 1 帧',
+      v:'首屏 3 张图片解码在 TaskPool 排队 180 ms，主线程 await 阻塞 1 帧',
+      ev:'ItemCard.build() → loader.get() → await taskpool.execute ×3 · 同步拷贝 7.2 MB 入参 18 ms，第 2 帧没交上'},
+    queue:{cls:'warn',chip:'TaskPool 排队 180 ms',file:IL,line:37,main:'d3-q',segs:['d1-q','d2-q','d3-q','t-pre','t-warm','a-pend'],pill:'排队 180 ms',
+      v:'首屏解码是默认 MEDIUM，排在第 2 页预取后面，最长排队 180 ms',
+      ev:'2 个线程被 prefetchNextPage（:33，185 ms）和 warmDiskCache（:42，197 ms）占满 · 封面占位约 200 ms'},
+    lock:{cls:'warn',chip:'@Sendable 锁等待 18 ms',file:IL,line:22,main:'d1-w',segs:['d1-w','d2-w','w-trim'],pill:'锁等待 18 ms',
+      v:'解码任务和 ThumbWorker 抢同一把 @Sendable 锁，#1 等了 18 ms',
+      ev:'@Sendable CoverCache 的 AsyncLock · trim()（ThumbWorker.ets:12）整段持锁 30 ms · put()（:19）排队：#1 18 ms、#2 4 ms'}
+  };
+  var ISS_ORDER=['block','queue','lock'];
+  state.cc={started:false,analyzed:false,auto:false,sel:null,iss:null,cur:null,sent:{},sending:null};
+
+  function buildTL(){
+    var L={main:'',tp0:'',tp1:'',tp2:'',tp3:'',tp4:'',wk:'',as:''};
+    SEGS.forEach(function(x){L[x.lane]+='<div class="sg '+x.k+'" data-id="'+x.id+'" style="--a:'+x.a+';--b:'+x.b+'" title="'+esc(x.t)+'"><span>'+(x.lb||'')+'</span></div>'});
+    var h='<div class="cc-under"></div>'
+      +'<div class="cc-lh r0" style="grid-row:1">ms</div>'
+      +'<div class="cc-ruler"><span class="cc-rl first" style="--a:0">0</span><span class="cc-rl" style="--a:100">100</span><span class="cc-rl" id="cc-rl200" style="--a:200">200</span><b class="cc-drop">丢 1 帧</b><span class="cc-rl end" style="--a:249">封面到齐 249</span></div>'
+      +'<div class="cc-lh sep" style="grid-row:2">主线程<small>UI 线程</small></div>'
+      +'<div class="cc-lane cc-main sep" style="grid-row:2"><div class="cc-band"></div>'+L.main+'</div>'
+      +'<div class="cc-lh sep" style="grid-row:3 / 8">TaskPool<small>2 个线程</small></div>';
+    for(var i=0;i<5;i++)h+='<div class="cc-lane cc-tp'+(i===4?' sep':'')+'" style="grid-row:'+(3+i)+'">'+L['tp'+i]+'</div>';
+    h+='<div class="cc-lh sep" style="grid-row:8">Worker<small>ThumbWorker</small></div>'
+      +'<div class="cc-lane sep" style="grid-row:8">'+L.wk+'</div>'
+      +'<div class="cc-lh" style="grid-row:9">异步回调<small>Promise</small></div>'
+      +'<div class="cc-lane" style="grid-row:9">'+L.as+'<i class="cc-dot" style="--a:224"></i><i class="cc-dot" style="--a:226"></i><i class="cc-dot" style="--a:243"></i></div>'
+      +'<div class="cc-over"><div class="cc-mk" style="--a:249"></div></div>';
+    $('#cc-tl').innerHTML=h;
+  }
+  /* 放不下的标签：长标签省略，短标签直接藏起来（悬停看 tooltip） */
+  function fitLabels(){
+    if($('#conc').hidden)return;
+    var r2=$('#cc-rl200'),re=$('#cc-tl .cc-rl.end');if(r2&&re){r2.style.visibility='';r2.style.visibility=r2.getBoundingClientRect().right+4>re.getBoundingClientRect().left?'hidden':'';}
+    $$('#cc-tl .sg').forEach(function(x){
+      var s=x.firstElementChild;if(!s||!s.textContent)return;x.classList.remove('nolbl');
+      var keep=s.textContent.length>14;
+      if(s.clientWidth<16||(!keep&&s.scrollWidth>s.clientWidth))x.classList.add('nolbl');
+    });
+  }
+  function renderChips(){
+    $('#cc-issues').innerHTML=ISS_ORDER.map(function(k){var I=ISS[k];
+      return '<button class="cc-iss'+(state.cc.cur===k?' on':'')+'" data-iss="'+k+'"><span class="dm-dot '+I.cls+'"></span><span class="t">'+esc(I.chip)+'</span>'
+        +(state.cc.sent[k]?'<span class="ok-mk" title="已发送到调优"><svg><use href="#i-checkS"/></svg></span>':'')+'</button>'}).join('');
+  }
+  function verdict(cls,v1,ev,file,line){
+    var box=$('#cc-verdict');box.className='cc-verdict '+cls;
+    $('#cc-ico use').setAttribute('href',cls==='err'?'#i-err':(cls==='warn'?'#i-warn':(cls==='ok'?'#i-checkS':'#i-info')));
+    $('#cc-v1').textContent=v1;$('#cc-v1').setAttribute('title',v1);
+    $('#cc-v2').innerHTML='<span class="loc" data-file="'+esc(file)+'" data-line="'+line+'">'+esc(file)+':'+line+'</span>'+(ev?' · '+esc(ev):'');
+  }
+  function renderSend(){
+    var k=state.cc.cur,b=$('#cc-send'),okp=$('#cc-okpill');
+    if(!k){b.hidden=true;okp.hidden=!state.cc.sel;return;}
+    okp.hidden=true;b.hidden=false;
+    if(state.cc.sending===k){b.disabled=true;b.className='btn sm';b.innerHTML='<span class="spin"></span><span>发送中…</span>';}
+    else if(state.cc.sent[k]){b.disabled=true;b.className='btn sm sent';b.innerHTML='<svg class="i"><use href="#i-checkS"/></svg><span>已发送到调优</span>';}
+    else{b.disabled=false;b.className='btn primary sm';b.innerHTML='<svg class="i"><use href="#i-sparkle"/></svg><span>交给调优出补丁</span>';}
+  }
+  function selectSeg(id){
+    var x=SEG[id];if(!x)return;
+    state.cc.sel=id;state.cc.iss=null;state.cc.cur=x.iss||null;
+    var tl=$('#cc-tl');tl.classList.remove('focus');
+    $$('.sg',tl).forEach(function(el){el.classList.toggle('sel',el.dataset.id===id);el.classList.remove('rel')});
+    renderChips();
+    var I=x.iss?ISS[x.iss]:null;
+    gotoLine(x.file,x.line);
+    setPill(I?I.cls:'info',x.file+':'+x.line+' · '+(x.pill||x.t));
+    verdict(I?I.cls:'ok',x.v||(I&&I.v)||x.t,x.ev||(I&&I.ev)||'',x.file,x.line);
+    renderSend();
+  }
+  function selectIssue(k){
+    var I=ISS[k];if(!I)return;
+    state.cc.iss=k;state.cc.sel=null;state.cc.cur=k;
+    var tl=$('#cc-tl');tl.classList.add('focus');
+    $$('.sg',tl).forEach(function(el){var id=el.dataset.id;el.classList.toggle('rel',I.segs.indexOf(id)>=0||SEG[id].iss===k);el.classList.toggle('sel',id===I.main)});
+    renderChips();
+    gotoLine(I.file,I.line);
+    setPill(I.cls,I.file+':'+I.line+' · '+I.pill);
+    verdict(I.cls,I.v,I.ev,I.file,I.line);
+    renderSend();
+  }
+  function enterConc(){
+    requestAnimationFrame(fitLabels);
+    if(!state.cc.started){
+      state.cc.started=true;
+      setTimeout(function(){
+        state.cc.analyzed=true;
+        var c=$('#conc');c.classList.add('analyzed','fresh');
+        $('#cc-scan').hidden=true;$('#cc-found').hidden=false;$('#cc-issues').hidden=false;renderChips();
+        if(!state.cc.sel&&!state.cc.iss){if(state.view==='conc')selectIssue('block');else state.cc.auto=true;}
+        else if(state.cc.sel&&state.view==='conc')selectSeg(state.cc.sel);
+      },900);
+      return;
+    }
+    /* 再次进来：编辑器与定位条回到并发视图里选中的那一处 */
+    if(state.cc.auto){state.cc.auto=false;selectIssue('block');}
+    else if(state.cc.sel)selectSeg(state.cc.sel);
+    else if(state.cc.iss)selectIssue(state.cc.iss);
+  }
+  buildTL();
+  $('#cc-tl').addEventListener('click',function(e){
+    var el=e.target.closest('.sg');
+    if(el)selectSeg(el.dataset.id);else $('#cc-tl').classList.remove('focus');
+  });
+  $('#cc-issues').addEventListener('click',function(e){var b=e.target.closest('.cc-iss');if(b)selectIssue(b.dataset.iss)});
+  $('#cc-v2').addEventListener('click',function(e){var l=e.target.closest('.loc');if(l)gotoLine(l.dataset.file,+l.dataset.line)});
+  /* 交给调优：把这条结论 + 轨迹 + 代码行一起送过去（这里只给反馈，不真跳转） */
+  $('#cc-send').addEventListener('click',function(){
+    var k=state.cc.cur;if(!k||state.cc.sent[k]||state.cc.sending)return;
+    state.cc.sending=k;renderSend();
+    setTimeout(function(){
+      state.cc.sending=null;state.cc.sent[k]=true;renderSend();renderChips();
+      var I=ISS[k];
+      $('#cc-toast-q').textContent='「'+I.v+'」';
+      $('#cc-toast-s').innerHTML='附：记录 #12 并发轨迹 · <code>'+esc(I.file)+':'+I.line+'</code> · 调优会出补丁，再在 Mate 70 Pro 上复测同一条记录';
+      $('#cc-toast').hidden=false;
+      clearTimeout(state.cc.toastT);state.cc.toastT=setTimeout(closeToast,8000);
+    },650);
+  });
+  function closeToast(e){if(e)e.preventDefault();$('#cc-toast').hidden=true;}
+  $('#cc-toast-x').addEventListener('click',closeToast);
+  $('#cc-toast-ok').addEventListener('click',closeToast);
+  /* 新开的标签可以关；工程树里点这两个文件也能打开 */
+  $('#tabs').addEventListener('click',function(e){
+    var x=e.target.closest('.x');if(!x)return;var tb=x.closest('.tab');if(!tb||tb.dataset.file==='ListPage.ets')return;
+    var on=tb.classList.contains('on');tb.remove();if(on){var lp=$('#tabs .tab[data-file="ListPage.ets"]');if(lp)lp.click();}
+  });
+  $('#tree-slot').addEventListener('click',function(e){var r=e.target.closest('.row[data-file]');if(r&&r.dataset.file!=='ListPage.ets'&&CODE_EL[r.dataset.file])openFile(r.dataset.file)});
+  window.addEventListener('resize',fitLabels);
+
   /* ---------- 初始：火焰图最热的一格已选中，代码已跳到 28 行 ---------- */
   renderCode();renderFlame();drawAll();
   var hot0=$('#flame span[data-hot]');if(hot0)selectSpan(hot0);
   window.addEventListener('resize',drawAll);
-DemoGuide.init([{"target": "#flame", "kind": "click", "pos": "top", "label": "点火焰图定位"}, {"target": "#loc-pill", "kind": "change", "pos": "top", "label": "定位到该行"}]);
+DemoGuide.init([{"target": "#flame", "kind": "click", "pos": "top", "label": "点火焰图定位"}, {"target": "#loc-pill", "kind": "change", "pos": "top", "label": "定位到该行"},
+    {"target": "#seg button[data-v=\"conc\"]", "kind": "click", "pos": "top", "label": "并发视图"},
+    {"target": "#cc-tl", "kind": "click", "pos": "left", "label": "点任意一段，落到代码行"},
+    {"target": "#cc-send", "kind": "click", "pos": "top", "label": "结论交给调优出补丁"}]);
 })();
 </script>
 </body>

@@ -14,20 +14,238 @@
 <script src="../_shared/frame.js"></script>
 <script src="../_shared/guide.js"></script>
 <style>
-  .ide[data-ide-theme]{--ai-w:clamp(400px,34vw,540px)}
-  .devices .seg span{cursor:default}
+  .ide[data-ide-theme]{--proj-w:clamp(220px,15vw,260px);--ai-w:clamp(380px,28vw,460px)}
+  .ide{--warn-fg:color-mix(in srgb,var(--ui-warning) 62%,var(--ui-fg))}
+  .btn{white-space:nowrap}
+  .btn svg.i{width:12px;height:12px}
+  .btn.primary svg.i{color:#fff}
+  .btn[disabled]{opacity:.55}
+
+  /* ---------- 原有：五步连接卡 ---------- */
   .dev-hist{display:flex;flex-direction:column;gap:2px;font-size:var(--fs-sm);line-height:var(--lh-sm)}
-  .dev-hist .r{display:flex;align-items:center;gap:8px;height:22px;padding:0 4px;color:var(--ui-fg-info)}
-  .dev-hist .r .t{font-family:var(--font-code);font-size:11px;width:44px;color:var(--ui-fg-disabled)}
-  .dev-hist .r svg{width:12px;height:12px}
+  .dev-hist .r{display:flex;align-items:center;gap:8px;min-height:22px;padding:0 4px;color:var(--ui-fg-info)}
+  .dev-hist .r .t{font-family:var(--font-code);font-size:11px;width:44px;flex:none;color:var(--ui-fg-disabled)}
+  .dev-hist .r svg{width:12px;height:12px;flex:none}
   .dev-hist .r.ok{color:var(--ui-fg)} .dev-hist .r.ok svg{color:var(--ui-success)}
   .dev-hist .r.err svg{color:var(--ui-error)} .dev-hist .r.err{color:var(--ui-fg)}
   .dev-hist .r.run svg{color:var(--ui-accent)}
   .acts{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
-  .other{opacity:.85}
+  .devices{gap:10px;padding:10px 12px 16px}
+  #pane-mate,#pane-dyn{display:flex;flex-direction:column;gap:10px}
+  #pane-mate[hidden],#pane-dyn[hidden]{display:none}
+  .dm-card-hd .hd-nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+  .dm-callout .dm-mono{color:var(--ui-fg)}
+
+  /* ---------- 设备中心（编辑区标签页） ---------- */
+  .hub{flex:1;display:flex;flex-direction:column;min-height:0}
+  .hub[hidden]{display:none}
+  .hub-bar{flex:none;display:flex;align-items:center;gap:10px;height:40px;padding:0 14px;border-bottom:1px solid var(--ui-border);background:var(--ui-bg)}
+  .hub-bar .grow{flex:1}
+  .hub-bar .dm-seg{align-self:center}
+  .hub-bar .dm-seg button{height:24px;padding:0 10px}
+  .hub-bar .dm-seg .n{font-family:var(--font-code);font-size:11px;color:var(--ui-fg-info);margin-left:5px;font-weight:400}
+  .hub-sum{display:inline-flex;align-items:center;gap:12px;font-size:var(--fs-sm);color:var(--ui-fg-info);white-space:nowrap}
+  .hub-sum span{display:inline-flex;align-items:center;gap:5px}
+  .hub-sum b{color:var(--ui-fg);font-weight:600;font-family:var(--font-code);font-size:12px}
+  .hub-body{flex:1;overflow:auto;min-height:0;padding:14px 14px 22px;display:flex;flex-direction:column;gap:12px}
+  .sec-h{display:flex;align-items:center;gap:6px;font-size:var(--fs-sm);color:var(--ui-fg-info);font-weight:600}
+  .sec-h svg{width:14px;height:14px;color:var(--ui-icon)}
+  .sec-h .grow{flex:1}
+  .sec-h .cnt{font-family:var(--font-code);font-weight:400}
+  .sec-h .note{font-weight:400}
+
+  .tbl{border:1px solid var(--ui-border);border-radius:var(--arc);background:var(--ui-bg);overflow:hidden;flex:none}
+  .hr{display:grid;grid-template-columns:30px minmax(0,1fr) 138px 176px 136px;gap:12px;align-items:center;padding:7px 14px 7px 12px;border-top:1px solid var(--ui-border);font-size:var(--fs-sm);line-height:var(--lh-sm);cursor:default;position:relative;outline:none}
+  .hr.th{border-top:0;padding-top:6px;padding-bottom:6px;color:var(--ui-fg-info);font-size:11px}
+  .hr:not(.th):hover{background:var(--ui-hover-list)}
+  .hr.sel,.hr.sel:hover{background:var(--ui-selection)}
+  .hr.sel::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--ui-accent)}
+  .hr:focus-visible{box-shadow:inset 0 0 0 1px var(--ui-accent)}
+  .hr.new{animation:rowin .35s ease-out}
+  @keyframes rowin{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+  .hr .fm{width:30px;height:30px;border-radius:7px;background:var(--ui-tag-bg);display:grid;place-items:center}
+  .hr .fm svg{width:16px;height:16px;color:var(--ui-icon)}
+  .hr .nm{display:flex;flex-direction:column;min-width:0;gap:1px}
+  .hr .nm b{font-weight:600;font-size:var(--fs);line-height:var(--lh);color:var(--ui-fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .hr .nm em{font-style:normal;font-weight:600;font-size:10px;line-height:15px;padding:0 5px;border-radius:4px;margin-left:6px;vertical-align:1px;background:color-mix(in srgb,var(--ui-accent) 18%,transparent);color:var(--ui-info)}
+  .hr .nm .os{font-size:11px;color:var(--ui-fg-info);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .hr .src{display:flex;align-items:center;gap:7px;min-width:0}
+  .hr .src svg{width:14px;height:14px;color:var(--ui-icon);flex:none}
+  .hr .src .tx{display:flex;flex-direction:column;min-width:0}
+  .hr .src .t{color:var(--ui-fg);white-space:nowrap}
+  .hr .src .s{font-size:11px;color:var(--ui-fg-info);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .stt{display:flex;flex-direction:column;gap:3px;min-width:0}
+  .stt .l1{display:flex;align-items:center;gap:8px}
+  .stt .l2{font-size:11px;color:var(--ui-fg-info);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .stt .l2 .wsec{font-family:var(--font-code)}
+  .msteps{display:inline-flex;gap:2px;flex:none}
+  .msteps i{width:9px;height:4px;border-radius:2px;background:var(--ui-progress-track)}
+  .msteps i.d{background:var(--ui-success)}
+  .msteps i.f{background:var(--ui-error)}
+  .msteps i.w{background:var(--ui-warning)}
+  .msteps i.r{background:var(--ui-accent);animation:blink 1s infinite}
+  .use{display:flex;flex-direction:column;gap:4px;min-width:0}
+  .use .l1{white-space:nowrap;color:var(--ui-fg-info);font-size:11px;overflow:hidden;text-overflow:ellipsis}
+  .use .l1 b{font-family:var(--font-code);font-size:12px;font-weight:500;color:var(--ui-fg);margin-right:5px}
+  .use .l2{font-size:11px;color:var(--ui-fg-info);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ubar{height:4px;border-radius:2px;background:var(--ui-progress-track);overflow:hidden}
+  .ubar i{display:block;height:100%;width:var(--v);background:var(--ui-progress);border-radius:2px}
+  .ubar.hot i{background:var(--ui-warning)}
+  .hub-empty{padding:18px 14px;color:var(--ui-fg-info);font-size:var(--fs-sm);border-top:1px solid var(--ui-border)}
+
+  .res-line{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto minmax(0,1fr) auto;gap:10px;align-items:center;font-size:var(--fs-sm);color:var(--ui-fg-info);padding:0 2px;flex:none}
+  .res-line .k{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;color:var(--ui-fg-info)}
+  .res-line .k svg{width:13px;height:13px;color:var(--ui-icon)}
+  .res-line .v{white-space:nowrap}
+  .res-line .v b{font-family:var(--font-code);color:var(--ui-fg);font-weight:500}
+  .res-line .gap{width:10px}
+
+  .rc{display:grid;grid-template-columns:28px minmax(0,1fr) 190px 40px 170px;gap:12px;align-items:center;padding:7px 14px 7px 12px;border-top:1px solid var(--ui-border);font-size:var(--fs-sm);line-height:var(--lh-sm)}
+  .rc:first-child{border-top:0}
+  .rc.new{animation:rowin .35s ease-out;background:color-mix(in srgb,var(--ui-accent) 8%,transparent)}
+  .rc .ri{width:28px;height:28px;border-radius:7px;display:grid;place-items:center;background:var(--ui-tag-bg)}
+  .rc .ri svg{width:15px;height:15px;color:var(--ui-icon)}
+  .rc .ri.zip{background:color-mix(in srgb,var(--ui-accent) 16%,transparent)} .rc .ri.zip svg{color:var(--ui-info)}
+  .rc .rt{display:flex;flex-direction:column;min-width:0}
+  .rc .rt b{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .rc .rt b.mono{font-family:var(--font-code);font-weight:500;font-size:12px}
+  .rc .rt span{font-size:11px;color:var(--ui-fg-info);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .rc .rd2{color:var(--ui-fg-info);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:11px}
+  .rc .rw{color:var(--ui-fg-info);font-size:11px;white-space:nowrap}
+  .rc .ra{display:flex;align-items:center;justify-content:flex-end;gap:6px;min-width:0}
+
+  /* ---------- 右侧：就绪设备详情 ---------- */
+  .stats{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .stat{border:1px solid var(--ui-border);border-radius:6px;padding:7px 9px;background:var(--ui-editor-bg);display:flex;flex-direction:column;gap:2px;min-width:0}
+  .stat .k{display:flex;align-items:center;gap:5px;font-size:11px;line-height:14px;color:var(--ui-fg-info)}
+  .stat .k svg{width:13px;height:13px;flex:none}
+  .stat .v{font-weight:600;font-size:var(--fs);line-height:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .stat .s{font-size:11px;line-height:14px;color:var(--ui-fg-info);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .stat .s.warn{color:var(--warn-fg)}
+  .stat .dm-progress{margin-top:4px}
+  .stat .dm-progress.low > i{background:var(--ui-error)}
+  .rowact{display:flex;align-items:center;gap:8px;min-height:26px}
+  .rowact .grow{flex:1}
+  .rowact .hint{font-size:11px;color:var(--ui-fg-info);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+  .sec-t{display:flex;align-items:center;gap:6px;font-size:var(--fs-sm)}
+  .sec-t b{font-weight:600}
+  .sec-t .cnt{font-family:var(--font-code);font-size:11px;color:var(--ui-fg-info)}
+  .sec-t .grow{flex:1}
+  .sec-t .note{font-size:11px;color:var(--ui-fg-info)}
+  .empty-s{font-size:var(--fs-sm);color:var(--ui-fg-info);padding:10px;border:1px dashed var(--ui-component-border);border-radius:6px;text-align:center}
+  .crashes{display:flex;flex-direction:column;gap:6px}
+  .crash{display:grid;grid-template-columns:14px minmax(0,1fr) auto;gap:8px;align-items:start;padding:7px 9px;border:1px solid var(--ui-border);border-radius:6px;cursor:default;background:var(--ui-editor-bg)}
+  .crash:hover{border-color:var(--ui-component-border)}
+  .crash.on{border-color:var(--ui-accent);background:color-mix(in srgb,var(--ui-accent) 10%,var(--ui-editor-bg))}
+  .crash .rd{width:14px;height:14px;border-radius:50%;border:1.5px solid var(--ui-component-border);margin-top:2px;display:grid;place-items:center;box-sizing:border-box}
+  .crash.on .rd{border-color:var(--ui-accent)}
+  .crash.on .rd::after{content:"";width:6px;height:6px;border-radius:50%;background:var(--ui-accent)}
+  .crash .ct{min-width:0;display:flex;flex-direction:column;gap:1px}
+  .crash .ct b{display:flex;align-items:center;gap:5px;font-weight:600;font-size:var(--fs-sm);white-space:nowrap}
+  .crash .ct b svg{width:13px;height:13px;flex:none}
+  .crash .ct b svg.e{color:var(--ui-error)} .crash .ct b svg.w{color:var(--ui-warning)}
+  .crash .ct .m{font-family:var(--font-code);font-size:11px;color:var(--ui-fg-info);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .crash .ct .loc{font-family:var(--font-code);font-size:11px;color:var(--ui-link)}
+  .crash .wh{font-size:11px;line-height:16px;color:var(--ui-fg-info);text-align:right;white-space:nowrap}
+  .pick{display:flex;flex-direction:column;gap:6px;padding:8px;border:1px solid var(--ui-component-border);border-radius:6px;background:var(--ui-editor-bg)}
+  .pick .dm-opt{background:var(--ui-bg)}
+  .pick .dm-opt.on{background:color-mix(in srgb,var(--ui-accent) 10%,var(--ui-bg))}
+  .pick .ops{font-size:11px;line-height:16px;color:var(--ui-fg-info)}
+  .pick .ops b{color:var(--ui-fg);font-weight:600}
+  .pick .acts{margin-top:0}
+
+  .dg{border:1px solid var(--ui-border);border-radius:6px;background:var(--ui-editor-bg);padding:8px 10px;display:flex;flex-direction:column;gap:2px}
+  .dg .it{display:grid;grid-template-columns:16px 72px minmax(0,1fr) auto;gap:8px;align-items:center;min-height:22px;font-size:var(--fs-sm)}
+  .dg .it .ic{display:grid;place-items:center}
+  .dg .it .ic svg{width:13px;height:13px;color:var(--ui-success)}
+  .dg .it.wait .ic svg{color:var(--ui-fg-disabled)}
+  .dg .it b{font-weight:600;white-space:nowrap}
+  .dg .it .d{color:var(--ui-fg-info);font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .dg .it .sz{font-family:var(--font-code);font-size:11px;color:var(--ui-fg-info)}
+  .dg .it.wait b,.dg .it.wait .d{color:var(--ui-fg-disabled)}
+  .dg .dm-progress{margin-top:6px}
+  .zip{display:flex;align-items:center;gap:10px;margin-top:6px;padding-top:8px;border-top:1px solid var(--ui-border)}
+  .zip .zi{width:30px;height:30px;border-radius:7px;background:color-mix(in srgb,var(--ui-accent) 16%,transparent);display:grid;place-items:center;flex:none}
+  .zip .zi svg{width:16px;height:16px;color:var(--ui-info)}
+  .zip .zt{min-width:0;display:flex;flex-direction:column}
+  .zip .zt b{font-family:var(--font-code);font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .zip .zt span{font-size:11px;color:var(--ui-fg-info)}
+  .dg .acts{margin-top:8px}
+
+  /* ---------- 右侧：复现 ---------- */
+  .rp-t{display:flex;gap:8px;align-items:flex-start;font-size:var(--fs-sm)}
+  .rp-t svg{width:14px;height:14px;flex:none;margin-top:1px}
+  .rp-t svg.e{color:var(--ui-error)} .rp-t svg.w{color:var(--ui-warning)}
+  .rp-t .tx{display:flex;flex-direction:column;min-width:0}
+  .rp-t b{font-weight:600}
+  .rp-t .m{font-family:var(--font-code);font-size:11px;color:var(--ui-fg-info);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .rp{display:grid;grid-template-columns:132px minmax(0,1fr);gap:14px;align-items:start;padding-top:10px}
+  .rp .dm-vtl{padding:2px 0 0}
+  .rp .dm-vstep{padding:0 0 8px 0;grid-template-columns:22px minmax(0,1fr);gap:0 6px}
+  .rp .dm-vstep::before{left:9px;top:20px}
+  .rp .dm-vstep .node{margin:0;width:20px;height:20px;box-sizing:border-box}
+  .rp .dm-vstep .body-t{min-height:20px;font-size:var(--fs-sm);line-height:16px;align-items:flex-start;padding-top:2px}
+  .rp .dm-vstep .body-t .grow{white-space:normal}
+  .rp .dm-vstep .body-t .t{font-family:var(--font-code);font-size:10.5px;color:var(--ui-fg-info);white-space:nowrap}
+  .rp .dm-vstep.pend .body-t{color:var(--ui-fg-info)}
+  .rp .dm-vstep.run .node::after{content:"";position:absolute;inset:-2px;border-radius:50%;border:2px solid var(--ui-accent);border-right-color:transparent;animation:spin 1s linear infinite}
+  .rp .dm-vstep.fail .node{border-color:var(--ui-error);background:var(--ui-error);color:#fff}
+  .rp .dm-vstep.fail .body-t{color:var(--ui-error);font-weight:600}
+  .rp .dm-vstep .node svg{width:11px;height:11px}
+  .rp-prog{display:flex;flex-direction:column;gap:5px}
+
+  /* 复现画面：云端 / 远端设备的画面流 */
+  .dm-device.phone.mini{width:132px;height:272px;border-radius:20px;padding:6px}
+  .dm-device.phone.mini .scr{border-radius:15px}
+  .dm-device.mini .tag{white-space:nowrap}
+  .mini .mapp .st{height:12px;font-size:7px;padding:0 9px}
+  .mini .mapp .hd{height:22px;font-size:11px;padding:0 9px}
+  .mini .mapp .search{height:15px;margin:1px 8px 4px;font-size:8px;padding:0 7px}
+  .mini .feed{flex:1;overflow:hidden;position:relative}
+  .mini .mapp .row{padding:4px 8px;gap:6px}
+  .mini .mapp .row .th{width:24px;height:24px;border-radius:5px}
+  .mini .mapp .row .tx b{font-size:9px}
+  .mini .mapp .row .tx span{font-size:8px}
+  .mini .mapp .row.hit{background:#EDF3FF}
+  .mini .feed .rows.fl{animation:fling .5s ease-out}
+  @keyframes fling{from{transform:translateY(60px)}to{transform:none}}
+  .mini .nav{height:22px;border-top:1px solid #f0f0f0;display:flex;align-items:center;justify-content:space-around;font-size:7.5px;color:#8a8f99;flex:none}
+  .mini .nav b{color:#3574F0;font-weight:600}
+  .mini .boot{position:absolute;inset:0;background:#0c0d10;color:#cfd3da;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;text-align:center;padding:0 10px}
+  .mini .boot .wm{font-size:11px;font-weight:600;letter-spacing:.06em;color:#fff}
+  .mini .boot .pb{width:74%;height:3px;border-radius:2px;background:#262a31;overflow:hidden}
+  .mini .boot .pb i{display:block;height:100%;width:var(--v,0%);background:#3574F0;transition:width .5s}
+  .mini .boot .bst{font-size:8px;color:#8a8f99;line-height:1.4}
+  .tap{position:absolute;width:20px;height:20px;margin:-10px 0 0 -10px;border-radius:50%;border:2px solid #3574F0;background:rgba(53,116,240,.3);left:var(--x);top:var(--y);animation:tap .7s ease-out both;pointer-events:none;z-index:3}
+  @keyframes tap{0%{transform:scale(.4);opacity:0}30%{opacity:1}100%{transform:scale(1.2);opacity:.9}}
+  .swipe{position:absolute;left:50%;top:30%;width:4px;height:40%;margin-left:-2px;border-radius:2px;background:linear-gradient(rgba(53,116,240,.7),rgba(53,116,240,0));animation:swipe .6s ease-out both;z-index:3}
+  @keyframes swipe{from{transform:translateY(35%);opacity:0}to{transform:translateY(-10%);opacity:1}}
+  .edge{position:absolute;left:0;top:44%;width:14px;height:34px;border-radius:0 17px 17px 0;background:rgba(53,116,240,.35);animation:tap .6s ease-out both;z-index:3}
+  .cov{position:absolute;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;padding:0 6px;animation:covin .25s ease-out;z-index:4}
+  @keyframes covin{from{opacity:0}to{opacity:1}}
+  .cov .dlg{background:#fff;border-radius:10px;padding:8px 8px 6px;width:100%;display:flex;flex-direction:column;gap:3px;color:#1a1a1a}
+  .cov .dlg b{font-size:9.5px;white-space:nowrap}
+  .cov .dlg span{font-size:8px;line-height:1.35;color:#6c707e;word-break:break-all}
+  .cov .dlg i{font-style:normal;font-size:9px;color:#3574F0;text-align:right;margin-top:3px}
+
+  /* 编辑器：复现后跳到的那一行 */
+  .code .ln.hl-err{background:color-mix(in srgb,var(--ui-error) 13%,transparent)}
+  .code .ln.inlay{min-height:22px}
+  .code .ln.inlay .t{padding-left:40px}
+  .inl-err{display:inline-flex;align-items:center;gap:6px;font-family:var(--font-ui);font-size:11px;line-height:18px;color:var(--ui-error);background:color-mix(in srgb,var(--ui-error) 12%,transparent);padding:0 8px;border-radius:4px;white-space:nowrap}
+  .inl-err svg{width:12px;height:12px}
 </style>
 </head>
 <body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <symbol id="i-desktop" viewBox="0 0 16 16"><rect x="1.5" y="2.5" width="13" height="9" rx="1.5" stroke="currentColor" fill="none"/><path d="M5.5 14h5M8 11.5V14" stroke="currentColor" stroke-linecap="round"/></symbol>
+  <symbol id="i-stream" viewBox="0 0 16 16"><rect x="2.5" y="2" width="6.5" height="12" rx="1.3" stroke="currentColor" fill="none"/><path d="M5 12h1.5" stroke="currentColor" stroke-linecap="round"/><path d="M11 6a2.8 2.8 0 0 1 0 4M13 4a5.6 5.6 0 0 1 0 8" stroke="currentColor" stroke-linecap="round" fill="none"/></symbol>
+  <symbol id="i-battery" viewBox="0 0 16 16"><rect x="1.5" y="4.5" width="11.5" height="7" rx="1.5" stroke="currentColor" fill="none"/><path d="M14.5 6.5v3" stroke="currentColor" stroke-linecap="round"/><rect x="3.2" y="6.2" width="6" height="3.6" rx=".6" fill="currentColor"/></symbol>
+  <symbol id="i-disk" viewBox="0 0 16 16"><ellipse cx="8" cy="4" rx="5.5" ry="2" stroke="currentColor" fill="none"/><path d="M2.5 4v8c0 1.1 2.5 2 5.5 2s5.5-.9 5.5-2V4M2.5 8c0 1.1 2.5 2 5.5 2s5.5-.9 5.5-2" stroke="currentColor" fill="none"/></symbol>
+  <symbol id="i-zip" viewBox="0 0 16 16"><path d="M3 2.5h10a.5.5 0 0 1 .5.5v10a.5.5 0 0 1-.5.5H3a.5.5 0 0 1-.5-.5V3a.5.5 0 0 1 .5-.5z" stroke="currentColor" fill="none"/><path d="M8 2.5v1.5M8 5v1.5M8 7.5V9" stroke="currentColor" stroke-linecap="round"/><rect x="6.8" y="9.6" width="2.4" height="2.4" rx=".5" stroke="currentColor" fill="none"/></symbol>
+  <symbol id="i-replay" viewBox="0 0 16 16"><path d="M2.8 8A5.2 5.2 0 1 0 4.4 4.2" stroke="currentColor" stroke-linecap="round" fill="none"/><path d="M4.6 1.8v2.6H2" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M6.8 5.8l3.4 2.2-3.4 2.2z" fill="currentColor"/></symbol>
+</defs></svg>
+
 <div class="ide" id="ide" data-ide-theme="dark" data-left="project" data-right="devices" data-bottom="none" role="application" aria-label="DevEco Studio">
   <div class="body">
     <div class="tw tw-left">
@@ -44,20 +262,48 @@
 
     <div class="editor">
       <div class="tabs" id="tabs"><span class="grow"></span><span class="tab-tools"><button class="abtn" title="Editor Options"><svg class="i"><use href="#i-moreV"/></svg></button></span></div>
-      <div class="code-wrap"><div class="code" id="code"></div><span class="ok" title="No problems found"><svg><use href="#i-check"/></svg></span></div>
+
+      <!-- 设备中心：所有来源的设备一张表 -->
+      <div class="hub" id="hub" data-for-file="设备中心">
+        <div class="hub-bar">
+          <div class="dm-seg" id="hub-filter">
+            <button data-f="all" class="on">全部<span class="n">6</span></button>
+            <button data-f="emu">模拟器<span class="n">2</span></button>
+            <button data-f="real">真机<span class="n">3</span></button>
+            <button data-f="remote">远端真机<span class="n">1</span></button>
+          </div>
+          <span class="grow"></span>
+          <span class="hub-sum" id="hub-sum"></span>
+          <button class="btn"><svg class="i"><use href="#i-add"/></svg>新建模拟器</button>
+          <button class="btn"><svg class="i"><use href="#i-wifi"/></svg>无线配对</button>
+        </div>
+        <div class="hub-body">
+          <div class="tbl" id="hub-tbl">
+            <div class="hr th"><span>形态</span><span>名称与系统版本</span><span>来源</span><span>状态</span><span>占用</span></div>
+            <div id="hub-rows"></div>
+          </div>
+          <div class="res-line" id="res-line"></div>
+          <div class="sec-h" style="margin-top:6px"><svg><use href="#i-zip"/></svg>诊断包与复现<span class="cnt" id="rec-cnt"></span><span class="grow"></span><span class="note">诊断包链接 7 天有效</span></div>
+          <div class="tbl" id="recs"></div>
+        </div>
+      </div>
+
+      <div class="code-wrap" data-for-file="Index.ets" hidden><div class="code" id="code"></div><span class="ok" title="No problems found"><svg><use href="#i-check"/></svg></span></div>
+      <div class="code-wrap" data-for-file="ListPage.ets" hidden><div class="code" id="code-list"></div></div>
       <div class="breadcrumbs" id="crumbs"></div>
     </div>
 
     <div class="tw tw-right">
-      <div class="pane on" data-pane="devices">
+      <div class="pane on" data-pane="devices" id="pane-devices">
         <div class="tw-hdr"><span class="title">Device Manager</span><span class="grow"></span>
           <button class="abtn" title="Refresh"><svg class="i"><use href="#i-refresh"/></svg></button>
           <button class="abtn" title="Pair Devices Using Wi-Fi"><svg class="i"><use href="#i-wifi"/></svg></button>
           <button class="abtn" title="Options"><svg class="i"><use href="#i-moreV"/></svg></button>
           <button class="abtn" title="Hide|Shift+Esc" data-act="hide-right"><svg class="i"><use href="#i-hide"/></svg></button></div>
-        <div class="tw-body"><div class="devices">
-          <div class="seg"><span>Local Emulator</span><span>Remote Emulator</span><span>Remote Device</span><span class="on">Local Device</span></div>
+        <div class="tw-body" id="dev-body"><div class="devices">
 
+          <!-- 选中 Mate 70 Pro：原有的五步连接 -->
+          <div id="pane-mate">
           <div class="dm-card accent" id="dev-card">
             <div class="dm-card-hd"><svg class="i"><use href="#i-phone"/></svg>HUAWEI Mate 70 Pro<span class="dm-pill muted"><svg><use href="#i-usb"/></svg>USB</span><span class="grow"></span><span class="dm-pill warn" id="dev-state">卡在第 2 步</span></div>
             <div class="dm-card-bd">
@@ -102,14 +348,11 @@
               </div>
             </div>
           </div>
+          <div id="mate-extra"></div>
+          </div>
 
-          <div class="dm-card other">
-            <div class="dm-card-hd"><svg class="i"><use href="#i-phone"/></svg>Phone Emulator<span class="dm-pill muted">API 20</span><span class="grow"></span><span class="dm-pill ok">就绪</span></div>
-          </div>
-          <div class="dm-card other">
-            <div class="dm-card-hd"><svg class="i"><use href="#i-watch"/></svg>HUAWEI WATCH 5<span class="dm-pill muted"><svg><use href="#i-wifi"/></svg>Wi-Fi</span><span class="grow"></span><span class="dm-pill muted">上次 昨天 18:02</span></div>
-          </div>
-          <div class="actions-row"><button class="btn primary"><svg class="i" style="width:12px;height:12px;color:#fff"><use href="#i-add"/></svg>New Emulator</button><button class="btn">Import</button></div>
+          <!-- 选中其他设备：按状态渲染 -->
+          <div id="pane-dyn" hidden></div>
         </div></div>
       </div>
     </div>
@@ -118,14 +361,448 @@
 
 <script>
 (function(){
-  var $=DemoFrame.$, $$=DemoFrame.$$;
+  var $=DemoFrame.$, $$=DemoFrame.$$, esc=DemoFrame.esc;
   document.getElementById('tree-slot').innerHTML=DemoFrame.tree({sel:'Index.ets'});
-  document.getElementById('tabs').insertAdjacentHTML('afterbegin',DemoFrame.tabs([{file:'Index.ets',on:true}]));
+  document.getElementById('tabs').insertAdjacentHTML('afterbegin',DemoFrame.tabs([{file:'设备中心',label:'设备中心',icon:'#i-tw-device',on:true},{file:'Index.ets'}]));
   document.getElementById('code').innerHTML=DemoFrame.code('Index.ets',{cur:4});
   DemoFrame.init({device:'Mate 70 Pro · 等待授权',deviceIcon:'#i-phone'});
 
+  /* ================= 数据 ================= */
+  var SRC={
+    local:{t:'本地模拟器',i:'#i-desktop',g:'emu'},
+    cloud:{t:'云端模拟器',i:'#i-cloud',g:'emu'},
+    usb:{t:'USB 真机',i:'#i-usb',g:'real'},
+    wifi:{t:'无线真机',i:'#i-wifi',g:'real'},
+    remote:{t:'远端真机',i:'#i-stream',g:'remote'}
+  };
+  var STEP_N=['认出设备','授权','建立通道','版本匹配','就绪'];
+  /* 设备上的崩溃 / 冻屏记录（faultlogger）与录下来的操作 */
+  var CR={
+    c1:{tone:'e',type:'JS Crash',name:'TypeError',msg:"Cannot read property 'buffer' of undefined",loc:'ListPage.ets:28',line:28,when:'今天 10:14',times:3,
+        stack:'loadCover (ListPage.ets:28:48)',why:'rawCover(id) 对还没加载的第 31 项返回 undefined',
+        ops:[['launch','冷启动 EntryAbility'],['tab','点底部「发现」页签'],['fling','快速下滑 3 屏 · 2400 px/s'],['item','点第 31 项商品卡片'],['wait','等崩溃信号 · 2 s']],hit:{cloud:[3,3],remote:[3,3]}},
+    c2:{tone:'w',type:'AppFreeze',name:'THREAD_BLOCK_6S',msg:'主线程 6.2 s 无响应 · createPixelMapSync',loc:'ListPage.ets:28',line:28,when:'昨天 21:30',times:1,
+        stack:'createPixelMapSync ← loadCover (ListPage.ets:28)',why:'每帧在主线程同步解码封面',
+        ops:[['launch','冷启动 EntryAbility'],['tab','点底部「发现」页签'],['fling','连续下滑 8 屏'],['wait','停在列表上等 6 s']],hit:{cloud:[2,3],remote:[3,3]}},
+    c3:{tone:'e',type:'CppCrash',name:'SIGSEGV',msg:'libimage_native.so · PixelMap::ReadPixels',when:'09-21 16:05',times:1,
+        stack:'PixelMap::ReadPixels (libimage_native.so+0x3a1f4)',why:'封面图释放后仍在读像素',
+        ops:[['launch','冷启动 EntryAbility'],['tab','点底部「发现」页签'],['item','点第 12 项商品卡片'],['pinch','双指放大封面图']],hit:{cloud:[1,3],remote:[2,3]}},
+    c4:{tone:'w',type:'AppFreeze',name:'THREAD_BLOCK_6S',msg:'主线程 6.4 s 无响应 · createPixelMapSync',loc:'ListPage.ets:28',line:28,when:'今天 09:52',times:2,
+        stack:'createPixelMapSync ← loadCover (ListPage.ets:28)',why:'每帧在主线程同步解码封面',
+        ops:[['launch','冷启动 EntryAbility'],['tab','点底部「发现」页签'],['fling','连续下滑 8 屏'],['wait','停在列表上等 6 s']],hit:{cloud:[3,3],remote:[3,3]}},
+    c5:{tone:'e',type:'CppCrash',name:'SIGABRT',msg:'libark_jsruntime.so · JIT 编译线程',when:'09-23 17:48',times:1,
+        stack:'panda::ecmascript::JitTask::Run (libark_jsruntime.so)',why:'只在 ARM 真机的 JIT 路径上出现',
+        ops:[['launch','冷启动 EntryAbility'],['tab','点底部「发现」页签'],['fling','快速下滑 12 屏'],['back','返回再进入 5 次']],hit:{cloud:[0,3],remote:[2,3]}}
+  };
+  var DEVS=[
+    {id:'mate',name:'HUAWEI Mate 70 Pro',model:'Mate 70 Pro',os:'HarmonyOS 6.0 · API 20',form:'#i-phone',src:'usb',where:'序列号 7WJ…2Q',
+      st:'conn',step:2,tone:'warn',stTxt:'授权 · 已等 <span class="wsec">12</span> 秒',use:{k:'local',gb:0.1},
+      info:{bat:86,batS:'充电中 · 35.8 ℃',sto:[212,512],app:'1.2.0 (1000012)',appS:'比当前构建旧 1 次 · 昨天 21:12 装',appWarn:1,sys:'HarmonyOS 6.0.0.120',sysS:'API 20 · 7WJ…2Q',shot:'1260×2844',hilog:'4,812'},
+      crashes:['c1','c2','c3']},
+    {id:'pad',name:'MatePad Pro 13.2',model:'MatePad Pro 13.2',os:'HarmonyOS 5.1 · API 18',form:'#i-tablet',src:'wifi',where:'192.168.3.41:5555',
+      st:'conn',step:4,tone:'err',stTxt:'版本匹配 · API 18 < 20',use:{k:'local',gb:0.1},
+      info:{bat:58,batS:'未充电',sto:[96,256],app:'未安装',appS:'Run 时自动安装',sys:'HarmonyOS 5.1.0.150',sysS:'API 18 · 192.168.3.41',shot:'2880×1920',hilog:'912'},crashes:[],
+      conn:{steps:[['done','Wi-Fi 0.6 s'],['done','已授权过'],['done','hdc · 5555'],['fail','API 18 &lt; 20'],['','']],bar:80,text:'停在版本匹配 · 用时 2.1 秒',hint:'',
+        fail:{icon:'#i-err',t:'设备是 HarmonyOS 5.1（API 18），工程最低要求 API 20，装不上。',
+          b:'<span class="dm-mono">build-profile.json5</span> 第 9 行 <span class="dm-mono">compatibleSdkVersion</span> 是 <span class="dm-mono">6.0.0(20)</span>。二选一：把最低版本降到 18，或换一台 API 20 的平板。',
+          acts:[{p:1,d:'pad-lower',i:'#i-wrench',t:'降到 5.1.0(18) 并重新核对'},{d:'pad-cloud',i:'#i-cloud',t:'改用云端 API 20 平板'}]},
+        hist:[['ok','00.0 s','Wi-Fi 上发现设备 · 192.168.3.41'],['ok','00.6 s','这台电脑已授权过，跳过确认'],['ok','01.4 s','hdc 通道已建立 · 端口 5555'],['err','02.1 s','设备 API 18 低于工程最低 API 20']]}},
+    {id:'emu',name:'Mate 70 Pro 模拟器',model:'Mate 70 Pro',os:'HarmonyOS 6.0 · API 20 · x86_64',form:'#i-phone',src:'local',where:'本机 Hypervisor',
+      st:'ready',stTxt:'运行 entry · 1.2.0',use:{k:'local',gb:6.2},
+      info:{bat:100,batS:'模拟值 · 可在扩展控制里调',sto:[14,32],app:'1.2.0 (1000013)',appS:'与当前构建一致',sys:'HarmonyOS 6.0.0.120',sysS:'API 20 · x86_64',shot:'1260×2844',hilog:'2,306'},
+      crashes:['c4']},
+    {id:'x6',name:'Mate X6',model:'Mate X6',os:'HarmonyOS 6.0 · API 20 · 展开态',form:'#i-fold',src:'cloud',where:'华东 · 28 ms',
+      st:'ready',stTxt:'空闲 · 15 分钟后释放',use:{k:'cloud',min:42},
+      info:{bat:80,batS:'模拟值',sto:[9,32],app:'1.2.0 (1000013)',appS:'与当前构建一致',sys:'HarmonyOS 6.0.0.120',sysS:'API 20 · 展开态',shot:'2440×2240',hilog:'1,127'},crashes:[]},
+    {id:'pura',name:'Pura 70 Pro',model:'Pura 70 Pro',os:'HarmonyOS 6.0 · API 20',form:'#i-phone',src:'remote',where:'南京实验室 · B-12',
+      st:'ready',stTxt:'串流中 · 31 ms',use:{k:'cloud',min:18},
+      info:{bat:64,batS:'实验室常供电 · 31.2 ℃',sto:[203,256],app:'1.1.9 (1000009)',appS:'比当前构建旧 4 次 · 09-23 装',appWarn:1,sys:'HarmonyOS 6.0.0.118',sysS:'API 20 · 机位 B-12',shot:'1260×2844',hilog:'6,090'},
+      crashes:['c5']},
+    {id:'watch',name:'HUAWEI WATCH 5',model:'WATCH 5',os:'HarmonyOS 6.0 · API 20',form:'#i-watch',src:'wifi',where:'192.168.3.27:5555',
+      st:'off',stTxt:'上次 昨天 18:02',use:{k:'none'},
+      info:{bat:72,batS:'未充电',sto:[7,32],app:'未安装',appS:'Run 时自动安装',sys:'HarmonyOS 6.0.0.110',sysS:'API 20 · 192.168.3.27',shot:'466×466',hilog:'603'},crashes:[],
+      conn:{steps:[['fail','找不到'],['',''],['',''],['',''],['','']],bar:0,text:'上次连上是昨天 18:02 · Wi-Fi',hint:'',
+        fail:{icon:'#i-wifi',t:'在 192.168.3.27:5555 找不到这块手表。',
+          b:'手表熄屏后会断开无线调试。在手表「设置 → 开发者选项 → 无线调试」里打开，保持亮屏，再点重新连接。',
+          acts:[{p:1,d:'w-retry',i:'#i-refresh',t:'已打开无线调试，重新连接'},{d:'w-pair',i:'#i-link',t:'用配对码配对'}]},
+        hist:[['err','18:02','昨天断开 · 手表熄屏后无线调试关闭']]}}
+  ];
+  var RECS=[
+    {k:'diag',t:'diag-Pura70Pro-0923-1810.zip',m:'2.9 MB · HiLog、截图、系统状态、应用版本',dev:'Pura 70 Pro · 远端真机',when:'昨天',pill:['muted','已分享给 李工']},
+    {k:'repro',t:'复现 AppFreeze · THREAD_BLOCK_6S',m:'云端模拟器 Mate 60 · 回放 3 次',dev:'来自 Mate 60 · USB 真机',when:'09-22',pill:['warn','未复现 0/3']}
+  ];
+  var CLOUD_BASE=126, sel='mate', filt='all', seq=0, zipSeq=0;
+  function byId(id){for(var i=0;i<DEVS.length;i++)if(DEVS[i].id===id)return DEVS[i];return null}
+  function cur(){return byId(sel)}
+
+  /* ================= 设备中心：表格 ================= */
+  function miniSteps(d){
+    if(d.conn)return d.conn.steps.map(function(s){return s[0]==='done'?'d':(s[0]==='fail'?'f':(s[0]==='run'?'r':''))});
+    var a=[];for(var i=1;i<=5;i++)a.push(d.st==='ready'||i<d.step?'d':(i===d.step?(d.running?'r':(d.tone==='err'?'f':'w')):''));return a;
+  }
+  function pillFor(d){
+    if(d.st==='ready'){
+      if(d.rep){var h=d.rep.hit;return h[0]?'<span class="dm-pill ok">已复现 '+h[0]+'/'+h[1]+'</span>':'<span class="dm-pill warn">未复现 0/'+h[1]+'</span>'}
+      return '<span class="dm-pill ok">就绪</span>';
+    }
+    if(d.st==='off')return '<span class="dm-pill muted">离线</span>';
+    if(d.st==='boot')return '<span class="dm-pill info">启动中</span>';
+    if(d.st==='replay')return '<span class="dm-pill info">复现中</span>';
+    return d.running?'<span class="dm-pill info">连接中 · 第 '+d.step+' 步</span>':'<span class="dm-pill '+(d.tone||'warn')+'">卡在第 '+d.step+' 步</span>';
+  }
+  function statusHTML(d){
+    var l1=pillFor(d);
+    if(d.st==='conn')l1+='<span class="msteps">'+miniSteps(d).map(function(c){return '<i class="'+c+'"></i>'}).join('')+'</span>';
+    if(d.st==='boot'||d.st==='replay')l1+='<span class="ubar" style="width:54px"><i style="--v:'+progPct(d)+'%"></i></span>';
+    return '<span class="l1">'+l1+'</span><span class="l2">'+d.stTxt+'</span>';
+  }
+  function useHTML(d){
+    var u=d.use;
+    if(u.k==='local'){
+      if(u.gb<0.2)return '<span class="l1"><b>&lt; 0.1 GB</b>本机</span><span class="l2">'+(d.st==='off'?'—':'只走 hdc 通道')+'</span>';
+      return '<span class="l1"><b>'+u.gb.toFixed(1)+' GB</b>本机内存</span><span class="ubar'+(u.gb>4?' hot':'')+'"><i style="--v:'+Math.round(u.gb/32*100)+'%"></i></span>';
+    }
+    if(u.k==='cloud')return '<span class="l1"><b>'+u.min+' 分钟</b>云端时长</span><span class="l2">'+(d.src==='remote'?'设备串流':'画面流')+' · 本机 0.1 GB</span>';
+    return '<span class="l1">—</span><span class="l2">离线不占用</span>';
+  }
+  function rowHTML(d){
+    var s=SRC[d.src];
+    return '<div class="hr'+(d.id===sel?' sel':'')+(d.isNew?' new':'')+'" data-id="'+d.id+'" role="row" tabindex="0" aria-selected="'+(d.id===sel)+'">'
+      +'<span class="fm"><svg><use href="'+d.form+'"/></svg></span>'
+      +'<span class="nm"><b>'+esc(d.name)+(d.tag?'<em>'+d.tag+'</em>':'')+'</b><span class="os">'+esc(d.os)+'</span></span>'
+      +'<span class="src"><svg><use href="'+s.i+'"/></svg><span class="tx"><span class="t">'+s.t+'</span><span class="s">'+esc(d.where)+'</span></span></span>'
+      +'<span class="stt">'+statusHTML(d)+'</span>'
+      +'<span class="use">'+useHTML(d)+'</span></div>';
+  }
+  function recHTML(r,i){
+    var right='';
+    if(r.k==='diag')right='<button class="btn sm" data-do="rec-copy" data-i="'+i+'"><svg class="i"><use href="#'+(r.copied?'i-checkS':'i-link')+'"/></svg>'+(r.copied?'已复制':'复制链接')+'</button>';
+    else if(r.inst&&byId(r.inst))right='<button class="btn sm" data-do="rec-open" data-id="'+r.inst+'">查看</button>';
+    return '<div class="rc'+(r.isNew?' new':'')+'"><span class="ri'+(r.k==='diag'?' zip':'')+'"><svg><use href="#'+(r.k==='diag'?'i-zip':'i-replay')+'"/></svg></span>'
+      +'<span class="rt"><b'+(r.k==='diag'?' class="mono"':'')+'>'+esc(r.t)+'</b><span>'+esc(r.m)+'</span></span>'
+      +'<span class="rd2">'+esc(r.dev)+'</span><span class="rw">'+r.when+'</span>'
+      +'<span class="ra">'+(r.pill?'<span class="dm-pill '+r.pill[0]+'">'+r.pill[1]+'</span>':'')+right+'</span></div>';
+  }
+  function renderHub(){
+    var rows=DEVS.filter(function(d){return filt==='all'||SRC[d.src].g===filt});
+    $('#hub-rows').innerHTML=rows.map(rowHTML).join('')||'<div class="hub-empty">这一类还没有设备</div>';
+    DEVS.forEach(function(d){d.isNew=0});
+    var c={all:DEVS.length,emu:0,real:0,remote:0};DEVS.forEach(function(d){c[SRC[d.src].g]++});
+    $$('#hub-filter button').forEach(function(b){b.classList.toggle('on',b.dataset.f===filt);$('.n',b).textContent=c[b.dataset.f]});
+    var n={ready:0,conn:0,off:0};DEVS.forEach(function(d){n[d.st==='ready'?'ready':(d.st==='off'?'off':'conn')]++});
+    $('#hub-sum').innerHTML='<span><i class="dm-dot ok"></i><b>'+n.ready+'</b>就绪</span><span><i class="dm-dot warn"></i><b>'+n.conn+'</b>连接中</span><span><i class="dm-dot"></i><b>'+n.off+'</b>离线</span>';
+    var gb=0,min=CLOUD_BASE;DEVS.forEach(function(d){if(d.use.k==='local')gb+=d.use.gb;if(d.use.k==='cloud'){gb+=0.1;min+=d.use.min}});
+    $('#res-line').innerHTML='<span class="k"><svg><use href="#i-desktop"/></svg>本机内存</span><span class="ubar'+(gb>8?' hot':'')+'"><i style="--v:'+Math.round(gb/32*100)+'%"></i></span><span class="v">设备共占 <b>'+gb.toFixed(1)+'</b> GB · 共 32 GB</span>'
+      +'<span class="k" style="margin-left:14px"><svg><use href="#i-cloud"/></svg>云端时长</span><span class="ubar"><i style="--v:'+Math.round(min/600*100)+'%"></i></span><span class="v">本月 <b>'+min+'</b> / 600 分钟</span>';
+    $('#recs').innerHTML=RECS.map(recHTML).join('');
+    RECS.forEach(function(r){r.isNew=0});
+    $('#rec-cnt').textContent=RECS.length;
+  }
+
+  /* ================= 右侧：设备详情 ================= */
+  function hd(d){
+    var s=SRC[d.src];
+    return '<div class="dm-card-hd"><svg class="i"><use href="'+d.form+'"/></svg><span class="hd-nm">'+esc(d.name)+'</span><span class="dm-pill muted"><svg><use href="'+s.i+'"/></svg>'+s.t+'</span><span class="grow"></span>'+pillFor(d)+'</div>';
+  }
+  function btn(a){
+    return '<button class="btn'+(a.p?' primary':'')+'" data-do="'+a.d+'"'+(a.id?' id="'+a.id+'"':'')+(a.dis?' disabled':'')+'><svg class="i"><use href="'+a.i+'"/></svg>'+a.t+'</button>';
+  }
+  function histHTML(h){
+    var ic=h[0]==='ok'?'#i-checkS':(h[0]==='err'?'#i-err':'#i-clock');
+    return '<div class="r '+h[0]+'"><span class="t">'+h[1]+'</span><svg><use href="'+ic+'"/></svg>'+h[2]+'</div>';
+  }
+  function connHTML(d){
+    var c=d.conn,h='<div class="dm-card accent">'+hd(d)+'<div class="dm-card-bd">';
+    h+='<div class="dm-steps-h">'+c.steps.map(function(s,i){
+      var mk=s[0]==='done'?'<svg><use href="#i-checkS"/></svg>':(s[0]==='fail'?'!':String(i+1));
+      return '<div class="dm-step '+s[0]+'"><span class="mk">'+mk+'</span><span>'+STEP_N[i]+'</span><span class="sub">'+(s[1]||'&nbsp;')+'</span></div>';
+    }).join('')+'</div>';
+    h+='<div class="dm-progress'+(c.indet?' indet':'')+'"><i style="--v:'+c.bar+'%"></i></div>';
+    h+='<div class="dm-row dm-small dm-muted"><span>'+c.text+'</span><span class="grow"></span><span>'+(c.hint||'')+'</span></div>';
+    if(c.fail)h+='<div class="dm-callout err"><svg><use href="'+c.fail.icon+'"/></svg><div><b>'+c.fail.t+'</b><br>'+c.fail.b+'<div class="acts">'+c.fail.acts.map(btn).join('')+'</div></div></div>';
+    if(c.pair)h+='<div class="dm-callout info"><svg><use href="#i-link"/></svg><div><b>配对码配对</b>：在手表「开发者选项 → 无线调试 → 使用配对码配对」里看 6 位码，填到这里。<div class="acts"><span class="ctx dm-mono" style="height:26px;padding:0 10px;letter-spacing:.2em">— — — — — —</span><button class="btn">配对</button></div></div></div>';
+    if(c.ok)h+='<div class="dm-callout ok"><svg><use href="#i-check"/></svg><div><b>已就绪。</b>'+c.ok+'<div class="acts"><button class="btn primary"><svg class="i"><use href="#i-run"/></svg>Run \'entry\'</button></div></div></div>';
+    h+='<div class="dm-sep"></div><div class="dm-small dm-h">这次连接</div><div class="dev-hist">'+c.hist.map(histHTML).join('')+'</div></div></div>';
+    if(d.st==='ready')h+=readyHTML(d,{title:'设备状态'});
+    return h;
+  }
+  function stat(ic,k,v,s,pct,warn){
+    return '<div class="stat"><span class="k"><svg><use href="'+ic+'"/></svg>'+k+'</span><span class="v">'+v+'</span><span class="s'+(warn?' warn':'')+'">'+s+'</span>'
+      +(pct!=null?'<div class="dm-progress'+(pct<20?' low':'')+'"><i style="--v:'+Math.round(pct)+'%"></i></div>':'')+'</div>';
+  }
+  function diagItems(d){
+    var I=d.info,n=d.crashes.length,fz=d.crashes.some(function(c){return CR[c].type==='AppFreeze'});
+    return [['HiLog','最近 15 分钟 · '+I.hilog+' 行','2.4 MB'],['截图','当前屏幕 · '+I.shot,'0.6 MB'],['系统状态','内存 · CPU · 温度 · 存储 · 网络','14 KB'],
+      ['应用版本',I.app==='未安装'?'未装本应用 · 附设备与 SDK 信息':'com.example.myapplication '+I.app,'2 KB'],
+      ['崩溃 / 冻屏',n?('faultlogger '+n+' 条'+(fz?' · 含冻屏 trace':'')):'近 7 天无记录',n?'0.8 MB':'1 KB']];
+  }
+  function diagHTML(d){
+    var g=d.diag,items=diagItems(d),h='<div class="dg" id="diag-box">';
+    items.forEach(function(it,i){
+      var st=g.done||i<g.i?'ok':(i===g.i?'run':'wait');
+      h+='<div class="it '+st+'"><span class="ic">'+(st==='ok'?'<svg><use href="#i-checkS"/></svg>':(st==='run'?'<span class="spin"></span>':'<svg><use href="#i-clock"/></svg>'))+'</span><b>'+it[0]+'</b><span class="d">'+it[1]+'</span><span class="sz">'+(st==='ok'?it[2]:'')+'</span></div>';
+    });
+    if(g.done){
+      h+='<div class="zip"><span class="zi"><svg><use href="#i-zip"/></svg></span><span class="zt"><b>'+g.file+'</b><span>'+g.size+' · 已去掉账号、定位等个人信息</span></span></div>';
+      h+='<div class="acts">'+btn({p:1,d:'diag-copy',id:'btn-diag-copy',i:g.copied?'#i-checkS':'#i-link',t:g.copied?'已复制链接 · 7 天有效':'复制分享链接'})+btn({d:'noop',i:'#i-folder',t:'在文件夹中显示'})+'</div>';
+    }else h+='<div class="dm-progress"><i style="--v:'+Math.round(g.i/items.length*100)+'%"></i></div>';
+    return h+'</div>';
+  }
+  function readyHTML(d,o){
+    o=o||{};var I=d.info,n=d.crashes.length;
+    var h='<div class="dm-card'+(o.title?'':' accent')+'">';
+    h+=o.title?'<div class="dm-card-hd"><svg class="i"><use href="#i-gauge"/></svg>'+o.title+'<span class="grow"></span><span class="dm-small dm-muted" style="font-weight:400">刚刚刷新</span></div>':hd(d);
+    h+='<div class="dm-card-bd"><div class="stats">'
+      +stat('#i-battery','电量',I.bat+'%',I.batS,I.bat)
+      +stat('#i-disk','存储','已用 '+I.sto[0]+' / '+I.sto[1]+' GB','剩余 '+(I.sto[1]-I.sto[0])+' GB',I.sto[0]/I.sto[1]*100)
+      +stat('#i-cube','本应用',I.app,I.appS,null,I.appWarn)
+      +stat('#i-info','系统',I.sys,I.sysS)+'</div>';
+    var running=d.diag&&!d.diag.done;
+    h+='<div class="rowact">'+btn({p:1,d:'diag',id:'btn-diag',i:'#i-zip',t:d.diag&&d.diag.done?'重新诊断':(running?'打包中…':'一键诊断'),dis:running})+'<span class="grow"></span><span class="hint">HiLog · 截图 · 系统状态 · 应用版本</span></div>';
+    if(d.diag)h+=diagHTML(d);
+    h+='<div class="dm-sep"></div><div class="sec-t"><b>最近崩溃 / 冻屏</b><span class="cnt">'+n+'</span><span class="grow"></span><span class="note">faultlogger · 近 7 天</span></div>';
+    if(!n)h+='<div class="empty-s">近 7 天没有本应用的崩溃或冻屏</div>';
+    else{
+      if(!d.csel)d.csel=d.crashes[0];
+      h+='<div class="crashes">'+d.crashes.map(function(id){var c=CR[id];
+        return '<div class="crash'+(d.csel===id?' on':'')+'" data-do="csel" data-cid="'+id+'" role="radio" aria-checked="'+(d.csel===id)+'"><span class="rd"></span><span class="ct"><b><svg class="'+c.tone+'"><use href="#'+(c.tone==='w'?'i-hourglass':'i-err')+'"/></svg>'+c.type+' · '+c.name+'</b><span class="m">'+esc(c.msg)+'</span>'+(c.loc?'<span class="loc">'+c.loc+'</span>':'')+'</span><span class="wh">'+c.when+'<br>'+c.times+' 次</span></div>';
+      }).join('')+'</div>';
+      h+='<div class="rowact">'+btn({d:'repro',id:'btn-repro',i:'#i-replay',t:'复现所选'})+'<span class="grow"></span><span class="hint">同型号云端模拟器或远端真机上回放</span></div>';
+      if(d.pick)h+=pickHTML(d);
+    }
+    return h+'</div></div>';
+  }
+  function pickHTML(d){
+    var c=CR[d.csel],t=d.ptarget||'cloud';
+    return '<div class="pick" id="repro-pick">'
+      +'<div class="dm-opt'+(t==='cloud'?' on':'')+'" data-do="pt" data-t="cloud"><span class="rd"></span><div><b>云端模拟器 · '+esc(d.model)+' · API 20</b><span>约 40 秒起好 · 按分钟计 · 装崩溃时的同一版本</span></div></div>'
+      +'<div class="dm-opt'+(t==='remote'?' on':'')+'" data-do="pt" data-t="remote"><span class="rd"></span><div><b>远端真机 · '+esc(d.model)+' · 南京实验室</b><span>ARM 真机 · 真实 GPU 与传感器 · 空闲 2 台</span></div></div>'
+      +'<div class="ops">按记录回放 <b>'+c.ops.length+' 步</b>，跑 3 次：'+c.ops.map(function(o){return o[1]}).join(' → ')+'</div>'
+      +'<div class="acts">'+btn({p:1,d:'go',id:'btn-repro-go',i:'#i-play',t:'开始复现'})+btn({d:'pick-x',i:'#i-closeS',t:'取消'})+'</div></div>';
+  }
+
+  /* ---- 复现 ---- */
+  function progPct(d){
+    if(d.boot)return Math.round(d.boot.p/3*100);
+    if(!d.rep)return 0;
+    var R=d.rep,n=CR[R.cid].ops.length,tot=3+n+2,done=R.phase==='boot'?R.boot:(R.phase==='replay'?3+R.k+1:(R.phase==='more'?3+n+R.run-2:tot));
+    return Math.round(done/tot*100);
+  }
+  function screenHTML(r){
+    var R=r.rep,c=CR[R.cid],k=R.k,op=k>=0&&R.phase==='replay'?c.ops[k][0]:null;
+    var h='<div class="dm-device phone mini"><div class="scr">';
+    if(R.phase==='boot'){
+      h+='<div class="boot"><div class="wm">HarmonyOS</div><div class="pb"><i style="--v:'+Math.round((R.boot+1)/3*100)+'%"></i></div><div class="bst">'+['分配实例','恢复系统快照','安装 entry '+R.app][R.boot]+'</div></div>';
+    }else{
+      var tabbed=false;for(var i=0;i<=Math.min(k,c.ops.length-1);i++)if(c.ops[i][0]==='tab')tabbed=true;
+      if(R.phase!=='replay')tabbed=true;
+      var start=1+R.flings*10,rows='',names=['轻薄羽绒服','降噪耳机','保温杯 500ml','机械键盘','折叠雨伞','运动手环','香薰蜡烛','帆布包'];
+      for(var j=0;j<7;j++){var no=start+j;rows+='<div class="row'+(op==='item'&&j===0?' hit':'')+'"><div class="th"></div><div class="tx"><b>'+names[(no+2)%names.length]+'</b><span>第 '+no+' 项 · ¥'+(39+no*7)+'</span></div></div>'}
+      h+='<div class="mapp"><div class="st"><span>10:32</span><span>5G 86%</span></div><div class="hd">'+(tabbed?'发现':'首页')+'</div><div class="search">搜索商品</div>'
+        +'<div class="feed"><div class="rows'+(op==='fling'?' fl':'')+'">'+rows+'</div></div>'
+        +'<div class="nav"><span>首页</span>'+(tabbed?'<b>发现</b>':'<span>发现</span>')+'<span>购物车</span><span>我的</span></div></div>';
+      if(op==='tab')h+='<span class="tap" style="--x:38%;--y:95%"></span>';
+      if(op==='item')h+='<span class="tap" style="--x:50%;--y:28%"></span>';
+      if(op==='fling')h+='<span class="swipe"></span>';
+      if(op==='pinch')h+='<span class="tap" style="--x:36%;--y:34%"></span><span class="tap" style="--x:64%;--y:24%"></span>';
+      if(op==='back')h+='<span class="edge"></span>';
+      if(R.crashed){
+        h+=c.type==='AppFreeze'
+          ?'<div class="cov"><div class="dlg"><b>应用无响应</b><span>MyApplication · 主线程 6 s 没有处理输入</span><i>等待　关闭应用</i></div></div>'
+          :'<div class="cov"><div class="dlg"><b>应用已停止运行</b><span>MyApplication · '+c.name+(c.loc?' · '+c.loc:'')+'</span><i>关闭应用</i></div></div>';
+      }
+    }
+    return h+'</div><span class="tag'+(r.src==='remote'?' remote':'')+'">'+(r.src==='cloud'?'云端 · 画面流':'远端真机 · 串流')+'</span></div>';
+  }
+  function reproHTML(r){
+    var R=r.rep,c=CR[R.cid],from=byId(R.from),n=c.ops.length,word=c.type==='AppFreeze'?'冻屏':'崩溃';
+    var h='<div class="dm-card accent">'+hd(r)+'<div class="dm-card-bd">';
+    h+='<div class="rp-t"><svg class="'+c.tone+'"><use href="#'+(c.tone==='w'?'i-hourglass':'i-err')+'"/></svg><span class="tx"><b>复现 '+c.type+' · '+c.name+'</b><span class="m">'+esc(c.msg)+'</span><span class="dm-small dm-muted">来自 '+esc(from?from.name:r.fromName)+' · '+c.when+' · 共 '+c.times+' 次</span></span></div>';
+    var steps='<div class="dm-vstep '+(R.phase==='boot'?'run':'done')+'"><span class="node">'+(R.phase==='boot'?'':'<svg><use href="#i-checkS"/></svg>')+'</span><div class="body"><div class="body-t"><span class="grow">'+(r.src==='cloud'?'起云端模拟器':'接入远端真机')+'，装 '+R.app+'</span></div></div></div>';
+    c.ops.forEach(function(o,i){
+      var st;
+      if(R.phase==='boot')st='pend';
+      else if(R.phase==='replay')st=i<R.k?'done':(i===R.k?(R.crashed&&i===n-1?'fail':'run'):'pend');
+      else st=R.hit[0]&&i===n-1?'fail':'done';
+      var node=st==='done'?'<svg><use href="#i-checkS"/></svg>':(st==='fail'?'!':(st==='run'?'':String(i+1)));
+      steps+='<div class="dm-vstep '+st+'"><span class="node">'+node+'</span><div class="body"><div class="body-t"><span class="grow">'+o[1]+(st==='fail'?' → '+word:'')+'</span></div></div></div>';
+    });
+    h+='<div class="rp">'+screenHTML(r)+'<div class="dm-vtl">'+steps+'</div></div>';
+    var txt=R.phase==='boot'?(['分配'+(r.src==='cloud'?'云端实例 · 华东':'远端真机 · 南京实验室 B-07'),'恢复 HarmonyOS 6.0.0.120 快照','安装 entry '+R.app+'（崩溃时的同一版本）'][R.boot])
+      :(R.phase==='replay'?'第 1 / 3 次回放 · 第 '+Math.max(1,R.k+1)+' / '+n+' 步':(R.phase==='more'?'第 '+R.run+' / 3 次回放…':'回放 3 次 · 用时 '+(9+n*2)+' 秒'));
+    h+='<div class="rp-prog"><div class="dm-progress'+(R.phase==='done'?'':' ')+'"><i style="--v:'+progPct(r)+'%"></i></div><div class="dm-row dm-small dm-muted"><span>'+txt+'</span><span class="grow"></span><span>'+(r.src==='cloud'?'云端 · 按分钟计':'远端真机 · 按分钟计')+'</span></div></div>';
+    if(R.phase==='done'){
+      var hit=R.hit,acts=[];
+      if(hit[0]){
+        h+='<div class="dm-callout ok"><svg><use href="#i-check"/></svg><div><b>已复现 '+hit[0]+' / '+hit[1]+' 次'+(hit[0]<hit[1]?'，偶发':'')+'。</b>'
+          +(hit[0]<hit[1]?'命中的那次堆栈和原记录一致；没崩的两次 HiLog 也留着，便于对比。':'每次都在「'+c.ops[n-1][1]+'」这一步'+word+'，堆栈和原记录一致。')
+          +'<br><span class="dm-mono">'+esc(c.stack)+'</span> · '+c.why+'。';
+        if(c.loc)acts.push({p:1,d:'jump',id:'btn-jump',i:'#i-arrowR',t:'跳到 '+c.loc});
+      }else{
+        h+='<div class="dm-callout warn"><svg><use href="#i-warn"/></svg><div><b>回放 3 次没有复现。</b>这条'+word+c.why+'，x86 云端模拟器走不到同一条路径。换一台远端真机再跑。';
+        if(r.src==='cloud')acts.push({p:1,d:'to-remote',i:'#i-stream',t:'换远端真机 '+r.model+' 再跑'});
+      }
+      acts.push({d:'attach',i:R.attached?'#i-checkS':'#i-zip',t:R.attached?'已加进 '+R.attached:'加进诊断包',dis:!!R.attached});
+      acts.push({d:'release',i:'#i-stopSq',t:'释放这台'});
+      h+='<div class="acts">'+acts.map(btn).join('')+'</div></div></div>';
+    }
+    return h+'</div></div>';
+  }
+  function bootHTML(d){
+    var p=d.boot.p,names=['分配云端实例 · 华东','恢复 HarmonyOS 6.0.0.120 快照','安装当前构建 entry 1.2.0 (1000013)'];
+    var h='<div class="dm-card accent">'+hd(d)+'<div class="dm-card-bd"><div class="dm-vtl rp" style="display:flex;padding-top:0">';
+    names.forEach(function(nm,i){var st=i<p?'done':(i===p?'run':'pend');
+      h+='<div class="dm-vstep '+st+'"><span class="node">'+(st==='done'?'<svg><use href="#i-checkS"/></svg>':(st==='run'?'':String(i+1)))+'</span><div class="body"><div class="body-t"><span class="grow">'+nm+'</span></div></div></div>'});
+    h+='</div><div class="dm-progress"><i style="--v:'+progPct(d)+'%"></i></div><div class="dm-row dm-small dm-muted"><span>通常 40 秒内起好，本机只收画面流</span><span class="grow"></span><span>云端 · 按分钟计</span></div></div></div>';
+    return h;
+  }
+  function detailHTML(d){
+    if(d.rep)return reproHTML(d);
+    if(d.boot&&d.st==='boot')return bootHTML(d);
+    if(d.conn)return connHTML(d);
+    return readyHTML(d);
+  }
+  function showDetail(){
+    var d=cur();if(!d){sel='mate';d=cur()}
+    var isMate=d.id==='mate';
+    $('#pane-mate').hidden=!isMate;$('#pane-dyn').hidden=isMate;
+    $('#mate-extra').innerHTML=isMate&&d.st==='ready'?readyHTML(d,{title:'设备状态'}):'';
+    $('#pane-dyn').innerHTML=isMate?'':detailHTML(d);
+  }
+  function refresh(id){renderHub();if(!id||id===sel)showDetail()}
+  function select(id,keepScroll){
+    sel=id;renderHub();showDetail();DemoFrame.setSide('right','devices');
+    if(!keepScroll){var b=$('#dev-body');if(b)b.scrollTop=0}
+    var r=$('.hr[data-id="'+id+'"]');if(r&&r.scrollIntoView)r.scrollIntoView({block:'nearest'});
+  }
+
+  /* ---- 一键诊断 ---- */
+  function startDiag(d){
+    var items=diagItems(d);
+    d.diag={i:0,done:false};refresh(d.id);
+    var b=$('#dev-body'),box=$('#diag-box');if(b&&box&&sel===d.id)box.scrollIntoView({block:'nearest',behavior:'smooth'});
+    var tick=setInterval(function(){
+      d.diag.i++;
+      if(d.diag.i>=items.length){
+        clearInterval(tick);
+        var mm=32+(zipSeq++);
+        d.diag.done=true;d.diag.file='diag-'+d.model.replace(/\s+/g,'')+'-0924-10'+mm+'.zip';d.diag.size=d.crashes.length?'3.8 MB':'3.0 MB';
+        RECS.unshift({k:'diag',t:d.diag.file,m:d.diag.size+' · HiLog、截图、系统状态、应用版本'+(d.crashes.length?'、崩溃记录':''),dev:d.name+' · '+SRC[d.src].t,when:'刚刚',isNew:1,from:d.id});
+        d.diag.rec=RECS[0];
+      }
+      refresh(d.id);
+    },520);
+  }
+
+  /* ---- 复现：起一台同型号设备，按记录回放 ---- */
+  function spawnRepro(from,cid,t){
+    var c=CR[cid],n=++seq;
+    var r={id:'r'+n,name:from.model,model:from.model,os:'HarmonyOS 6.0 · API 20',form:from.form,src:t,where:t==='cloud'?'华东 · 30 ms':'南京实验室 · B-07',
+      st:'boot',stTxt:'分配实例…',use:{k:'cloud',min:1},isNew:1,tag:'复现',fromName:from.name,
+      rep:{cid:cid,from:from.id,t:t,phase:'boot',boot:0,k:-1,run:1,flings:0,crashed:0,hit:c.hit[t],app:from.info.app},crashes:[]};
+    DEVS.splice(DEVS.indexOf(from)+1,0,r);
+    from.pick=0;
+    var rec={k:'repro',t:'复现 '+c.type+' · '+c.name,m:(t==='cloud'?'云端模拟器 ':'远端真机 ')+from.model+' · 回放 3 次',dev:'来自 '+from.name,when:'刚刚',inst:r.id,pill:['info','进行中'],isNew:1};
+    RECS.unshift(rec);r.rec=rec;
+    if(filt!=='all'&&SRC[t].g!==filt)filt='all';
+    select(r.id);
+    var R=r.rep,T=0;
+    function at(ms,fn){T+=ms;setTimeout(function(){if(!byId(r.id))return;fn();refresh(r.id)},T)}
+    at(800,function(){R.boot=1;r.stTxt='恢复系统快照…'});
+    at(800,function(){R.boot=2;r.stTxt='安装 entry '+R.app+'…'});
+    at(900,function(){R.phase='replay';R.k=0;r.st='replay';r.stTxt='回放 1 / '+c.ops.length+' 步'});
+    c.ops.forEach(function(o,i){if(i===0)return;
+      at(1000,function(){R.k=i;if(o[0]==='fling')R.flings++;r.stTxt='回放 '+(i+1)+' / '+c.ops.length+' 步';if(i===c.ops.length-1&&R.hit[0]>0)R.crashed=1});
+    });
+    at(1500,function(){R.phase='more';R.run=2;R.crashed=0;r.stTxt='第 2 / 3 次回放'});
+    at(800,function(){R.run=3;r.stTxt='第 3 / 3 次回放'});
+    at(800,function(){R.phase='done';R.crashed=R.hit[0]>0?1:0;r.st='ready';r.use.min=2;
+      r.stTxt=R.hit[0]?'已复现 '+R.hit[0]+' / '+R.hit[1]+' 次':'回放 3 次未复现';
+      rec.pill=R.hit[0]?['ok','已复现 '+R.hit[0]+'/'+R.hit[1]]:['warn','未复现 0/'+R.hit[1]];});
+  }
+  function spawnPlain(o){
+    var n=++seq,d={id:'s'+n,name:o.name,model:o.name,os:'HarmonyOS 6.0 · API 20',form:o.form,src:'cloud',where:'华东 · 29 ms',st:'boot',stTxt:'启动中…',use:{k:'cloud',min:1},isNew:1,boot:{p:0},
+      info:{bat:100,batS:'模拟值',sto:[6,32],app:'1.2.0 (1000013)',appS:'刚装的当前构建',sys:'HarmonyOS 6.0.0.120',sysS:'API 20 · 云端 · 华东',shot:o.shot,hilog:'88'},crashes:[]};
+    DEVS.splice(DEVS.indexOf(byId(o.after))+1,0,d);
+    if(filt!=='all'&&filt!=='emu')filt='all';
+    select(d.id);
+    [900,1800,2700].forEach(function(ms,i){setTimeout(function(){d.boot.p=i+1;d.stTxt=['恢复快照…','安装 entry…','空闲 · 刚起好'][i];if(i===2)d.st='ready';refresh(d.id)},ms)});
+  }
+
+  /* ---- 平板：版本不匹配 ---- */
+  function padLower(d){
+    var c=d.conn;c.fail=null;c.steps[3]=['run','核对中…'];c.indet=1;c.text='build-profile.json5 已改为 5.1.0(18)，hvigor 同步中…';
+    c.hist.push(['ok','08.4 s','compatibleSdkVersion 6.0.0(20) → 5.1.0(18)']);d.running=1;d.stTxt='版本匹配 · 核对中';refresh(d.id);
+    setTimeout(function(){c.steps[3]=['done','API 18 ≥ 18'];c.steps[4]=['run',''];d.step=5;c.text='装 entry 前最后检查…';
+      c.hist.push(['ok','10.2 s','hvigor 同步完成 · 2 处 API 20 接口都在 canIUse 判断里']);d.stTxt='就绪检查';refresh(d.id)},1300);
+    setTimeout(function(){c.steps[4]=['done',''];c.indet=0;c.bar=100;c.text='就绪，用时 10.9 秒';
+      c.ok='MatePad Pro 13.2 · HarmonyOS 5.1 · API 18，工程最低版本已降到 18。';c.hist.push(['ok','10.9 s','就绪 · 可以运行 entry']);
+      d.st='ready';d.running=0;d.stTxt='空闲';refresh(d.id)},2200);
+  }
+  /* ---- 手表：离线重连 ---- */
+  function watchRetry(d){
+    var c=d.conn;c.fail=null;c.pair=0;c.steps[0]=['run','搜索中…'];c.indet=1;c.text='在同一网段里找 WATCH 5…';c.hint='';
+    c.hist.push(['run','00.0 s','重新搜索 192.168.3.27']);d.st='conn';d.step=1;d.running=1;d.stTxt='认出设备 · 搜索中';refresh(d.id);
+    setTimeout(function(){c.steps[0]=['done','0.9 s'];c.steps[1]=['done','已授权过'];c.steps[2]=['run','建立中…'];d.step=3;c.text='正在建立 hdc 通道…';
+      c.hist.push(['ok','00.9 s','找到手表 · 信号 -52 dBm · 已授权过']);d.stTxt='建立通道 · hdc';refresh(d.id)},1000);
+    setTimeout(function(){c.steps[2]=['done','hdc · 5555'];c.steps[3]=['run','核对中…'];d.step=4;c.text='核对设备系统版本与工程 SDK…';
+      c.hist.push(['ok','01.7 s','hdc 通道已建立 · 端口 5555']);d.stTxt='版本匹配 · 核对中';refresh(d.id)},1800);
+    setTimeout(function(){c.steps[3]=['done','API 20'];c.steps[4]=['done',''];c.indet=0;c.bar=100;c.text='就绪，用时 2.4 秒';d.use={k:'local',gb:0.1};
+      c.ok='HUAWEI WATCH 5 · HarmonyOS 6.0 · API 20，与工程 SDK 一致。';c.hist.push(['ok','02.4 s','设备 API 20 与工程 SDK 一致 · 就绪']);
+      d.st='ready';d.running=0;d.stTxt='空闲';refresh(d.id)},2500);
+  }
+
+  /* ---- 跳到代码 ---- */
+  function openCode(r){
+    var c=CR[r.rep.cid],tab=$('.tab[data-file="ListPage.ets"]');
+    if(!tab){var tb=$$('#tabs .tab');tb[tb.length-1].insertAdjacentHTML('afterend',DemoFrame.tabs([{file:'ListPage.ets'}]));tab=$('.tab[data-file="ListPage.ets"]')}
+    var mk={};mk[c.line]='err';
+    $('#code-list').innerHTML=DemoFrame.code('ListPage.ets',{cur:c.line,marks:mk});
+    var ln=$('#code-list .ln[data-ln="'+c.line+'"]');
+    if(ln){ln.classList.add('hl-err');
+      ln.insertAdjacentHTML('afterend','<div class="ln inlay"><span class="g"></span><span class="t"><span class="inl-err"><svg><use href="#i-replay"/></svg>'+r.model+' 上复现 '+r.rep.hit[0]+'/'+r.rep.hit[1]+' · '+c.name+' · '+c.why+'</span></span></div>')}
+    tab.click();
+  }
+
+  /* ================= 交互 ================= */
+  function act(b){
+    var d=cur(),k=b.dataset.do;
+    if(k==='noop')return;
+    if(k==='diag'){startDiag(d);return}
+    if(k==='diag-copy'){d.diag.copied=1;if(d.diag.rec)d.diag.rec.copied=1;refresh(d.id);return}
+    if(k==='csel'){d.csel=b.dataset.cid;showDetail();return}
+    if(k==='repro'){d.pick=!d.pick;d.ptarget=d.ptarget||'cloud';showDetail();var p=$('#repro-pick');if(p)p.scrollIntoView({block:'nearest',behavior:'smooth'});return}
+    if(k==='pt'){d.ptarget=b.dataset.t;showDetail();return}
+    if(k==='pick-x'){d.pick=0;showDetail();return}
+    if(k==='go'){spawnRepro(d,d.csel,d.ptarget||'cloud');return}
+    if(k==='jump'){openCode(d);return}
+    if(k==='attach'){var f=byId(d.rep.from);d.rep.attached=f&&f.diag&&f.diag.done?f.diag.file:'下次诊断包';showDetail();return}
+    if(k==='release'){var from=d.rep?d.rep.from:'mate';DEVS.splice(DEVS.indexOf(d),1);select(byId(from)?from:'mate');return}
+    if(k==='to-remote'){var src=byId(d.rep.from);if(src)spawnRepro(src,d.rep.cid,'remote');return}
+    if(k==='pad-lower'){padLower(d);return}
+    if(k==='pad-cloud'){spawnPlain({name:'MatePad Pro 13.2',form:'#i-tablet',shot:'2880×1920',after:'pad'});return}
+    if(k==='w-retry'){watchRetry(d);return}
+    if(k==='w-pair'){d.conn.pair=!d.conn.pair;showDetail();return}
+    if(k==='rec-copy'){RECS[+b.dataset.i].copied=1;renderHub();return}
+    if(k==='rec-open'){select(b.dataset.id);return}
+  }
+  $('#hub').addEventListener('click',function(e){
+    var f=e.target.closest('#hub-filter button');if(f){filt=f.dataset.f;renderHub();return}
+    var b=e.target.closest('[data-do]');if(b){if(!b.disabled)act(b);return}
+    var r=e.target.closest('.hr[data-id]');if(r)select(r.dataset.id);
+  });
+  $('#hub').addEventListener('keydown',function(e){
+    var r=e.target.closest('.hr[data-id]');if(!r)return;
+    if(e.key==='Enter'||e.key===' '){e.preventDefault();select(r.dataset.id)}
+    if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();var n=e.key==='ArrowDown'?r.nextElementSibling:r.previousElementSibling;if(n&&n.dataset.id){select(n.dataset.id);var x=$('.hr[data-id="'+n.dataset.id+'"]');if(x)x.focus()}}
+  });
+  $('#pane-devices').addEventListener('click',function(e){var b=e.target.closest('[data-do]');if(b&&!b.disabled)act(b)});
+
+  /* ================= 原有：Mate 70 Pro 的五步连接 ================= */
+  var mate=byId('mate');
   /* 等待秒数会走：等待有进度，不是一个转圈 */
-  var sec=12,tick=setInterval(function(){sec++;var s=$('#wait-sec');if(s)s.textContent=sec;var bar=$('#wait-bar i');if(bar)bar.style.setProperty('--v',Math.min(95,34+sec*1.4)+'%')},1000);
+  var sec=12,tick=setInterval(function(){sec++;var s=$('#wait-sec');if(s)s.textContent=sec;var bar=$('#wait-bar i');if(bar)bar.style.setProperty('--v',Math.min(95,34+sec*1.4)+'%');
+    mate.stTxt='授权 · 已等 <span class="wsec">'+sec+'</span> 秒';var w=$('.hr[data-id="mate"] .wsec');if(w)w.textContent=sec},1000);
 
   function step(n,cls,sub){var el=$('.dm-step[data-step="'+n+'"]');el.className='dm-step '+cls;
     var mk=$('.mk',el);mk.innerHTML=cls==='done'?'<svg><use href="#i-checkS"/></svg>':(cls==='fail'?'!':String(n));
@@ -140,9 +817,11 @@
     $('#dev-state').className='dm-pill info';$('#dev-state').textContent='第 3 步';
     $('#wait-bar').classList.add('indet');$('#wait-text').textContent='正在建立 hdc 通道…';$('#wait-hint').textContent='';
     hist('ok','13.2 s','手机已授权（一律允许）');
+    mate.running=1;mate.step=3;mate.stTxt='建立通道 · hdc';renderHub();
     setTimeout(function(){
       step(3,'done','hdc 通道');step(4,'run','核对中…');$('#dev-state').textContent='第 4 步';$('#wait-text').textContent='核对设备系统版本与工程 SDK…';
       hist('ok','13.9 s','hdc 通道已建立 · 端口 7035');
+      mate.step=4;mate.stTxt='版本匹配 · 核对中';renderHub();
     },1100);
     setTimeout(function(){
       step(4,'done','HarmonyOS 6.0');step(5,'done','');
@@ -152,9 +831,15 @@
       $('#ok-box').hidden=false;
       hist('ok','14.6 s','设备 API 20 与工程 SDK 一致 · 就绪');
       var d=$('#hdr-device span');if(d)d.textContent='HUAWEI Mate 70 Pro';
+      mate.st='ready';mate.running=0;mate.stTxt='运行目标 · 用时 14.6 s';refresh('mate');
     },2200);
   });
-DemoGuide.init([{"target": "#btn-recheck", "kind": "click", "pos": "top", "label": "点这里重新检测"}, {"target": "#steps", "kind": "change", "pos": "top", "label": "步骤条往前推进"}]);
+
+  renderHub();showDetail();
+DemoGuide.init([{"target": "#btn-recheck", "kind": "click", "pos": "top", "label": "点这里重新检测"}, {"target": "#steps", "kind": "change", "pos": "left", "label": "步骤条往前推进"},
+  {"target": ".hr[data-id=\"emu\"] .fm", "kind": "click", "pos": "left", "label": "点一台就绪设备"},
+  {"target": "#btn-diag", "kind": "click", "pos": "right", "label": "一键打包诊断"},
+  {"target": "#btn-repro", "kind": "click", "pos": "right", "label": "选一条崩溃去复现"}]);
 })();
 </script>
 </body>
