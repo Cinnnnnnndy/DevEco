@@ -33,7 +33,6 @@
   --ai-surface:#FFFFFF;--ai-surface-2:#F4F5F8;--ai-field-line:#DFE1E5;
   --ai-grad:linear-gradient(120deg,#6E56F0 0%,#A452E0 55%,#E0457F 100%);
   --ai-grad-v:linear-gradient(180deg,#6E56F0 0%,#A452E0 55%,#E0457F 100%);
-  --ai-conic:conic-gradient(from var(--ai-angle),#6E56F0,#A452E0,#E0457F,#A452E0,#6E56F0);
 }
 
 .ide[data-ide-theme="dark"],
@@ -48,7 +47,6 @@
   --ai-surface:#2B2D30;--ai-surface-2:#323438;--ai-field-line:#43454A;
   --ai-grad:linear-gradient(120deg,#8F7CFF 0%,#C08AF7 55%,#F27BAE 100%);
   --ai-grad-v:linear-gradient(180deg,#8F7CFF 0%,#C08AF7 55%,#F27BAE 100%);
-  --ai-conic:conic-gradient(from var(--ai-angle),#8F7CFF,#C08AF7,#F27BAE,#C08AF7,#8F7CFF);
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
@@ -60,7 +58,6 @@
   --ai-surface:#2B2D30;--ai-surface-2:#323438;--ai-field-line:#43454A;
   --ai-grad:linear-gradient(120deg,#8F7CFF 0%,#C08AF7 55%,#F27BAE 100%);
   --ai-grad-v:linear-gradient(180deg,#8F7CFF 0%,#C08AF7 55%,#F27BAE 100%);
-  --ai-conic:conic-gradient(from var(--ai-angle),#8F7CFF,#C08AF7,#F27BAE,#C08AF7,#8F7CFF);
   }
 }
 
@@ -97,7 +94,8 @@ svg.ai-ico{width:16px;height:16px;flex:none;display:block;color:currentColor}
   -webkit-mask:var(--ai-spark-mask) center/contain no-repeat;mask:var(--ai-spark-mask) center/contain no-repeat}
 
 /* 小环：调用工具 / 在设备上验证 */
-.ai-ring{display:inline-block;flex:none;width:12px;height:12px;border-radius:50%;background:var(--ai-conic);
+.ai-ring{display:inline-block;flex:none;width:12px;height:12px;border-radius:50%;
+  background:conic-gradient(from 0deg,transparent 0 12%,var(--ai-violet) 40%,var(--ai-orchid) 70%,var(--ai-rose));
   -webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 2px),#000 calc(100% - 1.6px));
           mask:radial-gradient(farthest-side,transparent calc(100% - 2px),#000 calc(100% - 1.6px));
   animation:ai-spin var(--ai-t-ring) linear infinite}
@@ -205,25 +203,25 @@ svg.ai-ico{width:16px;height:16px;flex:none;display:block;color:currentColor}
 .ai-field__send:active{transform:scale(.94)}
 .ai-field__send:disabled{background:var(--ai-surface-2);color:var(--ui-fg-disabled);cursor:default}
 .ai-field__send svg{width:14px;height:14px}
-.ai-field::before,.ai-field::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;opacity:0;transition:opacity .3s}
-/* 流动描边：1.5px 的锥形渐变环 */
-.ai-field::before{padding:1.5px;background:var(--ai-conic);
+.ai-field::before,.ai-field::after{content:"";position:absolute;border-radius:inherit;pointer-events:none;opacity:0;transition:opacity .3s;
+  background:conic-gradient(from var(--ai-angle),var(--ai-violet),var(--ai-orchid),var(--ai-rose),var(--ai-orchid),var(--ai-violet));
   -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;
-          mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0)}
-/* 外发光：同一道光，模糊、压低透明度 */
-.ai-field::after{inset:-2px;background:var(--ai-conic);filter:blur(12px);z-index:-1}
+  mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);mask-composite:exclude}
+/* 流动描边：1.5px 的锥形渐变环（挖掉内容区，只剩一圈） */
+.ai-field::before{inset:0;padding:1.5px}
+/* 外发光：同一道光画在输入框大小的区域里、模糊后只留框外那一圈，不压到输入内容 */
+.ai-field::after{inset:-18px;padding:18px;border-radius:30px;background-clip:content-box;background-origin:content-box;filter:blur(9px)}
 .ai-field[data-state="generating"]{box-shadow:none}
 .ai-field[data-state="generating"]::before{opacity:1;animation:ai-angle var(--ai-t-shimmer) linear infinite}
-.ai-field[data-state="generating"]::after{opacity:.38;animation:ai-angle var(--ai-t-shimmer) linear infinite}
-.ai-field__gen{display:none;align-items:center;gap:7px;font-size:12px;color:var(--ui-fg-info);min-width:0}
+.ai-field[data-state="generating"]::after{opacity:.55;animation:ai-angle var(--ai-t-shimmer) linear infinite}
+.ai-field__gen{display:none;align-items:center;gap:7px;font-size:12px;color:var(--ui-fg-info);min-width:0;min-height:38px}
 .ai-field[data-state="generating"] .ai-field__gen{display:flex}
 .ai-field[data-state="generating"] .ai-field__ta{display:none}
-/* 生成中不会被外发光挤到：父容器需要 isolation 以便 z-index:-1 落在自身后面 */
-.ai-field{isolation:isolate}
 
 /* 兼容 kit 里已有的 .ai-input：加 data-ai-state="generating" 即获得同样的流动光 */
-.ai-input[data-ai-state="generating"]{border-color:transparent;isolation:isolate}
-.ai-input[data-ai-state="generating"]::after{inset:-1px;padding:1.5px;opacity:1;background:var(--ai-conic);
+.ai-input[data-ai-state="generating"]{border-color:transparent}
+.ai-input[data-ai-state="generating"]::after{inset:-1px;padding:1.5px;opacity:1;
+  background:conic-gradient(from var(--ai-angle),var(--ai-violet),var(--ai-orchid),var(--ai-rose),var(--ai-orchid),var(--ai-violet));
   animation:ai-angle var(--ai-t-shimmer) linear infinite}
 
 /* 3.2 就地问答浮层：选中代码 / 选中画布元素后出现 */
@@ -314,7 +312,7 @@ svg.ai-ico{width:16px;height:16px;flex:none;display:block;color:currentColor}
   .ai-ring{animation:none;background:conic-gradient(var(--ai-ink) 0 75%,transparent 0)}
   .ai-wait-dot::after{animation:none;inset:-3px;opacity:.28}
   .ai-field[data-state="generating"]::before,.ai-input[data-ai-state="generating"]::after{animation:none}
-  .ai-field[data-state="generating"]::after{animation:none;opacity:.22}
+  .ai-field[data-state="generating"]::after{animation:none;opacity:.3}
   .ai-touched{animation:ai-touch-reduced var(--ai-t-touch) linear 1}
 }
 .ai-reduce .ai-spark.is-live{animation:none;background:var(--ai-grad)}
@@ -322,6 +320,6 @@ svg.ai-ico{width:16px;height:16px;flex:none;display:block;color:currentColor}
 .ai-reduce .ai-ring{animation:none;background:conic-gradient(var(--ai-ink) 0 75%,transparent 0)}
 .ai-reduce .ai-wait-dot::after{animation:none;inset:-3px;opacity:.28}
 .ai-reduce .ai-field[data-state="generating"]::before,.ai-reduce .ai-input[data-ai-state="generating"]::after{animation:none}
-.ai-reduce .ai-field[data-state="generating"]::after{animation:none;opacity:.22}
+.ai-reduce .ai-field[data-state="generating"]::after{animation:none;opacity:.3}
 .ai-reduce .ai-touched{animation:ai-touch-reduced var(--ai-t-touch) linear 1}
 @keyframes ai-touch-reduced{0%,80%{box-shadow:0 0 0 1.5px var(--ai-orchid)}100%{box-shadow:0 0 0 1.5px transparent}}
