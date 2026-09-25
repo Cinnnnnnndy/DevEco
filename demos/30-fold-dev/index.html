@@ -5,12 +5,12 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='32' y2='32' gradientUnits='userSpaceOnUse'%3E%3Cstop stop-color='%232C8DDD'/%3E%3Cstop offset='1' stop-color='%233357AC'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='32' height='32' rx='7' fill='url(%23g)'/%3E%3Ctext x='16' y='22.5' font-family='Arial,Helvetica,sans-serif' font-size='13' font-weight='700' fill='white' text-anchor='middle'%3EDE%3C/text%3E%3C/svg%3E">
 <title>30 · 折叠屏鸿蒙电脑上开发：上屏写码，下屏运行与调试</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;500&display=swap">
 <link rel="stylesheet" href="../../deveco-intui-kit/src/tokens.css">
 <link rel="stylesheet" href="../../deveco-intui-kit/src/components.css">
 <link rel="stylesheet" href="../_shared/frame.css">
 <link rel="stylesheet" href="../_shared/guide.css">
 <script src="../../deveco-intui-kit/src/icons.js"></script>
+<script src="../../deveco-intui-kit/icons/ai-icons.js"></script>
 <script src="../_shared/frame.js"></script>
 <script src="../_shared/guide.js"></script>
 <style>
@@ -175,7 +175,7 @@
   .app .sb .bat{width:13px;height:6px;border:1px solid #182431;border-radius:2px;padding:1px;display:flex}
   .app .sb .bat i{flex:none;width:72%;background:#182431;border-radius:1px}
   .app .ah{height:30px;flex:none;display:flex;align-items:center;gap:7px;padding:0 9px}
-  .app .ah b{font-size:13px;font-weight:700;white-space:nowrap}
+  .app .ah b{font-size:13px;font-weight:600;white-space:nowrap}
   .app .ah .srch{flex:1;min-width:0;height:18px;border-radius:9px;background:#fff;color:#99A0AA;font-size:8px;display:flex;align-items:center;padding:0 7px;white-space:nowrap}
   .app .ah .tabs2{display:flex;gap:10px;font-size:9px;color:#6B7280;white-space:nowrap}
   .app .ah .tabs2 .on{color:#0A59F7;font-weight:600}
@@ -185,7 +185,7 @@
   .pc .img svg{width:38%;height:auto;aspect-ratio:1;color:rgba(24,36,49,.42)}
   .pc .tt{font-size:9px;line-height:12px;max-height:24px;overflow:hidden}
   .pc .pr{display:flex;align-items:baseline;gap:3px;white-space:nowrap;overflow:hidden;min-height:14px}
-  .pc .pr b{font-size:11.5px;font-weight:700;color:#E84026}
+  .pc .pr b{font-size:11.5px;font-weight:600;color:#E84026}
   .pc .pr span{font-size:8.5px;color:#99A0AA}
   .pc .pr em{font-style:normal;font-size:7.5px;line-height:11px;padding:0 3px;border-radius:3px;background:#FFE9E3;color:#E84026}
   .pc .pr.wrap{flex-wrap:wrap;gap:0 3px}
@@ -294,6 +294,54 @@
   .stage[data-pose="flat"] .dbg-grid{grid-template-columns:minmax(0,1.4fr) minmax(0,1fr) 150px}
 
   @media (prefers-reduced-motion:reduce){.fdev,.ide-win,.vkbd,.dock .dbg{transition:none}.win.enter,.hr-pill,.toast,.hud{animation:none}}
+
+  /* ===== 终轮：Agent 在下屏报进度（ai.css 状态机）+ 视觉收敛（描边改填充、蓝色只留主按钮 / 选中 / 焦点、删装饰）===== */
+  .agstrip{position:absolute;left:640px;top:112px;width:134px;z-index:5;display:none;flex-direction:column;gap:6px;pointer-events:auto}
+  .stage[data-pose="hover"][data-run="1"] .agstrip{display:flex}
+  .ag-card{border-radius:10px;background:var(--ui-popup-bg);box-shadow:var(--ui-shadow);padding:7px 8px 8px;font-size:10.5px;line-height:14px;display:flex;flex-direction:column;gap:4px;cursor:pointer}
+  .ag-card .hd{display:flex;align-items:center;gap:5px;min-width:0}
+  .ag-card .hd .agt{font-weight:500}
+  .ag-card .hd .ai-ring,.ag-card .hd .ai-spark{width:10px;height:10px}
+  .ag-card .hd .ai-wait-dot{width:7px;height:7px}
+  .ag-card .hd svg{width:11px;height:11px;flex:none;color:var(--ui-success)}
+  .ag-card .fl{font-family:var(--font-code);font-size:9.5px;color:var(--ui-fg-info);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ag-card .st{display:grid;grid-template-columns:10px minmax(0,1fr);gap:4px;color:var(--ui-fg-info)}
+  .ag-card .st::before{content:"·";text-align:center}
+  .ag-card .st.ok::before{content:"✓";color:var(--ui-success)}
+  .ag-card .st.run{color:var(--ui-fg)}
+  .ag-card .st.run::before{content:"›"}
+  .ag-card .st.wait{color:var(--ai-wait-ink)}
+  .ag-card .st.wait::before{content:"●";font-size:7px;color:var(--ai-wait)}
+  .ag-card.waiting{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--ai-wait) 45%,transparent),var(--ui-shadow)}
+  .ag-more{border-radius:9px;background:color-mix(in srgb,var(--ui-bg) 90%,transparent);padding:5px 8px;font-size:10px;line-height:13px;color:var(--ui-fg-info)}
+  .ag-more b{font-weight:500;color:var(--ui-fg)}
+  .agt{color:var(--ai-ink);white-space:nowrap}
+  .amsg .ai-toolrow{margin:0 -6px;align-items:start}
+  .amsg .ai-toolrow .what{white-space:normal;overflow-wrap:anywhere}
+  .amsg .ai-toolrow .ai-ring{width:12px;height:12px;margin:2px 2px 0}
+  .amsg .ai-answer{padding:10px 10px 8px;gap:8px}
+  .amsg .ai-answer__lead{font-size:12.5px;line-height:19px}
+  .amsg .ai-answer__body{font-size:12px;line-height:18px}
+  .amsg .ai-ask{padding:8px 10px}
+  .amsg .ai-ask.flash{animation:askf 1s ease}
+  @keyframes askf{0%{box-shadow:inset 0 0 0 1px var(--ai-wait),0 0 0 4px color-mix(in srgb,var(--ai-wait) 25%,transparent)}}
+  #hdr-agent{display:flex;min-width:0}
+  #hdr-agent .ai-status{max-width:300px}
+  .desk{background:var(--ui-editor-bg)}
+  .half .scr{background:color-mix(in srgb,var(--ui-fg) 5%,var(--ui-editor-bg))}
+  .rl-dev{border:0}
+  .rl-dev .nm svg{color:var(--ui-icon)}
+  .rl-pose button{border:0;background:color-mix(in srgb,var(--ui-fg) 5%,transparent)}
+  .rl-pose button.on{border:0;background:var(--ui-selection)}
+  .rl-pose button.on svg{color:var(--ui-fg)}
+  .rl-scenes button.on i{background:var(--ui-fg);color:var(--ui-editor-bg)}
+  .amsg .step.info svg.i{color:var(--ui-fg-info)}
+  .win.reload .wc::after{box-shadow:inset 0 0 0 3px var(--ui-success)}
+  .hr-pill{background:color-mix(in srgb,#000 72%,transparent);color:#fff}
+  .dk,.dkey{border:0;background:var(--ui-tag-bg)}
+  .dk.primary{background:var(--ui-accent)}
+  .vkbd{border:0}
+  .dock .dbg{border:0}
 </style>
 </head>
 <body>
@@ -408,6 +456,9 @@
               <span class="ctl"><span title="最小化"><svg><use href="#i-win-min"/></svg></span><span title="最大化"><svg><use href="#i-win-max"/></svg></span><span title="关闭"><svg><use href="#i-win-close"/></svg></span></span></div>
             <div class="wc"><div class="app pad" data-app></div><div class="ov" data-ov></div><div class="inkcap" data-cap></div><span class="grip"></span></div>
           </div>
+
+          <!-- 下屏的 Agent 进度：只放和上屏当前文件相关的 Agent，其余收成一行 -->
+          <div class="agstrip" id="agstrip" aria-live="polite"></div>
 
           <!-- M-Pen 悬浮工具条（系统层） -->
           <div class="penbar" id="penbar" aria-label="M-Pen">
@@ -611,7 +662,7 @@
     var hl=S.fixed&&S.showFix?[17,20]:[];
     var mk={};mk[bpLine()]='bp';
     $('#code-card').innerHTML=DemoFrame.code('ProductCard.ets',{marks:mk});
-    hl.forEach(function(n){var e=$('#code-card .ln[data-ln="'+n+'"]');if(e)e.classList.add('hl-ok')});
+    hl.forEach(function(n){var e=$('#code-card .ln[data-ln="'+n+'"]');if(e){e.classList.add('ai-block');e.insertAdjacentHTML('afterbegin','<span class="ai-gut" data-src="Agent·布局 · M-Pen 圈选后改 · 可退回"></span>')}});
     $('#code-store').innerHTML=DemoFrame.code('CartStore.ets',{});
     $('#span-sm').addEventListener('click',tuneSpan);
     markExec();
@@ -621,6 +672,7 @@
       $('#tabs .grow').insertAdjacentHTML('beforebegin',DemoFrame.tabs([{file:name}]));
     }
     var t=$('.tab[data-file="'+name+'"]');if(t&&!t.classList.contains('on'))t.click();
+    paintAgents();
   }
   function scrollToLine(sel,n){
     var c=$(sel),ln=c&&$('.ln[data-ln="'+n+'"]',c);if(!ln)return;
@@ -733,7 +785,7 @@
   }
   function initThread(){
     thread.innerHTML='<div class="umsg"><span class="time">2026/9/24 10:18</span><div class="bubble">商品卡在手机和平板上都要好看，先跑起来看看</div></div>'
-      +'<div class="amsg" id="a-run"><div class="step info"><svg class="i"><use href="#i-fold"/></svg><span>本机：<b>MateBook Fold</b> · HarmonyOS 6.1 · 展开 180°</span></div>'
+      +'<div class="amsg" id="a-run">'
       +'<div class="dm-card" id="run-card"><div class="dm-card-hd"><svg class="i"><use href="#i-run"/></svg>在本机运行<span class="grow"></span><span class="dm-pill ok">免连线 · 免模拟器</span></div>'
       +'<div class="dm-card-bd"><div class="tgt"><svg><use href="#i-phone"/></svg><b>Mate 70 Pro 窗口</b><span>1260×2844 · sm</span></div>'
       +'<div class="tgt"><svg><use href="#i-tablet"/></svg><b>MatePad Pro 窗口</b><span>2880×1920 · lg</span></div>'
@@ -950,7 +1002,7 @@
     var top=r.y+h+12,left=Math.max(4,Math.min(W-150,cx-72));
     if(top>H-34)top=Math.max(4,r.y-34);
     later(function(){
-      o.insertAdjacentHTML('beforeend','<div class="penpop" style="left:'+left+'px;top:'+top+'px"><button type="button" class="btn primary" id="pen-send"><svg class="i"><use href="#i-genie"/></svg>发给 DevEco Code</button><button type="button" class="btn" id="pen-redo">重画</button></div>');
+      o.insertAdjacentHTML('beforeend','<div class="penpop" style="left:'+left+'px;top:'+top+'px"><button type="button" class="btn primary" id="pen-send"><svg class="i"><use href="#ai-mark"/></svg>发给 Agent</button><button type="button" class="btn" id="pen-redo">重画</button></div>');
       var pp=$('.penpop',o),pw=pp.offsetWidth;pp.style.left=Math.max(4,Math.min(W-pw-4,cx-pw/2))+'px';
       $('#pen-send').addEventListener('click',sendInk);
       $('#pen-redo').addEventListener('click',function(){clearInk();armPen()});
@@ -971,37 +1023,39 @@
       +'<div class="shot"><div class="frame" id="shot-slot"></div><div class="cap">截图 · '+(isPh?'Mate 70 Pro':'MatePad')+' 窗口<br>product.id = '+g.id+'</div></div>'
       +'</div></div></div>');
     $('#shot-slot').appendChild(shot);$('#shot-slot').removeAttribute('id');
-    thread.insertAdjacentHTML('beforeend','<div class="amsg" id="a-pen"><div class="typing"><i></i><i></i><i></i></div></div>');
-    toBottom();capsule('run','DevEco Code · 看圈选');
+    thread.insertAdjacentHTML('beforeend','<div class="amsg" id="a-pen"><div class="ai-toolrow"><span class="ai-ring"></span><span class="what">读圈选、组件树节点和截图</span><span class="end"></span></div></div>');
+    toBottom();openTab('ProductCard.ets');setAg('layout','thinking','在看圈选',[['run','读圈选 · 组件树 · 截图']]);
     later(function(){
       var a=$('#a-pen');if(!a)return;
       var need=isPh?181:176,have=isPh?164:150;
-      a.innerHTML='<div class="step ok"><svg class="i"><use href="#i-checkS"/></svg><span>读了圈选、组件树节点和截图 · 定位到 <code>ProductCard.ets:17</code></span></div>'
-        +'<div>价格行是 <code>Row</code>，'+(isPh?'sm':'lg')+' 断点下卡片宽 <b>'+have+' vp</b>，三段文字要 <b>'+need+' vp</b>，右边的原价和「限时券」被裁掉。平板窗口里同样有 4 张卡被裁。改成能换行的 <code>Flex</code>：</div>'
+      a.innerHTML='<div class="ai-toolrow"><svg class="ai-ico"><use href="#ai-lasso"/></svg><span class="what">读了圈选、组件树和截图 · 定位 <code>ProductCard.ets:17</code></span><span class="end">1.1 s <span class="ok">✓</span></span></div>'
+        +'<div class="ai-answer"><p class="ai-answer__lead">价格行放不下：卡宽 '+have+' vp，三段文字要 '+need+' vp。</p><p class="ai-answer__body">价格行是 <code>Row</code>，右边的原价和「限时券」被裁；平板窗口里 4 张卡同样被裁。改成能换行的 <code>Flex</code>：</p></div>'
         +'<div class="diffcard"><div class="dh"><svg class="i"><use href="#i-ets"/></svg><span class="fn">ProductCard.ets</span><span class="cnt"><span class="add">+2</span> <span class="del">−1</span></span><span class="grow"></span></div>'
         +'<pre><span class="l del">-     Row({ space: 4 }) {</span><span class="l add">+     Flex({ wrap: FlexWrap.Wrap }) {</span><span class="l">        Text(`¥${this.product.price}`)</span><span class="l">          .fontColor($r(\'app.color.price\'))</span><span class="l add">+         .margin({ right: 4 })</span></pre></div>'
-        +'<div class="fix-ft" id="fix-ft"><button class="btn primary" id="fix-accept"><svg class="i"><use href="#i-checkS"/></svg>接受并热重载</button><button class="btn" id="fix-open"><svg class="i"><use href="#i-split"/></svg>在编辑器里看</button></div>';
+        +'<div class="ai-ask" id="fix-ask"><div class="ai-ask__h"><span class="ai-wait-dot"></span>在等你 · 接受后两个窗口热重载并比对</div><div class="ai-ask__opts fix-ft" id="fix-ft"><button class="ai-btn ai-btn--primary" id="fix-accept"><svg><use href="#i-checkS"/></svg>接受并热重载</button><button class="ai-btn ai-btn--fill" id="fix-open"><svg><use href="#i-split"/></svg>在编辑器里看</button></div></div>';
       $('#fix-accept').addEventListener('click',acceptFix);
       $('#fix-open').addEventListener('click',function(){openTab('ProductCard.ets');scrollToLine('#code-card',17)});
-      S.pen=4;toBottom();capsule('wait','等你确认 · ProductCard.ets');syncScene();
+      S.pen=4;toBottom();setAg('layout','waiting','在等你 · 接受改法',[['ok','读圈选 · 定位 :17'],['ok','Row → Flex 换行'],['wait','在等你接受']]);syncScene();
     },1100);
   }
   function acceptFix(){
     if(S.pen!==4)return;S.pen=5;
     S.fixed=true;S.showFix=true;renderCode();openTab('ProductCard.ets');later(function(){scrollToLine('#code-card',17)},30);
-    $('#fix-ft').outerHTML='<div class="steps" id="fix-steps"><div class="stp"><span class="st done"><svg><use href="#i-checkS"/></svg></span><span class="txt">改 ProductCard.ets 第 17、20 行</span><span class="file">+2 −1</span></div>'
-      +'<div class="stp"><span class="st run"></span><span class="txt">热重载 2 个窗口</span><span class="file"></span></div>'
-      +'<div class="stp"><span class="st todo"></span><span class="txt">sm / lg 截图比对：价格行不再被裁</span><span class="file"></span></div></div>';
+    $('#fix-ask').outerHTML='<div id="fix-steps"><div class="ai-toolrow"><svg class="ai-ico"><use href="#ai-review"/></svg><span class="what">你接受了改法</span><span class="end">刚刚 <span class="ok">✓</span></span></div>'
+      +'<div class="ai-toolrow"><svg class="ai-ico"><use href="#ai-edit"/></svg><span class="what">改 <code>ProductCard.ets</code> 第 17、20 行</span><span class="end">+2 −1 <span class="ok">✓</span></span></div>'
+      +'<div class="ai-toolrow" data-r="hr"><span class="ai-ring"></span><span class="what">热重载 2 个窗口</span><span class="end"></span></div></div>';
+    setAg('layout','verifying','热重载 · 比对 sm / lg',[['ok','改 :17 :20'],['run','热重载 2 个窗口'],['','比对 sm / lg 截图']]);
     toBottom();
     $$('.ink').forEach(function(x){x.classList.add('gone')});
     later(function(){
       renderApps();flash('phone','热重载 · 0.5 s');flash('pad','热重载 · 0.5 s');
-      var st=$$('#fix-steps .st');st[1].className='st done';st[1].innerHTML='<svg><use href="#i-checkS"/></svg>';$$('#fix-steps .file')[1].textContent='0.5 s';st[2].className='st run';
-      capsule('ok','热重载 0.5 s · 2 个窗口');
+      var r=$('#fix-steps [data-r="hr"]');if(r)r.outerHTML='<div class="ai-toolrow"><svg class="ai-ico"><use href="#ai-tool"/></svg><span class="what">热重载 2 个窗口</span><span class="end">0.5 s <span class="ok">✓</span></span></div><div class="ai-toolrow" data-r="cmp"><span class="ai-ring"></span><span class="what">sm / lg 截图比对</span><span class="end"></span></div>';
+      setAg('layout','verifying','比对 sm / lg 截图',[['ok','改 :17 :20'],['ok','热重载 0.5 s'],['run','比对 sm / lg 截图']]);
     },450);
     later(function(){
       $$('.ink').forEach(function(x){x.remove()});
-      var st=$$('#fix-steps .st');if(!st.length)return;st[2].className='st done';st[2].innerHTML='<svg><use href="#i-checkS"/></svg>';$$('#fix-steps .file')[2].textContent='通过';
+      var c=$('#fix-steps [data-r="cmp"]');if(!c)return;c.outerHTML='<div class="ai-toolrow"><svg class="ai-ico"><use href="#ai-verify"/></svg><span class="what">sm / lg 截图比对：价格行不再被裁</span><span class="end">通过 <span class="ok">✓</span></span></div>';
+      setAg('layout','done','已修好 · 价格不再被裁',[['ok','改 :17 :20'],['ok','热重载 0.5 s'],['ok','sm / lg 比对通过']]);
       step('<b>已修好</b>：手机和平板窗口里价格换到第二行，不再被裁。笔迹已清掉','ok');
       syncScene();
     },1500);
@@ -1010,11 +1064,37 @@
   /* =====================================================================
      状态栏胶囊、场景高亮、拖动窗口
      ===================================================================== */
-  function capsule(kind,t){
-    var slot=$('#status-slot');if(!slot)return;
-    var dot=kind==='run'?'<span class="spin" style="width:10px;height:10px"></span>':'<span class="dm-dot '+(kind==='wait'?'warn pulse':'ok')+'"></span>';
-    slot.innerHTML='<span class="dm-capsule'+(kind==='wait'?' wait':'')+'" id="cap">'+dot+'<span>'+esc(t)+'</span></span>';
+  /* 运行 / 调试态已在顶栏姿态胶囊、窗口暂停层与调试台上，状态栏不再重复一枚胶囊（消融） */
+  function capsule(){}
+
+  /* ---------- Agent：顶栏胶囊 + 下屏进度卡（只放和上屏当前文件相关的 Agent，其余收成一行） ---------- */
+  function freshAgents(){return [
+    {id:'layout',who:'Agent·布局',files:['ProductCard.ets'],st:'idle',txt:'待命',steps:[]},
+    {id:'reg',who:'Agent·回归',files:['CartStore.ets'],st:'tool',txt:'跑购物车单测 8/20',steps:[['run','CartStore.test.ets · 8/20']]},
+    {id:'i18n',who:'Agent·多语言',files:['string.json'],st:'generating',txt:'翻 en_US 26/40',steps:[]}
+  ]}
+  var AGS=freshAgents();
+  function ag(id){for(var i=0;i<AGS.length;i++)if(AGS[i].id===id)return AGS[i]}
+  var CAPI={idle:'',thinking:'<span class="ai-spark is-live"></span>',generating:'<span class="ai-spark is-live"></span>',tool:'<span class="ai-ring"></span>',verifying:'<span class="ai-ring"></span>',waiting:'<span class="ai-wait-dot"></span>',done:'<svg><use href="#i-checkS"/></svg>'};
+  function curFile(){var t=$('#tabs .tab.on');return t?t.dataset.file:''}
+  function setAg(id,st,txt,steps){var a=ag(id);a.st=st;a.txt=txt;if(steps)a.steps=steps;paintAgents()}
+  function jumpAsk(){var a=$('#fix-ask');if(a){DemoFrame.setSide('right','agent');a.scrollIntoView({block:'nearest',behavior:'smooth'});a.classList.remove('flash');void a.offsetWidth;a.classList.add('flash')}else DemoFrame.setSide('right','agent')}
+  function paintAgents(){
+    /* 回归在你调试时让路：本机窗口被调试会话占着，它的单测先停 */
+    var r=ag('reg');
+    if(S&&S.paused){r.st='idle';r.txt='让路：你在调试本机窗口';r.steps=[['wait','单测暂停，继续运行后接着跑']]}
+    else if(r.st==='idle'){r.st='tool';r.txt='跑购物车单测 9/20';r.steps=[['run','CartStore.test.ets · 9/20']]}
+    var L=ag('layout');
+    DemoFrame.agent(L.st,'<span class="agt">Agent·布局</span> '+esc(L.txt),{onClick:jumpAsk});
+    var el=$('#agstrip');if(!el)return;
+    var f=curFile(),rel=AGS.filter(function(a){return a.files.indexOf(f)>=0&&(a.st!=='idle'||a.steps.length)}),rest=AGS.filter(function(a){return rel.indexOf(a)<0&&a.st!=='idle'});
+    el.innerHTML=rel.map(function(a){
+      return '<div class="ag-card'+(a.st==='waiting'?' waiting':'')+'" data-ag="'+a.id+'"><div class="hd">'+(CAPI[a.st]||'')+'<span class="agt">'+a.who+'</span></div><div class="fl">'+esc(f)+'</div>'
+        +a.steps.map(function(x){return '<div class="st '+x[0]+'">'+esc(x[1])+'</div>'}).join('')+'</div>';
+    }).join('')+(rest.length?'<div class="ag-more">'+(rel.length?'其余 ':'')+'<b>'+rest.length+'</b> 个 Agent 在跑，不碰 '+esc(f||'当前文件')+' · '+rest.map(function(a){return a.who.replace('Agent·','')}).join('、')+'</div>':'');
   }
+  $('#agstrip').addEventListener('click',function(e){if(e.target.closest('.ag-card[data-ag="layout"]'))jumpAsk()});
+  $('#tabs').addEventListener('click',function(){setTimeout(paintAgents,0)});
   function syncScene(){
     var sc=S.paused?3:(S.pen>0?4:(S.pose==='hover'?2:1));S.scene=sc;
     $$('#rl-scenes button').forEach(function(b){var n=+b.dataset.scene;b.classList.toggle('on',n===sc);
@@ -1030,7 +1110,7 @@
     g('#win-phone',S.pen===1);
     g('#pen-send',S.pen===2);
     g('#fix-accept',S.pen===4);
-    updatePill();
+    updatePill();paintAgents();
   }
   /* 自由窗口：拖标题栏移动（下屏是斜着的，位移按投影比例换算） */
   $$('.win .wt').forEach(function(bar){
@@ -1065,7 +1145,7 @@
     renderCode();renderApps();initThread();
     openTab('Index.ets');
     $('#code-index').scrollTop=0;$('#code-card').scrollTop=0;
-    dbgLog('');capsule('ok','就绪 · MateBook Fold');
+    dbgLog('');AGS=freshAgents();paintAgents();
   }
   function scene(n){
     fold.classList.add('morph');
@@ -1096,7 +1176,6 @@
   DemoFrame.init({project:'MallApp',device:'MateBook Fold（本机）',deviceIcon:'#i-fold',pos:'12:31',
     center:'<span class="pose-pill"><svg class="i"><use href="#i-fold"/></svg><span id="pose-pill-t">展开 180°</span></span>',
     onReady:function(){
-      capsule('ok','就绪 · MateBook Fold');
       /* 悬停时上屏只有 780px：Header 收掉次要按钮 */
       var hide=['#i-translate','#i-rerun','#i-profile','#i-sdk','#i-projstruct','#i-user','#i-search','#i-vcs','#i-module'];
       $$('.hdr .hbtn').forEach(function(b){var u=$('use',b);if(u&&hide.indexOf(u.getAttribute('href'))>=0)b.classList.add('hv-hide')});
@@ -1115,16 +1194,14 @@
     {target:'#pose-hover.gd',kind:'click',pos:'right',label:'要边改边看手机、平板两种效果：折到悬停'},
     {target:'#span-sm.gd',kind:'click',pos:'bottom',label:'手机上想一行两张卡：点 12 改成 6'},
     {target:'#win-phone .add.gd',kind:'click',pos:'right',label:'想确认加购只 +1：点「加购」停在断点'},
-    {target:'#dbg-over.gd',kind:'click',pos:'top',label:'单步看购物车数，上屏跟着走到那一行'},
-    {target:'#pen-lasso.gd',kind:'click',pos:'left',label:'价格被裁了一截：拿笔圈给 AI'},
-    {target:'#win-phone.gd',kind:'change',pos:'right',label:'圈住价格被裁的那张卡'},
-    {target:'#pen-send.gd',kind:'click',pos:'bottom',label:'发出去：自动带上组件节点和截图'},
-    {target:'#fix-accept.gd',kind:'click',pos:'bottom',label:'接受改动，两个窗口一起刷新验证'}
+    {target:'#pen-lasso.gd',kind:'click',pos:'left',label:'价格被裁了一截：拿笔圈给 Agent'},
+    {target:'#fix-accept.gd',kind:'click',pos:'bottom',label:'它停在这等你：接受后两窗口热重载比对'}
   ],{scene:{
     at:'在 MateBook Fold 上改商品卡，手机平板都要好看',
     goal:'改一行就看到两种屏的效果，出了问题当场调、当场修',
     pain:'IDE、模拟器、调试窗挤一块屏来回拖；截图给 AI 还得描述',
-    fix:'折到悬停：上屏写码，下屏自动摆好应用和调试台，笔圈给 AI'
+    fix:'折到悬停：上屏写码，下屏摆好应用和调试台，笔圈给 Agent',
+    agent:'它读圈选改码并比对；下屏只放与当前文件相关的 Agent；你圈、拍板'
   }});
 })();
 </script>

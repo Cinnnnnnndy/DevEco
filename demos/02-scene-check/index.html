@@ -5,12 +5,12 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='32' y2='32' gradientUnits='userSpaceOnUse'%3E%3Cstop stop-color='%232C8DDD'/%3E%3Cstop offset='1' stop-color='%233357AC'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='32' height='32' rx='7' fill='url(%23g)'/%3E%3Ctext x='16' y='22.5' font-family='Arial,Helvetica,sans-serif' font-size='13' font-weight='700' fill='white' text-anchor='middle'%3EDE%3C/text%3E%3C/svg%3E">
 <title>02 · 场景化应用体检：上架会被打回的，写代码时就暴露</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;500&display=swap">
 <link rel="stylesheet" href="../../deveco-intui-kit/src/tokens.css">
 <link rel="stylesheet" href="../../deveco-intui-kit/src/components.css">
 <link rel="stylesheet" href="../_shared/frame.css">
 <link rel="stylesheet" href="../_shared/guide.css">
 <script src="../../deveco-intui-kit/src/icons.js"></script>
+<script src="../../deveco-intui-kit/icons/ai-icons.js"></script>
 <script src="../_shared/frame.js"></script>
 <script src="../_shared/guide.js"></script>
 <style>
@@ -24,6 +24,7 @@
   .btab svg.i{width:14px;height:14px}
   .btab.on svg.i{color:var(--ui-fg)}
   #auto-pill{margin-right:6px}
+  .dm-pill.info{background:var(--ui-tag-bg);color:var(--ui-fg)}
   #auto-pill .spin{width:10px;height:10px;border-width:1.5px}
   /* 面板主体：左列表 + 右详情 */
   .chk{flex:1;display:grid;grid-template-columns:minmax(0,1fr) 360px;min-height:0;height:100%}
@@ -41,14 +42,14 @@
   .chk-list .empty-ok svg{width:24px;height:24px;color:var(--ui-success)}
   code{font-family:var(--font-code);font-size:11px;background:var(--ui-tag-bg);padding:1px 4px;border-radius:4px;color:var(--ui-fg)}
   .chk-detail{overflow:auto;min-height:0;display:flex;flex-direction:column;gap:10px;padding:10px 14px 10px;font-size:var(--fs-para);line-height:var(--lh-para)}
-  .chk-detail .dt-head{display:flex;align-items:flex-start;gap:8px;font-weight:600}
+  .chk-detail .dt-head{display:flex;align-items:flex-start;gap:8px;font-weight:500}
   .chk-detail .dt-head svg{width:16px;height:16px;flex:none;margin-top:1px}
   .chk-detail .dt-head.err svg{color:var(--ui-error)}
   .chk-detail .dt-head.warn svg{color:var(--ui-warning)}
   .chk-detail .dt-loc{display:flex;align-items:center;gap:6px;font-size:var(--fs-sm);color:var(--ui-fg-info)}
   .chk-detail .dt-loc .loc{font-family:var(--font-code);font-size:11px;color:var(--ui-link)}
   .chk-detail .dt-loc svg{width:14px;height:14px}
-  .chk-detail .dt-h{font-size:var(--fs-sm);line-height:var(--lh-sm);font-weight:600;color:var(--ui-fg-info);margin-bottom:3px}
+  .chk-detail .dt-h{font-size:var(--fs-sm);line-height:var(--lh-sm);font-weight:500;color:var(--ui-fg-info);margin-bottom:3px}
   .chk-detail ul{margin:0;padding-left:16px}
   .chk-detail li{margin:1px 0}
   .chk-detail p{margin:0}
@@ -59,7 +60,7 @@
 
   /* ---------- 上架自检里的「一起跑的旅程」 ---------- */
   .chk-list .dm-group.jr-grp{margin-top:6px}
-  .chk-list .dm-item.jr-pub svg.i{color:var(--ui-info)}
+  .chk-list .dm-item.jr-pub svg.i{color:var(--ui-icon)}
   .chk-list .dm-item.jr-pub.err svg.i{color:var(--ui-error)}
   .chk-list .dm-item.jr-new{color:var(--ui-fg-info)}
   .chk-list .dm-item.jr-new svg.i{color:var(--ui-fg-info)}
@@ -69,7 +70,7 @@
   .jr{flex:1;display:grid;grid-template-columns:minmax(0,1fr) 420px;min-height:0;height:100%}
   .jr-main{display:flex;flex-direction:column;min-height:0;min-width:0;border-right:1px solid var(--ui-border)}
   .jr-compose{flex:none;display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--ui-border)}
-  .jr-compose > svg.i{color:var(--ui-info)}
+  .jr-compose > svg.i{color:var(--ui-icon)}
   .jr-prompt{flex:1;min-width:0;height:28px;border:1px solid var(--ui-component-border);border-radius:6px;background:var(--ui-field-bg);color:var(--ui-fg);font:inherit;font-size:var(--fs-para);padding:0 10px;outline:none;user-select:text}
   .jr-prompt:focus{border-color:var(--ui-accent)}
   .jr-tools{display:flex;gap:6px;flex:none}
@@ -80,21 +81,21 @@
   .jr .dm-pill .spin,.jr-foot .dm-pill .spin,.jr-sum .spin{width:9px;height:9px;border-width:1.5px}
   .jr-sum{flex:none}
   .jr-sum .jr-sumr{display:inline-flex;align-items:center;gap:6px;font-weight:400;font-size:var(--fs-sm);color:var(--ui-fg-info)}
-  .jr-sum .bad{color:var(--ui-error);font-weight:600}
-  .jr-sum .good{color:var(--ui-success);font-weight:600}
+  .jr-sum .bad{color:var(--ui-error);font-weight:500}
+  .jr-sum .good{color:var(--ui-success);font-weight:500}
   .jr-steps{flex:1;overflow:auto;min-height:0;padding:2px 0 10px}
   .jr-step{display:grid;grid-template-columns:18px auto minmax(0,1fr);gap:10px;align-items:start;padding:4px 12px 4px 10px;border-left:2px solid transparent;cursor:default}
   .jr-step:hover{background:var(--ui-hover-list)}
   .jr-step.sel{background:var(--ui-selection)}
-  .jr-step.run{border-left-color:var(--ui-accent);background:color-mix(in srgb,var(--ui-accent) 14%,transparent)}
+  .jr-step.run{border-left-color:var(--ui-fg-info);background:var(--ui-hover-list)}
   .jr-step.fail{border-left-color:var(--ui-error)}
   .jr-step.skip .jr-body,.jr-step.skip .jr-thumb{opacity:.55}
   .jr-step.enter{animation:jrin .3s ease-out both;animation-delay:var(--d,0s)}
   @keyframes jrin{from{opacity:0;transform:translateY(4px)}}
-  .jr-no{width:18px;height:18px;border-radius:50%;display:grid;place-items:center;font-size:11px;font-weight:600;background:var(--ui-tag-bg);color:var(--ui-fg-info);margin-top:3px}
+  .jr-no{width:18px;height:18px;border-radius:50%;display:grid;place-items:center;font-size:11px;font-weight:500;background:var(--ui-tag-bg);color:var(--ui-fg-info);margin-top:3px}
   .jr-step.pass .jr-no{background:var(--ui-success);color:var(--ui-accent-fg)}
   .jr-step.fail .jr-no{background:var(--ui-error);color:var(--ui-accent-fg)}
-  .jr-step.run .jr-no{background:var(--ui-accent);color:var(--ui-accent-fg)}
+  .jr-step.run .jr-no{background:var(--ui-fg-info);color:var(--ui-bg)}
   .jr-thumb{width:28px;height:63px;border-radius:4px;overflow:hidden;position:relative;border:1px solid var(--ui-component-border);background:var(--ui-tag-bg);display:grid;place-items:center;flex:none}
   .jr-thumb.none svg.i{width:12px;height:12px;color:var(--ui-fg-disabled)}
   .jr-thumb .jr-scr{position:absolute;left:0;top:0;transform:scale(.1707);transform-origin:0 0}
@@ -102,13 +103,13 @@
   .jr-thumb.lg .jr-scr{transform:scale(.305)}
   .jr-step.pass .jr-thumb{border-color:color-mix(in srgb,var(--ui-success) 70%,transparent)}
   .jr-step.fail .jr-thumb{border-color:var(--ui-error)}
-  .jr-step.run .jr-thumb{border-color:var(--ui-accent)}
+  .jr-step.run .jr-thumb{border-color:var(--ui-fg-info)}
   .jr-scr{width:164px;height:370px;background:#fff;color:#1a1a1a;font-family:var(--font-ui);font-size:11px;line-height:1.4;overflow:hidden;position:relative}
   .jr-body{min-width:0;display:flex;flex-direction:column;gap:1px}
   .jr-l1,.jr-l2,.jr-l3{display:flex;align-items:center;gap:8px;min-width:0}
   .jr-l1 .grow{flex:1}
   .jr-name,.jr-exp{min-width:0;height:22px;border:1px solid transparent;border-radius:5px;background:transparent;color:var(--ui-fg);font:inherit;font-size:var(--fs-para);padding:0 6px;outline:none;user-select:text}
-  .jr-name{flex:0 1 380px;font-weight:600;margin-left:-7px}
+  .jr-name{flex:0 1 380px;font-weight:500;margin-left:-7px}
   .jr-exp{flex:1 1 auto;max-width:640px;border-color:color-mix(in srgb,var(--ui-component-border) 70%,transparent);background:var(--ui-field-bg)}
   .jr-name:hover{border-color:var(--ui-component-border)}
   .jr-name:focus,.jr-exp:focus{border-color:var(--ui-accent);background:var(--ui-field-bg)}
@@ -130,12 +131,12 @@
   .jr-add[disabled]{opacity:.45}
   .jr-busy{display:flex;align-items:center;gap:8px;padding:14px 16px;color:var(--ui-fg-info);font-size:var(--fs-sm)}
   .jr-empty{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:var(--ui-fg-info);font-size:var(--fs-sm);text-align:center;padding:16px}
-  .jr-empty svg{width:24px;height:24px;color:var(--ui-info)}
+  .jr-empty svg{width:24px;height:24px;color:var(--ui-icon)}
   /* 右侧详情 */
   .jr-detail{display:flex;flex-direction:column;min-height:0;min-width:0}
   .jr-detail .chk-detail{flex:1}
   .chk-detail .dt-head.ok svg{color:var(--ui-success)}
-  .chk-detail .dt-head.info svg{color:var(--ui-info)}
+  .chk-detail .dt-head.info svg{color:var(--ui-icon)}
   .chk-detail ol{margin:0;padding-left:18px}
   .jr-foot{flex:none;display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:8px 14px;border-top:1px solid var(--ui-border)}
   .jr-foot .grow{flex:1}
@@ -148,13 +149,13 @@
   .jr-cmp{display:grid;grid-template-columns:1fr 1fr;gap:10px}
   .jr-crop{position:relative;height:70px;overflow:hidden;border-radius:6px;border:1px solid var(--ui-component-border);background:#fff}
   .jr-crop .jr-scr{position:absolute;right:0;top:0;transform:scale(1.15);transform-origin:100% 0}
-  .jr-lbl{position:absolute;left:6px;bottom:6px;height:18px;padding:0 7px;border-radius:9px;font-size:11px;line-height:18px;font-weight:600;color:var(--ui-accent-fg);white-space:nowrap}
+  .jr-lbl{position:absolute;left:6px;bottom:6px;height:18px;padding:0 7px;border-radius:9px;font-size:11px;line-height:18px;font-weight:500;color:var(--ui-accent-fg);white-space:nowrap}
   .jr-lbl.ok{background:var(--ui-success)}
   .jr-lbl.err{background:var(--ui-error)}
-  .jr-log{font-family:var(--font-code);font-size:11px;line-height:17px;background:var(--ui-editor-bg);border:1px solid var(--ui-border);border-radius:6px;padding:5px 8px;color:var(--ui-fg);user-select:text}
+  .jr-log{font-family:var(--font-code);font-size:11px;line-height:17px;background:var(--ui-editor-bg);border-radius:6px;padding:5px 8px;color:var(--ui-fg);user-select:text}
   .jr-log > div{display:flex;gap:6px}
   .jr-log .jr-lt{flex:none;color:var(--ui-fg-info)}
-  .jr-log .jr-lv{flex:none;width:8px;font-weight:600;color:var(--ui-fg-info)}
+  .jr-log .jr-lv{flex:none;width:8px;font-weight:500;color:var(--ui-fg-info)}
   .jr-log .jr-lm{min-width:0;word-break:break-all}
   .jr-log .jr-le,.jr-log .jr-le .jr-lv{color:var(--ui-error)}
   .jr-log mark{background:color-mix(in srgb,var(--ui-warning) 28%,transparent);color:inherit;border-radius:3px;padding:0 2px}
@@ -188,7 +189,7 @@
   .emu-strip .tx{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .emu-strip.muted{color:var(--ui-fg-info)}
   .emu-strip.muted svg{color:var(--ui-icon)}
-  .emu-strip.info{background:color-mix(in srgb,var(--ui-accent) 16%,transparent)}
+  .emu-strip.info{background:var(--ui-tag-bg)}
   .emu-strip.ok{background:color-mix(in srgb,var(--ui-success) 16%,transparent)}
   .emu-strip.ok svg{color:var(--ui-success)}
   .emu-strip.err{background:color-mix(in srgb,var(--ui-error) 16%,transparent)}
@@ -197,28 +198,28 @@
   .emu .dm-device.phone{width:180px;height:386px} /* Mate 70 Pro 1260×2844：屏幕 164×370 */
   .emu .dm-device.phone .scr{flex:none;width:164px;height:370px}
   .emu-cap{font-size:var(--fs-sm);line-height:var(--lh-sm);color:var(--ui-fg-info);min-height:16px;text-align:center;flex:none}
-  .jr-tap{position:absolute;width:24px;height:24px;margin:-12px 0 0 -12px;border-radius:50%;background:color-mix(in srgb,var(--ui-accent) 35%,transparent);border:2px solid var(--ui-accent);pointer-events:none;z-index:3;animation:jrtap .7s ease-out both}
+  .jr-tap{position:absolute;width:24px;height:24px;margin:-12px 0 0 -12px;border-radius:50%;background:rgba(26,26,26,.18);border:2px solid rgba(26,26,26,.55);pointer-events:none;z-index:3;animation:jrtap .7s ease-out both}
   @keyframes jrtap{0%{transform:scale(.4);opacity:0}40%{opacity:1}100%{transform:scale(1.1);opacity:.85}}
   @media (prefers-reduced-motion:reduce){.jr-tap,.jr-step.enter{animation:none}}
 
   /* ---------- 模拟器屏幕里的示例应用（应用自身配色，不随 IDE 主题变） ---------- */
-  .mapp .m-hd{height:30px;flex:none;display:flex;align-items:center;gap:6px;padding:0 10px;font-weight:600;font-size:12px}
+  .mapp .m-hd{height:30px;flex:none;display:flex;align-items:center;gap:6px;padding:0 10px;font-weight:500;font-size:12px}
   .mapp .m-sp{flex:1}
   .mapp .m-cart{position:relative;width:20px;height:20px;display:grid;place-items:center;border-radius:5px;flex:none}
   .mapp .m-cart svg{width:16px;height:16px;color:#1a1a1a}
-  .mapp .m-cart b{position:absolute;top:-3px;right:-4px;min-width:13px;height:13px;padding:0 3px;border-radius:7px;background:#E84026;color:#fff;font-size:8px;line-height:13px;text-align:center;font-weight:700}
+  .mapp .m-cart b{position:absolute;top:-3px;right:-4px;min-width:13px;height:13px;padding:0 3px;border-radius:7px;background:#E84026;color:#fff;font-size:8px;line-height:13px;text-align:center;font-weight:600}
   .mapp .hot-ok{outline:2px solid var(--ui-success);outline-offset:1px}
   .mapp .hot-err{outline:2px solid var(--ui-error);outline-offset:1px}
   .mapp .m-sub{padding:0 12px 8px;font-size:10px;color:#8a8f99}
   .mapp .m-inp{margin:4px 12px;height:28px;flex:none;border-radius:8px;border:1px solid #d9dce3;display:flex;align-items:center;padding:0 10px;font-size:10px;color:#1a1a1a}
   .mapp .m-btn{margin:12px 12px 0;height:30px;flex:none;border-radius:15px;background:#3574F0;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:11px}
-  .mapp .m-banner{margin:0 10px 6px;height:60px;flex:none;border-radius:8px;background:linear-gradient(120deg,#3574F0,#8a6cf0);color:#fff;font-weight:600;font-size:12px;padding:10px;line-height:1.35}
+  .mapp .m-banner{margin:0 10px 6px;height:60px;flex:none;border-radius:8px;background:#3574F0;color:#fff;font-weight:600;font-size:12px;padding:10px;line-height:1.35}
   .mapp .m-banner small{font-size:9px;font-weight:400;opacity:.9}
   .mapp .search.m-on{color:#1a1a1a}
   .mapp .m-cnt{padding:0 12px 2px;font-size:9px;color:#8a8f99}
-  .mapp .m-hero{margin:2px 10px 0;height:128px;flex:none;border-radius:10px;background:linear-gradient(160deg,#eef1f6,#d8dee9);display:grid;place-items:center}
+  .mapp .m-hero{margin:2px 10px 0;height:128px;flex:none;border-radius:10px;background:#E6EAF0;display:grid;place-items:center}
   .mapp .m-hero i{width:58px;height:40px;border-radius:20px;background:#fff;box-shadow:0 4px 12px rgba(0,0,0,.12)}
-  .mapp .m-price{padding:8px 12px 0;color:#E84026;font-size:16px;font-weight:700;line-height:20px}
+  .mapp .m-price{padding:8px 12px 0;color:#E84026;font-size:16px;font-weight:600;line-height:20px}
   .mapp .m-name{padding:2px 12px 0;font-size:12px;font-weight:600}
   .mapp .m-spec{padding:2px 12px 0;font-size:9px;color:#8a8f99}
   .mapp .m-bar{flex:none;display:flex;gap:6px;padding:8px 10px 10px;border-top:1px solid #f0f0f0;align-items:center}
@@ -244,7 +245,7 @@
   .mapp .mdl{border-right:1px solid #e6e8ed}
   .mapp .mdr{background:#fafbfc}
   .mapp .mdl > .mapp,.mapp .mdr > .mapp{flex:1;height:auto;min-height:0}
-  .mapp .m-brand{flex:1;margin:10px;border-radius:12px;background:linear-gradient(150deg,#3574F0,#8a6cf0);color:#fff;padding:18px 14px;display:flex;flex-direction:column;gap:6px}
+  .mapp .m-brand{flex:1;margin:10px;border-radius:12px;background:#3574F0;color:#fff;padding:18px 14px;display:flex;flex-direction:column;gap:6px}
   .mapp .m-brand b{font-size:16px}
   .mapp .m-brand span{font-size:10px;opacity:.9}
   .zw{position:absolute;left:0;top:0;transform-origin:0 0;overflow:hidden;background:#fff;color:#1a1a1a;font-family:var(--font-ui);font-size:11px;line-height:1.4}
@@ -254,22 +255,22 @@
   .jr-tk{font-size:var(--fs-sm);color:var(--ui-fg-info);white-space:nowrap;margin-right:2px}
   .jr-tgt .grow{flex:1}
   .jr-tgs{font-size:var(--fs-sm);color:var(--ui-fg-info);white-space:nowrap}
-  .dchip{display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 8px 0 7px;border:1px solid var(--ui-border);border-radius:6px;font:inherit;font-size:12px;background:transparent;color:var(--ui-fg);white-space:nowrap;flex:none}
+  .dchip{display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 8px 0 7px;border:1px solid transparent;border-radius:6px;font:inherit;font-size:12px;background:var(--ui-tag-bg);color:var(--ui-fg);white-space:nowrap;flex:none}
   .dchip:hover{background:var(--ui-hover)}
   .dchip[disabled]{opacity:.5}
   .dchip .cb{width:14px;height:14px;border-radius:3px;border:1.5px solid var(--ui-component-border);flex:none;display:grid;place-items:center;box-sizing:border-box}
-  .dchip.on{border-color:var(--ui-accent);background:color-mix(in srgb,var(--ui-accent) 10%,transparent)}
+  .dchip.on{border-color:var(--ui-border)}
   .dchip.on .cb{background:var(--ui-accent);border-color:var(--ui-accent)}
   .dchip.on .cb::after{content:"";width:6px;height:3px;border-left:1.5px solid #fff;border-bottom:1.5px solid #fff;transform:rotate(-45deg) translate(1px,-1px)}
   .dchip svg.i{width:14px;height:14px;flex:none}
-  .dchip b{font-weight:600}
+  .dchip b{font-weight:500}
   .dchip .rs{font-family:var(--font-code);font-size:10.5px;color:var(--ui-fg-info)}
-  .dchip.tap{border-style:dashed}
-  .dchip.tap svg.nfc{color:var(--ui-accent)}
+  .dchip.tap{background:transparent;border:1px dashed var(--ui-border)}
+  .dchip.tap svg.nfc{color:var(--ui-icon)}
   .dchip.tap .rs{font-family:var(--font-ui);color:var(--ui-link)}
-  .dchip.busy{border-color:var(--ui-accent)}
+  .dchip.busy{border-color:var(--ui-fg-info)}
   .bpk{display:inline-block;font-family:var(--font-code);font-size:10px;line-height:15px;padding:0 4px;border-radius:4px;background:var(--ui-tag-bg);color:var(--ui-fg-info);font-weight:500;flex:none}
-  .bpk.md,.bpk.lg{color:var(--ui-info);background:color-mix(in srgb,var(--ui-accent) 14%,transparent)}
+  .bpk.md,.bpk.lg{color:var(--ui-fg)}
 
   /* 多台并行：每步一行，每台设备一格截图（真实比例） */
   .jr-colhd{position:sticky;top:0;z-index:2;display:grid;grid-template-columns:18px auto minmax(0,1fr);gap:10px;align-items:center;padding:4px 12px;background:var(--ui-bg);border-bottom:1px solid var(--ui-border);font-size:11px;line-height:14px;color:var(--ui-fg-info)}
@@ -281,7 +282,7 @@
   .jr-cell{position:relative;display:flex;justify-content:center;flex:none}
   .jr-cell.pass .jr-thumb{border-color:color-mix(in srgb,var(--ui-success) 70%,transparent)}
   .jr-cell.fail .jr-thumb{border-color:var(--ui-error)}
-  .jr-cell.run .jr-thumb{border-color:var(--ui-accent)}
+  .jr-cell.run .jr-thumb{border-color:var(--ui-fg-info)}
   .jr-cell.skip .jr-thumb{opacity:.5}
   .jr-cell .mk{position:absolute;right:-4px;top:-4px;width:15px;height:15px;border-radius:50%;display:grid;place-items:center;background:var(--ui-bg);box-shadow:0 0 0 1px var(--ui-border);z-index:1}
   .jr-cell .mk svg{width:13px;height:13px}
@@ -291,31 +292,31 @@
   .jr-devrow{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap}
   .jr-dv{margin:0;display:flex;flex-direction:column;align-items:center;gap:3px;min-width:64px}
   .jr-dv figcaption{display:flex;align-items:center;gap:4px;font-size:11px;line-height:15px;white-space:nowrap}
-  .jr-dv figcaption b{font-weight:600}
+  .jr-dv figcaption b{font-weight:500}
   .jr-dvst{font-size:11px;line-height:14px;color:var(--ui-fg-info);white-space:nowrap}
   .jr-dv.pass .jr-thumb{border-color:color-mix(in srgb,var(--ui-success) 70%,transparent)}
   .jr-dv.pass .jr-dvst{color:var(--ui-success)}
   .jr-dv.fail .jr-thumb{border-color:var(--ui-error)}
-  .jr-dv.fail .jr-dvst{color:var(--ui-error);font-weight:600}
+  .jr-dv.fail .jr-dvst{color:var(--ui-error);font-weight:500}
   .jr-dres{display:flex;flex-direction:column;gap:3px;font-size:var(--fs-sm);line-height:var(--lh-sm)}
   .jr-dres > div{display:flex;align-items:center;gap:6px;min-height:20px}
   .jr-dres svg.i{width:14px;height:14px;flex:none;color:var(--ui-icon)}
   .jr-dres .grow{flex:1}
 
   /* ---------- 碰上的真机：多屏协同镜像，按真实比例 ---------- */
-  .ide[data-ide-theme][data-right="phones"][data-phones="2"]{--ai-w:480px}
+  .ide[data-ide-theme][data-right="phones"][data-phones="2"]{--ai-w:420px}
   .phs{flex:1;min-height:0;overflow:auto;display:flex;flex-wrap:wrap;align-items:flex-end;align-content:center;justify-content:center;gap:16px 12px;padding:12px 8px;background:var(--ui-editor-bg)}
   .phs-empty{align-self:center;color:var(--ui-fg-info);font-size:var(--fs-sm)}
   .phd{display:flex;flex-direction:column;align-items:center;gap:5px;min-width:0}
   .phd.off{opacity:.45}
-  .phv{position:relative;background:#0f1012;padding:5px;border-radius:18px;box-shadow:0 6px 18px rgba(0,0,0,.32)}
+  .phv{position:relative;background:#0f1012;padding:5px;border-radius:18px}
   .phv.pv-fold{border-radius:12px}
   .phv .jscr{position:relative;overflow:hidden;border-radius:13px;background:#fff}
   .phv.pv-fold .jscr{border-radius:8px}
   .phv.pv-fold .jscr::after{content:"";position:absolute;top:0;bottom:0;left:50%;width:1px;background:rgba(0,0,0,.14);z-index:6}
   .ph-cap{display:flex;align-items:center;gap:5px;font-size:12px;white-space:nowrap;margin-top:3px}
   .ph-cap svg.i{width:14px;height:14px;color:var(--ui-icon)}
-  .ph-cap b{font-weight:600}
+  .ph-cap b{font-weight:500}
   .ph-st{display:flex;align-items:center;gap:5px;max-width:100%;height:16px;font-size:11px;color:var(--ui-fg-info);white-space:nowrap;overflow:hidden}
   .ph-st .tx,.hc-st .tx{min-width:0;overflow:hidden;text-overflow:ellipsis}
   .ph-st svg.i,.hc-st svg.i{width:12px;height:12px;flex:none}
@@ -325,14 +326,14 @@
   .ph-st.info,.hc-st.info{color:var(--ui-fg)}
 
   /* ---------- 本机：鸿蒙电脑原生自由窗口（系统窗口，按应用自己的浅色） ---------- */
-  .hwin{position:absolute;z-index:40;left:0;top:0;display:flex;flex-direction:column;border-radius:12px;background:#fff;box-shadow:0 18px 48px rgba(0,0,0,.42),0 0 0 1px rgba(0,0,0,.2)}
+  .hwin{position:absolute;z-index:40;left:0;top:0;display:flex;flex-direction:column;border-radius:12px;background:#fff;box-shadow:0 10px 30px rgba(0,0,0,.35)}
   .hwin[hidden]{display:none}
   .hwin.opening{animation:hwopen .28s cubic-bezier(.2,.8,.2,1)}
   @keyframes hwopen{from{opacity:0;transform:scale(.94) translateY(10px)}}
   .hw-bar{height:32px;flex:none;display:flex;align-items:center;gap:6px;padding:0 4px 0 10px;background:#F1F3F5;color:#1a1a1a;border-radius:12px 12px 0 0;cursor:move;user-select:none;font-family:var(--font-ui);font-size:12px;touch-action:none}
-  .hw-ico{width:16px;height:16px;border-radius:5px;background:linear-gradient(135deg,#FF8A3D,#E84026);flex:none;display:grid;place-items:center}
+  .hw-ico{width:16px;height:16px;border-radius:5px;background:#E84026;flex:none;display:grid;place-items:center}
   .hw-ico svg{width:11px;height:11px;color:#fff}
-  .hw-name{font-weight:600;white-space:nowrap}
+  .hw-name{font-weight:500;white-space:nowrap}
   .hw-bar .grow{flex:1}
   .hw-b{width:28px;height:24px;border:0;border-radius:6px;background:transparent;color:#3a3d44;display:grid;place-items:center;cursor:default;flex:none}
   .hw-b:hover{background:rgba(0,0,0,.08)}
@@ -345,30 +346,30 @@
   .hw-rz[data-rz="b"]{left:14px;right:14px;bottom:-4px;height:8px;cursor:ns-resize}
   .hw-rz[data-rz="rb"]{right:-4px;bottom:-4px;width:18px;height:18px;cursor:nwse-resize}
   .hw-rz[data-rz="rb"]::after{content:"";position:absolute;right:7px;bottom:7px;width:7px;height:7px;border-right:2px solid rgba(0,0,0,.28);border-bottom:2px solid rgba(0,0,0,.28);border-radius:0 0 3px 0}
-  .hw-cap{position:absolute;left:0;right:0;top:calc(100% + 6px);display:flex;align-items:center;gap:8px;height:24px;padding:0 8px;border-radius:6px;background:var(--ui-popup-bg);border:1px solid var(--ui-popup-border);box-shadow:0 4px 12px rgba(0,0,0,.18);font-size:11px;color:var(--ui-fg-info);white-space:nowrap;overflow:hidden}
+  .hw-cap{position:absolute;left:0;right:0;top:calc(100% + 6px);display:flex;align-items:center;gap:8px;height:24px;padding:0 8px;border-radius:6px;background:var(--ui-popup-bg);font-size:11px;color:var(--ui-fg-info);white-space:nowrap;overflow:hidden}
   .hc-st{display:flex;align-items:center;gap:5px;min-width:0;flex:1}
   .hc-sz{flex:none;font-family:var(--font-code);font-size:10.5px}
   .hc-sz .bpk{margin-left:4px}
 
   /* ---------- 碰一碰：手机靠近电脑的动效 + 系统连接卡 ---------- */
-  .tapc{position:absolute;right:16px;bottom:34px;z-index:60;width:300px;border-radius:16px;background:var(--ui-popup-bg);border:1px solid var(--ui-popup-border);box-shadow:0 14px 40px rgba(0,0,0,.38);padding:10px 12px 12px;display:flex;flex-direction:column;gap:9px;transform:translateY(14px);opacity:0;transition:transform .25s ease-out,opacity .25s}
+  .tapc{position:absolute;right:16px;bottom:34px;z-index:60;width:300px;border-radius:16px;background:var(--ui-popup-bg);box-shadow:0 10px 30px rgba(0,0,0,.3);padding:10px 12px 12px;display:flex;flex-direction:column;gap:9px;transform:translateY(14px);opacity:0;transition:transform .25s ease-out,opacity .25s}
   .tapc[hidden]{display:none}
   .tapc.in{transform:none;opacity:1}
   .tapc-hd{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ui-fg-info)}
-  .tapc-hd svg.i{width:14px;height:14px;color:var(--ui-accent)}
+  .tapc-hd svg.i{width:14px;height:14px;color:var(--ui-icon)}
   .tapc-hd .grow{flex:1}
   .tapc-art{position:relative;height:98px;border-radius:10px;background:var(--ui-tag-bg);overflow:hidden}
   .tc-pc{position:absolute;left:40px;top:12px;width:156px;height:76px;border-radius:9px;background:color-mix(in srgb,var(--ui-fg-info) 20%,var(--ui-bg));box-shadow:inset 0 0 0 1px var(--ui-component-border)}
   .tc-kb{position:absolute;left:10px;right:10px;top:8px;height:34px;border-radius:3px;
     background:repeating-linear-gradient(0deg,transparent 0 2px,color-mix(in srgb,var(--ui-fg-info) 22%,transparent) 2px 8px),repeating-linear-gradient(90deg,transparent 0 2px,var(--ui-bg) 2px 3px);opacity:.9}
   .tc-pad{position:absolute;left:50%;bottom:7px;width:52px;height:24px;margin-left:-26px;border-radius:4px;box-shadow:inset 0 0 0 1px var(--ui-component-border)}
-  .tc-zone{position:absolute;right:13px;bottom:9px;width:20px;height:20px;border-radius:50%;border:1.5px dashed var(--ui-accent);display:grid;place-items:center}
-  .tc-zone svg{width:12px;height:12px;color:var(--ui-accent)}
+  .tc-zone{position:absolute;right:13px;bottom:9px;width:20px;height:20px;border-radius:50%;border:1.5px dashed var(--ui-fg-info);display:grid;place-items:center}
+  .tc-zone svg{width:12px;height:12px;color:var(--ui-fg-info)}
   .tc-ph{position:absolute;left:160px;top:36px;width:22px;height:50px;border-radius:6px;background:#15161a;border:2px solid #4a4d55;box-sizing:border-box;box-shadow:0 6px 14px rgba(0,0,0,.35);transform:translate(86px,-22px) rotate(20deg);opacity:0;transition:transform .6s cubic-bezier(.2,.8,.2,1),opacity .3s}
   .tc-ph::after{content:"";position:absolute;inset:2px;border-radius:3px;background:linear-gradient(160deg,#2b2f3a,#16181d);transition:background .3s}
   .tapc.go .tc-ph{transform:none;opacity:1}
-  .tapc.ok .tc-ph::after{background:linear-gradient(160deg,#5B8CF7,#3574F0)}
-  .tc-rip{position:absolute;left:173px;top:77px;width:12px;height:12px;margin:-6px 0 0 -6px;border-radius:50%;border:2px solid var(--ui-accent);opacity:0;pointer-events:none}
+  .tapc.ok .tc-ph::after{background:#3a3f4a}
+  .tc-rip{position:absolute;left:173px;top:77px;width:12px;height:12px;margin:-6px 0 0 -6px;border-radius:50%;border:2px solid var(--ui-fg-info);opacity:0;pointer-events:none}
   .tapc.hit .tc-rip{animation:tcrip 1s ease-out 2}
   .tapc.hit .tc-rip.r2{animation-delay:.3s}
   @keyframes tcrip{0%{transform:scale(.6);opacity:.9}100%{transform:scale(5.5);opacity:0}}
@@ -376,10 +377,39 @@
   .tc-ok svg{width:12px;height:12px;color:#fff}
   .tapc.ok .tc-ok{transform:scale(1)}
   .tapc-tx{display:flex;flex-direction:column;gap:2px;font-size:var(--fs-sm);line-height:var(--lh-sm);color:var(--ui-fg-info)}
-  .tapc-tx > b{font-size:var(--fs-para);line-height:var(--lh-para);color:var(--ui-fg);font-weight:600}
+  .tapc-tx > b{font-size:var(--fs-para);line-height:var(--lh-para);color:var(--ui-fg);font-weight:500}
   .tapc-tx b b{color:var(--ui-fg)}
   .tapc-m{font-family:var(--font-code);font-size:10.5px}
   @media (prefers-reduced-motion:reduce){.hwin.opening,.tapc.hit .tc-rip{animation:none}.tc-ph,.tapc{transition:none}}
+
+  /* ===== Agent·体检：扫全工程 → 每条出补丁 → 你勾选 → 它改完回归（ai.css 组件） ===== */
+  .ag-bar{position:sticky;top:-4px;z-index:2;display:flex;flex-direction:column;gap:2px;margin:-4px 0 4px;padding:6px 10px 6px 12px;background:var(--ui-bg)}
+  .ag-bar .hd{display:flex;align-items:center;gap:8px;min-height:28px;font-size:var(--fs-sm);color:var(--ui-fg)}
+  .ag-bar .hd .ai-ico{width:16px;height:16px;color:var(--ai-ink);flex:none}
+  .ag-bar .hd .tx{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .ag-bar .hd .tx b{font-weight:500}
+  .ag-bar .ai-btn{flex:none}
+  .ag-bar .ai-btn--primary[disabled]{opacity:.5}
+  .ag-bar .ai-toolrow{min-height:24px;padding:2px 6px;margin-left:-6px}
+  .ag-bar .ai-toolrow.wait .what{color:var(--ai-wait-ink)}
+  .ag-bar .ai-ring{width:12px;height:12px}
+  .chk-list .dm-item .pk{width:14px;height:14px;border-radius:3px;box-shadow:inset 0 0 0 1.5px var(--ui-component-border);flex:none;display:grid;place-items:center;cursor:pointer}
+  .chk-list .dm-item .pk.on{background:var(--ui-accent);box-shadow:none}
+  .chk-list .dm-item .pk.on::after{content:"";width:6px;height:3px;border-left:1.5px solid #fff;border-bottom:1.5px solid #fff;transform:rotate(-45deg) translate(1px,-1px)}
+  .chk-list .dm-item .pt{flex:none;font-family:var(--font-code);font-size:11px;color:var(--ui-fg-info)}
+  .chk-list .dm-item .pt .ad{color:var(--ui-success)}.chk-list .dm-item .pt .rm{color:var(--ui-error)}
+  .ag-judge{display:inline-flex;align-items:center;gap:5px;height:18px;padding:0 7px;border-radius:9px;background:var(--ai-wait-tint);color:var(--ai-wait-ink);font-size:11px;white-space:nowrap;flex:none}
+  .ag-judge .ai-wait-dot{width:6px;height:6px}
+  .ag-judge .ai-wait-dot::after{display:none}
+  .chk-detail .ag-patch{font-family:var(--font-code);font-size:11px;line-height:18px;border-radius:6px;background:var(--ui-editor-bg);padding:4px 0;overflow:hidden}
+  .chk-detail .ag-patch div{padding:0 8px;white-space:pre;overflow:hidden;text-overflow:ellipsis}
+  .chk-detail .ag-patch .ai-add::before{content:"+ ";color:var(--ui-success)}
+  .chk-detail .ag-patch .ai-del::before{content:"− ";color:var(--ui-error)}
+  .chk-detail .ag-note{font-size:var(--fs-sm);line-height:var(--lh-sm);color:var(--ui-fg-info)}
+  .chk-detail .ag-note.w{color:var(--ai-wait-ink)}
+  .chk-detail .ai-approve__cmd{font-size:11px;line-height:17px}
+  .chk-detail .ai-answer{padding:12px 14px 10px}
+  .code .ln.ai-block .ai-gut{left:52px}
 </style>
 </head>
 <body>
@@ -506,9 +536,9 @@
       {lv:'warn',msg:'应用图标在手表上会被裁掉一圈',file:'app.json5',line:6,
         why:['手表端把图标裁成圆形显示，现在的图标四角有内容，圆形裁切后会缺一块。','上架材料勾了「手表」设备，审核会在手表上实际看一遍。'],
         fix:'app.json5 第 6 行的 <code>icon</code> 换成安全区内的版本：主体控制在中间 66% 的圆内；或者单独给 wearable 配一张 <code>$media:app_icon_watch</code>。'},
-      {lv:'err',msg:'登录失败直接把错误码 <code>ERR_AUTH_401</code> 给用户看',file:'LoginPage.ets',line:27,
+      {lv:'err',msg:'登录失败直接把错误码 <code>ERR_AUTH_401</code> 给用户看',file:'LoginPage.ets',line:28,
         why:['用户看到 <code>ERR_AUTH_401</code> 不知道该做什么，审核按「错误提示不可理解」打回。','README 里已经写了这个码的含义是「验证码错误」，只是没用上。'],
-        fix:'第 27 行改成 <code>this.error = e.code === \'ERR_AUTH_401\' ? \'验证码错误，请重新输入\' : \'登录失败，请稍后再试\'</code>，错误码留在日志里。'},
+        fix:'第 28 行改成 <code>this.error = e.code === \'ERR_AUTH_401\' ? \'验证码错误，请重新输入\' : \'登录失败，请稍后再试\'</code>，错误码留在日志里。'},
       {lv:'warn',msg:'首页大图未做深色适配',file:'Index.ets',line:10,
         why:['工程开了跟随系统深色模式，首页大图是浅色底，切到深色后整块发白。','审核会在深色模式下截图对比，明显不协调的会要求整改。'],
         fix:'把 Index.ets 第 10 行引用的资源在 <code>resources/dark/media</code> 下放一张深色版本，文件名保持一致，系统会按模式自动选。'}
@@ -547,6 +577,17 @@
         fix:'ItemCard.ets 第 9 行的 <code>Image</code> 换成缩略图地址（<code>?w=320</code>），原图在详情页再拉；给 Image 设 <code>.alt($r(\'app.media.cover_placeholder\'))</code>。'}
     ]}
   ];
+  /* Agent·体检 给上架自检每条备好的补丁：机械改动默认勾上，产品取舍（文案、隐私用途）要你看 */
+  var PATCH=[
+    {add:1,del:1,conflict:true,diff:[['del',"TextInput({ placeholder: '验证码' }).maxLength(6)"],['add',"TextInput({ placeholder: '验证码' }).maxLength(6)"],['add',"  .accessibilityText('验证码，6 位数字')"]]},
+    {add:2,del:0,judge:'用途文案会原样出现在隐私声明里，要你定',diff:[['add','"deviceIdentifier",'],['add','"reason": "$string:privacy_udid"  // 用于登录风控']]},
+    {add:1,del:0,diff:[['add','"wearable": { "icon": "$media:app_icon_watch" }  // 已按 66% 安全圆生成']]},
+    {add:1,del:1,judge:'错误提示是产品用语，要你定',code:'      <span class="k">this</span>.<span class="p">error</span> = <span class="p">e</span>.<span class="p">code</span> === <span class="s">\'ERR_AUTH_401\'</span> ? <span class="s">\'验证码错误，请重新输入\'</span> : <span class="s">\'登录失败，请稍后再试\'</span>;',diff:[['del',"this.error = 'ERR_AUTH_401';"],['add',"this.error = e.code === 'ERR_AUTH_401' ? '验证码错误，请重新输入' : '登录失败，请稍后再试';"]]},
+    {add:1,del:0,diff:[['add','resources/dark/media/home_banner.png  // 新增深色版本，按原图压暗']]}
+  ];
+  SCENES[0].items.forEach(function(it,i){it.patch=PATCH[i];it.pick=!PATCH[i].judge});
+  var AG={phase:'idle',rows:[],fixedN:0};   /* idle · scan · ready · apply · conflict · verify · done */
+  var AIL={};   /* 文件 → Agent 写的行号（人改的不打标） */
   var cur='publish',selIdx=0,ideRoot;
 
   /* ---------- 示例工程里补两份代码：购物车 store 与结算页（旅程会定位到这里） ---------- */
@@ -683,6 +724,7 @@
     var marks={};if(line&&lv)marks[line]=lv;
     $('#code').innerHTML=DemoFrame.code(file,{cur:line,hl:(line&&!opt.nohl)?[line]:[],marks:marks});
     (opt.ok||[]).forEach(function(n){var el=$('#code .ln[data-ln="'+n+'"]');if(el){el.classList.remove('hl');el.classList.add('hl-ok')}});
+    (AIL[file]||[]).forEach(function(n){var el=$('#code .ln[data-ln="'+n+'"]');if(el&&!el.classList.contains('ai-block')){el.classList.add('ai-block');el.insertAdjacentHTML('afterbegin','<span class="ai-gut" data-src="Agent·体检 · 上架自检补丁"></span>')}});
     $('#crumbs').innerHTML=DemoFrame.crumbs(file);
     $$('#tree .row.sel').forEach(function(x){x.classList.remove('sel')});
     var r=$('#tree .row[data-file="'+file+'"]');if(r)r.classList.add('sel');
@@ -700,8 +742,6 @@
       var c=s.items.length+(s.id==='publish'?jrPubFail():0);
       return '<button class="btab'+(s.id===cur?' on':'')+'" data-scene="'+s.id+'"><svg class="i"><use href="'+s.icon+'"/></svg>'+s.name+'<span class="cnt">'+c+'</span></button>';
     }).join('')+jrTab();
-    var total=jrPubFail();SCENES.forEach(function(s){total+=s.items.length});
-    var slot=$('#status-slot');if(slot)slot.innerHTML='<span class="dm-capsule" title="App Check"><svg class="i" style="width:12px;height:12px"><use href="#i-tw-problems"/></svg>体检 · '+total+' 条待处理</span>';
   }
   function renderList(){
     var s=scene(cur),h='',ne=0,nw=0;
@@ -710,27 +750,35 @@
     if(!s.items.length){
       h='<div class="empty-ok"><svg><use href="#i-check"/></svg>'+s.name+'场景没有待处理的问题</div>';
     }else s.items.forEach(function(it,i){
-      var dead=!FILES[it.file];
+      var dead=!FILES[it.file],ag=s.id==='publish'&&AG.phase!=='idle'&&AG.phase!=='scan'&&it.patch;
       h+='<div class="dm-item '+it.lv+(i===selIdx?' sel':'')+'" data-i="'+i+'" role="button" tabindex="0">'
+        +(ag?'<span class="pk'+(it.pick?' on':'')+'" data-pick="'+i+'" role="checkbox" aria-checked="'+!!it.pick+'" title="接受这条补丁"></span>':'')
         +'<svg class="i"><use href="#'+(it.lv==='err'?'i-err':'i-warn')+'"/></svg>'
         +'<span class="msg">'+it.msg+'</span>'
-        +(it.state==='fixing'?'<span class="dm-pill info"><span class="spin"></span>DevEco Code 在改</span>':'')
+        +(it.state==='fixing'?'<span class="ai-src"><span class="ai-spark is-live"></span>'+(s.id==='publish'?'Agent·体检':'Agent')+' 在改</span>'
+          :ag&&it.patch.judge&&!it.pick?'<span class="ag-judge"><span class="ai-wait-dot"></span>要你看</span>'
+          :ag?'<span class="pt"><span class="ad">+'+it.patch.add+'</span> <span class="rm">−'+it.patch.del+'</span></span>':'')
         +'<span class="loc'+(dead?' dead':'')+'" title="'+(dead?'点击定位（示例工程里没有这个文件的代码）':'点击定位到这一行')+'">'+it.file+':'+it.line+'</span></div>';
     });
-    if(s.id==='publish')h+=jrPubSection();
+    if(s.id==='publish')h=agBar()+h+jrPubSection();
     $('#chk-list').innerHTML=h;
   }
   function renderDetail(){
     var s=scene(cur),it=s.items[selIdx],d=$('#chk-detail');
     if(!it){d.innerHTML='<div class="empty-ok" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;height:100%;color:var(--ui-fg-info);font-size:var(--fs-sm)"><svg style="width:24px;height:24px;color:var(--ui-success)"><use href="#i-check"/></svg>这个场景已经过了</div>';return;}
     var dead=!FILES[it.file];
+    if(s.id==='publish'&&AG.phase==='conflict'&&it===AG.cItem){d.innerHTML=conflictHTML();return}
+    var ag=s.id==='publish'&&it.patch&&AG.phase!=='idle'&&AG.phase!=='scan';
     d.innerHTML='<div class="dt-head '+it.lv+'"><svg><use href="#'+(it.lv==='err'?'i-err':'i-warn')+'"/></svg><span>'+it.msg+'</span></div>'
       +'<div class="dt-loc"><svg class="i"><use href="#'+(/\.json5$/.test(it.file)?'i-json':'i-ets')+'"/></svg><span class="loc" id="dt-loc" role="button" tabindex="0">'+it.file+':'+it.line+'</span><span class="dm-pill '+it.lv+'">'+s.lv[it.lv]+'</span><span class="grow"></span><span>'+s.name+'</span></div>'
       +'<div><div class="dt-h">'+s.whyTitle+'</div><ul>'+it.why.map(function(w){return '<li>'+w+'</li>'}).join('')+'</ul></div>'
-      +'<div><div class="dt-h">怎么改</div><p>'+it.fix+'</p></div>'
+      +(ag?'<div><div class="dt-h">补丁 · <span class="ai-src"><span class="ai-spark"></span>Agent·体检</span></div><div class="ag-patch">'+it.patch.diff.map(function(l){return '<div class="ai-'+l[0]+'">'+esc(l[1])+'</div>'}).join('')+'</div></div>'
+           +(it.patch.judge?'<div class="ag-note w">要你看：'+it.patch.judge+'</div>':'<div class="ag-note">机械改动，默认接受</div>')
+         :'<div><div class="dt-h">怎么改</div><p>'+it.fix+'</p></div>')
       +(it.state==='fixing'
-        ?'<div class="dt-acts"><span class="dm-pill info"><span class="spin" style="width:9px;height:9px;border-width:1.5px"></span>DevEco Code 正在改 '+it.file+'</span><span class="grow"></span><span class="dm-muted">改完自动重跑</span></div>'
-        :'<div class="dt-acts"><button class="btn primary" id="btn-fix"><svg class="i" style="width:12px;height:12px;color:#fff"><use href="#i-genie"/></svg>让 DevEco Code 改</button><button class="btn" id="btn-ignore">忽略这条</button></div>');
+        ?'<div class="dt-acts"><span class="ai-src"><span class="ai-spark is-live"></span>Agent 在改 '+it.file+'</span><span class="grow"></span><span class="dm-muted">改完自动重跑</span></div>'
+        :ag?'<div class="dt-acts"><button class="ai-btn ai-btn--fill" id="btn-pick">'+(it.pick?'不要这条':'接受这条')+'</button><button class="btn" id="btn-ignore">忽略这条</button></div>'
+        :'<div class="dt-acts"><button class="ai-btn ai-btn--fill" id="btn-fix"><svg><use href="#ai-fix"/></svg>只修这条</button><button class="btn" id="btn-ignore">忽略这条</button></div>');
   }
   function select(i,jump){
     var s=scene(cur);selIdx=Math.max(0,Math.min(i,s.items.length-1));
@@ -746,7 +794,99 @@
     selIdx=0;renderTabs();select(0);
   }
 
-  /* 「改完当场跑一遍」：DevEco Code 改完 → 自动重跑 → 这条从列表里消失 */
+  /* ---------- Agent·体检：扫全工程 → 每条出补丁 → 你勾选 → 写入（和别的 Agent 撞了先 rebase 再问）→ 回归 ---------- */
+  var RING='<span class="ai-ring"></span>',OK='<span class="ok">✓</span>';
+  function cap(st,html,o){DemoFrame.agent(st,html,o)}
+  function aLater(ms,fn){setTimeout(fn,ms)}
+  function pubItems(){return SCENES[0].items}
+  function picked(){return pubItems().filter(function(it){return it.pick&&it.patch})}
+  function agRow(ico,what,end,cls){AG.rows.push({ico:ico,what:what,end:end,cls:cls||''});return AG.rows.length-1}
+  function agEnd(i,end){AG.rows[i].end=end}
+  function agBar(){
+    var h='<div class="ag-bar" id="ag-bar">',n=pubItems().length,k=picked().length,j=pubItems().filter(function(it){return it.patch&&it.patch.judge&&!it.pick}).length;
+    if(AG.phase==='idle')h+='<div class="hd"><svg class="ai-ico"><use href="#ai-agent"/></svg><span class="tx"><b>'+n+' 条</b>会被打回或提意见 · 交给 Agent 按上架规则逐条出补丁</span><button class="ai-btn ai-btn--primary" id="ag-go"><svg><use href="#ai-fix"/></svg>交给 Agent 修</button></div>';
+    else if(AG.phase==='ready'||(AG.phase==='done'&&n))h+='<div class="hd"><svg class="ai-ico"><use href="#ai-agent"/></svg><span class="tx">'+(AG.phase==='done'?'<b>修好 '+AG.fixedN+' 条</b>，回归通过 · 剩 '+n+' 条':'<b>'+n+' 个补丁</b>已备好')+' · 勾了 '+k+' 条'+(j?' · '+j+' 条要你看':'')+'</span><button class="ai-btn ai-btn--primary" id="ag-accept"'+(k?'':' disabled')+'>接受 '+k+' 条并回归</button></div>';
+    else if(AG.phase==='done')h+='<div class="hd"><svg class="ai-ico"><use href="#ai-agent"/></svg><span class="tx"><b>上架自检清零</b> · 回归通过</span></div>';
+    if(AG.phase!=='ready'&&AG.phase!=='idle')h+=AG.rows.map(function(r){return '<div class="ai-toolrow '+r.cls+'"><svg class="ai-ico"><use href="#'+r.ico+'"/></svg><span class="what">'+r.what+'</span><span class="end">'+(r.end||'')+'</span></div>'}).join('');
+    return h+'</div>';
+  }
+  function refresh(){if(cur==='publish'){renderList();renderDetail()}renderTabs()}
+  function agStart(){
+    if(AG.phase!=='idle')return;
+    AG.phase='scan';AG.rows=[];
+    var r1=agRow('ai-tool','按上架规则扫全工程 · <code>entry</code> 42 个文件',RING);
+    cap('tool','Agent·体检 · 扫上架规则');refresh();
+    aLater(900,function(){agEnd(r1,OK+' 5 条');var r2=agRow('ai-edit','逐条出补丁',RING);cap('generating','Agent·体检 · 出补丁 <code>1/5</code>');refresh();
+      [1,2,3,4].forEach(function(k){aLater(k*260,function(){cap('generating','Agent·体检 · 出补丁 <code>'+(k+1)+'/5</code>')})});
+      aLater(1300,function(){agEnd(r2,OK+' 5/5');AG.phase='ready';
+        cap('waiting','在等你 · 勾选要接受的补丁',{onClick:function(){switchScene('publish')}});
+        selIdx=0;refresh();
+      });
+    });
+  }
+  function agPick(i){var it=pubItems()[i];if(!it||!it.patch||AG.phase!=='ready'&&AG.phase!=='done')return;it.pick=!it.pick;refresh()}
+  function agAccept(){
+    var list=picked();if(!list.length||AG.phase!=='ready'&&AG.phase!=='done')return;
+    AG.phase='apply';AG.rows=[];AG.batch=list;
+    list.forEach(function(it){it.state='fixing'});
+    var r=AG.rWrite=agRow('ai-edit','写入 '+list.length+' 个补丁',RING);
+    cap('generating','Agent·体检 · 写入 '+list.length+' 个补丁');refresh();
+    aLater(900,function(){
+      var c=list.filter(function(it){return it.patch.conflict})[0];
+      if(c){
+        /* 多 Agent：Agent·多语言 刚改了同一行 → 先 rebase 到它之后，再问你 */
+        agEnd(r,'<span class="ok">'+(list.length-1)+'/'+list.length+'</span>');
+        agRow('ai-waiting','LoginPage.ets:12 和 Agent·多语言 撞在同一行 · 已 rebase，等你定','','wait');
+        AG.phase='conflict';AG.cItem=c;c.state='';
+        selIdx=pubItems().indexOf(c);
+        AIL['LoginPage.ets']=[12,13];
+        var L=FILES['LoginPage.ets'].lines;
+        if(!AG.merged){AG.merged=true;AG.orig=L.slice();
+          pubItems().forEach(function(x){if(x.file==='LoginPage.ets'&&x.line===28)x.line=29});
+          L[11]=['      <span class="f">TextInput</span>({ <span class="p">placeholder</span>: <span class="f">$r</span>(<span class="s">\'app.string.login_code\'</span>) }).<span class="f">maxLength</span>(<span class="n">6</span>)'];
+          L.splice(12,0,['        .<span class="f">accessibilityText</span>(<span class="f">$r</span>(<span class="s">\'app.string.login_code_a11y\'</span>))']);}
+        refresh();openFile('LoginPage.ets',12,null,{nohl:true});
+        cap('waiting','在等你 · 两个 Agent 改到 LoginPage.ets:12',{onClick:function(){switchScene('publish');select(pubItems().indexOf(c),false)}});
+      }else{agEnd(r,OK);verify()}
+    });
+  }
+  function conflictHTML(){
+    return '<div class="ai-approve"><div class="ai-approve__h"><span class="ai-wait-dot"></span><span>在等你 · 两个 Agent 改到同一行</span></div>'
+      +'<p class="ai-approve__why"><b>Agent·多语言</b> 刚把 LoginPage.ets:12 的占位文案换成资源引用。无障碍补丁已接在它之后，合并后：</p>'
+      +'<div class="ai-approve__cmd">TextInput({ placeholder: $r(\'app.string.login_code\') })\n  .maxLength(6)\n  .accessibilityText($r(\'app.string.login_code_a11y\'))</div>'
+      +'<p class="ai-approve__why">无障碍文案也改走资源，en_US 由 Agent·多语言 一起补。</p>'
+      +'<div class="ai-approve__act"><button class="ai-btn ai-btn--primary" id="ag-merge">用合并后的</button><button class="ai-btn ai-btn--fill" id="ag-skip">这条等它做完再说</button></div></div>';
+  }
+  function agResolve(ok){
+    if(AG.phase!=='conflict')return;
+    var c=AG.cItem;
+    if(ok)c.state='fixing';
+    else{c.pick=false;AG.batch=AG.batch.filter(function(x){return x!==c});AIL['LoginPage.ets']=[];
+      if(AG.orig){FILES['LoginPage.ets'].lines=AG.orig;AG.merged=false;pubItems().forEach(function(x){if(x.file==='LoginPage.ets'&&x.line===29)x.line=28})}
+      openFile('LoginPage.ets',12,null,{nohl:true})}
+    AG.rows[AG.rows.length-1]={ico:'ai-waiting',what:'LoginPage.ets:12 · '+(ok?'你选了合并后的':'等 Agent·多语言 做完再改'),end:OK,cls:''};
+    agEnd(AG.rWrite,OK);AG.phase='apply';verify();
+  }
+  function verify(){
+    AG.phase='verify';
+    var r=agRow('ai-verify','回归：本机窗口跑登录 → 错误提示 → 首页深色，上架自检重跑',RING);
+    cap('verifying','设备验证 · 本机窗口回归');refresh();
+    autoRun(function(){
+      aLater(700,function(){
+        var b=AG.batch||[];AG.fixedN=b.length;
+        var jump=null;
+        b.forEach(function(it){
+          if(it.patch.code){var L=FILES[it.file].lines;L[it.line-1]=[it.patch.code];(AIL[it.file]=AIL[it.file]||[]).push(it.line);jump=it}
+          var i=pubItems().indexOf(it);if(i>=0)pubItems().splice(i,1)});
+        agEnd(r,OK+' 3 步');AG.phase='done';selIdx=0;
+        var left=pubItems().length;
+        cap('done','上架自检 '+(left+b.length)+' → '+left+(left?' · 剩 '+left+' 条要你看':''),{onClick:function(){switchScene('publish')}});
+        refresh();if(jump)openFile(jump.file,jump.line,null,{nohl:true});else if(pubItems()[0])openFile(pubItems()[0].file,pubItems()[0].line,pubItems()[0].lv);
+      });
+    });
+  }
+
+  /* 「改完当场跑一遍」：Agent 改完 → 自动重跑 → 这条从列表里消失 */
   function autoRun(after){
     var pill=$('#auto-pill'),t=$('#auto-txt');
     pill.className='dm-pill info';pill.innerHTML='<span class="spin"></span><span id="auto-txt">检测到改动，正在重跑…</span>';
@@ -1161,7 +1301,7 @@
     var fi=failIdx();if(fi<0||JR.fixStage)return;
     var F=FIX[JR.steps[fi].fk];if(!F)return;
     JR.fixKind=JR.steps[fi].fk;JR.fixIdx=fi;JR.fixStage=1;renderJourney();
-    (JR.devs||[]).forEach(function(d){devCap(d,'info','spin','DevEco Code 在改 '+F.file);if(d==='emu')emuCap('')});
+    (JR.devs||[]).forEach(function(d){devCap(d,'info','spin','Agent 在改 '+F.file);if(d==='emu')emuCap('')});
     later(function(){
       JR.fixStage=2;renderJD();
       openFile(F.file,F.line,'err');
@@ -1235,7 +1375,7 @@
   function renderTools(){
     var h,busy=JR.phase==='running'||JR.fixStage;
     if(JR.phase==='empty'||JR.phase==='splitting'){
-      h='<button class="btn primary" id="jr-split"'+(JR.phase==='splitting'?' disabled':'')+'><svg class="i"><use href="#i-genie"/></svg>'+(JR.phase==='splitting'?'正在拆…':'拆成步骤')+'</button>';
+      h='<button class="btn primary" id="jr-split"'+(JR.phase==='splitting'?' disabled':'')+'><svg class="i"><use href="#ai-plan"/></svg>'+(JR.phase==='splitting'?'正在拆…':'拆成步骤')+'</button>';
     }else{
       var none=!targets().length;
       h='<button class="btn primary" id="jr-run"'+(JR.fixStage||!JR.steps.length||(none&&JR.phase!=='running')?' disabled':'')+'>'+(JR.phase==='running'&&!JR.fixStage?'<svg class="i"><use href="#i-stopSq"/></svg>停止':'<svg class="i"><use href="#i-play"/></svg>'+(JR.result&&!none?'再跑一遍':runLabel()))+'</button>'
@@ -1372,8 +1512,8 @@
   function fixHTML(){
     var F=FIX[JR.fixKind]||FIX.cart,st=JR.fixStage,s=JR.steps[JR.fixIdx]||{name:''},n=JR.steps.length,running=st===3&&JR.phase==='running',devs=JR.devs||targets();
     function it(state,txt){return '<div class="'+state+'"><span class="mk">'+(state==='done'?'<svg><use href="#i-check"/></svg>':state==='run'?'<span class="spin"></span>':'<i></i>')+'</span><span>'+txt+'</span></div>'}
-    return '<div class="dt-head info"><svg><use href="#i-genie"/></svg><span>修复任务 · 第 '+(JR.fixIdx+1)+' 步「'+esc(s.name)+'」</span></div>'
-      +'<div><div class="dt-h">带给 DevEco Code 的现场</div><div class="jr-ctx">'+F.ctx.map(function(c,i){return '<span>'+(i?'':'<svg class="i"><use href="#i-camera"/></svg>')+c+'</span>'}).join('')+'<span>旅程 '+n+' 步</span>'+(devs.length>1?'<span>'+devs.length+' 台设备</span>':'')+'</div></div>'
+    return '<div class="dt-head info"><svg style="color:var(--ai-ink)"><use href="#ai-fix"/></svg><span>修复任务 · 第 '+(JR.fixIdx+1)+' 步「'+esc(s.name)+'」</span></div>'
+      +'<div><div class="dt-h">带给 Agent 的现场</div><div class="jr-ctx">'+F.ctx.map(function(c,i){return '<span>'+(i?'':'<svg class="i"><use href="#i-camera"/></svg>')+c+'</span>'}).join('')+'<span>旅程 '+n+' 步</span>'+(devs.length>1?'<span>'+devs.length+' 台设备</span>':'')+'</div></div>'
       +'<div class="jr-prog">'
         +it(st>1?'done':'run',F.read)
         +it(st>2?'done':st===2?'run':'wait',F.edit)
@@ -1404,12 +1544,12 @@
     var f=$('#jr-foot'),h='';
     if(JR.phase==='empty'||JR.phase==='splitting'){f.hidden=true;return}
     f.hidden=false;
-    if(JR.fixStage)h='<span class="dm-pill info"><span class="spin"></span>'+(JR.fixStage<3?'DevEco Code 在改 '+(FIX[JR.fixKind]||FIX.cart).file:'在 '+devsLabel()+' 上重跑旅程')+'</span><span class="grow"></span><span class="dm-muted">改完自动验证</span>';
+    if(JR.fixStage)h='<span class="dm-pill info"><span class="spin"></span>'+(JR.fixStage<3?'Agent 在改 '+(FIX[JR.fixKind]||FIX.cart).file:'在 '+devsLabel()+' 上重跑旅程')+'</span><span class="grow"></span><span class="dm-muted">改完自动验证</span>';
     else if(JR.phase==='running')h='<span class="dm-pill info"><span class="spin"></span>在 '+devsLabel()+' 上跑 · 第 '+(JR.runIdx+1)+'/'+JR.steps.length+' 步</span>';
     else{
       var fi=failIdx();
       if(JR.phase==='failed'&&fi>=0)h+=FIX[JR.steps[fi].fk]
-        ?'<button class="btn primary" id="jr-fix"><svg class="i"><use href="#i-genie"/></svg>转成修复任务</button>'
+        ?'<button class="btn primary" id="jr-fix"><svg class="i"><use href="#ai-fix"/></svg>转成修复任务</button>'
         :'<button class="btn primary" id="jr-restore"><svg class="i"><use href="#i-add"/></svg>补回「加入购物车」</button>';
       h+=!JR.saved?'<button class="btn" id="jr-save"><svg class="i"><use href="#i-json"/></svg>存为旅程文件</button>'
         :JR.dirty?'<button class="btn" id="jr-save"><svg class="i"><use href="#i-json"/></svg>保存改动</button>'
@@ -1468,16 +1608,23 @@
   DemoFrame.init({device:'HUAWEI Mate 70 Pro',deviceIcon:'#i-phone',pos:'12:1',onReady:function(){
     ideRoot=$('#ide');
     renderTabs();renderList();renderJD();renderTgt();
+    cap('idle','待命 · 上架自检 5 条',{onClick:function(){switchScene('publish')}});
     paintDev('emu',shotOf('emu',{k:'login'}));emuStrip('muted','i-phone','就绪 · 等旅程开始');
     bindWin();
     $('#scene-tabs').addEventListener('click',function(e){var b=e.target.closest('.btab');if(b)switchScene(b.dataset.scene)});
     $('#chk-list').addEventListener('click',function(e){
       if(e.target.closest('#jr-pub')){switchScene('journey');return}
       if(e.target.closest('#jr-new')){switchScene('journey');var p=$('#jr-prompt');p.focus();p.select();return}
+      if(e.target.closest('#ag-go')){agStart();return}
+      if(e.target.closest('#ag-accept')){agAccept();return}
+      var pk=e.target.closest('[data-pick]');if(pk){agPick(+pk.dataset.pick);return}
       var r=e.target.closest('.dm-item[data-i]');if(r)select(+r.dataset.i);
     });
     $('#chk-detail').addEventListener('click',function(e){
       if(e.target.closest('#btn-fix'))fixCurrent();
+      else if(e.target.closest('#btn-pick'))agPick(selIdx);
+      else if(e.target.closest('#ag-merge'))agResolve(true);
+      else if(e.target.closest('#ag-skip'))agResolve(false);
       else if(e.target.closest('#btn-ignore'))ignoreCurrent();
       else if(e.target.closest('#dt-loc')){var it=scene(cur).items[selIdx];if(it)openFile(it.file,it.line,it.lv)}
     });
@@ -1541,19 +1688,16 @@
     window.addEventListener('resize',function(){placeWin(true)});
   }});
 DemoGuide.init([
-  {"target": "#chk-list", "kind": "click", "pos": "top", "label": "点一条问题"},
-  {"target": "#code", "kind": "change", "pos": "top", "label": "自动跳到那一行"},
-  {"target": ".btab[data-scene=\"journey\"]", "kind": "click", "pos": "top", "label": "一句话写测试旅程"},
-  {"target": "#jr-run, #jr-split", "kind": "click", "pos": "left", "label": "拆成步骤，先在本机窗口跑"},
-  {"target": "#jr-tgt", "kind": "click", "pos": "top", "label": "要验真机：手机碰一下电脑就加进来"},
-  {"target": "#hwin", "kind": "change", "pos": "left", "label": "不起模拟器，拖宽窗口就能看 md"},
-  {"target": "#jr-colhd", "kind": "change", "pos": "top", "label": "哪台没过、卡在哪步，一眼看出"},
-  {"target": "#jr-fail", "kind": "change", "pos": "top", "label": "失败现场：截图+HiLog+代码行"}
+  {target:'#ag-go',kind:'click',pos:'top',label:'交给 Agent：每条出补丁'},
+  {target:'#ag-accept',kind:'click',pos:'left',label:'勾上的它改完就回归；要你看的先读'},
+  {target:'#ag-merge',kind:'click',pos:'bottom',label:'和别的 Agent 撞了：它已 rebase，你定'},
+  {target:'.btab[data-scene="journey"]',kind:'click',pos:'top',label:'要验下单路：一句话写旅程，本机加真机并行跑'}
 ], {scene: {
-  at: "你改完购物车准备提审，想确认下单这条路各设备都通",
-  goal: "提审前把会被打回的项和走不通的步骤清零",
-  pain: "提审被打回才知道；旅程要起模拟器、逐台手点、截图对日志",
-  fix: "边写边体检；一句话旅程本机加真机并行跑，失败直达代码行"
+  at: '购物车改完准备提审，让 Agent 先过一遍上架规则',
+  goal: '提审前把会被打回的项清零，改完的都回归过',
+  pain: '逐条点开、逐条改，改完还要自己起模拟器回归',
+  fix: 'Agent 每条出补丁，你勾选接受，它改完自动回归',
+  agent: '它扫全工程出补丁；撞上别的 Agent 先 rebase 再问；你勾选'
 }});
 })();
 </script>

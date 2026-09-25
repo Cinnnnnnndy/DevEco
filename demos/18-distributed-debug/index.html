@@ -10,18 +10,15 @@
 <link rel="stylesheet" href="../_shared/frame.css">
 <link rel="stylesheet" href="../_shared/guide.css">
 <script src="../../deveco-intui-kit/src/icons.js"></script>
+<script src="../../deveco-intui-kit/icons/ai-icons.js"></script>
 <script src="../_shared/frame.js"></script>
 <script src="../_shared/guide.js"></script>
 <style>
   /* 用 [data-ide-theme] 提高优先级：tokens.css 在主题块里定义了 --bottom-h */
-  .ide[data-ide-theme]{--bottom-h:clamp(340px,44vh,440px)}
+  .ide[data-ide-theme]{--bottom-h:clamp(340px,40vh,400px);--ai-w:384px}
   /* 底部 Distributed Debug 面板主体：纵向滚动 */
   .dbg{flex:1;min-height:0;overflow:auto;display:flex;flex-direction:column;gap:8px;padding:10px 12px}
   .dbg > *{flex:none}
-  /* 判断结论条：文字占满，按钮靠右居中 */
-  .dm-callout .cb{flex:1;min-width:0}
-  .dm-callout .cb code{font-family:var(--font-code);font-size:11px;background:var(--ui-tag-bg);padding:1px 4px;border-radius:4px}
-  .dm-callout > .btn{flex:none;align-self:center;white-space:nowrap}
   /* 时间轴：泳道加高，事件下移，让标记的文字标签有地方放 */
   .dm-tl .lane{min-height:58px}
   .dm-tl .ev{top:20px;cursor:pointer;transition:box-shadow .15s}
@@ -59,8 +56,11 @@
   .dm-tl .ev.info svg{color:var(--ui-fg-info)}
   .dm-tl .mark.accent{border-left-color:var(--ui-fg-info)}
   .dm-tl .mark.accent b{color:var(--ui-fg)}
-  #clock-pill{background:var(--ui-tag-bg);color:var(--ui-fg-info);font-weight:400}
-  #clock-pill svg{color:var(--ui-fg-info)}
+  #clock-src{margin-right:4px}
+  .dm-tl .ev.fixed{background:color-mix(in srgb,var(--ui-success) 14%,transparent);border-color:transparent;color:var(--ui-fg)}
+  .dm-tl .ev.fixed svg{color:var(--ui-success)}
+  .log .r.fixed .lmsg{color:var(--ui-fg)}
+  .log .r.fixed .lt{color:var(--ui-success)}
   .log .r.hl,.fx-log .log .r.new{background:color-mix(in srgb,var(--ui-fg) 8%,transparent)}
   .code .ln.hl{background:color-mix(in srgb,var(--ui-fg) 7%,transparent)}
   /* ===== 场景二：键鼠穿越 · 光标走到哪台就在调哪台 ===== */
@@ -76,8 +76,7 @@
   .dk-hd .dm-seg button + button{border-left:0}
   .dk-hd .dm-seg button.on{background:var(--ui-editor-bg);font-weight:600}
   .dk-hd .dm-seg svg{width:12px;height:12px;vertical-align:-2px;margin-right:4px;color:var(--ui-icon)}
-  .dk-desk{position:relative;flex:1;min-height:300px;overflow:hidden;
-    background-image:radial-gradient(color-mix(in srgb,var(--ui-fg) 12%,transparent) 1px,transparent 1px);background-size:16px 16px}
+  .dk-desk{position:relative;flex:1;min-height:300px;overflow:hidden}
   .dk-desk::after{content:"";position:absolute;left:0;right:0;top:232px;height:1px;background:var(--ui-border)}
   .dk-dev{position:absolute;left:var(--x);top:var(--y);padding:var(--bz);background:#0f1012;border-radius:var(--r);box-shadow:0 8px 20px rgba(0,0,0,.28);transition:box-shadow .2s}
   .dk-dev .dk-scr{position:relative;width:var(--w);height:var(--h);overflow:hidden;background:#fff;border-radius:calc(var(--r) - var(--bz));cursor:default}
@@ -136,7 +135,7 @@
   .dk-trail circle{fill:color-mix(in srgb,var(--ui-fg) 70%,transparent)}
   .dk-cur{position:absolute;left:0;top:0;width:18px;height:18px;margin:-2px 0 0 -3px;z-index:7;pointer-events:none;filter:drop-shadow(0 1px 2px rgba(0,0,0,.45))}
   .dk-cur svg{width:18px;height:18px;display:block}
-  .dk-edge{position:absolute;width:3px;border-radius:2px;background:var(--ui-accent);box-shadow:0 0 8px var(--ui-accent);z-index:6;pointer-events:none;animation:dkfade .9s ease-out forwards}
+  .dk-edge{position:absolute;width:3px;border-radius:2px;background:var(--ui-fg-info);z-index:6;pointer-events:none;animation:dkfade .9s ease-out forwards}
   .dk-eye{position:absolute;z-index:6;pointer-events:none;width:26px;height:26px;margin:-13px 0 0 -13px;border-radius:50%;display:grid;place-items:center;background:var(--ui-popup-bg);box-shadow:0 2px 8px rgba(0,0,0,.3);color:var(--ui-fg);animation:dkfade 1.3s ease-out forwards}
   .dk-eye svg{width:16px;height:16px}
   .dk-rip{position:absolute;z-index:6;width:22px;height:22px;margin:-11px 0 0 -11px;border-radius:50%;border:2px solid var(--ui-error);pointer-events:none;animation:dkrip .5s ease-out forwards}
@@ -180,6 +179,44 @@
   .fx-log .log{flex:1;min-height:0;overflow:auto}
   .fx-log .log .r .lt{width:84px}
   .fx-log .log .r.new{background:color-mix(in srgb,var(--ui-accent) 14%,transparent)}
+
+  /* ===== DevEco Code：Agent·分布式 的对话、结论、在等你 ===== */
+  /* 右侧 DevEco Code 通到底（调试面板让出右侧），这样结论和在等你一屏放得下 */
+  .ide[data-ide-theme].is-follow{--bottom-h:clamp(340px,44vh,440px)}
+  .ide:not([data-right="none"]) .tw-right{grid-row:1/3}
+  .ide:not([data-right="none"]) .tw-bottom{grid-column:2/4}
+  .tw-right .pane.on{flex:1 1 0;height:auto;min-height:0}
+  .code .ln.pending .t,.code .ln.pending .t *{color:var(--ai-ghost)!important;font-style:normal}
+  .ag{flex:1;min-height:0;overflow:auto;display:flex;flex-direction:column;gap:10px;padding:10px 12px 12px}
+  .ag > *{flex:none}
+  .ag .me{align-self:flex-end;max-width:92%;padding:7px 10px;border-radius:10px;background:var(--ai-surface-2);font-size:var(--fs-sm);line-height:var(--lh-sm);color:var(--ui-fg)}
+  .trail{border-radius:8px}
+  .trail > summary{list-style:none;cursor:pointer}
+  .trail > summary::-webkit-details-marker{display:none}
+  .trail > summary .end .chev{width:10px;height:10px;transition:transform .15s}
+  .trail[open] > summary .end .chev{transform:rotate(90deg)}
+  .trail .items{padding:2px 0 2px 14px}
+  .ai-toolrow .ai-ring{width:12px;height:12px}
+  .ai-answer code{font-family:var(--font-code);font-size:11.5px;padding:0 4px;border-radius:4px;background:var(--ai-surface-2)}
+  .ai-answer .ev-tag{display:inline-block;margin-right:4px;padding:0 5px;border-radius:4px;font-size:11px;line-height:16px;background:var(--ai-surface-2);color:var(--ui-fg-info)}
+  .ai-answer__applied .fchip{font-family:var(--font-code);font-size:11px;color:var(--ui-fg)}
+  .ai-answer__applied .ad{color:var(--ui-success);margin-left:4px}
+  .ai-approve.flash,.qrow.flash{animation:qflash .9s ease-out 1}
+  @keyframes qflash{0%{box-shadow:inset 0 0 0 1px var(--ai-wait),0 0 0 3px var(--ai-wait-tint)}100%{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--ai-wait) 38%,transparent)}}
+  .qrow{display:flex;flex-direction:column;gap:8px;padding:10px 12px;border-radius:10px;background:var(--ai-surface);font-size:12.5px;line-height:19px;color:var(--ui-fg)}
+  .qrow.need{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--ai-wait) 38%,transparent)}
+  .qrow .h{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ui-fg-info)}
+  .qrow.need .h{color:var(--ai-wait-ink);font-weight:500}
+  .qrow .h .ai-ico{width:14px;height:14px;color:var(--ui-icon)}
+  .qrow .h .nb{margin-left:auto;font-weight:400;color:var(--ui-fg-info)}
+  .qrow .act{display:flex;gap:6px;flex-wrap:wrap}
+  .ag-foot{flex:none;padding:0 12px 12px}
+  .ag-foot .ai-field__ta{min-height:34px;font-size:var(--fs-sm)}
+  .ag-foot .ai-field{padding:6px 8px 6px 10px;display:flex;flex-direction:column;gap:4px}
+  .ag-foot .ctx{display:inline-flex;align-items:center;gap:4px;height:22px;padding:0 7px;border-radius:6px;background:var(--ai-surface-2);font-size:11.5px;color:var(--ui-fg-info);white-space:nowrap}
+  .ag-foot .ctx svg{width:12px;height:12px}
+  /* 编辑器里 AI 写的行：gutter 让出行号列 */
+  .code .ln.ai-block .ai-gut{left:0}
 </style>
 </head>
 <body>
@@ -187,7 +224,7 @@
   <symbol id="i-desktop" viewBox="0 0 16 16"><rect x="2.5" y="3" width="11" height="7.5" rx="1" stroke="currentColor" fill="none"/><path d="M1 12.5h14" stroke="currentColor" stroke-linecap="round"/></symbol>
   <symbol id="i-eye" viewBox="0 0 16 16"><path d="M1.5 8S4 3.5 8 3.5 14.5 8 14.5 8 12 12.5 8 12.5 1.5 8 1.5 8z" stroke="currentColor" stroke-linejoin="round" fill="none"/><circle cx="8" cy="8" r="2" stroke="currentColor" fill="none"/></symbol>
 </defs></svg>
-<div class="ide" id="ide" data-ide-theme="dark" data-left="project" data-right="none" data-bottom="debug" role="application" aria-label="DevEco Studio">
+<div class="ide" id="ide" data-ide-theme="dark" data-left="none" data-right="agent" data-bottom="debug" role="application" aria-label="DevEco Studio">
   <div class="body">
     <div class="tw tw-left">
       <div class="pane on" data-pane="project">
@@ -207,11 +244,28 @@
       <div class="breadcrumbs" id="crumbs"></div>
     </div>
 
+    <div class="tw tw-right">
+      <div class="pane on" data-pane="agent">
+        <div class="tw-hdr"><span class="title">DevEco Code</span><span class="grow"></span>
+          <button class="abtn" title="New Chat"><svg class="i"><use href="#i-add"/></svg></button>
+          <button class="abtn" title="History"><svg class="i"><use href="#i-history"/></svg></button>
+          <button class="abtn" title="Options"><svg class="i"><use href="#i-moreV"/></svg></button>
+          <button class="abtn" title="Hide|Shift+Esc" data-act="hide-right"><svg class="i"><use href="#i-hide"/></svg></button></div>
+        <div class="ag" id="ag"></div>
+        <div class="ag-foot">
+          <div class="ai-field" id="field">
+            <textarea class="ai-field__ta" rows="1" placeholder="接着问，或说要它改什么…"></textarea>
+            <div class="ai-field__bar"><span class="ctx"><svg><use href="#ai-context"/></svg>Mate 70 Pro ⇄ WATCH 5 · 调试会话</span><span class="grow"></span><span class="ai-field__model"><svg><use href="#ai-local"/></svg>本机</span><button class="ai-field__send" type="button" title="发送" disabled><svg><use href="#ai-send"/></svg></button></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="tw tw-bottom">
       <div class="tw-hdr"><span class="title">Distributed Debug</span>
         <span class="tabbar"><button class="btab on" data-scene="pair"><svg class="i"><use href="#i-link"/></svg>Mate 70 Pro ⇄ WATCH 5<span class="x"><svg class="i"><use href="#i-closeS"/></svg></span></button><button class="btab" data-scene="follow"><svg class="i"><use href="#i-cursor"/></svg>键鼠穿越 · 3 台</button></span>
         <span class="grow"></span>
-        <span class="dm-pill info pair-only" id="clock-pill"><svg><use href="#i-clock"/></svg>两端时钟已对齐 · 偏差 3 ms</span>
+        <span class="ai-src pair-only" id="clock-src"><span class="ai-spark"></span>Agent·分布式 对齐 · 时钟偏差 3 ms</span>
         <button class="abtn pair-only" id="btn-pause" title="两端一起停"><svg class="i"><use href="#i-pause"/></svg></button>
         <button class="abtn pair-only" title="Resume Program|F9"><svg class="i"><use href="#i-play"/></svg></button>
         <button class="abtn" title="Options"><svg class="i"><use href="#i-moreV"/></svg></button>
@@ -220,33 +274,25 @@
         <div class="pane on" data-pane="debug">
           <div class="dbg" data-scene-body="pair">
 
-            <div class="dm-callout err" id="verdict">
-              <svg><use href="#i-err"/></svg>
-              <div class="cb"><b>断在交接的第 2 步：手表端没收到 continuation 数据。</b>手机端 <code>sendData</code> 在 1.240 s 已发出，手表端 1.243 s 收到握手，但到 1.31 s 都没有 <code>onReceive</code> 日志。</div>
-              <button class="btn sm" id="btn-jump"><svg class="i" style="width:12px;height:12px"><use href="#i-watch"/></svg>跳到手表端断点</button>
-            </div>
-
             <div class="dm-tl" id="tl">
-              <div class="ruler-h"></div>
-              <div class="ruler"><span style="--x:0%">0</span><span style="--x:25%">0.5 s</span><span style="--x:50%">1.0 s</span><span style="--x:75%">1.5 s</span><span style="--x:100%">2.0 s</span></div>
 
               <div class="lane-h"><svg><use href="#i-phone"/></svg>Mate 70 Pro<span class="dm-dot err" title="已停"></span></div>
               <div class="lane" data-lane="phone">
-                <span class="ev" data-t="0.082" data-side="phone" style="--x:4%">startAbility</span>
-                <span class="ev info" data-t="0.560" data-side="phone" style="--x:28%"><svg><use href="#i-link"/></svg>connect</span>
-                <span class="ev ok" data-t="1.240" data-side="phone" style="--x:56%"><svg><use href="#i-checkS"/></svg>sendData 1.240s</span>
-                <span class="ev" data-t="1.262" data-side="phone" style="--x:66%;--w:14%"><svg><use href="#i-hourglass"/></svg>waitAck…</span>
-                <span class="mark accent" style="--x:57%"><b>交接 · 第 2 步</b></span>
-                <span class="mark" data-mark="pause" style="--x:72%"><b>两端同时停 1.31 s</b></span>
+                <span class="ev" data-t="0.082" data-side="phone" style="--x:2%">startAbility</span>
+                <span class="ev info" data-t="0.560" data-side="phone" style="--x:22%"><svg><use href="#i-link"/></svg>connect</span>
+                <span class="ev ok" data-t="1.240" data-side="phone" style="--x:44%"><svg><use href="#i-checkS"/></svg>sendData 1.240s</span>
+                <span class="ev" data-t="1.262" data-side="phone" style="--x:61%;--w:15%"><svg><use href="#i-hourglass"/></svg>waitAck…</span>
+                <span class="mark accent" style="--x:45%"><b>交接 · 第 2 步</b></span>
+                <span class="mark" data-mark="pause" style="--x:79%"><b>两端同时停 1.31 s</b></span>
               </div>
 
               <div class="lane-h"><svg><use href="#i-watch"/></svg>WATCH 5<span class="dm-dot err" title="已停"></span></div>
               <div class="lane" data-lane="watch">
-                <span class="ev info" data-t="0.610" data-side="watch" style="--x:30%"><svg><use href="#i-link"/></svg>onConnect 0.61s</span>
-                <span class="ev ok" data-t="1.243" data-side="watch" style="--x:58%"><svg><use href="#i-checkS"/></svg>handshake 1.243s</span>
-                <span class="ev err miss" data-t="1.262" data-side="watch" style="--x:68%" id="ev-miss"><svg><use href="#i-err"/></svg>onReceive 未出现</span>
-                <span class="mark accent" style="--x:57%"></span>
-                <span class="mark" data-mark="pause" style="--x:72%"></span>
+                <span class="ev info" data-t="0.610" data-side="watch" style="--x:26%"><svg><use href="#i-link"/></svg>onConnect 0.61s</span>
+                <span class="ev ok" data-t="1.243" data-side="watch" style="--x:47%"><svg><use href="#i-checkS"/></svg>handshake 1.243s</span>
+                <span class="ev err miss" data-t="1.262" data-side="watch" style="--x:63%" id="ev-miss"><svg><use href="#i-err"/></svg>onReceive 未出现</span>
+                <span class="mark accent" style="--x:45%"></span>
+                <span class="mark" data-mark="pause" style="--x:79%"></span>
               </div>
             </div>
 
@@ -337,39 +383,82 @@
 (function(){
   var $=DemoFrame.$, $$=DemoFrame.$$;
   document.getElementById('tree-slot').innerHTML=DemoFrame.tree({sel:'ListPage.ets'});
-  $$('#tree .hint').forEach(function(h){h.textContent=h.textContent.replace(/\\/g,'/')});
-  document.getElementById('tabs').insertAdjacentHTML('afterbegin',DemoFrame.tabs([{file:'ListPage.ets',on:true},{file:'ItemCard.ets'}]));
+  /* 手表端页面：Agent 的补丁落在 15–20 行 */
+  DemoFrame.FILES['WatchPage.ets']={path:['entry','src','main','ets','pages'],crumbs:['WatchPage','onPageShow'],lines:[
+    ['<span class="k">import</span> { <span class="ty">hilog</span> } <span class="k">from</span> <span class="s">\'@kit.PerformanceAnalysisKit\'</span>;'],
+    ['<span class="k">import</span> { <span class="ty">Continuation</span>, <span class="ty">ContinuationData</span> } <span class="k">from</span> <span class="s">\'../common/Continuation\'</span>;'],
+    [''],
+    ['<span class="m">@Entry</span>'],
+    ['<span class="m">@Component</span>'],
+    ['<span class="k">struct</span> <span class="ty">WatchPage</span> {',{fold:1}],
+    ['  <span class="m">@State</span> <span class="p">item</span>: <span class="ty">Item</span> | <span class="k">null</span> = <span class="k">null</span>;'],
+    [''],
+    ['  <span class="f">aboutToAppear</span>() {',{fold:1}],
+    ['    <span class="ty">Continuation</span>.<span class="f">current</span>().<span class="f">on</span>(<span class="s">\'receive\'</span>, (<span class="p">d</span>: <span class="ty">ContinuationData</span>) =&gt; {'],
+    ['      <span class="k">this</span>.<span class="p">item</span> = <span class="p">d</span>.<span class="p">item</span>;'],
+    ['    });'],
+    ['  }'],
+    [''],
+    ['  <span class="f">onPageShow</span>() {',{fold:1}],
+    ['    <span class="c">// 后台待命时页面不重建，aboutToAppear 不再走：按这次的会话重新挂接收</span>'],
+    ['    <span class="ty">Continuation</span>.<span class="f">current</span>().<span class="f">on</span>(<span class="s">\'receive\'</span>, (<span class="p">d</span>: <span class="ty">ContinuationData</span>) =&gt; {'],
+    ['      <span class="k">this</span>.<span class="p">item</span> = <span class="p">d</span>.<span class="p">item</span>;'],
+    ['    });'],
+    ['  }'],
+    [''],
+    ['  <span class="f">build</span>() {',{fold:1}],
+    ['    <span class="f">ArcList</span>() {'],
+    ['      <span class="f">ArcListItem</span>() { <span class="ty">ItemDetail</span>({ <span class="p">item</span>: <span class="k">this</span>.<span class="p">item</span> }) }'],
+    ['    }'],
+    ['  }'],
+    ['}']
+  ]};
+  document.getElementById('tabs').insertAdjacentHTML('afterbegin',DemoFrame.tabs([{file:'WatchPage.ets',on:true},{file:'ListPage.ets'}]));
   DemoFrame.init({device:'Mate 70 Pro ⇄ WATCH 5',deviceIcon:'#i-link'});
 
-  /* 编辑器：默认停在第 15 行（断点）；手机端事件 → 15 行，手表端事件 → 21 行 */
-  function showLine(n,marks){
-    $('#code').innerHTML=DemoFrame.code('ListPage.ets',{cur:n,hl:n?[n]:[],marks:marks||{15:'bp'}});
-    var cur=$('#code .ln.cur');if(cur)cur.scrollIntoView({block:'center'});
+  /* 编辑器：WatchPage.ets 默认打开 Agent 的补丁（15–20 行，AI 写的打标）；手机端事件 → ListPage.ets:15，手表端事件 → WatchPage.ets:10 */
+  var AG={state:'wait',reg:'ask',file:'WatchPage.ets'};   /* wait 在等你 → run 复测中 → done 已修好 */
+  var PATCH=[15,16,17,18,19,20];
+  function setTab(f){
+    AG.file=f;
+    $$('#tabs .tab[data-file]').forEach(function(t){t.classList.toggle('on',t.dataset.file===f)});
+    var bc=$('#crumbs');if(bc)bc.innerHTML=DemoFrame.crumbs(f);
+  }
+  function showLine(n,marks,file){
+    file=file||'ListPage.ets';if(file!==AG.file)setTab(file);
+    var code=$('#code');
+    code.innerHTML=DemoFrame.code(file,{cur:n,hl:n?[n]:[],marks:marks||(file==='ListPage.ets'?{15:'bp'}:{10:'bp'})});
+    if(file==='WatchPage.ets'&&AG.state!=='reverted'){
+      PATCH.forEach(function(k){var ln=$('.ln[data-ln="'+k+'"]',code);if(!ln)return;
+        ln.classList.add('ai-block');if(AG.state==='wait')ln.classList.add('pending');
+        ln.insertAdjacentHTML('afterbegin','<span class="ai-gut" data-src="Agent·分布式 · 按新会话重新挂接收'+(AG.state==='wait'?' · 未应用':'')+'"></span>')});
+    }
+    var cur=$('.ln.cur',code)||(file==='WatchPage.ets'?$('.ln[data-ln="15"]',code):null);if(cur)cur.scrollIntoView({block:'center'});
     var p=$('#status-pos');if(p&&n)p.textContent=n+':1';
   }
-  showLine(15);
+  $('#tabs').addEventListener('click',function(e){var t=e.target.closest('.tab[data-file]');if(!t||e.target.closest('.x'))return;
+    var f=t.dataset.file;setTimeout(function(){showLine(f==='ListPage.ets'?15:null,null,f)},0)});
 
   /* 点时间轴上任一事件：两栏日志里同一时间戳的行一起亮，编辑器跳到对应行 */
   function pick(ev){
     $$('#tl .ev').forEach(function(x){x.classList.toggle('sel',x===ev)});
     var t=ev.dataset.t;
     $$('.log .r').forEach(function(r){r.classList.toggle('hl',r.dataset.t===t)});
-    showLine(ev.dataset.side==='watch'?21:15);
+    showLine(ev.dataset.side==='watch'?10:15,null,ev.dataset.side==='watch'?'WatchPage.ets':'ListPage.ets');
   }
   $('#tl').addEventListener('click',function(e){var ev=e.target.closest('.ev');if(ev)pick(ev)});
-  $('#btn-jump').addEventListener('click',function(){pick($('#ev-miss'))});
 
   /* 两端一起停：断点线一起挪到 1.60 s，两条泳道各多一个「已暂停」，两栏日志各多一行 */
   var paused=false;
   $('#btn-pause').addEventListener('click',function(){
     if(paused)return;paused=true;
-    $$('#tl .mark[data-mark="pause"]').forEach(function(m){m.style.setProperty('--x','80%');var b=$('b',m);if(b)b.textContent='两端同时停 1.60 s'});
+    $$('#tl .mark[data-mark="pause"]').forEach(function(m){m.style.setProperty('--x','86%');var b=$('b',m);if(b)b.textContent='两端同时停 1.60 s'});
     setTimeout(function(){
       $$('#tl .lane').forEach(function(l){
-        l.insertAdjacentHTML('beforeend','<span class="ev pause" data-t="1.600" data-side="'+l.dataset.lane+'" style="--x:81%"><svg><use href="#i-pause"/></svg>已暂停</span>');
+        l.insertAdjacentHTML('beforeend','<span class="ev pause" data-t="1.600" data-side="'+l.dataset.lane+'" style="--x:87%"><svg><use href="#i-pause"/></svg>已暂停</span>');
       });
       $('.log[data-log="phone"]').insertAdjacentHTML('beforeend','<div class="r pause" data-t="1.600"><span class="lt">[1.600]</span><span class="ltag">Debugger:</span><span class="lmsg">两端同时停 · ListPage.ets:15</span></div>');
-      $('.log[data-log="watch"]').insertAdjacentHTML('beforeend','<div class="r pause" data-t="1.600"><span class="lt">[1.600]</span><span class="ltag">Debugger:</span><span class="lmsg">两端同时停 · WatchPage.ets:21</span></div>');
+      $('.log[data-log="watch"]').insertAdjacentHTML('beforeend','<div class="r pause" data-t="1.600"><span class="lt">[1.600]</span><span class="ltag">Debugger:</span><span class="lmsg">两端同时停 · WatchPage.ets:10</span></div>');
       pick($('#tl .lane[data-lane="phone"] .ev.pause'));
     },400);
     this.classList.add('done');this.setAttribute('title','已在 1.60 s 两端同停');
@@ -436,7 +525,7 @@
     $('#fx-frames .fx-list').innerHTML=frames(d);
     $('#fx-vars .fx-list').innerHTML=vars(d);
     bpBar(d);logs(d);paintStates();
-    showLine(d.paused?28:null,FMARKS);
+    showLine(d.paused?28:null,FMARKS,'ListPage.ets');
     var hd=$('#hdr-device span');if(hd)hd.textContent=d.tag+' · 调试焦点';
     if(flash){$$('.fx-box').forEach(function(b){b.classList.add('flash');setTimeout(function(){b.classList.remove('flash')},450)})}
   }
@@ -537,24 +626,131 @@
     $$('.tw-bottom .btab[data-scene]').forEach(function(b){b.classList.toggle('on',b.dataset.scene===name)});
     $$('[data-scene-body]').forEach(function(x){x.hidden=x.dataset.sceneBody!==name});
     $('.tw-bottom').classList.toggle('follow',name==='follow');
+    /* 接手手动调时把 DevEco Code 收起给桌面让位，回到两端对齐再打开（胶囊仍在顶栏） */
+    var ide=$('#ide');ide.classList.toggle('is-follow',name==='follow');
+    if(name==='follow'){AG.pane=ide.getAttribute('data-right');DemoFrame.setSide('right',null)}
+    else if(AG.pane&&AG.pane!=='none'){DemoFrame.setSide('right',AG.pane)}
     if(name==='follow'){
       if(!folInit){folInit=true;var p=scr('pc');placeCur({x:p.x+p.w*.36,y:p.y+p.h*.42})}
       renderFocus(false);
     }else{
-      showLine(15);
+      showLine(AG.file==='WatchPage.ets'?null:15,null,AG.file);
       var hd=$('#hdr-device span');if(hd)hd.textContent='Mate 70 Pro ⇄ WATCH 5';
     }
   }
   $('.tw-bottom .tabbar').addEventListener('click',function(e){var b=e.target.closest('.btab[data-scene]');if(b&&!e.target.closest('.x'))scene(b.dataset.scene)});
+
+  /* ================= Agent·分布式：对齐两端 → 结论先行 → 在等你 → 两端复测 ================= */
+  var TRAIL=[
+    ['hdc install entry.hap → Mate 70 Pro、WATCH 5','2.4 s'],
+    ['hilog 两端 · <code>Continuation|DistConn</code>','0.3 s'],
+    ['对齐两端时钟 · 偏差 3 ms','0.2 s'],
+    ['复现流转 1 次 · 两端同停在 1.31 s','2.1 s'],
+    ['读 <code>WatchPage.ets</code>、<code>Continuation.ets</code>','1.2 s']
+  ];
+  var RUN=[
+    ['写入 <code>WatchPage.ets</code> +6','0.1 s',300],
+    ['hvigor assembleHap · entry','3.2 s',900],
+    ['hdc install → Mate 70 Pro、WATCH 5','2.4 s',800],
+    ['复现流转 1 次 · 商品详情 → 手表','1.3 s',900]
+  ];
+  var runDone=0,CUR=RUN;
+  function row(r,live){return '<div class="ai-toolrow">'+(live?'<span class="ai-ring"></span>':'<svg class="ai-ico"><use href="#ai-tool"/></svg>')+'<span class="what">'+r[0]+'</span><span class="end">'+(live?'':'<span class="ok">✓</span>'+r[1])+'</span></div>'}
+  function trailHTML(rows,title,end,open){
+    return '<details class="trail"'+(open?' open':'')+'><summary class="ai-toolrow"><svg class="ai-ico"><use href="#ai-tool"/></svg><span class="what">'+title+'</span><span class="end">'+end+'<svg class="i chev"><use href="#i-chevR"/></svg></span></summary><div class="items">'+rows+'</div></details>';
+  }
+  function renderAgent(){
+    var h='<div class="me">商品详情从 Mate 70 Pro 流转到 WATCH 5 没接上，查一下断在哪</div>';
+    h+=trailHTML(TRAIL.map(function(r){return row(r)}).join(''),'装包、抓两端 HiLog、对齐时钟、复现 1 次','5 步 · 6.2 s',false);
+    var fixed=AG.state==='done';
+    h+='<div class="ai-answer" id="answer"><div class="ai-answer__meta"><svg><use href="#ai-logo-16"/></svg>Agent·分布式 · 本机</div>'
+      +(fixed?'<p class="ai-answer__lead">修好了：手表端 1.246 s 收到 seq 2，详情页接上。</p><p class="ai-answer__body">两台各复现 1 次流转，交接 5 步都走通；手机端 ack 12 ms 回来。</p>'
+             :AG.state==='reverted'?'<p class="ai-answer__lead">补丁已退回，WatchPage.ets 回到原样。</p><p class="ai-answer__body">要再试，点下面「重新应用」。</p>'
+             :'<p class="ai-answer__lead">断在交接第 2 步：手表端的接收回调还挂在旧会话上，session 7 的数据没人接。</p>'
+              +'<p class="ai-answer__body"><span class="ev-tag">证据</span>手机 1.240 s 发出 seq 2，手表 1.243 s 回了握手，之后没有 <code>onReceive</code>。<br><span class="ev-tag">推断</span>手表页 0.082 s 就在后台待命、没重建，<code>aboutToAppear</code> 不会再走。</p>')
+      +'<div class="ai-answer__applied">'+(fixed?'已写入 <span class="fchip">WatchPage.ets<span class="ad">+6</span></span><span class="ai-src"><span class="ai-spark"></span>由 Agent·分布式 改 · <button type="button" data-ag="revert">退回</button></span>'
+             :AG.state==='reverted'?'':'补丁 <span class="fchip">WatchPage.ets<span class="ad">+6</span></span> · 未应用')+'</div>'
+      +'<div class="ai-answer__foot">'+(AG.state==='reverted'?'<button type="button" class="ai-btn ai-btn--fill" data-ag="reapply">重新应用</button>':'')
+      +'<button type="button" class="ai-btn" data-ag="jump"><svg><use href="#i-watch"/></svg>接手 · 跳到手表端断点</button><span class="grow"></span><span class="ai-fb"><button type="button" title="有用"><svg><use href="#ai-thumb-up"/></svg></button><button type="button" title="没用"><svg><use href="#ai-thumb-down"/></svg></button></span></div></div>';
+    if(AG.state==='wait'){
+      h+='<div class="ai-approve" id="wait-card"><div class="ai-approve__h"><span class="ai-wait-dot"></span>在等你 · 应用补丁并两端复测</div>'
+        +'<p class="ai-approve__why">要往 Mate 70 Pro、WATCH 5 重新装包，这次调试会话会重启，断点保留。</p>'
+        +'<div class="ai-approve__act"><button type="button" class="ai-btn ai-btn--primary" id="btn-apply" data-ag="apply">应用并复测</button><button type="button" class="ai-btn ai-btn--fill" data-ag="view">看补丁</button></div></div>';
+    }
+    if(AG.state==='run'||AG.state==='done'){
+      var rows=CUR.slice(0,runDone).map(function(r){return row(r)}).join('')+(AG.state==='run'&&runDone<CUR.length?row(CUR[runDone],true):'');
+      h+=trailHTML(rows,AG.state==='run'?'两端复测中 · 第 '+Math.min(runDone+1,CUR.length)+' 步，共 '+CUR.length+' 步':'写入补丁、装包、复现 1 次',AG.state==='run'?'':CUR.length+' 步 · 7.0 s',AG.state==='run');
+    }
+    /* 多 Agent：调试会话独占这两台，别的 Agent 要装包先问 */
+    if(AG.reg==='ask'){
+      h+='<div class="qrow need" id="q-reg"><div class="h"><span class="ai-wait-dot"></span>在等你 · Agent·回归 要用 Mate 70 Pro<span class="nb">不挡路</span></div>'
+        +'<div>它要装 1.3.2 跑回归，会结束你这次调试会话。</div>'
+        +'<div class="act"><button type="button" class="ai-btn ai-btn--fill" data-ag="reg-wait">排到调试之后</button><button type="button" class="ai-btn" data-ag="reg-now">现在让它装</button></div></div>';
+    }else{
+      var t=AG.reg==='now'?(AG.state==='done'?'Agent·回归 用完了 Mate 70 Pro，复测接着跑完':'Agent·回归 在用 Mate 70 Pro · 还要 2 分钟；复测等它装完')
+        :(AG.state==='done'?'调试会话结束，Mate 70 Pro 已交给 Agent·回归':'Agent·回归 排在你的调试之后 · 结束后自动交给它');
+      h+='<div class="qrow" id="q-reg"><div class="h"><svg class="ai-ico"><use href="#ai-agent"/></svg>'+t+'</div></div>';
+    }
+    $('#ag').innerHTML=h;
+    capsule();
+  }
+  function capsule(){
+    var q=AG.reg==='ask'?1:0;
+    if(AG.state==='wait')DemoFrame.agent('waiting','在等你 · 应用补丁并两端复测',{queue:q,onClick:function(){focusCard('#wait-card')}});
+    else if(AG.state==='run')DemoFrame.agent('verifying','Agent·分布式 在两端复测 · <code>'+Math.min(runDone+1,CUR.length)+'/'+CUR.length+'</code>',{queue:q,onClick:q?function(){focusCard('#q-reg')}:null});
+    else if(AG.state==='done')DemoFrame.agent(q?'waiting':'done',q?'在等你 · Agent·回归 要用 Mate 70 Pro':'流转复测通过 · 两端各 1 次',{onClick:q?function(){focusCard('#q-reg')}:null});
+    else DemoFrame.agent(q?'waiting':'idle',q?'在等你 · Agent·回归 要用 Mate 70 Pro':'Agent·分布式 待命',{onClick:q?function(){focusCard('#q-reg')}:null});
+  }
+  function focusCard(sel){var c=$(sel);if(!c)return;if($('#ide').classList.contains('is-follow'))scene('pair');DemoFrame.setSide('right','agent');c.scrollIntoView({block:'nearest'});c.classList.remove('flash');void c.offsetWidth;c.classList.add('flash')}
+  /* 复测后：时间轴与两栏日志换成这次的结果 */
+  var TL0=$('#tl').innerHTML,LP0=$('.log[data-log="phone"]').innerHTML,LW0=$('.log[data-log="watch"]').innerHTML;
+  function paintFixed(on){
+    if(!on){$('#tl').innerHTML=TL0;$('.log[data-log="phone"]').innerHTML=LP0;$('.log[data-log="watch"]').innerHTML=LW0;
+      paused=false;var bp=$('#btn-pause');bp.classList.remove('done');bp.setAttribute('title','两端一起停');return}
+    var miss=$('#ev-miss'),ack=$('#tl .lane[data-lane="phone"] .ev[data-t="1.262"]');
+    if(on){
+      miss.className='ev fixed';miss.dataset.t='1.246';miss.innerHTML='<svg><use href="#i-checkS"/></svg>onReceive 1.246s';
+      ack.className='ev fixed';ack.dataset.t='1.252';ack.style.setProperty('--w','8%');ack.innerHTML='<svg><use href="#i-checkS"/></svg>ack 1.252s';
+      $$('#tl .mark[data-mark="pause"]').forEach(function(m){m.hidden=true});
+      $$('#tl .lane-h .dm-dot').forEach(function(d){d.className='dm-dot ok';d.title='运行中'});
+      var pr=$('.log[data-log="phone"] .r[data-t="1.262"]'),wr=$('.log[data-log="watch"] .r[data-t="1.262"]');
+      pr.className='r fixed';pr.dataset.t='1.252';pr.innerHTML='<span class="lt">[1.252]</span><span class="ltag">Continuation:</span><span class="lmsg">收到 ack · seq 2 · 12 ms</span>';
+      wr.className='r fixed';wr.dataset.t='1.246';wr.innerHTML='<span class="lt">[1.246]</span><span class="ltag">Continuation:</span><span class="lmsg">onReceive seq 2 · 2.1 KB → WatchPage</span>';
+    }
+  }
+  function runRetest(){
+    AG.state='run';runDone=0;showLine(null,null,'WatchPage.ets');renderAgent();
+    CUR=AG.reg==='now'?[['等 Agent·回归 用完 Mate 70 Pro','2 分钟',700]].concat(RUN):RUN;renderAgent();
+    function next(){
+      var r=CUR[runDone];if(!r){AG.state='done';renderAgent();showLine(null,null,'WatchPage.ets');
+        $$('#code .ln.ai-block').forEach(function(l){l.classList.add('is-accepted')});return}
+      setTimeout(function(){runDone++;if(runDone===CUR.length)paintFixed(true);renderAgent();next()},r[2]);
+    }
+    next();
+  }
+  $('#ag').addEventListener('click',function(e){
+    var b=e.target.closest('[data-ag]');if(!b)return;var a=b.dataset.ag;
+    if(a==='apply'||a==='reapply'){runRetest()}
+    else if(a==='view'){showLine(null,null,'WatchPage.ets');var l=$('#code .ln[data-ln="15"]');if(l)l.scrollIntoView({block:'center'})}
+    else if(a==='jump'){pick($('#ev-miss'))}
+    else if(a==='revert'){AG.state='reverted';paintFixed(false);showLine(null,null,'WatchPage.ets');renderAgent()}
+    else if(a==='reg-wait'){AG.reg='wait';renderAgent()}
+    else if(a==='reg-now'){AG.reg='now';renderAgent()}
+  });
+  showLine(null,null,'WatchPage.ets');
+  renderAgent();
+
 DemoGuide.init([
-    {target:'#tl .ev[data-t="1.240"]',kind:'click',pos:'top',label:'流转断在哪？从手机发数据这步查'},
-    {target:'.btab[data-scene="follow"]',kind:'click',pos:'top',label:'平板、电脑滑动掉帧？切到这里'},
-    {target:'#dk-pad .hit[data-hit="pad-2"]',kind:'click',pos:'top',label:'光标移到平板，点商品停在那台'}
+    {target:'#btn-apply',kind:'click',pos:'left',label:'它查到断在第 2 步，你拍板：补丁 + 两端复测'},
+    {target:'#ev-miss',kind:'change',pos:'right',label:'它对齐的两端日志；复测后这里变绿'},
+    {target:'#q-reg',kind:'click',pos:'bottom',label:'别的 Agent 要装包到这台，先问你'},
+    {target:'.btab[data-scene="follow"]',kind:'click',pos:'top',label:'接手：光标移到哪台就调哪台'}
   ],{scene:{
-    at:'你在手机、手表、平板上联调同一个商品页',
-    goal:'找出问题出在哪台、哪一步、哪一行',
-    pain:'每台一个调试窗口，日志时间对不上，来回切窗口手抄',
-    fix:'两端日志对齐一条时间轴；光标移到哪台就调哪台'
+    at:'商品详情从手机流转到手表没接上，你交给 Agent 查',
+    goal:'知道断在哪一步、哪一行，修好并在两台上验过',
+    pain:'两台各开调试窗口，日志时间对不上，只能手抄对比',
+    fix:'它对齐两端日志、指出断点给补丁，你拍板后两端复测',
+    agent:'它对齐日志、出补丁、两端复测；别的 Agent 要这两台先问你'
   }});
 })();
 </script>

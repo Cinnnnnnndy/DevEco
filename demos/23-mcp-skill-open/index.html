@@ -3,14 +3,15 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='32' y2='32' gradientUnits='userSpaceOnUse'%3E%3Cstop stop-color='%232C8DDD'/%3E%3Cstop offset='1' stop-color='%233357AC'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='32' height='32' rx='7' fill='url(%23g)'/%3E%3Ctext x='16' y='22.5' font-family='Arial,Helvetica,sans-serif' font-size='13' font-weight='700' fill='white' text-anchor='middle'%3EDE%3C/text%3E%3C/svg%3E">
+<link rel="icon" type="image/svg+xml" href="../../deveco-intui-kit/icons/deveco-code-logo-16.svg">
 <title>23 · 开放 MCP 与 Skill：把编译、签名、真机、上架开给外部 Agent</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;500&display=swap">
 <link rel="stylesheet" href="../../deveco-intui-kit/src/tokens.css">
 <link rel="stylesheet" href="../../deveco-intui-kit/src/components.css">
+<link rel="stylesheet" href="../../deveco-intui-kit/src/ai.css">
 <link rel="stylesheet" href="../_shared/frame.css">
 <link rel="stylesheet" href="../_shared/guide.css">
 <script src="../../deveco-intui-kit/src/icons.js"></script>
+<script src="../../deveco-intui-kit/icons/ai-icons.js"></script>
 <script src="../_shared/frame.js"></script>
 <script src="../_shared/guide.js"></script>
 <style>
@@ -35,8 +36,8 @@
   .sec-h .dm-small{font-weight:400}
 
   /* 能力清单 */
-  .cap-grp{border:1px solid var(--ui-border);border-radius:var(--arc);background:var(--ui-field-bg);overflow:hidden}
-  .cap-gh{display:flex;align-items:center;gap:8px;height:28px;padding:0 10px;background:var(--ui-bg);border-bottom:1px solid var(--ui-border);font-size:var(--fs-sm);font-weight:600}
+  .cap-grp{border-radius:var(--ai-r);background:var(--ui-bg);overflow:hidden}
+  .cap-gh{display:flex;align-items:center;gap:8px;height:28px;padding:0 10px;font-size:var(--fs-sm);font-weight:600}
   .cap-gh .grow{flex:1}
   .cap-gh .sub{font-weight:400;color:var(--ui-fg-info)}
   .cap{display:grid;grid-template-columns:minmax(150px,auto) minmax(0,1fr) auto auto auto;align-items:center;gap:10px;min-height:30px;padding:3px 10px;font-size:var(--fs-sm);line-height:var(--lh-sm)}
@@ -46,28 +47,29 @@
   .cap .n{font-family:var(--font-code);font-size:10.5px;color:var(--ui-fg-info);min-width:44px;text-align:right}
   .cap.off .nm,.cap.off .ds{opacity:.5}
   .cap.flash{animation:capflash 1.2s ease-out}
-  @keyframes capflash{0%{background:color-mix(in srgb,var(--ui-accent) 28%,transparent)}100%{background:transparent}}
-  @keyframes ringflash{0%{box-shadow:0 0 0 2px var(--ui-accent)}70%{box-shadow:0 0 0 2px color-mix(in srgb,var(--ui-accent) 40%,transparent)}100%{box-shadow:0 0 0 2px transparent}}
+  @keyframes capflash{0%{background:var(--ui-hover)}100%{background:transparent}}
+  @keyframes ringflash{0%{background:var(--ui-hover)}100%{}}
   .tgl{position:relative;width:28px;height:16px;border-radius:8px;border:0;padding:0;background:var(--ui-component-border);flex:none;transition:background .15s}
-  .tgl::after{content:"";position:absolute;top:2px;left:2px;width:12px;height:12px;border-radius:50%;background:#fff;transition:transform .15s;box-shadow:0 1px 2px rgba(0,0,0,.3)}
-  .tgl.on{background:var(--ui-accent)}
+  .tgl::after{content:"";position:absolute;top:2px;left:2px;width:12px;height:12px;border-radius:50%;background:#fff;transition:transform .15s}
+  .tgl.on{background:var(--ui-fg)}   /* 开关用中性反色，不用蓝（ai.css 同规则） */
+  .tgl.on::after{background:var(--ui-editor-bg)}
   .tgl.on::after{transform:translateX(12px)}
   .need{display:inline-flex;align-items:center;gap:3px}
   .need svg{width:11px;height:11px}
 
   /* 客户端 */
-  .cli{display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--ui-border);border-radius:var(--arc);background:var(--ui-field-bg)}
-  .cli .lg{width:28px;height:28px;border-radius:7px;display:grid;place-items:center;font-weight:700;font-size:12px;color:#fff;flex:none}
+  .cli{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:var(--ai-r);background:var(--ui-bg)}
+  .cli .lg{width:28px;height:28px;border-radius:7px;display:grid;place-items:center;font-weight:600;font-size:12px;color:#fff;flex:none}
   .cli .tx{flex:1;min-width:0;display:flex;flex-direction:column}
   .cli .tx b{font-weight:600}
   .cli .tx span{font-size:var(--fs-sm);color:var(--ui-fg-info);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .cli.sel{border-color:var(--ui-accent)}
-  .snip{border:1px solid var(--ui-code-border,var(--ui-border));border-radius:var(--arc);background:var(--ui-code-bg);overflow:hidden}
-  .snip-h{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;padding:6px 8px 6px 10px;border-bottom:1px solid var(--ui-border);font-size:var(--fs-sm);color:var(--ui-fg-info)}
+  .cli.sel{box-shadow:inset 0 0 0 1px var(--ui-component-border)}
+  .snip{border-radius:var(--ai-r);background:var(--ui-bg);overflow:hidden}
+  .snip-h{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;padding:6px 8px 6px 10px;font-size:var(--fs-sm);color:var(--ui-fg-info)}
   .snip-h .grow{flex:1}
   .snip-h .btn{white-space:nowrap}
   .snip pre{margin:0;padding:10px 12px;font-family:var(--font-code);font-size:11.5px;line-height:1.6;color:var(--ui-fg);white-space:pre;overflow:auto;user-select:text}
-  .snip pre .k{color:var(--ui-link)}
+  .snip pre .k{color:var(--ed-keyword)}
   .snip pre .s{color:var(--ui-success)}
   .srv{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:var(--fs-sm);line-height:var(--lh-sm)}
   .srv dt{color:var(--ui-fg-info)}.srv dd{margin:0;font-family:var(--font-code);font-size:11px}
@@ -75,8 +77,8 @@
   /* Skills 视图 */
   .view-sk{flex:1;min-width:0;display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);min-height:0}
   .sk-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
-  .sk{border:1px solid var(--ui-border);border-radius:var(--arc);background:var(--ui-field-bg);padding:10px 12px;display:flex;flex-direction:column;gap:6px;cursor:default;position:relative}
-  .sk.sel{border-color:var(--ui-accent);box-shadow:0 0 0 1px var(--ui-accent)}
+  .sk{border-radius:var(--ai-r);background:var(--ui-bg);padding:10px 12px;display:flex;flex-direction:column;gap:6px;cursor:default;position:relative}
+  .sk.sel{box-shadow:inset 0 0 0 1px var(--ui-component-border)}
   .sk .t1{display:flex;align-items:center;gap:6px}
   .sk .t1 b{font-weight:600;flex:1;min-width:0}
   .sk .t2{font-size:var(--fs-sm);line-height:var(--lh-sm);color:var(--ui-fg-info);min-height:34px}
@@ -84,12 +86,12 @@
   .sk .t3 .grow{flex:1}
   .sk .meta{font-family:var(--font-code);font-size:10.5px;color:var(--ui-fg-info)}
   .sk .popup{top:auto;bottom:34px;left:auto;right:8px;min-width:280px}
-  .sk-tree{font-family:var(--font-code);font-size:11.5px;line-height:1.8;padding:8px 10px;border:1px solid var(--ui-border);border-radius:var(--arc);background:var(--ui-field-bg)}
+  .sk-tree{font-family:var(--font-code);font-size:11.5px;line-height:1.8;padding:8px 10px;border-radius:var(--arc);background:var(--ui-bg)}
   .sk-tree div{white-space:nowrap}
   .sk-tree .d{color:var(--ui-fg-info)}
   .sk-tree .new{color:var(--ui-success)}
   .sk-when{display:flex;align-items:flex-start;gap:6px;font-size:var(--fs-sm);line-height:var(--lh-sm)}
-  .sk-when svg{width:14px;height:14px;color:var(--ui-accent);flex:none;margin-top:1px}
+  .sk-when svg{width:14px;height:14px;color:var(--ai-ink);flex:none;margin-top:1px}
 
   /* ---- MCP 市场 ---- */
   .mk-search{display:inline-flex;align-items:center;gap:6px;height:24px;width:190px;padding:0 8px;border:1px solid var(--ui-component-border);border-radius:6px;background:var(--ui-field-bg);font-weight:400}
@@ -97,10 +99,10 @@
   .mk-search input{flex:1;min-width:0;border:0;background:transparent;color:var(--ui-fg);font:inherit;font-size:12px;outline:none}
   .mk-search input::placeholder{color:var(--ui-fg-disabled)}
   .mk-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
-  .mk{border:1px solid var(--ui-border);border-radius:var(--arc);background:var(--ui-field-bg);padding:10px 12px;display:flex;flex-direction:column;gap:7px;min-width:0}
+  .mk{border-radius:var(--ai-r);background:var(--ui-bg);padding:10px 12px;display:flex;flex-direction:column;gap:7px;min-width:0}
   .mk.fresh{animation:ringflash 1.6s ease-out}
   .mk .t1{display:flex;align-items:center;gap:8px;min-width:0}
-  .lgt{width:28px;height:28px;border-radius:7px;display:grid;place-items:center;color:#fff;font-weight:700;font-size:12px;flex:none}
+  .lgt{width:28px;height:28px;border-radius:7px;display:grid;place-items:center;color:#fff;font-weight:600;font-size:12px;flex:none}
   .lgt.sm{width:18px;height:18px;border-radius:5px;font-size:10px}
   .mk .t1 .nm{flex:1;min-width:0;display:flex;flex-direction:column}
   .mk .t1 .nm b{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -119,9 +121,9 @@
   .pc{height:16px;line-height:16px;padding:0 5px;border-radius:4px;font-size:10.5px;background:var(--ui-tag-bg);color:var(--ui-fg-info);white-space:nowrap}
   .pc.hi{background:color-mix(in srgb,var(--ui-warning) 20%,transparent);color:color-mix(in srgb,var(--ui-warning) 80%,var(--ui-fg))}
   /* 工具列表 */
-  .tl-grp{border:1px solid var(--ui-border);border-radius:var(--arc);background:var(--ui-field-bg);overflow:hidden}
+  .tl-grp{border-radius:var(--ai-r);background:var(--ui-bg);overflow:hidden}
   .tl-grp.fresh{animation:ringflash 1.6s ease-out}
-  .tl-gh{display:flex;align-items:center;gap:8px;min-height:32px;padding:4px 10px;background:var(--ui-bg);border-bottom:1px solid var(--ui-border);font-size:var(--fs-sm);font-weight:600}
+  .tl-gh{display:flex;align-items:center;gap:8px;min-height:32px;padding:4px 10px;font-size:var(--fs-sm);font-weight:600}
   .tl-gh .grow{flex:1}
   .tl-gh .sub{font-weight:400;color:var(--ui-fg-info);white-space:nowrap}
   .tl-row{display:grid;grid-template-columns:minmax(0,auto) minmax(0,1fr) auto;align-items:center;gap:10px;min-height:28px;padding:3px 10px;font-size:var(--fs-sm);line-height:var(--lh-sm)}
@@ -132,18 +134,18 @@
   .tl-sum{padding:7px 10px;font-size:var(--fs-sm);line-height:var(--lh-sm);color:var(--ui-fg-info)}
 
   /* ---- 权限 ---- */
-  .pm{border:1px solid var(--ui-border);border-radius:var(--arc);background:var(--ui-field-bg);overflow:hidden}
+  .pm{border-radius:var(--ai-r);background:var(--ui-bg);overflow:hidden}
   .pm-r{display:grid;grid-template-columns:minmax(150px,1fr) repeat(5,50px) 108px;align-items:center;min-height:28px;padding:0 10px;font-size:var(--fs-sm);line-height:var(--lh-sm)}
   .pm-r + .pm-r{border-top:1px solid var(--ui-border)}
-  .pm-r.h{background:var(--ui-bg);color:var(--ui-fg-info);font-size:11.5px;min-height:30px}
-  .pm-r.g{background:var(--ui-bg);font-weight:600;min-height:24px;font-size:11.5px}
+  .pm-r.h{color:var(--ui-fg-info);font-size:11.5px;min-height:30px}
+  .pm-r.g{font-weight:600;min-height:24px;font-size:11.5px}
   .pm-r.g>span{grid-column:1/-1;display:flex;align-items:center;gap:6px}
   .pm-r.g .sub{font-weight:400;color:var(--ui-fg-info)}
   .pm-r .cc{text-align:center}
   .pm-r .r{justify-self:end}
   .pm-r .nm{font-family:var(--font-code);font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .pm-r.fresh{animation:capflash 1.6s ease-out}
-  .pm-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--ui-accent);vertical-align:middle}
+  .pm-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--ui-fg-info);vertical-align:middle}
   .pm-dot.hi{background:var(--ui-warning)}
   .pm-no{display:inline-block;width:8px;height:1.5px;border-radius:1px;background:var(--ui-component-border);vertical-align:middle}
   .pm-pol{display:inline-flex;align-items:center;justify-content:space-between;gap:4px;height:22px;min-width:92px;padding:0 6px 0 8px;border:1px solid var(--ui-component-border);border-radius:5px;background:transparent;color:var(--ui-fg);font-size:11.5px;white-space:nowrap}
@@ -153,7 +155,7 @@
   .pm-pol.deny{color:var(--ui-error)}
   .pm-legend{display:flex;align-items:center;gap:12px;font-size:11px;color:var(--ui-fg-info);font-weight:400}
   .pm-legend span{display:inline-flex;align-items:center;gap:4px}
-  .gr{display:grid;grid-template-columns:22px minmax(0,1fr) auto;gap:3px 10px;align-items:center;padding:8px 10px;border:1px solid var(--ui-border);border-radius:var(--arc);background:var(--ui-field-bg)}
+  .gr{display:grid;grid-template-columns:22px minmax(0,1fr) auto;gap:3px 10px;align-items:center;padding:8px 10px;border-radius:var(--ai-r);background:var(--ui-bg)}
   .gr .lgt{width:22px;height:22px;border-radius:6px;font-size:10px;grid-row:span 2;align-self:start}
   .gr .w{min-width:0;font-size:var(--fs-para);line-height:var(--lh-para)}
   .gr .w b{font-weight:600}
@@ -173,8 +175,8 @@
   .md-body{flex:1;min-height:0;overflow:auto;padding:12px 16px 20px;display:flex;flex-direction:column;gap:12px}
   .md-body>*{flex:none}
   .md-cols{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;align-items:start}
-  .md-col{border:1px solid var(--ui-border);border-radius:var(--arc);background:var(--ui-field-bg);overflow:hidden;display:flex;flex-direction:column;min-width:0}
-  .md-ch{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--ui-bg);border-bottom:1px solid var(--ui-border)}
+  .md-col{border-radius:var(--ai-r);background:var(--ui-bg);overflow:hidden;display:flex;flex-direction:column;min-width:0}
+  .md-ch{display:flex;align-items:center;gap:8px;padding:8px 12px}
   .md-ch>svg{width:16px;height:16px;color:var(--ui-icon);flex:none}
   .md-ch .tx{display:flex;flex-direction:column;min-width:0;flex:1}
   .md-ch .tx b{font-weight:600}
@@ -182,12 +184,12 @@
   .md-m{position:relative;display:flex;flex-direction:column;gap:4px;padding:9px 12px 10px;cursor:default}
   .md-m + .md-m,.pv + .pv,.lc + .lc{border-top:1px solid var(--ui-border)}
   .md-m:hover{background:var(--ui-hover-list)}
-  .md-m.sel{background:color-mix(in srgb,var(--ui-accent) 10%,transparent)}
+  .md-m.sel{background:var(--ui-hover)}
   .md-m.sel::before{content:"";position:absolute;left:0;top:8px;bottom:8px;width:3px;border-radius:0 2px 2px 0;background:var(--ui-accent)}
   .md-m .r1{display:flex;align-items:center;gap:6px;min-height:20px}
   .md-m .r1 b{font-weight:600}
   .md-m .r1 .grow{flex:1}
-  .ck{width:16px;height:16px;color:var(--ui-accent);flex:none}
+  .ck{width:16px;height:16px;color:var(--ui-fg);flex:none}
   .md-m .r2{font-size:var(--fs-sm);line-height:var(--lh-sm);color:var(--ui-fg-info)}
   .md-m .r3{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--ui-fg-info);font-family:var(--font-code);white-space:nowrap}
   .md-m .r3 .dm-progress{flex:1;min-width:40px}
@@ -208,8 +210,8 @@
   .mchips{display:flex;flex-wrap:wrap;gap:4px}
   .mchip{display:inline-flex;align-items:center;gap:4px;height:22px;padding:0 8px;border:1px solid var(--ui-component-border);border-radius:5px;background:transparent;color:var(--ui-fg);font-family:var(--font-code);font-size:11px;white-space:nowrap}
   .mchip:hover{background:var(--ui-hover)}
-  .mchip.sel{border-color:var(--ui-accent);background:color-mix(in srgb,var(--ui-accent) 12%,transparent)}
-  .mchip svg{width:12px;height:12px;color:var(--ui-accent)}
+  .mchip.sel{border-color:var(--ui-fg-info);background:var(--ui-hover)}
+  .mchip svg{width:12px;height:12px;color:var(--ui-fg)}
   .pv.fresh,.lc.fresh{animation:capflash 1.4s ease-out}
   .lc .addr{font-family:var(--font-code);font-size:11px;color:var(--ui-fg-info);white-space:nowrap}
   .lc-off{display:flex;align-items:center;gap:8px}
@@ -218,14 +220,14 @@
   .lc .scan{display:flex;align-items:center;gap:6px;font-size:var(--fs-sm);color:var(--ui-fg-info)}
   .lm{display:grid;grid-template-columns:minmax(0,1fr) auto auto 16px;align-items:center;gap:8px;padding:5px 8px;margin:0 -8px;border-radius:5px;font-size:var(--fs-sm);cursor:default}
   .lm:hover{background:var(--ui-hover-list)}
-  .lm.sel{background:color-mix(in srgb,var(--ui-accent) 10%,transparent)}
+  .lm.sel{background:var(--ui-hover)}
   .lm .nm{font-family:var(--font-code);font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .lm .sz{font-family:var(--font-code);font-size:10.5px;color:var(--ui-fg-info)}
-  .md-foot{border:1px solid var(--ui-border);border-radius:var(--arc);background:var(--ui-field-bg);display:flex;flex-direction:column;overflow:hidden}
+  .md-foot{border-radius:var(--ai-r);background:var(--ui-bg);display:flex;flex-direction:column;overflow:hidden}
   .md-scn-h{display:flex;align-items:baseline;gap:10px;padding:10px 12px 8px}
   .md-scn-h b{font-weight:600}
   .md-scn{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;padding:0 12px 12px}
-  .scn{display:flex;flex-direction:column;gap:7px;padding:10px;border:1px solid var(--ui-border);border-radius:var(--arc);background:var(--ui-editor-bg);min-width:0}
+  .scn{display:flex;flex-direction:column;gap:7px;padding:10px;border-radius:var(--arc);background:var(--ui-editor-bg);min-width:0}
   .scn .t{display:flex;flex-direction:column;min-width:0}
   .scn .t b{font-weight:600}
   .scn .t span{font-size:var(--fs-sm);line-height:var(--lh-sm);color:var(--ui-fg-info)}
@@ -233,12 +235,12 @@
   .scn .nt svg{width:12px;height:12px;flex:none}
   .scn .nt.off{color:var(--ui-success)}
   .sel-btn{display:flex;align-items:center;justify-content:space-between;gap:8px;height:26px;width:100%;min-width:0;padding:0 6px 0 10px;border:1px solid var(--ui-component-border);border-radius:6px;background:var(--ui-editor-bg);color:var(--ui-fg);font-size:12px;white-space:nowrap}
-  .sel-btn:hover{border-color:var(--ui-accent)}
+  .sel-btn:hover{border-color:var(--ui-fg-info)}
   .sel-btn .nm{font-family:var(--font-code);font-size:11.5px;overflow:hidden;text-overflow:ellipsis}
   .sel-btn .grow{flex:1}
   .sel-btn .src{color:var(--ui-fg-info);font-size:11px}
   .sel-btn svg{width:12px;height:12px;color:var(--ui-icon)}
-  .md-priv{display:flex;align-items:center;gap:8px;padding:9px 12px;border-top:1px solid var(--ui-border);font-size:var(--fs-sm);line-height:var(--lh-sm);color:var(--ui-fg-info);background:var(--ui-bg)}
+  .md-priv{display:flex;align-items:center;gap:8px;padding:9px 12px;font-size:var(--fs-sm);line-height:var(--lh-sm);color:var(--ui-fg-info)}
   .md-priv svg{width:15px;height:15px;color:var(--ui-success);flex:none}
   .md-priv b{color:var(--ui-fg);font-weight:600}
 
@@ -259,13 +261,13 @@
   .rp-top{flex:none;padding:10px 12px 8px}
   .rp-pane{flex:1;min-height:0;display:flex;flex-direction:column}
   .rp-pane[hidden]{display:none}
-  .feed-top{flex:none;padding:0 12px 10px;display:flex;flex-direction:column;gap:8px;border-bottom:1px solid var(--ui-border)}
-  .sess{border:1px solid var(--ui-border);border-radius:var(--arc);background:var(--ui-field-bg);padding:8px 10px;display:flex;flex-direction:column;gap:4px;font-size:var(--fs-sm);line-height:var(--lh-sm)}
+  .feed-top{flex:none;padding:0 12px 10px;display:flex;flex-direction:column;gap:8px}
+  .sess{border-radius:var(--ai-r);background:var(--ai-surface);padding:8px 10px;display:flex;flex-direction:column;gap:4px;font-size:var(--fs-sm);line-height:var(--lh-sm)}
   .sess .who{display:flex;align-items:center;gap:6px;font-weight:600;font-size:var(--fs-para)}
-  .sess .who .lg{width:18px;height:18px;border-radius:5px;display:grid;place-items:center;font-size:10px;font-weight:700;color:#fff;background:#D97757}
+  .sess .who .lg{width:18px;height:18px;border-radius:5px;display:grid;place-items:center;font-size:10px;font-weight:600;color:#fff;background:#D97757}
   .feed{flex:1;min-height:0;overflow:auto;padding:8px 12px 16px;display:flex;flex-direction:column;gap:6px}
   .feed>*{flex:none}
-  .call{flex:none;border:1px solid var(--ui-border);border-radius:6px;background:var(--ui-field-bg);padding:6px 8px;display:flex;flex-direction:column;gap:4px;font-size:var(--fs-sm);line-height:var(--lh-sm);animation:callin .25s ease-out}
+  .call{flex:none;border-radius:8px;background:var(--ai-surface);padding:6px 8px;display:flex;flex-direction:column;gap:4px;font-size:var(--fs-sm);line-height:var(--lh-sm);animation:callin .25s ease-out}
   @keyframes callin{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
   .call .c1{display:flex;align-items:center;gap:6px}
   .call .c1 code{font-family:var(--font-code);font-size:11.5px;color:var(--ui-fg)}
@@ -274,9 +276,9 @@
   .call .c1 svg.st{width:14px;height:14px;flex:none}
   .call.ok svg.st{color:var(--ui-success)}
   .call.err svg.st{color:var(--ui-error)}
-  .call.wait{border-color:color-mix(in srgb,var(--ui-warning) 60%,transparent);background:color-mix(in srgb,var(--ui-warning) 8%,var(--ui-field-bg))}
-  .call.wait svg.st{color:var(--ui-warning)}
-  .call.err{border-color:color-mix(in srgb,var(--ui-error) 50%,transparent)}
+  .call.wait{background:var(--ai-wait-tint)}
+  .call.wait svg.st{color:var(--ai-wait)}
+  .call.err{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--ui-error) 45%,transparent)}
   .call .c2{font-family:var(--font-code);font-size:10.5px;color:var(--ui-fg-info);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .call .c3{color:var(--ui-fg)}
   .call .c4{font-size:11px;color:var(--ui-fg-info);display:flex;align-items:center;gap:4px}
@@ -300,17 +302,17 @@
   .amsg .tool-call svg.i{width:14px;height:14px;color:var(--ui-success);flex:none}
   .amsg .tool-call .grow{flex:1}
   .amsg .tool-call .dm-mono{color:var(--ui-fg-info);font-size:10.5px}
-  .skc{border:1px solid color-mix(in srgb,var(--ui-accent) 45%,var(--ui-border));border-radius:var(--arc);background:color-mix(in srgb,var(--ui-accent) 7%,var(--ui-field-bg));padding:8px 10px;display:flex;flex-direction:column;gap:6px;font-size:var(--fs-sm);line-height:var(--lh-sm);animation:callin .25s ease-out}
+  .skc{border-radius:var(--ai-r);background:var(--ai-surface);padding:8px 10px;display:flex;flex-direction:column;gap:6px;font-size:var(--fs-sm);line-height:var(--lh-sm);animation:callin .25s ease-out}
   .skc .h{display:flex;align-items:flex-start;gap:6px;font-size:var(--fs-para);line-height:var(--lh-para)}
-  .skc .h>svg{width:14px;height:14px;color:var(--ui-accent);flex:none;margin-top:2px}
+  .skc .h>svg{width:14px;height:14px;color:var(--ai-ink);flex:none;margin-top:2px}
   .skc .h b{font-weight:600}
   .skc .why{color:var(--ui-fg-info);padding-left:20px;margin-top:-3px}
   .skc .acts{display:flex;gap:6px;flex-wrap:wrap}
-  .skc.off{border-color:var(--ui-border);background:var(--ui-field-bg)}
+  .skc.off{background:var(--ai-surface-2)}
   .skc.off .h>svg{color:var(--ui-fg-info)}
-  .skc.sug{border-color:color-mix(in srgb,var(--ui-warning) 55%,var(--ui-border));background:color-mix(in srgb,var(--ui-warning) 7%,var(--ui-field-bg))}
-  .skc.sug .h>svg{color:var(--ui-warning)}
-  .skc .body{border-top:1px solid var(--ui-border);padding-top:7px;display:flex;flex-direction:column;gap:5px;color:var(--ui-fg)}
+  .skc.sug{background:var(--ai-wait-tint)}
+  .skc.sug .h>svg{color:var(--ai-wait)}
+  .skc .body{padding-top:4px;display:flex;flex-direction:column;gap:5px;color:var(--ui-fg)}
   .skc .body ol{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:2px}
   .skc .body .dm-mono{color:var(--ui-fg-info);font-size:10.5px}
   .ans-l{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:3px}
@@ -324,18 +326,6 @@
   .sk-auto{display:inline-flex;align-items:center;gap:4px;white-space:nowrap}
   .sk-auto svg{width:12px;height:12px;flex:none}
 
-  /* ---- 授权弹窗 ---- */
-  .mask{position:absolute;inset:0;z-index:60;background:rgba(0,0,0,.28);display:grid;place-items:center}
-  .mask[hidden]{display:none}
-  .dlg{width:460px;border:1px solid var(--ui-popup-border);border-radius:10px;background:var(--ui-popup-bg);box-shadow:var(--ui-shadow);font-size:var(--fs-para);line-height:var(--lh-para);overflow:hidden}
-  .dlg-h{display:flex;align-items:center;gap:8px;padding:12px 14px 6px;font-weight:600}
-  .dlg-h svg{width:18px;height:18px;color:var(--ui-warning);flex:none}
-  .dlg-b{padding:4px 14px 12px;display:flex;flex-direction:column;gap:8px}
-  .dlg-b .args{font-family:var(--font-code);font-size:11px;background:var(--ui-code-bg);border:1px solid var(--ui-border);border-radius:6px;padding:8px 10px;white-space:pre;color:var(--ui-fg);overflow:auto}
-  .dlg-b .needs{display:flex;align-items:center;gap:6px;font-size:var(--fs-sm);color:var(--ui-fg-info)}
-  .dlg-f{display:flex;align-items:center;gap:8px;padding:10px 14px;border-top:1px solid var(--ui-border);background:var(--ui-bg)}
-  .dlg-f .grow{flex:1}
-  .dlg-tip{padding:0 14px 10px;background:var(--ui-bg);font-size:11px;line-height:15px;color:var(--ui-fg-info)}
   /* ---- 系统意图（鸿蒙智能体框架） ---- */
   .view-it{grid-template-columns:minmax(0,1.15fr) minmax(0,1fr)}
   .it-r{display:grid;grid-template-columns:minmax(0,1fr) auto auto auto;align-items:center;gap:10px;min-height:44px;padding:5px 10px;font-size:var(--fs-sm);line-height:var(--lh-sm)}
@@ -348,16 +338,16 @@
   .it-r .n{font-family:var(--font-code);font-size:10.5px;color:var(--ui-fg-info);min-width:40px;text-align:right}
   .it-r.off .l1,.it-r.off .l2{opacity:.5}
   .it-r.flash{animation:capflash 1.2s ease-out}
-  .xylg{background:linear-gradient(135deg,#7B5CFF,#2E8BFF 60%,#27C8D8)!important}
-  .ic{display:grid;grid-template-columns:28px minmax(0,1fr) auto auto;align-items:center;gap:10px;padding:7px 10px;border:1px solid var(--ui-border);border-radius:var(--arc);background:var(--ui-field-bg)}
+  .xylg{background:#5B5FE8!important}
+  .ic{display:grid;grid-template-columns:28px minmax(0,1fr) auto auto;align-items:center;gap:10px;padding:7px 10px;border-radius:var(--ai-r);background:var(--ui-bg)}
   .ic .tx{min-width:0;display:flex;flex-direction:column}
   .ic .tx b{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .ic .tx span{font-size:var(--fs-sm);line-height:var(--lh-sm);color:var(--ui-fg-info);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .ic.off .tx,.ic.off .lgt{opacity:.5}
-  .il{border:1px solid var(--ui-border);border-radius:var(--arc);background:var(--ui-field-bg);padding:7px 10px;display:flex;flex-direction:column;gap:4px;font-size:var(--fs-sm);line-height:var(--lh-sm)}
+  .il{border-radius:var(--ai-r);background:var(--ui-bg);padding:7px 10px;display:flex;flex-direction:column;gap:4px;font-size:var(--fs-sm);line-height:var(--lh-sm)}
   .il.live{animation:callin .25s ease-out}
-  .il.wait{border-color:color-mix(in srgb,var(--ui-warning) 60%,transparent);background:color-mix(in srgb,var(--ui-warning) 8%,var(--ui-field-bg))}
-  .il.err{border-color:color-mix(in srgb,var(--ui-error) 50%,transparent)}
+  .il.wait{background:var(--ai-wait-tint)}
+  .il.err{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--ui-error) 45%,transparent)}
   .il .h{display:flex;align-items:center;gap:6px;min-width:0}
   .il .h b{font-weight:600;white-space:nowrap}
   .il .h code{font-family:var(--font-code);font-size:11px;color:var(--ui-fg-info)}
@@ -377,8 +367,8 @@
   .it-say{display:flex;flex-wrap:wrap;justify-content:center;gap:6px}
   .it-say .btn{white-space:nowrap}
   /* 手机：HUAWEI Mate 70 Pro 1260 × 2844 */
-  .ph{position:relative;width:244px;aspect-ratio:1260/2844;border-radius:36px;background:#0b0c0f;padding:6px;box-shadow:0 0 0 1px rgba(255,255,255,.08),0 10px 28px rgba(0,0,0,.35);flex:none}
-  .ph-s{position:relative;width:100%;height:100%;border-radius:31px;overflow:hidden;background:linear-gradient(165deg,#c9dcff 0%,#e3d9ff 48%,#fbe3ec 100%);color:#1b1d22;font-family:var(--font-ui);font-size:11px;line-height:15px}
+  .ph{position:relative;width:244px;aspect-ratio:1260/2844;border-radius:36px;background:#0b0c0f;padding:6px;box-shadow:0 8px 24px rgba(0,0,0,.28);flex:none}
+  .ph-s{position:relative;width:100%;height:100%;border-radius:31px;overflow:hidden;background:#E9EBF0;color:#1b1d22;font-family:var(--font-ui);font-size:11px;line-height:15px}
   .ph-s.app{background:#f3f4f7}
   .ph-hole{position:absolute;top:9px;left:50%;width:11px;height:11px;margin-left:-5.5px;border-radius:50%;background:#050506;z-index:6}
   .ph-sb{position:relative;z-index:5;height:30px;display:flex;align-items:center;gap:5px;padding:0 18px 0 20px;font-size:11px;font-weight:600}
@@ -388,24 +378,24 @@
   .ph-sb .sig i{width:2px;background:currentColor;border-radius:1px}
   .ph-sb .bat{width:18px;height:9px;border:1px solid currentColor;border-radius:2.5px;padding:1px;display:inline-flex}
   .ph-sb .bat i{flex:0 0 72%;background:currentColor;border-radius:1px}
-  .ph-cap{display:inline-flex;align-items:center;gap:4px;height:16px;padding:0 6px;border-radius:8px;background:#0A59F7;color:#fff;font-size:9.5px;font-weight:600;font-family:var(--font-code);animation:callin .25s ease-out}
+  .ph-cap{display:inline-flex;align-items:center;gap:4px;height:16px;padding:0 6px;border-radius:8px;background:#1b1d22;color:#fff;font-size:9.5px;font-weight:600;font-family:var(--font-code);animation:callin .25s ease-out}
   .ph-cap.ok{background:#1E9E5A}
   .ph-card{margin:8px 14px 0;border-radius:18px;background:rgba(255,255,255,.62);padding:12px 14px;display:flex;flex-direction:column;gap:2px}
   .ph-card .big{font-size:30px;line-height:34px;font-weight:300;letter-spacing:.5px}
   .ph-card .sub{font-size:10.5px;color:#4b5060}
   .ph-apps{display:grid;grid-template-columns:repeat(4,1fr);gap:14px 4px;padding:16px 12px 0}
   .ph-app{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:10px;line-height:12px;color:#1b1d22;white-space:nowrap}
-  .ph-app i{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;color:#fff;font-style:normal;font-weight:700;font-size:13px;box-shadow:0 1px 3px rgba(0,0,0,.12)}
+  .ph-app i{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;color:#fff;font-style:normal;font-weight:600;font-size:13px;}
   .ph-dock{position:absolute;left:12px;right:12px;bottom:20px;height:58px;border-radius:20px;background:rgba(255,255,255,.45);display:flex;align-items:center;justify-content:space-around;padding:0 8px}
   .ph-dock i{width:38px;height:38px;border-radius:11px}
   .ph-gb{position:absolute;bottom:7px;left:50%;width:84px;height:4px;margin-left:-42px;border-radius:2px;background:rgba(0,0,0,.55);z-index:6}
   .ph-s.dim .ph-card,.ph-s.dim .ph-apps,.ph-s.dim .ph-dock{filter:blur(2px);opacity:.55}
   /* 实况窗 */
-  .lw{position:absolute;z-index:4;top:34px;left:8px;right:8px;border-radius:18px;background:rgba(24,26,32,.94);color:#fff;padding:10px 12px 11px;display:flex;flex-direction:column;gap:6px;box-shadow:0 6px 18px rgba(0,0,0,.25);animation:lwin .3s ease-out}
+  .lw{position:absolute;z-index:4;top:34px;left:8px;right:8px;border-radius:18px;background:rgba(24,26,32,.94);color:#fff;padding:10px 12px 11px;display:flex;flex-direction:column;gap:6px;animation:lwin .3s ease-out}
   @keyframes lwin{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:none}}
   .lw .r{display:flex;align-items:center;gap:8px}
   .lw .r .grow{flex:1;min-width:0}
-  .lw .lg{width:24px;height:24px;border-radius:7px;background:linear-gradient(135deg,#2C8DDD,#3357AC);display:grid;place-items:center;font-size:9.5px;font-weight:700;flex:none}
+  .lw .lg{width:24px;height:24px;border-radius:7px;background:#2C6BD8;display:grid;place-items:center;font-size:9.5px;font-weight:600;flex:none}
   .lw b{font-weight:600;font-size:11.5px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .lw .s{font-size:10px;line-height:13px;color:rgba(255,255,255,.72);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
   .lw .pct{font-family:var(--font-code);font-size:12px;font-weight:600}
@@ -417,12 +407,12 @@
   .lw .dots span.ok{color:#7FD6A3}
   .lw .open{height:24px;padding:0 12px;border:0;border-radius:12px;background:#0A59F7;color:#fff;font-size:11px;font-weight:600;flex:none}
   /* 小艺 */
-  .xy{position:absolute;z-index:3;left:7px;right:7px;bottom:18px;border-radius:22px;padding:12px 12px 10px;display:flex;flex-direction:column;gap:7px;border:1.5px solid transparent;background:linear-gradient(rgba(255,255,255,.96),rgba(255,255,255,.96)) padding-box,linear-gradient(120deg,#7B5CFF,#2E8BFF 40%,#27C8D8 70%,#FF7AB6) border-box;box-shadow:0 8px 24px rgba(60,50,140,.22);animation:lwin .3s ease-out;max-height:64%;overflow:hidden}
+  .xy{position:absolute;z-index:3;left:7px;right:7px;bottom:18px;border-radius:22px;padding:12px 12px 10px;display:flex;flex-direction:column;gap:7px;background:#FFFFFF;box-shadow:0 6px 18px rgba(0,0,0,.14);animation:lwin .3s ease-out;max-height:64%;overflow:hidden}
   .xy-u{align-self:flex-end;max-width:86%;padding:6px 10px;border-radius:14px 14px 4px 14px;background:#0A59F7;color:#fff;font-size:11px;line-height:15px}
   .xy-a{align-self:flex-start;max-width:96%;font-size:11px;line-height:16px;color:#1b1d22}
   .xy-a b{font-weight:600}
   .xy-c{display:flex;align-items:center;gap:8px;padding:7px 9px;border-radius:12px;background:#F1F3F6;font-size:10.5px;line-height:14px;color:#1b1d22}
-  .xy-c .lg{width:22px;height:22px;border-radius:6px;background:linear-gradient(135deg,#2C8DDD,#3357AC);color:#fff;display:grid;place-items:center;font-size:9px;font-weight:700;flex:none}
+  .xy-c .lg{width:22px;height:22px;border-radius:6px;background:#2C6BD8;color:#fff;display:grid;place-items:center;font-size:9px;font-weight:600;flex:none}
   .xy-c .tx{flex:1;min-width:0;display:flex;flex-direction:column}
   .xy-c .tx b{font-weight:600}
   .xy-c .tx span{color:#5b6070;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -433,11 +423,11 @@
   .xy-log div{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .xy-log .e{color:#D13B3B}.xy-log .w{color:#B57800}
   .xy-acts{display:flex;gap:6px;flex-wrap:wrap}
-  .xy-acts button{height:22px;padding:0 10px;border-radius:11px;border:0;background:#E6ECFB;color:#0A59F7;font-size:10.5px;font-weight:600}
-  .xy-orb{align-self:center;width:26px;height:26px;border-radius:50%;background:conic-gradient(from 30deg,#7B5CFF,#2E8BFF,#27C8D8,#FF7AB6,#7B5CFF);margin-top:2px;animation:xyspin 3s linear infinite}
-  .xy-orb.idle{animation:none;opacity:.8}
+  .xy-acts button{height:22px;padding:0 10px;border-radius:11px;border:0;background:#EDEEF1;color:#1b1d22;font-size:10.5px;font-weight:600}
+  .xy-orb{align-self:center;width:22px;height:22px;border-radius:50%;background:#5B5FE8;margin-top:2px;opacity:.9}
+  .xy-orb.idle{opacity:.5}
   /* 手机上装好的应用 */
-  .pa-h{padding:4px 16px 8px;font-size:17px;line-height:22px;font-weight:700}
+  .pa-h{padding:4px 16px 8px;font-size:17px;line-height:22px;font-weight:600}
   .pa-q{margin:0 14px 8px;height:28px;border-radius:14px;background:#e6e8ee;display:flex;align-items:center;padding:0 10px;font-size:10.5px;color:#7a7f8c}
   .pa-it{display:flex;gap:9px;align-items:center;margin:0 14px 8px;padding:8px;border-radius:12px;background:#fff}
   .pa-it i{width:44px;height:44px;border-radius:8px;flex:none}
@@ -445,6 +435,31 @@
   .pa-it span{font-size:10px;color:#7a7f8c}
   .dm-toast[hidden]{display:none}
   .ide .btn.primary svg.i{color:var(--ui-accent-fg)}
+  /* 终轮：分段 / 胶囊用中性色，蓝只留主按钮 */
+  .dm-seg{border:0;background:var(--ui-bg);padding:2px;border-radius:8px}
+  .dm-seg button{border-radius:6px}
+  .dm-seg button + button{border-left:0}
+  .dm-seg button.on{background:var(--ui-tag-bg);font-weight:500}
+  .tw-right .dm-seg{background:var(--ai-surface)}
+  .tw-right .dm-seg button.on{background:var(--ai-surface-2)}
+  .dm-pill.info{background:var(--ui-tag-bg);color:var(--ui-fg)}
+  /* 在等你：授权卡就在调用流里，不弹模态 */
+  .feed .ai-approve,#it-wait .ai-approve{background:var(--ai-surface);animation:callin .25s ease-out}
+  #it-wait .ai-approve{background:var(--ui-bg)}
+  #it-wait:empty{display:none}
+  .ai-approve .needs{display:flex;align-items:center;gap:6px;font-size:var(--fs-sm);color:var(--ui-fg-info)}
+  .ai-approve__cmd{white-space:pre;overflow:auto;font-size:11px!important;line-height:17px!important}
+  .ai-approve .ap-tip{font-size:11px;line-height:15px;color:var(--ui-fg-info)}
+  .ai-approve__act .grow{flex:1}
+  .call .c1 .who{font-size:11px;color:var(--ui-fg-info);white-space:nowrap}
+  .call.q{background:transparent;box-shadow:inset 0 0 0 1px var(--ui-border)}
+  .call.q svg.st{color:var(--ui-fg-info)}
+  .call .ai-ring{width:12px;height:12px}
+  #hdr-agent{display:inline-flex;min-width:0;max-width:360px}
+  #hdr-agent .ai-status{max-width:100%}
+  /* 浅色主题的深色顶栏上，琥珀字用深色主题的那一档，保证对比 */
+  .ide[data-ide-theme="light"]:not([data-light-header="1"]) #hdr-agent .ai-status[data-state="waiting"]{color:#F5B64F;background:rgba(245,165,36,.16)}
+  .ide[data-ide-theme="light"]:not([data-light-header="1"]) #hdr-agent .ai-status:not([data-state="waiting"]){background:#393B40;color:#DFE1E5}
 </style>
 </head>
 <body>
@@ -497,11 +512,6 @@
                 <div class="snip-h"><span class="dm-seg" id="snip-seg"></span><span class="grow"></span><span class="dm-mono" id="snip-path"></span><button class="btn sm" id="btn-copy"><svg class="i" style="width:12px;height:12px"><use href="#i-copy"/></svg><span>复制</span></button></div>
                 <pre id="snip-code"></pre>
               </div>
-              <dl class="srv">
-                <dt>项目</dt><dd>MyApplication · entry · API 20</dd>
-                <dt>设备</dt><dd>HUAWEI Mate 70 Pro · hdc 已连接</dd>
-                <dt>调用记录</dt><dd>.deveco/mcp/audit.log</dd>
-              </dl>
             </div>
           </div>
           <!-- ===== MCP 市场 ===== -->
@@ -532,13 +542,6 @@
             <div class="col">
               <div class="sec-h">已授权记录<span class="cnt" id="gr-cnt"></span><span class="grow"></span><button class="btn sm" id="gr-all">全部撤销</button></div>
               <div class="dm-col" id="grants" style="gap:6px"></div>
-              <div class="sec-h" style="margin-top:6px">授权时的四个选项</div>
-              <div class="opts">
-                <b>仅这一次</b><span>只放行这一次调用，不留记录</span>
-                <b>本会话</b><span>到这个客户端断开为止，同一件事不再问</span>
-                <b>始终允许</b><span>记在上面，同一客户端、同一件事只留一条，随时能撤销</span>
-                <b>拒绝</b><span>这次不执行，Agent 收到 permission_denied</span>
-              </div>
             </div>
           </div>
           <!-- ===== 系统意图：开放给鸿蒙智能体框架 ===== -->
@@ -549,6 +552,7 @@
               <div class="sec-h" style="margin-top:4px">谁能调用<span class="cnt" id="ic-cnt"></span></div>
               <div class="dm-col" id="it-callers" style="gap:6px"></div>
               <div class="sec-h" style="margin-top:4px">意图调用记录<span class="cnt" id="il-cnt"></span><span class="grow"></span><button class="btn sm" id="it-goperm"><svg class="i" style="width:12px;height:12px"><use href="#i-shield"/></svg>授权记录在 权限 页</button></div>
+              <div id="it-wait"></div>
               <div class="dm-col" id="it-log" style="gap:6px"></div>
             </div>
             <div class="col">
@@ -646,19 +650,6 @@
           </div>
         </div>
       </div>
-    </div>
-  </div>
-
-  <div class="mask" id="mask" hidden>
-    <div class="dlg" role="dialog" aria-modal="true" aria-labelledby="dlg-title">
-      <div class="dlg-h"><svg><use href="#i-lock"/></svg><span id="dlg-title">Claude Code 想用调试证书给 entry 签名</span></div>
-      <div class="dlg-b">
-        <div id="dlg-desc">签完才能装到真机。</div>
-        <div class="needs" id="dlg-needs"></div>
-        <div class="args" id="dlg-args"></div>
-      </div>
-      <div class="dlg-f"><button class="btn" data-dec="deny">拒绝</button><span class="grow"></span><button class="btn" data-dec="always">始终允许</button><button class="btn" data-dec="session">本会话</button><button class="btn primary" data-dec="once">仅这一次</button></div>
-      <div class="dlg-tip">选「本会话」「始终允许」会记到 权限 → 已授权记录，随时能撤销。</div>
     </div>
   </div>
 
@@ -762,7 +753,7 @@
   function renderClis(){
     $('#clis').innerHTML=CLIS.map(function(c){
       return '<div class="cli'+(c.id===snipSel?' sel':'')+'" data-cli="'+c.id+'"><span class="lg" style="background:'+c.c+'">'+c.lg+'</span><span class="tx"><b>'+c.nm+'</b><span>'+esc(c.info)+'</span></span>'
-        +(c.on?'<span class="dm-pill ok"><span class="dm-dot ok"></span>已连接</span>':(c.busy?'<span class="dm-pill info"><span class="spin" style="width:10px;height:10px"></span>写入配置…</span>':'<button class="btn sm primary" data-join="'+c.id+'">一键接入</button>'))+'</div>';
+        +(c.on?'<span class="dm-pill ok"><span class="dm-dot ok"></span>已连接</span>':(c.busy?'<span class="dm-pill info"><span class="spin" style="width:10px;height:10px"></span>写入配置…</span>':'<button class="btn sm" data-join="'+c.id+'">一键接入</button>'))+'</div>';
     }).join('');
     $('#cli-cnt').textContent=CLIS.filter(function(c){return c.on}).length+' 个已连接';
     $('#snip-seg').innerHTML=CLIS.map(function(c){return '<button data-snip="'+c.id+'"'+(c.id===snipSel?' class="on"':'')+'>'+c.nm+'</button>'}).join('');
@@ -912,7 +903,7 @@
       foot='<div class="prog"><div class="ln"><span class="spin"></span><span>'+STAGES[m.stage]+(m.stage===0?' '+m.size:'')+'…</span><span class="grow"></span><span class="dm-mono dm-muted">'+(m.stage+1)+' / '+STAGES.length+'</span></div><div class="dm-progress"><i style="--v:'+pct+'%"></i></div></div>';
     }else{
       foot='<div class="t4">需要'+permChips(perms)+'</div><div class="t3"><span class="meta">'+m.tools.length+' 个工具 · '+m.size+'</span><span class="grow"></span>'
-        +(m.inst?'<span class="dm-pill ok"><svg><use href="#i-check"/></svg>已安装</span>':'<button class="btn sm primary" data-mkinst="'+m.id+'"><svg class="i" style="width:12px;height:12px"><use href="#i-download"/></svg>安装</button>')+'</div>';
+        +(m.inst?'<span class="dm-pill ok"><svg><use href="#i-check"/></svg>已安装</span>':'<button class="btn sm" data-mkinst="'+m.id+'"><svg class="i" style="width:12px;height:12px"><use href="#i-download"/></svg>安装</button>')+'</div>';
     }
     return '<div class="mk'+(m.fresh?' fresh':'')+'" data-mk="'+m.id+'"><div class="t1"><span class="lgt" style="background:'+m.c+'">'+m.lg+'</span><span class="nm"><b>'+esc(m.nm)+'</b><span>'+esc(m.pub)+'</span></span></div>'
       +'<div class="t2">'+esc(m.d)+'</div>'+foot+'</div>';
@@ -959,23 +950,24 @@
     toast(m.on?'已启用「'+m.nm+'」':'已停用「'+m.nm+'」',m.on?'它的工具重新出现在 DevEco Code 里。':'DevEco Code 暂时看不到它的工具，配置保留。');
   });
 
-  /* ---------------- 模拟外部调用 ---------------- */
+  /* ---------------- 模拟外部调用：Claude Code 修 ListPage；同时 Cursor 在同一台真机上跑上架自检 ---------------- */
   var STEPS=[
     {t:'deveco.devices',a:'{}',ms:0.3,res:'1 台可用 · HUAWEI Mate 70 Pro（USB）'},
     {t:'deveco.build',a:'{ module: "entry", mode: "debug" }',ms:18.4,res:'BUILD SUCCESSFUL · entry-default-unsigned.hap 4.2 MB'},
     {t:'deveco.sign.auto',a:'{ module: "entry", cert: "debug" }',ms:1.2,res:'entry-default-signed.hap'},
-    {t:'deveco.install',a:'{ device: "Mate 70 Pro", hap: "entry-default-signed.hap" }',ms:3.1,res:'install bundle successfully'},
-    {t:'deveco.launch',a:'{ ability: "EntryAbility" }',ms:1.6,res:'EntryAbility onForeground'},
-    {t:'deveco.screenshot',a:'{ device: "Mate 70 Pro" }',ms:0.9,res:'shot'},
-    {t:'deveco.hilog',a:'{ domain: "0xA0001", level: "W", since: "launch" }',ms:0.6,res:'log'}
+    {t:'deveco.install',a:'{ device: "Mate 70 Pro", hap: "entry-default-signed.hap" }',ms:3.1,res:'install bundle successfully',dev:1},
+    {t:'deveco.launch',a:'{ ability: "EntryAbility" }',ms:1.6,res:'EntryAbility onForeground',dev:1},
+    {t:'deveco.screenshot',a:'{ device: "Mate 70 Pro" }',ms:0.9,res:'shot',dev:1},
+    {t:'deveco.hilog',a:'{ domain: "0xA0001", level: "W", since: "launch" }',ms:0.6,res:'log',dev:1}
   ];
-  var running=false,todayN=36;
-  function callHTML(s,state,extra){
-    var ic=state==='run'?'<span class="spin"></span>':state==='wait'?'<svg class="st"><use href="#i-lock"/></svg>':state==='err'?'<svg class="st"><use href="#i-err"/></svg>':'<svg class="st"><use href="#i-check"/></svg>';
-    return '<div class="c1">'+ic+'<code>'+s.t+'</code><span class="dm-pill muted">Claude Code</span><span class="grow"></span><span class="ms">'+(extra&&extra.ms||'')+'</span></div><div class="c2">'+esc(s.a)+'</div>'+(extra&&extra.body?'<div class="c3">'+extra.body+'</div>':'')+(extra&&extra.note?'<div class="c4"><svg><use href="#i-shield"/></svg>'+extra.note+'</div>':'');
+  var running=false,todayN=36,lease=null,cursorRow=null;
+  function callHTML(s,state,extra,cli){
+    cli=cli||'Claude Code';
+    var ic=state==='run'?'<span class="ai-ring"></span>':state==='wait'?'<svg class="st"><use href="#ai-waiting"/></svg>':state==='q'?'<svg class="st"><use href="#i-hourglass"/></svg>':state==='err'?'<svg class="st"><use href="#i-err"/></svg>':'<svg class="st"><use href="#i-check"/></svg>';
+    return '<div class="c1">'+ic+'<code>'+s.t+'</code><span class="who">'+esc(cli)+'</span><span class="grow"></span><span class="ms">'+(extra&&extra.ms||'')+'</span></div>'+(extra&&extra.body?'<div class="c3">'+extra.body+'</div>':'')+(extra&&extra.note?'<div class="c4"><svg><use href="#i-shield"/></svg>'+extra.note+'</div>':'');
   }
   function resBody(s){
-    if(s.res==='shot') return '<div class="shot"><div class="ph"><div class="scr"><i></i><i></i><i></i><i></i><i></i><i></i></div></div><div class="dm-small dm-muted">1260 × 2844 · ListPage 首屏<br>已回传给外部 Agent</div></div>';
+    if(s.res==='shot') return '<div class="shot"><div class="ph"><div class="scr"><i></i><i></i><i></i><i></i><i></i><i></i></div></div><div class="dm-small dm-muted">1260 × 2844 · ListPage 首屏<br>已回传给 Claude Code</div></div>';
     if(s.res==='log') return '<div class="logl"><span class="w">W</span> ListPage: decode cover on UI thread, 38ms</div><div class="logl"><span class="w">W</span> ListPage: frame dropped ×6 during fling</div><div class="logl">共 14 条 · 2 条 W · 0 条 E</div>';
     return '<span class="dm-muted">'+esc(s.res)+'</span>';
   }
@@ -989,11 +981,25 @@
     var d=document.createElement('div');d.className='dm-callout '+(ok?'ok':'warn');
     d.innerHTML='<svg><use href="#i-'+(ok?'check':'warn')+'"/></svg><div>'+msg+'</div>';
     $('#feed').appendChild(d);d.scrollIntoView({block:'nearest'});
+    releaseLease();
+    capsule(ok?'done':'error',ok?'Claude Code 拿到截图与日志 · 7 次调用':'Claude Code 停在这一步');
   }
+  /* 顶栏胶囊：在等你优先，只推最挡路的一件，其余写「还有 N 件」 */
+  var capNow=['idle','外部 Agent 待命 · 2 个客户端已连接'];
+  function capsule(st,txt){capNow=[st,txt];syncCapsule();}
+  function syncCapsule(){
+    if(WAIT.length){var w=WAIT[0];DemoFrame.agent('waiting','<span class="lbl">在等你 · '+esc(w.who)+' 想'+esc(w.title)+'</span>',{queue:WAIT.length-1||null,onClick:function(){jumpWait(w)}});return;}
+    var icon=capNow[0]==='tool'||capNow[0]==='verifying'?'<span class="ai-ring"></span>':'';
+    DemoFrame.agent(capNow[0],icon+'<span class="lbl">'+esc(capNow[1])+'</span>');
+  }
+  /* 真机租约：同一台 Mate 70 Pro 同时只给一个 Agent 用 */
+  function takeLease(who){lease=who;}
+  function releaseLease(){var w=lease;lease=null;if(w==='Claude Code'&&cursorRow&&cursorRow.queued)runCursorInstall();}
   function run(i){
-    if(i>=STEPS.length){finish('外部 Agent 已拿到截图与日志，继续改 <b>ListPage.ets</b>。全程 7 次调用，都记在 audit.log。',true);return;}
+    if(i>=STEPS.length){finish('Claude Code 已拿到截图与日志，继续改 <b>ListPage.ets</b>。全程 7 次调用，都记在 <code>.deveco/mcp/audit.log</code>。',true);return;}
     var s=STEPS[i],x=TOOL[s.t],hm=HUMAN[s.t]||['调用 '+s.t,''];
     var el=document.createElement('div');el.className='call';$('#feed').appendChild(el);
+    if(i===1&&!cursorRow)startCursor();
     if(!x.on){
       el.className='call err';el.innerHTML=callHTML(s,'err',{ms:'已拒绝',body:'<span style="color:var(--ui-error)">该工具未开放，外部 Agent 收到 -32601</span>'});
       el.scrollIntoView({block:'nearest'});
@@ -1004,10 +1010,12 @@
       el.scrollIntoView({block:'nearest'});
       finish('<b>'+s.t+'</b> 在 权限 里设成了「不允许」，后面的步骤不会执行。',false);return;
     }
+    if(s.dev&&!lease)takeLease('Claude Code');
     el.innerHTML=callHTML(s,'run',{ms:'…'});el.scrollIntoView({block:'nearest'});
+    capsule('tool','Claude Code 在调 '+s.t);
     var note='';
     var go=function(){
-      el.className='call';el.innerHTML=callHTML(s,'run',{ms:'…'});
+      el.className='call';el.innerHTML=callHTML(s,'run',{ms:'…'});capsule('tool','Claude Code 在调 '+s.t);
       setTimeout(function(){
         el.className='call ok';el.innerHTML=callHTML(s,'ok',{ms:s.ms.toFixed(1)+'s',body:resBody(s),note:note});
         flashTool(s.t);todayN++;$('#feed-sum').textContent='今天 '+todayN+' 次';
@@ -1016,35 +1024,77 @@
     };
     if(x.pol==='ask'&&x.grant){
       bumpGrant(s.t,'Claude Code');
-      note='按已授权记录放行（'+(x.grant==='always'?'始终允许':'本会话')+'），没再问你';
+      note='按 Claude Code 的授权放行（'+(x.grant==='always'?'始终允许':'本会话')+'），没再问你';
       go();
     }else if(x.pol==='ask'){
-      el.className='call wait';el.innerHTML=callHTML(s,'wait',{ms:'等你授权',body:'<span class="dm-muted">需要确认，已在 IDE 里弹出</span>'});
-      askAuth(s,function(dec){
+      el.className='call wait';el.innerHTML=callHTML(s,'wait',{ms:'在等你'});
+      ask({kind:'call',who:'Claude Code',title:hm[0],desc:hm[1],needs:permChips(x.perms),
+        args:'tool:   '+s.t+'\nargs:   '+s.a+'\nclient: Claude Code (stdio, pid 48213)',host:el},function(dec){
         if(dec==='deny'){el.className='call err';el.innerHTML=callHTML(s,'err',{ms:'已拒绝',body:'<span style="color:var(--ui-error)">你拒绝了这次调用，外部 Agent 收到 permission_denied</span>'});finish(s.t==='deveco.sign.auto'?'签名被拒绝，后面的安装与截图不会执行。':'「'+hm[0]+'」被拒绝，后面的步骤不会执行。',false);return;}
-        if(dec==='session'||dec==='always'){x.grant=dec;addGrant(s.t,'Claude Code',dec);renderCaps();renderPerm();note='已记住：'+(dec==='always'?'始终允许':'本会话内不再问')+'，可在 权限 里撤销';}
+        if(dec==='session'||dec==='always'){x.grant=dec;addGrant(s.t,'Claude Code',dec);renderCaps();renderPerm();note='已记住：只对 Claude Code '+(dec==='always'?'始终允许':'本会话内不再问')+'，可在 权限 里撤销';}
         else note='仅这一次，下次还会问你';
         go();
       });
     } else go();
   }
-  var authCb=null;
-  function askAuth(s,cb){
-    authCb=cb;var hm=HUMAN[s.t]||['调用 '+s.t,''];var x=TOOL[s.t];
-    $('#dlg-title').textContent='Claude Code 想'+hm[0];
-    $('#dlg-desc').textContent=hm[1];$('#dlg-desc').hidden=!hm[1];
-    $('#dlg-needs').innerHTML='需要'+permChips(x.perms);
-    $('#dlg-args').textContent='tool:   '+s.t+'\nargs:   '+s.a+'\nclient: Claude Code (stdio, pid 48213)';
-    $('#mask').hidden=false;
+  /* 多 Agent：Cursor 同时在跑上架自检，要把 release 包装到同一台 Mate 70 Pro */
+  function startCursor(){
+    var s={t:'deveco.sign.auto',a:'{ module: "entry", cert: "debug" }'};
+    var el=document.createElement('div');el.className='call';$('#feed').appendChild(el);
+    cursorRow={el:el,queued:false};
+    var g=grantOf('deveco.sign.auto','Cursor');
+    el.innerHTML=callHTML(s,'run',{ms:'…'},'Cursor');
+    setTimeout(function(){
+      if(g){bumpGrant('deveco.sign.auto','Cursor');el.className='call ok';el.innerHTML=callHTML(s,'ok',{ms:'1.1s',note:'按 Cursor 自己的本会话授权放行；Claude Code 的授权另算'},'Cursor');}
+      else{el.className='call ok';el.innerHTML=callHTML(s,'ok',{ms:'1.1s'},'Cursor');}
+      var q=document.createElement('div');$('#feed').appendChild(q);cursorRow.el=q;
+      if(lease==='Claude Code'||running){cursorRow.queued=true;q.className='call q';q.innerHTML=callHTML({t:'deveco.install'},'q',{ms:'排队',body:'<span class="dm-muted">Mate 70 Pro 由 Claude Code 在用（装机 → 截图 → 日志），用完自动接上，不打断它</span>'},'Cursor');}
+      else runCursorInstall();
+    },700);
   }
-  $('#mask').addEventListener('click',function(e){
-    var b=e.target.closest('[data-dec]');if(!b)return;
-    $('#mask').hidden=true;var cb=authCb;authCb=null;cb&&cb(b.dataset.dec);
+  function runCursorInstall(){
+    var q=cursorRow.el;cursorRow.queued=false;
+    q.className='call';q.innerHTML=callHTML({t:'deveco.install'},'run',{ms:'…'},'Cursor');
+    setTimeout(function(){
+      q.className='call ok';q.innerHTML=callHTML({t:'deveco.install'},'ok',{ms:'3.4s',body:'<span class="dm-muted">release 包已装到 Mate 70 Pro，Cursor 接着跑 deveco.appcheck</span>'},'Cursor');
+      flashTool('deveco.install');todayN++;$('#feed-sum').textContent='今天 '+todayN+' 次';
+    },900);
+  }
+
+  /* 在等你：所有来源的授权进同一个队列，卡片就地出现在调用流 / 意图记录里 */
+  var WAIT=[],wSeq=0;
+  function ask(o,cb){
+    o.id='w'+(++wSeq);o.cb=cb;WAIT.push(o);
+    var card=document.createElement('div');card.className='ai-approve';card.dataset.wid=o.id;
+    card.innerHTML='<div class="ai-approve__h"><span class="ai-wait-dot"></span>在等你 · '+esc(o.who)+' 想'+esc(o.title)+'</div>'
+      +(o.desc?'<p class="ai-approve__why">'+esc(o.desc)+'</p>':'')
+      +'<div class="needs">需要'+o.needs+'</div>'
+      +'<div class="ai-approve__cmd">'+esc(o.args)+'</div>'
+      +'<div class="ai-approve__act"><button class="ai-btn ai-btn--primary" data-dec="once">仅这一次</button><button class="ai-btn ai-btn--fill" data-dec="session">本会话</button><button class="ai-btn ai-btn--fill" data-dec="always">始终允许</button><span class="grow"></span><button class="ai-btn" data-dec="deny">拒绝</button></div>'
+      +'<div class="ap-tip">记住的授权只对 '+esc(o.who)+' 生效，别的 Agent 还会问你；在 权限 → 已授权记录 里可以只撤它的。</div>';
+    if(o.kind==='intent')$('#it-wait').appendChild(card);else o.host.insertAdjacentElement('afterend',card);
+    o.card=card;reveal(card);syncCapsule();
+  }
+  /* 只滚动最近的滚动容器，不让 .ide 自己被横向滚走 */
+  function reveal(el){
+    var sc=el.parentElement;while(sc&&!/(auto|scroll)/.test(getComputedStyle(sc).overflowY))sc=sc.parentElement;
+    if(!sc)return;var d=el.getBoundingClientRect().top-sc.getBoundingClientRect().top;
+    if(d<0||d+el.offsetHeight>sc.clientHeight)sc.scrollTop+=d-24;
+  }
+  function jumpWait(w){
+    if(w.kind==='intent'){openTab('MCP & Skills');setView('intent');}else setRp('ext');
+    if(w.card){reveal(w.card);w.card.classList.remove('ai-touched');void w.card.offsetWidth;w.card.classList.add('ai-touched');}
+  }
+  document.addEventListener('click',function(e){
+    var b=e.target.closest('.ai-approve[data-wid] [data-dec]');if(!b)return;
+    var card=b.closest('.ai-approve'),o=WAIT.filter(function(w){return w.id===card.dataset.wid})[0];if(!o)return;
+    WAIT.splice(WAIT.indexOf(o),1);card.remove();syncCapsule();o.cb(b.dataset.dec);
   });
   $('#btn-sim').addEventListener('click',function(){
     if(running)return;running=true;this.disabled=true;
-    this.innerHTML='<span class="spin" style="width:12px;height:12px"></span>外部 Agent 调用中…';
-    $$("#feed .call:not(.hist), #feed .dm-callout").forEach(function(n){n.remove()});
+    this.innerHTML='<span class="ai-ring" style="width:12px;height:12px"></span>外部 Agent 调用中…';
+    $$("#feed .call:not(.hist), #feed .dm-callout, #feed .ai-approve").forEach(function(n){n.remove()});
+    WAIT=WAIT.filter(function(w){return w.kind!=='call'});cursorRow=null;lease=null;
     run(0);
   });
 
@@ -1070,7 +1120,7 @@
       return '<div class="sk'+(s.id===skSel?' sel':'')+'" data-sk="'+s.id+'"><div class="t1"><svg class="i"><use href="#i-skills"/></svg><b>'+esc(s.nm)+'</b>'+(s.inst?'<span class="dm-pill ok">已安装</span>':'')+'</div>'
         +'<div class="t2">'+esc(s.d)+'</div>'
         +'<div class="t3"><span class="meta">v'+s.v+' · 调用 '+s.n+' 次</span>'+(s.exp?'<span class="dm-pill info">已导出 · '+s.exp.join(' / ')+'</span>':'')+'<span class="grow"></span>'
-        +(s.inst?'':'<button class="btn sm primary" data-inst="'+s.id+'">'+(s.busy?'<span class="spin" style="width:10px;height:10px"></span>安装中':'安装到项目')+'</button>')
+        +(s.inst?'':'<button class="btn sm" data-inst="'+s.id+'">'+(s.busy?'<span class="spin" style="width:10px;height:10px"></span>安装中':'安装到项目')+'</button>')
         +'<button class="btn sm" data-exp="'+s.id+'"><svg class="i" style="width:12px;height:12px"><use href="#i-export"/></svg>导出</button></div>'
         +(openMenu===s.id?'<div class="popup"><div class="mhead">导出给其他 Agent</div><div class="mi" data-to="Claude Code"><svg class="i"><use href="#i-export"/></svg>Claude Code<span class="sc">.claude/skills/</span></div><div class="mi" data-to="Cursor"><svg class="i"><use href="#i-export"/></svg>Cursor Rules<span class="sc">.cursor/rules/*.mdc</span></div><div class="mi" data-to="AGENTS.md"><svg class="i"><use href="#i-export"/></svg>AGENTS.md 片段<span class="sc">通用</span></div></div>':'')
         +'</div>';
@@ -1151,7 +1201,7 @@
     /* 自带 Key */
     $('#md-byok').innerHTML=PROV.map(function(p){
       var st=p.st==='ok'?'<span class="dm-pill ok"><span class="dm-dot ok"></span>可用</span>':p.st==='checking'?'<span class="dm-pill info"><span class="spin" style="width:10px;height:10px"></span>校验中</span>':'<span class="dm-pill muted">未配置</span>';
-      var act=p.st==='ok'?'<button class="btn sm" data-rmkey="'+p.id+'">移除</button>':p.st==='none'?'<button class="btn sm primary" data-addkey="'+p.id+'"><svg class="i" style="width:12px;height:12px"><use href="#i-key"/></svg>添加 Key</button>':'';
+      var act=p.st==='ok'?'<button class="btn sm" data-rmkey="'+p.id+'">移除</button>':p.st==='none'?'<button class="btn sm" data-addkey="'+p.id+'"><svg class="i" style="width:12px;height:12px"><use href="#i-key"/></svg>添加 Key</button>':'';
       var h='<div class="pv'+(p.fresh?' fresh':'')+'" data-pv="'+p.id+'"><div class="r1"><span class="lgt sm" style="background:'+p.c+'">'+p.lg+'</span><b>'+esc(p.nm)+'</b>'+st+'<span class="grow"></span>'+act+'</div>';
       if(p.st==='edit'||p.st==='checking'){
         h+='<div class="kin"><input type="password" id="kin-'+p.id+'" value="'+esc(p.draft||'')+'" placeholder="粘贴 API Key" aria-label="'+esc(p.nm)+' API Key"'+(p.st==='checking'?' disabled':'')+'>'
@@ -1517,7 +1567,6 @@
   function itEnd(){itBusy=false;$('#it-say-install').disabled=false;$('#it-say-log').disabled=false;}
   function sayIntent(id){
     if(itBusy)return;
-    if(authCb){toast('电脑上还有一个授权没处理','先在弹窗里选一个，再让小艺发请求。');return;}
     itBusy=true;$('#it-say-install').disabled=true;$('#it-say-log').disabled=true;
     var it=itById(id),caller=find(CALLERS,'xy-phone');
     PH.phase='home';PH.lw=null;PH.xy=[{k:'u',t:it.say}];renderPhone();
@@ -1530,7 +1579,7 @@
       if(p==='off'||p==='deny'){stop('电脑上的权限设置不允许这样做，没有执行。',p==='off'?'MCP 能力清单里有工具是关闭的':'权限 页里有工具设成了「不允许」');return;}
       PH.xy.push({k:'a',t:'好的，交给 <b>MateBook Fold</b> 上的 DevEco Studio。'});PH.xy.push({k:'c',it:it});
       ILOG.unshift(e);
-      var go=function(note){e.st='run';e.note=note||'';phUnwait();renderPhone();renderItLog();(id==='InstallLatest'?runInstall:runLogs)(it,e);};
+      var go=function(note){e.st='run';e.note=note||'';phUnwait();renderPhone();renderItLog();capsule('tool','小艺 · Mate 70 Pro 在'+it.cn);(id==='InstallLatest'?runInstall:runLogs)(it,e);};
       if(p==='ask'){
         var g=grantOf('intent.'+it.id,PHONE_CLI);
         if(g){bumpGrant('intent.'+it.id,PHONE_CLI);go('按已授权记录放行（'+(g.scope==='always'?'始终允许':'本会话')+'），没再问你');return;}
@@ -1544,13 +1593,9 @@
     },700);
   }
   function askIntent(it,cb){
-    authCb=cb;var hm=HUMAN['intent.'+it.id];
-    $('#dlg-title').textContent='小艺（HUAWEI Mate 70 Pro）想'+hm[0];
-    $('#dlg-desc').textContent=hm[1];$('#dlg-desc').hidden=false;
-    var perms=it.tools.map(function(t){return TOOL[t].perms}).join('');
-    $('#dlg-needs').innerHTML='需要'+permChips(perms);
-    $('#dlg-args').textContent='intent: '+it.id+'（鸿蒙系统意图）\nfrom:   小艺 · HUAWEI Mate 70 Pro（同一华为账号）\ndevice: 发起请求的这台手机 · 无线调试 192.168.3.27:5555\ntools:  '+it.tools.join(' → ');
-    $('#mask').hidden=false;
+    var hm=HUMAN['intent.'+it.id],perms=it.tools.map(function(t){return TOOL[t].perms}).join('');
+    ask({kind:'intent',who:'小艺 · Mate 70 Pro',title:hm[0],desc:hm[1],needs:permChips(perms),
+      args:'intent: '+it.id+'（鸿蒙系统意图）\nfrom:   小艺 · HUAWEI Mate 70 Pro（同一华为账号）\ndevice: 发起请求的这台手机 · 无线调试 192.168.3.27:5555\ntools:  '+it.tools.join(' → ')},cb);
   }
   function bumpTools(names){names.forEach(function(n){TOOL[n].n++});renderCaps();}
   function runSteps(e,steps,onStep,done){
@@ -1569,7 +1614,7 @@
       PH.lw.step=4;PH.lw.pct=100;PH.lw.done=true;
       phSay('a','装好了：<b>MyApplication 1.0.0（debug）</b>，10:58 构建。点上面的实况窗就能打开。');
       e.st='ok';e.ms='刚刚 · 3.9s';it.n++;bumpTools(it.tools);renderIntents();itEnd();
-      toast('小艺的请求已完成','最新包已装到 HUAWEI Mate 70 Pro，手机上的实况窗可以直接打开。');
+      toast('小艺的请求已完成','最新包已装到 HUAWEI Mate 70 Pro，手机上的实况窗可以直接打开。');capsule('done','小艺 · Mate 70 Pro 装好了最新包');
     });
   }
   function runLogs(it,e){
@@ -1586,7 +1631,8 @@
   function renderStatus(){
     var slot=$('#status-slot');if(!slot)return;
     var n=CLIS.filter(function(c){return c.on}).length;
-    slot.innerHTML='<span class="dm-capsule"><span class="dm-dot ok"></span>MCP Server · '+n+' 个客户端已连接</span><span class="dm-capsule"><svg class="i" style="width:12px;height:12px"><use href="#i-genie"/></svg>'+esc(mOf(SCN.chat).nm)+'</span>';
+    slot.innerHTML='<span class="dm-capsule"><svg class="i" style="width:12px;height:12px"><use href="#i-genie"/></svg>'+esc(mOf(SCN.chat).nm)+'</span>';
+    if(capNow[0]==='idle'){capNow[1]='外部 Agent 待命 · '+n+' 个客户端已连接';syncCapsule();}
   }
 
   /* ---------------- toast ---------------- */
@@ -1600,16 +1646,17 @@
     onReady:function(){renderCaps();renderClis();renderSk();renderMk();renderTl();renderPerm();renderGrants();renderModels();renderIntents();renderPhone();setTimeout(function(){scanLocal(['ollama','lmstudio'],true);},1200);}});
 
   DemoGuide.init([
-    {target:'#btn-sim',kind:'click',pos:'bottom',label:'点这里：外部 Agent 调一遍'},
-    {target:"#feed",kind:"change",pos:"bottom",label:'调用流逐条出现，签名时弹授权'},
-    {target:'.cap[data-tool="deveco.install"] .tgl',kind:'click',pos:'left',label:'关掉某项再模拟试试'},
-    {target:'#rp-seg',kind:'click',pos:'right',label:'会话里试：技能自动调入'},
-    {target:'#view-seg',kind:'click',pos:'bottom',label:'MCP 市场一键装 · 权限可撤销'},
-    {target:'.tab[data-file="Models"]',kind:'click',pos:'right',label:'模型：内置 / 自带 Key / 本地'},
-    {target:'#view-seg [data-v="intent"]',kind:'click',pos:'top',label:'系统意图：小艺和鸿蒙智能体也能调'},
-    {target:'#it-say-install',kind:'click',pos:'bottom',label:'点这里：在手机上对小艺说'},
-    {target:'#it-phone',kind:'change',pos:'left',label:'实况窗走完构建 → 签名 → 安装'}
-  ]);
+    {target:'#btn-sim',kind:'click',pos:'bottom',label:'让 Claude Code 调一遍：修卡顿并真机验证'},
+    {target:'#feed .ai-approve',kind:'click',pos:'left',label:'在等你：签名要你授权，只记给它'},
+    {target:'#feed .call.q',kind:'change',pos:'left',label:'Cursor 也要这台真机：排队，不打断'},
+    {target:'.cap[data-tool="deveco.install"] .tgl',kind:'click',pos:'left',label:'关掉某项，外部 Agent 就调不到'}
+  ],{scene:{
+    at:'你在 Claude Code 里修 ListPage，Cursor 在跑上架自检',
+    goal:'让外部 Agent 自己构建、签名、装机、看日志',
+    pain:'外部 Agent 碰不到真机，只能你手动装包、截图、贴日志',
+    fix:'DevEco 工具开给它调，敏感步骤就地等你授权',
+    agent:'外部 Agent 按任务调工具；两家抢真机就排队；你只批签名'
+  }});
 })();
 </script>
 </body>

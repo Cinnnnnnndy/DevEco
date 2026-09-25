@@ -5,12 +5,12 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='32' y2='32' gradientUnits='userSpaceOnUse'%3E%3Cstop stop-color='%232C8DDD'/%3E%3Cstop offset='1' stop-color='%233357AC'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='32' height='32' rx='7' fill='url(%23g)'/%3E%3Ctext x='16' y='22.5' font-family='Arial,Helvetica,sans-serif' font-size='13' font-weight='700' fill='white' text-anchor='middle'%3EDE%3C/text%3E%3C/svg%3E">
 <title>08 · 结论先行：过程收起来，警告永远不压</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;500&display=swap">
 <link rel="stylesheet" href="../../deveco-intui-kit/src/tokens.css">
 <link rel="stylesheet" href="../../deveco-intui-kit/src/components.css">
 <link rel="stylesheet" href="../_shared/frame.css">
 <link rel="stylesheet" href="../_shared/guide.css">
 <script src="../../deveco-intui-kit/src/icons.js"></script>
+<script src="../../deveco-intui-kit/icons/ai-icons.js"></script>
 <script src="../_shared/frame.js"></script>
 <script src="../_shared/guide.js"></script>
 <style>
@@ -18,47 +18,73 @@
   .ide > .body{grid-row:3}
   .ide > .status{grid-row:4}
   .ide[data-ide-theme]{--proj-w:clamp(400px,34vw,520px)}
-  /* 上下文占用：只留一条细进度条钉在会话顶部；明细和手动压缩收进展开区，不常驻打扰阅读 */
+  .ide[data-ide-theme="light"]:not([data-light-header="1"]) #hdr-agent{--ai-surface-2:#393B40;--ai-wait-ink:#F5B64F;--ai-wait-tint:rgba(245,165,36,.16);--ai-ink:#B69CFF;--ui-fg:#DFE1E5;--ui-fg-info:#9DA0A8;--ui-icon:#CED0D6}
+  #hdr-agent .ai-status .agt{color:var(--ai-ink)}
+  /* 上下文占用：一条细条钉在会话顶部，谁占了多少用灰阶分段（不用蓝 / 紫，那是按钮和 AI 的颜色）；明细收进展开区 */
   .ctx-slim{flex:none;margin:8px 12px 0;display:flex;flex-direction:column;gap:4px}
   .ctx-slim .row{display:flex;align-items:center;gap:8px}
   .ctx-slim .row>svg.i{width:13px;height:13px;color:var(--ui-fg-info)}
   .ctx-slim .dm-ctx{flex:1;height:4px;border-radius:2px}
   .ctx-slim .dm-ctx i{transition:width .6s ease}
+  .ctx-slim .dm-ctx i.a{background:var(--ui-fg)}
+  .ctx-slim .dm-ctx i.b{background:color-mix(in srgb,var(--ui-fg) 58%,transparent)}
+  .ctx-slim .dm-ctx i.c{background:color-mix(in srgb,var(--ui-fg) 32%,transparent)}
+  .ctx-slim .dm-ctx i.d{background:color-mix(in srgb,var(--ui-fg) 16%,transparent)}
   .ctx-slim .pct{font-family:var(--font-code);font-size:11px;color:var(--ui-fg-info);min-width:30px;text-align:right}
   .ctx-slim .btn.sm svg.i{width:12px;height:12px}
-  .ctx-slim .dm-fold{margin:0}
-  .ctx-slim .dm-fold summary{height:22px;padding:0 8px;font-size:11px}
+  .ctx-slim .dm-fold{margin:0;border:0}
+  .ctx-slim .dm-fold summary{height:22px;padding:0 8px;font-size:11px;background:transparent}
+  .ctx-slim .dm-fold .fb{border-top:0;padding:2px 8px 6px}
   .ctx-slim .dm-legend{flex-wrap:wrap;gap:4px 14px}
   .ctx-slim .dm-legend i{width:8px;height:8px;border-radius:2px}
-  .ctx-slim .dm-legend b{color:var(--ui-fg);font-weight:600;font-family:var(--font-code);font-size:11px}
+  .ctx-slim .dm-legend i.a{background:var(--ui-fg)}.ctx-slim .dm-legend i.b{background:color-mix(in srgb,var(--ui-fg) 58%,transparent)}.ctx-slim .dm-legend i.c{background:color-mix(in srgb,var(--ui-fg) 32%,transparent)}.ctx-slim .dm-legend i.d{background:color-mix(in srgb,var(--ui-fg) 16%,transparent)}
+  .ctx-slim .dm-legend b{color:var(--ui-fg);font-weight:500;font-family:var(--font-code);font-size:11px}
   .btn:disabled{opacity:.5}
-  /* 结论先行的回复 */
-  .amsg .step svg.i{width:14px;height:14px}
-  .md .concl{font-size:var(--fs-para)}
-  .md .cl-h{margin:8px 0 4px;font-size:var(--fs-sm);line-height:var(--lh-sm);font-weight:600;color:var(--ui-fg-info)}
-  .chg .dm-item{min-height:24px;padding:1px 10px;font-family:var(--font-code);font-size:11px}
+  /* 结论先行的回复：ai.css 回答卡，结论一句在最前，改动清单紧跟，过程折叠 */
+  .ai-thread .ai-answer{padding:12px 12px 10px;gap:8px}
+  .ai-answer__meta .ai-ico{color:var(--ai-ink)}
+  .ai-answer__meta .agt{color:var(--ai-ink)}
+  .ai-answer code,.ai-approve code,.dm-callout code{font-family:var(--font-code);font-size:11px;background:var(--ai-surface-2);padding:1px 4px;border-radius:4px}
+  .cl-h{font-size:var(--fs-sm);line-height:var(--lh-sm);font-weight:500;color:var(--ui-fg-info)}
+  .chg{display:flex;flex-direction:column;border-radius:8px;background:var(--ai-surface-2);padding:2px 0}
+  .chg .dm-item{min-height:24px;padding:1px 10px;font-family:var(--font-code);font-size:11px;display:flex;align-items:center;gap:6px}
   .chg .dm-item svg.i{width:14px;height:14px}
+  .chg .dm-item .grow{flex:1}
   .chg .dm-item .cnt{flex:none;font-variant-numeric:tabular-nums}
   .chg .add{color:var(--ui-success)} .chg .del{color:var(--ui-error)}
-  .md .dm-fold{margin-top:8px}
-  .dm-fold .fb .pl{display:flex;gap:8px;padding:1px 0}
-  .dm-fold .fb .pl i{font-style:normal;font-family:var(--font-code);width:16px;text-align:right;color:var(--ui-fg-disabled);flex:none}
-  .dm-fold .fb .pl code,.dm-callout code{font-family:var(--font-code);font-size:11px;background:var(--ui-tag-bg);padding:1px 4px;border-radius:4px}
-  /* 永不折叠的两条 */
-  .dm-callout{align-items:flex-start}
+  .ai-answer details .pl{display:flex;gap:8px;padding:1px 4px;font-size:var(--fs-sm);line-height:1.6;color:var(--ui-fg-info)}
+  .ai-answer details .pl i{font-style:normal;font-family:var(--font-code);width:16px;text-align:right;color:var(--ui-fg-disabled);flex:none}
+  .ai-toolrow{padding:2px 0}
+  .ai-toolrow:hover{background:transparent}
+  .ai-toolrow svg.ok{width:12px;height:12px;color:var(--ui-success)}
+  .ai-toolrow .todo{width:10px;height:10px;border-radius:50%;box-shadow:inset 0 0 0 1.2px var(--ui-fg-disabled);margin:0 2px}
+  /* 永不折叠的两类：警告（状态色）与危险操作（在等你 = 琥珀审批卡） */
+  .dm-callout{align-items:flex-start;border:0}
   .dm-callout .cb{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
-  .dm-callout .cb-t{display:flex;align-items:center;gap:6px;font-weight:600}
-  .dm-callout .cb-t .dm-pill{font-weight:400;margin-left:auto}
-  .dm-callout .cb-t .dm-pill svg{width:11px;height:11px}
-  .dm-callout .acts{display:flex;gap:6px;justify-content:flex-end}
+  .dm-callout .cb-t{display:flex;align-items:center;gap:6px;font-weight:500}
   .dm-callout > .btn{flex:none;white-space:nowrap;margin-top:-1px}
   .dm-callout.ok svg.lead{color:var(--ui-success)}
-  /* 压缩发生时：在对话里插一张默认收起的系统卡，参考 Claude 的会话压缩提示，不单独占一块面板 */
-  .summ{align-self:center;max-width:440px;width:100%;animation:fadein .4s ease-out}
+  .pin{margin-left:auto;font-weight:400;font-size:11px;color:var(--ui-fg-info);white-space:nowrap}
+  .ai-approve__h .pin{font-weight:400}
+  .ai-approve.done{box-shadow:none}
+  .ai-approve.done .ai-approve__h{color:var(--ui-fg)}
+  .ai-approve.done .ai-approve__h svg{width:14px;height:14px;color:var(--ui-success)}
+  .ai-approve__act{justify-content:flex-end}
+  .flash{animation:qflash 1.4s var(--ai-ease) 1}
+  @keyframes qflash{0%,40%{box-shadow:inset 0 0 0 1.5px var(--ai-wait)}100%{box-shadow:inset 0 0 0 1.5px transparent}}
+  /* 压缩发生时：在对话里插一张默认收起的系统卡，不单独占一块面板 */
+  .summ{align-self:center;max-width:440px;width:100%;border:0;background:var(--ai-surface)}
+  .summ summary{background:transparent}
+  .summ .fb{border-top:0}
   .summ summary svg.i{width:13px;height:13px;color:var(--ui-fg-info)}
   .summ summary span{color:var(--ui-fg)}
-  @keyframes fadein{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
-  .dm-capsule b{font-weight:600}
+  .summ .pl{display:flex;gap:8px;padding:1px 0}
+  .summ .pl i{font-style:normal;font-family:var(--font-code);width:16px;text-align:right;color:var(--ui-fg-disabled);flex:none}
+  .summ code{font-family:var(--font-code);font-size:11px;background:var(--ai-surface-2);padding:1px 4px;border-radius:4px}
+  /* 输入框：ai.css 智能输入框 */
+  .ai-field.in8{margin:6px 12px 4px;flex:none}
+  .ai-field.in8 .ai-field__ctx .grow{flex:1}
+  .ai-field.in8 .ai-toggle svg{width:12px;height:12px}
   /* ===== 鸿蒙电脑版：长任务结论上实况窗（本机 + Mate 70 Pro），点开回 IDE ===== */
   .ide[data-ide-theme]{--desk-w:clamp(360px,24vw,392px)}
   .ide{grid-template-columns:minmax(0,1fr);transition:padding .45s cubic-bezier(.2,.8,.2,1)}

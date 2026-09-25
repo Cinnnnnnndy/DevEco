@@ -5,12 +5,12 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='32' y2='32' gradientUnits='userSpaceOnUse'%3E%3Cstop stop-color='%232C8DDD'/%3E%3Cstop offset='1' stop-color='%233357AC'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='32' height='32' rx='7' fill='url(%23g)'/%3E%3Ctext x='16' y='22.5' font-family='Arial,Helvetica,sans-serif' font-size='13' font-weight='700' fill='white' text-anchor='middle'%3EDE%3C/text%3E%3C/svg%3E">
 <title>09 · 可视化编程：画布和代码是同一份东西的两种看法</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;500&display=swap">
 <link rel="stylesheet" href="../../deveco-intui-kit/src/tokens.css">
 <link rel="stylesheet" href="../../deveco-intui-kit/src/components.css">
 <link rel="stylesheet" href="../_shared/frame.css">
 <link rel="stylesheet" href="../_shared/guide.css">
 <script src="../../deveco-intui-kit/src/icons.js"></script>
+<script src="../../deveco-intui-kit/icons/ai-icons.js"></script>
 <script src="../_shared/frame.js"></script>
 <script src="../_shared/guide.js"></script>
 <style>
@@ -50,31 +50,28 @@
   .dm-node.cond .dia{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
   .dm-node.cond .dia polygon{fill:var(--ui-bg);stroke:var(--ui-component-border);stroke-width:1.2;transition:stroke .15s}
   .dm-node.cond:hover .dia polygon{stroke:var(--ui-fg-info)}
-  .dm-node.cond.sel .dia polygon{stroke:var(--ui-accent);stroke-width:1.6;filter:drop-shadow(0 0 3px color-mix(in srgb,var(--ui-accent) 55%,transparent))}
+  .dm-node.cond.sel .dia polygon{stroke:var(--ui-accent);stroke-width:1.6}
   .dm-node.cond.peek .dia polygon{stroke:var(--ui-accent)}
   /* 连接点：节点右上角 ↔ 代码行槽，同一套小圆点语言，呼应 IDE 的行槽标记（断点/书签） */
   .lnkdot{display:inline-block;width:8px;height:8px;border-radius:50%;box-sizing:border-box;border:1.5px solid var(--ui-fg-info);background:var(--ui-editor-bg);cursor:pointer;transition:border-color .15s,background-color .15s,box-shadow .15s,transform .15s}
   .lnkdot:hover{border-color:var(--ui-accent);transform:scale(1.2)}
-  .lnkdot.on{background:var(--ui-accent);border-color:var(--ui-accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--ui-accent) 30%,transparent)}
+  .lnkdot.on{background:var(--ui-accent);border-color:var(--ui-accent)}
   .dm-node .lnkdot{position:absolute;top:-5px;right:-5px;z-index:2}
-  .dm-node.sel .lnkdot{background:var(--ui-accent);border-color:var(--ui-accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--ui-accent) 30%,transparent)}
+  .dm-node.sel .lnkdot{background:var(--ui-accent);border-color:var(--ui-accent)}
   .dm-node.cond .lbl{position:relative;display:inline-flex;align-items:center;gap:4px;font-weight:600}
   .dm-node.cond .lbl svg{width:14px;height:14px;color:var(--ui-icon)}
   .dm-node.cond .port.t{top:-3px}.dm-node.cond .port.b{bottom:-3px}.dm-node.cond .port.r{right:-3px}
   .dm-edges{width:100%;height:100%}
   .dm-edges path{transition:stroke .15s}
-  .dm-edges path.on{stroke-width:2}
+  .dm-edges path.on{stroke-width:2;stroke:var(--ui-fg-info)}
   .dm-edges text{paint-order:stroke;stroke:var(--ui-editor-bg);stroke-width:5px;stroke-linejoin:round}
-  .dm-edges text.on{fill:var(--ui-accent);font-weight:600}
+  .dm-edges text.on{fill:var(--ui-fg);font-weight:500}
   .code .ln{transition:background .25s}
   .code .num-edit{cursor:pointer;border-bottom:1px dashed currentColor;padding:0 2px;border-radius:3px}
-  .code .num-edit:hover{background:color-mix(in srgb,var(--ui-accent) 22%,transparent)}
+  .code .num-edit:hover{background:var(--ui-hover)}
   .code .ln.peek{background:color-mix(in srgb,var(--ui-accent) 8%,transparent)}
   /* 界面视图 */
   .vp-ui{position:absolute;inset:0;display:flex;gap:22px;padding:28px 22px;align-items:flex-start;justify-content:center}
-  .vp-pal{display:flex;flex-direction:column;gap:6px;width:104px;flex:none}
-  .vp-pal .hd{font-size:11px;color:var(--ui-fg-info);padding:0 2px 2px}
-  .vp-pal .chip{justify-content:flex-start;background:var(--ui-bg);cursor:grab}
   .vp-phone{display:flex;flex-direction:column;align-items:center;gap:26px;flex:none;padding-top:12px}
   .vp-phone .dm-device .scr{position:relative}
   .vp-tree{width:236px;flex:none}
@@ -110,48 +107,76 @@
   .vp-ink path.fade{transition:opacity .45s;opacity:0}
   .vp-ink path.bad{color:var(--ui-error);stroke:var(--ui-error)}
   .vp-ink path.w{stroke-width:2}
-  .vp-hover{position:absolute;pointer-events:none;border:2px solid var(--ui-accent);border-radius:calc(var(--arc) + 2px);box-shadow:0 0 0 4px color-mix(in srgb,var(--ui-accent) 20%,transparent);z-index:5;transition:all .1s}
+  .vp-hover{position:absolute;pointer-events:none;border:1.5px solid var(--ui-accent);border-radius:calc(var(--arc) + 2px);z-index:5;transition:all .1s}
   .vp-hover[hidden]{display:none}
-  .vp-note{position:absolute;left:10px;top:calc(100% + 6px);display:inline-flex;align-items:center;gap:5px;max-width:220px;height:22px;padding:0 8px;border-radius:4px;border:1px solid color-mix(in srgb,var(--ui-warning) 55%,transparent);background:color-mix(in srgb,var(--ui-warning) 16%,var(--ui-bg));color:var(--ui-fg);font-size:11px;white-space:nowrap;box-shadow:var(--ui-shadow);font-weight:400;animation:vpnote .3s ease-out}
+  .vp-note{position:absolute;left:10px;top:calc(100% + 6px);display:inline-flex;align-items:center;gap:5px;max-width:220px;height:22px;padding:0 8px;border-radius:6px;background:color-mix(in srgb,var(--ui-warning) 18%,var(--ui-editor-bg));color:var(--ui-fg);font-size:11px;white-space:nowrap;font-weight:400;animation:vpnote .3s ease-out}
   .vp-note svg{width:12px;height:12px;color:var(--ui-fg-info);flex:none}
   .dm-node.cond .vp-note{left:auto;right:-150px;top:22px}
   @keyframes vpnote{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
-  .pen-pal{position:absolute;right:12px;bottom:12px;z-index:8;width:236px;border:1px solid var(--ui-popup-border);border-radius:var(--arc);background:var(--ui-popup-bg);box-shadow:var(--ui-shadow);font-size:var(--fs-sm);line-height:var(--lh-sm)}
-  .pen-pal[hidden]{display:none}
-  .pen-pal .ph{display:flex;align-items:center;gap:6px;height:28px;padding:0 10px;border-bottom:1px solid var(--ui-border);font-weight:600;color:var(--ui-fg);white-space:nowrap}
-  .pen-pal .ph svg.i{width:14px;height:14px;color:var(--ui-icon)}
-  .pen-pal .ph .grow{flex:1}
-  .pen-pal .pb{padding:6px 10px 8px;display:flex;flex-direction:column;gap:4px;color:var(--ui-fg-info)}
-  .pen-pal .pb div{display:flex;align-items:center;gap:6px;white-space:nowrap}
-  .pen-pal .pb svg.i{width:13px;height:13px;flex:none;color:var(--ui-icon)}
-  .pen-pal .pb b{color:var(--ui-fg);font-weight:600}
-  .pen-pal .pb .grow{flex:1}
-  .pen-pal .pb .btn{height:22px;font-size:11px;padding:0 8px}
-  .vp-toast{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);z-index:9;display:inline-flex;align-items:center;gap:8px;height:30px;padding:0 6px 0 12px;border-radius:15px;background:var(--ui-tooltip-bg);color:var(--ui-tooltip-fg);font-size:var(--fs-sm);white-space:nowrap;box-shadow:var(--ui-shadow);opacity:0;pointer-events:none;transition:opacity .2s}
+  .vp-toast{position:absolute;left:50%;top:48px;transform:translateX(-50%);z-index:9;display:inline-flex;align-items:center;gap:8px;height:30px;padding:0 6px 0 12px;border-radius:15px;background:var(--ui-tooltip-bg);color:var(--ui-tooltip-fg);font-size:var(--fs-sm);white-space:nowrap;box-shadow:var(--ui-shadow);opacity:0;pointer-events:none;transition:opacity .2s}
   .vp-toast.on{opacity:1;pointer-events:auto}
   .vp-toast svg.i{width:13px;height:13px;flex:none}
   .vp-toast .btn{height:22px;font-size:11px;padding:0 8px;background:transparent;color:var(--ui-tooltip-fg);border-color:color-mix(in srgb,var(--ui-tooltip-fg) 45%,transparent)}
   .vp-toast .btn:hover{background:color-mix(in srgb,var(--ui-tooltip-fg) 15%,transparent)}
   .vp-toast.bad svg.i{color:var(--ui-error)}
   .vp-toast.ok svg.i{color:var(--ui-success)}
-  .vp-toast.pal-on{left:auto;right:12px;transform:none;bottom:98px}
-  .dm-split.fold .vp-toast.pal-on{bottom:14px}
   /* MateBook Fold 悬停：上屏代码、下屏画布 */
   .hinge{display:none}
   .dm-split.fold{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr) 26px minmax(0,1fr)}
   .dm-split.fold > .vp-right{order:1;border-left:0}
   .dm-split.fold > .hinge{order:2;display:flex;align-items:center;justify-content:center;gap:8px;border-left:0;position:relative;
-    background:linear-gradient(var(--ui-editor-bg),color-mix(in srgb,var(--ui-fg) 16%,var(--ui-bg)) 50%,var(--ui-editor-bg));border-top:1px solid var(--ui-border);border-bottom:1px solid var(--ui-border);font-size:11px;color:var(--ui-fg-info);white-space:nowrap;flex-direction:row}
-  .hinge .hg{display:inline-flex;align-items:center;gap:5px;height:18px;padding:0 9px;border-radius:9px;background:var(--ui-bg);border:1px solid var(--ui-border);color:var(--ui-fg)}
+    background:var(--ui-bg);font-size:11px;color:var(--ui-fg-info);white-space:nowrap;flex-direction:row}
+  .hinge .hg{display:inline-flex;align-items:center;gap:5px;height:18px;padding:0 9px;border-radius:9px;color:var(--ui-fg-info)}
   .hinge .hg svg.i{width:12px;height:12px;color:var(--ui-icon)}
-  .hinge .hg b{color:var(--ui-fg);font-weight:600}
   .dm-split.fold > .vp-left{order:3;border-left:0}
   .dm-split.fold .vp-stage{width:560px;min-width:0;margin:0 auto}
-  .dm-split.fold .pen-pal{bottom:auto;top:44px}
   .dm-split.fold .vp-ui{padding-top:14px}
 
-  .vp-phone .dm-device.phone{height:406px}
+  .vp-phone .dm-device.phone{height:386px}
   .vp-phone .dm-device .scr::before{content:"";position:absolute;top:4px;left:50%;width:7px;height:7px;margin-left:-3.5px;border-radius:50%;background:#0F1012;z-index:3;pointer-events:none}
+  /* ===== 终轮：填充代替描边、蓝色只留选中；Agent 补的节点 / 连线 / 代码行 ===== */
+  .ide[data-ide-theme="dark"]{--vp-node:var(--Gray2)}
+  .ide[data-ide-theme="light"]{--vp-node:var(--Gray12)}
+  .dm-node{border-color:transparent;background:var(--vp-node);box-shadow:none}
+  .dm-node:hover{border-color:var(--ui-component-border)}
+  .dm-node .nh{border-bottom:0;padding-bottom:2px}
+  .dm-node .nb{padding-top:2px}
+  .dm-node.sel,.dm-node.peek,.dm-node.sel:hover{border-color:var(--ui-accent);box-shadow:none}
+  .dm-node.loose{border-color:var(--ui-component-border)}
+  .dm-node .port{background:var(--ui-fg-info);border-color:var(--ui-editor-bg)}
+  .dm-node.cond .dia polygon{fill:var(--vp-node);stroke:transparent}
+  .dm-node.cond:hover .dia polygon{stroke:var(--ui-component-border)}
+  .dm-node .nb .ctx{border-color:transparent;background:var(--ui-editor-bg)}
+  .dm-node.wait{border-color:color-mix(in srgb,var(--ai-wait) 60%,transparent)}
+  .dm-node>.ai-src{position:absolute;left:0;top:calc(100% + 5px);z-index:3}
+  .dm-node>.ai-src.up{top:auto;bottom:calc(100% + 5px)}
+  .dm-edges path.ai{stroke:var(--ai-ink);stroke-dasharray:4 3}
+  .vp-stage{user-select:none;-webkit-user-select:none}
+  .vp-stage .dm-node.loose .port.b{width:12px;height:12px;bottom:-7px;margin-left:-6px;cursor:crosshair;background:var(--ui-fg)}
+  .vp-stage.dragging,.vp-stage.dragging *{cursor:crosshair}
+  .vp-left .dm-pane-hd .toggle{border-color:transparent;background:var(--ui-tag-bg)}
+  .vp-left .dm-pane-hd .toggle.on{background:var(--ui-fg);color:var(--ui-editor-bg)}
+  .vp-left .dm-pane-hd .toggle.on svg.i{color:currentColor}
+  .vp-tree .dm-card{border:0;background:var(--vp-node)}
+  .vp-tree .dm-card-hd{border-bottom:0}
+  .vp-tree .dm-card-ft{border-top:0;background:transparent}
+  .vp-tree .dm-item.sel{background:var(--ui-editor-bg)}
+  .code .ln.ai-block .g{background:transparent}
+  /* Agent 坞：交给它之后，过程收成一行 → 在等你（琥珀）→ 结论 */
+  .vp-agent{position:absolute;left:12px;bottom:52px;z-index:8;width:min(540px,calc(100% - 24px));display:flex;flex-direction:column;gap:8px}
+  .vp-agent[hidden]{display:none}
+  .vp-agent .ai-toolrow{background:var(--ai-surface);border-radius:10px;padding:6px 10px}
+  .vp-agent .ai-toolrow b,.vp-agent .who{font-weight:500}
+  .vp-agent .ver{display:grid;grid-template-columns:78px minmax(0,1fr);gap:8px;align-items:center;font-size:12px}
+  .vp-agent .ver .who{color:var(--ui-fg-info);font-weight:400}
+  .vp-agent .ver code{font-family:var(--font-code);font-size:11.5px;line-height:18px;padding:3px 8px;border-radius:6px;background:var(--ai-surface-2);color:var(--ui-fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .vp-agent .ai-approve.flash{animation:vpwait .9s ease-out}
+  @keyframes vpwait{0%{box-shadow:inset 0 0 0 2px var(--ai-wait)}100%{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--ai-wait) 38%,transparent)}}
+  .vp-agent .ai-answer{padding:12px 14px 8px;gap:8px}
+  .vp-agent .ai-answer__lead{font-size:13px;line-height:20px}
+  .dm-split.fold .vp-agent{left:auto;right:12px;bottom:12px;width:500px}
+  .dm-split.fold .vp-stage{zoom:.7}
+  .vp-phone .dm-device .tag{display:none}
   .vp-phone .dm-device .scr::after{content:"";position:absolute;bottom:5px;left:50%;width:60px;height:3px;margin-left:-30px;border-radius:2px;background:rgba(0,0,0,.7);z-index:3;pointer-events:none}
 </style>
 </head>
@@ -170,7 +195,7 @@
   <symbol id="i-vp-if" viewBox="0 0 16 16"><path d="M8 2l6 6-6 6-6-6z" stroke="currentColor" stroke-linejoin="round" fill="none"/></symbol>
 </defs></svg>
 
-<div class="ide" id="ide" data-ide-theme="dark" data-left="project" data-right="none" data-bottom="none" role="application" aria-label="DevEco Studio">
+<div class="ide" id="ide" data-ide-theme="dark" data-left="none" data-right="none" data-bottom="none" role="application" aria-label="DevEco Studio">
   <div class="body">
     <div class="tw tw-left">
       <div class="pane on" data-pane="project">
@@ -238,7 +263,7 @@
               </div>
 
               <div class="dm-node sel" id="n-retry" data-node="retry" role="button" tabindex="0" style="--x:95px;--y:378px;width:200px">
-                <div class="nh"><svg><use href="#i-refresh"/></svg><span>重试 ≤ <b id="retry-n">2</b> 次</span><span class="dm-pill info">可调</span></div>
+                <div class="nh"><svg><use href="#i-refresh"/></svg><span>重试 ≤ <b id="retry-n">2</b> 次</span></div>
                 <div class="nb">
                   <div class="prm"><span class="lb">次数</span><span class="ctx" id="p-count"><button data-d="-1" title="次数 −1，代码同步"><svg><use href="#i-vp-minus"/></svg></button><b>2</b><button data-d="1" title="次数 +1，代码同步"><svg><use href="#i-add"/></svg></button></span></div>
                   <div class="prm"><span class="lb">间隔</span><span class="ctx val" id="p-interval" role="button" tabindex="0" title="点一下换一档，代码同步"><b>800</b></span><span class="unit">ms</span></div>
@@ -249,6 +274,7 @@
               <div class="dm-node" id="n-err" data-node="err" role="button" tabindex="0" style="--x:360px;--y:408px;width:180px">
                 <div class="nh"><svg><use href="#i-warn"/></svg>提示 验证码错误</div>
                 <div class="nb"><code>this.error = '验证码错误'</code></div>
+                <span class="ai-src up" id="err-src"><span class="ai-spark"></span>Agent·多语言 在改</span>
                 <i class="port l"></i>
               </div>
               <svg class="vp-ink" id="ink"></svg>
@@ -257,16 +283,8 @@
 
             <!-- 界面视图 -->
             <div class="vp-ui" id="ui-view" hidden>
-              <div class="vp-pal">
-                <div class="hd">控件 · 拖到屏幕上</div>
-                <button class="chip" title="拖到屏幕上放一个 Text"><svg class="i"><use href="#i-vp-text"/></svg>Text</button>
-                <button class="chip" title="拖到屏幕上放一个 TextInput"><svg class="i"><use href="#i-vp-input"/></svg>TextInput</button>
-                <button class="chip" title="拖到屏幕上放一个 Button"><svg class="i"><use href="#i-vp-button"/></svg>Button</button>
-                <button class="chip" title="拖到屏幕上放一个 Image"><svg class="i"><use href="#i-vp-image"/></svg>Image</button>
-                <button class="chip" title="拖到屏幕上放一个 List"><svg class="i"><use href="#i-vp-list"/></svg>List</button>
-              </div>
               <div class="vp-phone">
-                <div class="dm-device phone"><span class="tag">实时</span>
+                <div class="dm-device phone">
                   <div class="scr" id="scr">
                     <div class="mapp" id="mapp">
                       <div class="st"><span>9:41</span><span>5G</span></div>
@@ -279,12 +297,12 @@
                     </div>
                     <div class="dm-hot ok" id="hot" hidden><span class="lb" id="hot-lb"></span></div>
                   </div>
-                  <span class="cap">Phone · pages/LoginPage</span>
+                  <span class="cap">Mate 70 Pro · pages/LoginPage</span>
                 </div>
               </div>
               <div class="vp-tree">
                 <div class="dm-card">
-                  <div class="dm-card-hd"><svg class="i"><use href="#i-tw-structure"/></svg>组件树<span class="grow"></span><span class="dm-pill muted">build()</span></div>
+                  <div class="dm-card-hd"><svg class="i"><use href="#i-tw-structure"/></svg>组件树</div>
                   <div class="dm-list" id="ctree">
                     <div class="dm-item sel" data-c="column" data-lines="9-16" style="padding-left:12px"><span class="ico"><svg><use href="#i-vp-column"/></svg></span><span class="grow">Column<code>space 16</code></span><span class="loc">L9</span></div>
                     <div class="dm-item" data-c="text" data-lines="10" style="padding-left:28px"><span class="ico"><svg><use href="#i-vp-text"/></svg></span><span class="grow">Text<code>'欢迎回来' · 24</code></span><span class="loc">L10</span></div>
@@ -293,22 +311,16 @@
                     <div class="dm-item" data-c="iferr" data-lines="13-15" style="padding-left:28px"><span class="ico"><svg><use href="#i-vp-if"/></svg></span><span class="grow">if (error) Text<code>12 · 红</code></span><span class="loc">L13</span></div>
                     <div class="dm-item" data-c="button" data-lines="16-19" style="padding-left:28px"><span class="ico"><svg><use href="#i-vp-button"/></svg></span><span class="grow">Button<code>'登录' · 100%</code></span><span class="loc">L16</span></div>
                   </div>
-                  <div class="dm-card-ft"><span class="dm-small dm-muted" id="ctree-hint">选中 Column · 第 9–16 行</span><span class="grow"></span><span class="dm-pill ok">已同步</span></div>
+                  <div class="dm-card-ft"><span class="dm-small dm-muted" id="ctree-hint">选中 Column · 第 9–16 行</span></div>
                 </div>
               </div>
             </div>
           </div>
-          <div class="pen-pal" id="pen-pal" hidden>
-            <div class="ph"><svg class="i"><use href="#i-pen"/></svg>M-Pen 3 · 已连接</div>
-            <div class="pb">
-              <div><svg class="i"><use href="#i-vp-link"/></svg>从组件画到节点 = <b>连线</b></div>
-              <div><svg class="i"><use href="#i-vp-note"/></svg>节点旁写字 = <b>备注</b><span class="grow"></span><button class="btn" id="pen-clear">清除笔迹</button></div>
-            </div>
-          </div>
+          <div class="vp-agent" id="vp-agent" hidden></div>
           <div class="vp-toast" id="vp-toast"><svg class="i"><use href="#i-checkS"/></svg><span id="vp-toast-t"></span><span id="vp-toast-a"></span></div>
         </div>
 
-        <div class="hinge" id="hinge"><span class="hg"><svg class="i"><use href="#i-vp-hover"/></svg><b>MateBook Fold</b> · 悬停 110° · 上屏看代码，下屏用笔</span></div>
+        <div class="hinge" id="hinge"><span class="hg"><svg class="i"><use href="#i-vp-hover"/></svg>MateBook Fold · 悬停 110°</span></div>
 
         <!-- 右：代码 -->
         <div class="vp-right">
@@ -345,9 +357,7 @@
   html+=ln(36,'}');
   document.getElementById('code').innerHTML=html;
 
-  DemoFrame.init({device:'HUAWEI Mate 70 Pro',deviceIcon:'#i-phone',pos:'25:24',onReady:function(){
-    $('#status-slot').innerHTML='<span class="dm-capsule" id="cap-sync"><svg class="i" style="width:12px;height:12px"><use href="#i-sync"/></svg><span id="cap-text">画布 ↔ 代码 · 已同步</span></span>';
-  }});
+  DemoFrame.init({device:'HUAWEI Mate 70 Pro',deviceIcon:'#i-phone',pos:'25:24'});
 
   /* ---- 状态 ---- */
   var state={count:2,interval:800,sel:'retry',view:'logic',comp:'column'};
@@ -393,25 +403,27 @@
   }
   function synced(){
     var p=$('#sync-pill'),t=$('#sync-text');t.textContent='刚刚同步';p.classList.remove('flash');void p.offsetWidth;p.classList.add('flash');
-    var c=$('#cap-text');if(c)c.textContent='画布 ↔ 代码 · 刚刚同步';
-    clearTimeout(synced.tm);synced.tm=setTimeout(function(){t.textContent='与代码同步';if(c)c.textContent='画布 ↔ 代码 · 已同步'},1500);
+    clearTimeout(synced.tm);synced.tm=setTimeout(function(){t.textContent='与代码同步'},1500);
   }
 
   /* ---- 连线：按节点当前位置算贝塞尔 ---- */
+  /* 悬停时画布按 zoom 缩小：屏幕坐标 ÷ 缩放 = 画布内坐标 */
+  function Z(){var st=$('#stage');return (st.getBoundingClientRect().width/st.offsetWidth)||1}
+  function local(r){var s=$('#stage').getBoundingClientRect(),z=Z();return {x:(r.left-s.left)/z,y:(r.top-s.top)/z,w:r.width/z,h:r.height/z}}
   function pt(id,side){
-    var el=$('#n-'+id),s=$('#stage').getBoundingClientRect(),r=el.getBoundingClientRect();
-    var x=r.left-s.left,y=r.top-s.top,w=r.width,h=r.height;
+    var q=local($('#n-'+id).getBoundingClientRect());
+    var x=q.x,y=q.y,w=q.w,h=q.h;
     if(side==='t')return[x+w/2,y];if(side==='b')return[x+w/2,y+h];if(side==='l')return[x,y+h/2];return[x+w,y+h/2];
   }
   function drawEdges(){
     var svg=$('#edges');if($('#ui-view').hidden===false)return;
-    var out='<defs><marker id="ah" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0.5L7.5 4 0 7.5z" fill="var(--ui-component-border)"/></marker><marker id="ah-on" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0.5L7.5 4 0 7.5z" fill="var(--ui-accent)"/></marker></defs>';
+    var out='<defs><marker id="ah" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0.5L7.5 4 0 7.5z" fill="var(--ui-component-border)"/></marker><marker id="ah-on" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0.5L7.5 4 0 7.5z" fill="var(--ui-fg-info)"/></marker></defs>';
     EDGES.forEach(function(e){
       var p1=pt(e[0],e[1]),p2=pt(e[2],e[3]),d1=DIR[e[1]],d2=DIR[e[3]];
       var dist=Math.hypot(p2[0]-p1[0],p2[1]-p1[1]),k=Math.max(40,Math.min(90,dist/2));if(e[1]==='l'&&e[3]==='l')k=72;
       var c1=[p1[0]+d1[0]*k,p1[1]+d1[1]*k],c2=[p2[0]+d2[0]*k,p2[1]+d2[1]*k];
       var on=(e[0]===state.sel||e[2]===state.sel);
-      out+='<path class="'+(on?'on':'')+'" marker-end="url(#'+(on?'ah-on':'ah')+')" d="M'+p1[0]+' '+p1[1]+' C'+c1[0]+' '+c1[1]+','+c2[0]+' '+c2[1]+','+p2[0]+' '+p2[1]+'"/>';
+      out+='<path class="'+(on?'on':'')+(e[5]?' '+e[5]:'')+'" marker-end="url(#'+(on?'ah-on':'ah')+')" d="M'+p1[0]+' '+p1[1]+' C'+c1[0]+' '+c1[1]+','+c2[0]+' '+c2[1]+','+p2[0]+' '+p2[1]+'"/>';
       if(e[4]){var mx=(p1[0]+3*c1[0]+3*c2[0]+p2[0])/8,my=(p1[1]+3*c1[1]+3*c2[1]+p2[1])/8;out+='<text class="'+(on?'on':'')+'" x="'+mx+'" y="'+(my+3.5)+'" text-anchor="middle">'+e[4]+'</text>'}
     });
     svg.innerHTML=out;
@@ -435,13 +447,13 @@
     n=Math.max(0,Math.min(5,n));state.count=n;
     $('#retry-n').textContent=n;$('#p-count b').textContent=n;
     var c=$('#code .num-edit[data-p="count"]');c.textContent=n;
-    flashLine(25,state.sel==='retry');synced();
+    flashLine(25,state.sel==='retry');synced();afterManual('重试 '+n+' 次');
   }
   function setInterval_(ms){
     state.interval=ms;
     $('#p-interval b').textContent=ms;var pc=$('#p-interval');pc.classList.remove('flash');void pc.offsetWidth;pc.classList.add('flash');
     var c=$('#code .num-edit[data-p="interval"]');c.textContent=ms;
-    flashLine(31,state.sel==='retry');synced();
+    flashLine(31,state.sel==='retry');synced();afterManual('间隔 '+ms+' ms');
   }
   function nextInterval(ms){return ms>=2000?800:ms+400}
   $('#p-count').addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;e.stopPropagation();setCount(state.count+(+b.dataset.d));if(state.sel!=='retry')selectNode('retry')});
@@ -512,18 +524,18 @@
   }
   $('#view-seg').addEventListener('click',function(e){var b=e.target.closest('button');if(b)setView(b.dataset.view)});
 
-  /* ================= 鸿蒙电脑版：M-Pen 手写笔连线 · 手写备注 · MateBook Fold 悬停 ================= */
+  /* ================= 连一条线交给 Agent：它补实现与异常分支；M-Pen 也能连；MateBook Fold 悬停 ================= */
   MAP.inp=[12];MAP.auto=[];
-  var pen=false,wired=false,penCur=null,writing=[],writeT=0,notes={},lastNote=null;
+  var pen=false,wired=false,penCur=null,writing=[],writeT=0,notes={},lastNote=null,drag=null;
   var NOTE={click:'防连点',call:'超时 5 s 由 auth 处理',cond:'401 与断网分开提示',go:'登录后清掉登录页',retry:'弱网下多试一次',err:'文案待产品确认',inp:'只收数字',auto:'输满即提交'};
-  function stageXY(e){var r=$('#stage').getBoundingClientRect();return [e.clientX-r.left,e.clientY-r.top];}
+  function stageXY(e){var s=$('#stage').getBoundingClientRect(),z=Z();return [(e.clientX-s.left)/z,(e.clientY-s.top)/z];}
+  function nodeRect(id){return local($('#n-'+id).getBoundingClientRect());}
   function nodeAt(x,y,pad){
-    var s=$('#stage').getBoundingClientRect(),hit=null;pad=pad||0;
-    $$('#stage .dm-node[data-node]').forEach(function(n){var r=n.getBoundingClientRect(),l=r.left-s.left-pad,t=r.top-s.top-pad;
-      if(x>=l&&x<=l+r.width+pad*2&&y>=t&&y<=t+r.height+pad*2)hit=n.dataset.node;});
+    var hit=null;pad=pad||0;
+    $$('#stage .dm-node[data-node]').forEach(function(n){var r=local(n.getBoundingClientRect());
+      if(x>=r.x-pad&&x<=r.x+r.w+pad&&y>=r.y-pad&&y<=r.y+r.h+pad)hit=n.dataset.node;});
     return hit;
   }
-  function nodeRect(id){var s=$('#stage').getBoundingClientRect(),r=$('#n-'+id).getBoundingClientRect();return {x:r.left-s.left,y:r.top-s.top,w:r.width,h:r.height};}
   function inkD(p){
     var d='M'+p[0][0].toFixed(1)+' '+p[0][1].toFixed(1);
     for(var i=1;i<p.length-1;i++){d+=' Q'+p[i][0].toFixed(1)+' '+p[i][1].toFixed(1)+' '+((p[i][0]+p[i+1][0])/2).toFixed(1)+' '+((p[i][1]+p[i+1][1])/2).toFixed(1);}
@@ -531,83 +543,191 @@
   }
   function hoverBox(id){var h=$('#pen-hover');if(!id){h.hidden=true;return;}var r=nodeRect(id);h.style.left=(r.x-4)+'px';h.style.top=(r.y-4)+'px';h.style.width=(r.w+8)+'px';h.style.height=(r.h+8)+'px';h.hidden=false;}
   function toast(kind,t,act){
-    var el=$('#vp-toast');el.className='vp-toast on '+kind+(pen?' pal-on':'');
+    var el=$('#vp-toast');el.className='vp-toast on '+kind;
     $('use',el).setAttribute('href',kind==='bad'?'#i-warn':'#i-checkS');$('#vp-toast-t').textContent=t;$('#vp-toast-a').innerHTML=act||'';
     clearTimeout(toast.t);toast.t=setTimeout(function(){el.classList.remove('on')},act?4200:2200);
   }
   function setPen(on){
     if(on&&state.view!=='logic')setView('logic');
-    pen=on;$('#pen-btn').classList.toggle('on',on);$('#stage').classList.toggle('pen-on',on);$('#pen-pal').hidden=!on;
+    pen=on;$('#pen-btn').classList.toggle('on',on);$('#stage').classList.toggle('pen-on',on);
     if(!on){$('#ink').innerHTML='';writing=[];hoverBox(null);}
   }
-  $('#pen-btn').addEventListener('click',function(){setPen(!pen);});
-  $('#pen-clear').addEventListener('click',function(){$('#ink').innerHTML='';writing=[];});
+  $('#pen-btn').addEventListener('click',function(){setPen(!pen);toast('ok',pen?'M-Pen 已连接 · 从组件画到节点即连线，节点旁写字即备注':'已收起笔');});
   var ink=$('#ink');
-  ink.addEventListener('pointerdown',function(e){
-    if(!pen||e.button!==0)return;e.preventDefault();try{ink.setPointerCapture(e.pointerId);}catch(_){}
-    var p=stageXY(e),el=document.createElementNS('http://www.w3.org/2000/svg','path');ink.appendChild(el);
+  function startStroke(e,p){
+    var el=document.createElementNS('http://www.w3.org/2000/svg','path');ink.appendChild(el);
     penCur={pts:[p],el:el,from:nodeAt(p[0],p[1],10)};clearTimeout(writeT);
     if(penCur.from)hoverBox(penCur.from);
-  });
-  ink.addEventListener('pointermove',function(e){
-    if(!penCur)return;var p=stageXY(e),q=penCur.pts[penCur.pts.length-1];
+  }
+  function moveStroke(e){
+    var p=stageXY(e),q=penCur.pts[penCur.pts.length-1];
     if(Math.abs(p[0]-q[0])+Math.abs(p[1]-q[1])<1.5)return;penCur.pts.push(p);penCur.el.setAttribute('d',inkD(penCur.pts));
     if(penCur.from){var to=nodeAt(p[0],p[1],10);hoverBox(to&&to!==penCur.from?to:penCur.from);}
+  }
+  /* 笔：在画布任意处落笔（连线或写字） */
+  ink.addEventListener('pointerdown',function(e){
+    if(!pen||e.button!==0)return;e.preventDefault();try{ink.setPointerCapture(e.pointerId);}catch(_){}
+    startStroke(e,stageXY(e));
   });
-  function endInk(){
+  ink.addEventListener('pointermove',function(e){if(penCur&&pen)moveStroke(e);});
+  ink.addEventListener('pointerup',function(){if(pen)endInk();});ink.addEventListener('pointercancel',function(){if(pen)endInk();});
+  /* 鼠标 / 触控板：从节点上按住拖到另一个节点 = 连线（不用开笔） */
+  $('#stage').addEventListener('pointerdown',function(e){
+    if(pen||e.button!==0||e.target.closest('button')||e.target.closest('.ctx'))return;
+    var n=e.target.closest('.dm-node[data-node]');if(!n)return;
+    drag={x:e.clientX,y:e.clientY,p:stageXY(e),on:false};
+  });
+  document.addEventListener('pointermove',function(e){
+    if(!drag)return;
+    if(!drag.on){if(Math.abs(e.clientX-drag.x)+Math.abs(e.clientY-drag.y)<6)return;drag.on=true;$('#stage').classList.add('dragging');startStroke(e,drag.p);}
+    moveStroke(e);
+  });
+  document.addEventListener('pointerup',function(){
+    if(!drag)return;var d=drag;drag=null;$('#stage').classList.remove('dragging');
+    if(d.on)endInk(true);
+  });
+  function endInk(byMouse){
     var c=penCur;if(!c)return;penCur=null;hoverBox(null);
     if(c.pts.length<3){c.el.remove();return;}
     var last=c.pts[c.pts.length-1],to=nodeAt(last[0],last[1],10);
     if(c.from&&to&&to!==c.from){tryWire(c,to);return;}
+    if(byMouse){fadeInk(c.el);return;}
     c.el.classList.add('w');writing.push(c);clearTimeout(writeT);writeT=setTimeout(recognize,800);
   }
-  ink.addEventListener('pointerup',endInk);ink.addEventListener('pointercancel',endInk);
   function fadeInk(el){el.classList.add('fade');setTimeout(function(){el.remove()},480);}
   function tryWire(c,to){
     var a=c.from,b=to,pair=[a,b].sort().join('>');
     if(pair!=='auto>inp'){
       c.el.classList.add('bad');setTimeout(function(){fadeInk(c.el)},500);
       var why=(a==='inp'||b==='inp'||a==='auto'||b==='auto')?'这两个节点之间没有能生成的事件':'这两个节点已经在流程里了';
-      toast('bad','没吸附：'+why+' · 从「TextInput 验证码」画到「输满 6 位自动登录」');return;
+      toast('bad','没连上：'+why+' · 从「TextInput 验证码」拖到「输满 6 位自动登录」');return;
     }
     if(wired){fadeInk(c.el);toast('ok','已经连上了 · onChange → onCode()');return;}
     fadeInk(c.el);wire();
   }
-  function wire(){
-    wired=true;
-    EDGES.push(['inp','b','auto','t','onChange'],['auto','l','call','r','']);
-    drawEdges();$$('#edges path').slice(-2).forEach(function(p){p.classList.add('fresh')});
-    ['inp','auto'].forEach(function(id){var n=$('#n-'+id);n.classList.remove('loose');n.classList.remove('snap');void n.offsetWidth;n.classList.add('snap');});
-    var pill=$('#inp-pill');pill.className='dm-pill ok';pill.textContent='已连线';
-    $('#n-inp .nb code').textContent='onChange → onCode(v)';
-    /* 代码：第 12 行绑 onChange，末尾补 onCode()；前面的行号都不动 */
-    var l12=$('#code .ln[data-ln="12"] .t');
-    l12.innerHTML='      <span class="f">TextInput</span>({ <span class="p">placeholder</span>: <span class="s">\'验证码\'</span> }).<span class="f">maxLength</span>(<span class="n">6</span>).<span class="f">onChange</span>(<span class="k">this</span>.<span class="p">onCode</span>)';
-    var end=$('#code .ln[data-ln="36"]');if(end)end.remove();
-    var add=ln(36,'')+ln(37,'  <span class="p">onCode</span> = (<span class="p">v</span>: <span class="k">string</span>) =&gt; {  <span class="c">// 笔连线生成</span>',{fold:1})
-      +ln(38,'    <span class="k">this</span>.<span class="p">code</span> = <span class="p">v</span>;')
-      +ln(39,'    <span class="k">if</span> (<span class="p">v</span>.<span class="p">length</span> === <span class="n">6</span>) <span class="k">this</span>.<span class="f">submit</span>();')
-      +ln(40,'  }')+ln(41,'}');
-    $('#code').insertAdjacentHTML('beforeend',add);
-    MAP.inp=[12];MAP.auto=[37,38,39,40];
-    if(!$('#n-auto .lnkdot')){var dot=document.createElement('i');dot.className='lnkdot';dot.setAttribute('data-bind','auto');dot.title='连到代码 · L37–40';$('#n-auto').appendChild(dot);}
-    selectNode('auto');[12,37,38,39,40].forEach(function(n){flashLine(n,true)});
-    var l=$('#code .ln[data-ln="37"]');if(l)l.scrollIntoView({block:'nearest'});
-    synced();updCap();
-    toast('ok','已连线 · 第 12 行绑 onChange，新增 onCode() 第 37–40 行','<button class="btn" id="unwire">撤销</button>');
+
+  /* ---- Agent：你连的线是指令，它补 handler、异常分支，停在两个 Agent 撞车的第 34 行等你挑 ---- */
+  var AG='Agent·登录',AG2='Agent·多语言',S={phase:'idle',timers:[]};
+  var ORIG={};[12,30,34].forEach(function(n){ORIG[n]=$('#code .ln[data-ln="'+n+'"] .t').innerHTML});
+  var ERR0={h:$('#n-err .nh').innerHTML,b:$('#n-err .nb code').textContent};
+  var V={
+    ag:'<span class="k">this</span>.<span class="p">error</span> = <span class="k">this</span>.<span class="p">offline</span> ? <span class="s">\'网络不稳，请重试\'</span> : <span class="s">\'验证码错误\'</span>;',
+    ml:'<span class="k">this</span>.<span class="p">error</span> = <span class="f">$r</span>(<span class="s">\'app.string.err_code\'</span>);',
+    mix:'<span class="k">this</span>.<span class="p">error</span> = <span class="k">this</span>.<span class="p">offline</span> ? <span class="f">$r</span>(<span class="s">\'app.string.err_net\'</span>) : <span class="f">$r</span>(<span class="s">\'app.string.err_code\'</span>);'
+  };
+  var SRC={ag:AG+' · 连线后补的 · 可退回',ml:AG2+' · 文案换成资源引用',mix:AG+' + '+AG2+' · 两版合成 · 可退回'};
+  function later(ms,fn){S.timers.push(setTimeout(fn,ms))}
+  function capClick(){
+    var d=$('#vp-agent');if(state.view!=='logic')setView('logic');
+    var w=$('#vp-agent .ai-approve');if(w){w.classList.remove('flash');void w.offsetWidth;w.classList.add('flash');}
+    if(S.phase==='done'){var l=$('#code .ln[data-ln="37"]');if(l)l.scrollIntoView({block:'nearest'});}
   }
+  function cap(st,html,q){DemoFrame.agent(st,html,{queue:q,onClick:capClick});}
+  function idleCap(){cap('idle',AG+' 待命 · 连一条线，它补实现');}
+  function aiLine(n,html,src){
+    var l=$('#code .ln[data-ln="'+n+'"]');if(!l)return;
+    if(html!=null)$('.t',l).innerHTML=html;
+    l.classList.add('ai-block');var g=$('.ai-gut',l);if(!g){g=document.createElement('i');g.className='ai-gut';l.insertBefore(g,l.firstChild);}
+    g.setAttribute('data-src',src);
+  }
+  function plainLine(n,html){var l=$('#code .ln[data-ln="'+n+'"]');if(!l)return;l.classList.remove('ai-block');var g=$('.ai-gut',l);if(g)g.remove();if(html!=null)$('.t',l).innerHTML=html;}
+  function touch(id){var n=$('#n-'+id);if(!n)return;n.classList.remove('ai-touched');void n.offsetWidth;n.classList.add('ai-touched');}
+  function chip(id,text,up){
+    var n=$('#n-'+id),c=$('.ai-src',n);
+    if(!c){c=document.createElement('span');c.className='ai-src';n.appendChild(c);}
+    c.classList.toggle('up',!!up);c.innerHTML='<span class="ai-spark"></span>'+esc(text);
+  }
+  function dock(html){var d=$('#vp-agent');d.innerHTML=html;d.hidden=!html;}
+  function row(ring,what,end){
+    return '<div class="ai-toolrow">'+(ring?'<span class="ai-ring"></span>':'<svg class="ai-ico" style="color:var(--ui-success)"><use href="#ai-verify"/></svg>')
+      +'<span class="what">'+what+'</span><span class="end">'+(end||'')+'</span></div>';
+  }
+  function wire(){
+    wired=true;S.phase='work';
+    /* 你画的那条：不打 AI 标 */
+    EDGES.push(['inp','b','auto','t','onChange']);
+    drawEdges();$$('#edges path').slice(-1).forEach(function(p){p.classList.add('fresh')});
+    ['inp','auto'].forEach(function(id){$('#n-'+id).classList.remove('loose')});
+    var pill=$('#inp-pill');pill.className='dm-pill ok';pill.textContent='已连线';
+    selectNode('inp');
+    cap('thinking',AG+' 在看你连的这条线');
+    dock(row(true,'<b>'+AG+'</b> 读 <code>LoginPage.ets</code>、<code>AuthService.ets</code>','0.4 s'));
+    later(600,function(){cap('tool',AG+' 读 <code>AuthService.ets</code> · 找断网错误码');});
+    later(1200,function(){
+      cap('generating',AG+' 在写 <code>onCode()</code> · 第 2 处，共 3 处');
+      dock(row(true,'<b>'+AG+'</b> 补 <code>onCode()</code>、断网分支 · 写 <code>LoginPage.ets</code>','1.2 s'));
+      aiLine(12,'      <span class="f">TextInput</span>({ <span class="p">placeholder</span>: <span class="s">\'验证码\'</span> }).<span class="f">maxLength</span>(<span class="n">6</span>).<span class="f">onChange</span>(<span class="k">this</span>.<span class="p">onCode</span>)',SRC.ag);
+      aiLine(30,'      } <span class="k">catch</span> (<span class="p">e</span>) { <span class="k">this</span>.<span class="p">offline</span> = <span class="f">isNetErr</span>(<span class="p">e</span>);',SRC.ag);
+      var end=$('#code .ln[data-ln="36"]');if(end)end.remove();
+      $('#code').insertAdjacentHTML('beforeend',ln(36,'')+ln(37,'  <span class="p">onCode</span> = (<span class="p">v</span>: <span class="k">string</span>) =&gt; {',{fold:1})
+        +ln(38,'    <span class="k">this</span>.<span class="p">code</span> = <span class="p">v</span>;')
+        +ln(39,'    <span class="k">if</span> (<span class="p">v</span>.<span class="p">length</span> === <span class="n">6</span> &amp;&amp; !<span class="k">this</span>.<span class="p">busy</span>) <span class="k">this</span>.<span class="f">submit</span>();  <span class="c">// 防重复提交</span>')
+        +ln(40,'  }')+ln(41,'}'));
+      [37,38,39,40].forEach(function(n){aiLine(n,null,SRC.ag)});
+      MAP.auto=[37,38,39,40];
+      if(!$('#n-auto .lnkdot')){var dot=document.createElement('i');dot.className='lnkdot';dot.setAttribute('data-bind','auto');dot.title='连到代码 · L37–40';$('#n-auto').appendChild(dot);}
+      EDGES.push(['auto','l','call','r','','ai']);
+      $('#n-inp .nb code').textContent='onChange → onCode(v)';
+      $('#n-auto .nb code').textContent='onCode(v) · 防重复提交';
+      chip('auto',AG+' 补的');touch('auto');
+      selectNode('auto');var l=$('#code .ln[data-ln="37"]');if(l)l.scrollIntoView({block:'nearest'});
+      synced();
+    });
+    later(2100,function(){
+      S.phase='wait';
+      $('#n-err').classList.add('wait');chip('err',AG+' + '+AG2+' 都改了这里',true);
+      var l34=$('#code .ln[data-ln="34"]');l34.classList.add('hl-warn');
+      cap('waiting','在等你 · 第 34 行两个 Agent 都改了',1);
+      dock(row(false,'<b>'+AG+'</b> 补了 <code>onCode()</code>、断网分支 · 3 处','2.1 s')
+        +'<div class="ai-approve" id="vp-wait"><div class="ai-approve__h"><span class="ai-wait-dot"></span>在等你 · 第 34 行，两个 Agent 都改了</div>'
+        +'<div class="ver"><span class="who">'+AG+'</span><code>'+V.ag+'</code></div>'
+        +'<div class="ver"><span class="who">'+AG2+'</span><code>'+V.ml+'</code></div>'
+        +'<p class="ai-approve__why">登录要把断网和验证码错分开提示；多语言把文案换成资源引用。<b>合成一版</b>两边都保留，并在 string.json 补 <code>err_net</code>。</p>'
+        +'<div class="ai-approve__act"><button class="ai-btn ai-btn--primary" data-pick="mix">合成一版</button><button class="ai-btn ai-btn--fill" data-pick="ag">用登录的</button><button class="ai-btn ai-btn--fill" data-pick="ml">用多语言的</button></div></div>');
+      selectNode('err');l34.scrollIntoView({block:'nearest'});
+    });
+  }
+  function pick(v){
+    if(S.phase!=='wait')return;S.phase='verify';
+    var l34=$('#code .ln[data-ln="34"]');l34.classList.remove('hl-warn');
+    aiLine(34,'    '+V[v],SRC[v]);
+    $('#n-err').classList.remove('wait');touch('err');
+    $('#n-err .nh').innerHTML='<svg><use href="#i-warn"/></svg>'+(v==='ml'?'提示 验证码错误':'提示 按原因分开');
+    $('#n-err .nb code').textContent=v==='ag'?'断网 / 验证码错 · 文案写死':v==='ml'?"$r('app.string.err_code')":'断网 / 验证码错 · $r 资源';
+    chip('err',v==='mix'?AG+' + '+AG2+' 合成':v==='ag'?AG+' 的版本':AG2+' 的版本',true);
+    flashLine(34,true);synced();
+    cap('verifying',AG+' 在 Mate 70 Pro 上验 · 2 条',1);
+    dock(row(true,'在 <b>Mate 70 Pro</b> 上验：输满 6 位自动登录 · 断网单独提示','hdc'));
+    later(1600,function(){
+      S.phase='done';
+      cap('done',AG+' 完成 · Mate 70 Pro 验过 2 条',1);
+      dock('<div class="ai-answer"><div class="ai-answer__meta"><svg><use href="#ai-logo-16"/></svg>'+AG+' · 本机</div>'
+        +'<p class="ai-answer__lead">输满 6 位就自动登录，连点不会重复提交；断网和验证码错分开提示。</p>'
+        +'<div class="ai-answer__applied">已写入 LoginPage.ets 4 处 · Mate 70 Pro 上验过 2 条 · 可退回</div>'
+        +'<div class="ai-answer__foot"><button class="ai-btn" data-a="take"><svg><use href="#i-code"/></svg>接手改 onCode()</button><button class="ai-btn" data-a="undo"><svg><use href="#ai-revert"/></svg>退回</button></div></div>');
+    });
+  }
+  $('#vp-agent').addEventListener('click',function(e){
+    var b=e.target.closest('[data-pick]');if(b){pick(b.dataset.pick);return;}
+    var a=e.target.closest('[data-a]');if(!a)return;
+    if(a.dataset.a==='undo')unwire();
+    if(a.dataset.a==='take'){selectNode('auto');var l=$('#code .ln[data-ln="39"]');if(l){l.scrollIntoView({block:'center'});$$('#code .ln.cur').forEach(function(x){x.classList.remove('cur')});l.classList.add('cur');var p=$('#status-pos');if(p)p.textContent='39:5';}}
+  });
   function unwire(){
-    if(!wired)return;wired=false;
+    if(!wired)return;wired=false;S.timers.forEach(clearTimeout);S.timers=[];S.phase='idle';
     EDGES=EDGES.filter(function(e){return !(e[0]==='inp'&&e[2]==='auto')&&!(e[0]==='auto'&&e[2]==='call')});
     ['inp','auto'].forEach(function(id){$('#n-'+id).classList.add('loose')});
     var pill=$('#inp-pill');pill.className='dm-pill loose-p';pill.textContent='未连线';$('#n-inp .nb code').textContent='maxLength(6) · 未绑事件';
-    $('#code .ln[data-ln="12"] .t').innerHTML='      <span class="f">TextInput</span>({ <span class="p">placeholder</span>: <span class="s">\'验证码\'</span> }).<span class="f">maxLength</span>(<span class="n">6</span>)';
+    $('#n-auto .nb code').textContent='v.length === 6 → submit()';var ca=$('#n-auto .ai-src');if(ca)ca.remove();
+    [12,30,34].forEach(function(n){plainLine(n,ORIG[n]);$('#code .ln[data-ln="'+n+'"]').classList.remove('hl-warn');});
     [36,37,38,39,40,41].forEach(function(n){var x=$('#code .ln[data-ln="'+n+'"]');if(x)x.remove();});
     $('#code').insertAdjacentHTML('beforeend',ln(36,'}'));
+    $('#n-err').classList.remove('wait');$('#n-err .nh').innerHTML=ERR0.h;$('#n-err .nb code').textContent=ERR0.b;chip('err',AG2+' 在改',true);
     MAP.auto=[];var d=$('#n-auto .lnkdot');if(d)d.remove();
-    selectNode('retry');flashLine(12,false);synced();updCap();toast('ok','已撤销连线 · 代码回到原样');
+    dock('');idleCap();
+    selectNode('retry');synced();toast('ok','已退回 · 代码回到连线前');
   }
-  /* 手写 → 节点备注 + 代码注释 */
+  /* 手写 → 节点备注 + 代码注释（你写的，不打 AI 标） */
   function recognize(){
     if(!writing.length)return;
     var x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
@@ -630,7 +750,7 @@
     if(t){var c=$('.pen-c',t);if(c)c.remove();t.insertAdjacentHTML('beforeend','<span class="c pen-c">  // ✎ '+esc(text)+'</span>');}
     lastNote={id:id,old:old};
     selectNode(id);flashLine(L,true);var lnEl=$('#code .ln[data-ln="'+L+'"]');if(lnEl)lnEl.scrollIntoView({block:'nearest'});
-    synced();updCap();
+    synced();
     toast('ok','手写识别「'+text+'」→ 节点备注 · 第 '+L+' 行注释','<button class="btn" id="unnote">撤销</button>');
   }
   function unnote(){
@@ -638,16 +758,16 @@
     var n=$('#n-'+id),el=$('.vp-note',n),t=$('#code .ln[data-ln="'+L+'"] .t'),c=t&&$('.pen-c',t);
     if(lastNote.old){notes[id]=lastNote.old;if(el)el.innerHTML='<svg><use href="#i-pen"/></svg>'+esc(lastNote.old);if(c)c.textContent='  // ✎ '+lastNote.old;}
     else{delete notes[id];if(el)el.remove();if(c)c.remove();}
-    lastNote=null;synced();updCap();toast('ok','已撤销备注');
+    lastNote=null;synced();toast('ok','已撤销备注');
   }
-  $('#vp-toast').addEventListener('click',function(e){if(e.target.closest('#unwire'))unwire();if(e.target.closest('#unnote'))unnote();});
-  function updCap(){
-    var k=Object.keys(notes).length,c=$('#cap-pen');
-    if(!wired&&!k){if(c)c.remove();return;}
-    if(!c){$('#status-slot').insertAdjacentHTML('beforeend','<span class="dm-capsule" id="cap-pen"><svg class="i" style="width:12px;height:12px"><use href="#i-pen"/></svg><span></span></span>');c=$('#cap-pen');}
-    $('span',c).textContent='M-Pen · 连线 '+(wired?1:0)+' · 备注 '+k;
+  $('#vp-toast').addEventListener('click',function(e){if(e.target.closest('#unnote'))unnote();});
+  /* 你手改参数：人是默认作者不打标；Agent 做完之后读到你的改动，只重验那一条 */
+  function afterManual(what){
+    if(S.phase!=='done')return;
+    cap('verifying',AG+' 按你改的'+what+'重验 · Mate 70 Pro',1);
+    clearTimeout(afterManual.t);afterManual.t=setTimeout(function(){if(S.phase==='done')cap('done',AG+' 按你改的'+what+'重验过',1);},1300);
   }
-  /* MateBook Fold 悬停：上屏代码、下屏画布 */
+  /* MateBook Fold 悬停：上屏代码、下屏画布（画布按下屏高度缩放，不用滚动） */
   $('#fold-btn').addEventListener('click',function(){
     var on=this.classList.toggle('on');$('.dm-split').classList.toggle('fold',on);
     setTimeout(drawEdges,0);
@@ -655,12 +775,16 @@
   });
   initConnectorDots();
   selectNode('retry');
+  idleCap();
   window.addEventListener('resize',drawEdges);
-DemoGuide.init([{"target": "#p-count [data-d=\"1\"]", "kind": "click", "pos": "top", "label": "点 + 加次数"}, {"target": "#code", "kind": "change", "pos": "top", "label": "代码同步改写"},
-    {"target": ".dm-split:has(#n-inp.loose) #pen-btn:not(.on)", "kind": "click", "pos": "bottom", "label": "验证码想输满就登录？拿笔连一下"},
-    {"target": "#stage.pen-on #n-inp.loose", "kind": "click", "pos": "top", "label": "从这里画到「输满 6 位自动登录」"},
-    {"target": ".dm-split:has(#n-inp:not(.loose)):not(.fold) #fold-btn", "kind": "click", "pos": "bottom", "label": "屏幕折成悬停：上屏看代码、下屏放平用笔"}],
-  {scene:{at:'你在画登录流程：点登录→调接口→失败重试→报错',goal:'把登录逻辑连对，流程图和 ArkTS 始终是同一份',pain:'流程画在白板，代码另写一遍，改一处忘一处',fix:'画布上连线调参即改代码；用笔拖一下就绑好事件'}});
+  DemoGuide.init([
+    {target:'#n-inp.loose', kind:'click', pos:'top', label:'按住拖到「输满 6 位自动登录」，剩下交给 Agent'},
+    {target:'.dm-split:not(.fold) #vp-wait', kind:'click', pos:'right', label:'两个 Agent 改了同一行：并排两版，你挑'},
+    {target:'.dm-split.fold #vp-wait', kind:'click', pos:'left', label:'两个 Agent 改了同一行：并排两版，你挑'},
+    {target:'#n-auto .ai-src', kind:'change', pos:'right', label:'它补的节点和代码行都带来源'},
+    {target:'#n-retry', kind:'click', pos:'bottom', label:'接手：次数、间隔你自己调，代码同步'}
+  ],
+  {scene:{at:'你在登录页流程图上加「验证码输满即登录」',goal:'连一条线，事件、实现和失败分支都补齐',pain:'连完线还得手写 handler、补断网分支，改一处忘一处',fix:'拖一条线交给 Agent，它补的节点和代码行都标出来',agent:'它补实现和异常分支；两个 Agent 改同一行并排两版；你连线、挑版'}});
 })();
 </script>
 </body>

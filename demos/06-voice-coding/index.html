@@ -5,103 +5,74 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='32' y2='32' gradientUnits='userSpaceOnUse'%3E%3Cstop stop-color='%232C8DDD'/%3E%3Cstop offset='1' stop-color='%233357AC'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='32' height='32' rx='7' fill='url(%23g)'/%3E%3Ctext x='16' y='22.5' font-family='Arial,Helvetica,sans-serif' font-size='13' font-weight='700' fill='white' text-anchor='middle'%3EDE%3C/text%3E%3C/svg%3E">
 <title>06 · 语音开发：说出来，读回来，用嘴确认</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;500&display=swap">
 <link rel="stylesheet" href="../../deveco-intui-kit/src/tokens.css">
 <link rel="stylesheet" href="../../deveco-intui-kit/src/components.css">
 <link rel="stylesheet" href="../_shared/frame.css">
 <link rel="stylesheet" href="../_shared/guide.css">
 <script src="../../deveco-intui-kit/src/icons.js"></script>
+<script src="../../deveco-intui-kit/icons/ai-icons.js"></script>
 <script src="../_shared/frame.js"></script>
 <script src="../_shared/guide.js"></script>
 <style>
   /* 外壳的 .menubar 隐藏时 .body 会落到 auto 行，这里把行位钉死，让主体撑满 */
   .ide > .body{grid-row:3}
   .ide > .status{grid-row:4}
-  .ide[data-ide-theme]{--proj-w:clamp(360px,30vw,460px)}
+  .ide[data-ide-theme]{--ai-w:clamp(380px,28vw,440px)}
+  /* 浅色主题默认是深色 Header：胶囊按深色取值 */
+  .ide[data-ide-theme="light"]:not([data-light-header="1"]) #hdr-agent{--ai-surface-2:#393B40;--ai-wait-ink:#F5B64F;--ai-wait-tint:rgba(245,165,36,.16);--ai-ink:#B69CFF;--ui-fg:#DFE1E5;--ui-fg-info:#9DA0A8;--ui-icon:#CED0D6}
   /* 语音消息：录音时长 pill 替代时间戳 */
   .umsg .dm-pill{align-self:flex-end}
+  .umsg .dm-pill.muted svg{color:var(--ui-icon)}
   .umsg .heard{display:flex;flex-wrap:wrap;justify-content:flex-end;align-items:center;gap:4px;max-width:92%}
-  .umsg .heard .ctx{height:20px;font-family:var(--font-code)}
-  .umsg .heard .ctx svg.i{width:11px;height:11px}
-  /* 读回（普通消息，留在对话记录里） */
-  .amsg .step svg.i.spk{color:var(--ui-info)}
-  /* 用嘴确认：不是对话里的卡片，是输入条本身变成的「听你确认」态——
-     类似微信/豆包按住说话时输入框的变化：波形 + 实时文字 + 一排轻量意图小按钮 */
-  .ai-input .voice-bar{display:flex;flex-direction:column;gap:6px;min-height:40px;justify-content:center}
-  .ai-input .voice-row{display:flex;align-items:center;gap:8px}
-  .ai-input .voice-row .dm-wave{height:20px;flex:none}
-  .ai-input .voice-row .dm-wave i{width:2.5px}
-  .ai-input .voice-live{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:var(--fs-para);line-height:var(--lh-para);color:var(--ui-fg-info)}
-  .ai-input .voice-live.final{color:var(--ui-fg);font-weight:600}
+  .umsg .heard .ai-chip{font-family:var(--font-code);font-size:11px}
+  .ai-thread .ai-answer,.ai-thread .ai-ask{padding:10px 12px}
+  .ai-thread .ai-answer{gap:8px}
+  .ai-answer__meta .ai-ico{color:var(--ai-ink)}
+  .ai-answer code,.ai-ask code{font-family:var(--font-code);font-size:11.5px;padding:0 4px;border-radius:4px;background:var(--ai-surface-2)}
+  .ai-answer__body p,.ai-ask p{margin:0}
+  .ai-toolrow{padding:2px 0}
+  .ai-toolrow:hover{background:transparent}
+  .ai-toolrow svg.ok{width:12px;height:12px;color:var(--ui-success)}
+  .ai-toolrow .todo{width:10px;height:10px;border-radius:50%;box-shadow:inset 0 0 0 1.2px var(--ui-fg-disabled);margin:0 2px}
+  .ai-toolrow .agt,.route .agt{color:var(--ai-ink);white-space:nowrap}
+  /* 读回 = 在等你：一句话派给哪个 Agent，派之前复述 */
+  .route{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 10px;padding:8px 10px;border-radius:8px;background:var(--ai-surface-2);font-size:12.5px;line-height:18px}
+  .route .no{color:var(--ui-fg-disabled);text-decoration:line-through}
+  /* 输入条：ai.css 智能输入框，确认时整条变成「听你确认」态（录音红点 + 波形 + 实时文字 + 三句话） */
+  .vc{margin:6px 12px 4px;flex:none}
+  .vc .ai-field__ctx .grow{flex:1}
+  .voice-bar{display:flex;flex-direction:column;gap:8px;min-height:38px;justify-content:center}
+  .voice-bar[hidden]{display:none}
+  .voice-row{display:flex;align-items:center;gap:8px;min-width:0}
+  .voice-row .ai-wave{flex:none}
+  .voice-row .t{font-family:var(--font-code);font-size:11px;color:var(--ui-fg-info)}
+  .voice-live{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;line-height:19px;color:var(--ai-ghost)}
+  .voice-live.final{color:var(--ui-fg);font-weight:500}
   .voice-chips{display:flex;flex-wrap:wrap;gap:6px}
-  .voice-chips .chip{height:22px;padding:0 8px;font-size:11px;gap:4px}
-  .voice-chips .chip svg.i{width:11px;height:11px;color:var(--ui-info)}
-  .voice-chips.decided .chip{opacity:.45}
-  .voice-chips.decided .chip.picked{opacity:1;background:var(--ui-selection);border-color:var(--ui-accent)}
+  .voice-chips .ai-btn{height:26px;padding:0 9px;font-size:12px}
+  .voice-chips .ai-btn svg{width:12px;height:12px}
+  .voice-chips.decided .ai-btn{opacity:.4;cursor:default}
+  .voice-chips.decided .ai-btn.picked{opacity:1;background:var(--ui-selection)}
   .voice-hint{font-size:11px;color:var(--ui-fg-info)}
   .voice-hint kbd{font-size:10px;line-height:14px}
-  /* 输入区语音态 */
-  .ai-input .bot .mode svg.i.rec{color:var(--ui-error)}
-  .send.stop.rec{animation:recpulse 1.6s ease-in-out infinite}
-  @keyframes recpulse{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--ui-error) 40%,transparent)}60%{box-shadow:0 0 0 4px transparent}}
-  @media (prefers-reduced-motion:reduce){.send.stop.rec{animation:none}}
-  .ai-input .top .toggle svg.i{width:12px;height:12px}
-  /* 状态栏胶囊里的小波形 */
-  .dm-capsule .dm-wave{height:12px;gap:1.5px}
-  .dm-capsule .dm-wave i{width:2px}
-  .dm-capsule svg.i{width:12px;height:12px;color:var(--ui-error)}
-  .dm-capsule.ok svg.i{color:var(--ui-success)}
-  .amsg.new{animation:fadein .4s ease-out}
-  .umsg.new{animation:fadein .4s ease-out}
-  @keyframes fadein{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
-
-  /* ===== 小艺即开发助手的语音入口：系统唤起条 → 离开电脑在手机 / 手表上接着说 → 回到电脑接回 IDE ===== */
-  .xy-orb{width:20px;height:20px;border-radius:50%;flex:none;background:conic-gradient(from 200deg,#5B8CF7,#9B6CF6,#F06EAA,#FFB35C,#4FD1C5,#5B8CF7);position:relative;display:inline-block}
-  .xy-orb::after{content:"";position:absolute;inset:4px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#fff,rgba(255,255,255,.55) 60%,rgba(255,255,255,.15))}
-  .xy-orb.sm{width:12px;height:12px}.xy-orb.sm::after{inset:2.5px}
-  .xy-orb.live{animation:xyspin 2.4s linear infinite}
-  @keyframes xyspin{to{transform:rotate(360deg)}}
-  .ai-input .top .toggle.xyb{gap:5px;border-color:color-mix(in srgb,#9B6CF6 55%,transparent)}
-  .ai-input .top .toggle.xyb:hover{background:var(--ui-hover)}
-  .ai-input .top .toggle.xyb[disabled]{opacity:.55}
-  .umsg .dm-pill .xy-orb{width:11px;height:11px}.umsg .dm-pill .xy-orb::after{inset:2.5px}
-  .umsg .dm-pill.dev{background:color-mix(in srgb,#9B6CF6 16%,transparent);color:var(--ui-fg)}
-  .umsg .dm-pill.dev svg{width:12px;height:12px}
-  .hand{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:var(--arc);border:1px dashed var(--ui-component-border);font-size:var(--fs-sm);line-height:var(--lh-sm);color:var(--ui-fg-info)}
+  .vc .ai-field__bar .mode{display:inline-flex;align-items:center;gap:4px;color:var(--ui-fg);border:0;background:transparent;padding:2px 4px;border-radius:4px;position:relative;font:inherit;font-size:12px}
+  .vc .ai-field__bar .mode:hover{background:var(--ui-hover)}
+  .vc .ai-field__send.rec{background:var(--ui-error);color:#fff}
+  .hand{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;background:var(--ai-surface-2);font-size:var(--fs-sm);line-height:var(--lh-sm);color:var(--ui-fg-info)}
   .hand .grow{flex:1}
+  .hand .btn{white-space:nowrap}
   .hand .btn svg.i{width:12px;height:12px}
-  .hand .btn .xy-orb{width:12px;height:12px}.hand .btn .xy-orb::after{inset:2.5px}
   .away-sep{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--ui-fg-info)}
   .away-sep::before,.away-sep::after{content:"";flex:1;height:1px;background:var(--ui-border)}
-  .amsg .md code{font-family:var(--font-code);font-size:11px;background:var(--ui-tag-bg);padding:1px 4px;border-radius:4px}
-  .amsg .md p{margin:0}
-  /* 系统级小艺唤起条（鸿蒙电脑，悬在所有窗口之上） */
-  .xy-bar{position:absolute;left:50%;bottom:44px;width:560px;margin-left:-280px;display:flex;flex-direction:column;gap:8px;z-index:60;animation:xyin .35s cubic-bezier(.3,.7,.3,1) both}
-  .xy-bar[hidden]{display:none}
-  .xy-bar.out{animation:xyout .3s ease-in both}
-  @keyframes xyin{from{opacity:0;transform:translateY(16px) scale(.97)}to{opacity:1;transform:none}}
-  @keyframes xyout{to{opacity:0;transform:translateY(12px) scale(.97)}}
-  .xy-card{padding:12px 14px;border-radius:18px;background:color-mix(in srgb,var(--ui-popup-bg) 94%,transparent);backdrop-filter:blur(24px);border:1px solid var(--ui-popup-border);box-shadow:0 16px 40px rgba(0,0,0,.35);font-size:var(--fs-sm);line-height:var(--lh-sm);color:var(--ui-fg);display:flex;flex-direction:column;gap:6px;animation:xyin .3s ease-out both}
-  .xy-card .hd{display:flex;align-items:center;gap:8px;color:var(--ui-fg-info)}
-  .xy-card .hd b{color:var(--ui-fg);font-weight:600}
-  .xy-card .hd .grow{flex:1}
-  .xy-card .rw{display:flex;align-items:center;gap:8px}
-  .xy-card .rw svg.i{width:14px;height:14px;flex:none}
-  .xy-card .rw code{font-family:var(--font-code);font-size:11px;background:var(--ui-tag-bg);padding:1px 5px;border-radius:4px}
-  .xy-pill{position:relative;display:flex;align-items:center;gap:12px;height:54px;padding:0 14px 0 12px;border-radius:27px;background:color-mix(in srgb,var(--ui-popup-bg) 94%,transparent);backdrop-filter:blur(24px);box-shadow:0 16px 40px rgba(0,0,0,.35)}
-  .xy-pill::before{content:"";position:absolute;inset:0;border-radius:27px;padding:2px;background:linear-gradient(90deg,#5B8CF7,#9B6CF6,#F06EAA,#FFB35C,#4FD1C5);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none}
-  .xy-pill .xy-orb{width:32px;height:32px}.xy-pill .xy-orb::after{inset:7px}
-  .xy-pill .said{flex:1;min-width:0;font-size:15px;line-height:20px;color:var(--ui-fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .xy-pill .said.hint{color:var(--ui-fg-info)}
-  .xy-pill .dm-wave i{background:linear-gradient(#5B8CF7,#9B6CF6)}
+  .umsg .dm-pill.dev svg{width:12px;height:12px}
   /* 离开电脑：电脑锁屏，手机和手表接着说 */
-  .away{position:absolute;inset:0;z-index:64;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;background:color-mix(in srgb,#070a14 70%,transparent);backdrop-filter:blur(8px) saturate(.7);color:#fff;animation:awin .4s ease-out both}
+  .away{position:absolute;inset:0;z-index:64;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;background:rgba(10,12,18,.9);color:#fff;animation:awin .3s ease-out both}
   .away[hidden]{display:none}
   .away.out{animation:awout .4s ease-in both}
   @keyframes awin{from{opacity:0}to{opacity:1}}
   @keyframes awout{to{opacity:0}}
   .away .lk{display:flex;flex-direction:column;align-items:center;gap:2px}
-  .away .lk b{font-size:40px;line-height:44px;font-weight:300;letter-spacing:1px}
+  .away .lk b{font-size:40px;line-height:44px;font-weight:400;letter-spacing:1px}
   .away .lk span{font-size:var(--fs-sm);opacity:.75;display:flex;align-items:center;gap:6px}
   .away .lk svg.i{width:14px;height:14px;color:#fff}
   .away .devs{display:flex;align-items:flex-end;gap:56px}
@@ -112,7 +83,7 @@
   .away .back .btn svg.i{width:14px;height:14px;color:currentColor}
   .away .back span{font-size:11px;opacity:.7}
   /* 手机：HUAWEI Mate 70 Pro 1260×2844，屏幕 216×487.5（逻辑 360×812.5 vp） */
-  .pdev{position:relative;padding:7px;border-radius:30px;background:#111214;box-shadow:0 14px 34px rgba(0,0,0,.5),inset 0 0 0 1px #2c2e33}
+  .pdev{position:relative;padding:7px;border-radius:30px;background:#111214;box-shadow:inset 0 0 0 1px #2c2e33}
   .pdev::before{content:"";position:absolute;right:-3px;top:110px;width:3px;height:44px;border-radius:0 2px 2px 0;background:#26282c}
   .pscr{position:relative;width:216px;height:487.5px;border-radius:24px;overflow:hidden;background:#F1F3F5}
   .plv{position:absolute;left:0;top:0;width:360px;height:812.5px;transform:scale(.6);transform-origin:0 0;background:#F1F3F5;color:#18191c;font-family:var(--font-ui);font-size:15px;line-height:1.4;display:flex;flex-direction:column;overflow:hidden}
@@ -153,8 +124,7 @@
   .plv .ps em{font-style:normal;margin-left:auto;color:#8a8f99;font-family:var(--font-code);font-size:12px}
   .plv .vb{height:92px;flex:none;display:flex;align-items:flex-start;justify-content:center;padding:10px 16px 0}
   .plv .mic{position:relative;display:flex;align-items:center;justify-content:center;gap:10px;width:100%;height:50px;border:0;border-radius:25px;background:#fff;font:inherit;font-size:16px;font-weight:600;color:#18191c;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.06)}
-  .plv .mic::before{content:"";position:absolute;inset:0;border-radius:25px;padding:2px;background:linear-gradient(90deg,#5B8CF7,#9B6CF6,#F06EAA,#FFB35C,#4FD1C5);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none}
-  .plv .mic .xy-orb{width:26px;height:26px}.plv .mic .xy-orb::after{inset:6px}
+  .plv .mic svg{width:22px;height:22px}
   .plv .mic.on{color:#0A59F7}
   .plv .mic[disabled]{cursor:default;color:#8a8f99}
   .plv .gb{position:absolute;bottom:8px;left:50%;width:128px;height:5px;margin-left:-64px;border-radius:3px;background:#18191c;opacity:.75}
@@ -165,7 +135,7 @@
   .plv .bn b{display:block;font-size:14px}
   .plv .bn span{color:#6b7078}
   /* 手表：HUAWEI WATCH 5 466×466 圆屏，屏幕 156 px（逻辑 233×233，缩放 .67） */
-  .wdev{position:relative;width:176px;height:176px;border-radius:50%;background:#16171a;box-shadow:0 14px 30px rgba(0,0,0,.5),inset 0 0 0 2px #3a3c42;display:grid;place-items:center}
+  .wdev{position:relative;width:176px;height:176px;border-radius:50%;background:#16171a;box-shadow:inset 0 0 0 2px #3a3c42;display:grid;place-items:center}
   .wdev::before,.wdev::after{content:"";position:absolute;left:44px;right:44px;height:40px;background:#232428;border-radius:10px;z-index:-1}
   .wdev::before{top:-30px}.wdev::after{bottom:-30px}
   .wdev .crown{position:absolute;right:-7px;top:62px;width:8px;height:22px;border-radius:3px;background:#3a3c42}
@@ -189,70 +159,21 @@
   .wlv .wm[disabled]{background:#2a2c31;cursor:default}
   .wlv.chat .rg{display:none}
   .wlv.chat .ap{margin-top:40px}
-  @media (prefers-reduced-motion:reduce){.xy-orb.live,.plv .ps i.r{animation:none}}
+  .plv .ag{display:block;font-size:12px;color:#6b7078;margin-top:4px}
+  @media (prefers-reduced-motion:reduce){.plv .ps i.r{animation:none}}
 </style>
 </head>
 <body>
-<div class="ide" id="ide" data-ide-theme="dark" data-left="agent" data-right="project" data-bottom="none" role="application" aria-label="DevEco Studio">
+<div class="ide" id="ide" data-ide-theme="dark" data-left="project" data-right="agent" data-bottom="none" role="application" aria-label="DevEco Studio">
   <div class="body">
     <div class="tw tw-left">
-      <div class="pane on" data-pane="agent">
-        <div class="tw-hdr"><span class="title">DevEco Code <span class="cnt">语音</span></span><span class="grow"></span>
-          <button class="abtn" title="New Chat"><svg class="i"><use href="#i-add"/></svg></button>
-          <button class="abtn" title="History"><svg class="i"><use href="#i-history"/></svg></button>
-          <button class="abtn" title="MCP"><svg class="i"><use href="#i-cube"/></svg></button>
-          <button class="abtn" title="Skills"><svg class="i"><use href="#i-skills"/></svg></button>
-          <button class="abtn" title="Settings"><svg class="i"><use href="#i-settings"/></svg></button>
+      <div class="pane on" data-pane="project">
+        <div class="tw-hdr"><span class="title">Project <svg class="i"><use href="#i-chevD"/></svg></span><span class="grow"></span>
+          <button class="abtn" title="Select Opened File"><svg class="i"><use href="#i-locate"/></svg></button>
+          <button class="abtn" title="Collapse All"><svg class="i"><use href="#i-collapseAll"/></svg></button>
           <button class="abtn" title="Options"><svg class="i"><use href="#i-moreV"/></svg></button>
           <button class="abtn" title="Hide|Shift+Esc" data-act="hide-left"><svg class="i"><use href="#i-hide"/></svg></button></div>
-        <div class="tw-body"><div class="ai">
-          <div class="ai-scroll" id="ai-scroll">
-            <div class="ai-thread" id="ai-thread">
-
-              <!-- ① 说出需求：识别提示里带着工程符号 -->
-              <div class="umsg">
-                <span class="dm-pill info"><svg><use href="#i-mic"/></svg>语音 · 2.4 s</span>
-                <div class="bubble">把 ListPage 列表滑动卡顿修一下，封面改成异步加载</div>
-                <div class="heard dm-small dm-muted"><span>识别用到了：</span>
-                  <span class="ctx"><svg class="i"><use href="#i-module"/></svg>MyApplication</span>
-                  <span class="ctx"><svg class="i"><use href="#i-branch"/></svg>feature/list-perf</span>
-                  <span class="ctx"><svg class="i"><use href="#i-struct"/></svg>ListPage</span>
-                  <span class="ctx"><svg class="i"><use href="#i-method"/></svg>loadCover</span>
-                </div>
-              </div>
-
-              <!-- ② AI 读回理解，等一句话确认（确认交互本身在下面输入条里，不在对话卡片里） -->
-              <div class="amsg">
-                <div class="step"><svg class="i spk"><use href="#i-speaker"/></svg><span id="readback-step">已读回（3.1 s）</span></div>
-                <div class="md" id="readback"><p>我理解为：把 <code>ListPage.ets</code> 第 28 行的同步解码改成异步，并给 <code>ItemCard</code> 加占位图。会改 2 个文件，不动数据层。对吗？</p></div>
-              </div>
-
-            </div>
-          </div>
-
-          <div class="ai-input" id="ai-input">
-            <div class="top"><button class="ctx"><svg class="i" style="width:12px;height:12px"><use href="#i-at"/></svg>Add Context</button><span class="ctx"><svg class="i" style="width:12px;height:12px"><use href="#i-ets"/></svg>ListPage.ets</span><span class="grow"></span><button class="toggle xyb" id="xy-go" title="交给系统小艺接收语音|小艺键 · 或说「小艺小艺」"><span class="xy-orb sm"></span>用小艺说</button><button class="toggle on" title="AI 把结果读回来"><svg class="i"><use href="#i-speaker"/></svg>读回给我听</button></div>
-            <textarea id="ai-text" rows="2" placeholder="按住空格说话，或直接说“DevEco Code”" aria-label="Message" hidden></textarea>
-            <div class="voice-bar" id="voice-bar">
-              <div class="voice-row">
-                <span class="dm-wave" id="wave"><i style="--h:40%;--d:0s"></i><i style="--h:70%;--d:.1s"></i><i style="--h:100%;--d:.2s"></i><i style="--h:60%;--d:.3s"></i><i style="--h:90%;--d:.4s"></i><i style="--h:50%;--d:.5s"></i><i style="--h:30%;--d:.6s"></i></span>
-                <span class="voice-live" id="voice-live">在听 · 等你一句话确认</span>
-              </div>
-              <div class="voice-chips" id="confirm">
-                <button class="chip" data-say="yes"><svg class="i"><use href="#i-mic"/></svg>对，去做</button>
-                <button class="chip" data-say="only"><svg class="i"><use href="#i-mic"/></svg>不对，只改 ListPage</button>
-                <button class="chip" data-say="again"><svg class="i"><use href="#i-mic"/></svg>换个说法</button>
-              </div>
-              <div class="voice-hint" id="confirm-hint">直接说出任一句即可，不用碰键盘；也可以按 <kbd>Space</kbd> 后说别的</div>
-            </div>
-            <div class="bot"><button class="mode" id="mode-btn" data-pop="mode" aria-expanded="false"><svg class="i rec" style="width:12px;height:12px"><use href="#i-mic"/></svg><span id="mode-label">语音 · 编程词汇</span><svg class="i" style="width:12px;height:12px"><use href="#i-chevD"/></svg>
-                <div class="popup" hidden style="top:auto;bottom:28px;left:0;min-width:260px"><div class="mhead">识别词汇表</div><div class="mi"><span class="chk"><svg class="i"><use href="#i-checkS"/></svg></span>语音 · 编程词汇<span class="sc">ArkTS · 工程符号 · 分支名</span></div><div class="mi"><span class="chk"></span>语音 · 通用<span class="sc">日常口语</span></div><div class="msep"></div><div class="mi"><span class="chk"></span><svg class="i"><use href="#i-kb"/></svg>键盘输入</div></div></button>
-              <button class="mode" id="model-btn" data-pop="model" aria-expanded="false"><span id="model-label">deepseek-v4-fl…</span><svg class="i" style="width:12px;height:12px"><use href="#i-chevD"/></svg>
-                <div class="popup" hidden style="top:auto;bottom:28px;left:0"><div class="mi">deepseek-v4-flash<span class="sc">fast</span></div><div class="mi">deepseek-v4-pro<span class="sc">reasoning</span></div><div class="mi">pangu-5.5</div></div></button>
-              <span class="grow"></span><span class="ring" id="counter" title="0 / 30000"></span><button class="send stop rec" id="send" title="正在录音，点一下停|Space"><svg><use href="#i-mic"/></svg></button></div>
-          </div>
-          <div class="ai-foot">The content is generated by AI and may not be entirely accurate or complete. It is for reference only | <a href="#">Terms of Use</a>&nbsp;&nbsp;<a href="#">Privacy Policy</a></div>
-        </div></div>
+        <div class="tw-body" id="tree-slot"></div>
       </div>
     </div>
 
@@ -264,20 +185,64 @@
     </div>
 
     <div class="tw tw-right">
-      <div class="pane on" data-pane="project">
-        <div class="tw-hdr"><span class="title">Project <svg class="i"><use href="#i-chevD"/></svg></span><span class="grow"></span>
-          <button class="abtn" title="Select Opened File"><svg class="i"><use href="#i-locate"/></svg></button>
-          <button class="abtn" title="Expand All"><svg class="i"><use href="#i-expandAll"/></svg></button>
-          <button class="abtn" title="Collapse All"><svg class="i"><use href="#i-collapseAll"/></svg></button>
-          <button class="abtn" title="Options"><svg class="i"><use href="#i-moreV"/></svg></button>
+      <div class="pane on" data-pane="agent">
+        <div class="tw-hdr"><span class="title">DevEco Code <span class="cnt">语音</span></span><span class="grow"></span>
+          <button class="abtn" title="New Chat"><svg class="i"><use href="#i-add"/></svg></button>
+          <button class="abtn" title="History"><svg class="i"><use href="#i-history"/></svg></button>
+          <button class="abtn" title="Settings"><svg class="i"><use href="#i-settings"/></svg></button>
           <button class="abtn" title="Hide|Shift+Esc" data-act="hide-right"><svg class="i"><use href="#i-hide"/></svg></button></div>
-        <div class="tw-body" id="tree-slot"></div>
+        <div class="tw-body"><div class="ai">
+          <div class="ai-scroll" id="ai-scroll">
+            <div class="ai-thread" id="ai-thread">
+
+              <!-- ① 在测试机旁叫小艺说了一句，交给 DevEco Code；识别提示里带着工程符号 -->
+              <div class="umsg">
+                <span class="dm-pill muted"><svg><use href="#i-mic"/></svg>小艺 · 3.2 s</span>
+                <div class="bubble">把 ListPage 列表滑动卡顿修一下，封面改成异步加载，购物车按钮的英文也补上</div>
+                <div class="heard dm-small dm-muted"><span>识别用到了：</span>
+                  <span class="ai-chip"><svg><use href="#i-branch"/></svg><span>feature/list-perf</span></span>
+                  <span class="ai-chip"><svg><use href="#i-struct"/></svg><span>ListPage</span></span>
+                  <span class="ai-chip"><svg><use href="#i-method"/></svg><span>loadCover</span></span>
+                </div>
+              </div>
+
+              <!-- ② 读回 = 在等你：一句话拆成两件，派给哪个 Agent 先复述，等你一句话确认 -->
+              <div class="ai-ask" id="rb-card">
+                <div class="ai-ask__h"><span class="ai-wait-dot"></span><span id="readback-step">在等你 · 已读回（3.1 s），说一句确认</span></div>
+                <div id="readback">
+                  <p>我听成两件事，分给两个 Agent：</p>
+                  <div class="route" style="margin-top:6px">
+                    <span class="agt">Agent·调优</span><span id="rt-1"><code>ListPage.ets:28</code> 封面同步解码改异步，<code>ItemCard</code> 加占位图</span>
+                    <span class="agt">Agent·多语言</span><span id="rt-2">「加入购物车」在 <code>string.json</code> 补 en_US</span>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <div class="ai-field vc" id="ai-input">
+            <div class="ai-field__ctx"><span class="ai-chip"><svg><use href="#i-ets"/></svg><span>ListPage.ets</span></span><span class="grow"></span><button type="button" class="ai-toggle" aria-pressed="true" title="Agent 把结果读回来"><svg class="i" style="width:12px;height:12px"><use href="#i-speaker"/></svg>读回给我听</button></div>
+            <textarea class="ai-field__ta" id="ai-text" rows="2" placeholder="按住空格说话，或直接打字" aria-label="Message" hidden></textarea>
+            <div class="voice-bar" id="voice-bar">
+              <div class="voice-row"><i class="ai-rec"></i><span class="ai-wave" id="wave"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="voice-live" id="voice-live">在听 · 等你一句话确认</span><span class="t">00:04</span></div>
+              <div class="voice-chips" id="confirm">
+                <button class="ai-btn ai-btn--fill" data-say="yes"><svg><use href="#i-mic"/></svg>对，去做</button>
+                <button class="ai-btn ai-btn--fill" data-say="only"><svg><use href="#i-mic"/></svg>只改 ListPage</button>
+                <button class="ai-btn ai-btn--fill" data-say="again"><svg><use href="#i-mic"/></svg>换个说法</button>
+              </div>
+              <div class="voice-hint" id="confirm-hint">说出任一句即可，不用碰键盘；按 <kbd>Space</kbd> 说别的</div>
+            </div>
+            <div class="ai-field__bar"><button class="mode" id="mode-btn" data-pop="mode" aria-expanded="false"><span id="mode-label">语音 · 编程词汇</span><svg class="i" style="width:12px;height:12px"><use href="#i-chevD"/></svg>
+                <div class="popup" hidden style="top:auto;bottom:28px;left:0;min-width:260px"><div class="mhead">识别词汇表</div><div class="mi"><span class="chk"><svg class="i"><use href="#i-checkS"/></svg></span>语音 · 编程词汇<span class="sc">ArkTS · 工程符号 · 分支名</span></div><div class="mi"><span class="chk"></span>语音 · 通用<span class="sc">日常口语</span></div><div class="msep"></div><div class="mi" id="kb-mode"><span class="chk"></span><svg class="i"><use href="#i-kb"/></svg>键盘输入</div></div></button>
+              <span class="ai-field__model"><svg><use href="#ai-local"/></svg>本机 · 盘古</span>
+              <span class="grow"></span><button class="ai-field__send rec" id="send" type="button" title="正在录音，点一下停|Space"><svg><use href="#ai-stop"/></svg></button></div>
+          </div>
+          <div class="ai-foot">The content is generated by AI and may not be entirely accurate or complete.</div>
+        </div></div>
       </div>
     </div>
   </div>
-
-  <!-- 系统级小艺唤起条 -->
-  <div class="xy-bar" id="xy-bar" hidden></div>
 
   <!-- 离开电脑：电脑锁屏；手机上应用接续到同一段对话，手表上是实况窗 -->
   <div class="away" id="away" hidden>
@@ -292,117 +257,59 @@
 
 <script>
 (function(){
-  var $=DemoFrame.$, $$=DemoFrame.$$;
+  var $=DemoFrame.$, $$=DemoFrame.$$, F=DemoFrame.FILES;
   document.getElementById('tree-slot').innerHTML=DemoFrame.tree({sel:'ListPage.ets'});
   document.getElementById('tabs').insertAdjacentHTML('afterbegin',DemoFrame.tabs([{file:'ListPage.ets',on:true},{file:'ItemCard.ets'}]));
   document.getElementById('code').innerHTML=DemoFrame.code('ListPage.ets',{cur:28,hl:[28]});
-
-  var WAVE='<span class="dm-wave"><i style="--h:50%;--d:0s"></i><i style="--h:100%;--d:.15s"></i><i style="--h:70%;--d:.3s"></i><i style="--h:90%;--d:.45s"></i><i style="--h:40%;--d:.6s"></i></span>';
-  DemoFrame.init({device:'HUAWEI Mate 70 Pro',deviceIcon:'#i-phone',pos:'28:12',
-    stripeLeft:[{left:'agent',icon:'#i-genie',title:'DevEco Code'},{left:'project',icon:'#i-tw-project',title:'Project|Alt+1'},{left:'structure',icon:'#i-tw-structure',title:'Structure|Alt+7'},{more:1},{gap:1},{bottom:'build',icon:'#i-tw-build',title:'Build'},{bottom:'log',icon:'#i-tw-device',title:'Log'},{bottom:'services',icon:'#i-tw-todo',title:'Services|Alt+8'},{bottom:'problems',icon:'#i-tw-problems',title:'Problems|Alt+6'},{bottom:'run',icon:'#i-tw-services',title:'Run|Alt+4'},{bottom:'terminal',icon:'#i-tw-terminal',title:'Terminal|Alt+F12'},{bottom:'debug',icon:'#i-info',title:'Debug|Alt+5'},{bottom:'vcs',icon:'#i-vcs',title:'Version Control|Alt+9'}],
-    stripeRight:[{right:'notifications',icon:'#i-tw-notifications',title:'Notifications',dot:1},{right:'project',icon:'#i-tw-project',title:'Project|Alt+1'},{right:'docs',icon:'#i-hdoc',title:'HarmonyOS Docs'},{right:'inspector',icon:'#i-pen',title:'Code Review'},{right:'web',icon:'#i-puzzle',title:'Extensions'},{right:'previewer',icon:'#i-tw-preview',title:'Previewer'},{more:1},{right:'devices',icon:'#i-phone',title:'Device Manager'}],
-    onReady:function(){
-    $('#status-slot').innerHTML='<span class="dm-capsule" id="cap-voice"><svg class="i"><use href="#i-mic"/></svg><span id="cap-text">正在听 · 手不离设备</span>'+WAVE+'</span>';
-  }});
+  DemoFrame.init({device:'HUAWEI Mate 70 Pro',deviceIcon:'#i-phone',pos:'28:12',file:'ListPage.ets'});
 
   var thread=$('#ai-thread'),scroll=$('#ai-scroll');
-  function umsg(sec,text){
-    thread.insertAdjacentHTML('beforeend','<div class="umsg new"><span class="dm-pill info"><svg><use href="#i-mic"/></svg>语音 · '+sec+' s</span><div class="bubble">'+text+'</div></div>');
+  var M='<svg class="i ai-ico"><use href="#ai-mark"/></svg>';
+  var OK='<svg class="i ai-ico ok"><use href="#i-checkS"/></svg>';
+  /* 一行一个工具 / 步骤：状态 · 谁 · 做什么 · 耗时 */
+  function tr(st,who,what,end){
+    var ic=st==='done'?OK:st==='run'?'<span class="ai-ring"></span>':'<span class="todo"></span>';
+    return '<div class="ai-toolrow">'+ic+'<span class="what">'+(who?'<span class="agt">'+who+'</span> · ':'')+what+'</span><span class="end">'+(end||'')+'</span></div>';
   }
-  function amsg(html){
-    thread.insertAdjacentHTML('beforeend','<div class="amsg new">'+html+'</div>');
-    scroll.scrollTop=scroll.scrollHeight;
+  /* 顶栏 Agent 胶囊：状态走 ai.css 状态机；点它回到它在等你的那处 */
+  function agent(state,text,o){DemoFrame.agent(state,text,o||{});}
+  function toWait(){var c=$('#rb-card');if(c)c.scrollIntoView({block:'nearest'});var b=$('#confirm .ai-btn');if(b)b.focus();}
+  agent('waiting','在等你 · 一句话派给两个 Agent，说一句确认',{onClick:toWait});
+
+  function umsg(sec,text,dev){
+    thread.insertAdjacentHTML('beforeend','<div class="umsg"><span class="dm-pill muted"><svg><use href="#i-'+(dev||'mic')+'"/></svg>'+sec+'</span><div class="bubble">'+text+'</div></div>');
   }
-  function stp(cls,txt,file){
-    var mk=cls==='done'?'<svg><use href="#i-checkS"/></svg>':'';
-    return '<div class="stp"><span class="st '+cls+'">'+mk+'</span><span class="txt">'+txt+'</span><span class="file">'+file+'</span></div>';
-  }
-  function stopWave(){var w=$('#wave');if(w){$$('i',w).forEach(function(i){i.style.animation='none';i.style.transform='scaleY(.5)'});w.style.opacity='.4'}}
+  function amsg(html,cls){thread.insertAdjacentHTML('beforeend','<div class="'+(cls||'ai-answer')+'">'+html+'</div>');scroll.scrollTop=scroll.scrollHeight;}
+  function stopWave(){var w=$('#wave');if(w){w.style.opacity='.35';$$('i',w).forEach(function(i){i.style.animation='none';i.style.height='6px'});}var r=$('.voice-row .ai-rec');if(r)r.style.visibility='hidden';}
   function decided(btn){
     var c=$('#confirm');c.classList.add('decided');btn.classList.add('picked');
-    $$('.chip',c).forEach(function(b){b.disabled=true});
-    $('#confirm-hint').innerHTML='听到了，'+ (btn.dataset.say==='yes'?'开始执行':'按你说的改') +'。中途随时可以说“停”';
+    $$('.ai-btn',c).forEach(function(b){b.disabled=true});
+    $('#confirm-hint').innerHTML='听到了，'+(btn.dataset.say==='yes'?'两个 Agent 开工':'只交给 Agent·调优')+'。中途随时说「停」';
     stopWave();
   }
-  /* 输入条本身在「打字态」和「听你确认态」之间切换（类似微信/豆包按住说话时输入框的变化） */
-  function voiceMode(on){
-    var ta=$('#ai-text'),vb=$('#voice-bar');
-    if(ta)ta.hidden=on;
-    if(vb)vb.hidden=!on;
+  /* 输入条在「听你确认」和「打字」之间切换 */
+  function voiceMode(on){$('#ai-text').hidden=on;$('#voice-bar').hidden=!on;var s=$('#send');s.classList.toggle('rec',on);s.innerHTML='<svg><use href="#'+(on?'ai-stop':'ai-send')+'"/></svg>';}
+  function speak(text,cb){var vl=$('#voice-live');vl.textContent=text;vl.classList.add('final');setTimeout(cb,320);}
+  function rbDone(txt){var c=$('#rb-card');c.className='ai-answer';var h=c.firstElementChild;h.className='ai-answer__meta';h.innerHTML=M+'<span>'+txt+'</span>';}
+
+  /* AI 写进文件的行：gutter 竖条 + 极淡底，接受后 3 s 淡出；悬停看来源 */
+  function aiMark(code,nums,src){
+    nums.forEach(function(n){
+      var l=$(code+' .ln[data-ln="'+n+'"]');if(!l)return;
+      l.classList.remove('hl','hl-ok','is-accepted');
+      if(!$('.ai-gut',l))l.insertAdjacentHTML('afterbegin','<span class="ai-gut" data-src="'+src+'"></span>');
+      l.classList.add('ai-block');void l.offsetWidth;l.classList.add('is-accepted');
+    });
   }
-  /* 说完一句话：先在输入条里把识别文字过一下（模拟“正在识别”），再落进对话记录，变成一条普通消息气泡 */
-  function speak(text,cb){
-    var vl=$('#voice-live');
-    if(vl){vl.textContent=text;vl.classList.add('final');}
-    setTimeout(cb,320);
-  }
-  /* 确认之后，编辑器里 27–28 行真的变成异步版本 */
+  /* 确认之后，编辑器里 27–28 行变成异步版本 */
   function applyAsync(){
     var l27=$('#code .ln[data-ln="27"]'),l28=$('#code .ln[data-ln="28"]');if(!l27||!l28)return;
     $('.t',l27).innerHTML='  <span class="k">async</span> <span class="f">loadCover</span>(<span class="p">id</span>: <span class="k">number</span>): <span class="ty">Promise</span>&lt;<span class="ty">PixelMap</span>&gt; {';
     $('.t',l28).innerHTML='    <span class="k">return</span> <span class="k">await</span> <span class="p">image</span>.<span class="f">createPixelMap</span>(<span class="k">this</span>.<span class="p">source</span>.<span class="f">rawCover</span>(<span class="p">id</span>));  <span class="c">// 后台解码，不占主线程</span>';
-    [l27,l28].forEach(function(ln){ln.classList.remove('hl');ln.classList.add('hl-ok')});
-    setTimeout(function(){[l27,l28].forEach(function(ln){ln.classList.remove('hl-ok')})},1800);
-  }
-  function capsule(text,ok){
-    var c=$('#cap-voice');if(!c)return;$('#cap-text',c).textContent=text;
-    if(ok){c.classList.add('ok');var w=$('.dm-wave',c);if(w)w.remove();c.insertAdjacentHTML('beforeend','<span class="dm-dot ok"></span>')}
+    aiMark('#code',[27,28],'Agent·调优 · 语音任务 · 可退回');
   }
 
-  /* 用嘴确认：三句话，三条路。交互全程发生在输入条的「听你确认」态里，
-     说完的一句话落进对话记录变成普通消息气泡，输入条再收回「打字态」 */
-  $('#confirm').addEventListener('click',function(e){
-    var b=e.target.closest('.chip[data-say]');if(!b||b.disabled)return;
-    var say=b.dataset.say;
-    if(say==='yes'){
-      decided(b);
-      speak('对，去做',function(){
-        umsg('0.8','对，去做');
-        setTimeout(function(){
-          amsg('<div class="step"><svg class="i spk"><use href="#i-speaker"/></svg>好，开始改。改完读给你听。</div>'
-            +'<div class="steps">'+stp('done','改 loadCover 为异步','ListPage.ets:28')+stp('run','给 ItemCard 加占位图','ItemCard.ets')+stp('todo','在 Mate 70 Pro 上复测','entry')+'</div>');
-          capsule('执行中 · 仍在听',true);
-          applyAsync();
-          voiceMode(false);
-        },500);
-      });
-    }else if(say==='only'){
-      decided(b);
-      speak('不对，只改 ListPage',function(){
-        umsg('1.2','不对，只改 ListPage');
-        setTimeout(function(){
-          amsg('<div class="step"><svg class="i spk"><use href="#i-speaker"/></svg>已读回（1.6 s）</div>'
-            +'<div class="md"><p>好，只改 <code>ListPage.ets</code>，不动 <code>ItemCard</code>。</p></div>'
-            +'<div class="steps">'+stp('done','改 loadCover 为异步','ListPage.ets:28')+stp('run','在 Mate 70 Pro 上复测','entry')+'</div>');
-          capsule('执行中 · 仍在听',true);
-          applyAsync();
-          voiceMode(false);
-        },500);
-      });
-    }else{
-      /* 换个说法：不算确认，AI 用另一种话再读一遍，输入条仍留在「听你确认」态，波形继续 */
-      if(b.dataset.busy)return;b.dataset.busy='1';
-      var vl=$('#voice-live');
-      speak('换个说法',function(){
-        umsg('0.6','换个说法');
-        var rb=$('#readback'),st=$('#readback-step');
-        st.textContent='正在换一种说法…';
-        if(vl)vl.textContent='在听你换一种说法…';
-        rb.innerHTML='<p><span class="typing"><i></i><i></i><i></i></span></p>';
-        setTimeout(function(){
-          st.textContent='已重新读回（2.6 s）';
-          rb.innerHTML='<p>换句话说：现在每滑一帧都在同步解封面，我把解码挪到后台，列表先显示占位图，解好了再换上。只动 <code>ListPage.ets</code> 和 <code>ItemCard.ets</code>，数据层不碰。这样对吗？</p>';
-          if(vl){vl.classList.remove('final');vl.textContent='在听 · 等你一句话确认';}
-          b.dataset.busy='';
-          scroll.scrollTop=scroll.scrollHeight;
-        },900);
-      });
-    }
-  });
-
-  /* =================== 小艺即开发助手的语音入口 =================== */
-  /* 流程：用小艺说（系统唤起条）→ 交给 DevEco Code 开工 → 离开电脑：手机应用接续、手表实况窗接着说 → 回到电脑，对话接回 IDE */
-  var F=DemoFrame.FILES;
+  /* ===== ItemCard：占位图（确认后）、底色（手机上说的） ===== */
   var IC_BASE=[
     ['<span class="k">import</span> { <span class="ty">Item</span> } <span class="k">from</span> <span class="s">\'../model/Item\'</span>;'],
     [''],
@@ -422,157 +329,195 @@
   ];
   var L_PH='      <span class="f">Image</span>(<span class="k">this</span>.<span class="p">cover</span> ?? <span class="f">$r</span>(<span class="s">\'app.media.cover_placeholder\'</span>))';
   var L_BG='        .<span class="f">backgroundColor</span>(<span class="f">$r</span>(<span class="s">\'app.color.cover_placeholder\'</span>))  <span class="c">// 手机上说的：浅灰 #F1F3F5</span>';
-  var XS={st:'idle',pct:62,phone:0,watch:0,built:0,timer:0};
-  function icLines(){
-    var L=IC_BASE.slice();
-    if(XS.st!=='idle')L[9]=[L_PH];
-    if(XS.phone)L.splice(11,0,[L_BG]);
-    return L;
-  }
-  function icRender(hl){
+  /* st: wait → work（两个 Agent 在跑）→ away（手机 / 手表接着说）→ back */
+  var XS={st:'wait',only:false,pct:62,phone:0,watch:0,built:0,timer:0,nw:''};
+  function icLines(){var L=IC_BASE.slice();if(XS.st!=='wait'&&!XS.only)L[9]=[L_PH];if(XS.phone)L.splice(11,0,[L_BG]);return L;}
+  function icRender(mark){
     F['ItemCard.ets']={path:['entry','src','main','ets','components'],crumbs:['ItemCard','build'],lines:icLines()};
-    $('#code-ic').innerHTML=DemoFrame.code('ItemCard.ets',{cur:10,hl:hl||[]});
+    $('#code-ic').innerHTML=DemoFrame.code('ItemCard.ets',{cur:10});
+    if(mark)aiMark('#code-ic',mark[0],mark[1]);
   }
   icRender();
 
-  var XWAVE='<span class="dm-wave"><i style="--h:40%;--d:0s"></i><i style="--h:80%;--d:.12s"></i><i style="--h:100%;--d:.24s"></i><i style="--h:60%;--d:.36s"></i><i style="--h:90%;--d:.48s"></i><i style="--h:45%;--d:.6s"></i></span>';
-  var ORB='<span class="xy-orb"></span>';
-  function tpl(el,text,ms,cb){var k=0,iv=setInterval(function(){k++;el.textContent=text.slice(0,k);if(k>=text.length){clearInterval(iv);if(cb)cb();}},ms);}
-  function capSet(html){$('#status-slot').innerHTML=html;}
-
-  /* ① 用小艺说：系统唤起条收音，识别后交给 DevEco Code */
-  function xyGo(){
-    if(XS.st!=='idle')return;XS.st='listen';
-    $('#xy-go').disabled=true;
-    var bar=$('#xy-bar');bar.hidden=false;bar.classList.remove('out');
-    bar.innerHTML='<div class="xy-pill"><span class="xy-orb live"></span><span class="said hint" id="xy-said">我在听…</span>'+XWAVE+'</div>';
-    capSet('<span class="dm-capsule"><span class="xy-orb sm"></span><span>小艺在听 · 系统语音入口</span></span>');
-    setTimeout(function(){
-      var el=$('#xy-said');el.classList.remove('hint');
-      tpl(el,'让 DevEco Code 给 ItemCard 加封面占位图，做完装到手机上跑一下',55,function(){
-        setTimeout(function(){
-          var w=$('#xy-bar .dm-wave');if(w)w.remove();
-          bar.insertAdjacentHTML('afterbegin','<div class="xy-card"><div class="hd"><span class="xy-orb sm"></span><b>小艺</b><span>交给 DevEco Code · MyApplication</span><span class="grow"></span><span class="spin"></span></div>'
-            +'<div class="rw"><svg class="i"><use href="#i-struct"/></svg><span>认出了工程符号 <code>ItemCard</code>，设备 <code>Mate 70 Pro</code></span></div></div>');
-          setTimeout(xyHandoff,1300);
-        },300);
-      });
-    },600);
+  /* ===== 用嘴确认：三句话，三条路 ===== */
+  function workSteps(){
+    return tr('done','Agent·调优','<code>loadCover</code> 改异步','ListPage.ets:28')
+      +(XS.only?'':tr('done','Agent·调优','<code>ItemCard</code> 加占位图','ItemCard.ets:10'))
+      +tr(XS.built?'done':'run','Agent·调优','hvigor 构建 → 装到 Mate 70 Pro',XS.built?'5.6 s':XS.pct+'%')
+      +(XS.only?'':tr('done','Agent·多语言','<code>string.json</code> 补 en_US「Add to cart」','0.9 s'));
   }
-  function xyHandoff(){
-    var bar=$('#xy-bar');bar.classList.add('out');setTimeout(function(){bar.hidden=true;bar.classList.remove('out');},300);
+  function startWork(){
     XS.st='work';
-    thread.insertAdjacentHTML('beforeend','<div class="umsg new"><span class="dm-pill info">'+ORB+'小艺 · 4.1 s</span><div class="bubble">让 DevEco Code 给 ItemCard 加封面占位图，做完装到手机上跑一下</div></div>');
-    amsg('<div class="step"><svg class="i spk"><use href="#i-speaker"/></svg>好，给 ItemCard 加封面占位图，构建后装到 Mate 70 Pro。</div>'
-      +'<div class="steps" id="xy-steps">'+stp('done','给 ItemCard 加封面占位图','ItemCard.ets:10')+stp('run','hvigor 构建 entry','62%')+stp('todo','装到 Mate 70 Pro','hdc')+'</div>'
-      +'<div class="hand" id="hand"><span>要走开？这段对话会接到手机和手表上</span><span class="grow"></span><button class="btn primary" id="hand-go"><span class="xy-orb"></span>接到手机 / 手表</button></div>');
-    icRender([10]);
-    capSet('<span class="dm-capsule"><span class="xy-orb sm"></span><span>小艺 → DevEco Code · 构建中</span></span>');
+    amsg('<div class="ai-answer__meta">'+M+'<span>好，开工。改完读给你听。</span></div><div id="work-steps">'+workSteps()+'</div>'
+      +'<div class="hand" id="hand"><span>要走开？进度会接到手机、手表上</span><span class="grow"></span><button class="btn primary" id="hand-go"><svg class="i"><use href="#i-phone"/></svg>接到手机 / 手表</button></div>');
+    applyAsync();icRender(XS.only?null:[[10],'Agent·调优 · 语音任务 · 可退回']);
+    voiceMode(false);
+    agent('tool','<span class="agt">Agent·调优</span> hvigor 构建 · '+XS.pct+'%',XS.only?{}:{queue:1});
   }
+  $('#confirm').addEventListener('click',function(e){
+    var b=e.target.closest('.ai-btn[data-say]');if(!b||b.disabled)return;
+    var say=b.dataset.say;
+    if(say==='yes'||say==='only'){
+      if(XS.st!=='wait')return;
+      XS.only=say==='only';decided(b);
+      speak(XS.only?'只改 ListPage':'对，去做',function(){
+        umsg(XS.only?'1.2 s':'0.8 s',XS.only?'只改 ListPage':'对，去做');
+        if(XS.only){$('#rt-1').innerHTML='<code>ListPage.ets:28</code> 封面同步解码改异步';$('#rt-2').classList.add('no');}
+        rbDone(XS.only?'读回 · 你改成只交给 Agent·调优':'读回 · 你确认了');
+        agent('generating','<span class="agt">Agent·调优</span> 在改 ListPage.ets');
+        setTimeout(startWork,600);
+      });
+    }else{
+      /* 换个说法：不算确认，用另一种话再读一遍，输入条仍在「听你确认」态 */
+      if(b.dataset.busy||XS.st!=='wait')return;b.dataset.busy='1';
+      var vl=$('#voice-live');
+      speak('换个说法',function(){
+        umsg('0.6 s','换个说法');
+        $('#readback-step').textContent='在等你 · 正在换一种说法…';vl.textContent='在听你换一种说法…';
+        agent('thinking','换一种说法读回');
+        setTimeout(function(){
+          $('#readback-step').textContent='在等你 · 已重新读回（2.6 s），说一句确认';
+          $('#rt-1').innerHTML='现在每滑一帧都在同步解封面：挪到后台解码，列表先显示占位图';
+          $('#rt-2').innerHTML='购物车按钮现在只有中文，英文界面会露出 key：补一条英文';
+          vl.classList.remove('final');vl.textContent='在听 · 等你一句话确认';b.dataset.busy='';
+          scroll.scrollTop=scroll.scrollHeight;
+          agent('waiting','在等你 · 一句话派给两个 Agent，说一句确认',{onClick:toWait});
+        },900);
+      });
+    }
+  });
+  /* 手动次路径：切到键盘输入，自己打字说 */
+  document.addEventListener('click',function(e){
+    if(!e.target.closest('#kb-mode'))return;
+    voiceMode(false);$('#mode-label').textContent='键盘输入';var ta=$('#ai-text');ta.focus();
+  });
 
-  /* ② 离开电脑：手机应用接续同一段对话，手表上是实况窗；都能按住说话 */
+  /* ===== 离开电脑：手机应用接续同一段对话，手表上是实况窗；都能按住说话 ===== */
   function stepsHTML(){
     var b=XS.built,d=XS.pct>=100;
-    return '<div class="ps"><div><i class="d"></i>加封面占位图</div>'
+    return '<div class="ps"><div><i class="d"></i>'+(XS.only?'loadCover 改异步':'改异步 + 占位图')+'</div>'
       +'<div><i class="'+(d?'d':'r')+'"></i>hvigor 构建<em>'+(d?'5.6 s':XS.pct+'%')+'</em></div>'
       +'<div><i class="'+(b?'d':(d?'r':''))+'"></i>装到这台 Mate 70 Pro</div></div>';
   }
+  function nw(k){return XS.nw===k?' nw':'';}
+  function liveHTML(){return XS.built?'<span class="live ok"><i></i>已装好</span>':'<span class="live"><i></i>构建 '+XS.pct+'%</span>';}
   function phoneRender(){
     var h='<div class="sb"><span class="l">10:52<span id="p-live">'+liveHTML()+'</span></span><span class="r"><span class="sig"><b></b><b></b><b></b><b></b></span><span style="font-size:12px">5G</span><span class="bat"></span></span><span class="hole"></span></div>'
       +'<div class="hdr2"><span class="bk">‹</span><span class="tt"><b>DevEco Code</b><span>MyApplication · 从 MateBook Fold 接续</span></span><span class="cn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><rect x="4" y="5" width="16" height="11" rx="1.5"/><path d="M2 19h20"/></svg></span></div>'
       +'<div class="msgs" id="p-msgs">'
-      +'<div class="pm u"><span class="fr">在电脑上 · 小艺</span>给 ItemCard 加封面占位图，做完装到手机上跑一下</div>'
-      +'<div class="pm a">好，占位图加上了，正在构建。<div id="p-steps">'+stepsHTML()+'</div></div>'
-      +(XS.phone?'<div class="pm u'+nw('phone')+'"><span class="fr">在手机上 · 小艺</span>占位图用浅灰，别用纯白</div><div class="pm a'+nw('phone')+'" style="animation-delay:.35s">好，底色换成 <code>$r(\'app.color.cover_placeholder\')</code>，浅灰 #F1F3F5，增量构建后一起装。</div>':'')
-      +(XS.watch?'<div class="pm u'+nw('watch')+'"><span class="fr">在手表上 · 小艺</span>先别提交</div><div class="pm a'+nw('watch')+'" style="animation-delay:.35s">好，改动留在 feature/list-perf，没提交。</div>':'')
+      +'<div class="pm u"><span class="fr">在电脑旁 · 小艺</span>把 ListPage 列表滑动卡顿修一下，封面改成异步'+(XS.only?'':'，购物车按钮英文也补上')+'</div>'
+      +'<div class="pm a">Agent·调优 在构建。<div id="p-steps">'+stepsHTML()+'</div>'+(XS.only?'':'<span class="ag">Agent·多语言 · 英文已补完</span>')+'</div>'
+      +(XS.phone?'<div class="pm u'+nw('phone')+'"><span class="fr">在手机上 · 小艺</span>占位图用浅灰，别用纯白</div><div class="pm a'+nw('phone')+'" style="animation-delay:.35s">好，交给 Agent·调优：底色换成 <code>$r(\'app.color.cover_placeholder\')</code>，浅灰 #F1F3F5，增量构建后一起装。</div>':'')
+      +(XS.watch?'<div class="pm u'+nw('watch')+'"><span class="fr">在手表上 · 小艺</span>先别提交</div><div class="pm a'+nw('watch')+'" style="animation-delay:.35s">好，'+(XS.only?'改动':'两个 Agent 的改动都')+'留在 feature/list-perf，没提交。</div>':'')
       +'</div>'
-      +'<div class="vb"><button class="mic'+(XS.phone?'':' ')+'" id="ph-mic"'+(XS.phone?' disabled':'')+'><span class="xy-orb"></span>'+(XS.phone?'已说完':'按住 说话')+'</button></div>'
-      +(XS.built&&!XS.bnDone?'<div class="bn" id="p-bn"><span class="ic"><svg><use href="#i-logo"/></svg></span><span><b>MyApplication 已更新</b><span>来自 DevEco Studio · 列表滑动 60 fps</span></span></div>':'')
+      +'<div class="vb"><button class="mic" id="ph-mic"'+(XS.phone?' disabled':'')+'><svg viewBox="0 0 16 16"><use href="#i-mic"/></svg>'+(XS.phone?'已说完':'按住 说话')+'</button></div>'
       +'<span class="gb"></span>';
     $('#plv').innerHTML=h;XS.nw='';
   }
-  function nw(k){return XS.nw===k?' nw':'';}
-  function liveHTML(){return XS.built?'<span class="live ok"><i></i>已装好</span>':'<span class="live"><i></i>构建 '+XS.pct+'%</span>';}
   function ringHTML(){
     var C=2*Math.PI*48,off=C*(1-XS.pct/100);
     return '<svg viewBox="0 0 112 112"><circle class="tk" cx="56" cy="56" r="48"/><circle class="pg" cx="56" cy="56" r="48" stroke-dasharray="'+C.toFixed(1)+'" stroke-dashoffset="'+off.toFixed(1)+'"/></svg>'
       +'<div class="ct">'+(XS.built?'<b>✓</b><span>已装到手机</span>':'<b>'+XS.pct+'%</b><span>hvigor 构建</span>')+'</div>';
   }
-  /* 构建进度只刷新会变的几处，不重画整屏 */
-  function tick(){
-    var l=$('#p-live'),st=$('#p-steps'),rg=$('#w-rg');
-    if(l)l.innerHTML=liveHTML();if(st)st.innerHTML=stepsHTML();
-    if(rg){rg.className='rg'+(XS.built?' ok':'');rg.innerHTML=ringHTML();}
-  }
   function watchRender(){
     var w=$('#wlv');
     if(XS.watch){
       w.className='wlv chat';
-      w.innerHTML='<span class="ap"><span class="xy-orb sm"></span>DevEco Code</span><span class="say">先别提交</span><span class="say a">好，没提交</span><button class="wm" disabled><svg class="i"><use href="#i-mic"/></svg></button>';
+      w.innerHTML='<span class="ap">DevEco Code</span><span class="say">先别提交</span><span class="say a">好，都没提交</span><button class="wm" disabled><svg class="i"><use href="#i-mic"/></svg></button>';
       return;
     }
     w.className='wlv';
-    w.innerHTML='<span class="ap"><span class="xy-orb sm"></span>DevEco Code</span>'
-      +'<div class="rg'+(XS.built?' ok':'')+'" id="w-rg">'+ringHTML()+'</div>'
+    w.innerHTML='<span class="ap">DevEco Code · Agent·调优</span><div class="rg'+(XS.built?' ok':'')+'" id="w-rg">'+ringHTML()+'</div>'
       +'<button class="wm" id="w-mic" title="抬腕说话"><svg class="i"><use href="#i-mic"/></svg></button>';
+  }
+  /* 构建进度只刷新会变的几处 */
+  function tick(){
+    var l=$('#p-live'),st=$('#p-steps'),rg=$('#w-rg');
+    if(l)l.innerHTML=liveHTML();if(st)st.innerHTML=stepsHTML();
+    if(rg){rg.className='rg'+(XS.built?' ok':'');rg.innerHTML=ringHTML();}
+    var ws=$('#work-steps');if(ws)ws.innerHTML=workSteps();
   }
   function awayGo(){
     if(XS.st!=='work')return;XS.st='away';
-    var hb=$('#hand-go');if(hb)hb.outerHTML='<span class="btn act"><span class="xy-orb"></span>已接到手机 / 手表</span>';
+    var hb=$('#hand-go');if(hb)hb.outerHTML='<span class="btn act"><svg class="i"><use href="#i-checkS"/></svg>已接到手机 / 手表</span>';
     var a=$('#away');a.hidden=false;a.classList.remove('out');
     $('#ide').classList.add('ovl');
     phoneRender();watchRender();
-    capSet('<span class="dm-capsule"><span class="xy-orb sm"></span><span>对话在手机 / 手表上 · 应用接续</span></span>');
+    agent('verifying','对话在手机 / 手表上 · Agent·调优 构建中');
     clearInterval(XS.timer);
     XS.timer=setInterval(function(){
       if(XS.pct<100){XS.pct=Math.min(100,XS.pct+4);}
       else if(!XS.built){XS.built=1;clearInterval(XS.timer);
         if(XS.st==='away')$('#p-msgs').insertAdjacentHTML('afterend','<div class="bn" id="p-bn"><span class="ic"><svg><use href="#i-logo"/></svg></span><span><b>MyApplication 已更新</b><span>来自 DevEco Studio · 列表滑动 60 fps</span></span></div>');
-        setTimeout(function(){XS.bnDone=1;var b=$('#p-bn');if(b)b.remove();},2600);}
+        setTimeout(function(){var b=$('#p-bn');if(b)b.remove();},2600);}
       if(XS.st==='away')tick();
     },160);
   }
   function phoneSay(){
     if(XS.phone||XS.st!=='away')return;
-    var b=$('#ph-mic');b.classList.add('on');b.innerHTML='<span class="xy-orb live"></span>正在听…';
-    setTimeout(function(){XS.phone=1;XS.nw='phone';phoneRender();icRender([10,12]);},900);
+    var b=$('#ph-mic');b.classList.add('on');b.innerHTML='<svg viewBox="0 0 16 16"><use href="#i-mic"/></svg>正在听…';
+    setTimeout(function(){XS.phone=1;XS.nw='phone';phoneRender();},900);
   }
   function watchSay(){
     if(XS.watch||XS.st!=='away')return;
     var m=$('#w-mic');if(m){m.disabled=true;}
     setTimeout(function(){XS.watch=1;XS.nw='watch';watchRender();phoneRender();},700);
   }
-  /* ③ 回到电脑：解锁后，手机和手表上说的话接回 IDE 的同一段对话 */
+  /* 回到电脑：手机和手表上说的话接回同一段对话，改动带来源 */
   function backPc(){
     if(XS.st!=='away')return;XS.st='back';
     clearInterval(XS.timer);XS.pct=100;XS.built=1;
-    var a=$('#away');a.classList.add('out');setTimeout(function(){a.hidden=true;a.classList.remove('out');$('#ide').classList.remove('ovl');},400);
+    var a=$('#away');a.classList.add('out');setTimeout(function(){a.hidden=true;a.classList.remove('out');$('#ide').classList.remove('ovl');},300);
     var n=(XS.phone?1:0)+(XS.watch?1:0);
-    var h='<div class="away-sep">你离开的 6 分钟 · 在手机和手表上'+(n?'说了 '+n+' 句':'没有说话')+'</div>';
-    if(XS.phone)h+='<div class="umsg new"><span class="dm-pill dev"><svg class="i"><use href="#i-phone"/></svg>手机 · 小艺 · 1.8 s</span><div class="bubble">占位图用浅灰，别用纯白</div></div>'
-      +'<div class="amsg new"><div class="md"><p>好，底色换成 <code>$r(\'app.color.cover_placeholder\')</code>（#F1F3F5），在 <code>ItemCard.ets:12</code>。</p></div></div>';
-    if(XS.watch)h+='<div class="umsg new"><span class="dm-pill dev"><svg class="i"><use href="#i-watch"/></svg>手表 · 小艺 · 0.9 s</span><div class="bubble">先别提交</div></div>'
-      +'<div class="amsg new"><div class="md"><p>好，改动留在 <code>feature/list-perf</code>，没提交。</p></div></div>';
-    thread.insertAdjacentHTML('beforeend',h);
-    var st=$('#xy-steps');if(st)st.innerHTML=stp('done','给 ItemCard 加封面占位图','ItemCard.ets:10')+stp('done','hvigor 构建 entry','5.6 s')+stp('done','装到 Mate 70 Pro · 列表滑动 60 fps','hdc');
-    amsg('<div class="step"><svg class="i spk"><use href="#i-speaker"/></svg>欢迎回来。占位图做完了，已装到 Mate 70 Pro'+(XS.phone?'，底色按你在手机上说的换成浅灰':'')+(XS.watch?'；按手表上说的，还没提交':'')+'。</div>'
-      +'<div class="steps">'+stp('done','ItemCard.ets · 改 '+(XS.phone?2:1)+' 行','第 10'+(XS.phone?'、12':'')+' 行')+stp('done','hvigor 构建 + hdc 安装','5.6 s')+stp('todo','提交到 feature/list-perf','等你说')+'</div>');
-    var tb=$('.tab[data-file="ItemCard.ets"]');if(tb)tb.click();
-    icRender(XS.phone?[10,12]:[10]);
+    thread.insertAdjacentHTML('beforeend','<div class="away-sep">你离开的 6 分钟 · 在手机和手表上'+(n?'说了 '+n+' 句':'没有说话')+'</div>');
+    if(XS.phone)umsg('手机 · 小艺 · 1.8 s','占位图用浅灰，别用纯白','phone');
+    if(XS.watch)umsg('手表 · 小艺 · 0.9 s','先别提交','watch');
+    tick();
+    amsg('<div class="ai-answer__meta">'+M+'<span>欢迎回来 · 读给你听</span></div>'
+      +'<p class="ai-answer__lead">'+(XS.only?'ListPage 改完':'占位图做完')+'，已装到 Mate 70 Pro，列表滑动 60 fps'+(XS.phone?'；底色按你在手机上说的换成浅灰':'')+(XS.watch?'；按手表上说的，还没提交':'')+'。</p>'
+      +tr('done','Agent·调优','ListPage.ets · 第 27–28 行','')+(XS.only?'':tr('done','Agent·调优','ItemCard.ets · 第 10'+(XS.phone?'、12':'')+' 行',XS.phone?'手机上说的':''))
+      +tr('done','Agent·调优','hvigor 构建 + hdc 安装','5.6 s')+tr('todo','','提交到 feature/list-perf','等你说'));
+    if(!XS.only){var tb=$('.tab[data-file="ItemCard.ets"]');if(tb)tb.click();icRender([XS.phone?[10,12]:[10],'Agent·调优 · '+(XS.phone?'第 12 行是你在手机上说的':'语音任务')+' · 可退回']);}
     var p=$('#status-pos');if(p)p.textContent='10:7';
-    capSet('<span class="dm-capsule ok"><span class="xy-orb sm"></span><span>已接回 · 手机 '+(XS.phone?1:0)+' 句 · 手表 '+(XS.watch?1:0)+' 句</span><span class="dm-dot ok"></span></span>');
+    voiceMode(true);
+    $('#confirm').outerHTML='<div class="voice-chips" id="confirm2"><button class="ai-btn ai-btn--fill" data-say="commit"><svg><use href="#i-mic"/></svg>提交吧</button><button class="ai-btn ai-btn--fill" data-say="hold"><svg><use href="#i-mic"/></svg>先放着</button></div>';
+    var vl=$('#voice-live');vl.classList.remove('final');vl.textContent='在听 · 要提交吗';
+    var w=$('#wave');w.style.opacity='';$$('i',w).forEach(function(i){i.style.animation='';i.style.height=''});$('.voice-row .ai-rec').style.visibility='';
+    $('#confirm-hint').textContent='说「提交吧」或「先放着」';
+    agent('waiting','在等你 · 要提交到 feature/list-perf 吗',{onClick:function(){$('#confirm2 .ai-btn').focus();}});
+    setTimeout(function(){scroll.scrollTop=scroll.scrollHeight;},0);
   }
   document.addEventListener('click',function(e){
     var t=e.target;
-    if(t.closest('#xy-go')){xyGo();return;}
     if(t.closest('#hand-go')){awayGo();return;}
     if(t.closest('#ph-mic')){phoneSay();return;}
     if(t.closest('#w-mic')){watchSay();return;}
     if(t.closest('#back-pc')){backPc();return;}
+    var c=t.closest('#confirm2 .ai-btn');
+    if(c&&!c.disabled){
+      var ok=c.dataset.say==='commit';
+      $$('#confirm2 .ai-btn').forEach(function(b){b.disabled=true});$('#confirm2').classList.add('decided');c.classList.add('picked');stopWave();
+      umsg('0.7 s',ok?'提交吧':'先放着');voiceMode(false);
+      amsg(ok?tr('done','Agent·调优','git commit → feature/list-perf','a3f9c21')+(XS.only?'':tr('done','Agent·多语言','git commit → feature/list-perf','7be20d4'))
+             :'<p class="ai-answer__body">好，改动留在工作区，没提交。</p>');
+      agent('done',ok?'已提交 · feature/list-perf':'改动留在工作区 · 没提交');scroll.scrollTop=scroll.scrollHeight;
+    }
   });
-  /* 桌面 / 锁屏这类系统层盖住 IDE 时，IDE 里的标注先收起 */
+
+  /* 锁屏这类系统层盖住 IDE 时，IDE 里的标注先收起 */
   function ovlGuard(list){return list.map(function(g){if(g.ovl)return g;g.target=g.target.split(',').map(function(t){return '.ide:not(.ovl) '+t.trim()}).join(',');return g;});}
-DemoGuide.init(ovlGuard([{"target": ".chip[data-say=\"yes\"]", "kind": "click", "pos": "top", "label": "点这里确认执行"}, {"target": "#ai-scroll", "kind": "change", "pos": "top", "label": "追加执行步骤"}, {"target": "#xy-go:not([disabled])", "kind": "click", "pos": "top", "label": "手在测试机上？点这里用小艺说"}, {"target": "#hand-go", "kind": "click", "pos": "top", "label": "要走开？点这里接到手机 / 手表"}, {"target": "#ph-mic:not([disabled])", "kind": "click", "pos": "top", "label": "路上想起要改？在手机上接着说", "ovl": true}]), {scene:{at:"你手上拿着测试机复现列表卡顿，想让 AI 直接开工",goal:"动嘴把活交代清楚、确认无误，离开工位也能盯到装机",pain:"得放下手机敲键盘；符号总被听错；人一走开就没人盯",fix:"小艺听懂工程符号并读回确认；手机手表上接着说，回来接上"}});
+  DemoGuide.init(ovlGuard([
+    {target:'#confirm .ai-btn[data-say="yes"]', kind:'click', pos:'left', label:'它先读回：一句话拆给两个 Agent，说「对」才开工'},
+    {target:'#hand-go', kind:'click', pos:'left', label:'要走开？进度和要你说的接到手机 / 手表'},
+    {target:'#ph-mic:not([disabled])', kind:'click', pos:'top', label:'路上想起要改？在手机上接着说', ovl:true},
+    {target:'#confirm2 .ai-btn', kind:'click', pos:'left', label:'回来接上：它停在提交前等你一句话'}
+  ]), {scene:{
+    at:'你拿着测试机复现列表卡顿，腾不出手打字',
+    goal:'动嘴把活交代清楚、确认无误，走开也能盯到装机',
+    pain:'得放下手机敲键盘；符号总听错；一走开就没人盯',
+    fix:'它读回理解等你一句话；走开时手机手表接着说',
+    agent:'它改码构建装机；一句话拆给两个 Agent 先复述；你说对不对'
+  }});
 })();
 </script>
 </body>

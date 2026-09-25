@@ -4,8 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='32' y2='32' gradientUnits='userSpaceOnUse'%3E%3Cstop stop-color='%232C8DDD'/%3E%3Cstop offset='1' stop-color='%233357AC'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='32' height='32' rx='7' fill='url(%23g)'/%3E%3Ctext x='16' y='22.5' font-family='Arial,Helvetica,sans-serif' font-size='13' font-weight='700' fill='white' text-anchor='middle'%3EDE%3C/text%3E%3C/svg%3E">
-<title>15 · 任务状态跟着人走：碰一碰接续，平板审，手表按</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<title>15 · 任务跟着人走：Agent 等你批时离开，碰一碰原位接上</title>
 <link rel="stylesheet" href="../../deveco-intui-kit/src/tokens.css">
 <link rel="stylesheet" href="../../deveco-intui-kit/src/components.css">
 <link rel="stylesheet" href="../_shared/frame.css">
@@ -42,22 +41,16 @@
   /* 平板屏：断点 + diff + 审批 */
   .mapp .hd.ell{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;line-height:30px}
   .mapp .sub{padding:0 12px 4px;font-size:9px;color:#8a8f99;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .mapp .diff{margin:2px 10px 0;border:1px solid #e6e8ee;border-radius:6px;overflow:hidden;font-family:var(--font-code);font-size:10px;line-height:16px;color:#1a1a1a}
+  .mapp .diff{margin:2px 10px 0;background:#f5f6f8;border-radius:6px;overflow:hidden;font-family:var(--font-code);font-size:10px;line-height:16px;color:#1a1a1a}
   .mapp .diff div{padding:0 6px;white-space:pre;overflow:hidden}
-  /* 各端最近的动作 */
-  .acts-card .dm-item{min-height:26px;font-size:var(--fs-sm)}
-  .acts-card .dm-item .t{font-family:var(--font-code);font-size:11px;color:var(--ui-fg-disabled);width:38px;flex:none}
-  .acts-card .dm-item svg{width:14px;height:14px;color:var(--ui-icon);flex:none}
-  .acts-card .dm-item .who{font-weight:600;flex:none}
-  .acts-card .dm-item.new{background:color-mix(in srgb,var(--ui-accent) 12%,transparent)}
   .mapp .diff .add{background:#E3F7E7}
   .mapp .diff .del{background:#FFEBEC}
   .mapp .tb{display:flex;gap:8px;padding:8px 12px 10px}
-  .mapp .tb div{flex:1;height:26px;border-radius:13px;border:1px solid #d9dce3;display:grid;place-items:center;font-size:10px;font-weight:600;color:#3574F0;background:#fff;transition:background .2s,color .2s}
+  .mapp .tb div{flex:1;height:26px;border-radius:13px;display:grid;place-items:center;font-size:10px;font-weight:500;color:#1a1a1a;background:#f0f1f3;transition:background .2s,color .2s}
   .mapp .tb div.sec{color:#666}
-  .mapp .tb.lit div:first-child{background:#3574F0;border-color:#3574F0;color:#fff}
+  .mapp .tb.lit div:first-child{background:#3574F0;color:#fff}
   .mapp .tb.lit div.sec{background:#f0f1f3}
-  .mapp .tb.done div:first-child{background:#E3F7E7;border-color:#E3F7E7;color:#208A3C}
+  .mapp .tb.done div:first-child{background:#E3F7E7;color:#208A3C}
   .mapp .tb.done div.sec{opacity:.45}
   /* 手表屏：进度 + 三个小圆钮 */
   .mapp .ring > div{display:flex;flex-direction:column;align-items:center;gap:2px}
@@ -71,16 +64,42 @@
   .ai-scroll{padding-top:10px}
   .dm-card .dm-item[data-end]{min-height:30px}
   .dm-card .dm-item[data-end] .grow{font-weight:400}
-  .dm-card .dm-item.here{background:color-mix(in srgb,var(--ui-accent) 10%,transparent)}
+  .dm-card .dm-item.here{background:var(--ai-surface-2)}
   .dm-card-ft .dm-small{white-space:normal;line-height:var(--lh-sm)}
   .dm-card-ft .dm-small b{font-weight:600;color:var(--ui-fg)}
-  .stp .st.done svg{width:10px;height:10px}
-  .stp{transition:background .3s}
-  .stp.focus{background:color-mix(in srgb,var(--ui-accent) 16%,transparent)}
+  /* 卡片用填充分层，不画描边 */
+  #ends{border:0;background:var(--ai-surface)}
+  #ends .dm-card-hd{border-bottom:0;font-weight:500;padding-bottom:4px}
+  #ends .dm-card-ft{border-top:0;background:transparent;padding-top:2px}
+  /* 统一的「在等你」队列：离开工位时整队带走，不是只带一个对话 */
+  .q{border-radius:var(--ai-r);background:var(--ai-surface);padding:8px 8px 6px;display:flex;flex-direction:column;gap:2px;margin-bottom:10px}
+  .q-hd{display:flex;align-items:center;gap:8px;padding:0 4px 4px;font-size:12px;color:var(--ai-wait-ink);font-weight:500}
+  .q-hd .grow{flex:1}.q-hd .dm-small{font-weight:400}
+  .q-it{appearance:none;border:0;background:transparent;width:100%;display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:8px;align-items:center;text-align:left;
+    min-height:30px;padding:4px 6px;border-radius:var(--ai-r-in);font:inherit;font-size:12px;line-height:17px;color:var(--ui-fg);cursor:pointer}
+  .q-it:hover{background:var(--ui-action-hover)}
+  .q-it .agt{color:var(--ai-ink);white-space:nowrap}
+  .q-it .tt{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .q-it .blk{font-size:11px;color:var(--ui-fg-info);white-space:nowrap}
+  .q-it .q-act{grid-column:2/4;display:flex;gap:6px;padding:2px 0 2px}
+  .q-it .q-act .ai-btn{height:24px}
+  .q-empty{font-size:12px;color:var(--ui-fg-info);padding:2px 6px 4px}
+  /* 轨迹：做完的收成一行，在等你的单独一张琥珀卡 */
+  .flow{display:flex;flex-direction:column;gap:6px}
+  .flow .ai-toolrow{appearance:none;border:0;background:transparent;width:100%;text-align:left;font:inherit;font-size:12px}
+  .flow button.ai-toolrow{cursor:pointer}
+  .flow .ai-toolrow .ai-ico.ok{color:var(--ui-success)}
+  .flow .ai-toolrow .todo-dot{width:10px;height:10px;border-radius:50%;box-shadow:inset 0 0 0 1.2px var(--ui-fg-disabled);margin:0 3px}
+  .flow .ai-toolrow .ai-ring{margin:0 2px}
+  .tr-sub{display:flex;flex-direction:column;gap:0;padding:0 6px 2px 30px;font-size:12px;line-height:22px;color:var(--ui-fg-info)}
+  .tr-sub code{font-family:var(--font-code);font-size:11px}
+  #ap4 .ai-approve__cmd .d{color:var(--ui-error)}#ap4 .ai-approve__cmd .a{color:var(--ui-success)}
+  .flash-q{animation:flashq 1.4s ease-out 1}
+  @keyframes flashq{0%{background:var(--ai-wait-tint)}100%{background:transparent}}
   .amsg .md p{color:var(--ui-fg)}
   .ai-input .top .ctx svg{width:12px;height:12px}
   .code .ln.flash{animation:lnflash 1.6s ease-out 2}
-  @keyframes lnflash{0%{background:color-mix(in srgb,var(--ui-accent) 38%,transparent)}100%{background:var(--ed-caret-row)}}
+  @keyframes lnflash{0%{background:var(--ui-selection)}100%{background:var(--ed-caret-row)}}
 
   /* ---------- 碰一碰场景：MateBook Pro（3120 × 2080，3:2）+ Pura 70 Pro（1260 × 2844） ---------- */
   .tapst{position:relative;height:100%;min-height:340px;min-width:620px}
@@ -99,7 +118,7 @@
   .l-ide .lp{width:84px;flex:none;background:var(--ui-bg);border-right:1px solid var(--ui-border);padding:6px 5px;display:flex;flex-direction:column;gap:4px}
   .l-ide .lp i{height:4px;border-radius:2px;background:var(--ui-fg-disabled);opacity:.55}
   .l-ide .lp i.a{background:var(--ui-accent);opacity:.8}
-  .l-ide .lp .box{border:1px solid var(--ui-accent);border-radius:3px;padding:3px;display:flex;flex-direction:column;gap:3px}
+  .l-ide .lp .box{background:var(--ui-hover);border-radius:3px;padding:3px;display:flex;flex-direction:column;gap:3px}
   .l-ide .ed{flex:1;min-width:0;padding:6px 6px;display:flex;flex-direction:column;gap:4px;position:relative}
   .l-ide .ed i{height:4px;border-radius:2px;background:var(--ui-fg-disabled);opacity:.45;margin-left:10px}
   .l-ide .ed i.k{background:var(--ui-accent);opacity:.7}
@@ -112,7 +131,7 @@
   .l-ide .bt i{height:3px;border-radius:2px;background:var(--ui-fg-disabled);opacity:.4}
   .l-ide .bt i.hl{background:var(--ui-warning);opacity:.8}
   .lsc[data-st="lock"] .l-ide{opacity:0}
-  .l-lock{position:absolute;inset:0;background:linear-gradient(160deg,#1c2f5c,#3b2d6b 55%,#15182a);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;opacity:0;transition:opacity .35s;pointer-events:none}
+  .l-lock{position:absolute;inset:0;background:#1b1f2a;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;opacity:0;transition:opacity .35s;pointer-events:none}
   .l-lock svg{width:14px;height:14px;opacity:.8}
   .l-lock b{font-size:30px;font-weight:300;line-height:34px;font-variant-numeric:tabular-nums}
   .l-lock span{font-size:9px;opacity:.8}
@@ -126,14 +145,14 @@
   .tsc .sb{position:absolute;left:0;right:0;top:0;height:16px;display:flex;align-items:center;justify-content:space-between;padding:2px 9px 0;font-size:7px;font-weight:600;z-index:4}
   .tsc .sb .bat{width:10px;height:5px;border:1px solid currentColor;border-radius:1.5px;position:relative}
   .tsc .sb .bat::after{content:"";position:absolute;inset:.5px;right:2.5px;background:currentColor;border-radius:.5px}
-  .tsc .cap{display:inline-flex;align-items:center;gap:2px;height:10px;padding:0 4px;border-radius:5px;background:#0A59F7;color:#fff;font-size:6.5px;font-weight:600}
-  .tsc .cap i{width:4px;height:4px;border-radius:50%;background:#fff;animation:dmpulse 1.4s ease-in-out infinite}
+  .tsc .cap{display:inline-flex;align-items:center;gap:2px;height:10px;padding:0 4px;border-radius:5px;background:#2b2d33;color:#fff;font-size:6.5px;font-weight:500}
+  .tsc .cap i{width:4px;height:4px;border-radius:50%;background:#F5A524}
   .tsc .bar{position:absolute;bottom:4px;left:50%;width:40px;height:2.5px;margin-left:-20px;border-radius:2px;background:rgba(255,255,255,.7);z-index:5}
   .tsc .pg{height:3px;border-radius:2px;background:#e3e6eb;overflow:hidden}
   .tsc .pg i{display:block;height:100%;background:#0A59F7;width:var(--v,0%);transition:width .2s}
   .t-aod{position:absolute;inset:0;background:#000;color:#8a8f99;display:flex;flex-direction:column;align-items:center;padding-top:96px;gap:2px}
   .t-aod b{font-size:20px;font-weight:300;color:#c9ccd3;font-variant-numeric:tabular-nums}
-  .t-lock{position:absolute;inset:0;background:linear-gradient(170deg,#23407a,#5a3f93 60%,#1a1d33);color:#fff}
+  .t-lock{position:absolute;inset:0;background:#1d2230;color:#fff}
   .t-lock .sb{color:#fff}
   .t-lock .tm{position:absolute;top:30px;left:0;right:0;text-align:center}
   .t-lock .tm b{display:block;font-size:26px;font-weight:300;line-height:30px;font-variant-numeric:tabular-nums}
@@ -143,11 +162,12 @@
   .lv .r1{display:flex;align-items:center;gap:3px;font-size:6.5px;color:#666}
   .lv .r1 svg{width:9px;height:9px}
   .lv .r1 .grow{flex:1}
-  .lv .r1 em{font-style:normal;font-weight:600;color:#0A59F7}
-  .lv .tt{font-size:9px;font-weight:700;line-height:11px}
+  .lv .r1 em{font-style:normal;font-weight:500;color:#9A5B00}
+  .lv .tt{font-size:9px;font-weight:600;line-height:11px}
+  .lv .more{font-size:6.5px;color:#9A5B00}
   .lv .sub{font-size:6.5px;color:#666;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .lv .bb{display:flex;gap:4px;margin-top:2px}
-  .lv .bb span{flex:1;height:15px;border-radius:8px;background:#f0f1f3;color:#0A59F7;font-size:7px;font-weight:600;display:grid;place-items:center;cursor:pointer}
+  .lv .bb span{flex:1;height:15px;border-radius:8px;background:#f0f1f3;color:#1a1a1a;font-size:7px;font-weight:500;display:grid;place-items:center;cursor:pointer}
   .lv .bb span.pri{background:#0A59F7;color:#fff}
   .lv .bb span:hover{filter:brightness(.95)}
   .t-lock .sw{position:absolute;bottom:14px;left:0;right:0;text-align:center;font-size:6.5px;opacity:.7}
@@ -164,7 +184,7 @@
   .t-app .lst b{font-size:10px;font-weight:600;line-height:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .t-app .lst b.mono{font-family:var(--font-code);font-size:9px;font-weight:500}
   .t-app .lst .pg{margin-top:3px}
-  .t-app .hint{position:absolute;left:6px;right:6px;bottom:14px;border:1px dashed #0A59F7;border-radius:8px;padding:7px 7px;display:flex;align-items:center;gap:6px;color:#0A59F7;background:rgba(10,89,247,.06);font-size:8.5px;line-height:11px;font-weight:600}
+  .t-app .hint{position:absolute;left:6px;right:6px;bottom:14px;border-radius:8px;padding:7px 7px;display:flex;align-items:center;gap:6px;color:#1a1a1a;background:#e4e7ec;font-size:8.5px;line-height:11px;font-weight:500}
   .t-app .hint svg{width:16px;height:16px;flex:none}
   .t-app .bar{background:rgba(0,0,0,.45)}
   .t-link{position:absolute;inset:0;background:#F1F3F5;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:#1a1a1a;font-size:8px;text-align:center;padding:0 10px}
@@ -180,10 +200,8 @@
   .ripple.on i:nth-child(2){animation-delay:.3s}
   .ripple.on i:nth-child(3){animation-delay:.6s}
   @keyframes rip{0%{transform:scale(.3);opacity:.95}100%{transform:scale(3.4);opacity:0}}
-  .fly{position:absolute;width:44px;height:28px;border-radius:6px;background:var(--ui-popup-bg);border:1px solid var(--ui-accent);box-shadow:0 6px 16px rgba(0,0,0,.35);z-index:6;display:grid;place-items:center;pointer-events:none;opacity:0;transition:left .7s cubic-bezier(.4,.1,.25,1),top .7s cubic-bezier(.4,.1,.25,1),transform .7s,opacity .2s}
-  .fly svg{width:14px;height:14px}
   /* 电脑上弹出的系统接续卡片（碰一碰 / 应用接续） */
-  .hc{position:fixed;top:52px;right:56px;width:344px;z-index:60;background:var(--ui-popup-bg);border:1px solid var(--ui-popup-border);border-radius:16px;box-shadow:var(--ui-shadow),0 18px 48px rgba(0,0,0,.32);padding:12px 14px 14px;display:flex;flex-direction:column;gap:10px;animation:hcin .4s cubic-bezier(.2,.8,.2,1)}
+  .hc{position:fixed;top:52px;right:56px;width:344px;z-index:60;background:var(--ui-popup-bg);border-radius:16px;box-shadow:0 0 0 1px var(--ui-popup-border),var(--ui-shadow);padding:12px 14px 14px;display:flex;flex-direction:column;gap:10px;animation:hcin .4s cubic-bezier(.2,.8,.2,1)}
   .hc[hidden]{display:none}
   .hc.out{animation:hcout .3s ease-in forwards}
   @keyframes hcin{from{opacity:0;transform:translateY(-16px) scale(.97)}to{opacity:1;transform:none}}
@@ -194,24 +212,18 @@
   .hc-tt{display:flex;align-items:center;gap:10px}
   .hc-tt .ico{width:36px;height:36px;border-radius:10px;background:var(--ui-tag-bg);display:grid;place-items:center;flex:none;position:relative}
   .hc-tt .ico svg{width:24px;height:24px}
-  .hc-tt .ico .bd{position:absolute;right:-4px;bottom:-4px;width:16px;height:16px;border-radius:50%;background:var(--ui-accent);color:var(--ui-accent-fg);display:grid;place-items:center;box-shadow:0 0 0 2px var(--ui-popup-bg)}
+  .hc-tt .ico .bd{position:absolute;right:-4px;bottom:-4px;width:16px;height:16px;border-radius:50%;background:var(--ui-fg-info);color:var(--ui-popup-bg);display:grid;place-items:center;box-shadow:0 0 0 2px var(--ui-popup-bg)}
   .hc-tt .ico .bd svg{width:10px;height:10px}
   .hc-tt b{display:block;font-size:var(--fs-h2);line-height:var(--lh-h2);font-weight:600}
   .hc-tt span{font-size:var(--fs-sm);color:var(--ui-fg-info)}
-  .hc-rows{display:grid;grid-template-columns:auto 44px minmax(0,1fr);gap:6px 8px;align-items:center;font-size:var(--fs-sm);line-height:var(--lh-sm);background:var(--ui-field-bg);border:1px solid var(--ui-border);border-radius:10px;padding:8px 10px}
+  .hc-rows{display:grid;grid-template-columns:auto 44px minmax(0,1fr);gap:6px 8px;align-items:center;font-size:var(--fs-sm);line-height:var(--lh-sm);background:var(--ai-surface-2);border-radius:10px;padding:8px 10px}
   .hc-rows svg{width:14px;height:14px;color:var(--ui-icon)}
   .hc-rows .k{color:var(--ui-fg-info)}
   .hc-rows .v{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .hc-rows .v.mono{font-family:var(--font-code);font-size:11px}
+  .hc-rows .v.wait{color:var(--ai-wait-ink)}
   .hc-ft{display:flex;gap:8px}
   .hc-ft .btn{flex:1;height:30px;border-radius:15px;justify-content:center}
-  /* 接续后在对话里的回执 */
-  .hand-card .dm-item{min-height:28px;font-size:var(--fs-sm)}
-  .hand-card .dm-item svg{width:14px;height:14px;color:var(--ui-icon);flex:none}
-  .hand-card .dm-item .k{width:40px;flex:none;color:var(--ui-fg-info)}
-  .hand-card .dm-item .mono{font-family:var(--font-code);font-size:11px}
-  .hand-card .dm-card-hd svg{width:16px;height:16px}
-  .hand-card .dm-card-hd .dm-small{font-weight:400}
   /* 底部 HiLog：接续后停在原来的位置 */
   .lg{height:100%;overflow:auto;padding:4px 0;font-family:var(--font-code);font-size:12px;line-height:20px}
   .lg .r{display:flex;gap:10px;padding:0 12px 0 0;white-space:pre}
@@ -222,7 +234,7 @@
   .lg .r.W .lv{color:var(--ui-warning)}
   .lg .r .msg{color:var(--ed-text)}
   .lg .r.here{background:var(--ui-selection)}
-  .lg .r.here .no{color:var(--ui-accent);font-weight:600}
+  .lg .r.here .no{color:var(--ui-fg);font-weight:600}
   .lg .r.bp{background:color-mix(in srgb,var(--ui-error) 12%,transparent)}
   .tw-bottom .tw-hdr .dm-pill{margin-right:8px}
 </style>
@@ -249,40 +261,43 @@
         <div class="tw-body"><div class="ai">
           <div class="ai-scroll" id="ai-scroll">
 
-            <div class="dm-card accent" id="ends">
+            <div class="q" id="q">
+              <div class="q-hd"><span class="ai-wait-dot"></span>在等你 <span id="q-n">2</span> 件<span class="grow"></span><span class="dm-small dm-muted">离开时整队跟着你走</span></div>
+              <button class="q-it" type="button" data-q="ap4"><span class="agt">Agent·调试</span><span class="tt">批第 4 步 · loadCover 改异步</span><span class="blk">挡住它</span></button>
+              <div class="q-it" data-q="x6" role="group"><span class="agt">Agent·回归</span><span class="tt">要借 Mate X6 跑 38 条回归，和第 5 步撞</span><span class="blk">挡住它</span>
+                <span class="q-act"><button class="ai-btn ai-btn--fill" type="button" data-x6="later">排到第 5 步后</button><button class="ai-btn" type="button" data-x6="now">先让它跑</button></span></div>
+            </div>
+
+            <div class="dm-card" id="ends">
               <div class="dm-card-hd"><svg class="i"><use href="#i-sync"/></svg>这个任务也在另外 3 端<span class="grow"></span><span class="dm-small dm-muted" style="font-weight:400" id="ends-when">状态一致 · 2 s 前</span></div>
               <div class="dm-list">
                 <div class="dm-item here" data-end="pc"><svg class="i"><use href="#i-laptop"/></svg><span class="grow">MateBook Pro · 写和改</span><span class="dm-pill ok" data-pill>这里</span><button class="btn sm" data-take="pc" hidden>交给它</button></div>
-                <div class="dm-item" data-end="phone"><svg class="i"><use href="#i-phone"/></svg><span class="grow">Pura 70 Pro · 实况窗 / 碰一碰</span><span class="dm-pill info" data-pill>已同步</span><button class="btn sm" data-take="phone" title="锁屏离开，任务以实况窗接到手机">交给它</button></div>
-                <div class="dm-item" data-end="tablet"><svg class="i"><use href="#i-tablet"/></svg><span class="grow">MatePad · 看和审</span><span class="dm-pill info" data-pill>已同步 · 2 s 前</span><button class="btn sm" data-take="tablet">交给它</button></div>
-                <div class="dm-item" data-end="watch"><svg class="i"><use href="#i-watch"/></svg><span class="grow">WATCH 5 · 继续 / 停 / 看结果</span><span class="dm-pill info" data-pill>已同步</span><button class="btn sm" data-take="watch">交给它</button></div>
+                <div class="dm-item" data-end="phone"><svg class="i"><use href="#i-phone"/></svg><span class="grow">Pura 70 Pro · 实况窗 / 碰一碰</span><span class="dm-pill muted" data-pill>已同步</span><button class="btn sm" data-take="phone" title="锁屏离开，任务以实况窗接到手机">交给它</button></div>
+                <div class="dm-item" data-end="tablet"><svg class="i"><use href="#i-tablet"/></svg><span class="grow">MatePad · 看和审</span><span class="dm-pill muted" data-pill>已同步 · 2 s 前</span><button class="btn sm" data-take="tablet">交给它</button></div>
+                <div class="dm-item" data-end="watch"><svg class="i"><use href="#i-watch"/></svg><span class="grow">WATCH 5 · 继续 / 停 / 看结果</span><span class="dm-pill muted" data-pill>已同步</span><button class="btn sm" data-take="watch">交给它</button></div>
               </div>
-              <div class="dm-card-ft"><div class="dm-small dm-muted">同步的是任务状态：连着 <b id="dev-now">Mate 70 Pro</b> · 断点 <b>ListPage.ets:28</b> · 日志看到第 <b id="log-now">412</b> 行 · AI 第 <b id="step-now">4</b> / 5 步</div></div>
+              <div class="dm-card-ft"><div class="dm-small dm-muted">跟着走的：真机 <b id="dev-now">Mate 70 Pro</b> · 断点 <b>ListPage.ets:28</b> · HiLog 第 <b id="log-now">412</b> 行 · Agent 第 <b id="step-now">4</b> / 5 步</div></div>
             </div>
 
             <div class="ai-thread" id="thread">
               <div class="umsg"><span class="time">14:02</span><div class="bubble">把 loadCover 改成异步，在 Mate 70 Pro 上跑到断点看一眼。改动我一会儿在平板上审。</div></div>
               <div class="amsg">
-                <div class="md"><p>分 5 步。第 4 步的改动等你审——在平板上点「批准」、在手表上按「继续」、在手机实况窗上点「批准」、或在这里点，都是同一份状态。</p></div>
-                <div class="steps" id="steps">
-                  <div class="stp" data-step="1"><span class="st done"><svg><use href="#i-checkS"/></svg></span><span class="txt">读取 ListPage.ets、ItemCard.ets</span><span class="file">只读</span></div>
-                  <div class="stp" data-step="2"><span class="st done"><svg><use href="#i-checkS"/></svg></span><span class="txt">把 loadCover 改成异步</span><span class="file">ListPage.ets</span></div>
-                  <div class="stp" data-step="3"><span class="st done"><svg><use href="#i-checkS"/></svg></span><span class="txt">在 Mate 70 Pro 上跑到断点 28</span><span class="file">日志 412 行</span></div>
-                  <div class="stp" data-step="4"><span class="st run"></span><span class="txt">等你确认第 2 步的改动</span><span class="file" id="s4-file">平板可审</span></div>
-                  <div class="stp" data-step="5"><span class="st todo"></span><span class="txt">继续跑完，加上 Mate X6 收集滑动帧率</span><span class="file" id="s5-file">手表可按</span></div>
+                <div class="md"><p>改好了，在 Mate 70 Pro 上跑到断点，停在第 4 步等你批。平板、手表、手机实况窗或这里，任一端批都算。</p></div>
+                <div class="flow" id="steps">
+                  <button class="ai-toolrow" type="button" id="tr-done" aria-expanded="false" title="展开看这 3 步"><svg class="ai-ico ok"><use href="#i-checkS"/></svg><span class="what">读 2 个文件 · 改 <code>ListPage.ets</code> · 在 Mate 70 Pro 跑到断点 28</span><span class="end">3 步 · 41 s</span></button>
+                  <div class="tr-sub" id="tr-sub" hidden><span>读 <code>ListPage.ets</code>、<code>ItemCard.ets</code> · 只读</span><span>把 loadCover 改成异步 · <code>ListPage.ets:27–28</code></span><span>hdc 装包到 Mate 70 Pro，停在断点 28 · HiLog 412 行</span></div>
+                  <div class="ai-approve" id="ap4">
+                    <div class="ai-approve__h"><span class="ai-wait-dot"></span>在等你 · 第 4 步 · 审这处改动</div>
+                    <div class="ai-approve__cmd"><span class="d">- return image.createPixelMapSync(raw(id));</span>
+<span class="a">+ return await image.createPixelMap(raw(id));</span></div>
+                    <p class="ai-approve__why">封面改成异步解码，滑动时不再占主线程；首屏封面晚 1 帧出现。</p>
+                    <div class="ai-approve__act"><button class="ai-btn ai-btn--fill" type="button" id="ap4-ok">批准</button><button class="ai-btn" type="button">打回</button><span class="dm-small dm-muted" id="s4-file">平板、手表、手机也能批</span></div>
+                  </div>
+                  <div class="ai-toolrow" id="tr5"><span class="todo-dot" id="s5-ico"></span><span class="what" id="s5-txt">第 5 步 · 在 Mate 70 Pro、Mate X6 上收滑动帧率</span><span class="end" id="s5-file">批完就跑</span></div>
                 </div>
-                <div class="ans-foot"><span id="foot-txt">在等你 · 任一端确认即可</span><span class="grow"></span><button class="abtn" title="Copy"><svg class="i"><use href="#i-copy"/></svg></button><button class="abtn" title="Good"><svg class="i"><use href="#i-like"/></svg></button><button class="abtn" title="Bad"><svg class="i"><use href="#i-dislike"/></svg></button></div>
+                <div class="ans-foot"><span id="foot-txt">在等你 · 任一端批即可</span><span class="grow"></span><button class="abtn" title="Copy"><svg class="i"><use href="#i-copy"/></svg></button><button class="abtn" title="Good"><svg class="i"><use href="#i-like"/></svg></button><button class="abtn" title="Bad"><svg class="i"><use href="#i-dislike"/></svg></button></div>
               </div>
 
-              <div class="dm-card acts-card" id="acts">
-                <div class="dm-card-hd"><svg class="i"><use href="#i-history"/></svg>各端最近的动作<span class="cnt dm-mono dm-muted" style="font-weight:400" id="acts-cnt">4</span><span class="grow"></span><span class="dm-small dm-muted" style="font-weight:400">同一个任务</span></div>
-                <div class="dm-list" id="acts-list">
-                  <div class="dm-item"><span class="t">14:02</span><svg><use href="#i-laptop"/></svg><span class="who">MateBook</span><span class="grow">打断点 ListPage.ets:28，改 loadCover</span></div>
-                  <div class="dm-item"><span class="t">14:03</span><svg><use href="#i-phone"/></svg><span class="who">Mate 70 Pro</span><span class="grow">跑到断点，日志停在第 412 行</span></div>
-                  <div class="dm-item"><span class="t">14:04</span><svg><use href="#i-tablet"/></svg><span class="who">MatePad</span><span class="grow">看了第 2 步的 diff，还没批</span></div>
-                  <div class="dm-item"><span class="t">14:04</span><svg><use href="#i-watch"/></svg><span class="who">WATCH 5</span><span class="grow">看结果：帧率 58，等你确认</span></div>
-                </div>
-              </div>
             </div>
 
           </div>
@@ -339,8 +354,7 @@
             </div>
             <span class="dev-cap" id="lap-cap">MateBook Pro · 3120×2080 · HarmonyOS 6</span>
             <div class="ripple" id="ripple"><i></i><i></i><i></i></div>
-            <div class="fly" id="fly"><svg class="i"><use href="#i-genie"/></svg></div>
-            <div class="tph" id="tph" title="拿起手机：看实况窗 / 碰一下电脑触控板">
+                        <div class="tph" id="tph" title="拿起手机：看实况窗 / 碰一下电脑触控板">
               <div class="tsc" id="tsc"></div>
             </div>
             <span class="dev-cap" id="ph-cap">Pura 70 Pro · 1260×2844</span>
@@ -353,10 +367,10 @@
               <div class="scr">
                 <div class="mapp">
                   <div class="st"><span>9:41</span><span>Wi-Fi ▮▮▮</span></div>
-                  <div class="hd ell">ListPage.ets · 断点 28 · Mate 70 Pro</div>
+                  <div class="hd ell" id="tab-hd">Agent·调试 · 在等你 · ListPage.ets:28</div>
                   <div class="sub" id="tab-sub">第 4 步 · 把 loadCover 改成异步 · 等你审</div>
                   <div class="diff">
-                    <div>  loadCover(id: number): PixelMap {</div>
+                    <div>  async loadCover(id: number) {</div>
                     <div class="del">- return image.createPixelMapSync(raw(id));</div>
                     <div class="add">+ return await image.createPixelMap(raw(id));</div>
                   </div>
@@ -370,7 +384,7 @@
             <div class="dm-device watch" id="dev-watch" data-end="watch">
               <div class="scr">
                 <div class="mapp">
-                  <div class="ring"><div><b id="w-big">4 / 5</b><span class="ws" id="w-small">等你确认</span><div class="wb"><i id="w-go" title="在手表上按「继续」">继续</i><i class="stop">停</i><i>看</i></div></div></div>
+                  <div class="ring"><div><b id="w-big">4 / 5</b><span class="ws" id="w-small">等你批 · +1</span><div class="wb"><i id="w-go" title="在手表上按「继续」">继续</i><i class="stop">停</i><i>看</i></div></div></div>
                 </div>
               </div>
               <span class="cap">WATCH 5 · 466×466</span>
@@ -397,7 +411,7 @@
     <div class="tw tw-bottom">
       <div class="pane on" data-pane="log">
         <div class="tw-hdr"><span class="title">Log</span><div class="tabbar"><button class="btab on">HiLog</button><button class="btab">FaultLog</button></div><span class="grow"></span>
-          <span class="dm-pill info" id="log-pill" hidden><svg class="i"><use href="#i-tap"/></svg><span id="log-pill-t">从 Pura 70 Pro 接续</span></span>
+          <span class="dm-pill muted" id="log-pill" hidden><svg class="i"><use href="#i-tap"/></svg><span id="log-pill-t">从 Pura 70 Pro 接续</span></span>
           <span class="dm-small dm-muted" style="margin-right:8px">HUAWEI Mate 70 Pro · com.example.myapplication · A00001</span>
           <button class="abtn" title="Hide" data-act="hide-bottom"><svg class="i"><use href="#i-hide"/></svg></button></div>
         <div class="tw-body"><div class="lg" id="lg"></div></div>
@@ -413,7 +427,8 @@
       <svg class="i"><use href="#i-phone"/></svg><span class="k">真机</span><span class="v" id="hc-dev">Mate 70 Pro</span>
       <svg class="i"><use href="#i-bpdot"/></svg><span class="k">断点</span><span class="v mono">ListPage.ets:28 · 命中 3 次</span>
       <svg class="i"><use href="#i-loglines"/></svg><span class="k">HiLog</span><span class="v" id="hc-log">看到第 412 行</span>
-      <svg class="i"><use href="#i-genie"/></svg><span class="k">AI</span><span class="v" id="hc-ai">第 4 / 5 步 · 等你确认</span>
+      <svg class="i"><use href="#i-genie"/></svg><span class="k">Agent</span><span class="v" id="hc-ai">第 4 / 5 步 · 等你批</span>
+      <svg class="i"><use href="#i-sparkle"/></svg><span class="k">在等你</span><span class="v wait" id="hc-q">2 件 · 第 4 步、X6 借用</span>
     </div>
     <div class="hc-ft"><button class="btn primary" id="hc-go">在 IDE 里接续</button><button class="btn" id="hc-no">稍后</button></div>
   </div>
@@ -424,30 +439,60 @@
   var $=DemoFrame.$, $$=DemoFrame.$$;
   document.getElementById('tree-slot').innerHTML=DemoFrame.tree({sel:'ListPage.ets'});
   document.getElementById('tabs').insertAdjacentHTML('afterbegin',DemoFrame.tabs([{file:'ListPage.ets',on:true},{file:'ItemCard.ets'}]));
-  document.getElementById('code').innerHTML=DemoFrame.code('ListPage.ets',{cur:28,marks:{28:'bp'}});
+  /* 第 27–28 行是 Agent·调试 在第 2 步写的，还没批：ai-block + 来源；人改的不打标 */
+  function renderCode(){
+    var code=document.getElementById('code');
+    code.innerHTML=DemoFrame.code('ListPage.ets',{cur:28,marks:{28:'bp'}});
+    var l27=code.querySelector('.ln[data-ln="27"] .t'),l28=code.querySelector('.ln[data-ln="28"] .t');
+    if(l27)l27.innerHTML='  <span class="k">async</span> <span class="f">loadCover</span>(<span class="p">id</span>: <span class="k">number</span>) {';
+    if(l28)l28.innerHTML='    <span class="k">return await</span> <span class="p">image</span>.<span class="f">createPixelMap</span>(<span class="k">this</span>.<span class="p">source</span>.<span class="f">rawCover</span>(<span class="p">id</span>));';
+    ['27','28'].forEach(function(n){var ln=code.querySelector('.ln[data-ln="'+n+'"]');if(!ln)return;ln.classList.add('ai-block');ln.insertAdjacentHTML('afterbegin','<span class="ai-gut" data-src="Agent·调试 · 第 2 步 · '+(continued?'你已批':'待你批')+'"></span>');});
+  }
+  var continued=false;
+  renderCode();
   DemoFrame.init({device:'HUAWEI Mate 70 Pro',deviceIcon:'#i-phone',stripeLeft:[{left:'agent',icon:'#i-genie',title:'DevEco Code'},{left:'project',icon:'#i-tw-project',title:'Project|Alt+1'},{left:'structure',icon:'#i-tw-structure',title:'Structure|Alt+7'},{more:1},{gap:1},{bottom:'build',icon:'#i-tw-build',title:'Build'},{bottom:'log',icon:'#i-tw-device',title:'Log'},{bottom:'services',icon:'#i-tw-todo',title:'Services|Alt+8'},{bottom:'problems',icon:'#i-tw-problems',title:'Problems|Alt+6'},{bottom:'run',icon:'#i-tw-services',title:'Run|Alt+4'},{bottom:'terminal',icon:'#i-tw-terminal',title:'Terminal|Alt+F12'},{bottom:'debug',icon:'#i-info',title:'Debug|Alt+5'},{bottom:'vcs',icon:'#i-vcs',title:'Version Control|Alt+9'}],stripeRight:[{right:'notifications',icon:'#i-tw-notifications',title:'Notifications',dot:1},{right:'project',icon:'#i-tw-project',title:'Project|Alt+1'},{right:'docs',icon:'#i-hdoc',title:'HarmonyOS Docs'},{right:'inspector',icon:'#i-pen',title:'Code Review'},{right:'web',icon:'#i-puzzle',title:'Extensions'},{right:'previewer',icon:'#i-tw-preview',title:'Previewer'},{more:1},{right:'devices',icon:'#i-phone',title:'Device Manager'}],onReady:function(){
-    $('#status-slot').innerHTML='<span class="dm-capsule" id="cap"><span class="dm-dot ok" id="cap-dot"></span><span id="cap-txt">任务在 MateBook · 另外 3 端已同步</span></span>';
     var code=$('#code');code.scrollTop=code.scrollHeight;   /* 断点在第 28 行，滚到底让它露出来 */
   }});
 
   var NAMES={pc:'MateBook',phone:'Pura 70 Pro',tablet:'MatePad',watch:'WATCH 5'};
   var ICONS={pc:'#i-laptop',phone:'#i-phone',tablet:'#i-tablet',watch:'#i-watch'};
-  var active='pc', continued=false;
+  var active='pc';
   /* 这份任务状态：各端看到的都是它 */
-  var S={devs:['Mate 70 Pro'],log:412,pct:0};
+  var S={devs:['Mate 70 Pro'],log:412,pct:0,x6:null};   /* x6：Agent·回归 借 Mate X6 的决定（later 排后 / now 先跑） */
 
-  function logAct(who,txt,t){
-    var list=$('#acts-list');
-    $$('.dm-item.new',list).forEach(function(x){x.classList.remove('new')});
-    list.insertAdjacentHTML('beforeend','<div class="dm-item new"><span class="t">'+(t||'14:05')+'</span><svg><use href="'+ICONS[who]+'"/></svg><span class="who">'+NAMES[who]+'</span><span class="grow">'+txt+'</span></div>');
-    $('#acts-cnt').textContent=$$('.dm-item',list).length;
+  /* ---------- 统一的「在等你」队列：两个 Agent 的待决放一处，离开时整队带走 ---------- */
+  function queue(){
+    var q=[];
+    if(!continued)q.push({id:'ap4',t:'批第 4 步'});
+    if(!S.x6)q.push({id:'x6',t:'Agent·回归 借 X6'});
+    return q;
   }
-
-  function capsule(txt,wait){
-    var cap=$('#cap');if(!cap)return;
-    cap.className='dm-capsule'+(wait?' wait':'');
-    $('#cap-dot').className='dm-dot ok'+(wait?' pulse':'');
-    $('#cap-txt').textContent=txt;
+  function goQ(){
+    DemoFrame.setSide('left','agent');
+    var top=queue()[0],el=top?(top.id==='ap4'?$('#ap4'):$('#q [data-q="x6"]')):$('#tr5');
+    if(!el)return;var sc=$('#ai-scroll'),d=el.getBoundingClientRect().top-sc.getBoundingClientRect().top;sc.scrollTo({top:sc.scrollTop+d-sc.clientHeight/3,behavior:'smooth'});
+    el.classList.remove('flash-q');void el.offsetWidth;el.classList.add('flash-q');
+  }
+  function renderQ(){
+    var q=queue();
+    $('#q-n').textContent=q.length;
+    var ap=$('#q [data-q="ap4"]'),x6=$('#q [data-q="x6"]');
+    if(ap)ap.hidden=continued;if(x6)x6.hidden=!!S.x6;
+    var e=$('#q .q-empty');
+    if(!q.length&&!e)$('#q').insertAdjacentHTML('beforeend','<div class="q-empty">都拍完了 · Agent 在接着跑</div>');
+    $('#q .q-hd').style.color=q.length?'':'var(--ui-fg-info)';
+    var d=$('#q .ai-wait-dot');if(d)d.style.display=q.length?'':'none';
+    agentCap();
+  }
+  /* 顶栏胶囊只推最挡路的那一件，其余写「还有 N 件」 */
+  function agentCap(){
+    var q=queue(),where=active==='phone'?' · 在手机实况窗上':(active==='tablet'?' · 在平板上':(active==='watch'?' · 在手表上':''));
+    if(q.length){
+      var top=q[0].id==='ap4'?'<b style="font-weight:500">Agent·调试</b> 在等你 · 批第 4 步':'<b style="font-weight:500">Agent·回归</b> 在等你 · 借 Mate X6';
+      DemoFrame.agent('waiting',top+where,{queue:q.length-1,onClick:goQ});
+    }else if(S.pct<62){
+      DemoFrame.agent('verifying','Agent·调试 在 '+S.devs.join('、')+' 收滑动帧率 <span class="t">'+Math.round(S.pct/62*100)+'%</span>',{onClick:goQ});
+    }else DemoFrame.agent('done','Agent·调试 第 5 步完成 · 帧率 58 → 60',{onClick:goQ});
   }
   function stepNow(){return +$('#step-now').textContent}
 
@@ -459,12 +504,11 @@
       it.classList.toggle('here',e===id);
       if(e===id){pill.className='dm-pill ok';pill.textContent='这里';btn.hidden=true;}
       else if(e==='pc'){pill.className='dm-pill muted';pill.textContent='跟随';btn.hidden=false;}
-      else{pill.className='dm-pill info';pill.textContent='已同步';btn.hidden=false;}
+      else{pill.className='dm-pill muted';pill.textContent='已同步';btn.hidden=false;}
     });
     $$('#canvas .dm-device').forEach(function(d){d.classList.toggle('live',d.dataset.end===id)});
     $('#ends-when').textContent='状态一致 · 刚刚';
-    capsule(id==='pc'?'任务回到 MateBook · 状态同步':(id==='phone'?'任务在 Pura 70 Pro 实况窗上 · 状态同步':'任务已交给 '+NAMES[id]+' · 状态同步'),id!=='pc');
-    logAct(id,msg||(id==='pc'?'接回任务：断点 28、日志 '+S.log+' 行、AI 第 '+stepNow()+' 步都还在':'接过任务：断点、日志位置、AI 步骤原样接上'),t);
+    agentCap();
   }
 
   /* 状态变了，各处一起刷新 */
@@ -475,12 +519,13 @@
     $('#ctx-dev').textContent=S.devs.length>1?'Mate 70 Pro +1':'Mate 70 Pro';
     var set=function(id,v,prop){var el=$('#'+id);if(!el)return;if(prop)el.style.setProperty('--v',v);else el.textContent=v};
     set('pv-step',stepNow()+'/5');
-    set('pv-tt',continued?'收集滑动帧率 · '+S.pct+'%':'等你确认第 4 步');
+    set('pv-tt',continued?'收集滑动帧率 · '+Math.round(S.pct/62*100)+'%':'Agent 在等你批第 4 步');
+    var q=queue();set('pv-more',q.length>1?'还有 '+(q.length-1)+' 件在等你 · Agent·回归 借 X6':'');
     set('pv-sub',continued?S.devs.join(' + ')+' · HiLog '+S.log+' 行':'Mate 70 Pro · ListPage:28');
     set('pv-bar',(continued?40+S.pct*0.6:72)+'%',1);
     set('pa-dev',S.devs.length>1?'Mate 70 Pro + X6':'Mate 70 Pro');
     set('pa-log','第 '+S.log+' 行');
-    set('pa-ai','第 '+stepNow()+'/5 步 · '+(continued?S.pct+'%':'等你'));
+    set('pa-ai','第 '+stepNow()+'/5 步 · '+(continued?Math.round(S.pct/62*100)+'%':'等你批')+(q.length>1?' · 另 1 件':''));
     set('pa-bar',(continued?40+S.pct*0.6:72)+'%',1);
     var ok=$('#pv-ok');if(ok)ok.hidden=continued;
   }
@@ -490,30 +535,50 @@
     var t=setInterval(function(){
       S.pct=Math.min(62,S.pct+4);
       S.log=412+Math.round(56*S.pct/62);
-      if(S.pct>=20&&S.devs.length<2)S.devs.push('Mate X6');
+      if(S.pct>=20&&S.devs.length<2&&S.x6!=='now')S.devs.push('Mate X6');
       syncState();renderLog(S.log,false);
-      if(S.pct>=62)clearInterval(t);
+      $('#s5-file').textContent=Math.round(S.pct/62*100)+'%';
+      if(S.pct>=62){clearInterval(t);var ic=$('#s5-ico');ic.outerHTML='<svg class="ai-ico ok" id="s5-ico"><use href="#i-checkS"/></svg>';$('#s5-txt').textContent='第 5 步 · '+S.devs.join('、')+' 滑动帧率 58 → 60';$('#s5-file').textContent='完成';$('#foot-txt').textContent='5 / 5 步完成';}
+      agentCap();
     },220);
   }
 
   /* 第 4 步确认、第 5 步开跑：不管从哪一端按的，各端看到的都是这份状态 */
   function continueTask(from){
     if(continued)return;continued=true;
-    var s4=$('#steps .stp[data-step="4"] .st'),s5=$('#steps .stp[data-step="5"] .st');
-    s4.className='st done';s4.innerHTML='<svg><use href="#i-checkS"/></svg>';
-    s5.className='st run';s5.innerHTML='';
-    $('#s4-file').textContent=from==='watch'?'手表上按的':(from==='tablet'?'平板上批的':(from==='phone'?'手机实况窗批的':'这里点的'));
-    $('#s5-file').textContent='进行中';
+    var where=from==='watch'?'你在 WATCH 5 上批的':(from==='tablet'?'你在 MatePad 上批的':(from==='phone'?'你在手机实况窗上批的':'你在这里批的'));
+    $('#ap4').outerHTML='<div class="ai-toolrow" id="ap4"><svg class="ai-ico ok"><use href="#i-checkS"/></svg><span class="what">第 4 步 · loadCover 改异步 · '+where+'</span><span class="end">'+(from==='phone'?'14:09':'14:05')+'</span></div>';
+    $('#s5-ico').outerHTML='<span class="ai-ring" id="s5-ico"></span>';
+    if(S.x6==='now')$('#s5-txt').textContent='第 5 步 · 在 Mate 70 Pro 上收滑动帧率 · X6 被 Agent·回归 占用';
+    $('#s5-file').textContent='0%';
+    renderCode();
     $('#step-now').textContent='5';
-    $('#foot-txt').textContent='第 5 / 5 步进行中 · 从 '+NAMES[from]+' 继续';
+    $('#foot-txt').textContent='第 5 / 5 步进行中 · 从 '+NAMES[from]+' 批的';
     /* 手表 */
-    $('#w-big').textContent='5 / 5';$('#w-small').textContent='继续中';$('#w-go').classList.add('lit');
+    $('#w-big').textContent='5 / 5';$('#w-small').textContent='继续中'+(S.x6?'':' · +1');$('#w-go').classList.add('lit');
     /* 平板 */
+    $('#tab-hd').textContent='Agent·调试 · 第 5 步 · ListPage.ets:28';
     $('#tab-sub').textContent='第 5 步 · 继续跑完，收集滑动帧率 · '+NAMES[from]+' 已确认第 4 步';
     var tb=$('#tab-tb');tb.classList.remove('lit');tb.classList.add('done');$('#tab-ok').textContent='第 4 步已批准';
-    logAct(from,from==='watch'?'按了「继续」：第 4 步确认，第 5 步开跑':(from==='tablet'?'批准了第 4 步，第 5 步开跑':(from==='phone'?'实况窗上点「批准」：第 5 步开跑，加上 Mate X6':'确认了第 4 步，第 5 步开跑')),from==='phone'?'14:09':null);
-    syncState();runStep5();
+    renderQ();syncState();runStep5();
   }
+  /* Agent·回归 要借 X6：排到第 5 步后，或让它先跑（第 5 步就只在 Mate 70 Pro 上收） */
+  function decideX6(v){
+    if(S.x6)return;S.x6=v;
+    var row=$('#q [data-q="x6"]');if(row)row.hidden=true;
+    if(v==='now'&&!continued)$('#s5-txt').textContent='第 5 步 · 在 Mate 70 Pro 上收滑动帧率 · X6 被 Agent·回归 占用';
+    if(v==='later')$('#ends-when').textContent='Agent·回归 排在第 5 步后';
+    var w=$('#w-small');if(w)w.textContent=continued?'继续中':'等你批';
+    renderQ();syncState();
+  }
+  $('#q').addEventListener('click',function(e){
+    var b=e.target.closest('[data-x6]');if(b){e.stopPropagation();decideX6(b.dataset.x6);return}
+    var it=e.target.closest('[data-q="ap4"]');if(it)goQ();
+  });
+  $('#steps').addEventListener('click',function(e){
+    if(e.target.closest('#ap4-ok')){setActive('pc');continueTask('pc');return}
+    var t=e.target.closest('#tr-done');if(t){var s=$('#tr-sub');s.hidden=!s.hidden;t.setAttribute('aria-expanded',String(!s.hidden))}
+  });
 
   /* ---------- 底部 HiLog：带行号，接续后停在原来那一行 ---------- */
   function logLine(n){
@@ -566,16 +631,16 @@
     }else if(st==='lock'){
       h='<div class="t-lock">'+SB('14:06')+'<div class="tm"><b>14:06</b><span>9月24日 星期四</span></div>'
         +'<div class="lv" id="live-card"><div class="r1"><svg><use href="#i-logo"/></svg>DevEco Code · 调试<span class="grow"></span><em id="pv-step">'+stepNow()+'/5</em></div>'
-        +'<div class="tt" id="pv-tt"></div><div class="sub" id="pv-sub"></div><div class="pg"><i id="pv-bar"></i></div>'
+        +'<div class="tt" id="pv-tt"></div><div class="sub" id="pv-sub"></div><div class="more" id="pv-more"></div><div class="pg"><i id="pv-bar"></i></div>'
         +'<div class="bb"><span class="pri" id="pv-ok" title="在实况窗上批准第 4 步">批准</span><span id="pv-open" title="在手机上打开这个调试会话">打开</span></div></div>'
         +'<div class="sw">上滑解锁</div><span class="bar"></span></div>';
     }else if(st==='app'){
       h='<div class="t-app">'+SB('14:15')+'<div class="ah"><svg><use href="#i-logo"/></svg><b>调试会话</b><span>ListPage</span></div>'
         +'<div class="lst"><div><span>真机</span><b id="pa-dev"></b></div><div><span>断点</span><b class="mono">ListPage.ets:28</b></div>'
-        +'<div><span>HiLog</span><b id="pa-log"></b></div><div><span>AI</span><b id="pa-ai"></b><div class="pg"><i id="pa-bar"></i></div></div></div>'
+        +'<div><span>HiLog</span><b id="pa-log"></b></div><div><span>Agent</span><b id="pa-ai"></b><div class="pg"><i id="pa-bar"></i></div></div></div>'
         +'<div class="hint"><svg><use href="#i-tap"/></svg><span>碰一下电脑<br>在 IDE 里接着调</span></div><span class="bar"></span></div>';
     }else if(st==='link'){
-      h='<div class="t-link"><span class="spin"></span><b>正在接续到<br>MateBook Pro</b><span>真机、断点、日志位置<br>AI 步骤一起带过去</span></div>';
+      h='<div class="t-link"><span class="spin"></span><b>正在接续到<br>MateBook Pro</b><span>真机、断点、日志位置<br>在等你的整队一起带过去</span></div>';
     }else if(st==='done'){
       h='<div class="t-link"><span class="ok"><svg viewBox="0 0 16 16"><path d="M3.5 8.5l3 3 6-7" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg></span><b>已在电脑上接续</b><span>实况窗已收起<br>离开电脑时会再接回来</span></div>';
     }
@@ -596,16 +661,6 @@
     $('#tap-hint').textContent=a.hint;
   }
 
-  function flyFrom(a,b,cb){
-    var f=$('#fly'),r=tapst.getBoundingClientRect();
-    var ra=a.getBoundingClientRect(),rb=b.getBoundingClientRect();
-    f.style.transition='none';
-    f.style.left=(ra.left-r.left+ra.width/2-22)+'px';f.style.top=(ra.top-r.top+ra.height/2-14)+'px';f.style.opacity='1';f.style.transform='scale(1)';
-    void f.offsetWidth;f.style.transition='';
-    f.style.left=(rb.left-r.left+rb.width/2-22)+'px';f.style.top=(rb.top-r.top+rb.height/2-14)+'px';f.style.transform='scale(.7)';
-    setTimeout(function(){f.style.opacity='0';if(cb)cb()},720);
-  }
-
   /* ① 锁屏离开：IDE 里的任务变成手机上的实况窗 */
   async function leave(){
     if(T!=='desk')return;
@@ -613,7 +668,6 @@
     lsc.dataset.st='lock';
     await wait(350);
     renderPhone('lock');
-    flyFrom(lsc,$('#live-card')||tsc);
     await wait(250);
     setActive('phone','实况窗接过任务：第 '+stepNow()+' 步 · 断点 28 · 日志 '+S.log+' 行','14:06');
     setT('away');
@@ -635,19 +689,17 @@
     var rp=$('#ripple');rp.style.left=tx+'px';rp.style.top=ty+'px';rp.classList.add('on');
     renderPhone('link');
     lsc.dataset.st='ide';
-    await wait(500);
-    flyFrom(tph,lsc);
-    await wait(650);
+    await wait(900);
     tph.style.transform='';
     await wait(300);
     rp.classList.remove('on');
     /* 电脑上：系统接续卡片 */
     $('#hc-dev').textContent=S.devs.join('、')+(S.devs.length>1?' · 2 台':'');
     $('#hc-log').textContent='看到第 '+S.log+' 行 · A00001/ListPage';
-    $('#hc-ai').textContent='第 '+stepNow()+' / 5 步 · '+(continued?'帧率采集 '+S.pct+'%':'等你确认第 4 步');
+    $('#hc-ai').textContent='第 '+stepNow()+' / 5 步 · '+(continued?'帧率采集 '+Math.round(S.pct/62*100)+'%':'等你批第 4 步');
+    var q=queue();$('#hc-q').textContent=q.length?q.length+' 件 · '+q.map(function(x){return x.t}).join('、'):'无 · 都拍完了';
     var hc=$('#hc');hc.classList.remove('out');hc.hidden=false;
     $('#tap-hint').textContent='碰到了 · 电脑弹出接续卡片';
-    logAct('phone','碰一碰 MateBook Pro：电脑弹出接续卡片','14:16');
   }
   function hideCard(){var hc=$('#hc');hc.classList.add('out');setTimeout(function(){hc.hidden=true;hc.classList.remove('out')},300)}
 
@@ -655,31 +707,20 @@
   function restore(){
     hideCard();
     setActive('pc','碰一碰接回：'+S.devs.join('、')+' · 断点 28 · 日志 '+S.log+' 行 · AI 第 '+stepNow()+' 步','14:16');
-    capsule('已从 Pura 70 Pro 接续 · 原样接上',false);
     /* 编辑器：回到 ListPage.ets:28 断点 */
     var tab=$('.tab[data-file="ListPage.ets"]');if(tab&&!tab.classList.contains('on'))tab.click();
-    var code=$('#code');code.innerHTML=DemoFrame.code('ListPage.ets',{cur:28,marks:{28:'bp'}});
+    renderCode();var code=$('#code');
     var ln=$('.ln[data-ln="28"]',code);if(ln){ln.classList.add('flash');setTimeout(function(){code.scrollTop=ln.offsetTop-code.clientHeight/2},40);}
     var pos=$('#status-pos');if(pos)pos.textContent='28:5';
     /* 底部：HiLog 打开到原来那一行 */
     DemoFrame.setSide('bottom','log');
     $('#log-pill').hidden=false;$('#log-pill-t').textContent='从 Pura 70 Pro 接续 · 第 '+S.log+' 行';
     setTimeout(function(){renderLog(S.log,true)},30);
-    /* AI 步骤：聚焦到正在的那一步 */
-    var cur=$('#steps .stp[data-step="'+stepNow()+'"]');
-    $$('#steps .stp.focus').forEach(function(x){x.classList.remove('focus')});
-    if(cur){cur.classList.add('focus');setTimeout(function(){cur.classList.remove('focus')},2600)}
-    /* 对话里留一张回执 */
-    var old=$('#hand-card');if(old)old.remove();
-    $('#thread').insertAdjacentHTML('beforeend','<div class="dm-card accent hand-card" id="hand-card">'
-      +'<div class="dm-card-hd"><svg class="i"><use href="#i-tap"/></svg>从 Pura 70 Pro 碰一碰接续<span class="grow"></span><span class="dm-small dm-muted">14:16 · 原样接上</span></div>'
-      +'<div class="dm-list">'
-      +'<div class="dm-item"><svg><use href="#i-phone"/></svg><span class="k">真机</span><span class="grow">'+S.devs.join('、')+'</span><span class="dm-pill ok">已重连</span></div>'
-      +'<div class="dm-item"><svg><use href="#i-bpdot"/></svg><span class="k">断点</span><span class="grow mono">ListPage.ets:28</span><button class="btn sm" data-jump="code">跳到</button></div>'
-      +'<div class="dm-item"><svg><use href="#i-loglines"/></svg><span class="k">HiLog</span><span class="grow">停在第 '+S.log+' 行</span><button class="btn sm" data-jump="log">打开</button></div>'
-      +'<div class="dm-item"><svg><use href="#i-genie"/></svg><span class="k">AI</span><span class="grow">第 '+stepNow()+' / 5 步 · '+(continued?'帧率采集 '+S.pct+'%':'等你确认第 4 步')+'</span><span class="dm-pill '+(continued?'info':'warn')+'">'+(continued?'继续中':'等你')+'</span></div>'
-      +'</div></div>');
-    var sc=$('#ai-scroll');setTimeout(function(){sc.scrollTop=sc.scrollHeight},40);
+    /* 对话里只留一行回执；在等你的队列原样还在 */
+    var old=$('#hand-row');if(old)old.remove();
+    var q=queue();
+    $('#steps').insertAdjacentHTML('beforeend','<div class="ai-toolrow" id="hand-row"><svg class="ai-ico"><use href="#i-tap"/></svg><span class="what">从 Pura 70 Pro 接续 · 真机重连、断点 28、HiLog 第 '+S.log+' 行'+(q.length?'、在等你 '+q.length+' 件':'')+' 原位接上</span><span class="end">14:16</span></div>');
+    setTimeout(goQ,60);
     renderPhone('done');setT('done');
     setTimeout(function(){if(T==='done')renderPhone('aod')},2600);
   }
@@ -731,20 +772,20 @@
     if(d.dataset.end==='tablet'&&!continued)$('#tab-tb').classList.add('lit');
   });
 
-  renderPhone('aod');setT('desk');setScene('tap');
+  renderPhone('aod');setT('desk');setScene('tap');renderQ();
   window.addEventListener('resize',placeCaps);
 
 DemoGuide.init([
-  {target:'#tap-act',kind:'click',pos:'top',label:'要离开工位？点这里，一步步走'},
-  {target:'#tph',kind:'change',pos:'left',label:'离开后在手机上盯 AI、批第 4 步'},
-  {target:'#hc-go',kind:'click',pos:'bottom',label:'回来了：点这里原位接着调'},
-  {target:'[data-take="watch"]',kind:'click',pos:'top',label:'点这里交给手表'},
-  {target:'#dev-watch',kind:'change',pos:'top',label:'手表变成继续中'}
+  {target:'#tap-act',kind:'click',pos:'top',label:'Agent 在等你批，你要去开会：点这里'},
+  {target:'#tph',kind:'change',pos:'left',label:'离开后手机实况窗盯 Agent，可直接批'},
+  {target:'#hc-go',kind:'click',pos:'bottom',label:'回来了：点这里原位接上'},
+  {target:'#q',kind:'change',pos:'right',label:'两个 Agent 在等你的，整队跟着你走'}
 ],{scene:{
-  at:'AI 在改 loadCover、停在断点等你批，你得去开会',
-  goal:'离开时不耽误 AI，回来在原处接着调',
-  pain:'回来要重连真机、重找断点、翻日志找行、翻聊天看进度',
-  fix:'锁屏即转手机实况窗；回来碰一下电脑，全部原位接上'
+  at:'Agent 改完 loadCover 停在第 4 步等你批，你要去开会',
+  goal:'离开也能批，回来在原处接着调',
+  pain:'回来要重连真机、找断点、翻日志、翻聊天看它到哪了',
+  fix:'锁屏即成手机实况窗；回来碰一下电脑，全部原位接上',
+  agent:'它跑步骤、停下等批；多 Agent 时整队在等你随你走；你批'
 }});
 })();
 </script>
