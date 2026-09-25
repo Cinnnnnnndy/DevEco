@@ -1,0 +1,1209 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='32' y2='32' gradientUnits='userSpaceOnUse'%3E%3Cstop stop-color='%232C8DDD'/%3E%3Cstop offset='1' stop-color='%233357AC'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='32' height='32' rx='7' fill='url(%23g)'/%3E%3Ctext x='16' y='22.5' font-family='Arial,Helvetica,sans-serif' font-size='13' font-weight='700' fill='white' text-anchor='middle'%3EDE%3C/text%3E%3C/svg%3E">
+<title>30 · 折叠屏鸿蒙电脑上开发：上屏写码，下屏运行与调试</title>
+<link rel="stylesheet" href="../../deveco-intui-kit/src/tokens.css">
+<link rel="stylesheet" href="../../deveco-intui-kit/src/components.css">
+<link rel="stylesheet" href="../_shared/frame.css">
+<link rel="stylesheet" href="../_shared/guide.css">
+<script src="../../deveco-intui-kit/src/icons.js"></script>
+<script src="../../deveco-intui-kit/icons/ai-icons.js"></script>
+<script src="../_shared/frame.js"></script>
+<script src="../_shared/guide.js"></script>
+<style>
+  /* =====================================================================
+     整页 = 一张桌面：左边是姿态 / 场景切换，右边是一台 MateBook Fold。
+     IDE（frame 注入外壳）画在折叠屏里：展开平放时占满 4:3 大屏；
+     悬停时只占上屏（3:2），应用窗口、虚拟键盘 / 调试台、M-Pen 在下屏（3:2）。
+     ===================================================================== */
+  body{background:var(--ui-editor-bg)}
+  .stage{flex:1;display:flex;min-width:0;min-height:0;color:var(--ui-fg);font-family:var(--font-ui)}
+
+  /* ---------- 左侧：设备与姿态 ---------- */
+  .rail{width:188px;flex:none;display:flex;flex-direction:column;gap:12px;padding:16px 12px;background:var(--ui-bg);border-right:1px solid var(--ui-border);font-size:var(--fs-sm);line-height:var(--lh-sm);user-select:none}
+  .rl-dev{display:flex;flex-direction:column;gap:6px;padding:10px;border:1px solid var(--ui-border);border-radius:var(--arc);background:var(--ui-field-bg)}
+  .rl-dev .nm{display:flex;align-items:center;gap:6px;font-weight:600;font-size:var(--fs);line-height:var(--lh)}
+  .rl-dev .nm svg{width:16px;height:16px;color:var(--ui-accent)}
+  .rl-dev .os{color:var(--ui-fg-info)}
+  .rl-dev dl{margin:2px 0 0;display:grid;grid-template-columns:auto 1fr;gap:3px 8px;font-size:11px;line-height:15px}
+  .rl-dev dt{color:var(--ui-fg-info)}
+  .rl-dev dd{margin:0;font-variant-numeric:tabular-nums}
+  .rl-h{font-size:11px;color:var(--ui-fg-info);margin:2px 0 -4px 2px}
+  .rl-pose{display:flex;flex-direction:column;gap:6px}
+  .rl-pose button{display:grid;grid-template-columns:34px 1fr;align-items:center;gap:8px;height:48px;padding:0 10px 0 6px;border:1px solid var(--ui-component-border);border-radius:var(--arc);background:transparent;color:var(--ui-fg);text-align:left;cursor:pointer}
+  .rl-pose button:hover{background:var(--ui-hover)}
+  .rl-pose button.on{border-color:var(--ui-accent);background:color-mix(in srgb,var(--ui-accent) 14%,transparent)}
+  .rl-pose button svg{width:34px;height:30px;color:var(--ui-icon)}
+  .rl-pose button.on svg{color:var(--ui-accent)}
+  .rl-pose b{display:block;font-weight:600;font-size:var(--fs);line-height:var(--lh)}
+  .rl-pose span{display:block;font-size:11px;color:var(--ui-fg-info);font-variant-numeric:tabular-nums}
+  .rl-scenes{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px}
+  .rl-scenes button{width:100%;display:flex;align-items:flex-start;gap:8px;padding:6px 8px;border:0;border-radius:6px;background:transparent;color:var(--ui-fg);text-align:left;cursor:pointer;font-size:var(--fs-sm);line-height:var(--lh-sm)}
+  .rl-scenes button:hover{background:var(--ui-hover)}
+  .rl-scenes button i{flex:none;width:18px;height:18px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-size:10px;font-weight:600;background:var(--ui-tag-bg);color:var(--ui-fg-info)}
+  .rl-scenes button.on{background:var(--ui-selection)}
+  .rl-scenes button.on i{background:var(--ui-accent);color:var(--ui-accent-fg)}
+  .rl-scenes button.done i{background:color-mix(in srgb,var(--ui-success) 22%,transparent);color:var(--ui-success)}
+
+  /* ---------- 桌面与设备 ---------- */
+  .desk{flex:1;min-width:0;position:relative;overflow:hidden;
+    background:radial-gradient(ellipse 70% 60% at 50% 38%,color-mix(in srgb,var(--ui-fg) 7%,var(--ui-editor-bg)),var(--ui-editor-bg))}
+  .fdev{position:absolute;left:0;right:0;top:17px;margin:0 auto;width:max-content;transition:opacity .22s,transform .22s}
+  .fdev.morph{opacity:0;transform:scale(.97)}
+  .half{position:relative;background:#101113;box-shadow:0 18px 50px rgba(0,0,0,.35),inset 0 0 0 1px rgba(255,255,255,.06)}
+  .half .scr{position:relative;width:100%;height:100%;overflow:hidden;border-radius:9px;
+    background:radial-gradient(ellipse 90% 80% at 20% 0%,color-mix(in srgb,var(--ui-accent) 30%,var(--ui-editor-bg)),transparent 70%),
+               radial-gradient(ellipse 80% 90% at 100% 100%,color-mix(in srgb,var(--ui-success) 18%,var(--ui-editor-bg)),var(--ui-editor-bg))}
+  .half.up{width:1280px;height:966px;padding:12px;border-radius:22px}
+  .hinge,.half.lo{display:none}
+  .stage[data-pose="hover"] .fdev{top:18px}
+  .stage[data-pose="hover"] .half.up{width:800px;height:540px;padding:10px;border-radius:18px 18px 5px 5px}
+  .stage[data-pose="hover"] .hinge{display:block;width:776px;height:12px;margin:0 auto;border-radius:0 0 7px 7px;background:linear-gradient(#34363b,#0c0d0f 70%)}
+  .stage[data-pose="hover"] .half.lo{display:block;width:800px;height:540px;padding:10px;border-radius:5px 5px 18px 18px;transform-origin:50% 0;transform:perspective(3600px) rotateX(46deg)}
+
+  /* 鸿蒙电脑的顶部状态栏（上屏） */
+  .sysbar{position:absolute;left:0;right:0;top:0;height:22px;display:flex;align-items:center;gap:10px;padding:0 12px;background:var(--ui-bg);color:var(--ui-fg);font-size:11px;border-bottom:1px solid var(--ui-border);z-index:3}
+  .sysbar b{font-weight:600}
+  .sysbar .grow{flex:1}
+  .sysbar .si{display:inline-flex;align-items:center;gap:4px;color:var(--ui-fg-info);font-variant-numeric:tabular-nums}
+  .sysbar svg{width:13px;height:13px;color:var(--ui-fg)}
+
+  /* IDE 窗口：展开时占满；运行后吸附到左 2/3；悬停时占满上屏 */
+  .ide-win{position:absolute;left:0;top:22px;bottom:0;width:100%;display:flex;transition:width .35s ease;z-index:2}
+  .stage[data-pose="flat"][data-run="1"] .ide-win{width:829px;box-shadow:6px 0 18px rgba(0,0,0,.18)}
+  #ide{min-width:0;grid-template-columns:minmax(0,1fr)}
+  .hdr .zone.left,.hdr .zone.right{flex:none}
+  .hdr .zone.center{min-width:0;overflow:hidden}
+  .ide[data-ide-theme]{--proj-w:230px;--ai-w:360px;--bottom-h:226px}
+  .stage[data-run="1"] .ide[data-ide-theme]{--ai-w:316px}
+  .stage[data-pose="hover"] .ide[data-ide-theme]{--ai-w:286px;--fs-code:var(--fs-code-sm);--lh-code:20px}
+  .stage[data-pose="hover"] .ide .stripe.left{display:none}
+  .stage[data-pose="hover"] .ide[data-left="none"] .body{grid-template-columns:0 0 minmax(0,1fr) var(--ai-w) var(--stripe-w)}
+  .stage[data-pose="hover"] .ide[data-left="none"][data-right="none"] .body{grid-template-columns:0 0 minmax(0,1fr) 0 var(--stripe-w)}
+  .stage[data-pose="hover"] .code .ln .g{width:46px}
+  .stage[data-pose="hover"] .hv-hide,.stage[data-run="1"] .hv-hide{display:none!important}
+  .stage[data-pose="hover"] .ai-foot{display:none}
+  .stage[data-pose="hover"] .breadcrumbs{display:none}
+  .hdr .caption{display:none}
+  .pose-pill{display:inline-flex;align-items:center;gap:6px;height:22px;margin-left:6px;padding:0 9px;border-radius:11px;background:var(--hdr-hover);color:var(--hdr-fg);font-size:12px;white-space:nowrap}
+  .pose-pill svg.i{width:14px;height:14px}
+  .pose-pill .dim{color:var(--hdr-fg-dim)}
+
+  /* 编辑器：可调的数值、执行行、断点 */
+  .code .tune{border-radius:3px;box-shadow:inset 0 -1px 0 currentColor;cursor:pointer;transition:background .2s}
+  .code .tune:hover{background:color-mix(in srgb,var(--ui-accent) 22%,transparent)}
+  .code .tune.bump{animation:bump .6s ease-out}
+  @keyframes bump{0%{background:color-mix(in srgb,var(--ui-accent) 45%,transparent)}100%{background:transparent}}
+  .code .ln.exec{background:color-mix(in srgb,var(--ui-accent) 26%,transparent);box-shadow:inset 3px 0 0 var(--ui-accent)}
+  .code .ln.exec .g{background:transparent}
+  .code .ln.exec .g .m{position:relative}
+  .code .ln.exec .g .m::after{content:"";position:absolute;left:1px;top:3px;border:5px solid transparent;border-left:7px solid var(--ui-accent)}
+  .code .ln.exec .g .m .bp{box-shadow:0 0 0 2px var(--ui-editor-bg)}
+
+  /* 项目树 */
+  .tree .row .hint{font-size:var(--fs-sm)}
+
+  /* DevEco Code 面板 */
+  .tw-right .ai-scroll{padding:0 10px 10px}
+  .ai-input textarea{min-height:22px}
+  .stage[data-pose="hover"] .ai-input{margin:4px 8px 6px;padding:6px 8px;gap:4px}
+  .stage[data-pose="hover"] .ai-input .top{display:none}
+  .amsg .step.ok svg.i{color:var(--ui-success)}
+  .amsg .step.warn svg.i{color:var(--ui-warning)}
+  .amsg .step.info svg.i{color:var(--ui-info)}
+  .amsg .step{align-items:flex-start}
+  .amsg .step svg.i{margin-top:1px;flex:none}
+  .amsg .step b{color:var(--ui-fg);font-weight:600}
+  .amsg .step code,.amsg code{font-family:var(--font-code);font-size:11px;background:var(--ui-tag-bg);padding:0 3px;border-radius:3px;color:var(--ui-fg)}
+  .amsg .step .spin{margin-top:2px}
+  .tgt{display:grid;grid-template-columns:16px auto 1fr;align-items:center;gap:6px;font-size:var(--fs-sm);line-height:var(--lh-sm)}
+  .tgt svg{width:14px;height:14px;color:var(--ui-icon)}
+  .tgt span{color:var(--ui-fg-info);text-align:right;font-family:var(--font-code);font-size:11px;white-space:nowrap}
+  .dm-card-ft{flex-wrap:wrap}
+  .dm-card-ft .btn svg.i{width:12px;height:12px;color:inherit}
+  .dm-card-bd{gap:6px}
+  .run-steps .stp{height:24px;font-size:11px}
+  .umsg .bubble .from{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--ui-fg-info);margin-bottom:4px}
+  .umsg .bubble .from svg{width:12px;height:12px}
+  .att{display:flex;flex-direction:column;gap:4px;margin-top:6px}
+  .att .ch{display:flex;align-items:center;gap:5px;font-size:11px;line-height:15px;padding:3px 6px;border-radius:5px;background:var(--ui-editor-bg);color:var(--ui-fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .att .ch svg{width:12px;height:12px;flex:none;color:var(--ui-icon)}
+  .att .ch code{font-family:var(--font-code);font-size:10.5px;overflow:hidden;text-overflow:ellipsis}
+  .att .shot{display:flex;gap:8px;align-items:flex-end}
+  .att .shot .frame{position:relative;width:96px;flex:none;border-radius:6px;overflow:hidden;background:#F1F3F5;padding:4px}
+  .att .shot .frame .pc{pointer-events:none}
+  .att .shot .frame::after{content:"";position:absolute;inset:1px;border:2px solid #F24C3D;border-radius:12px/16px}
+  .att .shot .cap{font-size:11px;color:var(--ui-fg-info);line-height:15px}
+  .umsg .bubble{word-break:normal;overflow-wrap:anywhere}
+  .fix-ft{display:flex;gap:6px;flex-wrap:wrap}
+  .fix-ft .btn svg.i{width:12px;height:12px;color:inherit}
+  .diffcard pre{font-size:11px;line-height:18px}
+
+  /* ---------- 下屏：应用自由窗口 ---------- */
+  .lo-desk{position:absolute;inset:0}
+  .win{position:absolute;z-index:4;width:var(--cw,208px);border-radius:10px;overflow:hidden;background:var(--ui-bg);box-shadow:0 12px 32px rgba(0,0,0,.35),0 0 0 1px color-mix(in srgb,var(--ui-fg) 14%,transparent);display:none}
+  .stage[data-run="1"] .win{display:block}
+  .win.enter{animation:winin .45s ease-out}
+  @keyframes winin{from{opacity:0;transform:translateY(10px) scale(.96)}}
+  .win .wt{height:24px;display:flex;align-items:center;gap:6px;padding:0 4px 0 8px;font-size:11px;line-height:14px;color:var(--ui-fg);cursor:grab;user-select:none;white-space:nowrap;touch-action:none}
+  .win.dragging .wt{cursor:grabbing}
+  .win .wt .ico{width:14px;height:14px;border-radius:4px;flex:none;background:linear-gradient(135deg,#0A59F7,#6E9BFF)}
+  .win .wt b{font-weight:600}
+  .win .wt .tag{color:var(--ui-fg-info);font-size:10px;overflow:hidden;text-overflow:ellipsis;min-width:0}
+  .win .wt .ctl{margin-left:auto;display:flex;flex:none}
+  .win .wt .ctl span{width:20px;height:20px;display:grid;place-items:center;border-radius:5px;color:var(--ui-fg-info)}
+  .win .wt .ctl svg{width:12px;height:12px}
+  .win .wc{position:relative;width:100%;aspect-ratio:1260/2844;overflow:hidden}
+  .win.w-pad .wc{aspect-ratio:2880/1920}
+  .win .grip{position:absolute;right:2px;bottom:2px;width:10px;height:10px;border-right:2px solid rgba(0,0,0,.25);border-bottom:2px solid rgba(0,0,0,.25);border-radius:0 0 4px 0;z-index:9;pointer-events:none}
+  .win.reload .wc::after{content:"";position:absolute;inset:0;z-index:8;pointer-events:none;box-shadow:inset 0 0 0 3px var(--ui-accent);animation:rl 1s ease-out forwards}
+  @keyframes rl{to{box-shadow:inset 0 0 0 0 transparent}}
+  .hr-pill{position:absolute;top:20px;left:50%;transform:translateX(-50%);z-index:9;display:inline-flex;align-items:center;gap:4px;height:18px;padding:0 8px;border-radius:9px;background:var(--ui-accent);color:var(--ui-accent-fg);font-size:9.5px;font-weight:600;white-space:nowrap;animation:pillio 1.6s ease-out forwards;pointer-events:none}
+  .hr-pill svg{width:10px;height:10px}
+  @keyframes pillio{0%{opacity:0;transform:translate(-50%,-4px)}12%{opacity:1;transform:translate(-50%,0)}80%{opacity:1}100%{opacity:0}}
+
+  /* 应用内容（鸿蒙应用自身的界面，按应用的浅色主题画） */
+  .app{position:absolute;inset:0;display:flex;flex-direction:column;background:#F1F3F5;color:#182431;font-family:var(--font-ui);overflow:hidden}
+  .app .sb{height:16px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 11px;font-size:8px;font-weight:600;position:relative;font-variant-numeric:tabular-nums}
+  .app .sb .punch{position:absolute;left:50%;top:4px;width:7px;height:7px;margin-left:-3.5px;border-radius:50%;background:#0b0b0c}
+  .app .sb .ics{display:flex;gap:3px;align-items:center}
+  .app .sb .sig{display:flex;align-items:flex-end;gap:1px;height:7px}
+  .app .sb .sig i{width:1.5px;background:#182431;border-radius:1px}
+  .app .sb .bat{width:13px;height:6px;border:1px solid #182431;border-radius:2px;padding:1px;display:flex}
+  .app .sb .bat i{flex:none;width:72%;background:#182431;border-radius:1px}
+  .app .ah{height:30px;flex:none;display:flex;align-items:center;gap:7px;padding:0 9px}
+  .app .ah b{font-size:13px;font-weight:600;white-space:nowrap}
+  .app .ah .srch{flex:1;min-width:0;height:18px;border-radius:9px;background:#fff;color:#99A0AA;font-size:8px;display:flex;align-items:center;padding:0 7px;white-space:nowrap}
+  .app .ah .tabs2{display:flex;gap:10px;font-size:9px;color:#6B7280;white-space:nowrap}
+  .app .ah .tabs2 .on{color:#0A59F7;font-weight:600}
+  .app .grid{flex:1;min-height:0;overflow:hidden;display:grid;grid-template-columns:repeat(var(--cols),minmax(0,1fr));gap:6px;padding:2px 8px 6px;align-content:start}
+  .pc{position:relative;background:#fff;border-radius:9px;padding:5px;display:flex;flex-direction:column;gap:3px;min-width:0}
+  .pc .img{aspect-ratio:1;min-height:0;border-radius:6px;display:grid;place-items:center;overflow:hidden}
+  .pc .img svg{width:38%;height:auto;aspect-ratio:1;color:rgba(24,36,49,.42)}
+  .pc .tt{font-size:9px;line-height:12px;max-height:24px;overflow:hidden}
+  .pc .pr{display:flex;align-items:baseline;gap:3px;white-space:nowrap;overflow:hidden;min-height:14px}
+  .pc .pr b{font-size:11.5px;font-weight:600;color:#E84026}
+  .pc .pr span{font-size:8.5px;color:#99A0AA}
+  .pc .pr em{font-style:normal;font-size:7.5px;line-height:11px;padding:0 3px;border-radius:3px;background:#FFE9E3;color:#E84026}
+  .pc .pr.wrap{flex-wrap:wrap;gap:0 3px}
+  .pc .pr.wrap b{margin-right:1px}
+  .pc .add{height:18px;border-radius:9px;border:0;padding:0;background:#0A59F7;color:#fff;font-size:8.5px;font-weight:600;font-family:inherit;cursor:pointer}
+  .pc .add:active{filter:brightness(.9)}
+  .grid[style*="--cols:1"] .pc .tt{font-size:11px;line-height:15px;max-height:30px}
+  .grid[style*="--cols:1"] .pc .pr b{font-size:14px}
+  .grid[style*="--cols:1"] .pc .pr span{font-size:10px}
+  .grid[style*="--cols:1"] .pc .pr em{font-size:9px;line-height:13px}
+  .grid[style*="--cols:1"] .pc .add{height:24px;font-size:10px}
+  .grid[style*="--cols:3"] .pc{padding:4px;gap:2px}
+  .grid[style*="--cols:3"] .pc .tt{font-size:8px;line-height:10px;max-height:20px}
+  .grid[style*="--cols:3"] .pc .pr b{font-size:9.5px}
+  .app .tabbar{height:28px;flex:none;display:flex;justify-content:space-around;align-items:center;background:#fff;font-size:8px;color:#99A0AA}
+  .app .tabbar span{position:relative}
+  .app .tabbar .on{color:#0A59F7;font-weight:600}
+  .app .tabbar i{position:absolute;top:-6px;right:-10px;min-width:12px;height:12px;padding:0 3px;border-radius:6px;background:#E84026;color:#fff;font-style:normal;font-size:7.5px;line-height:12px;text-align:center;font-weight:600}
+  .app .gbar{height:10px;flex:none;display:grid;place-items:center;background:#fff}
+  .app .gbar i{width:62px;height:3px;border-radius:2px;background:#182431}
+  .app.pad .gbar i{width:96px}
+  .app.pad .grid{padding:2px 10px 6px;gap:8px}
+  .app.pad .ah .cart{position:relative}
+  .app.pad .ah .cart i{position:absolute;top:-5px;right:-9px;min-width:11px;height:11px;padding:0 2px;border-radius:6px;background:#E84026;color:#fff;font-style:normal;font-size:7px;line-height:11px;text-align:center}
+
+  /* 应用上的系统层：暂停遮罩、Toast、音量 / 旋转 HUD、M-Pen 笔迹 */
+  .ov{position:absolute;inset:0;z-index:6;pointer-events:none}
+  .pause-ov{position:absolute;inset:0;background:rgba(12,14,18,.34);display:grid;place-items:center;animation:fin .2s}
+  .pause-ov span{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:12px;background:rgba(20,22,26,.86);color:#fff;font-size:9.5px;white-space:nowrap}
+  .pause-ov svg{width:10px;height:10px}
+  @keyframes fin{from{opacity:0}}
+  .toast{position:absolute;left:50%;bottom:48px;transform:translateX(-50%);padding:5px 11px;border-radius:13px;background:rgba(24,36,49,.86);color:#fff;font-size:9px;white-space:nowrap;animation:toast 2.2s ease-out forwards}
+  @keyframes toast{0%{opacity:0;transform:translate(-50%,6px)}10%{opacity:1;transform:translate(-50%,0)}80%{opacity:1}100%{opacity:0}}
+  .hud{position:absolute;top:26px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:6px;padding:5px 10px;border-radius:14px;background:rgba(255,255,255,.96);box-shadow:0 4px 14px rgba(0,0,0,.22);color:#182431;font-size:9px;white-space:nowrap;animation:toast 1.8s ease-out forwards}
+  .hud svg{width:12px;height:12px}
+  .inkcap{position:absolute;inset:0;z-index:7;display:none;cursor:crosshair;touch-action:none}
+  .inking .inkcap{display:block}
+  .inking .wc{outline:2px dashed color-mix(in srgb,#F24C3D 70%,transparent);outline-offset:-2px}
+  .ink{position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none}
+  .ink path{fill:none;stroke:#F24C3D;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round;transition:stroke-dashoffset .7s ease-out,opacity .5s}
+  .ink.gone path{opacity:0}
+  .penpop{position:absolute;z-index:8;display:flex;gap:4px;padding:4px;border-radius:9px;background:var(--ui-popup-bg);border:1px solid var(--ui-popup-border);box-shadow:var(--ui-shadow);pointer-events:auto;animation:fin .2s;white-space:nowrap}
+  .penpop .btn{height:22px;padding:0 7px;font-size:11px}
+  .penpop .btn svg.i{width:12px;height:12px;color:inherit}
+
+  /* M-Pen 悬浮工具条 */
+  .penbar{position:absolute;z-index:5;width:44px;display:none;flex-direction:column;align-items:center;gap:3px;padding:6px 0 5px;border-radius:22px;background:var(--ui-popup-bg);border:1px solid var(--ui-popup-border);box-shadow:var(--ui-shadow);color:var(--ui-fg)}
+  .stage[data-run="1"] .penbar{display:flex}
+  .penbar .pb-h{font-size:9px;font-weight:600;color:var(--ui-fg-info);letter-spacing:.02em;margin-bottom:1px}
+  .pbtn{width:34px;height:34px;border-radius:17px;border:0;padding:0;background:transparent;display:grid;place-items:center;color:var(--ui-fg);cursor:pointer}
+  .pbtn:hover{background:var(--ui-hover)}
+  .pbtn.on{background:var(--ui-accent);color:var(--ui-accent-fg)}
+  .pbtn:disabled{opacity:.4;cursor:default}
+  .pbtn svg{width:18px;height:18px}
+
+  /* 下屏底部：虚拟键盘 ↔ 调试台 */
+  .dock{position:absolute;left:230px;top:311px;width:540px;height:199px;overflow:hidden;border-radius:12px;z-index:3}
+  .stage[data-pose="flat"] .dock{display:none}
+  .vkbd{position:absolute;inset:0;padding:8px;display:flex;flex-direction:column;gap:5px;border-radius:12px;background:color-mix(in srgb,var(--ui-bg) 90%,transparent);border:1px solid color-mix(in srgb,var(--ui-fg) 12%,transparent);transition:transform .38s ease,opacity .3s}
+  .vkbd .kr{flex:1;display:flex;gap:5px}
+  .vkbd .kr span{flex:1;border-radius:6px;background:var(--ui-field-bg);box-shadow:0 1px 0 color-mix(in srgb,var(--ui-fg) 20%,transparent);display:grid;place-items:center;font-size:11px;color:var(--ui-fg)}
+  .vkbd .kr span.w15{flex:1.5}.vkbd .kr span.w2{flex:2}.vkbd .kr span.w6{flex:6;color:var(--ui-fg-info);font-size:10px}
+  .vkbd .kr span.fn{color:var(--ui-fg-info)}
+  .dock[data-mode="debug"] .vkbd{transform:translateY(104%);opacity:0}
+  .dock .dbg{position:absolute;inset:0;border-radius:12px;border:1px solid var(--ui-component-border);box-shadow:var(--ui-shadow);transform:translateY(104%);transition:transform .38s ease}
+  .dock[data-mode="debug"] .dbg{transform:none}
+
+  /* 调试台（悬停时在下屏，展开时进 IDE 底部工具窗） */
+  .dbg{display:flex;flex-direction:column;background:var(--ui-bg);color:var(--ui-fg);font-size:var(--fs-sm);line-height:var(--lh-sm);min-height:0;height:100%;overflow:hidden}
+  .dbg-bar{height:38px;flex:none;display:flex;align-items:center;gap:5px;padding:0 8px;border-bottom:1px solid var(--ui-border);white-space:nowrap}
+  .dbg-bar .grow{flex:1}
+  .dbg-bar .dm-pill{font-family:var(--font-code);font-weight:500;max-width:210px;overflow:hidden;text-overflow:ellipsis}
+  .dk{height:28px;min-width:30px;padding:0 9px;border-radius:7px;border:1px solid var(--ui-component-border);background:var(--ui-field-bg);color:var(--ui-fg);display:inline-flex;align-items:center;gap:5px;font-size:12px;cursor:pointer;white-space:nowrap}
+  .dk:hover{background:var(--ui-hover)}
+  .dk:active{background:var(--ui-action-pressed)}
+  .dk svg{width:14px;height:14px;color:var(--ui-icon);flex:none}
+  .dk.primary{background:var(--ui-accent);border-color:var(--ui-accent);color:var(--ui-accent-fg)}
+  .dk.primary svg{color:inherit}
+  .dk:disabled{opacity:.45;cursor:default}
+  .dbg-grid{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr) 128px}
+  .dbg-col{min-width:0;min-height:0;display:flex;flex-direction:column;border-right:1px solid var(--ui-border);overflow:hidden}
+  .dbg-col:last-child{border-right:0}
+  .dbg-h{height:22px;flex:none;padding:0 8px;display:flex;align-items:center;gap:6px;color:var(--ui-fg-info);font-size:11px}
+  .dbg-list{flex:1;min-height:0;overflow:auto}
+  .var{display:flex;gap:6px;padding:0 8px;font-family:var(--font-code);font-size:11px;line-height:18px;white-space:nowrap}
+  .var .vn{color:var(--ed-field);flex:none}
+  .var .vv{color:var(--ed-text);overflow:hidden;text-overflow:ellipsis;min-width:0}
+  .var .vv.num{color:var(--ed-number)}.var .vv.str{color:var(--ed-string)}
+  .var.chg{background:color-mix(in srgb,var(--ui-warning) 16%,transparent)}
+  .var.chg .vv::after{content:" ↑";color:color-mix(in srgb,var(--ui-warning) 80%,var(--ui-fg))}
+  .stk{display:flex;align-items:center;gap:5px;padding:0 8px;line-height:18px;white-space:nowrap;font-size:11px;min-width:0}
+  .stk b{font-weight:600;flex:none}
+  .stk span{color:var(--ui-fg-info);overflow:hidden;text-overflow:ellipsis;min-width:0;font-family:var(--font-code);font-size:10.5px}
+  .stk.cur{background:var(--ui-selection)}
+  .stk.fw b,.stk.fw span{color:var(--ui-fg-disabled);font-weight:400}
+  .dkeys{display:grid;grid-template-columns:1fr;gap:6px;padding:2px 8px 6px}
+  .dkey{height:36px;border-radius:8px;border:1px solid var(--ui-component-border);background:var(--ui-field-bg);color:var(--ui-fg);display:flex;align-items:center;justify-content:center;gap:6px;font-size:12px;line-height:16px;cursor:pointer;padding:0}
+  .dkey:hover{background:var(--ui-hover)}
+  .dkey:active{background:var(--ui-action-pressed)}
+  .dkey svg{width:14px;height:14px;color:var(--ui-icon)}
+  .dbg-log{height:20px;flex:none;border-top:1px solid var(--ui-border);padding:0 8px;display:flex;align-items:center;gap:6px;font-family:var(--font-code);font-size:10.5px;color:var(--ui-fg-info);white-space:nowrap;overflow:hidden}
+  .dbg-log b{color:var(--ui-fg);font-weight:500}
+  .dbg-log.flash{animation:logf .8s ease-out}
+  @keyframes logf{from{background:color-mix(in srgb,var(--ui-accent) 22%,transparent)}}
+  .tw-bottom .dbg{border-radius:0}
+  .stage[data-pose="flat"] .dbg-grid{grid-template-columns:minmax(0,1.4fr) minmax(0,1fr) 150px}
+
+  @media (prefers-reduced-motion:reduce){.fdev,.ide-win,.vkbd,.dock .dbg{transition:none}.win.enter,.hr-pill,.toast,.hud{animation:none}}
+
+  /* ===== 终轮：Agent 在下屏报进度（ai.css 状态机）+ 视觉收敛（描边改填充、蓝色只留主按钮 / 选中 / 焦点、删装饰）===== */
+  .agstrip{position:absolute;left:640px;top:112px;width:134px;z-index:5;display:none;flex-direction:column;gap:6px;pointer-events:auto}
+  .stage[data-pose="hover"][data-run="1"] .agstrip{display:flex}
+  .ag-card{border-radius:10px;background:var(--ui-popup-bg);box-shadow:var(--ui-shadow);padding:7px 8px 8px;font-size:11.5px;line-height:15px;display:flex;flex-direction:column;gap:4px;cursor:pointer}
+  .ag-card .hd{display:flex;align-items:center;gap:5px;min-width:0}
+  .ag-card .hd .agt{font-weight:500}
+  .ag-card .hd .ai-ring,.ag-card .hd .ai-spark{width:10px;height:10px}
+  .ag-card .hd .ai-wait-dot{width:7px;height:7px}
+  .ag-card .hd svg{width:11px;height:11px;flex:none;color:var(--ui-success)}
+  .ag-card .fl{font-family:var(--font-code);font-size:10.5px;color:var(--ui-fg-info);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ag-card .st{display:grid;grid-template-columns:10px minmax(0,1fr);gap:4px;color:var(--ui-fg-info)}
+  .ag-card .st::before{content:"·";text-align:center}
+  .ag-card .st.ok::before{content:"✓";color:var(--ui-success)}
+  .ag-card .st.run{color:var(--ui-fg)}
+  .ag-card .st.run::before{content:"›"}
+  .ag-card .st.wait{color:var(--ai-wait-ink)}
+  .ag-card .st.wait::before{content:"●";font-size:7px;color:var(--ai-wait)}
+  .ag-card.waiting{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--ai-wait) 45%,transparent),var(--ui-shadow)}
+  .ag-more{border-radius:9px;background:color-mix(in srgb,var(--ui-bg) 90%,transparent);padding:5px 8px;font-size:11px;line-height:14px;color:var(--ui-fg-info)}
+  .ag-more b{font-weight:500;color:var(--ui-fg)}
+  .agt{color:var(--ai-ink);white-space:nowrap}
+  .amsg .ai-toolrow{margin:0 -6px;align-items:start}
+  .amsg .ai-toolrow .what{white-space:normal;overflow-wrap:anywhere}
+  .amsg .ai-toolrow .ai-ring{width:12px;height:12px;margin:2px 2px 0}
+  .amsg .ai-answer{padding:10px 10px 8px;gap:8px}
+  .amsg .ai-answer__lead{font-size:12.5px;line-height:19px}
+  .amsg .ai-answer__body{font-size:12px;line-height:18px}
+  .amsg .ai-ask{padding:8px 10px}
+  .amsg .ai-ask.flash{animation:askf 1s ease}
+  @keyframes askf{0%{box-shadow:inset 0 0 0 1px var(--ai-wait),0 0 0 4px color-mix(in srgb,var(--ai-wait) 25%,transparent)}}
+  #hdr-agent{display:flex;min-width:0}
+  #hdr-agent .ai-status{max-width:300px}
+  .stage[data-pose="hover"] #hdr-agent .ai-status{max-width:176px}
+  .desk{background:var(--ui-editor-bg)}
+  .half .scr{background:color-mix(in srgb,var(--ui-fg) 5%,var(--ui-editor-bg))}
+  .rl-dev{border:0}
+  .rl-dev .nm svg{color:var(--ui-icon)}
+  .rl-pose button{border:0;background:color-mix(in srgb,var(--ui-fg) 5%,transparent)}
+  .rl-pose button.on{border:0;background:var(--ui-selection)}
+  .rl-pose button.on svg{color:var(--ui-fg)}
+  .rl-scenes button.on i{background:var(--ui-fg);color:var(--ui-editor-bg)}
+  .amsg .step.info svg.i{color:var(--ui-fg-info)}
+  .win.reload .wc::after{box-shadow:inset 0 0 0 3px var(--ui-success)}
+  .hr-pill{background:color-mix(in srgb,#000 72%,transparent);color:#fff}
+  .dk,.dkey{border:0;background:var(--ui-tag-bg)}
+  .dk.primary{background:var(--ui-accent)}
+  .vkbd{border:0}
+  .dock .dbg{border:0}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <symbol id="i-pose-flat" viewBox="0 0 34 30"><rect x="4" y="5" width="26" height="18" rx="2" stroke="currentColor" stroke-width="1.4" fill="none"/><path d="M17 5v18" stroke="currentColor" stroke-dasharray="1.6 1.6"/><path d="M13 23l-3 5M21 23l3 5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></symbol>
+  <symbol id="i-pose-hover" viewBox="0 0 34 30"><path d="M5 26h24" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M8 26L4.5 7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M10.5 22.5a4.5 4.5 0 0 0-2.2 3.4" stroke="currentColor" fill="none"/><circle cx="8" cy="26" r="1.4" fill="currentColor"/></symbol>
+  <symbol id="i-headset" viewBox="0 0 16 16"><path d="M3 10V8a5 5 0 0 1 10 0v2" stroke="currentColor" stroke-width="1.3" fill="none"/><rect x="2.5" y="9.5" width="3" height="4.5" rx="1.2" fill="currentColor"/><rect x="10.5" y="9.5" width="3" height="4.5" rx="1.2" fill="currentColor"/></symbol>
+  <symbol id="i-keys" viewBox="0 0 16 16"><rect x="1.5" y="4" width="13" height="8.5" rx="1.5" stroke="currentColor" stroke-width="1.2" fill="none"/><path d="M4 6.5h1M7 6.5h1M10 6.5h1M4 9.2h1M11 9.2h1M6.5 10h3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></symbol>
+  <symbol id="i-lasso" viewBox="0 0 16 16"><path d="M8 2.5c3.3 0 6 1.8 6 4s-2.7 4-6 4c-.8 0-1.6-.1-2.3-.3" stroke="currentColor" stroke-linecap="round" fill="none"/><path d="M5 10.3C3.2 9.6 2 8.2 2 6.5 2 4.3 4.7 2.5 8 2.5" stroke="currentColor" stroke-linecap="round" stroke-dasharray="1.6 1.8" fill="none"/><path d="M5.5 9.8c-.9.6-1.2 1.6-.6 2.4.7.9 2.2.6 2.4 1.8" stroke="currentColor" stroke-linecap="round" fill="none"/></symbol>
+  <symbol id="i-eraser" viewBox="0 0 16 16"><path d="M9.3 2.7l4 4a1 1 0 0 1 0 1.4L8 13.5H4.8L2.7 11.4a1 1 0 0 1 0-1.4l5.2-5.2" stroke="currentColor" stroke-linejoin="round" fill="none"/><path d="M5.5 7.2l4.3 4.3M8 13.5h5.5" stroke="currentColor" stroke-linecap="round"/></symbol>
+  <symbol id="i-step-over" viewBox="0 0 16 16"><path d="M2.5 9a5.5 5.5 0 0 1 10.3-2.5" stroke="currentColor" stroke-linecap="round" fill="none"/><path d="M13.3 3.5v3.3H10" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" fill="none"/><circle cx="8" cy="12.5" r="1.6" fill="currentColor"/></symbol>
+  <symbol id="i-step-into" viewBox="0 0 16 16"><path d="M8 1.5v8M4.8 6.5L8 9.7l3.2-3.2" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" fill="none"/><circle cx="8" cy="13" r="1.6" fill="currentColor"/></symbol>
+  <symbol id="i-step-out" viewBox="0 0 16 16"><path d="M8 10V2M4.8 5.2L8 2l3.2 3.2" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" fill="none"/><circle cx="8" cy="13" r="1.6" fill="currentColor"/></symbol>
+  <symbol id="i-back" viewBox="0 0 16 16"><path d="M10 3L5 8l5 5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
+  <symbol id="i-battery" viewBox="0 0 16 16"><rect x="1.5" y="5" width="12" height="6" rx="1.5" stroke="currentColor" fill="none"/><rect x="3" y="6.5" width="7.5" height="3" rx=".5" fill="currentColor"/><path d="M14.5 7v2" stroke="currentColor" stroke-linecap="round"/></symbol>
+  <symbol id="i-monitor" viewBox="0 0 16 16"><rect x="1.5" y="2.5" width="13" height="8.5" rx="1.2" stroke="currentColor" stroke-width="1.2" fill="none"/><path d="M6 14h4M8 11v3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></symbol>
+</defs></svg>
+
+<div class="stage" id="stage" data-pose="flat" data-run="0">
+  <!-- 左侧：设备、姿态、场景 -->
+  <aside class="rail" id="rail" aria-label="设备与姿态">
+    <div class="rl-dev">
+      <div class="nm"><svg class="i"><use href="#i-fold"/></svg>MateBook Fold</div>
+      <div class="os">本机 · HarmonyOS 6.1</div>
+      <dl id="rl-spec">
+        <dt>屏幕</dt><dd>18″ 柔性 OLED</dd>
+        <dt>展开</dt><dd>3296×2472 · 4:3</dd>
+        <dt>悬停</dt><dd>2472×1648 ×2 · 3:2</dd>
+      </dl>
+    </div>
+    <div class="rl-h">姿态</div>
+    <div class="rl-pose" role="radiogroup" aria-label="姿态">
+      <button type="button" id="pose-flat" class="on" role="radio" aria-checked="true" data-pose="flat"><svg><use href="#i-pose-flat"/></svg><div><b>展开平放</b><span>180° · 一整块屏</span></div></button>
+      <button type="button" id="pose-hover" role="radio" aria-checked="false" data-pose="hover"><svg><use href="#i-pose-hover"/></svg><div><b>悬停</b><span>110° · 上屏写 下屏跑</span></div></button>
+    </div>
+    <div class="rl-h">场景</div>
+    <ol class="rl-scenes" id="rl-scenes">
+      <li><button type="button" data-scene="1" class="on"><i>1</i><span>展开：整屏写代码</span></button></li>
+      <li><button type="button" data-scene="2"><i>2</i><span>悬停：改一行，下屏热刷新</span></button></li>
+      <li><button type="button" data-scene="3"><i>3</i><span>断点：下屏变调试台</span></button></li>
+      <li><button type="button" data-scene="4"><i>4</i><span>M-Pen 圈一处，AI 改</span></button></li>
+    </ol>
+  </aside>
+
+  <main class="desk" id="desk">
+    <div class="fdev" id="fold">
+      <!-- 上屏（展开时 = 整块屏） -->
+      <div class="half up"><div class="scr" id="scr-up">
+        <div class="sysbar"><b>DevEco Studio</b><span class="grow"></span>
+          <span class="si">中</span><span class="si"><svg><use href="#i-wifi"/></svg></span><span class="si"><svg><use href="#i-battery"/></svg>86%</span><span class="si">9月24日 周四 10:24</span></div>
+        <div class="ide-win" id="ide-win">
+          <div class="ide" id="ide" data-ide-theme="dark" data-left="project" data-right="agent" data-bottom="none" role="application" aria-label="DevEco Studio">
+            <div class="body">
+              <div class="tw tw-left">
+                <div class="pane on" data-pane="project">
+                  <div class="tw-hdr"><span class="title">Project <svg class="i"><use href="#i-chevD"/></svg></span><span class="grow"></span>
+                    <button class="abtn" title="Select Opened File"><svg class="i"><use href="#i-locate"/></svg></button>
+                    <button class="abtn" title="Collapse All"><svg class="i"><use href="#i-collapseAll"/></svg></button>
+                    <button class="abtn" title="Hide|Shift+Esc" data-act="hide-left"><svg class="i"><use href="#i-hide"/></svg></button></div>
+                  <div class="tw-body" id="tree-slot"></div>
+                </div>
+              </div>
+
+              <div class="editor">
+                <div class="tabs" id="tabs"><span class="grow"></span><span class="tab-tools"><button class="abtn" title="Editor Options"><svg class="i"><use href="#i-moreV"/></svg></button></span></div>
+                <div class="code-wrap" data-for-file="Index.ets"><div class="code" id="code-index"></div></div>
+                <div class="code-wrap" data-for-file="ProductCard.ets" hidden><div class="code" id="code-card"></div></div>
+                <div class="code-wrap" data-for-file="CartStore.ets" hidden><div class="code" id="code-store"></div></div>
+                <div class="breadcrumbs" id="crumbs"></div>
+              </div>
+
+              <div class="tw tw-right">
+                <div class="pane on" data-pane="agent">
+                  <div class="tw-hdr"><span class="title">DevEco Code</span><span class="grow"></span>
+                    <button class="abtn" title="New Chat"><svg class="i"><use href="#i-add"/></svg></button>
+                    <button class="abtn" title="History"><svg class="i"><use href="#i-history"/></svg></button>
+                    <button class="abtn" title="Settings"><svg class="i"><use href="#i-settings"/></svg></button>
+                    <button class="abtn" title="Hide|Shift+Esc" data-act="hide-right"><svg class="i"><use href="#i-hide"/></svg></button></div>
+                  <div class="tw-body"><div class="ai">
+                    <div class="ai-scroll" id="ai-scroll"><div class="ai-thread" id="thread"></div></div>
+                    <div class="ai-input">
+                      <div class="top"><button class="ctx"><svg class="i" style="width:12px;height:12px"><use href="#i-at"/></svg>Add Context</button><span class="ctx"><svg class="i" style="width:12px;height:12px"><use href="#i-ets"/></svg>ProductCard.ets</span><span class="grow"></span></div>
+                      <textarea id="ai-text" rows="1" placeholder="Type @ to add context. Type / to switch between functions." aria-label="Message"></textarea>
+                      <div class="bot"><button class="mode"><span id="model-label">pangu-5.5</span><svg class="i" style="width:12px;height:12px"><use href="#i-chevD"/></svg></button><span class="grow"></span><button class="send" title="Send|Enter"><svg><use href="#i-send-o"/></svg></button></div>
+                    </div>
+                    <div class="ai-foot">The content is generated by AI and may not be entirely accurate or complete. It is for reference only | <a href="#">Terms of Use</a></div>
+                  </div></div>
+                </div>
+              </div>
+
+              <div class="tw tw-bottom">
+                <div class="pane on" data-pane="debug"><div class="tw-body" id="dbg-flat-slot" style="overflow:hidden"></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div></div>
+
+      <div class="hinge" aria-hidden="true"></div>
+
+      <!-- 下屏（悬停时） -->
+      <div class="half lo"><div class="scr" id="scr-lo">
+        <div class="lo-desk" id="lo-desk">
+          <!-- 鸿蒙应用自由窗口 × 2 -->
+          <div class="win w-phone" id="win-phone" data-kind="phone">
+            <div class="wt"><span class="ico"></span><b>鸿蒙优选</b><span class="tag">Mate 70 Pro · 1260×2844 · sm</span>
+              <span class="ctl"><span title="最小化"><svg><use href="#i-win-min"/></svg></span><span title="最大化"><svg><use href="#i-win-max"/></svg></span><span title="关闭"><svg><use href="#i-win-close"/></svg></span></span></div>
+            <div class="wc"><div class="app" data-app></div><div class="ov" data-ov></div><div class="inkcap" data-cap></div><span class="grip"></span></div>
+          </div>
+          <div class="win w-pad" id="win-pad" data-kind="pad">
+            <div class="wt"><span class="ico"></span><b>鸿蒙优选</b><span class="tag">MatePad Pro 13.2 · 2880×1920 · lg</span>
+              <span class="ctl"><span title="最小化"><svg><use href="#i-win-min"/></svg></span><span title="最大化"><svg><use href="#i-win-max"/></svg></span><span title="关闭"><svg><use href="#i-win-close"/></svg></span></span></div>
+            <div class="wc"><div class="app pad" data-app></div><div class="ov" data-ov></div><div class="inkcap" data-cap></div><span class="grip"></span></div>
+          </div>
+
+          <!-- 下屏的 Agent 进度：只放和上屏当前文件相关的 Agent，其余收成一行 -->
+          <div class="agstrip" id="agstrip" aria-live="polite"></div>
+
+          <!-- M-Pen 悬浮工具条（系统层） -->
+          <div class="penbar" id="penbar" aria-label="M-Pen">
+            <span class="pb-h">M-Pen</span>
+            <button type="button" class="pbtn" id="pen-lasso" title="圈选批注：圈一处发给 DevEco Code"><svg><use href="#i-lasso"/></svg></button>
+            <button type="button" class="pbtn" id="pen-erase" title="擦掉笔迹"><svg><use href="#i-eraser"/></svg></button>
+          </div>
+
+          <!-- 底部：虚拟键盘位 ↔ 调试台 -->
+          <div class="dock" id="dock" data-mode="kbd">
+            <div class="vkbd" aria-hidden="true">
+              <div class="kr"><span>Q</span><span>W</span><span>E</span><span>R</span><span>T</span><span>Y</span><span>U</span><span>I</span><span>O</span><span>P</span><span class="w15 fn">⌫</span></div>
+              <div class="kr"><span class="w15 fn">Tab</span><span>A</span><span>S</span><span>D</span><span>F</span><span>G</span><span>H</span><span>J</span><span>K</span><span>L</span><span class="w15 fn">↵</span></div>
+              <div class="kr"><span class="w2 fn">⇧</span><span>Z</span><span>X</span><span>C</span><span>V</span><span>B</span><span>N</span><span>M</span><span>,</span><span>.</span><span class="w15 fn">⇧</span></div>
+              <div class="kr"><span class="w15 fn">123</span><span class="fn">中/英</span><span class="w6">空格</span><span class="fn">⌘</span><span class="w15 fn">收起</span></div>
+            </div>
+            <section class="dbg" id="dbg" aria-label="调试台">
+              <div class="dbg-bar">
+                <span class="dm-pill warn" id="dbg-state">已暂停</span>
+                <span class="grow"></span>
+                <button type="button" class="dk primary" id="dbg-resume" title="继续运行"><svg><use href="#i-play"/></svg>继续</button>
+                <button type="button" class="dk" id="dbg-over" title="单步跳过"><svg><use href="#i-step-over"/></svg>单步</button>
+                <button type="button" class="dk" id="dbg-into" title="单步进入"><svg><use href="#i-step-into"/></svg>进入</button>
+                <button type="button" class="dk" id="dbg-out" title="单步跳出"><svg><use href="#i-step-out"/></svg>跳出</button>
+              </div>
+              <div class="dbg-grid">
+                <div class="dbg-col"><div class="dbg-h">变量</div><div class="dbg-list" id="dbg-vars"></div></div>
+                <div class="dbg-col"><div class="dbg-h">调用栈</div><div class="dbg-list" id="dbg-stack"></div></div>
+                <div class="dbg-col"><div class="dbg-h">手机窗口按键</div>
+                  <div class="dkeys">
+                    <button type="button" class="dkey" data-key="back" title="发返回键：看暂停后返回会不会丢购物车"><svg><use href="#i-back"/></svg>返回</button>
+                    <button type="button" class="dkey" data-key="rotate" title="转横屏：继续后看横屏布局"><svg><use href="#i-rotate"/></svg>旋转</button>
+                  </div></div>
+              </div>
+              <div class="dbg-log" id="dbg-log"></div>
+            </section>
+          </div>
+        </div>
+      </div></div>
+    </div>
+  </main>
+</div>
+
+<script>
+(function(){
+  var $=DemoFrame.$, $$=DemoFrame.$$, esc=DemoFrame.esc;
+  var stage=$('#stage'), fold=$('#fold');
+
+  /* =====================================================================
+     代码：Index.ets（一多栅格）、ProductCard.ets（商品卡，断点在 addToCart）、CartStore.ets
+     ===================================================================== */
+  var P='entry src main ets'.split(' ');
+  function L(s,o){return o?[s,o]:[s]}
+  function indexLines(span){return [
+    L('<span class="k">import</span> { <span class="ty">ProductCard</span> } <span class="k">from</span> <span class="s">\'../view/ProductCard\'</span>;'),
+    L('<span class="k">import</span> { <span class="ty">Product</span>, <span class="f">mockList</span> } <span class="k">from</span> <span class="s">\'../model/Product\'</span>;'),
+    L(''),
+    L('<span class="m">@Entry</span>'),
+    L('<span class="m">@Component</span>'),
+    L('<span class="k">struct</span> <span class="ty">Index</span> {',{fold:1}),
+    L('  <span class="m">@State</span> <span class="p">list</span>: <span class="ty">Product</span>[] = <span class="f">mockList</span>();'),
+    L(''),
+    L('  <span class="f">build</span>() {',{fold:1}),
+    L('    <span class="f">GridRow</span>({ <span class="p">columns</span>: <span class="n">12</span>, <span class="p">gutter</span>: <span class="n">8</span> }) {',{fold:1}),
+    L('      <span class="f">ForEach</span>(<span class="k">this</span>.<span class="p">list</span>, (<span class="p">p</span>: <span class="ty">Product</span>) =&gt; {',{fold:1}),
+    L('        <span class="f">GridCol</span>({ <span class="p">span</span>: { <span class="p">sm</span>: <span class="n tune" id="span-sm" title="点一下改值，保存即热重载">'+span+'</span>, <span class="p">md</span>: <span class="n">6</span>, <span class="p">lg</span>: <span class="n">3</span> } }) {'),
+    L('          <span class="ty">ProductCard</span>({ <span class="p">product</span>: <span class="p">p</span> })'),
+    L('        }'),
+    L('      }, (<span class="p">p</span>: <span class="ty">Product</span>) =&gt; <span class="p">p</span>.<span class="p">id</span>.<span class="f">toString</span>())'),
+    L('    }'),
+    L('    .<span class="f">padding</span>(<span class="n">12</span>)'),
+    L('    .<span class="f">onBreakpointChange</span>((<span class="p">bp</span>: <span class="k">string</span>) =&gt; {',{fold:1}),
+    L('      <span class="ty">AppStorage</span>.<span class="f">setOrCreate</span>(<span class="s">\'bp\'</span>, <span class="p">bp</span>);'),
+    L('    })'),
+    L('  }'),
+    L('}')
+  ]}
+  function cardLines(fixed){
+    var a=[
+      L('<span class="k">import</span> { <span class="p">promptAction</span> } <span class="k">from</span> <span class="s">\'@kit.ArkUI\'</span>;'),
+      L('<span class="k">import</span> { <span class="ty">Product</span> } <span class="k">from</span> <span class="s">\'../model/Product\'</span>;'),
+      L('<span class="k">import</span> { <span class="ty">CartStore</span> } <span class="k">from</span> <span class="s">\'../store/CartStore\'</span>;'),
+      L(''),
+      L('<span class="m">@Component</span>'),
+      L('<span class="k">export struct</span> <span class="ty">ProductCard</span> {',{fold:1}),
+      L('  <span class="m">@ObjectLink</span> <span class="p">product</span>: <span class="ty">Product</span>;'),
+      L('  <span class="m">@StorageProp</span>(<span class="s">\'bp\'</span>) <span class="p">bp</span>: <span class="k">string</span> = <span class="s">\'sm\'</span>;'),
+      L(''),
+      L('  <span class="f">build</span>() {',{fold:1}),
+      L('    <span class="f">Column</span>({ <span class="p">space</span>: <span class="n">6</span> }) {',{fold:1}),
+      L('      <span class="f">Image</span>(<span class="k">this</span>.<span class="p">product</span>.<span class="p">cover</span>)'),
+      L('        .<span class="f">width</span>(<span class="s">\'100%\'</span>).<span class="f">aspectRatio</span>(<span class="n">1</span>)'),
+      L('        .<span class="f">borderRadius</span>(<span class="n">12</span>)'),
+      L('      <span class="f">Text</span>(<span class="k">this</span>.<span class="p">product</span>.<span class="p">name</span>)'),
+      L('        .<span class="f">fontSize</span>(<span class="n">14</span>).<span class="f">maxLines</span>(<span class="n">2</span>)'),
+      fixed?L('      <span class="f">Flex</span>({ <span class="p">wrap</span>: <span class="ty">FlexWrap</span>.<span class="p">Wrap</span> }) {',{fold:1})
+           :L('      <span class="f">Row</span>({ <span class="p">space</span>: <span class="n">4</span> }) {',{fold:1}),
+      L('        <span class="f">Text</span>(<span class="s">`¥${</span><span class="k">this</span>.<span class="p">product</span>.<span class="p">price</span><span class="s">}`</span>)'),
+      L('          .<span class="f">fontColor</span>(<span class="f">$r</span>(<span class="s">\'app.color.price\'</span>))')
+    ];
+    if(fixed)a.push(L('          .<span class="f">margin</span>({ <span class="p">right</span>: <span class="n">4</span> })'));
+    a=a.concat([
+      L('        <span class="f">Text</span>(<span class="s">`¥${</span><span class="k">this</span>.<span class="p">product</span>.<span class="p">origin</span><span class="s">}`</span>)'),
+      L('          .<span class="f">fontSize</span>(<span class="n">11</span>).<span class="f">fontColor</span>(<span class="ty">Color</span>.<span class="p">Gray</span>)'),
+      L('        <span class="f">Text</span>(<span class="f">$r</span>(<span class="s">\'app.string.coupon\'</span>)).<span class="f">fontSize</span>(<span class="n">10</span>)'),
+      L('      }'),
+      L('      <span class="f">Button</span>(<span class="f">$r</span>(<span class="s">\'app.string.add_cart\'</span>))'),
+      L('        .<span class="f">width</span>(<span class="s">\'100%\'</span>).<span class="f">height</span>(<span class="n">28</span>)'),
+      L('        .<span class="f">onClick</span>(() =&gt; <span class="k">this</span>.<span class="f">addToCart</span>())'),
+      L('    }'),
+      L('    .<span class="f">padding</span>(<span class="n">8</span>).<span class="f">borderRadius</span>(<span class="n">16</span>)'),
+      L('    .<span class="f">backgroundColor</span>(<span class="f">$r</span>(<span class="s">\'app.color.card_bg\'</span>))'),
+      L('  }'),
+      L(''),
+      L('  <span class="f">addToCart</span>() {',{fold:1}),
+      L('    <span class="k">const</span> <span class="p">id</span> = <span class="k">this</span>.<span class="p">product</span>.<span class="p">id</span>;'),
+      L('    <span class="k">if</span> (<span class="k">this</span>.<span class="p">product</span>.<span class="p">stock</span> &lt;= <span class="n">0</span>) <span class="k">return</span>;'),
+      L('    <span class="ty">CartStore</span>.<span class="f">add</span>(<span class="p">id</span>, <span class="n">1</span>);'),
+      L('    <span class="p">promptAction</span>.<span class="f">showToast</span>({ <span class="p">message</span>: <span class="s">\'已加入购物车\'</span> });'),
+      L('  }'),
+      L('}')
+    ]);
+    return a;
+  }
+  var STORE=[
+    L('<span class="k">import</span> { <span class="p">preferences</span> } <span class="k">from</span> <span class="s">\'@kit.ArkData\'</span>;'),
+    L(''),
+    L('<span class="k">export class</span> <span class="ty">CartStore</span> {',{fold:1}),
+    L('  <span class="k">static</span> <span class="p">items</span>: <span class="ty">Map</span>&lt;<span class="k">number</span>, <span class="k">number</span>&gt; = <span class="k">new</span> <span class="ty">Map</span>();'),
+    L(''),
+    L('  <span class="k">static</span> <span class="f">add</span>(<span class="p">id</span>: <span class="k">number</span>, <span class="p">qty</span>: <span class="k">number</span>) {',{fold:1}),
+    L('    <span class="k">const</span> <span class="p">n</span> = <span class="ty">CartStore</span>.<span class="p">items</span>.<span class="f">get</span>(<span class="p">id</span>) ?? <span class="n">0</span>;'),
+    L('    <span class="ty">CartStore</span>.<span class="p">items</span>.<span class="f">set</span>(<span class="p">id</span>, <span class="p">n</span> + <span class="p">qty</span>);'),
+    L('    <span class="ty">AppStorage</span>.<span class="f">set</span>(<span class="s">\'cartCount\'</span>, <span class="ty">CartStore</span>.<span class="f">count</span>());'),
+    L('  }'),
+    L(''),
+    L('  <span class="k">static</span> <span class="f">count</span>(): <span class="k">number</span> {',{fold:1}),
+    L('    <span class="k">let</span> <span class="p">s</span> = <span class="n">0</span>;'),
+    L('    <span class="ty">CartStore</span>.<span class="p">items</span>.<span class="f">forEach</span>((<span class="p">v</span>: <span class="k">number</span>) =&gt; <span class="p">s</span> += <span class="p">v</span>);'),
+    L('    <span class="k">return</span> <span class="p">s</span>;'),
+    L('  }'),
+    L('}')
+  ];
+  var F=DemoFrame.FILES;
+  F['Index.ets']={path:P.concat('pages'),crumbs:['Index','build'],lines:indexLines(12)};
+  F['ProductCard.ets']={path:P.concat('view'),crumbs:['ProductCard','addToCart'],lines:cardLines(false)};
+  F['CartStore.ets']={path:P.concat('store'),crumbs:['CartStore','add'],lines:STORE};
+
+  /* =====================================================================
+     项目树（本页自己的工程结构，类名与 frame 的树一致，点开合 / 点文件切标签照常）
+     ===================================================================== */
+  function tr(d,ic,name,o,kids){
+    o=o||{};var dir=!!kids,open=!!o.open;
+    var h='<div class="row'+(o.sel?' sel':'')+'" style="padding-left:'+(8+d*16)+'px"'+(dir?' data-dir="1" data-open="'+(open?1:0)+'"':'')+(o.file?' data-file="'+name+'"':'')+'>'
+      +'<span class="tg">'+(dir?'<svg class="i"><use href="'+(open?'#i-chevD':'#i-chevR')+'"/></svg>':'')+'</span>'
+      +'<span class="ico"><svg><use href="'+ic+'"/></svg></span><span class="lbl">'+(o.b?'<b>'+name+'</b>':name)+'</span>'+(o.hint?'<span class="hint">'+esc(o.hint)+'</span>':'')+'</div>';
+    if(dir)h+='<div class="kids"'+(open?'':' hidden')+'>'+kids.join('')+'</div>';
+    return h;
+  }
+  $('#tree-slot').innerHTML='<div class="tree" id="tree">'
+    +tr(0,'#i-module','MallApp',{b:1,open:1,hint:'~/DevEcoStudioProjects/MallApp'},[
+      tr(1,'#i-folder','AppScope',{},[tr(2,'#i-json','app.json5')]),
+      tr(1,'#i-module','entry',{b:1,open:1},[
+        tr(2,'#i-folder','src',{open:1},[
+          tr(3,'#i-folder','main',{open:1},[
+            tr(4,'#i-sourceRoot','ets',{open:1},[
+              tr(5,'#i-folder','entryability',{},[tr(6,'#i-ets','EntryAbility.ets')]),
+              tr(5,'#i-folder','model',{open:1},[tr(6,'#i-ets','Product.ets')]),
+              tr(5,'#i-folder','pages',{open:1},[tr(6,'#i-ets','Index.ets',{file:1,sel:1})]),
+              tr(5,'#i-folder','store',{open:1},[tr(6,'#i-ets','CartStore.ets',{file:1})]),
+              tr(5,'#i-folder','view',{open:1},[tr(6,'#i-ets','ProductCard.ets',{file:1})])
+            ]),
+            tr(4,'#i-resRoot','resources',{},[tr(5,'#i-folder','base'),tr(5,'#i-folder','dark')]),
+            tr(4,'#i-json','module.json5')
+          ])
+        ]),
+        tr(2,'#i-json','build-profile.json5'),tr(2,'#i-hvigor','hvigorfile.ts'),tr(2,'#i-json','oh-package.json5')
+      ]),
+      tr(1,'#i-json','build-profile.json5'),tr(1,'#i-hvigor','hvigorfile.ts'),tr(1,'#i-json','oh-package.json5')
+    ])+'</div>';
+
+  $('#tabs').insertAdjacentHTML('afterbegin',DemoFrame.tabs([{file:'Index.ets',on:true},{file:'ProductCard.ets'}]));
+
+  /* =====================================================================
+     状态
+     ===================================================================== */
+  var S;
+  function fresh(){return {pose:'flat',running:false,span:12,fixed:false,cart:2,paused:false,loc:null,hit:null,pen:0,penCard:null,penWin:null,scene:1,debugged:false,announced:false};}
+  S=fresh();
+  var timers=[];
+  function later(fn,ms){var t=setTimeout(fn,ms);timers.push(t);return t}
+  function clearTimers(){timers.forEach(clearTimeout);timers=[]}
+
+  function bpLine(){return S.fixed?36:35}
+  function clickLine(){return S.fixed?27:26}
+
+  function renderCode(){
+    F['Index.ets'].lines=indexLines(S.span);
+    F['ProductCard.ets'].lines=cardLines(S.fixed);
+    $('#code-index').innerHTML=DemoFrame.code('Index.ets',{});
+    var hl=S.fixed&&S.showFix?[17,20]:[];
+    var mk={};mk[bpLine()]='bp';
+    $('#code-card').innerHTML=DemoFrame.code('ProductCard.ets',{marks:mk});
+    hl.forEach(function(n){var e=$('#code-card .ln[data-ln="'+n+'"]');if(e){e.classList.add('ai-block');e.insertAdjacentHTML('afterbegin','<span class="ai-gut" data-src="Agent·布局 · M-Pen 圈选后改 · 可退回"></span>')}});
+    $('#code-store').innerHTML=DemoFrame.code('CartStore.ets',{});
+    $('#span-sm').addEventListener('click',tuneSpan);
+    markExec();
+  }
+  function openTab(name){
+    if(!$('.tab[data-file="'+name+'"]')){
+      $('#tabs .grow').insertAdjacentHTML('beforebegin',DemoFrame.tabs([{file:name}]));
+    }
+    var t=$('.tab[data-file="'+name+'"]');if(t&&!t.classList.contains('on'))t.click();
+    paintAgents();
+  }
+  function scrollToLine(sel,n){
+    var c=$(sel),ln=c&&$('.ln[data-ln="'+n+'"]',c);if(!ln)return;
+    var top=ln.offsetTop-c.clientHeight*0.35;c.scrollTop=Math.max(0,top);
+  }
+
+  /* =====================================================================
+     应用（鸿蒙优选）：手机窗口 sm，平板窗口 lg
+     ===================================================================== */
+  var GOODS=[
+    {id:1024,n:'无线降噪耳机 Pro · 半入耳长续航版',p:1299,o:1599,g:'#i-headset',c:['#DCE6FF','#B8C9FF'],st:36},
+    {id:1025,n:'智能手表 5 · 46mm 钛金属表壳',p:2499,o:2799,g:'#i-watch',c:['#E0F3E7','#B5DFC4'],st:12},
+    {id:1026,n:'折叠蓝牙键盘 · 三模连接',p:1099,o:1299,g:'#i-keys',c:['#FFF0DA','#FFD9A6'],st:58},
+    {id:1027,n:'16 英寸便携显示器 · 2.5K',p:1599,o:1899,g:'#i-monitor',c:['#EDE4FF','#D2C0FF'],st:9},
+    {id:1028,n:'磁吸触控笔 · 无线充电',p:1049,o:1199,g:'#i-pen',c:['#FFE3E3','#FFC2C2'],st:21},
+    {id:1029,n:'平板 13.2 英寸 · 柔光版',p:5199,o:5699,g:'#i-tablet',c:['#DDF3F6','#B3E3EA'],st:17}
+  ];
+  function cardHTML(g,i){
+    return '<div class="pc" data-i="'+i+'"><div class="img" style="background:linear-gradient(135deg,'+g.c[0]+','+g.c[1]+')"><svg><use href="'+g.g+'"/></svg></div>'
+      +'<div class="tt">'+esc(g.n)+'</div>'
+      +'<div class="pr'+(S.fixed?' wrap':'')+'"><b>¥'+g.p+'</b><span>¥'+g.o+'</span><em>限时券</em></div>'
+      +'<button type="button" class="add" data-i="'+i+'">加购</button></div>';
+  }
+  var SB_PHONE='<div class="sb"><span>10:24</span><i class="punch"></i><span class="ics"><span class="sig"><i style="height:3px"></i><i style="height:4.5px"></i><i style="height:6px"></i><i style="height:7px"></i></span>5G<span class="bat"><i></i></span></span></div>';
+  function renderApps(){
+    var ph=$('#win-phone [data-app]'),pd=$('#win-pad [data-app]');
+    var cols=12/S.span;
+    ph.innerHTML=SB_PHONE+'<div class="ah"><b>鸿蒙优选</b><span class="srch">搜索商品</span></div>'
+      +'<div class="grid" style="--cols:'+cols+'">'+GOODS.map(cardHTML).join('')+'</div>'
+      +'<div class="tabbar"><span class="on">首页</span><span>分类</span><span>购物车<i>'+S.cart+'</i></span><span>我的</span></div><div class="gbar"><i></i></div>';
+    pd.innerHTML='<div class="sb"><span>10:24</span><span class="ics">WLAN<span class="bat"><i></i></span></span></div>'
+      +'<div class="ah"><b>鸿蒙优选</b><span class="srch">搜索商品</span><span class="tabs2"><span class="on">首页</span><span>分类</span><span class="cart">购物车<i>'+S.cart+'</i></span><span>我的</span></span></div>'
+      +'<div class="grid" style="--cols:4">'+GOODS.slice(0,4).map(cardHTML).join('')+'</div><div class="gbar"><i></i></div>';
+  }
+  function ov(kind){return $('#win-'+kind+' [data-ov]')}
+  /* 一次性的提示放完就删：窗口换屏（挪 DOM）时动画会重放 */
+  document.addEventListener('animationend',function(e){var t=e.target;if(t.classList&&(t.classList.contains('toast')||t.classList.contains('hud')||t.classList.contains('hr-pill')))t.remove()});
+  function flash(kind,label){
+    var w=$('#win-'+kind);w.classList.remove('reload');void w.offsetWidth;w.classList.add('reload');
+    var o=ov(kind);$$('.hr-pill',o).forEach(function(x){x.remove()});
+    o.insertAdjacentHTML('beforeend','<span class="hr-pill"><svg><use href="#i-bolt"/></svg>'+esc(label)+'</span>');
+    later(function(){w.classList.remove('reload')},1100);
+  }
+  function toast(kind,t){var o=ov(kind);$$('.toast',o).forEach(function(x){x.remove()});o.insertAdjacentHTML('beforeend','<div class="toast">'+esc(t)+'</div>')}
+  function hud(kind,html){var o=ov(kind);$$('.hud',o).forEach(function(x){x.remove()});o.insertAdjacentHTML('beforeend','<div class="hud">'+html+'</div>')}
+
+  /* =====================================================================
+     窗口布局：展开时吸附在 IDE 右边；悬停时全部到下屏
+     ===================================================================== */
+  var POS={
+    hover:{phone:[10,10,208],pad:[230,10,400],pen:[726,10]},
+    flat:{phone:[845,34,196],pad:[845,514,400],pen:[1060,34]}
+  };
+  function placeWins(){
+    var p=POS[S.pose],host=S.pose==='hover'?$('#lo-desk'):$('#scr-up');
+    [['phone','#win-phone'],['pad','#win-pad']].forEach(function(k){
+      var w=$(k[1]);if(w.parentNode!==host)host.appendChild(w);
+      w.style.left=p[k[0]][0]+'px';w.style.top=p[k[0]][1]+'px';w.style.setProperty('--cw',p[k[0]][2]+'px');
+    });
+    var pb=$('#penbar');if(pb.parentNode!==host)host.appendChild(pb);
+    pb.style.left=p.pen[0]+'px';pb.style.top=p.pen[1]+'px';
+    /* 调试台：悬停 → 下屏虚拟键盘位；展开 → IDE 底部工具窗 */
+    var dbg=$('#dbg');
+    if(S.pose==='hover'){if(dbg.parentNode!==$('#dock'))$('#dock').appendChild(dbg)}
+    else{if(dbg.parentNode!==$('#dbg-flat-slot'))$('#dbg-flat-slot').appendChild(dbg)}
+  }
+  function layoutIDE(){
+    if(S.pose==='hover'){
+      DemoFrame.setSide('left',null);DemoFrame.setSide('right','agent');DemoFrame.setSide('bottom',null);
+    }else{
+      DemoFrame.setSide('left',S.running?null:'project');DemoFrame.setSide('right','agent');
+      DemoFrame.setSide('bottom',S.paused?'debug':null);
+    }
+    $('#dock').setAttribute('data-mode',S.paused?'debug':'kbd');
+  }
+  function setPose(p,opt){
+    opt=opt||{};
+    if(p===S.pose&&!opt.force)return;
+    var go=function(){
+      S.pose=p;stage.setAttribute('data-pose',p);
+      $$('.rl-pose button').forEach(function(b){var on=b.dataset.pose===p;b.classList.toggle('on',on);b.setAttribute('aria-checked',on?'true':'false')});
+      placeWins();layoutIDE();updatePill();
+      if(S.loc)later(function(){scrollToLine(S.loc.f==='CartStore.ets'?'#code-store':'#code-card',S.loc.l)},60);
+      if(!opt.quiet&&p==='hover'){
+        step('<b>检测到悬停 110°</b>：编辑器留在上屏，应用窗口和调试台移到下屏，面板不用手动拖','info','#i-fold');
+        if(!S.running)run({auto:true});
+      }
+      if(!opt.quiet&&p==='flat'&&S.running)step('展开平放：应用窗口吸附到右侧，IDE 让出 1/3 屏','info','#i-fold');
+      syncScene();
+    };
+    if(opt.instant){go();return}
+    fold.classList.add('morph');
+    setTimeout(function(){go();requestAnimationFrame(function(){fold.classList.remove('morph')})},200);
+  }
+  function updatePill(){
+    var t=$('#pose-pill-t');if(!t)return;
+    t.innerHTML=S.pose==='hover'?'悬停 110° <span class="dim">· 下屏'+(S.paused?'调试台':'运行')+'</span>':'展开 180°';
+  }
+
+  /* =====================================================================
+     DevEco Code 对话
+     ===================================================================== */
+  var thread=$('#thread'),scroller=$('#ai-scroll');
+  function toBottom(){scroller.scrollTop=scroller.scrollHeight}
+  function lastA(){var a=thread.lastElementChild;if(!a||!a.classList.contains('amsg')){thread.insertAdjacentHTML('beforeend','<div class="amsg"></div>');a=thread.lastElementChild}return a}
+  function step(html,kind,icon){
+    var ic=icon||(kind==='ok'?'#i-checkS':kind==='warn'?'#i-warn':'#i-info');
+    lastA().insertAdjacentHTML('beforeend','<div class="step '+(kind||'')+'"><svg class="i"><use href="'+ic+'"/></svg><span>'+html+'</span></div>');
+    toBottom();
+  }
+  function initThread(){
+    thread.innerHTML='<div class="umsg"><span class="time">2026/9/24 10:18</span><div class="bubble">商品卡在手机和平板上都要好看，先跑起来看看</div></div>'
+      +'<div class="amsg" id="a-run">'
+      +'<div class="dm-card" id="run-card"><div class="dm-card-hd"><svg class="i"><use href="#i-run"/></svg>在本机运行<span class="grow"></span><span class="dm-pill ok">免连线 · 免模拟器</span></div>'
+      +'<div class="dm-card-bd"><div class="tgt"><svg><use href="#i-phone"/></svg><b>Mate 70 Pro 窗口</b><span>1260×2844 · sm</span></div>'
+      +'<div class="tgt"><svg><use href="#i-tablet"/></svg><b>MatePad Pro 窗口</b><span>2880×1920 · lg</span></div>'
+      +'<div class="dm-small dm-muted">不用连手机、不开模拟器：两种屏直接在这台电脑上跑，改完保存就刷新。</div></div>'
+      +'<div class="dm-card-ft" id="run-ft"><button class="btn primary" id="btn-run"><svg class="i"><use href="#i-run"/></svg>在本机运行</button><span class="dm-small dm-muted">折到悬停：上屏写码，下屏运行</span></div></div></div>';
+    $('#btn-run').addEventListener('click',function(){run()});
+  }
+
+  /* =====================================================================
+     运行：hvigor 构建 → 本机安装 → 两个自由窗口
+     ===================================================================== */
+  function run(opt){
+    opt=opt||{};
+    if(S.running)return;
+    S.running=true;
+    var ft=$('#run-ft');
+    var stp=function(t,f,st){return '<div class="stp"><span class="st '+st+'">'+(st==='done'?'<svg><use href="#i-checkS"/></svg>':'')+'</span><span class="txt">'+t+'</span><span class="file">'+f+'</span></div>'};
+    var list=[['hvigor assembleHap','3.2 s'],['本机安装 entry-default-signed.hap','0.6 s'],['启动 2 个自由窗口 · sm / lg','0.9 s']];
+    function paint(n){if(ft)ft.outerHTML='<div class="dm-card-ft run-steps" id="run-ft" style="padding:0;display:block"><div class="steps" style="border:0;border-radius:0">'+list.map(function(x,i){return stp(x[0],i<n?x[1]:'',i<n?'done':(i===n?'run':'todo'))}).join('')+'</div></div>';ft=$('#run-ft')}
+    function done(){
+      stage.setAttribute('data-run','1');
+      $$('.win').forEach(function(w){w.classList.remove('enter');void w.offsetWidth;w.classList.add('enter')});
+      layoutIDE();
+      step('<b>已在本机运行</b>：Mate 70 Pro（sm）和 MatePad（lg）两个窗口。改代码不用重装，保存即热重载','ok');
+      capsule('ok','本机运行 · 2 个窗口');
+      syncScene();
+    }
+    if(opt.instant){paint(3);done();return}
+    capsule('run','构建中 · hvigor');
+    paint(0);later(function(){paint(1)},700);later(function(){paint(2)},1150);later(function(){paint(3);done()},1600);
+  }
+
+  /* =====================================================================
+     场景 2：改一行（sm 列宽），两个窗口热重载
+     ===================================================================== */
+  var SPANS=[12,6,4];
+  function tuneSpan(e){
+    if(e)e.stopPropagation();
+    if(S.paused){step('调试暂停中：继续运行后再改，热重载会接着生效','warn');return}
+    var i=SPANS.indexOf(S.span);S.span=SPANS[(i+1)%SPANS.length];
+    renderCode();var t=$('#span-sm');t.classList.add('bump');
+    var ln=t.closest('.ln');$$('#code-index .ln.cur').forEach(function(x){x.classList.remove('cur')});ln.classList.add('cur');
+    var p=$('#status-pos');if(p)p.textContent='12:'+(S.span>9?31:30);
+    if(!S.running){step('已改 <code>Index.ets:12</code> · sm 列宽 '+S.span+'。运行后两个窗口会同步刷新');return}
+    reload('Index.ets:12 · sm '+S.span,'sm 断点下每行 <b>'+(12/S.span)+' 张</b>卡片；lg 窗口按 <code>lg: 3</code> 不变，只做了一次热重载校验');
+  }
+  function reload(where,tail){
+    later(function(){
+      renderApps();
+      flash('phone','热重载 · 0.4 s');flash('pad','热重载 · 0.4 s');
+      step('<b>热重载</b> <code>'+esc(where)+'</code> · 0.4 s · 2 个窗口 · '+tail,'ok','#i-bolt');
+      capsule('ok','热重载 0.4 s · 2 个窗口');
+      syncScene();
+    },260);
+  }
+
+  /* =====================================================================
+     场景 3：命中断点 → 下屏从虚拟键盘位变成调试台
+     ===================================================================== */
+  function hit(i,kind){
+    if(!S.running||S.paused)return;
+    S.paused=true;S.debugged=true;
+    S.hit={i:i,kind:kind,added:false};
+    S.loc={f:'ProductCard.ets',l:bpLine()};
+    $$('.win [data-ov]').forEach(function(o){o.insertAdjacentHTML('beforeend','<div class="pause-ov"><span><svg><use href="#i-pause"/></svg>已在断点暂停 · ProductCard.ets:'+bpLine()+'</span></div>')});
+    penOff();
+    layoutIDE();updatePill();
+    openTab('ProductCard.ets');markExec();
+    later(function(){scrollToLine('#code-card',S.loc.l)},30);
+    paintDbg();
+    step('<b>命中断点</b> <code>ProductCard.ets:'+bpLine()+'</code>（'+(kind==='phone'?'手机':'平板')+'窗口点了「加购」）· '+(S.pose==='hover'?'下屏已切到调试台，可以直接点':'调试台在底部'),'warn','#i-debug');
+    capsule('wait','已暂停 · ProductCard.ets:'+bpLine());
+    syncScene();
+  }
+  function markExec(){
+    $$('.code .ln.exec').forEach(function(x){x.classList.remove('exec')});
+    if(!S.loc)return;
+    var sel=S.loc.f==='CartStore.ets'?'#code-store':'#code-card';
+    var ln=$(sel+' .ln[data-ln="'+S.loc.l+'"]');if(ln)ln.classList.add('exec');
+    var p=$('#status-pos');if(p)p.textContent=S.loc.l+':5';
+  }
+  function vars(){
+    var g=GOODS[S.hit.i],b=bpLine(),l=S.loc.l,c=S.cart,added=S.hit.added;
+    var v=[];
+    if(S.loc.f==='ProductCard.ets'){
+      v.push(['this.product','Product {id: '+g.id+', price: '+g.p+', stock: '+g.st+'}','']);
+      v.push(['id',''+g.id,'num']);
+      v.push(['this.bp','"'+(S.hit.kind==='phone'?'sm':'lg')+'"','str']);
+      v.push(['cartCount',''+(added?c+1:c),'num',added&&l===b+1]);
+    }else{
+      v.push(['id',''+g.id,'num']);v.push(['qty','1','num']);
+      if(l>=8)v.push(['n','0','num',l===8]);
+      v.push(['CartStore.items','Map('+(l>=9?4:3)+')','',l===9]);
+      if(l>=10)v.push(['cartCount',''+(c+1),'num',l===10]);
+    }
+    return v;
+  }
+  function stack(){
+    var b=bpLine(),cl=clickLine(),s=[];
+    if(S.loc.f==='CartStore.ets')s.push(['add','CartStore.ets:'+S.loc.l,'cur']);
+    s.push(['addToCart','ProductCard.ets:'+(S.loc.f==='CartStore.ets'?b:S.loc.l),S.loc.f==='ProductCard.ets'?'cur':'']);
+    s.push(['onClick','ProductCard.ets:'+cl,'']);
+    s.push(['GestureEvent','@ohos.arkui · 框架','fw']);
+    return s;
+  }
+  function paintDbg(){
+    if(!S.loc)return;
+    $('#dbg-state').textContent='已暂停 · '+S.loc.f+':'+S.loc.l;
+    $('#dbg-vars').innerHTML=vars().map(function(x){return '<div class="var'+(x[3]?' chg':'')+'"><span class="vn">'+esc(x[0])+'</span><span class="vv '+x[2]+'" title="'+esc(x[1])+'">'+esc(x[1])+'</span></div>'}).join('');
+    $('#dbg-stack').innerHTML=stack().map(function(x){return '<div class="stk '+x[2]+'"><b>'+esc(x[0])+'</b><span>'+esc(x[1])+'</span></div>'}).join('');
+    $('#dbg-into').disabled=!(S.loc.f==='ProductCard.ets'&&S.loc.l===bpLine());
+    $('#dbg-out').disabled=false;
+  }
+  function dbgLog(html){var e=$('#dbg-log');e.innerHTML=html;e.classList.remove('flash');void e.offsetWidth;e.classList.add('flash')}
+  function moveTo(f,l,msg){
+    S.loc={f:f,l:l};
+    if(f==='CartStore.ets')openTab('CartStore.ets');else openTab('ProductCard.ets');
+    markExec();scrollToLine(f==='CartStore.ets'?'#code-store':'#code-card',l);paintDbg();
+    $('#dbg-state').textContent='已暂停 · '+f+':'+l;
+    capsule('wait','已暂停 · '+f+':'+l);
+    if(msg)dbgLog(msg);
+  }
+  function stepOver(){
+    if(!S.paused)return;var b=bpLine(),l=S.loc.l;
+    if(S.loc.f==='CartStore.ets'){
+      if(l<10){moveTo('CartStore.ets',l+1,'<b>单步</b> → CartStore.ets:'+(l+1));return}
+      S.hit.added=true;moveTo('ProductCard.ets',b+1,'<b>返回</b> addToCart · cartCount → '+(S.cart+1));return;
+    }
+    if(l===b){S.hit.added=true;moveTo('ProductCard.ets',b+1,'<b>单步</b> CartStore.add(1024, 1) 已执行 · cartCount '+S.cart+' → '+(S.cart+1));return}
+    if(l===b+1){moveTo('ProductCard.ets',b+2,'<b>单步</b> showToast 已入队 · 继续后显示');return}
+    resume('函数返回');
+  }
+  function stepInto(){
+    if(!S.paused)return;
+    if(S.loc.f==='ProductCard.ets'&&S.loc.l===bpLine()){moveTo('CartStore.ets',7,'<b>进入</b> CartStore.add · CartStore.ets:7');return}
+    stepOver();
+  }
+  function stepOut(){
+    if(!S.paused)return;
+    if(S.loc.f==='CartStore.ets'){S.hit.added=true;moveTo('ProductCard.ets',bpLine()+1,'<b>跳出</b> CartStore.add → addToCart:'+(bpLine()+1));return}
+    resume('跳出 addToCart');
+  }
+  function resume(why){
+    if(!S.paused)return;
+    S.paused=false;
+    var h=S.hit;S.loc=null;markExec();
+    S.cart+=1;
+    $$('.pause-ov').forEach(function(x){x.remove()});
+    renderApps();
+    toast(h.kind,'已加入购物车');
+    layoutIDE();updatePill();
+    step('<b>继续运行</b>'+(why?'（'+esc(why)+'）':'')+' · 购物车 '+(S.cart-1)+' → '+S.cart+' · 下屏换回虚拟键盘','ok','#i-play');
+    capsule('ok','本机运行 · 2 个窗口');
+    dbgLog('');
+    syncScene();
+  }
+  var KEYS={
+    back:['#i-back','返回','KEYCODE_BACK → 手机窗口 · 应用暂停中，继续后处理'],
+    rotate:['#i-rotate','窗口已转为横屏','窗口旋转 → 横屏 · onConfigurationUpdate 已排队，继续后重排'],
+  };
+  $$('.dkey').forEach(function(b){b.addEventListener('click',function(){
+    var k=KEYS[b.dataset.key];
+    hud('phone','<svg><use href="'+k[0]+'"/></svg>'+esc(k[1]));
+    dbgLog('<b>设备按键</b> '+esc(k[2]));
+  })});
+  $('#dbg-resume').addEventListener('click',function(){resume()});
+  $('#dbg-over').addEventListener('click',stepOver);
+  $('#dbg-into').addEventListener('click',stepInto);
+  $('#dbg-out').addEventListener('click',stepOut);
+
+  /* 应用里点「加购」→ 命中断点 */
+  $$('.win [data-app]').forEach(function(a){a.addEventListener('click',function(e){
+    var b=e.target.closest('.add');if(!b)return;
+    hit(+b.dataset.i,a.closest('.win').dataset.kind);
+  })});
+
+  /* =====================================================================
+     场景 4：M-Pen 在下屏运行中的界面上圈一处 → DevEco Code 收到圈选 + 组件树节点 + 截图
+     ===================================================================== */
+  function penOff(){S.pen=S.pen===1?0:S.pen;$('#pen-lasso').classList.remove('on');$$('.win').forEach(function(w){w.classList.remove('inking')})}
+  function armPen(){
+    if(!S.running||S.paused)return;
+    if(S.pen===1){penOff();syncScene();return}
+    clearInk();S.pen=1;$('#pen-lasso').classList.add('on');$$('.win').forEach(function(w){w.classList.add('inking')});
+    syncScene();
+  }
+  function clearInk(){$$('.ink,.penpop').forEach(function(x){x.remove()});if(S.pen===2)S.pen=0}
+  $('#pen-lasso').addEventListener('click',armPen);
+  $('#pen-erase').addEventListener('click',function(){clearInk();penOff();syncScene()});
+  function rel(el,anc){var x=0,y=0;while(el&&el!==anc){x+=el.offsetLeft;y+=el.offsetTop;el=el.offsetParent}return {x:x,y:y}}
+  function inkPath(cx,cy,rx,ry){
+    var pts=[],a0=-2.2,a1=a0+Math.PI*2+0.55,n=46;
+    for(var k=0;k<=n;k++){var t=k/n,a=a0+(a1-a0)*t,wob=1+0.045*Math.sin(t*9.5)+0.07*t;
+      pts.push([cx+Math.cos(a)*rx*wob,cy+Math.sin(a)*ry*wob*(1-0.05*Math.cos(a*2))])}
+    return 'M'+pts.map(function(p){return p[0].toFixed(1)+' '+p[1].toFixed(1)}).join(' L');
+  }
+  $$('.win [data-cap]').forEach(function(cap){cap.addEventListener('pointerdown',function(e){
+    if(S.pen!==1)return;e.preventDefault();
+    var win=cap.closest('.win'),wc=$('.wc',win);
+    cap.style.pointerEvents='none';var hitEl=document.elementFromPoint(e.clientX,e.clientY);cap.style.pointerEvents='';
+    var card=hitEl&&hitEl.closest&&hitEl.closest('.pc');
+    if(!card||!wc.contains(card))card=$('.pc',wc);
+    drawInk(win,card);
+  })});
+  function drawInk(win,card){
+    var wc=$('.wc',win),o=$('[data-ov]',win);
+    var r=rel(card,wc),w=card.offsetWidth,h=card.offsetHeight,W=wc.offsetWidth,H=wc.offsetHeight;
+    var cx=r.x+w/2,cy=r.y+h/2,rx=w/2+7,ry=h/2+8;
+    o.insertAdjacentHTML('beforeend','<svg class="ink" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none"><path d="'+inkPath(cx,cy,rx,ry)+'"/></svg>');
+    var path=$('.ink:last-of-type path',o),len=path.getTotalLength();
+    path.style.strokeDasharray=len;path.style.strokeDashoffset=len;void path.getBoundingClientRect();path.style.strokeDashoffset=0;
+    S.pen=2;S.penCard=+card.dataset.i;S.penWin=win.dataset.kind;
+    $('#pen-lasso').classList.remove('on');$$('.win').forEach(function(x){x.classList.remove('inking')});
+    var top=r.y+h+12,left=Math.max(4,Math.min(W-150,cx-72));
+    if(top>H-34)top=Math.max(4,r.y-34);
+    later(function(){
+      o.insertAdjacentHTML('beforeend','<div class="penpop" style="left:'+left+'px;top:'+top+'px"><button type="button" class="btn primary" id="pen-send"><svg class="i"><use href="#ai-mark"/></svg>发给 Agent</button><button type="button" class="btn" id="pen-redo">重画</button></div>');
+      var pp=$('.penpop',o),pw=pp.offsetWidth;pp.style.left=Math.max(4,Math.min(W-pw-4,cx-pw/2))+'px';
+      $('#pen-send').addEventListener('click',sendInk);
+      $('#pen-redo').addEventListener('click',function(){clearInk();armPen()});
+      syncScene();
+    },650);
+  }
+  function sendInk(){
+    if(S.pen!==2)return;S.pen=3;
+    $$('.penpop').forEach(function(x){x.remove()});
+    var g=GOODS[S.penCard],win=$('#win-'+S.penWin),card=$('.pc[data-i="'+S.penCard+'"]',win),wc=$('.wc',win);
+    var isPh=S.penWin==='phone',vpScale=(isPh?360:1280)/wc.offsetWidth;
+    var r=rel(card,wc),vx=Math.round(r.x*vpScale),vy=Math.round(r.y*vpScale),vw=Math.round(card.offsetWidth*vpScale),vh=Math.round(card.offsetHeight*vpScale);
+    var shot=card.cloneNode(true);shot.removeAttribute('data-i');
+    thread.insertAdjacentHTML('beforeend','<div class="umsg"><span class="time">10:31 · M-Pen</span><div class="bubble"><div class="from"><svg class="i"><use href="#i-lasso"/></svg>在'+(isPh?'手机':'平板')+'窗口圈了一处</div>'
+      +'这里显示不全<div class="att">'
+      +'<div class="ch"><svg><use href="#i-lasso"/></svg>圈选区域 <code>x '+vx+' y '+vy+' · '+vw+'×'+vh+' vp · '+(isPh?'sm':'lg')+'</code></div>'
+      +'<div class="ch"><svg><use href="#i-ui"/></svg>组件 <code>Index › GridRow › GridCol['+S.penCard+'] › ProductCard</code></div>'
+      +'<div class="shot"><div class="frame" id="shot-slot"></div><div class="cap">截图 · '+(isPh?'Mate 70 Pro':'MatePad')+' 窗口<br>product.id = '+g.id+'</div></div>'
+      +'</div></div></div>');
+    $('#shot-slot').appendChild(shot);$('#shot-slot').removeAttribute('id');
+    thread.insertAdjacentHTML('beforeend','<div class="amsg" id="a-pen"><div class="ai-toolrow"><span class="ai-ring"></span><span class="what">读圈选、组件树节点和截图</span><span class="end"></span></div></div>');
+    toBottom();openTab('ProductCard.ets');setAg('layout','thinking','在看圈选',[['run','读圈选 · 组件树 · 截图']]);
+    later(function(){
+      var a=$('#a-pen');if(!a)return;
+      var need=isPh?181:176,have=isPh?164:150;
+      a.innerHTML='<div class="ai-toolrow"><svg class="ai-ico"><use href="#ai-lasso"/></svg><span class="what">读了圈选、组件树和截图 · 定位 <code>ProductCard.ets:17</code></span><span class="end">1.1 s <span class="ok">✓</span></span></div>'
+        +'<div class="ai-answer"><p class="ai-answer__lead">价格行放不下：卡宽 '+have+' vp，三段文字要 '+need+' vp。</p><p class="ai-answer__body">价格行是 <code>Row</code>，右边的原价和「限时券」被裁；平板窗口里 4 张卡同样被裁。改成能换行的 <code>Flex</code>：</p></div>'
+        +'<div class="diffcard"><div class="dh"><svg class="i"><use href="#i-ets"/></svg><span class="fn">ProductCard.ets</span><span class="cnt"><span class="add">+2</span> <span class="del">−1</span></span><span class="grow"></span></div>'
+        +'<pre><span class="l del">-     Row({ space: 4 }) {</span><span class="l add">+     Flex({ wrap: FlexWrap.Wrap }) {</span><span class="l">        Text(`¥${this.product.price}`)</span><span class="l">          .fontColor($r(\'app.color.price\'))</span><span class="l add">+         .margin({ right: 4 })</span></pre></div>'
+        +'<div class="ai-ask" id="fix-ask"><div class="ai-ask__h"><span class="ai-wait-dot"></span>在等你 · 接受后两个窗口热重载并比对</div><div class="ai-ask__opts fix-ft" id="fix-ft"><button class="ai-btn ai-btn--primary" id="fix-accept"><svg><use href="#i-checkS"/></svg>接受并热重载</button><button class="ai-btn ai-btn--fill" id="fix-open"><svg><use href="#i-split"/></svg>在编辑器里看</button></div></div>';
+      $('#fix-accept').addEventListener('click',acceptFix);
+      $('#fix-open').addEventListener('click',function(){openTab('ProductCard.ets');scrollToLine('#code-card',17)});
+      S.pen=4;toBottom();setAg('layout','waiting','在等你 · 接受改法',[['ok','读圈选 · 定位 :17'],['ok','Row → Flex 换行'],['wait','在等你接受']]);syncScene();
+    },1100);
+  }
+  function acceptFix(){
+    if(S.pen!==4)return;S.pen=5;
+    S.fixed=true;S.showFix=true;renderCode();openTab('ProductCard.ets');later(function(){scrollToLine('#code-card',17)},30);
+    $('#fix-ask').outerHTML='<div id="fix-steps"><div class="ai-toolrow"><svg class="ai-ico"><use href="#ai-review"/></svg><span class="what">你接受了改法</span><span class="end">刚刚 <span class="ok">✓</span></span></div>'
+      +'<div class="ai-toolrow"><svg class="ai-ico"><use href="#ai-edit"/></svg><span class="what">改 <code>ProductCard.ets</code> 第 17、20 行</span><span class="end">+2 −1 <span class="ok">✓</span></span></div>'
+      +'<div class="ai-toolrow" data-r="hr"><span class="ai-ring"></span><span class="what">热重载 2 个窗口</span><span class="end"></span></div></div>';
+    setAg('layout','verifying','热重载 · 比对 sm / lg',[['ok','改 :17 :20'],['run','热重载 2 个窗口'],['','比对 sm / lg 截图']]);
+    toBottom();
+    $$('.ink').forEach(function(x){x.classList.add('gone')});
+    later(function(){
+      renderApps();flash('phone','热重载 · 0.5 s');flash('pad','热重载 · 0.5 s');
+      var r=$('#fix-steps [data-r="hr"]');if(r)r.outerHTML='<div class="ai-toolrow"><svg class="ai-ico"><use href="#ai-tool"/></svg><span class="what">热重载 2 个窗口</span><span class="end">0.5 s <span class="ok">✓</span></span></div><div class="ai-toolrow" data-r="cmp"><span class="ai-ring"></span><span class="what">sm / lg 截图比对</span><span class="end"></span></div>';
+      setAg('layout','verifying','比对 sm / lg 截图',[['ok','改 :17 :20'],['ok','热重载 0.5 s'],['run','比对 sm / lg 截图']]);
+    },450);
+    later(function(){
+      $$('.ink').forEach(function(x){x.remove()});
+      var c=$('#fix-steps [data-r="cmp"]');if(!c)return;c.outerHTML='<div class="ai-toolrow"><svg class="ai-ico"><use href="#ai-verify"/></svg><span class="what">sm / lg 截图比对：价格行不再被裁</span><span class="end">通过 <span class="ok">✓</span></span></div>';
+      setAg('layout','done','已修好 · 价格不再被裁',[['ok','改 :17 :20'],['ok','热重载 0.5 s'],['ok','sm / lg 比对通过']]);
+      step('<b>已修好</b>：手机和平板窗口里价格换到第二行，不再被裁。笔迹已清掉','ok');
+      syncScene();
+    },1500);
+  }
+
+  /* =====================================================================
+     状态栏胶囊、场景高亮、拖动窗口
+     ===================================================================== */
+  /* 运行 / 调试态已在顶栏姿态胶囊、窗口暂停层与调试台上，状态栏不再重复一枚胶囊（消融） */
+  function capsule(){}
+
+  /* ---------- Agent：顶栏胶囊 + 下屏进度卡（只放和上屏当前文件相关的 Agent，其余收成一行） ---------- */
+  function freshAgents(){return [
+    {id:'layout',who:'Agent·布局',files:['ProductCard.ets'],st:'idle',txt:'待命',steps:[]},
+    {id:'reg',who:'Agent·回归',files:['CartStore.ets'],st:'tool',txt:'跑购物车单测 8/20',steps:[['run','CartStore.test.ets · 8/20']]},
+    {id:'i18n',who:'Agent·多语言',files:['string.json'],st:'generating',txt:'翻 en_US 26/40',steps:[]}
+  ]}
+  var AGS=freshAgents();
+  function ag(id){for(var i=0;i<AGS.length;i++)if(AGS[i].id===id)return AGS[i]}
+  var CAPI={idle:'',thinking:'<span class="ai-spark is-live"></span>',generating:'<span class="ai-spark is-live"></span>',tool:'<span class="ai-ring"></span>',verifying:'<span class="ai-ring"></span>',waiting:'<span class="ai-wait-dot"></span>',done:'<svg><use href="#i-checkS"/></svg>'};
+  function curFile(){var t=$('#tabs .tab.on');return t?t.dataset.file:''}
+  function setAg(id,st,txt,steps){var a=ag(id);a.st=st;a.txt=txt;if(steps)a.steps=steps;paintAgents()}
+  function jumpAsk(){var a=$('#fix-ask');if(a){DemoFrame.setSide('right','agent');a.scrollIntoView({block:'nearest',behavior:'smooth'});a.classList.remove('flash');void a.offsetWidth;a.classList.add('flash')}else DemoFrame.setSide('right','agent')}
+  function paintAgents(){
+    /* 回归在你调试时让路：本机窗口被调试会话占着，它的单测先停 */
+    var r=ag('reg');
+    if(S&&S.paused){r.st='idle';r.txt='让路：你在调试本机窗口';r.steps=[['wait','单测暂停，继续运行后接着跑']]}
+    else if(r.st==='idle'){r.st='tool';r.txt='跑购物车单测 9/20';r.steps=[['run','CartStore.test.ets · 9/20']]}
+    var L=ag('layout');
+    DemoFrame.agent(L.st,'<span class="agt">Agent·布局</span> '+esc(L.txt),{onClick:jumpAsk});
+    var el=$('#agstrip');if(!el)return;
+    var f=curFile(),rel=AGS.filter(function(a){return a.files.indexOf(f)>=0&&(a.st!=='idle'||a.steps.length)}),rest=AGS.filter(function(a){return rel.indexOf(a)<0&&a.st!=='idle'});
+    el.innerHTML=rel.map(function(a){
+      return '<div class="ag-card'+(a.st==='waiting'?' waiting':'')+'" data-ag="'+a.id+'"><div class="hd">'+(CAPI[a.st]||'')+'<span class="agt">'+a.who+'</span></div><div class="fl">'+esc(f)+'</div>'
+        +a.steps.map(function(x){return '<div class="st '+x[0]+'">'+esc(x[1])+'</div>'}).join('')+'</div>';
+    }).join('')+(rest.length?'<div class="ag-more">'+(rel.length?'其余 ':'')+'<b>'+rest.length+'</b> 个 Agent 在跑，不碰 '+esc(f||'当前文件')+' · '+rest.map(function(a){return a.who.replace('Agent·','')}).join('、')+'</div>':'');
+  }
+  $('#agstrip').addEventListener('click',function(e){if(e.target.closest('.ag-card[data-ag="layout"]'))jumpAsk()});
+  $('#tabs').addEventListener('click',function(){setTimeout(paintAgents,0)});
+  function syncScene(){
+    var sc=S.paused?3:(S.pen>0?4:(S.pose==='hover'?2:1));S.scene=sc;
+    $$('#rl-scenes button').forEach(function(b){var n=+b.dataset.scene;b.classList.toggle('on',n===sc);
+      b.classList.toggle('done',n<sc||(n===2&&S.span!==12&&sc!==2)||(n===3&&S.debugged&&sc!==3)||(n===4&&S.pen===5&&sc!==4))});
+    /* 标注：只亮当下能做的那一两条 */
+    var g=function(sel,on){var e=$(sel);if(e)e.classList.toggle('gd',!!on)};
+    g('#pose-hover',S.pose==='flat');
+    g('#span-sm',S.pose==='hover'&&S.running&&!S.paused&&S.span===12&&S.pen===0);
+    var firstAdd=$('#win-phone .pc[data-i="1"] .add');$$('.add.gd').forEach(function(x){x.classList.remove('gd')});
+    if(firstAdd&&S.pose==='hover'&&S.running&&!S.paused&&S.span!==12&&!S.debugged&&S.pen===0)firstAdd.classList.add('gd');
+    g('#dbg-over',S.paused&&S.pose==='hover');
+    g('#pen-lasso',S.pose==='hover'&&S.running&&!S.paused&&S.debugged&&S.pen===0&&!S.fixed);
+    g('#win-phone',S.pen===1);
+    g('#pen-send',S.pen===2);
+    g('#fix-accept',S.pen===4);
+    updatePill();paintAgents();
+  }
+  /* 自由窗口：拖标题栏移动（下屏是斜着的，位移按投影比例换算） */
+  $$('.win .wt').forEach(function(bar){
+    var win=bar.closest('.win'),sx,sy,ox,oy,kx,ky,on=false;
+    bar.addEventListener('pointerdown',function(e){
+      if(e.target.closest('.ctl'))return;on=true;win.classList.add('dragging');bar.setPointerCapture(e.pointerId);
+      var r=win.getBoundingClientRect();kx=r.width/win.offsetWidth||1;ky=r.height/win.offsetHeight||1;
+      sx=e.clientX;sy=e.clientY;ox=win.offsetLeft;oy=win.offsetTop;
+      $$('.win').forEach(function(x){x.style.zIndex=x===win?5:4});
+    });
+    bar.addEventListener('pointermove',function(e){
+      if(!on)return;var host=win.parentNode;
+      var nx=ox+(e.clientX-sx)/kx,ny=oy+(e.clientY-sy)/ky;
+      nx=Math.max(0,Math.min(host.clientWidth-win.offsetWidth,nx));ny=Math.max(S.pose==='flat'?22:0,Math.min(host.clientHeight-24,ny));
+      win.style.left=nx+'px';win.style.top=ny+'px';
+    });
+    var end=function(){on=false;win.classList.remove('dragging')};
+    bar.addEventListener('pointerup',end);bar.addEventListener('pointercancel',end);
+  });
+
+  /* =====================================================================
+     场景跳转（左侧 1–4）：把前置状态一次铺好
+     ===================================================================== */
+  function reset(){
+    clearTimers();
+    S=fresh();
+    stage.setAttribute('data-run','0');
+    $$('.pause-ov,.toast,.hud,.hr-pill,.ink,.penpop').forEach(function(x){x.remove()});
+    $$('.win').forEach(function(w){w.classList.remove('inking','reload','enter');w.style.zIndex=''});
+    $('#pen-lasso').classList.remove('on');
+    var st=$('.tab[data-file="CartStore.ets"]');if(st)st.remove();
+    renderCode();renderApps();initThread();
+    openTab('Index.ets');
+    $('#code-index').scrollTop=0;$('#code-card').scrollTop=0;
+    dbgLog('');AGS=freshAgents();paintAgents();
+  }
+  function scene(n){
+    fold.classList.add('morph');
+    setTimeout(function(){
+      reset();
+      if(n>=2){run({instant:true});}
+      setPose(n===1?'flat':'hover',{instant:true,force:true,quiet:true});
+      if(n>=2)step('<b>悬停 110°</b>：编辑器在上屏，应用窗口和调试台在下屏','info','#i-fold');
+      if(n>=3){S.span=6;renderCode();renderApps();step('<b>热重载</b> <code>Index.ets:12 · sm 6</code> · 0.4 s · 2 个窗口','ok','#i-bolt')}
+      if(n===3)hit(1,'phone');
+      if(n===4){S.debugged=true;armPen()}
+      syncScene();
+      requestAnimationFrame(function(){fold.classList.remove('morph')});
+    },200);
+  }
+  $$('#rl-scenes button').forEach(function(b){b.addEventListener('click',function(){scene(+b.dataset.scene)})});
+  /* 树里点文件：没开过的标签（CartStore.ets）也能打开 */
+  $('#tree-slot').addEventListener('click',function(e){var r=e.target.closest('.row[data-file]');if(r)openTab(r.dataset.file)});
+  $$('.rl-pose button').forEach(function(b){b.addEventListener('click',function(){setPose(b.dataset.pose)})});
+
+  /* 主题：页面其余部分（左栏、桌面、下屏）跟着 IDE 的深浅走 */
+  function syncTheme(){var ide=$('#ide');document.documentElement.setAttribute('data-theme',ide.getAttribute('data-ide-theme')==='dark'?'dark':'light')}
+
+  /* =====================================================================
+     启动
+     ===================================================================== */
+  renderCode();renderApps();initThread();
+  DemoFrame.init({project:'MallApp',device:'MateBook Fold（本机）',deviceIcon:'#i-fold',pos:'12:31',
+    onReady:function(){
+      /* 悬停时上屏只有 780px：Header 收掉次要按钮 */
+      var hide=['#i-translate','#i-rerun','#i-profile','#i-sdk','#i-projstruct','#i-user','#i-search','#i-vcs','#i-module'];
+      $$('.hdr .hbtn').forEach(function(b){var u=$('use',b);if(u&&hide.indexOf(u.getAttribute('href'))>=0)b.classList.add('hv-hide')});
+      $$('.hdr .sep').forEach(function(s){s.classList.add('hv-hide')});
+      $$('.hdr .hbtn').forEach(function(b){var u=$('use',b);if(!u)return;var h=u.getAttribute('href');
+        if(h==='#i-run'||h==='#i-debug')b.addEventListener('click',function(){if(!S.running)run();else step('应用已在本机运行 · 改代码直接热重载，不用重跑','info')})});
+      /* 状态栏路径里的工程名跟本工程走 */
+      var sc=$('#status-crumbs'),fixName=function(){var w=document.createTreeWalker(sc,NodeFilter.SHOW_TEXT),n;while((n=w.nextNode()))if(n.nodeValue==='MyApplication')n.nodeValue='MallApp'};
+      fixName();new MutationObserver(fixName).observe(sc,{childList:true});
+      syncTheme();
+      new MutationObserver(syncTheme).observe($('#ide'),{attributes:true,attributeFilter:['data-ide-theme']});
+      placeWins();layoutIDE();syncScene();
+    }});
+
+  DemoGuide.init([
+    {target:'#pose-hover.gd',kind:'click',pos:'right',label:'要边改边看手机、平板两种效果：折到悬停'},
+    {target:'#span-sm.gd',kind:'click',pos:'bottom',label:'手机上想一行两张卡：点 12 改成 6'},
+    {target:'#win-phone .add.gd',kind:'click',pos:'right',label:'想确认加购只 +1：点「加购」停在断点'},
+    {target:'#pen-lasso.gd',kind:'click',pos:'left',label:'价格被裁了一截：拿笔圈给 Agent'},
+    {target:'#fix-accept.gd',kind:'click',pos:'bottom',label:'它停在这等你：接受后两窗口热重载比对'}
+  ],{scene:{
+    at:'在 MateBook Fold 上改商品卡，手机平板都要好看',
+    goal:'改一行就看到两种屏的效果，出了问题当场调、当场修',
+    pain:'IDE、模拟器、调试窗挤一块屏来回拖；截图给 AI 还得描述',
+    fix:'折到悬停：上屏写码，下屏摆好应用和调试台，笔圈给 Agent',
+    agent:'它读圈选改码并比对；下屏只放与当前文件相关的 Agent；你圈、拍板'
+  }});
+})();
+</script>
+</body>
+</html>

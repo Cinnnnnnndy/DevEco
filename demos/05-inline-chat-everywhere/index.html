@@ -5,12 +5,12 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='32' y2='32' gradientUnits='userSpaceOnUse'%3E%3Cstop stop-color='%232C8DDD'/%3E%3Cstop offset='1' stop-color='%233357AC'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='32' height='32' rx='7' fill='url(%23g)'/%3E%3Ctext x='16' y='22.5' font-family='Arial,Helvetica,sans-serif' font-size='13' font-weight='700' fill='white' text-anchor='middle'%3EDE%3C/text%3E%3C/svg%3E">
 <title>05 · 就地对话：从编辑器长进 Build、Debug、HiLog</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;500&display=swap">
 <link rel="stylesheet" href="../../deveco-intui-kit/src/tokens.css">
 <link rel="stylesheet" href="../../deveco-intui-kit/src/components.css">
 <link rel="stylesheet" href="../_shared/frame.css">
 <link rel="stylesheet" href="../_shared/guide.css">
 <script src="../../deveco-intui-kit/src/icons.js"></script>
+<script src="../../deveco-intui-kit/icons/ai-icons.js"></script>
 <script src="../_shared/frame.js"></script>
 <script src="../_shared/guide.js"></script>
 <style>
@@ -18,7 +18,12 @@
   .ide > .body{grid-row:3}
   .ide > .status{grid-row:4}
   /* 三处入口共用同一套 .dm-inline；本页只补内容排版 */
-  .dm-inline{width:min(460px,70%)}
+  .dm-inline{width:min(460px,70%);border:0;border-radius:var(--ai-r);box-shadow:0 0 0 1px var(--ui-popup-border),var(--ui-shadow)}
+  .dm-inline::before{display:none}
+  .dm-inline .ih{border-bottom:0;padding:8px 10px 2px}
+  .dm-inline .if{border-top:0;padding:4px 10px 8px}
+  .dm-inline .ih .ai-ico,.dm-inline .a .ai-ico{color:var(--ai-ink)}
+  .dm-inline .a .ai-ico{width:14px;height:14px;margin-top:3px}
   .dm-inline .ih svg.i{width:14px;height:14px}
   .dm-inline .ih kbd{font-size:10px;line-height:14px}
   .dm-inline .q,.dm-inline .a{display:flex;align-items:flex-start;gap:6px}
@@ -36,54 +41,46 @@
   .pv-wrap{flex:1;min-height:0;display:flex;flex-direction:column}
   .pv-wrap .prev-tools{flex:none}
   .pv-wrap .prev-tools .grow{flex:1}
-  .pv-wrap .prev-tools .dm-pill{margin-left:4px}
+  .pv-wrap .prev-tools .ai-src{margin-left:12px}
   .pv-stage{position:relative;display:grid;grid-template-columns:auto 460px;gap:52px;align-items:start;padding-top:8px}
   .dm-inline.pv{position:relative;left:0;top:0;width:460px;margin-top:104px}
-  .pv-link{position:absolute;left:142px;top:164px;width:92px;border-top:1.5px dashed var(--ui-success);transition:left .4s,width .4s}
-  .pv-link::after{content:"";position:absolute;right:-2px;top:-3.5px;width:6px;height:6px;border-radius:50%;background:var(--ui-success)}
-  .pv-link.fixed{left:164px;width:70px}
+  .pv-stage .dm-device.phone{width:180px;height:386px}   /* Mate 70 Pro 1260×2844：屏 164×370 */
   /* 登录页里被选中的按钮：初始比输入框窄、颜色不是品牌蓝 */
   .mapp .lbtn-wrap{position:relative;margin:8px 34px;transition:margin .4s}
   .mapp .lbtn-wrap .btn{margin:0;background:#8A94A6;transition:background .4s}
   .mapp .lbtn-wrap.fixed{margin:8px 12px}
   .mapp .lbtn-wrap.fixed .btn{background:#0A59F7}
-  .mapp .lbtn-wrap .dm-hot{inset:-3px}
-  .mapp .lbtn-wrap .dm-hot .lb{left:auto;right:-1px}
+  .mapp .lbtn-wrap.ai-select[data-ai-tag]::after{font-size:9px;line-height:14px;padding:0 5px}
   .mapp .hintline{margin:10px 12px 0;font-size:9px;color:#8a8f99;text-align:center}
 
   /* ===== AI 长在工具窗里：Build / Debug / Log / Profiler ===== */
-  .ide[data-ide-theme]{--bottom-h:282px}
+  .ide[data-ide-theme]{--bottom-h:318px}
   .tw-bottom .pane{height:100%}
   .tw-bottom .tw-hdr{height:34px}
   .tw-bottom .tw-hdr .title{font-weight:600}
   .tw-bottom .tw-body{display:flex;min-height:0}
   .btab .dm-dot{width:6px;height:6px}
-  .aic{position:relative;border:1px solid var(--ui-popup-border);border-radius:var(--arc);background:var(--ui-popup-bg);box-shadow:var(--ui-shadow);font-size:var(--fs-para);line-height:var(--lh-para);display:flex;flex-direction:column;min-height:0}
-  .aic::before{content:"";position:absolute;left:-1px;top:0;bottom:0;width:3px;border-radius:3px 0 0 3px;background:linear-gradient(#5B8CF7,#9B6CF6)}
-  .aic .ah{display:flex;align-items:center;gap:6px;padding:6px 10px;border-bottom:1px solid var(--ui-border);font-size:var(--fs-sm);color:var(--ui-fg-info);flex:none}
-  .aic .ah b{color:var(--ui-fg);font-weight:600}
-  .aic .ah svg.i{width:14px;height:14px}
-  .aic .ah .grow{flex:1}
-  .aic .ictx{display:flex;flex-wrap:wrap;gap:4px;padding:6px 10px 0}
-  .aic .ictx span{font-family:var(--font-code);font-size:10px;line-height:16px;padding:0 6px;border-radius:4px;background:var(--ui-tag-bg);color:var(--ui-fg-info);white-space:nowrap}
-  .aic .ictx span::before{content:"读了 ";font-family:var(--font-ui);opacity:.7}
-  .aic .ictx span:not(:first-child)::before{content:""}
-  .aic .ab{padding:8px 10px;display:flex;flex-direction:column;gap:6px;overflow:auto;min-height:0}
-  .aic .ab p{margin:0}
-  .aic .ab code{font-family:var(--font-code);font-size:11px;background:var(--ui-tag-bg);padding:1px 4px;border-radius:4px}
-  .aic .q{display:flex;gap:6px;align-items:flex-start;color:var(--ui-fg-info)}
-  .aic .q svg.i,.aic .a svg.i{width:14px;height:14px;margin-top:2px;flex:none}
-  .aic .a{display:flex;gap:6px;align-items:flex-start}
-  .aic .af{display:flex;align-items:center;gap:6px;padding:6px 10px;border-top:1px solid var(--ui-border);flex:none;flex-wrap:wrap}
-  .aic .af .grow{flex:1}
-  .aic .af .btn svg.i{width:12px;height:12px}
-  .aic.ok::before{background:var(--ui-success)}
-  .aic .diffcard pre{padding:4px 0}
-  .aic .diffcard pre .l{line-height:17px}
-  .aic .diffcard .dh{height:24px}
+  /* 工具窗里的就地回答：ai.css 的回答卡 / 审批卡，放进面板只补尺寸 */
+  .tw-bottom .ai-answer,.tw-bottom .ai-approve{min-height:0;overflow:auto;font-size:12.5px;line-height:19px}
+  .tw-bottom .ai-answer{padding:10px 12px 8px;gap:8px}
+  .tw-bottom .ai-answer__lead{font-size:13px;line-height:20px}
+  .tw-bottom .ai-approve{padding:10px 12px;gap:8px}
+  .ai-answer code,.ai-approve code{font-family:var(--font-code);font-size:11.5px;padding:0 4px;border-radius:4px;background:var(--ai-surface-2)}
+  .ai-answer__meta .ai-ico{color:var(--ai-ink)}
+  .ai-answer__meta .grow{flex:1}
+  .ai-answer .q{display:flex;gap:6px;align-items:flex-start;color:var(--ui-fg-info)}
+  .ai-answer .q svg.i{width:14px;height:14px;margin-top:3px;flex:none}
+  .ai-answer__foot .btn svg.i,.ai-approve__act .btn svg.i{width:12px;height:12px}
+  .ai-approve__cmd{white-space:pre-wrap;word-break:break-all}
+  .ai-approve__cmd .add{color:var(--ui-success)}
+  .ai-toolrow{padding:2px 0}
+  .ai-toolrow:hover{background:transparent}
+  .ai-toolrow .ai-ring{width:12px;height:12px}
+  .ai-toolrow svg.ok{width:12px;height:12px;color:var(--ui-success)}
+  .code .ln.ai-block .ai-gut{left:47px}
+  .code .ln.ai-block.is-accepted,.code .ln.ai-block.is-accepted .ai-gut::before{animation-delay:var(--ai-ago,0s)}
   .act{display:inline-flex;align-items:center;gap:5px}
   .act.done{color:var(--ui-success)}
-  .btn.act.done{border-color:color-mix(in srgb,var(--ui-success) 60%,transparent)}
   .ph{margin:auto;color:var(--ui-fg-info);font-size:var(--fs-sm);text-align:center;display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px}
   .ph svg.i{width:18px;height:18px;opacity:.7}
   /* Build */
@@ -95,7 +92,7 @@
   .build .list .row .grow{flex:1;overflow:hidden;text-overflow:ellipsis}
   .bout{display:grid;grid-template-columns:minmax(0,1fr) 500px;gap:10px;min-height:0;padding-right:10px}
   .bout .out{min-height:0}
-  .bout .aic{margin:8px 0}
+  .bout .ai-answer,.bout .ai-approve{margin:8px 0;align-self:start;max-height:calc(100% - 16px)}
   .out .er{color:var(--ui-error)}
   .out .dim{color:var(--ui-fg-info)}
   .out .lnk{color:var(--ui-link);text-decoration:underline}
@@ -116,12 +113,12 @@
   .vrow .vn{color:var(--ed-field)}.vrow .vv{color:var(--ed-string)}.vrow .vu{color:var(--ui-fg-info);font-style:italic}
   .vrow .vt{color:var(--ui-fg-info);font-size:11px}
   .vrow.sel{background:color-mix(in srgb,var(--ui-warning) 12%,transparent)}
-  .askchip{display:inline-flex;align-items:center;gap:4px;height:20px;padding:0 8px;border-radius:10px;border:1px solid color-mix(in srgb,var(--ui-accent) 60%,transparent);background:color-mix(in srgb,var(--ui-accent) 12%,transparent);color:var(--ui-fg);font-family:var(--font-ui);font-size:11px;margin-left:auto}
-  .askchip svg.i{width:12px;height:12px}
-  .dbg .aic{flex:1}
+  .askchip{appearance:none;border:0;margin-left:auto;font-family:var(--font-ui);cursor:pointer}
+  .askchip .ai-ico{width:12px;height:12px}
+  .dbg .ai-answer{flex:1}
   .code .ln.exec{background:color-mix(in srgb,var(--ui-accent) 22%,transparent)}
   .code .bp.cond{position:relative}
-  .code .bp.cond::after{content:"?";position:absolute;inset:0;display:grid;place-items:center;font-size:8px;font-weight:700;color:#fff;font-family:var(--font-ui)}
+  .code .bp.cond::after{content:"?";position:absolute;inset:0;display:grid;place-items:center;font-size:8px;font-weight:600;color:#fff;font-family:var(--font-ui)}
   .code .ln .cbtag{margin-left:10px;font-family:var(--font-ui);font-size:11px;padding:0 6px;border-radius:4px;background:color-mix(in srgb,var(--ed-breakpoint) 18%,transparent);color:var(--ui-fg)}
   /* Log */
   .logp{flex:1;display:grid;grid-template-columns:minmax(0,1fr) 500px;gap:10px;min-height:0;padding-right:10px}
@@ -134,10 +131,7 @@
   .lg .r.st .msg{color:var(--ed-text)}
   .lg .r.st:hover{background:var(--ui-hover-list)}
   .lg .r.sel{background:var(--ui-selection)}
-  .logp .aic{margin:8px 0}
-  /* Profiler */
-  .prof{flex:1;display:grid;grid-template-columns:minmax(0,1fr) 440px;gap:10px;padding:8px 10px;min-height:0}
-  .prof .dm-chart{min-height:0}
+  .logp .ai-answer{margin:8px 0;align-self:start;max-height:calc(100% - 16px)}
 
   /* ===== 下一处编辑预测：ItemCard.ets ===== */
   #code-nep{scrollbar-width:none;padding-right:18px}
@@ -149,24 +143,22 @@
   @keyframes nepcaret{50%{opacity:0}}
   .code .nep-err{text-decoration:underline wavy var(--ui-error) 1px;text-underline-offset:3px;text-decoration-skip-ink:none}
   .code .ln.vmod .g{box-shadow:inset -3px 0 0 var(--ui-file-modified)}
-  .code .ln .g .m .nep-gi{color:var(--ui-accent);cursor:pointer}
+  .code .ln .g .m .nep-gi{color:var(--ai-ink);cursor:pointer}
   .code .ln.nep-on .nep-o{background:color-mix(in srgb,var(--ui-error) 16%,transparent);text-decoration:line-through;text-decoration-color:color-mix(in srgb,var(--ui-error) 75%,transparent);border-radius:2px}
-  .code .ln .nep-inlay{display:inline-flex;align-items:center;gap:3px;margin-left:14px;padding:0 6px;height:16px;line-height:16px;border-radius:8px;vertical-align:1px;font-family:var(--font-ui);font-size:11px;color:var(--ui-success);background:color-mix(in srgb,var(--ui-success) 12%,transparent);cursor:pointer}
-  .code .ln .nep-inlay svg.i{width:12px;height:12px}
-  .code .ln .nep-cb{display:inline-flex;align-items:center;gap:4px;margin-left:14px;padding:0 6px;height:16px;line-height:16px;border-radius:4px;vertical-align:1px;font-family:var(--font-ui);font-size:11px;color:var(--ui-fg);background:color-mix(in srgb,var(--ui-accent) 16%,transparent)}
-  .code .ln .nep-cb svg.i{width:12px;height:12px;color:var(--ui-accent)}
+  /* 跨文件同步的来源：ai.css 来源标记，行内压低一档 */
+  .code .ln .ai-src{margin-left:14px;height:16px;padding:0 7px 0 5px;font-family:var(--font-ui);vertical-align:1px;cursor:pointer}
   /* 幽灵行：不占行号，灰色是还没轮到的，带语法色的是当前这一处 */
   .code .gl{display:flex;min-height:var(--lh-code);cursor:default}
   .code .gl .g{width:58px;flex:none;background:var(--ed-gutter)}
   .code .gl .t{flex:1;padding-left:8px;white-space:pre;color:var(--ed-comment)}
   .code .gl:not(.on):not(.tb) .t *{color:inherit}
   .code .gl .nep-n{background:color-mix(in srgb,var(--ui-success) 10%,transparent);border-radius:3px}
-  .code .gl.on,.code .gl.tb{background:color-mix(in srgb,var(--ui-accent) 8%,transparent)}
-  .code .gl.on .g,.code .gl.tb .g{box-shadow:inset -2px 0 0 var(--ui-accent)}
+  .code .gl.on,.code .gl.tb{background:var(--ai-tint)}
+  .code .gl.on .g,.code .gl.tb .g{box-shadow:inset -2px 0 0 var(--ai-ink)}
   .code .gl.on .t{opacity:.88}
   .code .gl.on .nep-n{background:color-mix(in srgb,var(--ui-success) 22%,transparent)}
   .code .gl .nep-o2{text-decoration:line-through;opacity:.7}
-  .code .gl .nep-peek{display:inline-flex;align-items:center;gap:4px;height:16px;line-height:14px;padding:0 6px;border-radius:4px;border:1px dashed color-mix(in srgb,var(--ui-accent) 60%,transparent);font-family:var(--font-ui);font-size:11px;vertical-align:1px;color:var(--ui-fg-info)}
+  .code .gl .nep-peek{display:inline-flex;align-items:center;gap:4px;height:16px;line-height:14px;padding:0 6px;border-radius:4px;background:var(--ai-surface-2);font-family:var(--font-ui);font-size:11px;vertical-align:1px;color:var(--ui-fg-info)}
   .code .gl .nep-peek svg.i{width:12px;height:12px}
   .code .gl.in{animation:nepin .35s ease-out both;animation-delay:var(--d,0ms)}
   @keyframes nepin{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:none}}
@@ -177,39 +169,37 @@
   .nep-k kbd{font-size:10px;line-height:14px;padding:0 4px}
   .nep-chip{display:inline-flex;align-items:center;gap:4px;height:18px;padding:0 7px;border-radius:9px;background:var(--ui-tag-bg);color:var(--ui-fg);font-size:11px}
   .nep-chip svg.i{width:12px;height:12px}
-  .nep-tag{display:inline-flex;align-items:center;height:18px;padding:0 6px;border-radius:4px;font-size:11px;font-weight:600;color:var(--ui-info);background:color-mix(in srgb,var(--ui-accent) 16%,transparent)}
+  .nep-tag{display:inline-flex;align-items:center;height:18px;padding:0 6px;border-radius:4px;font-size:11px;font-weight:500;color:var(--ui-fg);background:var(--ui-tag-bg)}
   .nep-idx{font-family:var(--font-code);font-size:11px}
   /* 右侧滚动条：拇指 + 每一处的标记 */
   .nep-ruler{position:absolute;top:0;right:0;bottom:0;width:12px;z-index:4}
   .nep-ruler .thumb{position:absolute;left:3px;right:3px;border-radius:3px;background:color-mix(in srgb,var(--ui-fg) 20%,transparent);pointer-events:none}
-  .nep-ruler .mk{position:absolute;left:2px;right:2px;height:4px;margin-top:-2px;border:0;padding:0;border-radius:1px;background:var(--ui-accent);cursor:pointer}
+  .nep-ruler .mk{position:absolute;left:2px;right:2px;height:4px;margin-top:-2px;border:0;padding:0;border-radius:1px;background:var(--ai-ink);cursor:pointer}
   .nep-ruler .mk.on{left:0;right:0;height:6px;margin-top:-3px;box-shadow:0 0 0 1px var(--ui-editor-bg)}
   .nep-ruler .mk.a{background:var(--ui-success)}
   .nep-ruler .mk.k{background:transparent;box-shadow:inset 0 0 0 1px var(--ui-fg-info)}
   /* 编辑器右上角的小挂件：状态 + 模型来源 */
-  .nep-w{position:absolute;top:6px;right:20px;z-index:5;display:flex;align-items:center;gap:6px;height:28px;padding:0 3px 0 8px;border:1px solid var(--ui-popup-border);border-radius:var(--arc);background:var(--ui-popup-bg);box-shadow:0 2px 10px rgba(0,0,0,.14);font-size:var(--fs-sm);color:var(--ui-fg-info);white-space:nowrap}
+  .nep-w{position:absolute;top:6px;right:20px;z-index:5;display:flex;align-items:center;gap:6px;height:28px;padding:0 3px 0 8px;border-radius:14px;background:var(--ai-surface-2);font-size:var(--fs-sm);color:var(--ui-fg-info);white-space:nowrap}
   .nep-w .st{display:inline-flex;align-items:center;gap:6px}
   .nep-w .st b{color:var(--ui-fg);font-weight:600}
-  .nep-w .st svg.i{width:14px;height:14px;color:var(--ui-accent)}
+  .nep-w .st svg.i{width:14px;height:14px;color:var(--ai-ink)}
   .nep-w .st.done svg.i{color:var(--ui-success)}
   .nep-w .nav{display:inline-flex}
   .nep-w .abtn{width:20px;height:20px}
   .nep-w .abtn svg.i{width:14px;height:14px}
   .nep-w .sep{width:1px;height:14px;background:var(--ui-border)}
-  .nep-src{display:inline-flex;gap:1px;padding:1px;border-radius:6px;background:var(--ui-tag-bg)}
-  .nep-src button{display:inline-flex;align-items:center;gap:4px;height:20px;padding:0 8px;border:0;border-radius:5px;background:transparent;color:var(--ui-fg-info);font:inherit;font-size:11px;cursor:pointer}
+  .nep-src{display:inline-flex;gap:1px;padding:1px;border-radius:12px;background:transparent}
+  .nep-src button{display:inline-flex;align-items:center;gap:4px;height:20px;padding:0 8px;border:0;border-radius:11px;background:transparent;color:var(--ui-fg-info);font:inherit;font-size:11px;cursor:pointer}
   .nep-src button svg.i{width:12px;height:12px}
-  .nep-src button.on{background:var(--ui-popup-bg);color:var(--ui-fg);box-shadow:0 0 0 1px var(--ui-component-border)}
-  .nep-more{position:absolute;right:20px;bottom:10px;z-index:5;display:inline-flex;align-items:center;gap:4px;height:24px;padding:0 10px 0 6px;border-radius:12px;border:1px solid color-mix(in srgb,var(--ui-accent) 55%,transparent);background:var(--ui-popup-bg);color:var(--ui-fg);font:inherit;font-size:var(--fs-sm);box-shadow:var(--ui-shadow);cursor:pointer}
-  .nep-more svg.i{width:14px;height:14px;color:var(--ui-accent)}
+  .nep-src button.on{background:var(--ai-surface);color:var(--ui-fg)}
+  .nep-more{position:absolute;right:20px;bottom:10px;z-index:5;display:inline-flex;align-items:center;gap:4px;height:24px;padding:0 10px 0 6px;border-radius:12px;border:0;background:var(--ai-surface-2);color:var(--ui-fg);font:inherit;font-size:var(--fs-sm);cursor:pointer}
+  .nep-more svg.i{width:14px;height:14px;color:var(--ai-ink)}
   /* 全部走完后的结果 */
-  .nep-done{position:absolute;right:20px;bottom:12px;z-index:6;width:380px;border:1px solid var(--ui-popup-border);border-radius:var(--arc);background:var(--ui-popup-bg);box-shadow:var(--ui-shadow);font-size:var(--fs-para);line-height:var(--lh-para);overflow:hidden}
-  .nep-done::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--ui-success)}
-  .nep-done.part::before{background:var(--ui-warning)}
+  .nep-done{position:absolute;right:20px;bottom:12px;z-index:6;width:380px;border-radius:var(--ai-r);background:var(--ai-surface);box-shadow:var(--ui-shadow);font-size:var(--fs-para);line-height:var(--lh-para);overflow:hidden}
   .nep-done .hd{display:flex;align-items:center;gap:6px;padding:8px 8px 4px 12px}
   .nep-done .hd svg.i{width:14px;height:14px;color:var(--ui-success);flex:none}
   .nep-done.part .hd svg.i{color:var(--ui-warning)}
-  .nep-done .hd b{font-weight:600;color:var(--ui-fg)}
+  .nep-done .hd b{font-weight:500;color:var(--ui-fg)}
   .nep-done .hd .grow{flex:1}
   .nep-done .hd .abtn svg.i{color:var(--ui-fg-info)}
   .nep-done .bd{padding:2px 12px 8px;display:flex;flex-direction:column;gap:4px;font-size:var(--fs-sm);line-height:var(--lh-sm);color:var(--ui-fg)}
@@ -218,8 +208,147 @@
   .nep-done .bd code{font-family:var(--font-code);font-size:11px;background:var(--ui-tag-bg);padding:0 4px;border-radius:4px}
   .nep-done .bd .sk{color:color-mix(in srgb,var(--ui-warning) 75%,var(--ui-fg))}
   .nep-done .bd .dm-muted{color:var(--ui-fg-info)}
-  .nep-done .ft{display:flex;gap:6px;padding:8px 12px;border-top:1px solid var(--ui-border)}
+  .nep-done .ft{display:flex;gap:6px;padding:2px 12px 10px}
   .nep-done .ft .btn svg.i{width:12px;height:12px}
+
+  /* ===== ⑤ 手机上的截图、HiLog 拖进对话就是上下文（华为分享 / 碰一碰） ===== */
+  .editor{position:relative}
+  .dc-hello{display:flex;flex-direction:column;gap:10px;padding:14px 2px 4px}
+  .dc-hello .hh{display:flex;align-items:center;gap:8px;font-size:var(--fs-h2);line-height:var(--lh-h2);font-weight:500}
+  .dc-hello .hh .ai-ico{width:18px;height:18px;color:var(--ai-ink)}
+  .dc-hello p{margin:0;color:var(--ui-fg-info);font-size:var(--fs-para);line-height:var(--lh-para)}
+  /* 输入框：ai.css 智能输入框，附件卡片落在上下文行 */
+  .dc-input{margin:6px 12px 4px;flex:none}
+  .dc-input .ai-chip{appearance:none;border:0;font:inherit;font-size:11.5px;cursor:pointer}
+  .dc-input .ai-chip:hover{background:var(--ui-hover)}
+  .dc-atts{display:flex;flex-wrap:wrap;gap:6px}
+  .dc-atts[hidden]{display:none}
+  .dc-att{display:flex;align-items:center;gap:8px;height:40px;padding:0 8px 0 4px;border-radius:var(--ai-r-in);background:var(--ai-surface-2);font-size:11px;line-height:14px;min-width:0}
+  @keyframes attin{from{opacity:0;transform:scale(.9)}to{opacity:1;transform:none}}
+  .dc-att .tx{display:flex;flex-direction:column;min-width:0;padding-right:2px}
+  .dc-att .tx b{font-weight:500;color:var(--ui-fg);white-space:nowrap}
+  .dc-att .tx span{color:var(--ui-fg-info);white-space:nowrap;font-family:var(--font-code);font-size:10.5px}
+  .dc-att .abtn{width:18px;height:18px}
+  .dc-att .abtn svg.i{width:12px;height:12px}
+  .dc-att .lic{width:24px;height:32px;border-radius:4px;display:grid;place-items:center;background:color-mix(in srgb,var(--ui-success) 14%,transparent);color:var(--ui-success);flex:none}
+  .dc-att .lic svg.i{width:14px;height:14px;color:currentColor}
+  /* 截图缩略：按 1260×2844 的比例 */
+  .mini{position:relative;display:block;flex:none;width:18px;height:40.6px;border-radius:3px;background:#dfe2e7;overflow:hidden;box-shadow:inset 0 0 0 1px rgba(0,0,0,.12)}
+  .mini::before{content:"";position:absolute;left:0;right:0;top:0;height:45%;background:#c9cdd4}
+  .mini::after{content:"";position:absolute;left:12%;right:12%;top:40%;height:18%;border-radius:2px;background:#fff;box-shadow:0 0 0 1px rgba(0,0,0,.06),inset 0 -2px 0 #E84026}
+  .dc-att .mini{width:14.2px;height:32px}
+  .umsg .dc-atts{justify-content:flex-end}
+  /* 回答里：截图与日志按时间对上 */
+  .algn{position:relative;display:flex;flex-direction:column;gap:6px;padding:8px 10px;border-radius:8px;background:var(--ai-surface-2);font-size:var(--fs-sm);line-height:var(--lh-sm)}
+  .algn .hd{font-size:11px;color:var(--ui-fg-info)}
+  .algn .r{position:relative;display:grid;grid-template-columns:16px 86px minmax(0,1fr);align-items:center;gap:6px;min-width:0}
+  .algn .r svg.i{width:14px;height:14px}
+  .algn .r .tm{font-family:var(--font-code);font-size:11px;color:var(--ui-fg)}
+  .algn .r .ms{color:var(--ui-fg-info);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .algn .r.cam svg.i{color:var(--ui-icon)}.algn .r.er svg.i{color:var(--ui-error)}.algn .r.wa svg.i{color:var(--ui-warning)}
+  .algn .r + .r::before{content:"";position:absolute;left:7px;top:-7px;height:8px;border-left:1px dashed var(--ui-component-border)}
+  .ai-thread .ai-answer{padding:12px 12px 8px}
+  .ai-thread .ai-answer__body p{margin:0}
+  .ai-thread .ai-answer__body p + p{margin-top:4px}
+  .ai-thread .diffcard{border:0;background:var(--ai-surface-2)}
+  .ai-thread .diffcard .dh{background:transparent}
+
+  /* 桌面上的测试机：HUAWEI Mate 70 Pro 1260×2844，屏幕 216×487.5（逻辑 360×812.6 vp，缩放 .6） */
+  .ph-dock{position:absolute;right:22px;bottom:38px;z-index:30;display:flex;flex-direction:column;align-items:center;gap:8px;transition:transform .45s cubic-bezier(.3,.7,.3,1),opacity .35s}
+  .ph-dock[hidden]{display:none}
+  .ph-dock.enter{animation:phin .5s cubic-bezier(.3,.7,.3,1) both}
+  @keyframes phin{from{opacity:0;transform:translate(40px,30px) rotate(6deg)}to{opacity:1;transform:none}}
+  .ph-dock.tap{transform:translate(18px,-10px) rotate(-7deg)}
+  .ph-cap{display:flex;align-items:center;gap:6px;height:24px;padding:0 4px 0 8px;border-radius:12px;background:var(--ai-surface-2);font-size:11px;color:var(--ui-fg);white-space:nowrap}
+  .ph-cap svg.i{width:12px;height:12px}
+  .ph-cap .abtn{width:18px;height:18px}
+  .ph-cap .dm-pill{height:16px;line-height:16px}
+  .ph-dev{position:relative;padding:7px;border-radius:30px;background:#111214;box-shadow:0 10px 28px rgba(0,0,0,.35)}
+  .ph-dev::before{content:"";position:absolute;right:-3px;top:110px;width:3px;height:44px;border-radius:0 2px 2px 0;background:#26282c}
+  .ph-scr{position:relative;width:216px;height:487.5px;border-radius:24px;overflow:hidden;background:#fff}
+  .ph-lv{position:absolute;left:0;top:0;width:360px;height:812.5px;transform:scale(.6);transform-origin:0 0;background:#F1F3F5;color:#18191c;font-family:var(--font-ui);font-size:15px;line-height:1.35;overflow:hidden}
+  .ph-lv .sb{position:absolute;left:0;right:0;top:0;height:38px;display:flex;align-items:center;justify-content:space-between;padding:0 26px;font-size:14px;font-weight:600;z-index:6}
+  .ph-lv .sb .r{display:flex;align-items:center;gap:6px}
+  .ph-lv .sig{display:inline-flex;align-items:flex-end;gap:2px;height:12px}
+  .ph-lv .sig b{width:3px;background:currentColor;border-radius:1px}
+  .ph-lv .sig b:nth-child(1){height:4px}.ph-lv .sig b:nth-child(2){height:6px}.ph-lv .sig b:nth-child(3){height:9px}.ph-lv .sig b:nth-child(4){height:12px}
+  .ph-lv .bat{width:24px;height:12px;border:1.5px solid currentColor;border-radius:3px;position:relative;box-sizing:border-box}
+  .ph-lv .bat::before{content:"";position:absolute;left:1.5px;top:1.5px;bottom:1.5px;right:6px;background:currentColor;border-radius:1px}
+  .ph-lv .hole{position:absolute;top:11px;left:50%;width:16px;height:16px;margin-left:-8px;border-radius:50%;background:#0b0b0d;z-index:7}
+  .ph-lv .gb{position:absolute;bottom:8px;left:50%;width:128px;height:5px;margin-left:-64px;border-radius:3px;background:#18191c;opacity:.75;z-index:9}
+  .ph-lv .live{display:inline-flex;align-items:center;gap:5px;height:22px;padding:0 9px 0 7px;border-radius:11px;background:#18191c;color:#fff;font-size:12px;font-weight:600}
+  .ph-lv .live i{width:8px;height:8px;border-radius:50%;background:#64BB5C}
+  .ph-lv .live.run i{background:#0A59F7;animation:dmpulse 1s ease-in-out infinite}
+  @keyframes dmpulse{50%{opacity:.35}}
+  /* 应用：商品详情页 */
+  .ph-app{position:absolute;inset:0;display:flex;flex-direction:column;padding-top:38px;background:#F1F3F5}
+  .ph-app .hd{height:56px;flex:none;display:flex;align-items:center;gap:10px;padding:0 16px;font-size:20px;font-weight:600}
+  .ph-app .hd .bk{width:36px;height:36px;border-radius:18px;background:#e5e7eb;display:grid;place-items:center;font-size:20px;font-weight:400}
+  .ph-app .img{margin:0 16px;height:328px;border-radius:20px;background:#E3E6EA;flex:none;position:relative;overflow:hidden}
+  .ph-app .sk{margin:14px 16px 0;height:18px;border-radius:9px;background:#E3E6EA}
+  .ph-app .sk.s{width:40%}
+  .ph-app .pr{margin:16px 16px 0;font-size:24px;font-weight:600;color:#E84026;height:30px}
+  .ph-app .cta{margin:auto 16px 34px;height:44px;border-radius:22px;background:#0A59F7;color:#fff;display:grid;place-items:center;font-size:16px;font-weight:600;flex:none}
+  .ph-app.ok .img{background:linear-gradient(145deg,#f6f7f9,#dde3ec)}
+  .ph-app.ok .img::before{content:"";position:absolute;left:50%;top:50%;width:120px;height:150px;margin:-75px 0 0 -60px;border-radius:60px 60px 46px 46px;background:linear-gradient(160deg,#ffffff,#cfd6e0);box-shadow:0 18px 30px rgba(40,60,90,.18)}
+  .ph-app.ok .img::after{content:"";position:absolute;left:50%;top:50%;width:40px;height:40px;margin:-20px 0 0 -20px;border-radius:50%;background:#2a2f38;box-shadow:inset 0 0 0 8px #4b5360}
+  .ph-app .tt{margin:14px 16px 0;font-size:18px;font-weight:600}
+  .ph-app .tt small{display:block;margin-top:2px;font-size:13px;font-weight:400;color:#8a8f99}
+  /* 系统弹窗：应用已停止 */
+  .ph-dim{position:absolute;inset:0;background:rgba(0,0,0,.38);z-index:3}
+  .ph-dlg{position:absolute;left:16px;right:16px;top:150px;padding:22px 24px 8px;border-radius:24px;background:#fff;z-index:4;box-shadow:0 10px 30px rgba(0,0,0,.2)}
+  .ph-dlg b{display:block;font-size:18px;margin-bottom:6px}
+  .ph-dlg p{margin:0;color:#6b7078;font-size:14px}
+  .ph-dlg .bb{display:flex;margin-top:14px}
+  .ph-dlg .bb span{flex:1;text-align:center;height:40px;line-height:40px;color:#0A59F7;font-size:16px;font-weight:600}
+  /* 华为分享面板 */
+  .ph-sheet{position:absolute;left:8px;right:8px;bottom:8px;z-index:8;padding:10px 18px 26px;border-radius:30px;background:#fff;box-shadow:0 -6px 30px rgba(0,0,0,.18);transition:transform .45s cubic-bezier(.3,.7,.3,1)}
+  .ph-sheet.away{transform:translateY(110%)}
+  .ph-sheet .hdl{width:40px;height:4px;border-radius:2px;background:#d4d7dc;margin:0 auto 12px}
+  .ph-sheet .st{font-size:19px;font-weight:600;margin-bottom:12px}
+  .ph-sheet .its{display:flex;gap:12px;margin-bottom:14px}
+  .ph-sheet .it{width:84px;display:flex;flex-direction:column;gap:6px;font-size:12px;color:#6b7078;line-height:1.3}
+  .ph-sheet .it .pv{width:84px;height:130px;border-radius:12px;overflow:hidden;position:relative;box-shadow:inset 0 0 0 1px rgba(0,0,0,.08)}
+  .ph-sheet .it .pv .mini{width:100%;height:100%;border-radius:0}
+  .ph-sheet .it .pv.log{background:#EEF6EC;display:flex;flex-direction:column;gap:6px;padding:12px 10px;box-sizing:border-box}
+  .ph-sheet .it .pv.log i{height:5px;border-radius:3px;background:#b8d8b3}
+  .ph-sheet .it .pv.log i.e{background:#f0a597}
+  .ph-sheet .it .pv .ck{position:absolute;right:6px;top:6px;width:20px;height:20px;border-radius:50%;background:#0A59F7;display:grid;place-items:center}
+  .ph-sheet .it .pv .ck::after{content:"";width:8px;height:4px;border-left:2px solid #fff;border-bottom:2px solid #fff;transform:rotate(-45deg) translate(1px,-1px)}
+  .ph-sheet .sec{font-size:13px;color:#8a8f99;margin:2px 0 10px;display:flex;align-items:center;gap:6px}
+  .ph-sheet .devs{display:flex;gap:6px;margin-bottom:12px}
+  .ph-sheet .dv{width:98px;display:flex;flex-direction:column;align-items:center;gap:6px;font-size:12px;line-height:1.25;text-align:center;color:#18191c;border:0;background:transparent;padding:4px 0;border-radius:14px;font-family:inherit;cursor:pointer}
+  .ph-sheet .dv:hover{background:#F1F3F5}
+  .ph-sheet .dv .av{width:58px;height:58px;border-radius:50%;background:#EAF0FF;display:grid;place-items:center;position:relative}
+  .ph-sheet .dv .av svg{width:30px;height:30px;color:#0A59F7}
+  .ph-sheet .dv.muted .av{background:#F1F3F5}.ph-sheet .dv.muted .av svg{color:#6b7078}
+  .ph-sheet .dv em{font-style:normal;font-size:11px;color:#0A59F7;font-weight:600}
+  .ph-sheet .dv.go .av::after{content:"";position:absolute;inset:-5px;border-radius:50%;border:3px solid #0A59F7;border-right-color:transparent;animation:spin 1s linear infinite}
+  .ph-sheet .dv.sent .av{background:#0A59F7}.ph-sheet .dv.sent .av svg{color:#fff}
+  .ph-sheet .tap{display:flex;align-items:center;gap:12px;width:100%;padding:12px 14px;border-radius:18px;background:#F1F3F5;border:0;font-family:inherit;font-size:13px;color:#18191c;text-align:left;cursor:pointer}
+  .ph-sheet .tap:hover{background:#e7eaee}
+  .ph-sheet .tap svg{width:30px;height:30px;flex:none;color:#0A59F7}
+  .ph-sheet .tap b{display:block;font-size:14px;color:#18191c}
+  .ph-sheet .tap span{color:#8a8f99}
+  .ph-toast{position:absolute;left:40px;right:40px;bottom:64px;z-index:9;padding:10px 14px;border-radius:22px;background:rgba(24,25,28,.88);color:#fff;font-size:14px;text-align:center;animation:attin .3s ease-out both}
+  .ph-banner{position:absolute;left:10px;right:10px;top:44px;z-index:9;display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:22px;background:#fff;box-shadow:0 8px 24px rgba(0,0,0,.16);font-size:13px;line-height:1.3;animation:phbn .4s ease-out both}
+  @keyframes phbn{from{opacity:0;transform:translateY(-16px)}to{opacity:1;transform:none}}
+  .ph-banner .ic{width:36px;height:36px;border-radius:10px;flex:none;display:grid;place-items:center;background:linear-gradient(135deg,#2C8DDD,#3357AC)}
+  .ph-banner .ic svg{width:24px;height:24px}
+  .ph-banner b{display:block;font-size:14px}
+  .ph-banner span{color:#6b7078}
+  /* 系统级：华为分享接收通知（鸿蒙电脑右上角） */
+  .sys-note{position:absolute;top:48px;right:56px;z-index:60;width:300px;display:flex;gap:10px;padding:12px 14px;border-radius:16px;background:var(--ui-popup-bg);box-shadow:var(--ui-shadow);font-size:var(--fs-sm);line-height:var(--lh-sm);color:var(--ui-fg-info);animation:sysin .35s ease-out both}
+  .sys-note[hidden]{display:none}
+  @keyframes sysin{from{opacity:0;transform:translateX(24px)}to{opacity:1;transform:none}}
+  .sys-note .ic{width:32px;height:32px;border-radius:9px;flex:none;display:grid;place-items:center;background:var(--ai-surface-2)}
+  .sys-note .ic svg{width:18px;height:18px;color:var(--ui-icon)}
+  .sys-note b{display:block;color:var(--ui-fg);font-weight:500;font-size:var(--fs-para);line-height:var(--lh-para)}
+  .sys-note .tx{flex:1;min-width:0}
+  .sys-note .pb{margin-top:6px;height:3px;border-radius:2px;background:var(--ui-progress-track);overflow:hidden}
+  .sys-note .pb i{display:block;height:100%;width:0;background:var(--ui-fg-info);transition:width 1.1s linear}
+
+  @media (prefers-reduced-motion:reduce){.ph-dock.enter{animation:none}}
 </style>
 </head>
 <body>
@@ -245,43 +374,26 @@
     <div class="editor">
       <div class="tabs" id="tabs"><span class="grow"></span><span class="tab-tools"><button class="abtn" title="Editor Options"><svg class="i"><use href="#i-moreV"/></svg></button></span></div>
 
-      <!-- ① 文档里：README.md -->
-      <div class="code-wrap" data-for-file="README.md">
-        <div class="code" id="code-md"></div>
-        <div class="dm-inline" id="ic-md" style="--x:120px;--y:26px">
-          <div class="ih"><svg class="i"><use href="#i-genie"/></svg>Inline Chat · README.md 第 14 行<span class="grow"></span><kbd>Esc</kbd><button class="abtn" title="Close" data-close="ic-md"><svg class="i"><use href="#i-closeS"/></svg></button></div>
-          <div class="ib">
-            <div class="q"><svg class="i"><use href="#i-user"/></svg><span>把这段改成面向第三方接入方的口吻，补上超时时间</span></div>
-            <div class="a"><svg class="i"><use href="#i-genie"/></svg><div class="md"><p>改成了对接入方说话的口吻，补了 10 s 超时；下面的错误码表不动。</p></div></div>
-            <div class="diffcard wrap" id="md-diff">
-              <div class="dh"><svg class="i"><use href="#i-md"/></svg><span class="fn">README.md:14</span><span class="cnt"><span class="add">+1</span> <span class="del">−1</span></span></div>
-              <pre><span class="l del">- 传入手机号与验证码，返回 `Session`。失败时抛出 `AuthError`，错误码见下表。</span><span class="l add">+ 接入方传入手机号与验证码，成功返回 `Session`；超时时间 10 s，超时或失败抛出 `AuthError`，错误码见下表。</span></pre>
-            </div>
-          </div>
-          <div class="if"><span class="dm-mono dm-muted">deepseek-v4-flash</span><span class="grow"></span><button class="btn" data-regen="md-diff"><svg class="i"><use href="#i-regen"/></svg>重新生成</button><button class="btn primary" id="md-apply">替换</button></div>
-        </div>
-      </div>
-
       <!-- ② 代码里：LoginPage.ets -->
-      <div class="code-wrap" data-for-file="LoginPage.ets" hidden>
+      <div class="code-wrap" data-for-file="LoginPage.ets">
         <div class="code" id="code-ets"></div>
-        <div class="dm-inline" id="ic-ets" style="--x:120px;--y:342px">
-          <div class="ih"><svg class="i"><use href="#i-genie"/></svg>Inline Chat · LoginPage.ets 第 13–15 行<span class="grow"></span><kbd>Esc</kbd><button class="abtn" title="Close" data-close="ic-ets"><svg class="i"><use href="#i-closeS"/></svg></button></div>
+        <div class="dm-inline" id="ic-ets" style="--x:120px;--y:30px">
+          <div class="ih"><svg class="i ai-ico"><use href="#ai-mark"/></svg>就地问 · LoginPage.ets 第 13–15 行<span class="grow"></span><kbd>Esc</kbd><button class="abtn" title="Close" data-close="ic-ets"><svg class="i"><use href="#i-closeS"/></svg></button></div>
           <div class="ib">
             <div class="q"><svg class="i"><use href="#i-user"/></svg><span>把错误提示改友好一点</span></div>
-            <div class="a"><svg class="i"><use href="#i-genie"/></svg><div class="md"><p>提示文案来自第 27 行赋的 <code>ERR_AUTH_401</code>，换成用户看得懂的一句话就行，这里的显示逻辑不用动。</p></div></div>
+            <div class="a"><svg class="i ai-ico"><use href="#ai-mark"/></svg><div class="md"><p>提示文案来自第 27 行赋的 <code>ERR_AUTH_401</code>，换成用户看得懂的一句话就行，这里的显示逻辑不用动。</p></div></div>
             <div class="diffcard" id="ets-diff">
               <div class="dh"><svg class="i"><use href="#i-ets"/></svg><span class="fn">LoginPage.ets:27</span><span class="cnt"><span class="add">+1</span> <span class="del">−1</span></span></div>
-              <pre><span class="l">    } catch (e) {</span><span class="l del">-     this.error = 'ERR_AUTH_401';</span><span class="l add">+     this.error = '验证码错误，请重新输入';</span><span class="l">    }</span></pre>
+              <pre><span class="l del">-     this.error = 'ERR_AUTH_401';</span><span class="l add">+     this.error = '验证码错误，请重新输入';</span></pre>
             </div>
           </div>
-          <div class="if"><span class="dm-mono dm-muted">deepseek-v4-flash</span><span class="grow"></span><button class="btn" data-close="ic-ets">Reject</button><button class="btn primary" id="ets-apply">Accept</button></div>
+          <div class="if"><span class="dm-mono dm-muted">本机模型</span><span class="grow"></span><button class="btn" data-close="ic-ets">不要</button><button class="btn" id="ets-apply">接受</button></div>
         </div>
       </div>
 
       <!-- ③ 界面预览上：Previewer -->
       <div class="pv-wrap" data-for-file="Previewer" hidden>
-        <div class="prev-tools"><svg class="i"><use href="#i-phone"/></svg>Phone · 1080×2340 · API 20<span class="grow"></span><svg class="i" style="width:14px;height:14px"><use href="#i-cursor"/></svg>选中 Button<span class="dm-pill ok" id="pv-done" hidden><svg><use href="#i-checkS"/></svg>已写回 LoginPage.ets:16–18</span></div>
+        <div class="prev-tools"><svg class="i"><use href="#i-phone"/></svg>Mate 70 Pro · 1260×2844 · sm<span class="ai-src" id="pv-done" hidden><span class="ai-spark"></span>已写回 LoginPage.ets:16–18 <i>·</i> <button type="button" id="pv-undo">退回</button></span><span class="grow"></span></div>
         <div class="dm-prev">
           <div class="pv-stage">
             <div class="dm-device phone">
@@ -290,20 +402,19 @@
                 <div class="title">欢迎回来</div>
                 <div class="inp">手机号</div>
                 <div class="inp">验证码</div>
-                <div class="lbtn-wrap" id="lbtn-wrap"><div class="btn">登录</div><span class="dm-hot ok"><span class="lb" id="lbtn-lb">Button · LoginPage.ets:16</span></span></div>
+                <div class="lbtn-wrap ai-select" id="lbtn-wrap" data-ai-tag="将改 · Button · :16"><div class="btn">登录</div></div>
                 <div class="hintline">登录即表示同意《用户协议》</div>
                 <div class="fill"></div>
               </div></div>
               <span class="cap">pages/LoginPage</span>
             </div>
-            <span class="pv-link" id="pv-link"></span>
             <div class="dm-inline pv" id="ic-pv">
-              <div class="ih"><svg class="i"><use href="#i-genie"/></svg>Inline Chat · Previewer · Button（LoginPage.ets:16）<span class="grow"></span><kbd>Esc</kbd><button class="abtn" title="Close" data-close="ic-pv"><svg class="i"><use href="#i-closeS"/></svg></button></div>
+              <div class="ih"><svg class="i ai-ico"><use href="#ai-mark"/></svg>就地问 · 预览里的 Button（LoginPage.ets:16）<span class="grow"></span><kbd>Esc</kbd><button class="abtn" title="Close" data-close="ic-pv"><svg class="i"><use href="#i-closeS"/></svg></button></div>
               <div class="ib">
                 <div class="q"><svg class="i"><use href="#i-user"/></svg><span>按钮再宽一点，跟输入框对齐，颜色用品牌蓝</span></div>
-                <div class="a"><svg class="i"><use href="#i-genie"/></svg><div class="md"><p>宽度改成和上面两个输入框一样（<code>'100%'</code>），去掉两侧 34 vp 的外边距，背景色换成 <code>$r('app.color.brand')</code>。</p><p>改 3 处：<code>width</code> / <code>margin</code> / <code>backgroundColor</code>，都在 <code>LoginPage.ets</code> 第 16–18 行。</p></div></div>
+                <div class="a"><svg class="i ai-ico"><use href="#ai-mark"/></svg><div class="md"><p>宽度改成和上面两个输入框一样（<code>'100%'</code>），去掉两侧 34 vp 的外边距，背景色换成 <code>$r('app.color.brand')</code>。</p><p>改 3 处：<code>width</code> / <code>margin</code> / <code>backgroundColor</code>，都在 <code>LoginPage.ets</code> 第 16–18 行。</p></div></div>
               </div>
-              <div class="if"><span class="dm-mono dm-muted">deepseek-v4-flash</span><span class="grow"></span><button class="btn" data-close="ic-pv">Reject</button><button class="btn primary" id="pv-apply">Accept</button></div>
+              <div class="if"><span class="dm-mono dm-muted">本机模型</span><span class="grow"></span><button class="btn" data-close="ic-pv">不要</button><button class="btn" id="pv-apply">接受</button></div>
             </div>
           </div>
         </div>
@@ -332,6 +443,40 @@
       <div class="code-wrap" data-for-file="DetailPage.ets" hidden><div class="code" id="code-detail"></div></div>
 
       <div class="breadcrumbs" id="crumbs"></div>
+
+      <!-- ⑤ 桌上的测试机：截图 + HiLog 用华为分享 / 碰一碰发到 DevEco Code -->
+      <div class="ph-dock" id="ph-dock" hidden>
+        <div class="ph-cap" id="ph-cap"><svg class="i"><use href="#i-phone"/></svg>李工的 Mate 70 Pro · 测试机<button class="abtn" id="ph-x" title="收起"><svg class="i"><use href="#i-closeS"/></svg></button></div>
+        <div class="ph-dev"><div class="ph-scr"><div class="ph-lv" id="ph-lv"></div></div></div>
+      </div>
+    </div>
+
+    <!-- 右侧：DevEco Code -->
+    <div class="tw tw-right">
+      <div class="pane" data-pane="agent">
+        <div class="tw-hdr"><span class="title">DevEco Code</span><span class="grow"></span>
+          <button class="abtn" title="New Chat"><svg class="i"><use href="#i-add"/></svg></button>
+          <button class="abtn" title="History"><svg class="i"><use href="#i-history"/></svg></button>
+          <button class="abtn" title="MCP"><svg class="i"><use href="#i-cube"/></svg></button>
+          <button class="abtn" title="Settings"><svg class="i"><use href="#i-settings"/></svg></button>
+          <button class="abtn" title="Hide|Shift+Esc" data-act="hide-right"><svg class="i"><use href="#i-hide"/></svg></button></div>
+        <div class="tw-body"><div class="ai">
+          <div class="ai-scroll" id="dc-scroll"><div class="ai-thread" id="dc-thread">
+            <div class="dc-hello">
+              <div class="hh"><svg class="i ai-ico"><use href="#ai-mark"/></svg>测试机上闪退了？</div>
+              <p>让测试把截图和 HiLog 碰一下电脑发过来，直接落进输入框当上下文，不用存文件、对时间、找行号。</p>
+            </div>
+          </div></div>
+          <div class="ai-field dc-input" id="dc-input">
+            <div class="ai-field__ctx"><span class="ai-chip"><svg><use href="#ai-context"/></svg><span>LoginPage.ets</span></span><button type="button" class="ai-chip" id="dc-from" title="手机上的截图、HiLog 碰一碰或华为分享发过来"><svg><use href="#i-phone"/></svg><span>从手机接收</span></button></div>
+            <div class="dc-atts" id="dc-atts" hidden></div>
+            <textarea class="ai-field__ta" id="dc-text" rows="2" placeholder="问 DevEco Code，或把手机上的截图、HiLog 发过来" aria-label="Message"></textarea>
+            <div class="ai-field__gen"><span class="ai-spark is-live"></span><span class="ai-shimmer" id="dc-gen">读截图与 HiLog</span></div>
+            <div class="ai-field__bar"><span class="ai-dd">Agent</span><span class="ai-field__model"><svg><use href="#ai-local"/></svg>本机 · 盘古</span><span class="grow"></span><button class="ai-field__send" id="dc-send" type="button" title="发送|Enter"><svg><use href="#ai-send"/></svg></button></div>
+          </div>
+          <div class="ai-foot">The content is generated by AI and may not be entirely accurate or complete.</div>
+        </div></div>
+      </div>
     </div>
 
     <div class="tw tw-bottom">
@@ -343,7 +488,7 @@
           <div class="build">
             <div class="side"><button class="abtn" title="Rebuild"><svg class="i"><use href="#i-rerun"/></svg></button><button class="abtn" title="Stop"><svg class="i"><use href="#i-stop"/></svg></button><button class="abtn" title="Filter"><svg class="i"><use href="#i-tune"/></svg></button></div>
             <div class="list" id="b-list"></div>
-            <div class="bout"><div class="out" id="b-out"></div><div class="aic" id="b-ai"></div></div>
+            <div class="bout"><div class="out" id="b-out"></div><div id="b-ai"></div></div>
           </div>
         </div>
       </div>
@@ -354,7 +499,7 @@
         <div class="tw-body">
           <div class="dbg">
             <div>
-              <div class="dtools"><button class="abtn" title="Resume Program|F9"><svg class="i"><use href="#i-play"/></svg></button><button class="abtn" title="Pause"><svg class="i"><use href="#i-pause"/></svg></button><button class="abtn" title="Stop|Ctrl+F2"><svg class="i"><use href="#i-stopSq"/></svg></button><button class="abtn" title="Step Over|F8"><svg class="i"><use href="#i-arrowR"/></svg></button></div>
+              <div class="dtools"><button class="abtn" title="Resume Program|F9"><svg class="i"><use href="#i-play"/></svg></button><button class="abtn" title="Pause"><svg class="i"><use href="#i-pause"/></svg></button><button class="abtn" title="Stop"><svg class="i"><use href="#i-stopSq"/></svg></button><button class="abtn" title="Step Over|F8"><svg class="i"><use href="#i-arrowR"/></svg></button></div>
               <div class="dsec">Frames</div>
               <div class="frow sel"><svg class="i" style="width:12px;height:12px"><use href="#i-method"/></svg>aboutToAppear<span class="loc">DetailPage.ets:13</span></div>
               <div class="frow"><svg class="i" style="width:12px;height:12px"><use href="#i-method"/></svg>initialRender<span class="loc">DetailPage.ets</span></div>
@@ -366,10 +511,10 @@
               <div class="dsec">Variables · 停在 DetailPage.ets:13</div>
               <div class="vrow"><svg class="i" style="width:12px;height:12px"><use href="#i-chevD"/></svg><span class="vn">params</span> = <span class="vv">{ id: 1024 }</span><span class="vt">Record&lt;string, number&gt;</span></div>
               <div class="vrow l2"><span class="vn">id</span> = <span class="n">1024</span></div>
-              <div class="vrow sel" id="v-id"><span class="vn">this.id</span> = <span class="vu">undefined</span><span class="vt">number</span><button class="askchip" id="ask-undef"><svg class="i"><use href="#i-genie"/></svg>为什么是 undefined？</button></div>
+              <div class="vrow sel" id="v-id"><span class="vn">this.id</span> = <span class="vu">undefined</span><span class="vt">number</span><button class="askchip ai-pill" id="ask-undef"><svg class="ai-ico"><use href="#ai-mark"/></svg>为什么是 undefined？</button></div>
               <div class="vrow"><span class="vn">this.product</span> = <span class="vu">undefined</span><span class="vt">Product | undefined</span></div>
             </div>
-            <div id="d-ai"><div class="ph"><svg class="i"><use href="#i-genie"/></svg>在变量、调用栈上直接问，AI 读得到这一刻的运行状态</div></div>
+            <div id="d-ai"><div class="ph"><svg class="i"><use href="#ai-mark"/></svg>在变量旁直接问，它读得到这一刻的运行状态</div></div>
           </div>
         </div>
       </div>
@@ -379,32 +524,15 @@
           <span class="dm-small dm-muted" style="margin-right:8px">HUAWEI Mate 70 Pro · com.example.myapplication</span>
           <button class="abtn" title="Hide|Shift+Esc" data-act="hide-bottom"><svg class="i"><use href="#i-hide"/></svg></button></div>
         <div class="tw-body">
-          <div class="logp"><div class="lg" id="lg"></div><div class="aic" id="l-ai" style="display:none"></div><div class="ph" id="l-ph"><svg class="i"><use href="#i-cursor"/></svg>选中一段崩溃栈，就地解释并跳到代码</div></div>
-        </div>
-      </div>
-      <!-- Profiler -->
-      <div class="pane" data-pane="profiler">
-        <div class="tw-hdr"><span class="title">Profiler</span><div class="tabbar"><button class="btab on">Frame</button><button class="btab">ArkTS Allocation</button></div><span class="grow"></span>
-          <span class="dm-pill ok" style="margin-right:8px"><span class="dm-dot ok pulse"></span>录制中 · Mate 70 Pro</span>
-          <button class="abtn" title="Hide|Shift+Esc" data-act="hide-bottom"><svg class="i"><use href="#i-hide"/></svg></button></div>
-        <div class="tw-body">
-          <div class="prof">
-            <div class="dm-chart"><div class="ch-t"><b>帧耗时</b>ms · 列表滑动<span class="grow"></span>超 16.6 ms 的帧 <b>3</b></div>
-              <svg viewBox="0 0 600 150" preserveAspectRatio="none" style="height:170px">
-                <line class="lim" x1="0" y1="80" x2="600" y2="80"/>
-                <path class="area" d="M0 120 L40 118 L80 121 L120 115 L160 60 L200 117 L240 119 L280 55 L320 116 L360 120 L400 118 L440 50 L480 119 L520 117 L560 121 L600 118 L600 150 L0 150Z"/>
-                <path class="line" d="M0 120 L40 118 L80 121 L120 115 L160 60 L200 117 L240 119 L280 55 L320 116 L360 120 L400 118 L440 50 L480 119 L520 117 L560 121 L600 118"/>
-                <text class="lbl" x="4" y="76">16.6</text>
-              </svg></div>
-            <div class="aic"><div class="ah"><svg class="i"><use href="#i-genie"/></svg><b>AI 跟着录制在看</b><span class="grow"></span></div>
-              <div class="ictx"><span>Frame 轨道</span><span>调用栈采样</span></div>
-              <div class="ab"><p>3 帧超 16.6 ms，都卡在 <code>ListPage.loadCover</code> 的 <code>createPixelMapSync</code>——主线程同步解码封面。</p></div>
-              <div class="af"><span class="grow"></span><button class="btn" id="go-lp"><svg class="i"><use href="#i-arrowR"/></svg>跳到 ListPage.ets:28</button></div></div>
-          </div>
+          <div class="logp"><div class="lg" id="lg"></div><div class="ai-answer" id="l-ai" style="display:none"></div><div class="ph" id="l-ph"><svg class="i"><use href="#i-cursor"/></svg>选中一段崩溃栈，就地解释并跳到代码</div></div>
         </div>
       </div>
     </div>
   </div>
+
+  <!-- 系统通知：华为分享接收（鸿蒙电脑右上角） -->
+  <div class="sys-note" id="sys-note" hidden></div>
+
 </div>
 
 <script>
@@ -466,16 +594,14 @@
     ['  }'],
     ['}']
   ]};
-  document.getElementById('tree-slot').innerHTML=DemoFrame.tree({sel:'README.md'});
+  document.getElementById('tree-slot').innerHTML=DemoFrame.tree({sel:'LoginPage.ets'});
   document.getElementById('tabs').insertAdjacentHTML('afterbegin',DemoFrame.tabs([
-    {file:'LoginPage.ets'},
+    {file:'LoginPage.ets',on:true},
     {file:'ItemCard.ets'},
-    {file:'Previewer',icon:'#i-tw-preview'},
-    {file:'README.md',icon:'#i-md',on:true}
+    {file:'Previewer',icon:'#i-tw-preview'}
   ]));
-  $('#code-md').innerHTML=DemoFrame.code('README.md',{cur:14,hl:[14]});
   $('#code-ets').innerHTML=DemoFrame.code('LoginPage.ets',{cur:13,hl:[13,14,15]});
-  DemoFrame.init({device:'HUAWEI Mate 70 Pro',deviceIcon:'#i-phone',pos:'14:1'});
+  DemoFrame.init({device:'HUAWEI Mate 70 Pro',deviceIcon:'#i-phone',pos:'13:1',file:'LoginPage.ets'});
 
   /* Previewer 标签没有源码文件，面包屑改成组件路径 */
   $('#ide').addEventListener('click',function(e){
@@ -484,55 +610,55 @@
     var p=$('#status-pos');if(p)p.textContent='16:7';
   });
 
-  function flash(ln){ln.classList.remove('hl');ln.classList.add('hl-ok');setTimeout(function(){ln.classList.remove('hl-ok')},1500)}
+  /* AI 写进文件的行：ai.css 的 gutter 竖条 + 极淡底，接受后 3 s 淡出；悬停竖条看来源。人改的不打标 */
+  function aiMark(code,nums,src){
+    nums.forEach(function(n){
+      var l=$(code+' .ln[data-ln="'+n+'"]');if(!l)return;
+      l.classList.remove('hl','hl-ok','is-accepted');
+      if(!$('.ai-gut',l))l.insertAdjacentHTML('afterbegin','<span class="ai-gut" data-src="'+src+'"></span>');
+      l.classList.add('ai-block');void l.offsetWidth;l.classList.add('is-accepted');
+    });
+  }
   function hide(id){var el=$('#'+id);if(el)el.hidden=true}
+  var M='<svg class="i ai-ico"><use href="#ai-mark"/></svg>';
+  function ic(id){return '<svg class="i"><use href="#'+id+'"/></svg>'}
+  var OK='<svg class="ok"><use href="#i-checkS"/></svg>';
+  function tr(what,end,live){return '<div class="ai-toolrow">'+(live?'<span class="ai-ring"></span>':ic('i-checkS').replace('class="i"','class="i ai-ico"'))+'<span class="what">'+what+'</span><span class="end">'+(end||'')+'</span></div>';}
+  /* 顶栏 Agent 胶囊：状态走 ai.css 状态机；点它回到它在等你的那处 */
+  var AG={st:null};
+  function agent(state,text,fn){AG.st=state;DemoFrame.agent(state,text,fn?{onClick:fn}:{});}
 
-  /* 关闭 / Reject：只收起弹层 */
+  /* 关闭 / 不要：只收起弹层 */
   $$('[data-close]').forEach(function(b){b.addEventListener('click',function(){hide(b.dataset.close)})});
 
-  /* 重新生成：diff 先变成打字中，再回来 */
-  $$('[data-regen]').forEach(function(b){b.addEventListener('click',function(){
-    var pre=$('#'+b.dataset.regen+' pre');if(!pre||pre.dataset.busy)return;
-    var keep=pre.innerHTML;pre.dataset.busy='1';
-    pre.innerHTML='<span class="l"><span class="typing"><i></i><i></i><i></i></span></span>';
-    setTimeout(function(){pre.innerHTML=keep;delete pre.dataset.busy},900);
-  })});
-
-  /* ① 文档：替换 → 第 14 行换成新句，闪一下绿 */
-  $('#md-apply').addEventListener('click',function(){
-    var ln=$('#code-md .ln[data-ln="14"]');
-    $('.t',ln).innerHTML='接入方传入手机号与验证码，成功返回 <span class="s">`Session`</span>；超时时间 10 s，超时或失败抛出 <span class="s">`AuthError`</span>，错误码见下表。';
-    flash(ln);hide('ic-md');
-  });
-
-  /* ② 代码：Accept → 第 27 行的错误码换成友好提示 */
+  /* ② 代码：接受 → 第 27 行的错误码换成友好提示，带来源 */
   $('#ets-apply').addEventListener('click',function(){
     var ln=$('#code-ets .ln[data-ln="27"]');
     $('.t',ln).innerHTML='      <span class="k">this</span>.<span class="p">error</span> = <span class="s">\'验证码错误，请重新输入\'</span>;';
     [13,14,15].forEach(function(n){$('#code-ets .ln[data-ln="'+n+'"]').classList.remove('hl')});
-    flash(ln);hide('ic-ets');
+    aiMark('#code-ets',[27],'DevEco Code · 就地问 · 可退回');hide('ic-ets');
     $$('#code-ets .ln.cur').forEach(function(x){x.classList.remove('cur')});ln.classList.add('cur');
     var p=$('#status-pos');if(p)p.textContent='27:20';
+    agent('done','已写入 LoginPage.ets:27 · 可退回');
   });
 
-  /* ③ 预览：Accept → 按钮拉到和输入框一样宽、换品牌蓝 */
-  $('#pv-apply').addEventListener('click',function(){
-    $('#lbtn-wrap').classList.add('fixed');$('#pv-link').classList.add('fixed');
-    $('#lbtn-lb').textContent='Button · 已改 3 处';
-    $('#pv-done').hidden=false;hide('ic-pv');
-  });
+  /* ③ 预览：接受 → 按钮拉到和输入框一样宽、换品牌色；改过的那一处脉冲一次，来源标记就是退回入口 */
+  function pvSet(on){
+    var w=$('#lbtn-wrap');w.classList.toggle('fixed',on);w.classList.remove('ai-select');
+    w.classList.remove('ai-touched');void w.offsetWidth;if(on)w.classList.add('ai-touched');
+    $('#pv-done').hidden=!on;
+  }
+  $('#pv-apply').addEventListener('click',function(){pvSet(true);hide('ic-pv');agent('done','已写回 LoginPage.ets:16–18 · 预览已刷新');});
+  $('#pv-undo').addEventListener('click',function(){pvSet(false);agent('idle','已退回 LoginPage.ets:16–18');});
 
-  /* =================== AI 长在工具窗里 =================== */
-  var G='<svg class="i"><use href="#i-genie"/></svg>';
-  function ic(id){return '<svg class="i"><use href="#'+id+'"/></svg>'}
+  /* =================== Agent 长在工具窗里 =================== */
   function openTab(file,label,icon){
     var tb=$('.tab[data-file="'+file+'"]');
     if(!tb){$('#tabs .grow').insertAdjacentHTML('beforebegin',DemoFrame.tabs([{file:file,label:label,icon:icon}]));tb=$('.tab[data-file="'+file+'"]');}
     tb.click();return tb;
   }
-  function cap(html){$('#status-slot').innerHTML=html;}
 
-  /* ---- Build：失败 → AI 读完报错 → 修复并重建 ---- */
+  /* ---- Build：失败 → Agent 读完报错 → 要改的文件在 Agent·接口 的任务里，先停下问你 → 并进后重建 ---- */
   var FAIL_LIST='<div class="row fail sel">'+ic('i-err')+'<span class="grow"><b>Build:</b> failed</span><span class="when">6 s 812 ms</span></div>'
     +'<div class="row fail l2">'+ic('i-err')+'<span class="grow">:entry:default@CompileArkTS</span><span class="when">1 error</span></div>'
     +'<div class="row fail l3">'+ic('i-err')+'<span class="grow">ProductApi.ets:12 缺少权限声明</span></div>';
@@ -546,95 +672,111 @@
     +'  At File: <span class="lnk">entry/src/main/ets/model/ProductApi.ets:12:18</span>\n'
     +'<span class="er">&gt; hvigor ERROR: BUILD FAILED in 6 s 812 ms</span>';
   $('#b-list').innerHTML=FAIL_LIST;$('#b-out').innerHTML=FAIL_OUT;
-  $('#b-ai').innerHTML='<div class="ah">'+G+'<b>AI 已读完这次 hvigor 报错</b><span class="grow"></span><span class="dm-pill err">缺少权限声明</span></div>'
-    +'<div class="ictx"><span>Build 输出</span><span>module.json5</span><span>ProductApi.ets:12</span></div>'
-    +'<div class="ab"><p><code>ProductApi.ets:12</code> 调 <code>http.createHttp</code> 要 INTERNET 权限，<code>module.json5</code> 没声明。补上即可，不动代码。</p>'
-    +'<div class="diffcard"><div class="dh">'+ic('i-json')+'<span class="fn">entry/src/main/module.json5</span><span class="cnt"><span class="add">+4</span> <span class="del">−1</span></span></div>'
-    +'<pre><span class="l add">+    "requestPermissions": [</span><span class="l add">+      { "name": "ohos.permission.INTERNET" }</span><span class="l add">+    ]</span></pre></div></div>'
-    +'<div class="af"><button class="btn" id="b-open">'+ic('i-json')+'打开 module.json5</button><span class="grow"></span><button class="btn primary" id="b-fix">'+ic('i-wrench')+'修复并重新构建</button></div>';
+  var WHO='<span class="ai-src"><span class="ai-spark"></span>Agent·接口 <i>·</i> 任务「详情页接商品接口」 <i>·</i> 在跑</span>';
+  function buildAsk(){
+    var a=$('#b-ai');a.className='ai-approve';
+    a.innerHTML=tr('读 Build 输出、<code>module.json5</code>、<code>ProductApi.ets:12</code>','0.8 s')
+      +'<div class="ai-approve__h"><span class="ai-wait-dot"></span>在等你 · 补权限要改 Agent·接口 正在改的文件</div>'
+      +'<p class="ai-approve__why"><b>缺 INTERNET 权限</b>：<code>ProductApi.ets:12</code> 调了 <code>http.createHttp</code>，<code>module.json5</code> 没声明。</p>'
+      +'<p class="ai-approve__why">'+WHO+' 写的这两处，直接改会和它下一步撞。</p>'
+      +'<div class="ai-approve__cmd"><span class="add">+ "requestPermissions": [{ "name": "ohos.permission.INTERNET" }]</span></div>'
+      +'<div class="ai-approve__act"><button class="btn primary" id="b-fix" data-how="merge">'+ic('i-wrench')+'并进它的任务并重建</button><button class="btn" id="b-fix2" data-how="here">只在这里改</button><span class="grow"></span><button class="btn" id="b-open">'+ic('i-json')+'打开 module.json5</button></div>';
+  }
+  buildAsk();
   $('#code-json').innerHTML=DemoFrame.code('module.json5',{});
-  cap('<span class="dm-capsule"><span class="dm-dot err"></span>Build failed · AI 已给出修复</span>');
+  function goBuild(){DemoFrame.setSide('bottom','build');var c=$('#b-ai');if(c)c.scrollIntoView({block:'nearest'});}
+  agent('waiting','在等你 · 补权限要改 Agent·接口 的文件',goBuild);
 
+  var HOW='merge';
   function applyJsonFix(){
     if(F['module.json5'].lines.length>JSON_BEFORE.length)return;
     F['module.json5'].lines=JSON_BEFORE.slice(0,9).concat(JSON_ADD).concat(JSON_BEFORE.slice(10));
     $('#code-json').innerHTML=DemoFrame.code('module.json5',{cur:12});
-    [10,11,12,13].forEach(function(n){var l=$('#code-json .ln[data-ln="'+n+'"]');if(l)l.classList.add('hl-ok')});
+    aiMark('#code-json',[10,11,12,13],HOW==='merge'?'Agent·接口 · 并入它的任务 · 可退回':'DevEco Code · 就地修 · 可退回');
   }
   document.addEventListener('click',function(e){
     if(e.target.closest('#b-open')){openTab('module.json5','module.json5','#i-json');return;}
-    if(e.target.closest('#b-fix')){
+    var fx=e.target.closest('#b-fix,#b-fix2');
+    if(fx){
+      HOW=fx.dataset.how;
       applyJsonFix();openTab('module.json5','module.json5','#i-json');
-      $('#b-ai').querySelector('.af').innerHTML='<span class="dm-small dm-muted">已改 module.json5 · 正在重新构建</span><span class="grow"></span><span class="spin"></span>';
+      var a=$('#b-ai');a.className='ai-answer';
+      a.innerHTML='<div class="ai-answer__meta">'+M+'<span>Agent 在修构建</span></div>'+tr('改 <code>module.json5</code> · 第 10–13 行','','')+tr('<code>hvigor assembleHap</code> · entry','',1);
       $('#b-list').innerHTML='<div class="row sel"><span class="spin"></span><span class="grow"><b>Build:</b> running…</span></div>';
       var L=['<span class="dim">&gt; hvigor Starting Daemon...</span>','<span class="dim">&gt; hvigor Finished :entry:default@PreBuild... after 298 ms</span>','<span class="dim">&gt; hvigor Finished :entry:default@CompileArkTS... after 3 s 410 ms</span>','<span class="dim">&gt; hvigor Finished :entry:default@PackageHap... after 902 ms</span>','<span class="dim">&gt; hvigor Finished :entry:default@SignHap... after 214 ms</span>','<span class="ok">&gt; hvigor BUILD SUCCESSFUL in 5 s 904 ms</span>'];
       var out=$('#b-out');out.innerHTML='';var i=0;
       var t=setInterval(function(){out.innerHTML+=(i?'\n':'')+L[i];i++;if(i>=L.length){clearInterval(t);buildOk();}},260);
-      cap('<span class="dm-capsule"><span class="spin" style="width:10px;height:10px"></span>hvigor assembleHap · entry</span>');
+      agent('tool','<code>hvigor assembleHap</code> · entry');
       return;
     }
     if(e.target.closest('#go-run')){
       var b=e.target.closest('#go-run');b.outerHTML='<span class="btn act done">'+ic('i-checkS')+'已装到 Mate 70 Pro</span>';
-      cap('<span class="dm-capsule"><span class="dm-dot ok"></span>hdc install → Mate 70 Pro · 已启动</span>');
+      agent('done','hdc install → Mate 70 Pro · 已启动');
       setTimeout(function(){DemoFrame.setSide('bottom','log');logNew();},500);return;
     }
     if(e.target.closest('#go-debug')){
       var d=e.target.closest('#go-debug');d.outerHTML='<span class="btn act done">'+ic('i-checkS')+'已停在断点</span>';
       startDebug();return;
     }
-    if(e.target.closest('#go-prof')){
-      var pr=e.target.closest('#go-prof');pr.outerHTML='<span class="btn act done">'+ic('i-checkS')+'Profiler 已附加</span>';
-      DemoFrame.setSide('bottom','profiler');cap('<span class="dm-capsule"><span class="dm-dot ok pulse"></span>Profiler · Frame 录制中</span>');return;
-    }
-    if(e.target.closest('#go-lp')){openTab('LoginPage.ets');return;}
   });
   function buildOk(){
     $('#b-list').innerHTML='<div class="row sel">'+ic('i-checkS')+'<span class="grow"><b>Build:</b> finished</span><span class="when">5 s 904 ms</span></div><div class="row l2">'+ic('i-checkS')+'<span class="grow">:entry:assembleHap</span><span class="when">entry-default-signed.hap</span></div>';
-    var a=$('#b-ai');a.classList.add('ok');
-    a.innerHTML='<div class="ah">'+G+'<b>补了权限，重新构建成功</b><span class="grow"></span><span class="dm-pill ok">BUILD SUCCESSFUL</span></div>'
-      +'<div class="ictx"><span>Build 输出</span><span>已连接设备</span></div>'
-      +'<div class="ab"><p>在 <code>module.json5</code> 加了 <code>ohos.permission.INTERNET</code>，5.9 s 出了 <code>entry-default-signed.hap</code>。Mate 70 Pro 已经用 hdc 连上，下一步直接点：</p></div>'
-      +'<div class="af"><button class="btn primary" id="go-debug">'+ic('i-debug')+'Debug 到 Mate 70 Pro</button><button class="btn" id="go-run">'+ic('i-run')+'运行</button><button class="btn" id="go-prof">'+ic('i-profile')+'打开 Profiler</button></div>';
-    cap('<span class="dm-capsule"><span class="dm-dot ok"></span>Build successful · 5.9 s</span>');
-    var tb=$('.stripe [data-bottom="build"]');
+    var a=$('#b-ai');
+    a.innerHTML='<div class="ai-answer__meta">'+M+'<span>Agent · 读了 Build 输出与已连接设备</span></div>'
+      +'<p class="ai-answer__lead">补了 INTERNET 权限，重建成功 · 5.9 s。</p>'
+      +'<div class="ai-answer__applied"><span class="ai-src"><span class="ai-spark"></span>'+(HOW==='merge'?'已并进 Agent·接口 的任务，它的回归会带上':'已在这里改，Agent·接口 下一步会读到')+' <i>·</i> <button type="button" id="b-undo">退回</button></span></div>'
+      +'<div class="ai-answer__foot"><button class="btn primary" id="go-debug">'+ic('i-debug')+'Debug 到 Mate 70 Pro</button><button class="btn" id="go-run">'+ic('i-run')+'运行</button></div>';
+    agent('done','构建成功 · 5.9 s · 可以上真机');
   }
+  document.addEventListener('click',function(e){
+    if(!e.target.closest('#b-undo'))return;
+    F['module.json5'].lines=JSON_BEFORE.slice();$('#code-json').innerHTML=DemoFrame.code('module.json5',{});
+    $('#b-list').innerHTML=FAIL_LIST;$('#b-out').innerHTML=FAIL_OUT;buildAsk();
+    agent('waiting','在等你 · 补权限要改 Agent·接口 的文件',goBuild);
+  });
 
   /* ---- Debug：停在断点 → 就地问 → 加条件断点 ---- */
   function detailCode(o){$('#code-detail').innerHTML=DemoFrame.code('DetailPage.ets',o);}
-  var bpCond=false;
+  var bpCond=false,dbgOn=false;
   function renderDetail(extra){
     detailCode({cur:13,marks:{13:'bp'}});
     var l=$('#code-detail .ln[data-ln="13"]');l.classList.add('exec');
     if(bpCond){$('.bp',l).classList.add('cond');$('.t',l).insertAdjacentHTML('beforeend','<span class="cbtag">条件：this.id === undefined</span>');}
+    if(PH.patched)phPatchDom();
     if(extra)extra();
   }
   function startDebug(){
-    renderDetail();openTab('DetailPage.ets','DetailPage.ets');
+    dbgOn=true;renderDetail();openTab('DetailPage.ets','DetailPage.ets');
     DemoFrame.setSide('bottom','debug');
-    cap('<span class="dm-capsule wait"><span class="dm-dot info pulse"></span>Debugging · 停在 DetailPage.ets:13</span>');
+    agent('idle','停在 DetailPage.ets:13 · 可在变量旁就地问');
     var p=$('#status-pos');if(p)p.textContent='13:5';
   }
   $('#ask-undef').addEventListener('click',function(){
     var d=$('#d-ai');
-    d.innerHTML='<div class="aic"><div class="ah">'+G+'<b>就地问 · this.id</b><span class="grow"></span><span class="dm-mono dm-muted">DetailPage.ets:13</span></div>'
-      +'<div class="ictx"><span>调用栈</span><span>变量</span><span>ListPage.ets 跳转</span></div>'
-      +'<div class="ab"><div class="q">'+ic('i-user')+'<span>this.id 为什么是 undefined？</span></div><div class="a">'+G+'<span class="typing"><i></i><i></i><i></i></span></div></div></div>';
+    d.innerHTML='<div class="ai-answer"><div class="ai-answer__meta">'+M+'<span>就地问 · <code>this.id</code> · DetailPage.ets:13</span></div>'
+      +'<div class="q">'+ic('i-user')+'<span>this.id 为什么是 undefined？</span></div>'
+      +tr('读调用栈、变量、<code>ListPage.ets:17</code> 的跳转','',1)+'</div>';
+    agent('thinking','读调用栈与变量 · DetailPage.ets:13');
     setTimeout(function(){
-      $('#d-ai .ab .a').innerHTML=G+'<div><p>键名对不上：跳转时传的是 <code>{ id: item.id }</code>，第 12 行取的是 <code>params[\'productId\']</code>，所以拿到 undefined。</p><p>后面 <code>getDetail(undefined)</code> 返回空，第 24 行 <code>this.product!.price</code> 会崩——HiLog 里那条 TypeError 就是它。</p></div>';
-      $('#d-ai .aic').insertAdjacentHTML('beforeend','<div class="af"><button class="btn primary" id="add-cbp">'+ic('i-debug')+'在此加条件断点</button><button class="btn" id="fix-key">'+ic('i-wrench')+'改成 params[\'id\']</button><span class="grow"></span><button class="btn" title="Resume Program|F9">'+ic('i-play')+'继续</button></div>');
+      var a=$('#d-ai .ai-answer');$('.ai-toolrow',a).outerHTML=tr('读调用栈、变量、<code>ListPage.ets:17</code> 的跳转','0.6 s');
+      a.insertAdjacentHTML('beforeend','<p class="ai-answer__lead">键名对不上：跳转传的是 <code>{ id }</code>，第 12 行取的是 <code>params[\'productId\']</code>。</p>'
+        +'<p class="ai-answer__body">所以 <code>getDetail(undefined)</code> 返回空，第 24 行 <code>this.product!.price</code> 会崩——HiLog 里那条 TypeError 就是它。</p>'
+        +'<div class="ai-answer__foot"><button class="btn primary" id="fix-key">'+ic('i-wrench')+'改成 params[\'id\']</button><button class="btn" id="add-cbp">'+ic('i-debug')+'加条件断点</button><span class="grow"></span><button class="btn" title="Resume Program|F9">'+ic('i-play')+'继续</button></div>');
+      agent('done','找到原因 · 键名 productId ≠ id');
     },800);
     this.remove();
   });
+  var KEY12='    <span class="k">this</span>.<span class="p">id</span> = <span class="p">params</span>[<span class="s">\'id\'</span>];';
   document.addEventListener('click',function(e){
     var b=e.target.closest('#add-cbp');
     if(b){bpCond=true;renderDetail();openTab('DetailPage.ets','DetailPage.ets');
       $('#bp-list').innerHTML='<div class="frow"><span class="bpd cond"></span>DetailPage.ets:13<span class="loc">this.id === undefined</span></div>';
       b.outerHTML='<span class="btn act done">'+ic('i-checkS')+'已加 · 只在 id 取不到时停</span>';return;}
     var f=e.target.closest('#fix-key');
-    if(f){openTab('DetailPage.ets','DetailPage.ets');
-      var l=$('#code-detail .ln[data-ln="12"]');$('.t',l).innerHTML='    <span class="k">this</span>.<span class="p">id</span> = <span class="p">params</span>[<span class="s">\'id\'</span>];';
-      l.classList.add('hl-ok');setTimeout(function(){l.classList.remove('hl-ok')},1600);
-      f.outerHTML='<span class="btn act done">'+ic('i-checkS')+'已改第 12 行</span>';return;}
+    if(f){F['DetailPage.ets'].lines[11]=[KEY12];renderDetail();openTab('DetailPage.ets','DetailPage.ets');
+      aiMark('#code-detail',[12],'DevEco Code · 就地问 · 可退回');
+      f.outerHTML='<span class="btn act done">'+ic('i-checkS')+'已改第 12 行</span>';
+      agent('done','已改 DetailPage.ets:12 · 可退回');return;}
   });
 
   /* ---- HiLog：选中崩溃栈 → 就地解释 → 跳到代码 ---- */
@@ -660,10 +802,12 @@
     var r=e.target.closest('.r.st, .r.E');if(!r)return;
     $$('#lg .r').forEach(function(x){x.classList.toggle('sel',x.classList.contains('st')||/TypeError/.test(x.textContent))});
     $('#l-ph').style.display='none';var a=$('#l-ai');a.style.display='';
-    a.innerHTML='<div class="ah">'+G+'<b>这段崩溃栈</b><span class="grow"></span><span class="dm-pill err">JS_ERROR</span></div>'
-      +'<div class="ictx"><span>选中的 4 行栈</span><span>DetailPage.ets</span><span>上一条 404</span></div>'
-      +'<div class="ab"><p>崩在 <code>DetailPage.ets:24</code>：<code>this.product</code> 还没拿到就用 <code>!.</code> 取了 price。上一行 404 请求的是 <code>/product/undefined</code>——id 没取对，根因在第 12 行。</p></div>'
-      +'<div class="af"><button class="btn primary" id="go-24">'+ic('i-arrowR')+'跳到 DetailPage.ets:24</button><button class="btn" id="go-12">跳到根因第 12 行</button></div>';
+    a.innerHTML='<div class="ai-answer__meta">'+M+'<span>就地问 · 选中的崩溃栈</span></div>'
+      +tr('读选中的 4 行栈、<code>DetailPage.ets</code>、上一条 404','0.4 s')
+      +'<p class="ai-answer__lead">崩在 <code>DetailPage.ets:24</code>：商品还没取到就用 <code>!.</code> 取了 price。</p>'
+      +'<p class="ai-answer__body">上一行 404 请求的是 <code>/product/undefined</code>——id 没取对，根因在第 12 行。</p>'
+      +'<div class="ai-answer__foot"><button class="btn primary" id="go-12">'+ic('i-arrowR')+'跳到根因第 12 行</button><button class="btn" id="go-24">跳到第 24 行</button></div>';
+    agent('done','崩溃栈 → 根因 DetailPage.ets:12');
   });
   document.addEventListener('click',function(e){
     var j=e.target.closest('#go-24,#go-12');if(!j)return;
@@ -696,7 +840,7 @@
     cloud:{chip:ic('i-cloud')+'云端模型 · deepseek-v4-flash',cap:'云端模型',ms:'410 ms',done:'云端模型 · deepseek-v4-flash'}
   };
   /* phase: idle → typing → predicting → pending → done；s[i]: p 待定 / a 已接受 / k 已跳过 */
-  var NEP={phase:'idle',src:'local',act:-1,cur:7,s:['p','p','p','p']};
+  var NEP={phase:'idle',src:'local',act:-1,cur:7,s:['p','p','p','p'],at:[]};
 
   function nepLines(){
     var ty=NEP.phase!=='idle',s=NEP.s,A=function(i){return s[i]==='a'};
@@ -720,7 +864,7 @@
       ['        .<span class="f">fontSize</span>(<span class="n">12</span>).<span class="f">fontColor</span>(<span class="f">$r</span>(<span class="s">\'app.color.text_secondary\'</span>))'],
       ['      <span class="f">Button</span>(<span class="s">\'加入购物车\'</span>).<span class="f">width</span>(<span class="s">\'100%\'</span>)'],
       ['        .<span class="f">onClick</span>(() =&gt; <span class="ty">CartStore</span>.<span class="f">add</span>({ <span class="p">title</span>: <span class="k">this</span>.<span class="p">title</span>, <span class="p">price</span>: '+(A(1)?TP:E(TP,ERR_ASSIGN))+', <span class="p">count</span>: '+TC+' }))'
-        +(A(1)?'<span class="nep-inlay" data-open-cart="1" title="打开 CartItem.ets">'+ic('i-checkS')+'已同步 CartItem.ets:5</span>':'')],
+        +(A(1)?'<span class="ai-src" data-open-cart="1" title="打开 CartItem.ets"><span class="ai-spark"></span>已同步 CartItem.ets:5</span>':'')],
       ['    }'],
       ['    .<span class="f">padding</span>(<span class="n">12</span>)'],
       ['  }'],
@@ -765,7 +909,7 @@
     if(NEP.phase!=='idle')$('.ln[data-ln="7"]',code).classList.add('vmod');
     SG.forEach(function(g,i){
       var st=NEP.s[i],ln=$('.ln[data-ln="'+g.ln+'"]',code);
-      if(st==='a'){ln.classList.add('vmod');return;}
+      if(st==='a'){ln.classList.add('vmod','ai-block','is-accepted');ln.style.setProperty('--ai-ago',-((Date.now()-(NEP.at[i]||0))/1000).toFixed(2)+'s');ln.insertAdjacentHTML('afterbegin','<span class="ai-gut" data-src="下一处编辑 · '+SRC[NEP.src].cap+' · '+g.tag+'"></span>');return;}
       if(!live||st!=='p')return;
       var on=i===NEP.act;
       ln.classList.add(on?'nep-on':'nep-p');
@@ -827,9 +971,9 @@
   }
   function nepCap(){
     var P=NEP.phase,S=SRC[NEP.src],c=nepCount(),e=nepErrs();
-    if(P==='predicting')cap('<span class="dm-capsule wait"><span class="spin" style="width:10px;height:10px"></span>下一处编辑 · '+S.cap+' · 预测中</span>');
-    else if(P==='pending')cap('<span class="dm-capsule"><span class="dm-dot info"></span>下一处编辑 · '+S.cap+' · '+S.ms+' · 还有 '+c.p+' 处</span>');
-    else if(P==='done')cap('<span class="dm-capsule"><span class="dm-dot '+(e?'warn':'ok')+'"></span>下一处编辑 · 改了 '+c.a+' 处 · '+(e?e+' 个错误':'0 错误')+'</span>');
+    if(P==='predicting')agent('generating','下一处编辑 · '+S.cap+' 预测中');
+    else if(P==='pending')agent('done','下一处编辑 · 还有 '+c.p+' 处 · <span class="t">'+S.ms+'</span>');
+    else if(P==='done')agent(e?'error':'done','下一处编辑 · 改了 '+c.a+' 处 · '+(e?e+' 个错误':'0 错误'));
   }
   function nepDone(){
     var d=$('#nep-done'),acc=[],sk=[],xf=false,e=nepErrs();
@@ -860,17 +1004,17 @@
       ['}']
     ];
     $('#code-cart').innerHTML=DemoFrame.code('CartItem.ets',{cur:5});
-    if(ok){var l=$('#code-cart .ln[data-ln="5"]');l.classList.add('vmod','hl-ok');$('.t',l).insertAdjacentHTML('beforeend','<span class="nep-cb">'+ic('i-nep')+'下一处编辑 · 跟着 ItemCard.ets:7 改的</span>');}
+    if(ok){var l=$('#code-cart .ln[data-ln="5"]');l.classList.add('vmod');$('.t',l).insertAdjacentHTML('beforeend','<span class="ai-src"><span class="ai-spark"></span>下一处编辑 · 跟着 ItemCard.ets:7 改的</span>');aiMark('#code-cart',[5],'下一处编辑 · 跨文件 · 可退回');}
   }
 
   function nepGo(i){if(NEP.phase!=='pending'||NEP.s[i]!=='p')return;NEP.act=i;NEP.cur=SG[i].ln;nepRender();nepReveal();}
   function nepStep(d){var n=SG.length;for(var k=1;k<n;k++){var j=((NEP.act+d*k)%n+n)%n;if(NEP.s[j]==='p'){nepGo(j);return;}}}
   function nepResolve(mark){
     if(NEP.phase!=='pending'||NEP.act<0)return;
-    var i=NEP.act,g=SG[i];NEP.s[i]=mark;NEP.cur=g.ln;
+    var i=NEP.act,g=SG[i];NEP.s[i]=mark;NEP.cur=g.ln;if(mark==='a')NEP.at[i]=Date.now();
     var n=nepNext(i);NEP.act=n;if(n<0)NEP.phase='done';
     nepRender();
-    if(mark==='a'){var l=$('#code-nep .ln[data-ln="'+g.ln+'"]');l.classList.add('hl-ok');setTimeout(function(){l.classList.remove('hl-ok')},1400);if(g.x)cartRender();}
+    if(mark==='a'&&g.x)cartRender();
     var p=$('#status-pos');if(p)p.textContent=g.ln+':'+(g.ind+1);
     if(NEP.phase==='done')nepDone();else nepReveal();
     nepCap();
@@ -910,6 +1054,8 @@
   nepRender();cartRender();
   $('#code-nep').addEventListener('scroll',function(){nepRuler();nepMore();});
   window.addEventListener('resize',function(){nepRuler();nepMore();});
+  /* 看 ItemCard 时右上角是下一处编辑的挂件：拿现场那条标注先让开 */
+  $('#ide').addEventListener('click',function(e){if(e.target.closest('.tab[data-file]'))setTimeout(function(){$('#ide').classList.toggle('on-nep',!!$('.tab.on[data-file="ItemCard.ets"]'));},0);});
   $('#ide').addEventListener('click',function(e){var tb=e.target.closest('.tab[data-file="ItemCard.ets"]');if(!tb)return;tb.setAttribute('data-seen','1');setTimeout(function(){nepRuler();nepMore();nepReveal();},0);});
   document.addEventListener('click',function(e){
     var t=e.target,wb=t.closest('#nep-w button');
@@ -935,7 +1081,176 @@
     }else if(NEP.phase==='done'&&e.key==='Escape'&&!$('#nep-done').hidden){e.stopPropagation();$('#nep-done').hidden=true;}
   },true);
 
-DemoGuide.init([{"target": "#md-apply", "kind": "click", "pos": "top", "label": "点这里替换文案"}, {"target": "#b-fix,#go-debug,#ask-undef,#add-cbp", "kind": "click", "pos": "top", "label": "点这里：AI 直接驱动 IDE"}, {"target": ".tw-bottom", "kind": "change", "pos": "top", "label": "Build / Debug / HiLog 里就地出现 AI"}, {"target": ".tab[data-file=\"ItemCard.ets\"]:not(.on):not([data-seen])", "kind": "click", "pos": "top", "label": "点这里：下一处编辑预测"}, {"target": "#nep-type", "kind": "click", "pos": "right", "label": "点这里：把 number 改成 Price"}, {"target": ".gl.tb .nep-tb", "kind": "click", "pos": "right", "label": "按 Tab 接受，Esc 跳过"}]);
+
+  /* =================== ⑤ 手机上的截图、HiLog 拖进对话就是上下文 =================== */
+  /* st: idle → share（测试机上开着华为分享面板）→ sending → ready（两张卡落进输入框）→ asked → patched → verified */
+  var PH={st:'idle',seen:0,patched:false,verified:false,busy:0};
+  var dcThread=$('#dc-thread'),dcScroll=$('#dc-scroll'),E=DemoFrame.esc;
+  var SVG=function(d){return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">'+d+'</svg>'};
+  var LAPTOP=SVG('<rect x="4" y="5" width="16" height="11" rx="1.5"/><path d="M2 19h20"/>'),
+      TABLET=SVG('<rect x="3" y="5.5" width="18" height="13" rx="2"/>'),
+      FOLD=SVG('<rect x="4" y="4" width="16" height="16" rx="2"/><path d="M12 4v16" stroke-dasharray="2 2"/>'),
+      TAPIC=SVG('<rect x="3" y="8" width="8" height="13" rx="1.5"/><rect x="11" y="3" width="10" height="7" rx="1" transform="rotate(12 16 6.5)"/><path d="M13.5 13.5a3 3 0 0 1 3 3M13.5 10.8a5.8 5.8 0 0 1 5.8 5.8"/>');
+  function LIVE(cls,t){return '<span class="live '+cls+'"><i></i>'+t+'</span>';}
+  function phSB(t,live){return '<div class="sb"><span style="display:flex;align-items:center;gap:8px">'+t+(live||'')+'</span><span class="r"><span class="sig"><b></b><b></b><b></b><b></b></span><span style="font-size:12px">5G</span><span class="bat"></span></span></div><span class="hole"></span>';}
+  var APP_CRASH='<div class="ph-app"><div class="hd"><span class="bk">‹</span>商品详情</div><div class="img"></div><div class="sk"></div><div class="sk s"></div><div class="pr">¥</div><div class="cta" style="opacity:.4">加入购物车</div></div>';
+  var APP_OK='<div class="ph-app ok"><div class="hd"><span class="bk">‹</span>商品详情</div><div class="img"></div><div class="tt">FreeBuds Pro 4 无线降噪耳机<small>星河蓝 · 已售 2.1 万</small></div><div class="pr">¥1,299.00</div><div class="cta">加入购物车</div></div>';
+  var DLG='<div class="ph-dim"></div><div class="ph-dlg"><b>「MyApplication」已停止运行</b><p>应用出现问题，已关闭。</p><div class="bb"><span>反馈</span><span>重新打开</span></div></div>';
+  var SHEET='<div class="ph-sheet" id="ph-sheet"><div class="hdl"></div><div class="st">分享 2 项</div>'
+    +'<div class="its"><div class="it"><div class="pv" id="ph-pv1"><span class="mini"></span><span class="ck"></span></div>截图 · 10:42:10</div>'
+    +'<div class="it"><div class="pv log" id="ph-pv2"><i style="width:80%"></i><i style="width:60%"></i><i class="e" style="width:90%"></i><i class="e" style="width:70%"></i><i style="width:85%"></i><i style="width:50%"></i><span class="ck"></span></div>HiLog · 186 行</div></div>'
+    +'<div class="sec">华为分享 · 附近的设备</div>'
+    +'<div class="devs"><button class="dv" id="ph-to" data-ph-send="share"><span class="av">'+LAPTOP+'</span>王工的 MateBook Fold<em>DevEco Code</em></button>'
+    +'<button class="dv muted"><span class="av">'+TABLET+'</span>MatePad Pro 13.2</button><button class="dv muted"><span class="av">'+FOLD+'</span>Mate X6</button></div>'
+    +'<button class="tap" id="ph-tap" data-ph-send="tap">'+TAPIC+'<span><b>碰一碰</b><span>手机碰一下电脑，直接发到 DevEco Code</span></span></button></div>';
+  function BANNER(t,sub){return '<div class="ph-banner"><span class="ic"><svg><use href="#i-logo"/></svg></span><span><b>'+t+'</b><span>'+sub+'</span></span></div>';}
+  function phView(v){
+    var h='';
+    if(v==='share')h=phSB('10:42')+APP_CRASH+DLG+SHEET;
+    else if(v==='sent')h=phSB('10:42')+APP_CRASH+DLG+'<div class="ph-toast">已发送 2 项到 王工的 MateBook Fold</div>';
+    else if(v==='install')h=phSB('10:51',LIVE('run','复测 1/3'))+APP_CRASH+BANNER('DevEco Studio · 正在安装新包','来自 王工的 MateBook Fold · hdc');
+    else if(v==='ok')h=phSB('10:51',LIVE('','复测 3/3'))+APP_OK+BANNER('复测通过','列表 → 详情走了 3 次，没有崩溃');
+    $('#ph-lv').innerHTML=h+'<span class="gb"></span>';
+  }
+  function phShow(){
+    var d=$('#ph-dock');
+    if(PH.st==='idle'){PH.st='share';phView('share');}
+    if(!d.hidden)return;
+    DemoFrame.setSide('left',null);   /* 让出编辑区，手机不压住就地对话 */
+    d.hidden=false;d.classList.remove('enter');void d.offsetWidth;d.classList.add('enter');
+  }
+  function dcAppend(html){dcThread.insertAdjacentHTML('beforeend',html);dcScroll.scrollTop=dcScroll.scrollHeight;return dcThread.lastElementChild;}
+  function sysNote(title,sub,prog){
+    var n=$('#sys-note');clearTimeout(n._t);
+    n.innerHTML='<span class="ic"><svg class="i"><use href="#i-export"/></svg></span><div class="tx"><b>'+title+'</b><span id="sys-sub">'+sub+'</span>'+(prog?'<div class="pb"><i id="sys-pb"></i></div>':'')+'</div>';
+    n.hidden=false;
+    if(prog)setTimeout(function(){var b=$('#sys-pb');if(b)b.style.width='100%';},30);
+  }
+  function sysHide(ms){var n=$('#sys-note');clearTimeout(n._t);n._t=setTimeout(function(){n.hidden=true;},ms||0);}
+
+  var ATTS='<div class="dc-att" data-att="shot"><span class="mini"></span><span class="tx"><b>截图 · 商品详情</b><span>Mate 70 Pro · 10:42:10</span></span></div>'
+    +'<div class="dc-att" data-att="log"><span class="lic"><svg class="i"><use href="#i-text"/></svg></span><span class="tx"><b>HiLog · 186 行</b><span>10:41:58 – 10:42:10</span></span></div>';
+  function phSend(kind){
+    if(PH.st!=='share')return;PH.st='sending';
+    var dock=$('#ph-dock'),to=$('#ph-to');
+    if(kind==='tap')dock.classList.add('tap');
+    to.classList.add('go');
+    if($('#ide').getAttribute('data-right')!=='agent')DemoFrame.setSide('right','agent');
+    sysNote('华为分享 · 来自 李工的 Mate 70 Pro','正在接收 2 项 · '+(kind==='tap'?'碰一碰':'附近设备'),1);
+    setTimeout(function(){
+      to.classList.remove('go');to.classList.add('sent');dock.classList.remove('tap');
+      phView('sent');
+      var atts=$('#dc-atts');atts.innerHTML=ATTS;atts.hidden=false;
+      sysNote('华为分享 · 已接收 2 项','已放进 DevEco Code 输入框，没存到下载目录');sysHide(2600);
+      phTypeAsk();
+    },kind==='tap'?1100:800);
+  }
+  function phTypeAsk(){
+    var ta=$('#dc-text'),t='测试说点商品进详情就闪退，必现',k=0;
+    ta.value='';
+    var iv=setInterval(function(){k++;ta.value=t.slice(0,k);if(k>=t.length){clearInterval(iv);PH.st='ready';$('#dc-send').classList.add('ready');}},45);
+  }
+  function genOn(on,txt){$('#dc-input').setAttribute('data-state',on?'generating':'idle');if(txt)$('#dc-gen').textContent=txt;}
+  function dcAsk(){
+    if(PH.st!=='ready')return;PH.st='asked';
+    var ta=$('#dc-text'),q=ta.value||'测试说点商品进详情就闪退，必现';
+    dcAppend('<div class="umsg"><div class="dc-atts">'+ATTS+'</div><div class="bubble">'+E(q)+'</div></div>');
+    $('#dc-atts').hidden=true;$('#dc-atts').innerHTML='';ta.value='';$('#dc-send').classList.remove('ready');
+    var a=dcAppend('<div class="ai-answer" id="ph-ans"><div class="ai-answer__meta">'+M+'<span>DevEco Code · 读了手机现场</span></div></div>');
+    genOn(true,'读截图与 HiLog');agent('thinking','读截图与 HiLog · 李工的 Mate 70 Pro');
+    var steps=[
+      ['截图：商品详情页，弹窗「已停止运行」，价格区为空','0.3 s'],
+      ['截图 10:42:10.2 ↔ HiLog E 10:42:09.931 · pid 30417','0.2 s'],
+      ['按 sourcemap 还原栈 → <code>DetailPage.ets:24:25</code>','0.4 s']
+    ];
+    var i=0,iv=setInterval(function(){
+      a.insertAdjacentHTML('beforeend',tr(steps[i][0],steps[i][1]));i++;dcScroll.scrollTop=dcScroll.scrollHeight;
+      if(i===1)agent('tool','对齐截图与日志时间');
+      if(i<steps.length)return;clearInterval(iv);
+      setTimeout(function(){
+        genOn(false);
+        a.insertAdjacentHTML('beforeend','<p class="ai-answer__lead">崩在 <code>DetailPage.ets:24</code>：商品还没取到就取了 price。根因在第 12 行，键名应是 <code>id</code>。</p>'
+          +'<div class="algn">'
+          +'<div class="r cam"><svg class="i"><use href="#i-camera"/></svg><span class="tm">10:42:10.2</span><span class="ms">截图 · 弹窗「MyApplication 已停止运行」</span></div>'
+          +'<div class="r er"><svg class="i"><use href="#i-err"/></svg><span class="tm">10:42:09.931</span><span class="ms">TypeError · DetailPage.ets:24:25</span></div>'
+          +'<div class="r wa"><svg class="i"><use href="#i-warn"/></svg><span class="tm">10:42:09.915</span><span class="ms">GET /api/product/undefined → 404</span></div></div>'
+          +'<div class="diffcard"><div class="dh"><svg class="i"><use href="#i-ets"/></svg><span class="fn">DetailPage.ets · 第 12、24 行</span><span class="cnt"><span class="add">+2</span> <span class="del">−2</span></span></div>'
+          +'<pre><span class="l del">-  this.id = params[\'productId\'];</span><span class="l add">+  this.id = params[\'id\'];</span>'
+          +'<span class="l del">-  Text(`¥${this.product!.price}`)</span><span class="l add">+  Text(this.product ? `¥${this.product.price}` : \'\')</span></pre></div>'
+          +'<div class="ai-answer__foot" id="ph-btns"><button class="btn primary" id="ph-apply"><svg class="i"><use href="#i-checkS"/></svg>应用补丁</button><button class="btn" data-go="24"><svg class="i"><use href="#i-arrowR"/></svg>跳到 DetailPage.ets:24</button></div>');
+        dcScroll.scrollTop=dcScroll.scrollHeight;
+        agent('done','手机现场 → DetailPage.ets:24 · 已给补丁');
+      },350);
+    },520);
+  }
+  var FIX24='      <span class="f">Text</span>(<span class="k">this</span>.<span class="p">product</span> ? <span class="s">`¥${</span><span class="k">this</span>.<span class="p">product</span>.<span class="p">price</span><span class="s">}`</span> : <span class="s">\'\'</span>).<span class="f">fontColor</span>(<span class="s">\'#E84026\'</span>)';
+  function phPatchDom(){
+    F['DetailPage.ets'].lines[11]=[KEY12];F['DetailPage.ets'].lines[23]=[FIX24];
+    var l12=$('#code-detail .ln[data-ln="12"]'),l24=$('#code-detail .ln[data-ln="24"]');if(!l12||!l24)return;
+    $('.t',l12).innerHTML=KEY12;$('.t',l24).innerHTML=FIX24;
+  }
+  function showDetail(n){
+    if(dbgOn){renderDetail();return;}
+    detailCode({cur:n||24});if(PH.patched)phPatchDom();
+  }
+  function goDetail(n,cls){
+    if(!$('#code-detail .ln'))showDetail(n);
+    openTab('DetailPage.ets','DetailPage.ets');
+    $$('#code-detail .ln').forEach(function(x){x.classList.remove('cur','hl-warn')});
+    var l=$('#code-detail .ln[data-ln="'+n+'"]');l.classList.add('cur');if(cls)l.classList.add(cls);
+    var p=$('#status-pos');if(p)p.textContent=n+':7';
+    return l;
+  }
+  function phApply(b){
+    if(PH.patched)return;PH.patched=true;
+    phPatchDom();showDetail(24);goDetail(24);
+    aiMark('#code-detail',[12,24],'DevEco Code · 手机现场 · 可退回');
+    $('#ph-btns').innerHTML='<span class="btn act done"><svg class="i"><use href="#i-checkS"/></svg>已改第 12、24 行</span><span class="grow"></span><button class="btn primary" id="ph-verify"><svg class="i"><use href="#i-run"/></svg>装到 Mate 70 Pro 复测</button>';
+    agent('done','DetailPage.ets 已改 2 行 · ArkTS 检查 0 错误');
+  }
+  function phVerify(b){
+    if(PH.verified||PH.busy)return;PH.busy=1;
+    b.outerHTML='<span class="btn act"><span class="spin"></span>正在装到 Mate 70 Pro…</span>';
+    phShow();phView('install');
+    agent('verifying','装到李工的 Mate 70 Pro · 按截图路径复测');
+    setTimeout(function(){
+      PH.verified=true;PH.busy=0;phView('ok');
+      var w=$('#dc-thread .btn.act:not(.done)');if(w)w.outerHTML='<span class="btn act done"><svg class="i"><use href="#i-checkS"/></svg>已装到 Mate 70 Pro</span>';
+      dcAppend('<div class="ai-answer"><p class="ai-answer__lead">复测通过 · 3/3，结果也推到了李工手机的实况窗。</p>'
+        +tr('<code>hvigor assembleHap</code>','5.2 s')+tr('<code>hdc install</code> → 李工的 Mate 70 Pro','1.9 s')
+        +tr('按截图路径复现 3 次：列表 → 详情','3 / 3')+tr('HiLog 无 JS_ERROR、无 404','pid 30988')+'</div>');
+      agent('done','复测通过 · 李工的 Mate 70 Pro · 3/3');
+    },2000);
+  }
+  /* 打开 DevEco Code 时，测试机也拿到了桌边 */
+  $$('.stripe [data-right="agent"]').forEach(function(b){b.addEventListener('click',function(){
+    setTimeout(function(){if($('#ide').getAttribute('data-right')==='agent'&&!PH.seen){PH.seen=1;phShow();}},60);
+  });});
+  document.addEventListener('click',function(e){
+    var t=e.target,s=t.closest('[data-ph-send]');
+    if(s){phSend(s.dataset.phSend);return;}
+    if(t.closest('#ph-x')){$('#ph-dock').hidden=true;return;}
+    if(t.closest('#dc-from')){PH.seen=1;phShow();return;}
+    if(t.closest('#dc-send')){dcAsk();return;}
+    if(t.closest('#ph-apply')){phApply(t.closest('#ph-apply'));return;}
+    if(t.closest('#ph-verify')){phVerify(t.closest('#ph-verify'));return;}
+    var g=t.closest('#dc-thread [data-go]');if(g){var n=+g.dataset.go;goDetail(n,PH.patched?'':'hl-warn');return;}
+  });
+  $('#dc-text').addEventListener('keydown',function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();dcAsk();}});
+
+DemoGuide.init([
+  {target:'#b-fix', kind:'click', pos:'left', label:'Agent 停在这等你：补丁并进 Agent·接口 的任务'},
+  {target:'#go-debug,#ask-undef:not([hidden])', kind:'click', pos:'bottom', label:'接着上真机，停下后在变量旁就地问'},
+  {target:'#ets-apply', kind:'click', pos:'bottom', label:'编辑器里就地问的改动，接受就写回'},
+  {target:'.tab[data-file="ItemCard.ets"]:not([data-seen]),#nep-type', kind:'click', pos:'bottom', label:'改一处类型，其余要跟着改的一起给出'},
+  {target:'.ide:not(.on-nep) .stripe.right [data-right="agent"]:not(.on),#ph-to:not(.sent),#dc-send.ready', kind:'click', pos:'left', label:'测试机闪退：现场碰一下就进对话'}
+], {scene:{
+  at:'构建挂了、断点停了、测试机闪退，问题散在各工具窗',
+  goal:'在出问题的那处问清、改好，并在真机上复测通过',
+  pain:'报错、日志、截图要复制进聊天窗，再跳回原处找行',
+  fix:'Agent 就在 Build、Debug、HiLog 里读现场，改码再重建复测',
+  agent:'它读现场、改码、复测；要改别的 Agent 的文件先问你；你点接受'
+}});
 })();
 </script>
 </body>

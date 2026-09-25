@@ -5,19 +5,18 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='32' y2='32' gradientUnits='userSpaceOnUse'%3E%3Cstop stop-color='%232C8DDD'/%3E%3Cstop offset='1' stop-color='%233357AC'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='32' height='32' rx='7' fill='url(%23g)'/%3E%3Ctext x='16' y='22.5' font-family='Arial,Helvetica,sans-serif' font-size='13' font-weight='700' fill='white' text-anchor='middle'%3EDE%3C/text%3E%3C/svg%3E">
 <title>04 · 安卓应用转化：一键之后的活才是活</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;500&display=swap">
 <link rel="stylesheet" href="../../deveco-intui-kit/src/tokens.css">
 <link rel="stylesheet" href="../../deveco-intui-kit/src/components.css">
 <link rel="stylesheet" href="../_shared/frame.css">
 <link rel="stylesheet" href="../_shared/guide.css">
 <script src="../../deveco-intui-kit/src/icons.js"></script>
+<script src="../../deveco-intui-kit/icons/ai-icons.js"></script>
 <script src="../_shared/frame.js"></script>
 <script src="../_shared/guide.js"></script>
 <style>
   .ide[data-ide-theme]{--ai-w:clamp(380px,32vw,520px)} /* 带属性选择器，压过 tokens.css 里按主题写的默认值 */
   code{font-family:var(--font-code);font-size:11px;background:var(--ui-tag-bg);padding:1px 4px;border-radius:4px;color:var(--ui-fg)}
   /* 树标题栏里的进度 pill */
-  #tree-prog{margin-left:2px}
   /* 编辑器顶部的转化提示条 */
   #callout-wrap{padding:8px 12px 0;flex:none;display:flex;flex-direction:column;gap:6px}
   #callout-wrap:empty{display:none}
@@ -31,18 +30,18 @@
   .mg-top{display:flex;flex-direction:column;gap:8px;padding:10px 12px 8px}
   .mg-top .dm-row{font-size:var(--fs-sm);line-height:var(--lh-sm)}
   .mg-list .dm-item{align-items:flex-start;padding:6px 12px;white-space:normal;cursor:default}
-  .mg-list .dm-item .num{width:18px;height:18px;border-radius:50%;background:var(--ui-tag-bg);color:var(--ui-tag-fg);font-family:var(--font-code);font-size:11px;font-weight:600;display:grid;place-items:center;flex:none;margin-top:1px}
+  .mg-list .dm-item .num{width:18px;height:18px;border-radius:50%;background:var(--ui-tag-bg);color:var(--ui-tag-fg);font-family:var(--font-code);font-size:11px;font-weight:500;display:grid;place-items:center;flex:none;margin-top:1px}
   .mg-list .dm-item.sel .num{background:var(--ui-accent);color:var(--ui-accent-fg)}
   .mg-list .dm-item .grow{display:flex;flex-direction:column;gap:1px;overflow:visible}
   .mg-list .dm-item .t{display:flex;align-items:center;gap:6px;white-space:nowrap}
-  .mg-list .dm-item .t b{font-weight:600}
+  .mg-list .dm-item .t b{font-weight:500}
   .mg-list .dm-item .t .f{font-family:var(--font-code);font-size:11px;color:var(--ui-link)}
   .mg-list .dm-item .t .f.dead{color:var(--ui-fg-info)}
   .mg-list .dm-item .r{font-size:var(--fs-sm);line-height:var(--lh-sm);color:var(--ui-fg-info);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .mg-list .dm-item .side{display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex:none;margin-top:1px}
   .mg-list .dm-item .est{font-family:var(--font-code);font-size:11px;color:var(--ui-fg-info);white-space:nowrap}
   .mg-list .dm-item.new{animation:mgin .5s ease-out}
-  @keyframes mgin{from{background:color-mix(in srgb,var(--ui-accent) 20%,transparent)}to{background:transparent}}
+  @keyframes mgin{from{background:var(--ui-hover)}to{background:transparent}}
   /* 安卓提交卡片 */
   .cm{display:flex;align-items:center;gap:8px;min-height:28px}
   .cm .sha{font-family:var(--font-code);font-size:11px;color:var(--ui-link);flex:none;width:48px}
@@ -55,9 +54,148 @@
   .prev-split{display:flex;flex-direction:row;flex:1;min-height:0}
   .prev-col{flex:none;width:180px;display:flex;flex-direction:column;border-right:1px solid var(--ui-border);background:var(--ui-editor-bg)}
   .prev-col .previewer{flex:1;padding:12px}
-  .prev-col .phone{width:148px;height:308px;border-width:5px}
+  .prev-col .phone{width:148px;height:321px;border-width:5px}
   .prev-path{flex:none;padding:6px 10px;font-family:var(--font-code);font-size:11px;color:var(--ui-fg-info);border-top:1px solid var(--ui-border);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .code-col{flex:1;min-width:0;display:flex;flex-direction:column;min-height:0}
+
+  /* 预览：按 Mate 70 Pro 1260 × 2844 比例，挖孔居中 */
+  .prev-col .phone::before{width:9px;height:9px;border-radius:50%;top:7px}
+  .prev-col .phone .mapp{width:100%;height:100%;padding-top:20px;overflow:hidden;border-radius:21px}
+  .prev-col .prev-tools{white-space:nowrap;overflow:hidden}
+  .prev-col .prev-tools b{display:inline-flex;align-items:center;gap:4px}
+  .prev-col .cmp-go{margin:0 10px 10px;justify-content:center;flex:none}
+  .prev-col .cmp-go svg.i{width:14px;height:14px}
+
+  /* ===== 并排对照：同一台鸿蒙电脑上，卓易通跑安卓原版 · 原生窗口跑鸿蒙版 ===== */
+  .ide[data-ide-theme].cmp-on{--ai-w:440px}
+  .prev-split.cmp .prev-col{display:none}
+  .desk-col{flex:none;width:492px;display:flex;flex-direction:column;min-height:0;border-right:1px solid var(--ui-border);background:color-mix(in srgb,var(--ui-fg) 4%,var(--ui-editor-bg))}
+  .desk-col[hidden]{display:none}
+  .desk-bar{height:34px;flex:none;display:flex;align-items:center;gap:6px;padding:0 8px 0 10px;border-bottom:1px solid var(--ui-border);background:var(--ui-bg);font-size:var(--fs-sm);white-space:nowrap}
+  .desk-bar > svg.i{width:14px;height:14px;color:var(--ui-icon);flex:none}
+  .desk-bar b{font-weight:500;flex:none}
+  .desk-bar .sub{color:var(--ui-fg-info);overflow:hidden;text-overflow:ellipsis;min-width:0}
+  .desk-bar .grow{flex:1}
+  .desk-bar .btn{flex:none}
+  .desk-bar .btn svg.i{width:12px;height:12px}
+  .desk-area{position:relative;height:540px;flex:none;overflow:hidden}
+  .sync-dot{position:absolute;left:235px;top:250px;width:20px;height:20px;border-radius:50%;display:grid;place-items:center;background:var(--ui-fg-info);color:var(--ui-bg)}
+  .sync-dot svg.i{width:12px;height:12px;color:var(--ui-bg)}
+  .sync-dot.off{background:var(--ui-fg-disabled);box-shadow:none}
+  .win{position:absolute;width:var(--w);border-radius:10px;background:var(--ui-popup-bg);box-shadow:0 6px 18px rgba(0,0,0,.22);overflow:hidden;z-index:1}
+  .win.front{z-index:2}
+  .win-tb{height:28px;display:flex;align-items:center;gap:6px;padding:0 4px 0 8px;font-size:11px;color:var(--ui-fg);cursor:grab;user-select:none;white-space:nowrap;touch-action:none}
+  .win.drag .win-tb{cursor:grabbing}
+  .win-tb .ic{width:16px;height:16px;border-radius:4px;display:grid;place-items:center;font-size:9px;font-weight:600;color:#fff;flex:none}
+  .win-tb .ic.a{background:#2E9E5B}.win-tb .ic.h{background:#0A59F7}
+  .win-tb .t{min-width:0;overflow:hidden;text-overflow:ellipsis;font-weight:500}
+  .win-tb .t em{font-style:normal;font-weight:400;color:var(--ui-fg-info);margin-left:4px}
+  .win-tb .grow{flex:1}
+  .win-tb .wb{width:20px;height:20px;display:grid;place-items:center;color:var(--ui-fg-info);flex:none}
+  .win-tb .wb svg{width:10px;height:10px}
+  .win-scr{position:relative;width:calc(var(--w) - 2px);height:calc((var(--w) - 2px) * 2.2571);overflow:hidden;overflow:clip;background:#fff}
+  .scr-in{position:absolute;left:0;top:0;transform-origin:0 0;transform:scale(var(--k,1))}
+  .win-rs{position:absolute;right:0;bottom:0;width:16px;height:16px;cursor:nwse-resize;z-index:10;touch-action:none;background:linear-gradient(135deg,transparent 55%,color-mix(in srgb,var(--ui-fg-info) 70%,transparent) 55% 62%,transparent 62% 72%,color-mix(in srgb,var(--ui-fg-info) 70%,transparent) 72% 79%,transparent 79%)}
+  /* 窗口里的应用：两边同一套基准尺寸 218 × 492 */
+  .ma{position:relative;width:218px;height:492px;overflow:hidden;font-family:var(--font-ui);color:#1a1a1a;font-size:11px;line-height:1.4;background:#fff;user-select:none}
+  .ma .st{height:24px;display:flex;align-items:center;justify-content:space-between;padding:0 14px;font-size:10px;font-weight:600}
+  .ma .st svg{width:26px;height:10px}
+  .ma .gbar{position:absolute;left:50%;bottom:7px;width:64px;height:4px;margin-left:-32px;border-radius:2px;background:rgba(0,0,0,.5)}
+  .ma .lg{padding:36px 18px 0;display:flex;flex-direction:column;gap:10px}
+  .ma .h1{font-size:20px;font-weight:600;line-height:26px}
+  .ma .h2{font-size:10px;color:#8a8f99;margin:-8px 0 8px}
+  .ma .in{height:34px;border-radius:17px;background:#f1f3f5;display:flex;align-items:center;padding:0 14px;font-size:11px;letter-spacing:.5px}
+  .ma .in.ph{color:#9aa0ab}
+  .ma .in.focus{box-shadow:inset 0 0 0 1.5px #0A59F7}
+  .ma .sms{height:26px;border-radius:13px;border:1px solid #cfd6e4;display:flex;align-items:center;gap:5px;padding:0 10px;font-size:10px;color:#0A59F7;align-self:flex-start}
+  .ma .sms svg{width:11px;height:11px}
+  .ma .ghost{height:26px;align-self:stretch}
+  .ma .er{font-size:10px;color:#E84026;min-height:14px;margin:-4px 0 -4px 14px}
+  .ma .bt{height:36px;border-radius:18px;background:#0A59F7;color:#fff;display:grid;place-items:center;font-weight:600;font-size:12px;margin-top:6px}
+  .ma .ft{position:absolute;left:0;right:0;bottom:34px;text-align:center;font-size:9px;color:#8a8f99}
+  .ma .toast{position:absolute;left:50%;bottom:70px;transform:translateX(-50%);padding:6px 14px;border-radius:14px;background:rgba(0,0,0,.78);color:#fff;font-size:10px;white-space:nowrap;z-index:5}
+  .ma .nav{height:40px;display:flex;align-items:center;gap:4px;padding:0 12px 0 8px;font-size:14px;font-weight:600}
+  .ma .nav .bk{width:24px;height:24px;display:grid;place-items:center}
+  .ma .nav .bk svg{width:14px;height:14px}
+  .ma .sr{margin:0 12px 6px;height:28px;border-radius:14px;background:#f1f3f5;color:#9aa0ab;font-size:10px;display:flex;align-items:center;padding:0 12px}
+  .ma .rf{height:30px;display:flex;align-items:center;justify-content:center;gap:6px;font-size:10px;color:#0A59F7}
+  .ma .rf i{width:11px;height:11px;border-radius:50%;border:2px solid #0A59F7;border-right-color:transparent}
+  .ma .lst{position:relative;touch-action:none}
+  .ma .rw{display:flex;align-items:center;gap:10px;height:58px;padding:0 12px;border-bottom:1px solid #f0f1f3}
+  .ma .rw .th{width:40px;height:40px;background:#DCE3EE;flex:none}
+  .ma .rw .th.r{border-radius:8px}
+  .ma .rw b{display:block;font-size:11px;font-weight:600}
+  .ma .rw span{display:block;font-size:9px;color:#8a8f99}
+  .ma .rw .pr{margin-left:auto;font-size:11px;font-weight:600;color:#E84026}
+  .ma .rw.nw{background:#f3f7ff}
+  .ma [data-hs]{cursor:pointer}
+  .ma .rip{position:absolute;width:28px;height:28px;margin:-14px 0 0 -14px;border-radius:50%;background:rgba(10,89,247,.35);pointer-events:none;animation:marip .7s ease-out forwards;z-index:9}
+  .ma .rip.miss{background:transparent;border:2px dashed #E84026;animation:none}
+  @keyframes marip{from{transform:scale(.3);opacity:1}to{transform:scale(1.7);opacity:0}}
+  .ma .dbox{position:absolute;border:2px solid var(--ui-error);border-radius:7px;pointer-events:none;z-index:8}
+  .ma .dbox.gone{border-style:dashed}
+  .ma .dbox > b{pointer-events:auto;cursor:pointer;position:absolute;top:-9px;left:-9px;width:16px;height:16px;border-radius:50%;background:var(--ui-error);color:#fff;font-size:9px;line-height:16px;text-align:center;font-weight:600}
+  .ma .dbox.sel{box-shadow:0 0 0 3px color-mix(in srgb,var(--ui-error) 30%,transparent)}
+  .ma .dbox.ok{border-color:var(--ui-success)}
+  .ma .dbox.ok > b{background:var(--ui-success)}
+  .desk-log{flex:1;min-height:0;overflow:auto;margin:0 10px 10px;border-radius:var(--arc);background:var(--ui-bg)}
+  .desk-log .hd{position:sticky;top:0;z-index:1;height:28px;display:flex;align-items:center;gap:6px;padding:0 10px;font-size:var(--fs-sm);background:var(--ui-bg);border-bottom:1px solid var(--ui-border);white-space:nowrap}
+  .desk-log .hd b{font-weight:500}
+  .desk-log .hd .grow{flex:1}
+  .op{display:flex;align-items:center;gap:8px;min-height:28px;padding:3px 10px;font-size:var(--fs-sm);line-height:var(--lh-sm)}
+  .op + .op{border-top:1px solid var(--ui-border)}
+  .op .n{font-family:var(--font-code);font-size:11px;color:var(--ui-fg-info);width:16px;flex:none}
+  .op .tx{flex:1;min-width:0}
+  .op .dm-pill{flex:none}
+  .op.hint{color:var(--ui-fg-info)}
+  .op.hint svg.i{width:12px;height:12px;flex:none}
+  /* Migration 面板里的差异卡 */
+  .cmp-pad{padding-bottom:4px}
+  #cmp-diffs{gap:6px;padding:8px}
+  .df{display:flex;flex-direction:column;gap:4px;padding:7px 9px;border-radius:6px;cursor:pointer;background:var(--ui-bg)}
+  .df:hover{background:var(--ui-hover)}
+  .df.sel{box-shadow:inset 2px 0 0 var(--ui-accent);background:var(--ui-hover)}
+  .df.done{opacity:.8}
+  .df .t{display:flex;align-items:center;gap:6px;white-space:nowrap;min-width:0}
+  .df .t .num{width:16px;height:16px;border-radius:50%;background:var(--ui-error);color:#fff;font-size:10px;font-weight:600;display:grid;place-items:center;flex:none}
+  .df.done .t .num{background:var(--ui-success)}
+  .df .t b{font-weight:500;overflow:hidden;text-overflow:ellipsis;min-width:0}
+  .df .t .dm-pill{flex:none}
+  .df .t .loc{margin-left:auto;font-family:var(--font-code);font-size:11px;color:var(--ui-link);flex:none}
+  .df .sd{display:grid;grid-template-columns:52px minmax(0,1fr);gap:1px 8px;font-size:var(--fs-sm);line-height:var(--lh-sm)}
+  .df .sd em{font-style:normal;color:var(--ui-fg-info)}
+  .df .sd span{min-width:0}
+  .df .ac{display:flex;align-items:center;gap:6px;margin-top:2px;min-width:0}
+  .df .ac .btn{flex:none;white-space:nowrap}
+  .df .ac .btn svg.i{width:12px;height:12px}
+  .df .ac .note{font-size:11px;color:var(--ui-fg-info);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+  .cm .dm-pill.ok{flex:none}
+  /* 共享组件在本页收敛：卡片去描边、info 不用蓝 */
+  .mg-body .dm-card{border:0;background:color-mix(in srgb,var(--ui-fg) 4%,var(--ui-bg))}
+  .mg-body .dm-card-hd{border-bottom:0;font-weight:500}
+  .dm-pill.info{background:var(--ui-tag-bg);color:var(--ui-fg)}
+  .dm-progress i{background:var(--ui-fg-info)}
+  .dm-callout.ok{border-color:transparent}
+  #callout-wrap .ai-answer{padding:10px 12px}
+  #callout-wrap .ai-answer__body{font-size:12.5px;line-height:19px}
+  .code .ln.ai-block .ai-gut{left:52px}
+  .code .ln.ai-block .g{background:transparent}
+  /* ===== Agent·转化：两版并排回放 → 找差异 → 按原版改；需人工 / 撞车的进统一「在等你」队列 ===== */
+  .ag-box{display:flex;flex-direction:column;gap:6px;padding:10px 12px 4px}
+  .ag-box:empty{display:none}
+  .ag-box .hd{display:flex;align-items:center;gap:8px;min-height:28px;font-size:var(--fs-sm)}
+  .ag-box .hd .ai-ico{width:16px;height:16px;color:var(--ai-ink);flex:none}
+  .ag-box .hd .tx{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .ag-box .hd .tx b{font-weight:500}
+  .ag-box .ai-toolrow{margin:0 -6px;min-height:24px;padding:2px 6px}
+  .ag-box .ai-ring{width:12px;height:12px}
+  .ag-box .qh{display:flex;align-items:center;gap:6px;font-size:var(--fs-sm);color:var(--ai-wait-ink);margin-top:4px}
+  .ag-box .ai-approve__why code{font-size:11px}
+  .ag-box .qn{display:flex;align-items:center;gap:8px;min-height:28px;padding:0 10px;border-radius:8px;background:var(--ai-surface);font-size:var(--fs-sm);color:var(--ui-fg-info)}
+  .ag-box .qn .ai-wait-dot{width:6px;height:6px}
+  .ag-box .qn .ai-wait-dot::after{display:none}
+  .ag-box .qn span:not(.ai-wait-dot){min-width:0;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .ag-box .who{color:var(--ai-ink)}
 </style>
 </head>
 <body>
@@ -65,7 +203,7 @@
   <div class="body">
     <div class="tw tw-left">
       <div class="pane on" data-pane="project">
-        <div class="tw-hdr"><span class="title">Project <svg class="i"><use href="#i-chevD"/></svg></span><span class="dm-pill info" id="tree-prog">转化 4 / 6</span><span class="grow"></span>
+        <div class="tw-hdr"><span class="title">Project <svg class="i"><use href="#i-chevD"/></svg></span><span class="grow"></span>
           <button class="abtn" title="Select Opened File"><svg class="i"><use href="#i-locate"/></svg></button>
           <button class="abtn" title="Collapse All"><svg class="i"><use href="#i-collapseAll"/></svg></button>
           <button class="abtn" title="Options"><svg class="i"><use href="#i-moreV"/></svg></button>
@@ -77,9 +215,28 @@
     <div class="editor">
       <div class="prev-split">
         <div class="prev-col">
-          <div class="prev-tools"><b><svg class="i" style="width:14px;height:14px"><use href="#i-phone"/></svg>Previewer</b><span>· 1080×2340 · API 20</span></div>
+          <div class="prev-tools"><b><svg class="i" style="width:14px;height:14px"><use href="#i-phone"/></svg>Previewer</b><span>· 1260×2844</span></div>
           <div class="previewer"><div class="phone"><div class="mapp" id="mapp"></div></div></div>
+          <button class="btn cmp-go" id="btn-cmp"><svg class="i"><use href="#i-diff"/></svg>并排对照安卓原版</button>
           <div class="prev-path" id="prev-path"></div>
+        </div>
+        <div class="desk-col" id="desk" hidden>
+          <div class="desk-bar"><svg class="i"><use href="#i-diff"/></svg><b>并排对照</b><span class="sub">同一台 MateBook Pro · 两窗按 Mate 70 Pro 比例</span><span class="grow"></span>
+            <button class="btn sm" id="btn-replay"><svg class="i"><use href="#i-play"/></svg>重放一遍</button><button class="btn sm" id="btn-cmp-exit">退出</button></div>
+          <div class="desk-area" id="desk-area">
+            <div class="sync-dot" id="sync-dot" title="键鼠同步：点一边，另一边跟着点"><svg class="i"><use href="#i-sync"/></svg></div>
+            <div class="win" id="win-a" data-side="a" style="--w:222px;left:12px;top:14px">
+              <div class="win-tb"><span class="ic a">卓</span><span class="t">安卓原版<em>卓易通</em></span><span class="grow"></span><span class="wb"><svg viewBox="0 0 10 10"><path d="M1.5 5h7" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg></span><span class="wb"><svg viewBox="0 0 10 10"><rect x="1.5" y="1.5" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.2" fill="none"/></svg></span><span class="wb"><svg viewBox="0 0 10 10"><path d="M2 2l6 6M8 2L2 8" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg></span></div>
+              <div class="win-scr"><div class="scr-in"><div class="ma" id="ma-a"></div></div></div>
+              <div class="win-rs" title="拖动缩放"></div>
+            </div>
+            <div class="win front" id="win-h" data-side="h" style="--w:222px;left:257px;top:14px">
+              <div class="win-tb"><span class="ic h">S</span><span class="t">鸿蒙版<em>entry · 调试</em></span><span class="grow"></span><span class="wb"><svg viewBox="0 0 10 10"><path d="M1.5 5h7" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg></span><span class="wb"><svg viewBox="0 0 10 10"><rect x="1.5" y="1.5" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.2" fill="none"/></svg></span><span class="wb"><svg viewBox="0 0 10 10"><path d="M2 2l6 6M8 2L2 8" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg></span></div>
+              <div class="win-scr"><div class="scr-in"><div class="ma" id="ma-h"></div></div></div>
+              <div class="win-rs" title="拖动缩放"></div>
+            </div>
+          </div>
+          <div class="desk-log" id="desk-log"></div>
         </div>
         <div class="code-col">
           <div class="tabs" id="tabs"><span class="grow"></span><span class="tab-tools"><button class="abtn" title="Editor Options"><svg class="i"><use href="#i-moreV"/></svg></button></span></div>
@@ -97,6 +254,10 @@
           <button class="abtn" title="Options"><svg class="i"><use href="#i-moreV"/></svg></button>
           <button class="abtn" title="Hide|Shift+Esc" data-act="hide-right"><svg class="i"><use href="#i-hide"/></svg></button></div>
         <div class="tw-body"><div class="mg-body">
+          <div class="ag-box" id="ag-box"></div>
+          <div class="dm-pad cmp-pad" id="cmp-pad" hidden>
+            <div class="dm-card" id="cmp-card"><div class="dm-card-hd"><svg class="i"><use href="#i-diff"/></svg>并排对照 · 差异落到 ArkTS<span class="grow"></span><span class="dm-pill warn" id="cmp-cnt">1 处</span></div><div class="dm-card-bd" id="cmp-diffs"></div></div>
+          </div>
           <div class="mg-top">
             <div class="dm-row"><svg class="i" style="width:14px;height:14px"><use href="#i-translate"/></svg><span>Android <code>app/</code> → HarmonyOS <code>entry/</code></span><span class="grow"></span><span class="dm-pill muted">原生 ArkTS · 无兼容层</span></div>
             <div class="dm-progress"><i id="prog-bar" style="--v:67%"></i></div>
@@ -156,6 +317,7 @@
     {sha:'7d02be',msg:'列表加下拉刷新',screen:'列表页',file:'ListPage.ets',when:'昨天',who:'李婷',est:'~40min'},
     {sha:'c41e77',msg:'隐私声明新增设备标识',screen:'设置页',file:'SettingsPage.ets',when:'前天',who:'张伟',est:'~10min'}
   ];
+  var AISRC={};   /* 文件 → 行 → 哪个 Agent 写的 */
   var prog={total:6,done:4,manual:2},mode='screen',curFile='LoginPage.ets',selIdx=0,explainOpen=false;
 
   /* ---------- 编辑器 ---------- */
@@ -164,7 +326,7 @@
     var m=$('#mapp'),p=$('#prev-path');if(!m)return;
     if(file==='LoginPage.ets'){
       m.innerHTML='<div class="title">欢迎回来</div><div class="inp">手机号</div><div class="inp">验证码</div>'
-        +(FSTATE[file]==='err'?'<div class="err">ERR_AUTH_401</div>':'')+'<div class="fill"></div><div class="btn">登录</div>';
+        +(FSTATE[file]==='err'&&!CMP.fixed.toast?'<div class="err">ERR_AUTH_401</div>':'')+'<div class="fill"></div><div class="btn">登录</div>';
     }else if(file==='ListPage.ets'){
       m.innerHTML='<div class="hd">商品</div><div class="search">搜索</div>'
         +['无线鼠标 · 全新','机械键盘 · 二手','显示器支架 · 全新','蓝牙音箱 · 二手']
@@ -176,21 +338,23 @@
     }
     if(p)p.textContent=PREV_PATH[file]||file;
   }
-  function openFile(file){
+  function openFile(file,line,ok){
     if(!FILES[file])return false;
     curFile=file;explainOpen=false;
     var n=NOTES[file],st=FSTATE[file]||'ok';
     var tabs=$('#tabs');$$('.tab',tabs).forEach(function(t){t.remove()});
     tabs.insertAdjacentHTML('afterbegin',DemoFrame.tabs([{file:file,on:true}]));
-    var cur=n&&n.range?n.range[0]:1,marks={};
-    if(n&&n.range&&!n.reviewed)marks[cur]='warn';
+    var cur=line||(n&&n.range?n.range[0]:1),marks={};
+    if(n&&n.range&&!n.reviewed)marks[n.range[0]]='warn';
     $('#code').innerHTML=DemoFrame.code(file,{cur:cur,marks:marks});
     if(n&&n.range)$$('#code .ln').forEach(function(ln){var k=+ln.dataset.ln;if(k>=n.range[0]&&k<=n.range[1])ln.classList.add(n.reviewed?'hl-ok':'hl-warn')});
+    (ok||[]).forEach(function(k){var l=$('#code .ln[data-ln="'+k+'"]');if(l){l.classList.remove('hl-warn');l.classList.add('ai-block');var src=(AISRC[file]&&AISRC[file][k])||'Agent·转化 · 按原版改';l.insertAdjacentHTML('afterbegin','<span class="ai-gut" data-src="'+src+'"></span>')}});
+    if(line){var ll=$('#code .ln[data-ln="'+line+'"]');if(ll){if(!(ok&&ok.indexOf(line)>=0))ll.classList.add('hl');var cw=$('#code').parentNode;cw.scrollTop=Math.max(0,ll.offsetTop-cw.clientHeight/3)}}
     $('#crumbs').innerHTML=DemoFrame.crumbs(file);
     $$('#tree .row.sel').forEach(function(x){x.classList.remove('sel')});
     var r=$('#tree .row[data-file="'+file+'"]');if(r)r.classList.add('sel');
     var p=$('#status-pos');if(p)p.textContent=cur+':1';
-    renderCallout();renderPreview(file);
+    renderCallout();renderPreview(file);if(CMP.on)renderDiffs();
     return true;
   }
   function renderCallout(){
@@ -201,8 +365,8 @@
       h='<div class="dm-callout ok"><svg><use href="#i-checkS"/></svg><div class="txt">'+n.text+'<div class="who">已查 · '+n.reviewed+'</div></div><div class="acts"><span class="dm-pill ok">已查</span></div></div>';
     }else{
       h='<div class="dm-callout warn"><svg><use href="#i-warn"/></svg><div class="txt">'+n.text+'<div class="who">第 '+n.range[0]+'–'+n.range[1]+' 行 · 机器转出 · 今天 09:41</div></div>'
-       +'<div class="acts"><button class="btn sm primary" id="btn-reviewed"><svg class="i" style="width:12px;height:12px;color:#fff"><use href="#i-checkS"/></svg>标记为已查</button><button class="btn sm" id="btn-explain"><svg class="i" style="width:12px;height:12px"><use href="#i-genie"/></svg>'+(explainOpen?'收起解释':'让 DevEco Code 解释差异')+'</button></div></div>';
-      if(explainOpen)h+='<div class="dm-callout info"><svg><use href="#i-genie"/></svg><div class="txt"><b>差异在哪</b>：'+n.explain+'</div></div>';
+       +'<div class="acts"><button class="btn sm" id="btn-reviewed"><svg class="i" style="width:12px;height:12px"><use href="#i-checkS"/></svg>标记为已查</button><button class="btn sm" id="btn-explain"><svg class="i" style="width:12px;height:12px"><use href="#ai-explain"/></svg>'+(explainOpen?'收起解释':'让 Agent 解释差异')+'</button></div></div>';
+      if(explainOpen)h+='<div class="ai-answer"><div class="ai-answer__meta"><svg><use href="#ai-explain"/></svg>Agent·转化 · 差异在哪</div><p class="ai-answer__body">'+n.explain+'</p></div>';
     }
     w.innerHTML=h;
   }
@@ -225,8 +389,6 @@
     if(mode==='screen'){pct=Math.round(prog.done/prog.total*100);txt='按屏迁移 · '+prog.done+' / '+prog.total+' 屏已转 · '+prog.manual+' 屏需人工';}
     else{pct=60;txt='按模块迁移 · 3 / 5 模块已转 · 2 模块需人工';}
     $('#prog-bar').style.setProperty('--v',pct+'%');$('#prog-txt').textContent=txt;
-    $('#tree-prog').textContent='转化 '+prog.done+' / '+prog.total;
-    var slot=$('#status-slot');if(slot)slot.innerHTML='<span class="dm-capsule" title="Android → HarmonyOS Migration"><svg class="i" style="width:12px;height:12px"><use href="#i-translate"/></svg>安卓转化 · '+prog.done+' / '+prog.total+' 屏'+(prog.manual?' · '+prog.manual+' 屏需人工':'')+'</span>';
   }
   function renderList(){
     var list=mode==='screen'?SCREENS:MODULES;
@@ -242,20 +404,364 @@
   function renderCommits(){
     var left=0;
     $('#commits').innerHTML=COMMITS.map(function(c,i){
-      if(!c.queued)left++;
+      if(!c.queued&&!c.done)left++;
       return '<div class="cm"><span class="sha">'+c.sha+'</span><span class="grow"><span class="m">'+c.msg+'</span><span class="s">'+c.screen+' · '+c.when+' · '+c.who+'</span></span>'
-        +(c.queued?'<span class="dm-pill muted"><svg><use href="#i-checkS"/></svg>已排进清单</span>':'<button class="btn sm" data-sync="'+i+'"><svg class="i" style="width:12px;height:12px"><use href="#i-sync"/></svg>同步到鸿蒙版</button>')+'</div>';
+        +(c.done?'<span class="dm-pill ok"><svg><use href="#i-checkS"/></svg>对照已对齐</span>':(c.queued?'<span class="dm-pill muted"><svg><use href="#i-checkS"/></svg>已排进清单</span>':'<button class="btn sm" data-sync="'+i+'"><svg class="i" style="width:12px;height:12px"><use href="#i-sync"/></svg>同步到鸿蒙版</button>'))+'</div>';
     }).join('');
     var sc=$('#sync-cnt');sc.className='dm-pill '+(left?'warn':'ok');sc.textContent=left?left+' 条':'都跟上了';
   }
   function syncCommit(i){
-    var c=COMMITS[i];if(c.queued)return;c.queued=true;
+    var c=COMMITS[i];if(c.queued||c.done)return;c.queued=true;
     SCREENS.push({name:c.screen,file:c.file,why:'同步安卓提交 '+c.sha+'：'+c.msg,st:'info',est:c.est,fresh:true});
     renderCommits();
     if(mode!=='screen'){mode='screen';$$('#seg button').forEach(function(b){b.classList.toggle('on',b.dataset.mode==='screen')});renderProgress();}
     renderList();
     var last=$('#mg-list .dm-item:last-child');if(last)last.scrollIntoView({block:'nearest'});
   }
+
+  /* ---------- 并排对照：卓易通里跑安卓原版，原生窗口跑鸿蒙版，键鼠同步，差异落到 ArkTS 行 ---------- */
+  var esc=DemoFrame.esc;
+  var KW=/^(import|from|export|default|class|extends|struct|private|const|let|return|if|else|new|this|void|number|string|boolean|as|async|await|try|catch|true|false|undefined|null)$/;
+  function hl(src){
+    var re=/(\/\/.*$)|('(?:[^'\\]|\\.)*'|`(?:[^`\\]|\\.)*`)|(@[A-Za-z]+)|(\$\$|\$r)|(0x[0-9A-Fa-f]+|\b\d+(?:\.\d+)?\b)|([A-Za-z_$][\w$]*)|([\s\S])/g,m,out='';
+    while((m=re.exec(src))){
+      if(m[1])out+='<span class="c">'+esc(m[1])+'</span>';
+      else if(m[2])out+='<span class="s">'+esc(m[2])+'</span>';
+      else if(m[3])out+='<span class="m">'+esc(m[3])+'</span>';
+      else if(m[4])out+='<span class="f">'+esc(m[4])+'</span>';
+      else if(m[5])out+='<span class="n">'+esc(m[5])+'</span>';
+      else if(m[6]){var w=m[6],rest=src.slice(re.lastIndex),cls=KW.test(w)?'k':(/^\s*\(/.test(rest)?'f':(/^[A-Z]/.test(w)?'ty':'p'));out+='<span class="'+cls+'">'+esc(w)+'</span>'}
+      else out+=esc(m[7]);
+    }
+    return out;
+  }
+  function L(src,meta){return meta?[hl(src),meta]:[hl(src)]}
+  FILES['ItemCard.ets']={path:['entry','src','main','ets','components'],crumbs:['ItemCard','build'],lines:[
+    L("import { Item } from '../model/Item';"),L(""),L("@Component"),L("export struct ItemCard {",{fold:1}),
+    L("  @Prop item: Item;"),L("  @Prop cover: PixelMap | undefined;"),L(""),
+    L("  build() {",{fold:1,at:1}),L("    Row({ space: 10 }) {",{fold:1}),
+    L("      Image(this.cover).width(40).height(40)"),
+    L("      Column({ space: 2 }) {",{fold:1}),
+    L("        Text(this.item.title).fontSize(15).fontWeight(FontWeight.Medium)"),
+    L("        Text(this.item.tag).fontSize(12).fontColor($r('app.color.text_secondary'))"),
+    L("      }.alignItems(HorizontalAlign.Start).layoutWeight(1)"),
+    L("      Text(`¥${this.item.price}`).fontColor($r('app.color.price'))"),
+    L("    }"),L("    .height(72).padding({ left: 16, right: 16 })"),L("  }"),L("}")
+  ]};
+
+  var CMP={on:false,screen:'login',code:'000000',focus:false,aToast:false,hToast:false,hErr:false,aRef:false,hRef:false,miss:null,ops:[],found:[],fixed:{},st:{},sel:null,busy:false,prevLeft:'project'};
+  /* 差异：安卓语汇只写在「安卓原版」一栏，鸿蒙一栏只写 ArkTS */
+  var DIFFS={
+    autofill:{kind:'界面',screen:'login',title:'验证码框下少了短信验证码建议',a:'SmsRetriever 建议条「482913 · 点按填入」',h:'<code>TextInput</code> 只能手动输入',file:'LoginPage.ets',line:12,manual:1,
+      box:{a:'[data-d="chip"]',h:'[data-d="chip"]'}},
+    toast:{kind:'行为',screen:'login',title:'验证码错了，提示不一样',a:'弹 Toast「验证码错误」',h:'<code>Text(this.error)</code> 显示 ERR_AUTH_401',file:'LoginPage.ets',line:28,commit:'a3f9c1',
+      fixLine:30,fixOk:[1,30],fixNote:'改用 promptAction.showToast · string.json 加 code_wrong',box:{a:'[data-d="toast"]',h:'[data-d="err"]'}},
+    radius:{kind:'界面',screen:'list',title:'商品图是直角',a:'ShapeableImageView 圆角 8dp',h:'<code>Image</code> 没有 <code>.borderRadius</code>',file:'ItemCard.ets',line:10,
+      fixLine:10,fixOk:[10],fixNote:'Image 补 .borderRadius(8)',box:{a:'[data-d="th"]',h:'[data-d="th"]'}},
+    refresh:{kind:'行为',screen:'list',title:'列表往下拉不会刷新',a:'SwipeRefreshLayout 下拉刷新，新到 1 件',h:'<code>List</code> 只回弹，外面没有 <code>Refresh</code>',file:'ListPage.ets',line:14,commit:'7d02be',
+      fixLine:15,fixOk:[9,15,24,25],fixNote:'List 外包一层 Refresh + onRefreshing',box:{a:'[data-d="rf"]',h:'[data-d="lsttop"]'}}
+  };
+  function openDiffs(){return CMP.found.filter(function(k){return !CMP.fixed[k]&&!DIFFS[k].manual}).length}
+  function find(k){if(CMP.found.indexOf(k)<0)CMP.found.push(k)}
+
+  /* ---------- 两个窗口里的应用 ---------- */
+  var STSVG='<svg viewBox="0 0 26 10" aria-hidden="true"><path d="M1 9h1.6V7H1zM3.8 9h1.6V5.2H3.8zM6.6 9h1.6V3.4H6.6zM9.4 9h1.6V1.6H9.4z" fill="#1a1a1a"/><rect x="14" y="1.5" width="10" height="7" rx="1.8" fill="none" stroke="#1a1a1a" stroke-width="1"/><rect x="15.3" y="2.8" width="6.4" height="4.4" rx=".8" fill="#1a1a1a"/><path d="M24.8 4v2" stroke="#1a1a1a" stroke-linecap="round"/></svg>';
+  var GOODS=[['无线鼠标','全新 · 包邮','129'],['机械键盘','二手 · 9 成新','389'],['显示器支架','全新','159'],['蓝牙音箱','二手','219'],['移动电源','全新 · 包邮','99'],['智能手表','二手','1299'],['平板支架','全新','59']];
+  function appHTML(side){
+    var a=side==='a',h='<div class="st"><span>09:41</span>'+STSVG+'</div>';
+    if(CMP.screen==='login'){
+      var toast=a?CMP.aToast:CMP.hToast;
+      h+='<div class="lg"><div class="h1">欢迎回来</div><div class="h2">登录后同步购物车和订单</div>'
+        +'<div class="in" data-hs="phone">138 **** 5620</div>'
+        +'<div class="in'+(CMP.code?'':' ph')+(CMP.focus?' focus':'')+'" data-hs="code">'+(CMP.code||'验证码')+'</div>'
+        +(a&&CMP.code!=='482913'?'<div class="sms" data-hs="chip" data-d="chip"><svg viewBox="0 0 16 16"><use href="#i-chat"/></svg>短信验证码 482913 · 点按填入</div>':'<div class="ghost" data-d="chip"></div>')
+        +'<div class="er" data-d="err">'+(!a&&CMP.hErr?'ERR_AUTH_401':'')+'</div>'
+        +'<div class="bt" data-hs="login">登录</div></div>'
+        +'<div class="ft">其他方式登录 · 华为账号</div>'
+        +(toast?'<div class="toast" data-d="toast">验证码错误</div>':'');
+    }else{
+      var ref=a?CMP.aRef:CMP.hRef,round=a||CMP.fixed.radius;
+      h+='<div class="nav"><span class="bk" data-hs="back"><svg viewBox="0 0 16 16"><path d="M10 3L5 8l5 5" stroke="#1a1a1a" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg></span>商品</div>'
+        +'<div class="sr">搜索商品</div><div class="lst" data-hs="pull" data-d="lsttop">'
+        +(ref?'<div class="rf" data-d="rf"><i></i>已更新 · 新到 1 件</div>':'')
+        +(ref?[['降噪耳机','新到 · 全新','699',1]]:[]).concat(GOODS).map(function(g,i){return '<div class="rw'+(g[3]?' nw':'')+'"><span class="th'+(round?' r':'')+'"'+(i===0?' data-d="th"':'')+'></span><div><b>'+g[0]+'</b><span>'+g[1]+'</span></div><span class="pr">¥'+g[2]+'</span></div>'}).join('')
+        +'</div>';
+    }
+    return h+'<div class="gbar"></div>';
+  }
+  function renderApps(){
+    ['a','h'].forEach(function(side){$('#ma-'+side).innerHTML=appHTML(side)});
+    if(CMP.miss){var m=CMP.miss;$('#ma-'+m.side).insertAdjacentHTML('beforeend','<span class="rip miss" style="left:'+m.x+'px;top:'+m.y+'px"></span>')}
+  }
+  /* 差异框按两边实际渲染的位置画（基准坐标 218 × 492） */
+  function drawBoxes(){
+    ['a','h'].forEach(function(side){
+      var root=$('#ma-'+side);$$('.dbox',root).forEach(function(b){b.remove()});
+      CMP.found.forEach(function(k,i){
+        var d=DIFFS[k];if(d.screen!==CMP.screen)return;
+        var el=$(k==='refresh'&&side==='h'&&CMP.hRef?'[data-d="rf"]':d.box[side],root);if(!el)return;
+        var x=el.offsetLeft,y=el.offsetTop,w=el.offsetWidth,h=el.offsetHeight,p=el.offsetParent;
+        while(p&&p!==root){x+=p.offsetLeft;y+=p.offsetTop;p=p.offsetParent}
+        if(k==='refresh'&&side==='h'&&!CMP.hRef){h=30}
+        if(k==='toast'&&side==='h'&&!CMP.hErr&&!CMP.hToast)return;
+        if(k==='toast'&&side==='a'&&!CMP.aToast)return;
+        if(k==='refresh'&&side==='a'&&!CMP.aRef)return;
+        if(k==='toast'&&side==='h'&&CMP.hToast){el=$('[data-d="toast"]',root);x=el.offsetLeft-el.offsetWidth/2;y=el.offsetTop;w=el.offsetWidth;h=el.offsetHeight}
+        if(k==='toast'&&side==='a'){x=el.offsetLeft-el.offsetWidth/2}
+        var ok=!!CMP.fixed[k],gone=!ok&&((k==='autofill'&&side==='h')||(k==='refresh'&&side==='h'));
+        root.insertAdjacentHTML('beforeend','<span class="dbox'+(gone?' gone':'')+(ok?' ok':'')+(CMP.sel===k?' sel':'')+'" data-diff="'+k+'" style="left:'+(x-4)+'px;top:'+(y-4)+'px;width:'+(w+8)+'px;height:'+(h+8)+'px" title="'+esc(d.title)+'"><b>'+(i+1)+'</b></span>');
+      });
+    });
+  }
+
+  /* ---------- 同步操作日志 ---------- */
+  var RES={same:['ok','一致'],beh:['err','行为不同'],ui:['warn','界面不同'],miss:['warn','右边没有这个控件'],fix:['ok','改后重放 · 一致']};
+  function logOp(text,res){CMP.ops.push({t:text,r:res});renderLog()}
+  function nextHint(){
+    if(CMP.screen==='login'){
+      if(CMP.found.indexOf('toast')<0)return '点左边的「登录」，看两边对错误验证码的反应';
+      if(CMP.code!=='482913')return '点左边的「短信验证码」建议条，把正确的码填进去';
+      return '再点「登录」进商品列表';
+    }
+    if(CMP.found.indexOf('refresh')<0)return '在左边列表上往下拖一下，试下拉刷新';
+    return '点右侧差异卡「按原版改」，改完两边会自动重放';
+  }
+  function renderLog(){
+    var h='<div class="hd"><svg class="i" style="width:14px;height:14px;color:var(--ui-icon)"><use href="#i-sync"/></svg><b>同步操作</b><span class="dm-muted">· 点一边，另一边同一位置跟着点</span><span class="grow"></span><span class="dm-pill info">'+CMP.ops.length+' 步</span></div>';
+    CMP.ops.forEach(function(o,i){var r=RES[o.r];h+='<div class="op"><span class="n">'+(i+1)+'</span><span class="tx">'+o.t+'</span><span class="dm-pill '+r[0]+'">'+r[1]+'</span></div>'});
+    h+='<div class="op hint"><span class="n"></span><svg class="i"><use href="#i-arrowR"/></svg><span class="tx">'+nextHint()+'</span></div>';
+    var el=$('#desk-log');el.innerHTML=h;el.scrollTop=el.scrollHeight;
+  }
+
+  /* ---------- 差异卡（Migration 面板） ---------- */
+  function renderDiffs(){
+    var el=$('#cmp-diffs');if(!el)return;
+    var h='';
+    CMP.found.forEach(function(k,i){
+      var d=DIFFS[k],st=CMP.st[k]||'open',done=st==='ok';
+      var pill=d.manual?'<span class="dm-pill err">需人工</span>':(done?'<span class="dm-pill ok">已对齐</span>':(st==='fixing'?'<span class="dm-pill info">重放中…</span>':'<span class="dm-pill '+(d.kind==='行为'?'err':'warn')+'">'+d.kind+'</span>'));
+      var ln=done?d.fixLine:d.line;
+      h+='<div class="df'+(CMP.sel===k?' sel':'')+(done?' done':'')+'" data-k="'+k+'"><div class="t"><span class="num">'+(i+1)+'</span>'+pill+'<b>'+esc(d.title)+'</b><span class="loc">'+d.file+':'+ln+'</span></div>'
+        +'<div class="sd"><em>安卓原版</em><span>'+esc(d.a)+'</span><em>鸿蒙版</em><span>'+(done?'和原版一致 · '+esc(d.fixNote):d.h)+'</span></div>'
+        +'<div class="ac"><button class="btn sm" data-act="loc"><svg class="i"><use href="#i-locate"/></svg>定位</button>'
+        +(d.manual?'<span class="note">'+(d.decided||'没有对应的系统能力，等你定怎么处理')+'</span>':(done?'<span class="note">热重载后重放同一步，两边一致'+(d.commit?' · 安卓提交 '+d.commit+' 已跟上':'')+'</span>':'<button class="btn sm" data-act="fix"'+(st==='fixing'?' disabled':'')+'><svg class="i"><use href="#ai-edit"/></svg>按原版改</button><span class="note">'+esc(d.fixNote)+'</span>'))
+        +'</div></div>';
+    });
+    if(!h)h='<div class="dm-muted dm-small">两边正在启动…</div>';
+    el.innerHTML=h;
+    var o=openDiffs(),c=$('#cmp-cnt');c.className='dm-pill '+(o?'warn':'ok');var nf=CMP.found.filter(function(k){return CMP.fixed[k]}).length,nm=CMP.found.filter(function(k){return DIFFS[k].manual}).length;c.textContent=o?o+' 处待改 · 共 '+CMP.found.length:nf+' 处已对齐'+(nm?' · '+nm+' 处需人工':'');
+    renderProgress();
+  }
+  function locateDiff(k){
+    var d=DIFFS[k],done=CMP.st[k]==='ok';CMP.sel=k;
+    openFile(d.file,done?d.fixLine:d.line,done?d.fixOk:null);
+    renderDiffs();drawBoxes();
+  }
+
+  /* ---------- 改成和原版一致：改 ArkTS → 热重载 → 两边重放同一步 ---------- */
+  function applyFix(k){
+    if(k==='toast'){
+      var f=FILES['LoginPage.ets'].lines;
+      f.splice(27,1,L("      promptAction.showToast({ message: $r('app.string.code_wrong') });"));
+      f.unshift(L("import { promptAction } from '@kit.ArkUI';"),L(""));
+      NOTES['LoginPage.ets'].range=[26,32];
+    }else if(k==='radius'){
+      FILES['ItemCard.ets'].lines[9]=L("      Image(this.cover).width(40).height(40).borderRadius(8)");
+    }else if(k==='refresh'){
+      var o=FILES['ListPage.ets'].lines,n=o.slice(0,8).concat([L("  @State refreshing: boolean = false;")],o.slice(8,13),[L("      Refresh({ refreshing: $$this.refreshing }) {",{fold:1})],
+        o.slice(13,21).map(function(l){return ['  '+l[0],l[1]]}),[L("      }"),L("      .onRefreshing(async () => { await this.source.reload(); this.refreshing = false; })")],o.slice(21));
+      if(AG.merge){n.forEach(function(l,i){if(/cachedCount/.test(l[0])){n[i]=[l[0].replace('<span class="n">0</span>','<span class="n">4</span>'),l[1]];(AISRC['ListPage.ets']=AISRC['ListPage.ets']||{})[i+1]='Agent·列表 · 列表缓存';if(DIFFS.refresh.fixOk.indexOf(i+1)<0)DIFFS.refresh.fixOk.push(i+1)}})}
+      FILES['ListPage.ets'].lines=n;NOTES['ListPage.ets'].range=[16,23];
+    }
+  }
+  function fix(k){
+    var d=DIFFS[k];if(CMP.busy||d.manual||CMP.st[k]==='ok')return;
+    CMP.busy=true;CMP.st[k]='fixing';CMP.sel=k;applyFix(k);
+    openFile(d.file,d.fixLine,d.fixOk);renderDiffs();
+    setTimeout(function(){
+      CMP.fixed[k]=true;CMP.miss=null;
+      if(k==='toast'){CMP.screen='login';CMP.code='000000';CMP.focus=false;CMP.aToast=true;CMP.hToast=true;CMP.hErr=false;logOp('热重载 → 重放「点登录（验证码 000000）」','fix')}
+      else if(k==='radius'){CMP.screen='list';logOp('热重载 → 重新比对商品列表截图','fix')}
+      else if(k==='refresh'){CMP.screen='list';CMP.aRef=true;CMP.hRef=true;logOp('热重载 → 重放「在列表上往下拉」','fix')}
+      CMP.st[k]='ok';CMP.busy=false;
+      var c=COMMITS.filter(function(x){return x.sha===d.commit})[0];if(c){c.done=true;renderCommits()}
+      renderApps();drawBoxes();renderDiffs();renderLog();
+      openFile(d.file,d.fixLine,d.fixOk);
+    },900);
+  }
+
+  /* ---------- 同步操作：点一边，另一边同一位置跟着点 ---------- */
+  function ripple(x,y){['a','h'].forEach(function(s){$('#ma-'+s).insertAdjacentHTML('beforeend','<span class="rip" style="left:'+x+'px;top:'+y+'px"></span>')})}
+  function doOp(hs,side,x,y){
+    if(CMP.busy)return;
+    CMP.miss=null;var before=CMP.found.length;
+    if(hs==='chip'){
+      CMP.code='482913';CMP.focus=false;CMP.aToast=false;CMP.hErr=false;CMP.hToast=false;CMP.miss={side:side==='a'?'h':'a',x:x,y:y};find('autofill');
+      logOp('点「短信验证码 482913」建议条 → 右边同一位置没有控件，已把 482913 同步键入右边','miss');
+    }else if(hs==='code'){CMP.focus=true;logOp('点「验证码」输入框 → 两边都弹出键盘','same')}
+    else if(hs==='phone'){CMP.focus=false;logOp('点「手机号」输入框 → 两边都弹出键盘','same')}
+    else if(hs==='login'){
+      CMP.focus=false;
+      if(CMP.code==='482913'){CMP.screen='list';CMP.aToast=CMP.hToast=CMP.hErr=false;CMP.aRef=CMP.hRef=false;if(CMP.fixed.radius)logOp('点「登录」→ 两边都进了商品列表 · 截图比对一致','same');else{find('radius');logOp('点「登录」→ 两边都进了商品列表 · 截图比对出 1 处界面差异','ui')}}
+      else{CMP.aToast=true;if(CMP.fixed.toast){CMP.hToast=true;logOp('点「登录」（验证码 '+CMP.code+'）→ 两边都提示「验证码错误」','same')}else{CMP.hErr=true;find('toast');logOp('点「登录」（验证码 '+CMP.code+'）→ 左边弹提示，右边显示错误码','beh')}}
+    }else if(hs==='back'){CMP.screen='login';CMP.code='000000';CMP.aRef=CMP.hRef=false;logOp('点返回 → 两边都回到登录页','same')}
+    else if(hs==='pull'){
+      CMP.aRef=true;if(CMP.fixed.refresh){CMP.hRef=true;logOp('在列表上往下拉 → 两边都刷新，新到 1 件','same')}else{CMP.hRef=false;find('refresh');logOp('在列表上往下拉 → 左边刷新出 1 件新品，右边只回弹','beh')}
+    }else return;
+    renderApps();ripple(x,y);drawBoxes();renderDiffs();
+    if(CMP.found.length>before)locateDiff(CMP.found[CMP.found.length-1]);
+  }
+  function basePt(win,e){var r=$('.win-scr',win).getBoundingClientRect(),k=r.width/218;return {x:Math.round((e.clientX-r.left)/k),y:Math.round((e.clientY-r.top)/k)}}
+  var drag=null;
+  function front(win){$$('#desk-area .win').forEach(function(w){w.classList.toggle('front',w===win)})}
+  $('#desk-area').addEventListener('pointerdown',function(e){
+    var win=e.target.closest('.win');if(!win)return;front(win);
+    var area=$('#desk-area').getBoundingClientRect(),wr=win.getBoundingClientRect();
+    if(e.target.closest('.win-rs')){drag={t:'rs',win:win,x0:e.clientX,w0:wr.width};e.preventDefault();return}
+    if(e.target.closest('.win-tb')){drag={t:'mv',win:win,dx:e.clientX-wr.left,dy:e.clientY-wr.top,area:area};win.classList.add('drag');e.preventDefault();return}
+    var hs=e.target.closest('[data-hs]');
+    if(hs){drag={t:'hs',win:win,hs:hs.dataset.hs,y0:e.clientY,pt:basePt(win,e)}}
+  });
+  document.addEventListener('pointermove',function(e){
+    if(!drag)return;
+    if(drag.t==='mv'){var a=drag.area,w=drag.win,x=Math.max(-40,Math.min(a.width-80,e.clientX-a.left-drag.dx)),y=Math.max(0,Math.min(a.height-40,e.clientY-a.top-drag.dy));w.style.left=x+'px';w.style.top=y+'px'}
+    else if(drag.t==='rs'){var nw=Math.round(Math.max(170,Math.min(260,drag.w0+(e.clientX-drag.x0))));setW(drag.win,nw)}
+  });
+  document.addEventListener('pointerup',function(e){
+    if(!drag)return;var d=drag;drag=null;d.win.classList.remove('drag');
+    if(d.t!=='hs')return;
+    var dy=e.clientY-d.y0;
+    if(d.hs==='pull'){if(dy>12)doOp('pull',d.win.dataset.side,d.pt.x,d.pt.y)}
+    else doOp(d.hs,d.win.dataset.side,d.pt.x,d.pt.y);
+  });
+  function setW(win,w){win.style.setProperty('--w',w+'px');win.style.setProperty('--k',((w-2)/218).toFixed(4))}
+  $('#ma-a').parentNode.parentNode.parentNode.addEventListener('dragstart',function(e){e.preventDefault()});
+  /* 点差异框 → 选中并落到代码 */
+  $('#desk-area').addEventListener('click',function(e){var b=e.target.closest('.dbox');if(b)locateDiff(b.dataset.diff)});
+  $('#cmp-diffs').addEventListener('click',function(e){
+    var card=e.target.closest('.df');if(!card)return;var k=card.dataset.k,a=e.target.closest('[data-act]');
+    if(a&&a.dataset.act==='fix'){if(!a.disabled)fix(k);return}
+    locateDiff(k);
+  });
+
+  function replay(){
+    if(CMP.busy)return;CMP.busy=true;
+    var steps=[['login',100,300],['chip',100,240],['login',100,300],['pull',100,200]],i=0;
+    CMP.screen='login';CMP.code='000000';CMP.aToast=CMP.hToast=CMP.hErr=false;CMP.aRef=CMP.hRef=false;CMP.miss=null;
+    logOp('重放一遍：按记录的 4 步在两边同时回放','same');renderApps();drawBoxes();
+    (function next(){if(i>=steps.length){CMP.busy=false;renderLog();return}var s=steps[i++];CMP.busy=false;doOp(s[0],'a',s[1],s[2]);CMP.busy=true;setTimeout(next,650)})();
+  }
+  /* ---------- Agent·转化：你说一句 → 它在同一台鸿蒙电脑上并排回放两版、找差异、按原版改 → 需人工的和撞车的停下来等你 ---------- */
+  var AG={phase:'idle',rows:[],q:[],merge:false};
+  var RING='<span class="ai-ring"></span>',OK='<span class="ok">✓</span>';
+  function cap(st,t,o){DemoFrame.agent(st,t,o)}
+  function aRow(ico,what,end,cls){AG.rows.push({ico:ico,what:what,end:end||'',cls:cls||''});renderAg();return AG.rows.length-1}
+  function aEnd(i,end){AG.rows[i].end=end;renderAg()}
+  function whenFree(fn){if(CMP.busy)return setTimeout(function(){whenFree(fn)},150);fn()}
+  var QD={
+    clash:{h:'两个 Agent 改到同一个 List',tag:'挡住它',
+      why:'下拉刷新要在 <code>ListPage.ets</code> 的 <code>List</code> 外包一层 <code>Refresh</code>；<span class="who">Agent·列表</span> 正在同一个 <code>List</code> 上把 <code>cachedCount</code> 从 0 改成 4。按意图分组后两处不重叠，可以合成一次改动。',
+      a:['用合并后的','merge'],b:['等 Agent·列表 先改完','wait']},
+    sms:{h:'短信自动填充没有对应 Kit',tag:'需人工',
+      why:'安卓用 <code>SmsRetriever</code> 在验证码框下给出「482913 · 点按填入」。鸿蒙侧没有同等系统能力，只能二选一。',
+      a:['保留手动输入 · 加「粘贴」','paste'],b:['接输入法验证码联想（~2h）','ime']}
+  };
+  function renderAg(){
+    var b=$('#ag-box');if(!b)return;
+    var h='';
+    if(AG.phase==='idle')h='<div class="hd"><svg class="ai-ico"><use href="#ai-agent"/></svg><span class="tx">交给 Agent：两版并排回放、找差异、<b>按原版改</b></span><button class="ai-btn ai-btn--primary" id="ag-go"><svg><use href="#ai-review"/></svg>对照两版</button></div>';
+    else h='<div class="hd"><svg class="ai-ico"><use href="#ai-agent"/></svg><span class="tx"><b>Agent·转化</b> · 登录页 + 列表页'+(AG.phase==='done'?' · 已和原版对齐':'')+'</span></div>';
+    h+=AG.rows.map(function(r){return '<div class="ai-toolrow '+r.cls+'"><svg class="ai-ico"><use href="#'+r.ico+'"/></svg><span class="what">'+r.what+'</span><span class="end">'+r.end+'</span></div>'}).join('');
+    if(AG.q.length){
+      var d=QD[AG.q[0]];
+      h+='<div class="qh"><span class="ai-wait-dot"></span>在等你 · '+AG.q.length+' 件 · 按挡路程度排</div>'
+        +'<div class="ai-approve" id="ag-wait"><div class="ai-approve__h"><span>'+d.h+'</span><span style="font-weight:400;color:var(--ui-fg-info)">'+d.tag+'</span></div>'
+        +'<p class="ai-approve__why">'+d.why+'</p>'
+        +'<div class="ai-approve__act"><button class="ai-btn ai-btn--primary" data-q="'+d.a[1]+'">'+d.a[0]+'</button><button class="ai-btn ai-btn--fill" data-q="'+d.b[1]+'">'+d.b[0]+'</button></div></div>';
+      AG.q.slice(1).forEach(function(k){h+='<div class="qn"><span class="ai-wait-dot"></span><span>'+QD[k].h+'</span><em style="font-style:normal">'+QD[k].tag+'</em></div>'});
+    }
+    b.innerHTML=h;
+  }
+  function capWait(){
+    if(!AG.q.length)return;
+    cap('waiting','在等你 · '+QD[AG.q[0]].h,{queue:AG.q.length-1||null,onClick:function(){var w=$('#ag-wait');if(w)w.scrollIntoView({block:'nearest',behavior:'smooth'})}});
+  }
+  function agStart(){
+    if(AG.phase!=='idle')return;
+    AG.phase='run';
+    var r1=aRow('ai-tool','卓易通跑安卓原版 · 本机窗口跑鸿蒙版',RING);
+    cap('tool','Agent·转化 · 启动两版');cmpStart();
+    setTimeout(function(){
+      aEnd(r1,OK);var r2=aRow('ai-verify','同步回放 4 步：登录 → 短信建议 → 登录 → 下拉',RING);
+      cap('tool','Agent·转化 · 两版同步回放');replay();
+      setTimeout(function(){whenFree(function(){
+        aEnd(r2,OK+' 4 处差异');
+        var r3=aRow('ai-edit','按原版改 <code>LoginPage.ets</code>：错误码改 Toast',RING);
+        cap('generating','Agent·转化 · 在改 <code>LoginPage.ets</code>');fix('toast');
+        setTimeout(function(){whenFree(function(){
+          aEnd(r3,OK+' 重放一致');
+          var r4=aRow('ai-edit','按原版改 <code>ItemCard.ets</code>：商品图圆角 8',RING);
+          cap('generating','Agent·转化 · 在改 <code>ItemCard.ets</code>');fix('radius');
+          setTimeout(function(){whenFree(function(){
+            aEnd(r4,OK+' 截图一致');
+            aRow('ai-waiting','停下 2 件等你：一件撞车、一件需人工','','wait');
+            AG.phase='wait';AG.q=['clash','sms'];renderAg();capWait();
+          })},1100);
+        })},1100);
+      })},2750);
+    },600);
+  }
+  function agDecide(v){
+    var k=AG.q[0];if(!k)return;
+    AG.q.shift();
+    if(k==='clash'){
+      if(v==='merge'){
+        AG.merge=true;renderAg();
+        var r=aRow('ai-edit','合并改 <code>ListPage.ets</code>：Refresh（转化）+ cachedCount 4（<span class="who">Agent·列表</span>）',RING);
+        cap('generating','Agent·转化 · 合并改 <code>ListPage.ets</code>');
+        whenFree(function(){fix('refresh');setTimeout(function(){aEnd(r,OK+' 下拉一致');next()},1100)});
+        return;
+      }
+      aRow('ai-waiting','下拉刷新排在 Agent·列表 之后，它改完再做',OK);
+      DIFFS.refresh.fixNote='排在 Agent·列表 之后';renderDiffs();
+    }else if(k==='sms'){
+      var t=v==='paste'?'保留手动输入，验证码框右侧加「粘贴」':'接输入法验证码联想，已排进剩余清单 ~2h';
+      DIFFS.autofill.decided='你定了：'+t;
+      SCREENS[0].why=v==='paste'?'短信自动填充 → 手动输入 + 粘贴（你定的）':'短信自动填充 → 输入法验证码联想（你定的）';
+      if(v==='paste'){SCREENS[0].st='warn';SCREENS[0].est='~20min';
+        if(FSTATE['LoginPage.ets']==='err'){FSTATE['LoginPage.ets']='warn';prog.done++;prog.manual--;var tp=$('#tree .row[data-file="LoginPage.ets"] .dm-pill');if(tp)tp.outerHTML=pill('warn');renderProgress()}}
+      aRow('ai-waiting','短信自动填充：'+t,OK);renderDiffs();renderList();
+    }
+    next();
+  }
+  function next(){
+    renderAg();
+    if(AG.q.length){capWait();return}
+    AG.phase='done';renderAg();
+    var n=CMP.found.filter(function(k){return CMP.fixed[k]}).length;
+    cap('done','已和原版对齐 '+n+' 处 · 安卓 2 条提交已跟上');
+  }
+
+  function cmpStart(){
+    var ide=$('#ide');if(CMP.on)return;
+    CMP.on=true;CMP.prevLeft=ide.getAttribute('data-left');
+    DemoFrame.setSide('left',null);ide.classList.add('cmp-on');
+    $('.prev-split').classList.add('cmp');$('#desk').hidden=false;$('#cmp-pad').hidden=false;
+    ['a','h'].forEach(function(s){setW($('#win-'+s),222)});
+    $('#win-a').style.left='12px';$('#win-a').style.top='14px';$('#win-h').style.left='257px';$('#win-h').style.top='14px';
+    if(!CMP.ops.length){CMP.screen='login';CMP.code='000000';find('autofill');CMP.sel='autofill';CMP.ops.push({t:'两边都冷启动到登录页 · 截图比对出 1 处界面差异',r:'ui'})}
+    renderApps();renderLog();renderDiffs();requestAnimationFrame(drawBoxes);
+    $('#mg-list').closest('.tw-body').scrollTop=0;
+  }
+  function cmpExit(){
+    var ide=$('#ide');CMP.on=false;ide.classList.remove('cmp-on');
+    $('.prev-split').classList.remove('cmp');$('#desk').hidden=true;$('#cmp-pad').hidden=true;
+    DemoFrame.setSide('left',CMP.prevLeft&&CMP.prevLeft!=='none'?CMP.prevLeft:'project');
+    renderProgress();
+  }
+  $('#btn-cmp').addEventListener('click',cmpStart);
+  $('#btn-cmp-exit').addEventListener('click',cmpExit);
+  $('#btn-replay').addEventListener('click',replay);
 
   /* ---------- 初始 ---------- */
   document.getElementById('tree-slot').innerHTML=DemoFrame.tree({sel:'LoginPage.ets',decorate:function(name){return FSTATE[name]?pill(FSTATE[name]):''}});
@@ -278,13 +784,25 @@
       var it=SCREENS[selIdx];if(it&&it.file&&FILES[it.file])openFile(it.file);
     });
     $('#commits').addEventListener('click',function(e){var b=e.target.closest('[data-sync]');if(b)syncCommit(+b.dataset.sync)});
+    $('#ag-box').addEventListener('click',function(e){if(e.target.closest('#ag-go')){agStart();return}var q=e.target.closest('[data-q]');if(q)agDecide(q.dataset.q)});
+    renderAg();cap('idle','待命 · 4/6 屏已转 · 3 条安卓提交没跟上');
     /* 树里点有代码的文件：切编辑器 */
     $('#ide').addEventListener('click',function(e){
       var r=e.target.closest('#tree .row[data-file]');if(!r)return;
       var f=r.dataset.file;if(FILES[f]&&f!==curFile)openFile(f);
     });
   }});
-DemoGuide.init([{"target": "#btn-reviewed", "kind": "click", "pos": "top", "label": "点这里标记已查"}, {"target": "#tree-prog", "kind": "change", "pos": "top", "label": "进度 4/6→5/6"}]);
+DemoGuide.init([
+  {target:'#ag-go',kind:'click',pos:'left',label:'交给 Agent：两版并排回放、找差异、按原版改'},
+  {target:'#ag-wait .ai-btn--primary',kind:'click',pos:'left',label:'它停下等你：撞车的、需人工的排成一队'},
+  {target:'#btn-cmp',kind:'click',pos:'top',label:'想自己点一遍？手动并排对照'}
+], {scene:{
+  at:'你在把安卓版 Shop 迁到鸿蒙，登录页和列表页已转出',
+  goal:'鸿蒙版和安卓原版做到一样，并跟上安卓的新提交',
+  pain:'两台手机摆桌上各点一遍，肉眼找不同，再翻代码找行',
+  fix:'Agent 并排回放两版找差异、按原版改，只把需人工的交给你',
+  agent:'它回放、找差异、按原版改；和功能 Agent 撞同页进同一队列；你判需人工项'
+}});
 })();
 </script>
 </body>

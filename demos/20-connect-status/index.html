@@ -5,12 +5,12 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='32' y2='32' gradientUnits='userSpaceOnUse'%3E%3Cstop stop-color='%232C8DDD'/%3E%3Cstop offset='1' stop-color='%233357AC'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='32' height='32' rx='7' fill='url(%23g)'/%3E%3Ctext x='16' y='22.5' font-family='Arial,Helvetica,sans-serif' font-size='13' font-weight='700' fill='white' text-anchor='middle'%3EDE%3C/text%3E%3C/svg%3E">
 <title>20 · 连接状态：卡在第几步，下一步做什么</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;500&display=swap">
 <link rel="stylesheet" href="../../deveco-intui-kit/src/tokens.css">
 <link rel="stylesheet" href="../../deveco-intui-kit/src/components.css">
 <link rel="stylesheet" href="../_shared/frame.css">
 <link rel="stylesheet" href="../_shared/guide.css">
 <script src="../../deveco-intui-kit/src/icons.js"></script>
+<script src="../../deveco-intui-kit/icons/ai-icons.js"></script>
 <script src="../_shared/frame.js"></script>
 <script src="../_shared/guide.js"></script>
 <style>
@@ -234,6 +234,192 @@
   .code .ln.inlay .t{padding-left:40px}
   .inl-err{display:inline-flex;align-items:center;gap:6px;font-family:var(--font-ui);font-size:11px;line-height:18px;color:var(--ui-error);background:color-mix(in srgb,var(--ui-error) 12%,transparent);padding:0 8px;border-radius:4px;white-space:nowrap}
   .inl-err svg{width:12px;height:12px}
+
+  /* ---------- 新增：碰一碰连接（设备中心顶部的一块桌面） ---------- */
+  .tapx{flex:none;border:1px solid var(--ui-border);border-radius:var(--arc);background:var(--ui-bg);display:flex;flex-direction:column}
+  .tapx[hidden]{display:none}
+  .tapx.live{border-color:var(--ui-accent)}
+  .tapx-hd{display:flex;align-items:center;gap:8px;height:34px;padding:0 8px 0 12px;border-bottom:1px solid var(--ui-border);font-size:var(--fs-sm)}
+  .tapx-hd > svg{width:14px;height:14px;color:var(--ui-info);flex:none}
+  .tapx-hd b{font-weight:600}
+  .tapx-hd .note{color:var(--ui-fg-info);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+  .tapx-hd .grow{flex:1}
+  .tapx-bd{display:grid;grid-template-columns:392px minmax(0,1fr);gap:14px;padding:12px 14px 14px;align-items:start}
+  /* 桌面：本机键盘面（俯视）+ 碰一碰区 + 手机 */
+  .desk{position:relative;height:226px}
+  .deck{position:absolute;left:0;top:14px;width:272px;height:196px;border-radius:14px;border:1px solid var(--ui-component-border);
+    background:color-mix(in srgb,var(--ui-fg) 5%,var(--ui-editor-bg))}
+  .deck .kb{position:absolute;left:14px;right:14px;top:12px;height:98px;border-radius:6px;
+    background:repeating-linear-gradient(90deg,transparent 0 2px,color-mix(in srgb,var(--ui-fg) 11%,transparent) 2px 16px,transparent 16px 18px),
+      repeating-linear-gradient(0deg,transparent 0 2px,var(--ui-editor-bg) 2px 4px,transparent 4px 19.6px);opacity:.9}
+  .deck .kb::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(180deg,transparent 0 16px,color-mix(in srgb,var(--ui-fg) 5%,var(--ui-editor-bg)) 16px 19.6px)}
+  .deck .tp{position:absolute;left:84px;top:122px;width:104px;height:64px;border-radius:7px;border:1px solid var(--ui-component-border);background:color-mix(in srgb,var(--ui-fg) 3%,transparent)}
+  .deck .who{position:absolute;left:14px;bottom:8px;font-size:10px;line-height:14px;color:var(--ui-fg-info);white-space:nowrap}
+  .nfc{position:absolute;left:198px;top:124px;width:58px;height:58px;border-radius:12px;border:1.5px dashed var(--ui-accent);background:color-mix(in srgb,var(--ui-accent) 10%,transparent);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:var(--ui-info);font-size:10px;line-height:12px}
+  .nfc svg{width:18px;height:18px}
+  .nfc .rip{position:absolute;inset:-2px;border-radius:14px;border:2px solid var(--ui-accent);opacity:0;pointer-events:none}
+  .tapx.touch .nfc .rip{animation:nfcrip .9s ease-out 2}
+  .tapx.touch .nfc .rip.r2{animation-delay:.3s}
+  @keyframes nfcrip{0%{transform:scale(.8);opacity:.9}100%{transform:scale(1.9);opacity:0}}
+  .tapx.wait .nfc{animation:nfcwait 1.6s ease-in-out infinite}
+  @keyframes nfcwait{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--ui-accent) 40%,transparent)}60%{box-shadow:0 0 0 8px transparent}}
+  /* 手机：Mate 70 Pro 1260×2844（约 9:20.3），挖孔居中、大圆角 */
+  .ph{position:absolute;left:302px;top:8px;width:76px;height:164px;padding:3px;border:0;border-radius:15px;background:#0f1012;box-shadow:0 10px 26px rgba(0,0,0,.4);
+    transform:rotate(9deg);transform-origin:50% 50%;transition:transform .45s cubic-bezier(.3,.7,.3,1);cursor:pointer;z-index:2;display:block;text-align:left}
+  .ph:focus-visible{outline:2px solid var(--ui-accent);outline-offset:3px}
+  .ph.near{transform:translate(-96px,44px) rotate(-12deg) scale(.97)}
+  .ph.touch{transform:translate(-114px,62px) rotate(-16deg) scale(.9)}
+  .ph.back{transform:translate(-8px,6px) rotate(3deg)}
+  .ph.done{cursor:default}
+  .ph .scr{position:relative;display:flex;flex-direction:column;width:70px;height:158px;border-radius:12px;overflow:hidden;background:linear-gradient(160deg,#3b3f48,#6a6f7a 60%,#9aa0aa);color:#fff;font-family:var(--font-ui)}
+  .ph .ps-st{display:flex;justify-content:space-between;align-items:center;height:12px;padding:1px 9px 0;font-size:6.5px;font-weight:600;flex:none}
+  .ph .ps-hole{position:absolute;left:50%;top:3px;width:6px;height:6px;margin-left:-3px;border-radius:50%;background:#050505}
+  .ph .ps-home{display:grid;grid-template-columns:repeat(4,1fr);gap:6px 5px;padding:14px 7px 0}
+  .ph .ps-home i{aspect-ratio:1;border-radius:4px;background:rgba(255,255,255,.78)}
+  .ph .ps-home i:nth-child(3n){background:rgba(255,255,255,.55)}
+  .ph .ps-fill{flex:1}
+  .ph .ps-dock{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:0 6px 5px;padding:4px;border-radius:8px;background:rgba(255,255,255,.22)}
+  .ph .ps-dock i{aspect-ratio:1;border-radius:4px;background:#fff}
+  .ph .ps-bar{height:7px;flex:none;display:grid;place-items:center}
+  .ph .ps-bar::after{content:"";width:30px;height:2px;border-radius:1px;background:rgba(255,255,255,.85)}
+  .ph .ps-cap{position:absolute;left:6px;right:6px;top:14px;border-radius:9px;background:rgba(20,22,28,.86);padding:5px 6px;display:flex;flex-direction:column;gap:1px;animation:covin .25s ease-out}
+  .ph .ps-cap b{font-size:6.8px;line-height:9px;font-weight:600}
+  .ph .ps-cap span{font-size:6px;line-height:8px;color:#b8c4dc}
+  .ph .ps-cap .pb{height:2px;border-radius:1px;background:rgba(255,255,255,.2);margin-top:2px;overflow:hidden}
+  .ph .ps-cap .pb i{display:block;height:100%;width:var(--v,0%);background:#5b8def;transition:width .25s}
+  .ph .scr.app{background:#fff;color:#1a1a1a}
+  .ph .scr.app .ps-st{color:#333}
+  .ph .scr.app .ps-bar::after{background:#1a1a1a}
+  .ph .ap-hd{font-size:9px;font-weight:600;padding:5px 7px 3px}
+  .ph .ap-sr{margin:0 6px 4px;height:11px;border-radius:6px;background:#f0f1f3;font-size:5.5px;color:#888;display:flex;align-items:center;padding:0 5px}
+  .ph .ap-row{display:flex;gap:5px;align-items:center;padding:3px 6px;border-bottom:1px solid #f0f0f0}
+  .ph .ap-row i{width:16px;height:16px;border-radius:3px;background:linear-gradient(135deg,#dfe7ff,#b9c9ff);flex:none}
+  .ph .ap-row span{display:flex;flex-direction:column;gap:2px;flex:1;min-width:0}
+  .ph .ap-row span::before,.ph .ap-row span::after{content:"";height:3px;border-radius:2px;background:#d6d9e0;width:80%}
+  .ph .ap-row span::after{width:44%;background:#e8eaef}
+  .ph .ap-nav{display:flex;justify-content:space-around;font-size:5.5px;color:#8a8f99;padding:3px 0 1px;border-top:1px solid #f0f0f0}
+  .ph .ap-nav b{color:#3574F0;font-weight:600}
+  .ph .scr.app.launch{animation:applaunch .35s ease-out}
+  @keyframes applaunch{from{transform:scale(.6);opacity:0;border-radius:30px}to{transform:none;opacity:1}}
+  .ph-cap{position:absolute;left:276px;top:196px;width:128px;text-align:center;font-size:10px;line-height:14px;color:var(--ui-fg-info);white-space:nowrap}
+
+  /* 右侧：等待 / 系统连接卡 / 五步飞过 */
+  .tap-r{min-width:0;display:flex;flex-direction:column;gap:10px}
+  .tap-wait{display:flex;flex-direction:column;gap:8px;font-size:var(--fs-sm);line-height:var(--lh-sm)}
+  .tap-wait .l0{display:flex;align-items:center;gap:8px;font-size:var(--fs);font-weight:600}
+  .tap-wait .l0 .dm-dot{animation:blink 1.4s infinite}
+  .tap-wait .pre{display:flex;flex-direction:column;gap:5px;color:var(--ui-fg-info)}
+  .tap-wait .pre span{display:flex;align-items:center;gap:7px}
+  .tap-wait .pre svg{width:13px;height:13px;color:var(--ui-success);flex:none}
+  .tap-wait .pre b{color:var(--ui-fg);font-weight:600}
+  .syscard{width:340px;max-width:100%;border-radius:16px;border:1px solid var(--ui-popup-border);background:var(--ui-popup-bg);box-shadow:var(--ui-shadow);padding:12px 14px 12px;display:flex;flex-direction:column;gap:9px;
+    font-size:var(--fs-sm);line-height:var(--lh-sm);animation:cardin .28s cubic-bezier(.2,.8,.3,1)}
+  @keyframes cardin{from{opacity:0;transform:translateY(-8px) scale(.97)}to{opacity:1;transform:none}}
+  .syscard .sc-hd{display:flex;align-items:center;gap:6px;color:var(--ui-fg-info);font-size:11px}
+  .syscard .sc-hd svg{width:13px;height:13px;color:var(--ui-info)}
+  .syscard .sc-hd .grow{flex:1}
+  .syscard .sc-dev{display:flex;gap:12px;align-items:center}
+  .syscard .sc-ph{width:26px;height:58px;border-radius:6px;background:#0f1012;padding:2px;flex:none;box-sizing:border-box}
+  .syscard .sc-ph i{display:block;width:100%;height:100%;border-radius:4px;background:linear-gradient(160deg,#3b3f48,#9aa0aa)}
+  .syscard .sc-dev .tx{display:flex;flex-direction:column;gap:1px;min-width:0}
+  .syscard .sc-dev b{font-size:var(--fs-h2);line-height:var(--lh-h2);font-weight:600;color:var(--ui-fg)}
+  .syscard .sc-dev span{color:var(--ui-fg-info);font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .syscard .sc-chk{display:flex;flex-wrap:wrap;gap:4px 14px;color:var(--ui-fg-info);font-size:11px}
+  .syscard .sc-chk span{display:inline-flex;align-items:center;gap:5px}
+  .syscard .sc-chk svg{width:12px;height:12px;color:var(--ui-success)}
+  .syscard .sc-trust{display:flex;align-items:flex-start;gap:8px;padding:7px 9px;border-radius:9px;background:color-mix(in srgb,var(--ui-fg) 5%,transparent);cursor:default}
+  .syscard .sc-trust .tx{display:flex;flex-direction:column}
+  .syscard .sc-trust .tx span{font-size:11px;color:var(--ui-fg-info)}
+  .cbx{width:14px;height:14px;border-radius:4px;border:1.5px solid var(--ui-component-border);flex:none;margin-top:1px;display:grid;place-items:center;box-sizing:border-box}
+  .cbx svg{width:10px;height:10px;color:#fff;display:none}
+  .cbx.on{background:var(--ui-accent);border-color:var(--ui-accent)}
+  .cbx.on svg{display:block}
+  .syscard .sc-act{display:flex;gap:8px}
+  .syscard .sc-act .btn{flex:1;justify-content:center;height:28px;border-radius:14px}
+  .tap-run{display:flex;flex-direction:column;gap:6px}
+  .tap-run .tr-hd{display:flex;align-items:center;gap:8px;font-size:var(--fs-sm)}
+  .tap-run .tr-hd b{font-weight:600;font-size:var(--fs)}
+  .tap-run .tr-hd .grow{flex:1}
+  .tap-run .tr-hd .tm{font-family:var(--font-code);font-size:12px;color:var(--ui-fg-info)}
+  .tap-run .dm-steps-h{padding:4px 0 0;margin-top:22px}
+  .tap-run .dm-step .sub{font-family:var(--font-code);font-size:10.5px;white-space:nowrap}
+  .tap-run .dm-step.done .mk{animation:mkpop .22s ease-out}
+  @keyframes mkpop{0%{transform:scale(.6)}70%{transform:scale(1.15)}100%{transform:none}}
+  .tap-run .dev-hist{margin-top:2px}
+  .tap-run .dev-hist .r > span:not(.t):not(.cmd):not(.spin){white-space:nowrap;flex:none}
+  .tap-run .dev-hist .r .cmd{font-family:var(--font-code);font-size:11px;color:var(--ui-fg-info);margin-left:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+  .tap-run .dev-hist .r.run .spin{width:10px;height:10px;border-width:1.5px}
+
+  /* 三种连法对比：每一步谁来做 */
+  /* ---------- 精修：少描边、多填充；蓝色只留主按钮 / 选中小标记 / 链接 / 聚焦环 ---------- */
+  .ide{--fill1:color-mix(in srgb,var(--ui-fg) 5%,var(--ui-bg));--fill2:color-mix(in srgb,var(--ui-fg) 6%,transparent);--line:color-mix(in srgb,var(--ui-fg) 7%,transparent)}
+  .tbl,.tapx{border:0;background:var(--fill1)}
+  .hr,.rc{border-top-color:var(--line)}
+  .hr.th{background:transparent}
+  .hr.sel,.hr.sel:hover{background:color-mix(in srgb,var(--ui-fg) 9%,transparent)}
+  .hr .nm em{background:var(--ui-tag-bg);color:var(--ui-fg)}
+  .rc.new{background:transparent}
+  .rc .ri.zip,.zip .zi{background:var(--ui-tag-bg)}
+  .rc .ri.zip svg,.zip .zi svg{color:var(--ui-fg)}
+  .devices .dm-card,.devices .dm-card.accent{border:0;background:var(--fill1)}
+  .devices .dm-card-hd{border-bottom-color:var(--line)}
+  .devices .dm-sep{background:var(--line)}
+  .stat,.dg,.crash,.pick{border:0;background:var(--fill2)}
+  .crash.on{border:0;background:color-mix(in srgb,var(--ui-fg) 11%,transparent)}
+  .pick .dm-opt{border-color:transparent;background:var(--fill2)}
+  .pick .dm-opt.on{border-color:transparent;background:color-mix(in srgb,var(--ui-fg) 11%,transparent)}
+  .empty-s{border:0;background:var(--fill2)}
+  .zip{border-top-color:var(--line)}
+  .dm-callout.ok,.dm-callout.info{border-color:transparent}
+  .dm-callout.info{background:var(--fill2)}
+  .dm-callout.info svg{color:var(--ui-fg-info)}
+  .ide .dm-pill.info{background:var(--ui-tag-bg);color:var(--ui-fg)}
+  .dev-hist .r.run svg{color:var(--ui-fg-info)}
+  .msteps i.r{background:var(--ui-fg-info)}
+  .ubar i,.devices .dm-progress > i{background:color-mix(in srgb,var(--ui-fg) 45%,transparent)}
+  .tapx.live{border:0}
+  .tapx-hd{border-bottom-color:var(--line)}
+  .tapx-hd > svg,.syscard .sc-hd svg{color:var(--ui-fg-info)}
+  .deck{border:0;background:color-mix(in srgb,var(--ui-fg) 7%,var(--ui-editor-bg))}
+  .deck .tp{border:0;background:color-mix(in srgb,var(--ui-fg) 5%,transparent)}
+  .nfc{border:1px dashed var(--ui-fg-info);background:color-mix(in srgb,var(--ui-fg) 8%,transparent);color:var(--ui-fg)}
+  .nfc .rip{border-color:var(--ui-fg-info)}
+  @keyframes nfcwait{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--ui-fg) 25%,transparent)}60%{box-shadow:0 0 0 8px transparent}}
+  .syscard{border:0}
+  .syscard .sc-trust{background:var(--fill2)}
+  .dm-device.mini .tag,.dm-device.mini .tag.remote{background:color-mix(in srgb,var(--ui-fg) 78%,var(--ui-bg));color:var(--ui-bg)}
+
+  /* ===== Agent·连接：诊断卡在第几步、能修的自己修，重启 hdc 先列出受影响的 Agent 再问你 ===== */
+  .ag20{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+  .ag20:empty{display:none}
+  .ag-go{display:flex;align-items:center;gap:8px;padding:8px 8px 8px 12px;border-radius:10px;background:var(--ai-surface);font-size:var(--fs-sm);line-height:var(--lh-sm);color:var(--ui-fg)}
+  .ag-go .tx{flex:1;min-width:0}
+  .ag20 .trail > summary{list-style:none;cursor:pointer}
+  .ag20 .trail > summary::-webkit-details-marker{display:none}
+  .ag20 .trail > summary .chev{width:10px;height:10px;transition:transform .15s}
+  .ag20 .trail[open] > summary .chev{transform:rotate(90deg)}
+  .ag20 .trail .items{padding:2px 0 2px 14px}
+  .ag20 .ai-toolrow .what b{font-weight:500}
+  .ag20 code,.aff code{font-family:var(--font-code);font-size:11.5px;padding:0 4px;border-radius:4px;background:var(--ai-surface-2)}
+  .aff{display:flex;flex-direction:column;gap:2px;border-radius:8px;background:var(--ai-surface-2);padding:6px 8px;font-size:12px;line-height:18px}
+  .aff .af{display:grid;grid-template-columns:14px auto minmax(0,1fr);gap:4px 8px;align-items:center;padding:3px 0}
+  .aff .af svg{width:14px;height:14px;color:var(--ui-icon)}
+  .aff .af b{font-weight:500;white-space:nowrap}
+  .aff .af span{color:var(--ui-fg-info);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .aff .af em{grid-column:2/4;font-style:normal;color:var(--ui-fg)}
+  .aff .af em.warn{color:var(--ai-wait-ink)}
+  .aff .dim{color:var(--ui-fg-info);padding:3px 0 1px 22px}
+  .ag20 .flash{animation:qflash .9s ease-out 1}
+  @keyframes qflash{0%{box-shadow:inset 0 0 0 1px var(--ai-wait),0 0 0 3px var(--ai-wait-tint)}100%{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--ai-wait) 38%,transparent)}}
+  .manual{margin-top:8px;border-radius:8px}
+  .manual > summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:6px;height:26px;font-size:var(--fs-sm);color:var(--ui-fg-info)}
+  .manual > summary::-webkit-details-marker{display:none}
+  .manual > summary svg{width:12px;height:12px;transition:transform .15s}
+  .manual[open] > summary svg{transform:rotate(90deg)}
+  .manual .dm-callout{margin-top:4px}
+  .stt .l2 .agt{display:inline-flex;align-items:center;gap:5px;color:var(--ui-fg)}
+  .stt .l2 .agt .ai-spark{width:9px;height:9px}
 </style>
 </head>
 <body>
@@ -243,6 +429,7 @@
   <symbol id="i-battery" viewBox="0 0 16 16"><rect x="1.5" y="4.5" width="11.5" height="7" rx="1.5" stroke="currentColor" fill="none"/><path d="M14.5 6.5v3" stroke="currentColor" stroke-linecap="round"/><rect x="3.2" y="6.2" width="6" height="3.6" rx=".6" fill="currentColor"/></symbol>
   <symbol id="i-disk" viewBox="0 0 16 16"><ellipse cx="8" cy="4" rx="5.5" ry="2" stroke="currentColor" fill="none"/><path d="M2.5 4v8c0 1.1 2.5 2 5.5 2s5.5-.9 5.5-2V4M2.5 8c0 1.1 2.5 2 5.5 2s5.5-.9 5.5-2" stroke="currentColor" fill="none"/></symbol>
   <symbol id="i-zip" viewBox="0 0 16 16"><path d="M3 2.5h10a.5.5 0 0 1 .5.5v10a.5.5 0 0 1-.5.5H3a.5.5 0 0 1-.5-.5V3a.5.5 0 0 1 .5-.5z" stroke="currentColor" fill="none"/><path d="M8 2.5v1.5M8 5v1.5M8 7.5V9" stroke="currentColor" stroke-linecap="round"/><rect x="6.8" y="9.6" width="2.4" height="2.4" rx=".5" stroke="currentColor" fill="none"/></symbol>
+  <symbol id="i-tapnfc" viewBox="0 0 16 16"><path d="M1.5 13.5h8" stroke="currentColor" stroke-linecap="round"/><rect x="8.2" y="1.8" width="5.2" height="10" rx="1.2" transform="rotate(24 10.8 6.8)" stroke="currentColor" fill="none"/><path d="M4.2 10.6a2.4 2.4 0 0 1 2.2-2.4M2.2 10.6a4.4 4.4 0 0 1 4.2-4.4" stroke="currentColor" stroke-linecap="round" fill="none"/></symbol>
   <symbol id="i-replay" viewBox="0 0 16 16"><path d="M2.8 8A5.2 5.2 0 1 0 4.4 4.2" stroke="currentColor" stroke-linecap="round" fill="none"/><path d="M4.6 1.8v2.6H2" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M6.8 5.8l3.4 2.2-3.4 2.2z" fill="currentColor"/></symbol>
 </defs></svg>
 
@@ -274,10 +461,25 @@
           </div>
           <span class="grow"></span>
           <span class="hub-sum" id="hub-sum"></span>
+          <button class="btn" id="btn-tap" aria-pressed="false"><svg class="i"><use href="#i-tapnfc"/></svg>碰一碰连接</button>
           <button class="btn"><svg class="i"><use href="#i-add"/></svg>新建模拟器</button>
           <button class="btn"><svg class="i"><use href="#i-wifi"/></svg>无线配对</button>
         </div>
         <div class="hub-body">
+          <!-- 新增：碰一碰连接。手机碰电脑 → 电脑侧弹连接卡 → 五步一次走完 → 自动装包并拉起 entry -->
+          <div class="tapx wait" id="tapx" hidden>
+            <div class="tapx-hd"><svg><use href="#i-tapnfc"/></svg><b>碰一碰连接</b><span class="note" id="tap-note">手机解锁亮屏，碰一下触控板右侧的碰一碰区</span><span class="grow"></span>
+              <button class="abtn" id="tap-x" title="收起"><svg class="i"><use href="#i-closeS"/></svg></button></div>
+            <div class="tapx-bd">
+              <div class="desk">
+                <div class="deck"><div class="kb"></div><div class="tp"></div><span class="who">本机</span>
+                  <div class="nfc"><svg><use href="#i-tapnfc"/></svg>碰一碰<i class="rip"></i><i class="rip r2"></i></div></div>
+                <button class="ph" id="tap-phone" title="拿这台 Mate 70 Pro 碰一下电脑"><span class="scr" id="ph-scr"></span></button>
+                <span class="ph-cap">Mate 70 Pro · 1260×2844</span>
+              </div>
+              <div class="tap-r" id="tap-r"></div>
+            </div>
+          </div>
           <div class="tbl" id="hub-tbl">
             <div class="hr th"><span>形态</span><span>名称与系统版本</span><span>来源</span><span>状态</span><span>占用</span></div>
             <div id="hub-rows"></div>
@@ -305,46 +507,50 @@
           <!-- 选中 Mate 70 Pro：原有的五步连接 -->
           <div id="pane-mate">
           <div class="dm-card accent" id="dev-card">
-            <div class="dm-card-hd"><svg class="i"><use href="#i-phone"/></svg>HUAWEI Mate 70 Pro<span class="dm-pill muted"><svg><use href="#i-usb"/></svg>USB</span><span class="grow"></span><span class="dm-pill warn" id="dev-state">卡在第 2 步</span></div>
+            <div class="dm-card-hd"><svg class="i"><use href="#i-phone"/></svg>HUAWEI Mate 70 Pro<span class="dm-pill muted"><svg><use href="#i-usb"/></svg>USB</span><span class="grow"></span><span class="dm-pill warn" id="dev-state">卡在第 3 步</span></div>
             <div class="dm-card-bd">
               <div class="dm-steps-h" id="steps">
                 <div class="dm-step done" data-step="1"><span class="mk"><svg><use href="#i-checkS"/></svg></span><span>认出设备</span><span class="sub">0.3 s</span></div>
-                <div class="dm-step fail" data-step="2"><span class="mk">!</span><span>授权</span><span class="sub">等手机确认</span></div>
-                <div class="dm-step" data-step="3"><span class="mk">3</span><span>建立通道</span><span class="sub">hdc</span></div>
+                <div class="dm-step done" data-step="2"><span class="mk"><svg><use href="#i-checkS"/></svg></span><span>授权</span><span class="sub">已授权过</span></div>
+                <div class="dm-step fail" data-step="3"><span class="mk">!</span><span>建立通道</span><span class="sub">hdc 无响应</span></div>
                 <div class="dm-step" data-step="4"><span class="mk">4</span><span>版本匹配</span><span class="sub">SDK API 20</span></div>
                 <div class="dm-step" data-step="5"><span class="mk">5</span><span>就绪</span><span class="sub">&nbsp;</span></div>
               </div>
-              <div class="dm-progress" id="wait-bar"><i style="--v:34%"></i></div>
-              <div class="dm-row dm-small dm-muted"><span id="wait-text">等待手机上的授权 · 已等 <b id="wait-sec">12</b> 秒</span><span class="grow"></span><span id="wait-hint">通常 30 秒内完成</span></div>
+              <div class="dm-progress" id="wait-bar"><i style="--v:52%"></i></div>
+              <div class="dm-row dm-small dm-muted"><span id="wait-text">建立 hdc 通道 · 已等 <b id="wait-sec">12</b> 秒</span><span class="grow"></span><span id="wait-hint">通常 1 秒内完成</span></div>
 
-              <div class="dm-callout err" id="fail-box">
-                <svg><use href="#i-hand"/></svg>
-                <div>
-                  <b>手机上弹出了「允许 USB 调试」的确认框，还没有点允许。</b><br>
-                  在手机上点「允许」，勾选「一律允许使用这台计算机进行调试」，下次插上就不用再点。
-                  <div class="acts">
-                    <button class="btn primary" id="btn-recheck"><svg class="i" style="width:12px;height:12px;color:#fff"><use href="#i-refresh"/></svg>已在手机上点了允许，重新检测</button>
-                    <button class="btn" id="btn-wifi"><svg class="i" style="width:12px;height:12px"><use href="#i-wifi"/></svg>改用 Wi-Fi 配对</button>
+              <div class="ag20" id="ag20"></div>
+
+              <details class="manual" id="manual"><summary><svg class="i"><use href="#i-chevR"/></svg>接手 · 自己排查</summary>
+                <div class="dm-callout err" id="fail-box">
+                  <svg><use href="#i-err"/></svg>
+                  <div>
+                    <b>hdc 通道握手无响应。</b><br>
+                    终端里 <span class="dm-mono">hdc list targets</span> 看状态；8710 上若是旧版 hdc server，执行 <span class="dm-mono">hdc kill -r</span> 重启——会断开这台电脑上所有设备的调试会话。
+                    <div class="acts">
+                      <button class="btn" id="btn-recheck"><svg class="i" style="width:12px;height:12px"><use href="#i-refresh"/></svg>重启 hdc server</button>
+                      <button class="btn" id="btn-wifi"><svg class="i" style="width:12px;height:12px"><use href="#i-wifi"/></svg>改用 Wi-Fi 配对</button>
+                    </div>
                   </div>
                 </div>
-              </div>
-              <div class="dm-callout info" id="wifi-box" hidden>
-                <svg><use href="#i-wifi"/></svg>
-                <div><b>Wi-Fi 配对</b>：手机与电脑连同一个 Wi-Fi，在手机「开发者选项 → 无线调试」里点「使用配对码配对」，把 6 位码填到这里。
-                  <div class="acts"><span class="ctx dm-mono" style="height:26px;padding:0 10px;letter-spacing:.2em">— — — — — —</span><button class="btn">配对</button></div></div>
-              </div>
+                <div class="dm-callout info" id="wifi-box" hidden>
+                  <svg><use href="#i-wifi"/></svg>
+                  <div><b>Wi-Fi 配对</b>：手机与电脑连同一个 Wi-Fi，在手机「开发者选项 → 无线调试」里点「使用配对码配对」，把 6 位码填到这里。
+                    <div class="acts"><span class="ctx dm-mono" style="height:26px;padding:0 10px;letter-spacing:.2em">— — — — — —</span><button class="btn">配对</button></div></div>
+                </div>
+              </details>
               <div class="dm-callout ok" id="ok-box" hidden>
                 <svg><use href="#i-check"/></svg>
                 <div><b>已就绪。</b>HUAWEI Mate 70 Pro · HarmonyOS 6.0 · API 20，与工程 SDK 一致。可以运行 <span class="dm-mono">entry</span> 了。
-                  <div class="acts"><button class="btn primary"><svg class="i" style="width:12px;height:12px;color:#fff"><use href="#i-run"/></svg>Run 'entry'</button><button class="btn">加进 Previewer</button></div></div>
+                  <div class="acts"><button class="btn primary" id="btn-run"><svg class="i" style="width:12px;height:12px;color:#fff"><use href="#i-run"/></svg>Run 'entry'</button><button class="btn">加进 Previewer</button></div></div>
               </div>
 
               <div class="dm-sep"></div>
               <div class="dm-small dm-h">这次连接</div>
               <div class="dev-hist" id="hist">
                 <div class="r ok"><span class="t">00.0 s</span><svg><use href="#i-checkS"/></svg>USB 上认出设备 · 序列号 7WJ…2Q</div>
-                <div class="r ok"><span class="t">00.3 s</span><svg><use href="#i-checkS"/></svg>hdc 已识别为 HarmonyOS 设备</div>
-                <div class="r err"><span class="t">00.4 s</span><svg><use href="#i-err"/></svg>授权请求已发到手机，等待确认</div>
+                <div class="r ok"><span class="t">00.3 s</span><svg><use href="#i-checkS"/></svg>这台电脑已授权过（一律允许）</div>
+                <div class="r err"><span class="t">00.4 s</span><svg><use href="#i-err"/></svg>hdc 通道握手无响应 · 重试中</div>
               </div>
             </div>
           </div>
@@ -365,7 +571,7 @@
   document.getElementById('tree-slot').innerHTML=DemoFrame.tree({sel:'Index.ets'});
   document.getElementById('tabs').insertAdjacentHTML('afterbegin',DemoFrame.tabs([{file:'设备中心',label:'设备中心',icon:'#i-tw-device',on:true},{file:'Index.ets'}]));
   document.getElementById('code').innerHTML=DemoFrame.code('Index.ets',{cur:4});
-  DemoFrame.init({device:'Mate 70 Pro · 等待授权',deviceIcon:'#i-phone'});
+  DemoFrame.init({device:'Mate 70 Pro · 连接中',deviceIcon:'#i-phone'});
 
   /* ================= 数据 ================= */
   var SRC={
@@ -373,7 +579,8 @@
     cloud:{t:'云端模拟器',i:'#i-cloud',g:'emu'},
     usb:{t:'USB 真机',i:'#i-usb',g:'real'},
     wifi:{t:'无线真机',i:'#i-wifi',g:'real'},
-    remote:{t:'远端真机',i:'#i-stream',g:'remote'}
+    remote:{t:'远端真机',i:'#i-stream',g:'remote'},
+    tap:{t:'碰一碰',i:'#i-tapnfc',g:'real'}
   };
   var STEP_N=['认出设备','授权','建立通道','版本匹配','就绪'];
   /* 设备上的崩溃 / 冻屏记录（faultlogger）与录下来的操作 */
@@ -396,7 +603,7 @@
   };
   var DEVS=[
     {id:'mate',name:'HUAWEI Mate 70 Pro',model:'Mate 70 Pro',os:'HarmonyOS 6.0 · API 20',form:'#i-phone',src:'usb',where:'序列号 7WJ…2Q',
-      st:'conn',step:2,tone:'warn',stTxt:'授权 · 已等 <span class="wsec">12</span> 秒',use:{k:'local',gb:0.1},
+      st:'conn',step:3,tone:'warn',stTxt:'建立通道 · 已等 <span class="wsec">12</span> 秒',use:{k:'local',gb:0.1},
       info:{bat:86,batS:'充电中 · 35.8 ℃',sto:[212,512],app:'1.2.0 (1000012)',appS:'比当前构建旧 1 次 · 昨天 21:12 装',appWarn:1,sys:'HarmonyOS 6.0.0.120',sysS:'API 20 · 7WJ…2Q',shot:'1260×2844',hilog:'4,812'},
       crashes:['c1','c2','c3']},
     {id:'pad',name:'MatePad Pro 13.2',model:'MatePad Pro 13.2',os:'HarmonyOS 5.1 · API 18',form:'#i-tablet',src:'wifi',where:'192.168.3.41:5555',
@@ -408,14 +615,14 @@
           acts:[{p:1,d:'pad-lower',i:'#i-wrench',t:'降到 5.1.0(18) 并重新核对'},{d:'pad-cloud',i:'#i-cloud',t:'改用云端 API 20 平板'}]},
         hist:[['ok','00.0 s','Wi-Fi 上发现设备 · 192.168.3.41'],['ok','00.6 s','这台电脑已授权过，跳过确认'],['ok','01.4 s','hdc 通道已建立 · 端口 5555'],['err','02.1 s','设备 API 18 低于工程最低 API 20']]}},
     {id:'emu',name:'Mate 70 Pro 模拟器',model:'Mate 70 Pro',os:'HarmonyOS 6.0 · API 20 · x86_64',form:'#i-phone',src:'local',where:'本机 Hypervisor',
-      st:'ready',stTxt:'运行 entry · 1.2.0',use:{k:'local',gb:6.2},
+      st:'ready',stTxt:'运行 entry · 1.2.0',agent:'Agent·回归 · UI 回归 34/120',use:{k:'local',gb:6.2},
       info:{bat:100,batS:'模拟值 · 可在扩展控制里调',sto:[14,32],app:'1.2.0 (1000013)',appS:'与当前构建一致',sys:'HarmonyOS 6.0.0.120',sysS:'API 20 · x86_64',shot:'1260×2844',hilog:'2,306'},
       crashes:['c4']},
     {id:'x6',name:'Mate X6',model:'Mate X6',os:'HarmonyOS 6.0 · API 20 · 展开态',form:'#i-fold',src:'cloud',where:'华东 · 28 ms',
       st:'ready',stTxt:'空闲 · 15 分钟后释放',use:{k:'cloud',min:42},
       info:{bat:80,batS:'模拟值',sto:[9,32],app:'1.2.0 (1000013)',appS:'与当前构建一致',sys:'HarmonyOS 6.0.0.120',sysS:'API 20 · 展开态',shot:'2440×2240',hilog:'1,127'},crashes:[]},
     {id:'pura',name:'Pura 70 Pro',model:'Pura 70 Pro',os:'HarmonyOS 6.0 · API 20',form:'#i-phone',src:'remote',where:'南京实验室 · B-12',
-      st:'ready',stTxt:'串流中 · 31 ms',use:{k:'cloud',min:18},
+      st:'ready',stTxt:'串流中 · 31 ms',agent:'Agent·性能 · 抓 trace 还剩 40 秒',use:{k:'cloud',min:18},
       info:{bat:64,batS:'实验室常供电 · 31.2 ℃',sto:[203,256],app:'1.1.9 (1000009)',appS:'比当前构建旧 4 次 · 09-23 装',appWarn:1,sys:'HarmonyOS 6.0.0.118',sysS:'API 20 · 机位 B-12',shot:'1260×2844',hilog:'6,090'},
       crashes:['c5']},
     {id:'watch',name:'HUAWEI WATCH 5',model:'WATCH 5',os:'HarmonyOS 6.0 · API 20',form:'#i-watch',src:'wifi',where:'192.168.3.27:5555',
@@ -454,7 +661,7 @@
     var l1=pillFor(d);
     if(d.st==='conn')l1+='<span class="msteps">'+miniSteps(d).map(function(c){return '<i class="'+c+'"></i>'}).join('')+'</span>';
     if(d.st==='boot'||d.st==='replay')l1+='<span class="ubar" style="width:54px"><i style="--v:'+progPct(d)+'%"></i></span>';
-    return '<span class="l1">'+l1+'</span><span class="l2">'+d.stTxt+'</span>';
+    return '<span class="l1">'+l1+'</span><span class="l2">'+(d.agent?'<span class="agt"><span class="ai-spark"></span>'+d.agent+'</span>':d.stTxt)+'</span>';
   }
   function useHTML(d){
     var u=d.use;
@@ -521,7 +728,7 @@
     h+='<div class="dm-row dm-small dm-muted"><span>'+c.text+'</span><span class="grow"></span><span>'+(c.hint||'')+'</span></div>';
     if(c.fail)h+='<div class="dm-callout err"><svg><use href="'+c.fail.icon+'"/></svg><div><b>'+c.fail.t+'</b><br>'+c.fail.b+'<div class="acts">'+c.fail.acts.map(btn).join('')+'</div></div></div>';
     if(c.pair)h+='<div class="dm-callout info"><svg><use href="#i-link"/></svg><div><b>配对码配对</b>：在手表「开发者选项 → 无线调试 → 使用配对码配对」里看 6 位码，填到这里。<div class="acts"><span class="ctx dm-mono" style="height:26px;padding:0 10px;letter-spacing:.2em">— — — — — —</span><button class="btn">配对</button></div></div></div>';
-    if(c.ok)h+='<div class="dm-callout ok"><svg><use href="#i-check"/></svg><div><b>已就绪。</b>'+c.ok+'<div class="acts"><button class="btn primary"><svg class="i"><use href="#i-run"/></svg>Run \'entry\'</button></div></div></div>';
+    if(c.ok)h+='<div class="dm-callout ok"><svg><use href="#i-check"/></svg><div><b>已就绪。</b>'+c.ok+'<div class="acts">'+(c.okActs?c.okActs.map(btn).join(''):'<button class="btn primary"><svg class="i"><use href="#i-run"/></svg>Run \'entry\'</button>')+'</div></div></div>';
     h+='<div class="dm-sep"></div><div class="dm-small dm-h">这次连接</div><div class="dev-hist">'+c.hist.map(histHTML).join('')+'</div></div></div>';
     if(d.st==='ready')h+=readyHTML(d,{title:'设备状态'});
     return h;
@@ -752,6 +959,122 @@
       d.st='ready';d.running=0;d.stTxt='空闲';refresh(d.id)},2500);
   }
 
+
+  /* ================= 新增：碰一碰连接 ================= */
+  /* 手机碰电脑 → 电脑侧弹连接卡（设备名、型号、是否信任此电脑）→ 五步一次走完 → 自动装包并拉起 entry */
+  var TP={ph:'idle',trust:true,k:0,log:[],t0:0,dev:null,timers:[]};
+  var TAP_STEPS=[['碰一碰','0.1 s'],['同账号','0.3 s'],['Wi-Fi 直连','0.8 s'],['API 20','1.1 s'],['','1.4 s']];
+  function phHome(){
+    var h='<span class="ps-st"><span>10:32</span><span>5G 78</span></span><span class="ps-hole"></span><span class="ps-home">';
+    for(var i=0;i<12;i++)h+='<i></i>';
+    h+='</span><span class="ps-fill"></span><span class="ps-dock"><i></i><i></i><i></i><i></i></span><span class="ps-bar"></span>';
+    return h;
+  }
+  function phApp(){
+    var h='<span class="ps-st"><span>10:32</span><span>5G 78</span></span><span class="ps-hole"></span><span class="ap-hd">商品</span><span class="ap-sr">搜索商品</span>';
+    for(var i=0;i<6;i++)h+='<span class="ap-row"><i></i><span></span></span>';
+    return h+'<span class="ps-fill"></span><span class="ap-nav"><b>首页</b><span>发现</span><span>购物车</span><span>我的</span></span><span class="ps-bar"></span>';
+  }
+  function phScreen(){
+    var scr=$('#ph-scr');if(!scr)return;
+    var app=TP.ph==='done'||(TP.ph==='inst'&&TP.launched);
+    scr.className='scr'+(app?' app':'')+(app&&TP.justLaunched?' launch':'');TP.justLaunched=0;
+    var h=app?phApp():phHome();
+    if(TP.ph==='card')h+='<span class="ps-cap"><b>碰一碰</b><span>请在电脑上确认</span></span>';
+    if(TP.ph==='conn'||(TP.ph==='inst'&&!TP.launched))h+='<span class="ps-cap"><b>已连接这台电脑</b><span>'+(TP.ph==='conn'?'正在建立调试通道':'正在安装 entry · 38.2 MB')+'</span><span class="pb"><i style="--v:'+(TP.ph==='conn'?TP.k*16:80+(TP.inst||0)*8)+'%"></i></span></span>';
+    scr.innerHTML=h;
+  }
+  function tapLine(l){
+    var ic=l[0]==='run'?'<span class="spin"></span>':'<svg><use href="#i-checkS"/></svg>';
+    return '<div class="r '+l[0]+'"><span class="t">'+l[1]+'</span>'+ic+'<span>'+l[2]+'</span>'+(l[3]?'<span class="cmd">'+l[3]+'</span>':'')+'</div>';
+  }
+  function renderTap(){
+    var box=$('#tapx'),r=$('#tap-r');if(!box||!r)return;
+    box.classList.toggle('wait',TP.ph==='idle');
+    box.classList.toggle('live',TP.ph!=='idle');
+    var ph=$('#tap-phone');
+    ph.className='ph'+(TP.ph==='card'?' back':'')+(TP.ph==='conn'||TP.ph==='inst'?' back':'')+(TP.ph==='done'?' back done':'')+(TP.pose?' '+TP.pose:'');
+    ph.title=TP.ph==='idle'?'拿这台 Mate 70 Pro 碰一下电脑':(TP.ph==='done'?'已连接 · 手机上正在运行 entry':'');
+    phScreen();
+    var note={idle:'手机解锁亮屏，碰一下触控板右侧的碰一碰区',card:'碰到了 · 在电脑上确认这台手机',conn:'连接中 · 不用插线，手机上也不用点允许',inst:'已就绪 · 自动装包并在手机上拉起 entry',done:'连上并拉起 entry · 共 '+(TP.total||'3.2')+' 秒'}[TP.ph];
+    $('#tap-note').textContent=note;
+    var h='';
+    if(TP.ph==='idle'){
+      h='<div class="tap-wait"><div class="l0"><i class="dm-dot ok"></i>等待碰一碰…</div>'
+        +'<div class="pre"><span><svg><use href="#i-checkS"/></svg>本机已登录华为账号 <b>小王 · 138****6021</b></span>'
+        +'<span><svg><use href="#i-checkS"/></svg>工程 <b>MyApplication</b> · 运行目标 <b>entry</b> · SDK API 20</span>'
+        +'<span><svg><use href="#i-checkS"/></svg>手机需开开发者模式，与本机同一华为账号</span></div>'
+        +'</div>';
+    }else if(TP.ph==='card'){
+      h='<div class="syscard" role="dialog" aria-label="碰一碰连接">'
+        +'<div class="sc-hd"><svg><use href="#i-tapnfc"/></svg>碰一碰</div>'
+        +'<div class="sc-dev"><span class="sc-ph"><i></i></span><span class="tx"><b>小王的 Mate 70 Pro</b><span>HUAWEI Mate 70 Pro · PLR-AL00</span><span>HarmonyOS 6.0.0.120 · API 20</span></span></div>'
+        +'<div class="sc-chk"><span><svg><use href="#i-checkS"/></svg>与本机同一华为账号</span><span><svg><use href="#i-checkS"/></svg>开发者模式已开</span></div>'
+        +'<div class="sc-trust" data-t="trust" role="checkbox" aria-checked="'+TP.trust+'" tabindex="0"><span class="cbx'+(TP.trust?' on':'')+'"><svg viewBox="0 0 16 16"><path d="M3.5 8.5l3 3 6-7" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></span>'
+        +'<span class="tx"><b>信任此电脑</b><span>'+(TP.trust?'以后这台手机碰一下直接连，不再弹这张卡':'只连这一次，下次碰一碰还会询问')+'</span></span></div>'
+        +'<div class="sc-act"><button class="btn" data-t="cancel">取消</button><button class="btn primary" data-t="ok" id="btn-tap-ok">连接并运行 entry</button></div></div>';
+    }else{
+      var pill=TP.ph==='conn'?'<span class="dm-pill info">连接中 · 第 '+Math.min(5,TP.k+1)+' 步</span>':(TP.ph==='inst'?'<span class="dm-pill info">已就绪 · 装包中</span>':'<span class="dm-pill ok">已拉起 entry</span>');
+      h='<div class="tap-run"><div class="tr-hd"><svg class="i" style="width:14px;height:14px"><use href="#i-phone"/></svg><b>小王的 Mate 70 Pro</b><span class="dm-pill muted"><svg><use href="#i-tapnfc"/></svg>碰一碰</span><span class="grow"></span>'+pill+'</div>';
+      h+='<div class="dm-steps-h" id="tap-steps">'+STEP_N.map(function(n,i){
+        var st=i<TP.k?'done':(i===TP.k&&TP.ph==='conn'?'run':'');
+        return '<div class="dm-step '+st+'"><span class="mk">'+(st==='done'?'<svg><use href="#i-checkS"/></svg>':String(i+1))+'</span><span>'+n+'</span><span class="sub">'+(st==='done'?TAP_STEPS[i][1]:'&nbsp;')+'</span></div>';
+      }).join('')+'</div>';
+      h+='<div class="dev-hist">'+TP.log.map(tapLine).join('')+'</div></div>';
+    }
+    r.innerHTML=h;
+  }
+  function tapLater(ms,fn){TP.timers.push(setTimeout(function(){fn();renderTap()},ms))}
+  function tapTouch(){
+    if(TP.ph!=='idle')return;
+    TP.pose='near';renderTap();
+    tapLater(260,function(){TP.pose='touch';$('#tapx').classList.add('touch')});
+    tapLater(900,function(){TP.pose='';TP.ph='card';$('#tapx').classList.remove('touch')});
+  }
+  function tapCancel(){TP.timers.forEach(clearTimeout);TP.timers=[];TP.ph='idle';TP.pose='';renderTap()}
+  function tapConnect(){
+    TP.ph='conn';TP.k=0;TP.log=[];
+    var d={id:'tap',name:'小王的 Mate 70 Pro',model:'Mate 70 Pro',os:'HUAWEI Mate 70 Pro · HarmonyOS 6.0 · API 20',form:'#i-phone',src:'tap',where:TP.trust?'Wi-Fi 直连 · 已信任':'Wi-Fi 直连 · 仅本次',
+      st:'conn',step:1,running:1,stTxt:'认出设备 · 碰一碰',use:{k:'local',gb:0.1},isNew:1,tag:'刚碰',
+      info:{bat:78,batS:'未充电 · 32.4 ℃',sto:[186,512],app:'未安装',appS:'碰一碰后自动安装',sys:'HarmonyOS 6.0.0.120',sysS:'API 20 · Wi-Fi 直连',shot:'1260×2844',hilog:'312'},crashes:[],
+      conn:{steps:[['run',''],['',''],['',''],['',''],['','']],bar:4,indet:1,text:'碰一碰 · 正在连接',hint:'',hist:[]}};
+    TP.dev=d;DEVS.splice(1,0,d);
+    if(filt!=='all'&&filt!=='real')filt='all';
+    select('tap');renderTap();
+    var hb=$('.hub-body');if(hb)hb.scrollTop=0;
+    var c=d.conn,HL=[['ok','00.1 s','碰一碰 · 认出 HUAWEI Mate 70 Pro（PLR-AL00）'],['ok','00.3 s','同一华为账号'+(TP.trust?' · 已信任此电脑':'')+' · 手机上免确认'],['ok','00.8 s','Wi-Fi 直连已建立 · hdc 通道 · 端口 8710'],['ok','01.1 s','设备 API 20 与工程 SDK 一致'],['ok','01.4 s','就绪 · 开始装包']];
+    [0,1,2,3,4].forEach(function(i){
+      tapLater(280*(i+1),function(){
+        TP.k=i+1;c.steps[i]=['done',TAP_STEPS[i][1]];if(i<4)c.steps[i+1]=['run',''];
+        c.bar=Math.round((i+1)/5*100);c.hist.push(HL[i]);d.step=Math.min(5,i+2);
+        d.stTxt=i<4?STEP_N[i+1]+' · 碰一碰':'就绪 · 用时 1.4 秒';c.text=i<4?'碰一碰 · 第 '+(i+2)+' 步':'就绪，用时 1.4 秒';
+        if(i===4){c.indet=0;d.st='ready';d.running=0;d.stTxt='装包中 · entry 1.2.0';TP.ph='inst';TP.inst=0;
+          TP.log=[['ok','01.4 s','hvigor 已是最新构建','entry 1.2.0 (1000013) · 不用重编'],['run','01.4 s','装到手机','hdc install entry-default-signed.hap · 38.2 MB']];}
+        refresh('tap');
+      });
+    });
+    tapLater(1400+1100,function(){TP.inst=1;TP.log[1]=['ok','02.5 s','已装到手机','hdc install · 38.2 MB · 1.1 s'];TP.log.push(['run','02.5 s','拉起 entry','aa start -a EntryAbility -b com.example.myapplication']);c.hist.push(['ok','02.5 s','entry 已安装 · 38.2 MB · 1.1 s']);refresh('tap')});
+    tapLater(1400+1100+700,function(){TP.launched=1;TP.justLaunched=1;TP.total='3.2';TP.ph='done';
+      TP.log[2]=['ok','03.2 s','已拉起 entry','aa start EntryAbility · 首帧 0.7 s'];c.hist.push(['ok','03.2 s','手机上已拉起 entry · 首帧 0.7 s']);
+      c.ok='小王的 Mate 70 Pro · HarmonyOS 6.0 · API 20，碰一碰 1.4 秒连上，entry 已装好并在手机上拉起。';
+      c.okActs=[{d:'noop',i:'#i-debug',t:'附加调试器'},{d:'noop',i:'#i-stream',t:'在电脑上镜像这台'}];
+      d.info.app='1.2.0 (1000013)';d.info.appS='刚由碰一碰装上 · 与当前构建一致';d.stTxt='运行 entry · 1.2.0 · 刚拉起';d.tag='';
+      var hd=$('#hdr-device span');if(hd)hd.textContent='小王的 Mate 70 Pro';
+      refresh('tap');
+    });
+  }
+  $('#tapx').addEventListener('click',function(e){
+    if(e.target.closest('#tap-x')){$('#tapx').hidden=true;$('#btn-tap').setAttribute('aria-pressed','false');return}
+    if(e.target.closest('#tap-phone')){tapTouch();return}
+    var t=e.target.closest('[data-t]');if(!t)return;
+    if(t.dataset.t==='trust'){TP.trust=!TP.trust;renderTap();return}
+    if(t.dataset.t==='cancel'){tapCancel();return}
+    if(t.dataset.t==='ok'){tapConnect();return}
+  });
+  $('#tapx').addEventListener('keydown',function(e){var t=e.target.closest('[data-t="trust"]');if(t&&(e.key===' '||e.key==='Enter')){e.preventDefault();TP.trust=!TP.trust;renderTap();var n=$('[data-t="trust"]');if(n)n.focus()}});
+  $('#btn-tap').addEventListener('click',function(){var x=$('#tapx');x.hidden=!x.hidden;this.setAttribute('aria-pressed',String(!x.hidden));if(!x.hidden)x.scrollIntoView({block:'nearest',behavior:'smooth'})});
+  renderTap();
+
   /* ---- 跳到代码 ---- */
   function openCode(r){
     var c=CR[r.rep.cid],tab=$('.tab[data-file="ListPage.ets"]');
@@ -798,48 +1121,142 @@
   });
   $('#pane-devices').addEventListener('click',function(e){var b=e.target.closest('[data-do]');if(b&&!b.disabled)act(b)});
 
-  /* ================= 原有：Mate 70 Pro 的五步连接 ================= */
-  var mate=byId('mate');
+  /* ================= Mate 70 Pro：卡在第 3 步 · Agent·连接 诊断并自动修 ================= */
+  var mate=byId('mate'),emu=byId('emu'),pura=byId('pura');
   /* 等待秒数会走：等待有进度，不是一个转圈 */
-  var sec=12,tick=setInterval(function(){sec++;var s=$('#wait-sec');if(s)s.textContent=sec;var bar=$('#wait-bar i');if(bar)bar.style.setProperty('--v',Math.min(95,34+sec*1.4)+'%');
-    mate.stTxt='授权 · 已等 <span class="wsec">'+sec+'</span> 秒';var w=$('.hr[data-id="mate"] .wsec');if(w)w.textContent=sec},1000);
+  var sec=12,tick=setInterval(function(){sec++;var s=$('#wait-sec');if(s)s.textContent=sec;var bar=$('#wait-bar i');if(bar)bar.style.setProperty('--v',Math.min(92,52+sec*1.2)+'%');
+    mate.stTxt='建立通道 · 已等 <span class="wsec">'+sec+'</span> 秒';var w=$('.hr[data-id="mate"] .wsec');if(w)w.textContent=sec;
+    if(AG.st==='idle'){var t=$('#ag-sec');if(t)t.textContent=sec}},1000);
 
   function step(n,cls,sub){var el=$('.dm-step[data-step="'+n+'"]');el.className='dm-step '+cls;
     var mk=$('.mk',el);mk.innerHTML=cls==='done'?'<svg><use href="#i-checkS"/></svg>':(cls==='fail'?'!':String(n));
     if(sub!=null)$('.sub',el).innerHTML=sub||'&nbsp;'}
   function hist(cls,t,txt){$('#hist').insertAdjacentHTML('beforeend','<div class="r '+cls+'"><span class="t">'+t+'</span><svg><use href="#'+(cls==='ok'?'i-checkS':(cls==='err'?'i-err':'i-clock'))+'"/></svg>'+txt+'</div>')}
+  function ready(t){
+    step(3,'done','hdc 3.2.0');step(4,'done','HarmonyOS 6.0');step(5,'done','');
+    var wb=$('#wait-bar');wb.classList.remove('indet');$('#wait-bar i').style.setProperty('--v','100%');
+    $('#wait-text').textContent='就绪，用时 '+t+' 秒';$('#wait-hint').textContent='';
+    $('#dev-state').className='dm-pill ok';$('#dev-state').textContent='就绪';
+    $('#ok-box').hidden=false;$('#manual').hidden=true;
+    hist('ok',t+' s','设备 API 20 与工程 SDK 一致 · 就绪');
+    var d=$('#hdr-device span');if(d)d.textContent='HUAWEI Mate 70 Pro';
+    mate.st='ready';mate.running=0;mate.stTxt='运行目标 · 用时 '+t+' s';refresh('mate');
+  }
 
-  $('#btn-wifi').addEventListener('click',function(){$('#wifi-box').hidden=!$('#wifi-box').hidden});
-  $('#btn-recheck').addEventListener('click',function(){
-    clearInterval(tick);
-    $('#fail-box').hidden=true;$('#wifi-box').hidden=true;
-    step(2,'done','已允许');step(3,'run','正在建立…');
+  var AG={st:'idle',k:0,how:null};
+  var DIAG=[
+    {t:'<code>hdc list targets</code> → 7WJ…2Q <b>Offline</b> · 停在第 3 步',e:'0.2 s',ms:700,cap:'查卡在哪步'},
+    {t:'重新枚举 USB · 仍是 Offline',e:'1.1 s',ms:800,cap:'自己试着修'},
+    {t:'换端口：8711 起临时通道 · 设备被 8710 上的 server 占着',e:'1.4 s',ms:900,cap:'自己试着修'},
+    {t:'查 8710：hdc server 3.1.0（远端串流工具拉起的）· SDK 自带 3.2.0',e:'0.3 s',ms:700,cap:'找根因'}
+  ];
+  var FIX={
+    wait:[
+      {cap:'等 Agent·性能 抓完 trace',t:'等 Agent·性能 抓完 Pura 70 Pro 的 trace',e:'40 s',ms:1200,fn:function(){pura.agent='Agent·性能 · trace 已存 · 空闲';refresh()}},
+      {cap:'通知 Agent·回归 暂停',t:'通知 Agent·回归 在第 34 条暂停',e:'0.1 s',ms:500,fn:function(){emu.agent='Agent·回归 · 暂停在 34/120';refresh()}},
+      {cap:'重启 hdc',t:'<code>hdc kill -r</code> · 换成 SDK 自带的 3.2.0',e:'1.6 s',ms:900,fn:restart},
+      {cap:'连回设备',t:'连回模拟器、Pura 70 Pro · Agent·回归 从第 34 条接着跑',e:'1.2 s',ms:900,fn:function(){back(false)}},
+      {cap:'核对 Mate 70 Pro',t:'Mate 70 Pro 建立通道 · 版本匹配 · 就绪',e:'0.9 s',ms:800,fn:function(){ready('18.2')}}
+    ],
+    now:[
+      {cap:'重启 hdc',t:'<code>hdc kill -r</code> · 换成 SDK 自带的 3.2.0',e:'1.6 s',ms:900,fn:restart},
+      {cap:'连回设备',t:'连回两台 · Agent·性能 的 trace 断在 12.4 s，它重抓一次',e:'1.2 s',ms:900,fn:function(){back(true)}},
+      {cap:'核对 Mate 70 Pro',t:'Mate 70 Pro 建立通道 · 版本匹配 · 就绪',e:'0.9 s',ms:800,fn:function(){ready('15.6')}}
+    ]
+  };
+  function restart(){
+    step(3,'run','重启 hdc…');$('#wait-bar').classList.add('indet');$('#wait-text').textContent='重启 hdc server，换成 3.2.0…';$('#wait-hint').textContent='';
     $('#dev-state').className='dm-pill info';$('#dev-state').textContent='第 3 步';
-    $('#wait-bar').classList.add('indet');$('#wait-text').textContent='正在建立 hdc 通道…';$('#wait-hint').textContent='';
-    hist('ok','13.2 s','手机已授权（一律允许）');
-    mate.running=1;mate.step=3;mate.stTxt='建立通道 · hdc';renderHub();
-    setTimeout(function(){
-      step(3,'done','hdc 通道');step(4,'run','核对中…');$('#dev-state').textContent='第 4 步';$('#wait-text').textContent='核对设备系统版本与工程 SDK…';
-      hist('ok','13.9 s','hdc 通道已建立 · 端口 7035');
-      mate.step=4;mate.stTxt='版本匹配 · 核对中';renderHub();
-    },1100);
-    setTimeout(function(){
-      step(4,'done','HarmonyOS 6.0');step(5,'done','');
-      $('#wait-bar').classList.remove('indet');$('#wait-bar i').style.setProperty('--v','100%');
-      $('#wait-text').textContent='就绪，用时 14.6 秒';
-      $('#dev-state').className='dm-pill ok';$('#dev-state').textContent='就绪';
-      $('#ok-box').hidden=false;
-      hist('ok','14.6 s','设备 API 20 与工程 SDK 一致 · 就绪');
-      var d=$('#hdr-device span');if(d)d.textContent='HUAWEI Mate 70 Pro';
-      mate.st='ready';mate.running=0;mate.stTxt='运行目标 · 用时 14.6 s';refresh('mate');
-    },2200);
+    [emu,pura].forEach(function(d){d.agent=null;d.stTxt='hdc 重启中 · 重连…'});
+    hist('ok','14.1 s','hdc server 3.1.0 → 3.2.0 · 端口 8710');mate.running=1;mate.stTxt='建立通道 · hdc 重启中';refresh();
+  }
+  function back(cut){
+    emu.stTxt='运行 entry · 1.2.0';emu.agent='Agent·回归 · UI 回归 35/120';
+    pura.stTxt='串流中 · 31 ms';pura.agent=cut?'Agent·性能 · 重抓 trace · 还要 1 分钟':'Agent·性能 · 空闲';
+    step(3,'done','hdc 3.2.0');step(4,'run','核对中…');$('#wait-text').textContent='核对设备系统版本与工程 SDK…';
+    hist(cut?'err':'ok','15.2 s',cut?'连回模拟器、Pura 70 Pro · Agent·性能 的 trace 被打断':'连回模拟器、Pura 70 Pro · 两个 Agent 的会话都在');
+    mate.step=4;mate.stTxt='版本匹配 · 核对中';refresh();
+  }
+  function row(r,live){return '<div class="ai-toolrow">'+(live?'<span class="ai-ring"></span>':'<svg class="ai-ico"><use href="#ai-tool"/></svg>')+'<span class="what">'+r.t+'</span><span class="end">'+(live?'':'<span class="ok">✓</span>'+r.e)+'</span></div>'}
+  function trail(list,n,live,title,end){
+    var rows=list.slice(0,n).map(function(r){return row(r)}).join('')+(live&&n<list.length?row(list[n],true):'');
+    return '<details class="trail"'+(live?' open':'')+'><summary class="ai-toolrow"><svg class="ai-ico"><use href="#ai-tool"/></svg><span class="what">'+title+'</span><span class="end">'+end+'<svg class="i chev"><use href="#i-chevR"/></svg></span></summary><div class="items">'+rows+'</div></details>';
+  }
+  function renderAG(){
+    var box=$('#ag20'),h='';
+    if(AG.st==='manual'){box.innerHTML='';capsule();return}
+    if(AG.st==='idle'){
+      h='<div class="ag-go"><span class="ai-spark"></span><span class="tx">卡了 <b id="ag-sec">'+sec+'</b> 秒。交给 Agent·连接：查卡在哪步，能修的自己修</span><button type="button" class="ai-btn ai-btn--primary" id="btn-ag-go" data-ag="go">交给 Agent</button></div>';
+      box.innerHTML=h;capsule();return;
+    }
+    var dl=AG.st==='diag';
+    h+=trail(DIAG,dl?AG.k:DIAG.length,dl,dl?'诊断中 · 第 '+Math.min(AG.k+1,DIAG.length)+' 步，共 '+DIAG.length+' 步':'查到卡在第 3 步 · 能修的两招试过了','4 步 · 3.0 s');
+    if(!dl){
+      var done=AG.st==='done';
+      h+='<div class="ai-answer"><div class="ai-answer__meta"><svg><use href="#ai-logo-16"/></svg>Agent·连接 · 本机</div>'
+        +(done?'<p class="ai-answer__lead">修好了：Mate 70 Pro 就绪。</p><p class="ai-answer__body">'+(AG.how==='wait'?'Agent·性能 的 trace 抓完才重启，两个 Agent 的会话都接上了；Agent·回归 从第 34 条接着跑。':'Agent·性能 的 trace 被打断，它在重抓（约 1 分钟）；Agent·回归 从第 34 条接着跑。')+'</p>'
+              :'<p class="ai-answer__lead">卡在第 3 步：8710 上跑的是旧版 hdc server（3.1.0），新插的设备握不上手。</p><p class="ai-answer__body">不打断别人的两招（重新枚举、换端口）试过了，不行。要重启 hdc server，换成 SDK 自带的 3.2.0。</p>')
+        +'</div>';
+    }
+    if(AG.st==='wait'){
+      h+='<div class="ai-approve" id="ag-wait"><div class="ai-approve__h"><span class="ai-wait-dot"></span>在等你 · 重启 hdc 会断开 2 个 Agent 的会话</div>'
+        +'<div class="aff"><div class="af"><svg><use href="#ai-agent"/></svg><b>Agent·回归</b><span>Mate 70 Pro 模拟器 · UI 回归 34/120</span><em>断开后从第 34 条续跑，多约 1 分钟</em></div>'
+        +'<div class="af"><svg><use href="#ai-agent"/></svg><b>Agent·性能</b><span>Pura 70 Pro 远端 · 抓 trace 还剩 40 秒</span><em class="warn">现在断会丢这段 trace，要重抓</em></div>'
+        +'<div class="dim">不受影响：Mate X6 云端（空闲）；MatePad、WATCH 5 本来没连上</div></div>'
+        +'<div class="ai-approve__act"><button type="button" class="ai-btn ai-btn--primary" id="btn-ag-wait" data-ag="wait">等它抓完再重启 · 约 40 秒</button><button type="button" class="ai-btn ai-btn--fill" data-ag="now">现在重启</button></div></div>';
+    }
+    if(AG.st==='fix'||AG.st==='done'){
+      var L=FIX[AG.how],fl=AG.st==='fix';
+      h+=trail(L,fl?AG.k:L.length,fl,fl?'修复中 · 第 '+Math.min(AG.k+1,L.length)+' 步，共 '+L.length+' 步':(AG.how==='wait'?'等 trace 抓完、重启 hdc、连回两台':'重启 hdc、连回两台'),L.length+' 步');
+    }
+    box.innerHTML=h;capsule();
+  }
+  function capsule(){
+    var go=function(){var c=$('#ag-wait');select('mate');if(c){c.scrollIntoView({block:'nearest'});c.classList.remove('flash');void c.offsetWidth;c.classList.add('flash')}};
+    if(AG.st==='idle')DemoFrame.agent('idle','Agent·连接 待命 · 另有 2 个 Agent 在跑');
+    else if(AG.st==='diag')DemoFrame.agent('tool','Agent·连接 '+DIAG[Math.min(AG.k,DIAG.length-1)].cap+' · <code>'+Math.min(AG.k+1,DIAG.length)+'/'+DIAG.length+'</code>');
+    else if(AG.st==='wait')DemoFrame.agent('waiting','在等你 · 重启 hdc 会断开 2 个 Agent',{onClick:go});
+    else if(AG.st==='fix'){var L=FIX[AG.how],r=L[Math.min(AG.k,L.length-1)];DemoFrame.agent(AG.k>=L.length-1?'verifying':'tool','Agent·连接 '+r.cap+' · <code>'+Math.min(AG.k+1,L.length)+'/'+L.length+'</code>')}
+    else if(AG.st==='done')DemoFrame.agent('done','Mate 70 Pro 就绪');
+    else DemoFrame.agent('idle','Agent·连接 待命');
+  }
+  function play(list,then){
+    AG.k=0;renderAG();
+    (function next(){var r=list[AG.k];if(!r){then();return}
+      setTimeout(function(){if(r.fn)r.fn();AG.k++;renderAG();next()},r.ms)})();
+  }
+  $('#ag20').addEventListener('click',function(e){
+    var b=e.target.closest('[data-ag]');if(!b)return;var a=b.dataset.ag;
+    if(a==='go'){clearInterval(tick);$('#manual').open=false;AG.st='diag';$('#wait-text').textContent='Agent·连接 在查 · 已等 '+sec+' 秒';
+      play(DIAG,function(){AG.st='wait';$('#wait-text').textContent='查到根因 · 等你定要不要重启 hdc';step(3,'fail','旧版 hdc server');hist('err','13.4 s','8710 上是 hdc server 3.1.0 · 与 SDK 3.2.0 握手不兼容');renderAG()})}
+    else if(a==='wait'||a==='now'){AG.st='fix';AG.how=a;play(FIX[a],function(){AG.st='done';renderAG()})}
   });
 
+  /* 接手 · 自己排查：直接重启 hdc（不看会打断谁） */
+  $('#btn-wifi').addEventListener('click',function(){$('#wifi-box').hidden=!$('#wifi-box').hidden});
+  $('#btn-recheck').addEventListener('click',function(){
+    if(AG.st==='diag'||AG.st==='fix'||AG.st==='done')return;
+    clearInterval(tick);AG.st='manual';$('#wifi-box').hidden=true;renderAG();
+    restart();
+    setTimeout(function(){back(true);hist('err','15.2 s','Agent·回归 在第 34 条被打断，已自动续跑')},1100);
+    setTimeout(function(){ready('16.0')},2000);
+  });
+  $('#pane-devices').addEventListener('click',function(e){if(e.target.closest('#btn-run')){var d=$('#hdr-device span');if(d)d.textContent='HUAWEI Mate 70 Pro · entry'}});
+  renderAG();
   renderHub();showDetail();
-DemoGuide.init([{"target": "#btn-recheck", "kind": "click", "pos": "top", "label": "点这里重新检测"}, {"target": "#steps", "kind": "change", "pos": "left", "label": "步骤条往前推进"},
-  {"target": ".hr[data-id=\"emu\"] .fm", "kind": "click", "pos": "left", "label": "点一台就绪设备"},
-  {"target": "#btn-diag", "kind": "click", "pos": "right", "label": "一键打包诊断"},
-  {"target": "#btn-repro", "kind": "click", "pos": "right", "label": "选一条崩溃去复现"}]);
+DemoGuide.init([
+  {target:'.ag-go',kind:'click',pos:'top',label:'卡住了：交给 Agent 查，能修的它自己修'},
+  {target:'#btn-ag-wait',kind:'click',pos:'bottom',label:'重启 hdc 会断开这两个 Agent：你定'},
+  {target:'#steps',kind:'change',pos:'left',label:'它修到第几步，这里就走到第几步'},
+  {target:'#manual > summary',kind:'click',pos:'left',label:'接手：自己排查'},
+  {target:'#btn-tap',kind:'click',pos:'bottom',label:'不想插线：碰一碰连接'}
+], {scene:{
+  at:'你插上 Mate 70 Pro 想跑 entry，连接卡住了',
+  goal:'连上、装好包，应用在手机上跑起来',
+  pain:'不知道卡在哪步，只能搜报错、重插线、重启 hdc 碰运气',
+  fix:'Agent 查到卡在第 3 步并自己修，要重启 hdc 才问你',
+  agent:'它诊断并自动修；重启 hdc 会断别的 Agent，先列出来再问你'
+}});
 })();
 </script>
 </body>

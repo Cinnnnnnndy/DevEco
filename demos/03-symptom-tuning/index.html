@@ -5,12 +5,12 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='32' y2='32' gradientUnits='userSpaceOnUse'%3E%3Cstop stop-color='%232C8DDD'/%3E%3Cstop offset='1' stop-color='%233357AC'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='32' height='32' rx='7' fill='url(%23g)'/%3E%3Ctext x='16' y='22.5' font-family='Arial,Helvetica,sans-serif' font-size='13' font-weight='700' fill='white' text-anchor='middle'%3EDE%3C/text%3E%3C/svg%3E">
 <title>03 · 从症状进入的调优：改完告诉你到底有没有改好</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;500&display=swap">
 <link rel="stylesheet" href="../../deveco-intui-kit/src/tokens.css">
 <link rel="stylesheet" href="../../deveco-intui-kit/src/components.css">
 <link rel="stylesheet" href="../_shared/frame.css">
 <link rel="stylesheet" href="../_shared/guide.css">
 <script src="../../deveco-intui-kit/src/icons.js"></script>
+<script src="../../deveco-intui-kit/icons/ai-icons.js"></script>
 <script src="../_shared/frame.js"></script>
 <script src="../_shared/guide.js"></script>
 <style>
@@ -19,11 +19,10 @@
   .umsg .bubble{padding:6px 10px}
   /* Profiler 面板：左列症状入口 + 主体图表 */
   .prof{display:grid;grid-template-columns:200px minmax(0,1fr);height:100%;min-height:0}
-  .sym-col{display:flex;flex-direction:column;gap:6px;padding:10px;border-right:1px solid var(--ui-border);overflow:auto;min-height:0}
-  .sym{display:flex;align-items:center;gap:8px;height:38px;flex:none;padding:0 10px;border:1px solid var(--ui-border);border-radius:var(--arc);background:var(--ui-field-bg);text-align:left;font-size:var(--fs);color:var(--ui-fg);cursor:default;white-space:nowrap}
+  .sym-col{display:flex;flex-direction:column;gap:5px;padding:10px;border-right:1px solid var(--ui-border);overflow:auto;min-height:0}
+  .sym{display:flex;align-items:center;gap:8px;height:32px;flex:none;padding:0 10px;border:0;border-radius:var(--arc);background:transparent;text-align:left;font-size:var(--fs);color:var(--ui-fg);cursor:default;white-space:nowrap}
   .sym:hover{background:var(--ui-hover)}
-  .sym.on{border-color:var(--ui-accent);background:color-mix(in srgb,var(--ui-accent) 14%,transparent);font-weight:600}
-  .sym.on svg.i{color:var(--ui-info)}
+  .sym.on{background:var(--ui-tag-bg);box-shadow:inset 2px 0 0 var(--ui-accent);font-weight:500}
   .sym .sub{margin-left:auto;font-size:11px;font-weight:400;color:var(--ui-fg-info)}
   .sym-hint{padding:4px 2px 0;font-size:var(--fs-sm);line-height:var(--lh-sm);color:var(--ui-fg-info)}
   .prof-main{display:flex;flex-direction:column;gap:8px;padding:10px 12px;overflow:auto;min-height:0}
@@ -46,41 +45,50 @@
   .ch-t .dm-seg button,.cmp-bar .dm-seg button{height:22px;font-size:11px;padding:0 10px}
   .dm-seg button:disabled{opacity:.45}
   /* Agent 面板里的 diff 卡状态 */
-  .diffcard.applied{border-color:color-mix(in srgb,var(--ui-success) 60%,transparent)}
+  .diffcard{border:0;background:var(--ai-surface)}
+  .diffcard .dh{background:transparent}
+  .diffcard pre{background:var(--ui-editor-bg);margin:0 6px 6px;border-radius:6px}
   .diffcard.rejected{opacity:.55}
   .diffcard .dh .fn,.diffcard .dh .cnt{flex:none;white-space:nowrap}
   .diffcard .dh .note{font-size:11px;color:var(--ui-fg-info);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
   .diffcard pre .l.hunk{color:var(--ui-fg-info)}
   .amsg .step.ok svg.i{color:var(--ui-success)}
-  .amsg .step.run svg.i{color:var(--ui-accent)}
+  .amsg .step{min-height:28px;padding:4px 6px;margin:0 -6px;border-radius:6px;line-height:16px}
+  .amsg .step .spin{border-color:color-mix(in srgb,var(--ai-ink) 30%,transparent);border-top-color:var(--ai-ink)}
+  .amsg .step.lease{color:var(--ui-fg-info)}
+  .amsg .step.lease svg.i{color:var(--ui-icon)}
+  .amsg .step.lease b{font-weight:500;color:var(--ui-fg)}
+  .amsg .ai-toolrow{margin:0 -6px}
+  .amsg .ai-toolrow .ai-ico{color:var(--ui-icon)}
+  .code .ln.ai-block .ai-gut{left:52px}
 
   /* 内存涨 / 泄漏：曲线 + 泄漏链 */
   .leak-grid{display:grid;grid-template-columns:minmax(0,1.12fr) minmax(0,1fr);gap:8px;flex:none}
-  .dm-chart .mem-line{fill:none;stroke:var(--ui-accent);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
-  .dm-chart .mem-area{fill:color-mix(in srgb,var(--ui-accent) 11%,transparent)}
+  .dm-chart .mem-line{fill:none;stroke:var(--ui-fg-info);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+  .dm-chart .mem-area{fill:color-mix(in srgb,var(--ui-fg-info) 12%,transparent)}
   .dm-chart .mem-in{fill:color-mix(in srgb,var(--ui-fg) 5%,transparent)}
   .dm-chart .floor{fill:none;stroke:var(--ui-error);stroke-width:1.5;stroke-dasharray:4 3}
   .dm-chart .base{stroke:var(--ui-success);stroke-width:1;stroke-dasharray:4 3}
-  .dm-chart .mcur{stroke:var(--ui-accent);stroke-width:1}
-  .dm-chart .mend{fill:var(--ui-accent);stroke:var(--ui-editor-bg);stroke-width:2}
+  .dm-chart .mcur{stroke:var(--ui-fg-info);stroke-width:1}
+  .dm-chart .mend{fill:var(--ui-fg);stroke:var(--ui-editor-bg);stroke-width:2}
   .dm-chart .cyc{fill:transparent;cursor:pointer;pointer-events:all}
-  .dm-chart .cyc:hover{fill:color-mix(in srgb,var(--ui-accent) 8%,transparent)}
+  .dm-chart .cyc:hover{fill:color-mix(in srgb,var(--ui-fg) 6%,transparent)}
   .dm-chart .cyc.on{fill:color-mix(in srgb,var(--ui-error) 7%,transparent);stroke:var(--ui-error);stroke-width:1.5}
   .chain-card{gap:6px}
   .chain{display:flex;flex-direction:column;padding-top:2px}
-  .cn{display:flex;flex-direction:column;gap:1px;align-items:stretch;min-width:0;padding:5px 9px;border:1px solid var(--ui-component-border);border-radius:6px;background:var(--ui-field-bg);color:var(--ui-fg);text-align:left;font-size:var(--fs-sm);line-height:var(--lh-sm);cursor:pointer}
+  .cn{display:flex;flex-direction:column;gap:1px;align-items:stretch;min-width:0;padding:5px 9px;border:0;border-radius:6px;background:var(--ui-tag-bg);color:var(--ui-fg);text-align:left;font-size:var(--fs-sm);line-height:var(--lh-sm);cursor:pointer}
   .cn:hover{background:var(--ui-hover)}
-  .cn.on{border-color:var(--ui-accent);background:color-mix(in srgb,var(--ui-accent) 14%,transparent)}
+  .cn.on{box-shadow:inset 2px 0 0 var(--ui-accent);background:var(--ui-hover)}
   .cn .l1{display:flex;align-items:center;gap:6px;white-space:nowrap;min-width:0;overflow:hidden}
-  .cn .l1 b{font-weight:600;flex:none}
+  .cn .l1 b{font-weight:500;flex:none}
   .cn .l1 > span,.cn .l1 code{min-width:0;overflow:hidden;text-overflow:ellipsis}
   .cn .l1 > span{color:var(--ui-fg-info)}
   .cn .l2{display:flex;gap:8px;font-size:11px;line-height:15px;color:var(--ui-fg-info);white-space:nowrap;min-width:0}
   .cn .l2 > span:first-child{min-width:0;overflow:hidden;text-overflow:ellipsis}
   .cn .l2 .loc{margin-left:auto;flex:none;font-family:var(--font-code);color:var(--ui-link)}
   .cn.root,.cn.leaked{align-self:center;width:62%}
-  .cn.leaked{border-color:color-mix(in srgb,var(--ui-error) 60%,transparent);background:color-mix(in srgb,var(--ui-error) 9%,transparent)}
-  .cn.leaked.on{border-color:var(--ui-accent);background:color-mix(in srgb,var(--ui-accent) 14%,transparent)}
+  .cn.leaked{background:color-mix(in srgb,var(--ui-error) 12%,transparent)}
+  .cn.leaked.on{box-shadow:inset 2px 0 0 var(--ui-accent)}
   .cn-row{display:grid;grid-template-columns:1fr 1fr}
   .cn-row > .cn{margin:0 6px}
   .dm-chart svg.cw{height:14px;width:100%;overflow:visible}
@@ -102,7 +110,7 @@
   .dm-chart .sp-rg.b{fill:color-mix(in srgb,var(--ui-error) 16%,transparent)}.dm-chart .sp-rg.a{fill:color-mix(in srgb,var(--ui-success) 18%,transparent)}
   .dm-chart .sp-md{stroke-width:2;stroke-linecap:round}.dm-chart .sp-md.b{stroke:var(--ui-error)}.dm-chart .sp-md.a{stroke:var(--ui-success)}
   .dm-chart .sp-link{fill:none;stroke:var(--ui-fg-info);stroke-width:1;stroke-dasharray:3 3}
-  .dm-chart .glbl{font-family:var(--font-ui);font-size:11px;font-weight:600;fill:var(--ui-fg)}
+  .dm-chart .glbl{font-family:var(--font-ui);font-size:11px;font-weight:500;fill:var(--ui-fg)}
   .mt{display:flex;flex-direction:column;min-width:0}
   .mt-h,.mt-r{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr) minmax(0,1fr) 120px 58px 78px;align-items:center;gap:8px;padding:0 6px}
   .mt-h{height:22px;font-size:11px;color:var(--ui-fg-info);border-bottom:1px solid var(--ui-border)}
@@ -110,7 +118,7 @@
   .mt-r:last-child{border-bottom:0}
   .mt-r > span{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .mt-r .v{font-variant-numeric:tabular-nums}
-  .mt-r .v b{font-weight:600}
+  .mt-r .v b{font-weight:500}
   .mt-r .v small{font-size:11px;color:var(--ui-fg-info);margin-left:5px}
   .mt-r .d{font-family:var(--font-code);font-size:11px}
   .dm-chart svg.rg{width:120px;height:22px}
@@ -126,7 +134,7 @@
   .tf{display:flex;flex-direction:column;min-width:0}
   .tf-h,.tf-row{display:grid;grid-template-columns:18px minmax(0,1fr) 184px 96px 96px;align-items:center;gap:10px;padding:0 8px}
   .tf-h{height:22px;font-size:11px;color:var(--ui-fg-info);border-bottom:1px solid var(--ui-border)}
-  .tf-h .on{color:var(--ui-fg);font-weight:600}
+  .tf-h .on{color:var(--ui-fg);font-weight:500}
   .tf-row{height:30px;width:100%;border:0;border-radius:4px;background:transparent;color:var(--ui-fg);text-align:left;font-size:var(--fs-sm);cursor:pointer}
   .tf-row:hover{background:var(--ui-hover-list)}
   .tf-row.sel{background:var(--ui-selection)}
@@ -139,10 +147,10 @@
   .tf-row .ms.on{color:var(--ui-fg)}
   .tf-row .ms .bar{height:3px;border-radius:2px;background:var(--ui-progress-track);overflow:hidden}
   .tf-row .ms .bar i{display:block;height:100%;border-radius:2px;background:var(--ui-fg-disabled);width:var(--v)}
-  .tf-row .ms.on .bar i{background:var(--ui-accent)}
+  .tf-row .ms.on .bar i{background:var(--ui-fg-info)}
   .tf-stack{display:flex;flex-direction:column;min-width:0;padding-left:10px;border-left:1px solid var(--ui-border)}
   .tf-stack .sh{height:22px;display:flex;align-items:center;gap:6px;font-size:11px;color:var(--ui-fg-info);border-bottom:1px solid var(--ui-border);margin-bottom:4px;white-space:nowrap;overflow:hidden}
-  .tf-stack .sh b{color:var(--ui-fg);font-weight:600;font-family:var(--font-code);overflow:hidden;text-overflow:ellipsis}
+  .tf-stack .sh b{color:var(--ui-fg);font-weight:500;font-family:var(--font-code);overflow:hidden;text-overflow:ellipsis}
   .sf{display:flex;align-items:center;gap:6px;height:26px;width:100%;flex:none;padding:0 8px 0 calc(8px + var(--d,0) * 14px);border:0;border-radius:4px;background:transparent;color:var(--ui-fg);font-family:var(--font-code);font-size:11px;text-align:left;white-space:nowrap;cursor:pointer}
   .sf:hover{background:var(--ui-hover-list)}
   .sf.on{background:var(--ui-selection)}
@@ -153,11 +161,111 @@
   .sf.root:hover{background:transparent}
   .sf:not(.root)::before{content:"";width:7px;height:7px;flex:none;margin-top:-5px;border-left:1px solid var(--ui-fg-disabled);border-bottom:1px solid var(--ui-fg-disabled)}
   .tf-wait{display:flex;align-items:center;justify-content:center;gap:8px;min-height:180px;color:var(--ui-fg-info);font-size:var(--fs-sm)}
+
+  /* 碰一碰取现场：症状列入口 */
+  .sym.tap{box-shadow:inset 0 0 0 1px var(--ui-border)}
+  .sym.tap.on{box-shadow:inset 2px 0 0 var(--ui-accent)}
+  .sym.tap .sub{display:inline-flex;align-items:center;gap:4px}
+  .sym-sep{height:1px;flex:none;background:var(--ui-border);margin:8px 0}
+  /* 碰一碰：左边「桌面」画手机和电脑，右边连接 / 30 秒回捞 / 识别出的症状 */
+  .tap-grid{display:grid;grid-template-columns:380px minmax(0,1fr);gap:10px;flex:none}
+  .tap-stage{position:relative;height:340px;border-radius:var(--arc);overflow:hidden;overflow:clip;background:var(--ui-editor-bg)}
+  .tap-stage .st-tag{position:absolute;right:10px;top:8px;z-index:3}
+  .deck{position:absolute;left:-70px;top:34px;width:250px;height:340px;border-radius:16px;background:var(--ui-tag-bg)}
+  .deck .keys{position:absolute;left:84px;right:14px;top:14px;height:104px;border-radius:8px;background:repeating-linear-gradient(90deg,var(--ui-tag-bg) 0 15px,transparent 15px 18px);-webkit-mask:repeating-linear-gradient(180deg,#000 0 15px,transparent 15px 18px);mask:repeating-linear-gradient(180deg,#000 0 15px,transparent 15px 18px)}
+  .deck .pad{position:absolute;left:100px;top:138px;width:104px;height:80px;border-radius:8px;background:color-mix(in srgb,var(--ui-fg) 3%,transparent)}
+  .deck .nfc{position:absolute;left:214px;top:146px;width:30px;height:30px;border-radius:8px;border:1px dashed var(--ui-fg-info);display:grid;place-items:center;color:var(--ui-fg);cursor:pointer}
+  .deck .nfc svg.i{width:16px;height:16px}
+  .deck .nfc-l{position:absolute;left:206px;top:180px;width:46px;text-align:center;font-size:11px;color:var(--ui-fg-info)}
+  .deck .name{position:absolute;left:100px;top:236px;font-size:11px;color:var(--ui-fg-info);white-space:nowrap}
+  .ripple{position:absolute;width:30px;height:30px;margin:-15px 0 0 -15px;border-radius:50%;border:2px solid var(--ui-fg-info);opacity:0;pointer-events:none;z-index:4}
+  .tap-stage.hit .ripple{animation:rip 1s ease-out 2}
+  .tap-stage.hit .ripple.r2{animation-delay:.25s}
+  @keyframes rip{from{transform:scale(.6);opacity:.9}to{transform:scale(3.4);opacity:0}}
+  /* 手机：Mate 70 Pro 1260 × 2844，屏 128 × 289 */
+  .tphone{position:absolute;left:226px;top:32px;width:136px;height:297px;padding:4px;border-radius:24px;background:#0f1012;box-shadow:0 10px 26px rgba(0,0,0,.35);z-index:2;transition:transform .55s cubic-bezier(.3,.7,.3,1)}
+  .tphone .scr{position:relative;width:128px;height:289px;border-radius:20px;overflow:hidden;overflow:clip;background:#fff;color:#1a1a1a;font-family:var(--font-ui);font-size:9px;line-height:1.35}
+  .tp-st{height:16px;display:flex;align-items:center;justify-content:space-between;padding:0 12px 0 14px;font-size:8px;font-weight:500;color:#1a1a1a}
+  .tp-st .hole{width:8px;height:8px;border-radius:50%;background:#0f1012}
+  .tp-st svg{width:22px;height:8px}
+  .tp-hd{height:22px;display:flex;align-items:center;padding:0 10px;font-size:11px;font-weight:600}
+  .tp-search{margin:0 8px 4px;height:16px;border-radius:8px;background:#f1f3f5;color:#8a8f99;font-size:8px;display:flex;align-items:center;padding:0 8px}
+  .tp-row{display:flex;align-items:center;gap:6px;padding:4px 8px;border-bottom:1px solid #f0f1f3}
+  .tp-row i{width:22px;height:22px;border-radius:5px;background:#DCE3EE;flex:none}
+  .tp-row b{display:block;font-size:8.5px;font-weight:600;white-space:nowrap}
+  .tp-row span{display:block;font-size:7.5px;color:#8a8f99;white-space:nowrap}
+  .tp-bar{position:absolute;left:50%;bottom:5px;width:40px;height:3px;margin-left:-20px;border-radius:2px;background:rgba(0,0,0,.55);z-index:6}
+  .tp-live{position:absolute;left:6px;right:6px;top:19px;z-index:4;padding:6px 7px;border-radius:10px;background:#fff;box-shadow:0 3px 12px rgba(0,0,0,.2);display:flex;flex-direction:column;gap:3px}
+  .tp-live .l1{display:flex;align-items:center;gap:4px;font-size:8px;font-weight:600;white-space:nowrap}
+  .tp-live .l1 svg{width:11px;height:11px;flex:none}
+  .tp-live .l1 em{margin-left:auto;font-style:normal;font-weight:400;color:#8a8f99}
+  .tp-live .l2{font-size:8px;color:#333;line-height:1.3}
+  .tp-live .pg{height:3px;border-radius:2px;background:#e6e8eb;overflow:hidden}
+  .tp-live .pg i{display:block;height:100%;width:var(--v,0%);background:#0A59F7;border-radius:2px;transition:width .2s}
+  .tp-live .pg.indet i{width:35%;animation:tpind 1.1s linear infinite}
+  @keyframes tpind{from{transform:translateX(-100%)}to{transform:translateX(300%)}}
+  .tp-scrim{position:absolute;inset:0;background:rgba(0,0,0,.32);z-index:4;opacity:0;pointer-events:none;transition:opacity .25s}
+  .tp-sheet{position:absolute;left:5px;right:5px;bottom:12px;z-index:5;padding:9px 9px 8px;border-radius:14px;background:#fff;display:flex;flex-direction:column;gap:5px;transform:translateY(120%);transition:transform .3s ease-out}
+  .tp-sheet .dv{display:flex;align-items:center;justify-content:center;gap:6px;color:#0A59F7}
+  .tp-sheet .dv svg{width:16px;height:16px}
+  .tp-sheet .dv i{width:20px;border-top:1.5px dotted #0A59F7}
+  .tp-sheet b{font-size:9.5px;text-align:center}
+  .tp-sheet p{margin:0;font-size:8px;color:#555;text-align:center}
+  .tp-sheet .bt{display:flex;gap:6px;margin-top:2px}
+  .tp-sheet .bt button{flex:1;height:20px;border:0;border-radius:10px;font:inherit;font-size:8.5px;font-weight:600;background:#f1f3f5;color:#0A59F7;cursor:pointer}
+  .tp-sheet .bt button.ok{background:#0A59F7;color:#fff}
+  .tphone[data-ph="ask"] .tp-scrim{opacity:1}
+  .tphone[data-ph="ask"] .tp-sheet{transform:none}
+  .tp-hit{position:absolute;inset:0;border:0;background:transparent;border-radius:24px;cursor:pointer;z-index:7}
+  .tp-finger{position:absolute;left:62px;top:200px;width:18px;height:18px;border-radius:50%;background:rgba(10,89,247,.28);border:1.5px solid rgba(10,89,247,.8);z-index:3;opacity:0;pointer-events:none}
+  .tphone.replay .tp-finger{animation:swipe 1s ease-in-out infinite}
+  .tphone.replay .tp-list{animation:lst 1s ease-in-out infinite}
+  @keyframes swipe{0%{opacity:0;transform:translateY(0)}15%{opacity:1}80%{opacity:1;transform:translateY(-120px)}100%{opacity:0;transform:translateY(-120px)}}
+  @keyframes lst{0%,15%{transform:translateY(0)}80%,100%{transform:translateY(-40px)}}
+  .tp-list{will-change:transform}
+  .tap-side{display:flex;flex-direction:column;gap:8px;min-width:0}
+  .dm-chart.conn{min-height:0;gap:6px}
+  .conn .kvs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:2px 16px;font-size:var(--fs-sm);line-height:var(--lh-sm)}
+  .conn .kvs > span{display:flex;gap:8px;min-width:0;white-space:nowrap}
+  .conn .kvs > span > em{font-style:normal;color:var(--ui-fg-info);flex:none;width:28px}
+  .conn .kvs > span > span{min-width:0;overflow:hidden;text-overflow:ellipsis}
+  .conn .wait{font-size:var(--fs-sm);line-height:var(--lh-sm);color:var(--ui-fg-info)}
+  .conn .ch-t .grow + .dm-pill{flex:none}
+  .dm-chart .tl-lbl{font-family:var(--font-ui);font-size:11px;fill:var(--ui-fg-info)}
+  .dm-chart .tl-line{fill:none;stroke:var(--ui-fg-info);stroke-width:1.5;stroke-linejoin:round}
+  .dm-chart .tl-area{fill:color-mix(in srgb,var(--ui-fg-info) 12%,transparent)}
+  .dm-chart .tl-bar{fill:color-mix(in srgb,var(--ui-fg-info) 55%,transparent)}
+  .dm-chart .tl-bar.bad{fill:var(--ui-error)}
+  .dm-chart .tl-touch{fill:color-mix(in srgb,var(--ui-fg) 22%,transparent);stroke:var(--ui-fg-info);stroke-width:1}
+  .dm-chart .tl-log{stroke:var(--ui-fg-disabled);stroke-width:1}
+  .dm-chart .tl-log.w{stroke:var(--ui-warning);stroke-width:2}
+  .dm-chart .tl-sep{stroke:var(--ui-border);stroke-width:1}
+  .dm-chart .tl-anom{fill:color-mix(in srgb,var(--ui-error) 8%,transparent);stroke:var(--ui-error);stroke-width:1.5;cursor:pointer;pointer-events:all}
+  .dm-chart .tl-now{stroke:var(--ui-fg);stroke-width:1.5}
+  .tap-go{display:flex;align-items:center;gap:10px}
+  .tap-go > div{flex:1;min-width:0}
+  .tap-go .btn{flex:none}
+  .umsg .bubble .tap-att{display:flex;align-items:center;gap:6px;margin-bottom:4px;padding:3px 8px;border-radius:6px;background:var(--ui-tag-bg);font-size:11px;line-height:16px;color:var(--ui-fg);white-space:nowrap}
+  .umsg .bubble .tap-att svg.i{width:12px;height:12px;color:var(--ui-icon)}
+  /* 共享组件在本页收敛：图表去描边、序列用中性色；info 提示不用蓝 */
+  .prof .dm-chart{border:0}
+  .prof .dm-chart .bar{fill:color-mix(in srgb,var(--ui-fg-info) 50%,transparent)}
+  .prof .dm-chart .bar.bad{fill:var(--ui-error)}
+  .prof .dm-chart .line{stroke:var(--ui-fg-info)}
+  .prof .dm-chart .area{fill:color-mix(in srgb,var(--ui-fg-info) 14%,transparent)}
+  .dm-callout{border:0}
+  .dm-callout.info{background:var(--ui-tag-bg)}
+  .dm-callout.info svg{color:var(--ui-icon)}
+  .dm-callout.ok{background:color-mix(in srgb,var(--ui-success) 12%,transparent)}
+  .dm-pill.info{background:var(--ui-tag-bg);color:var(--ui-fg)}
+  .dm-progress i{background:var(--ui-fg-info)}
 </style>
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
   <symbol id="i-therm" viewBox="0 0 16 16"><path d="M6.5 9.3V3.5a1.5 1.5 0 0 1 3 0v5.8a2.5 2.5 0 1 1-3 0Z" stroke="currentColor" stroke-linejoin="round" fill="none"/><path d="M8 7v4" stroke="currentColor" stroke-linecap="round"/></symbol>
+  <symbol id="i-tap" viewBox="0 0 16 16"><rect x="2.5" y="2.5" width="6.5" height="11" rx="1.4" stroke="currentColor" fill="none"/><path d="M5 11.5h1.5" stroke="currentColor" stroke-linecap="round"/><path d="M11 5.8a3.2 3.2 0 0 1 0 4.4M13 4a6 6 0 0 1 0 8" stroke="currentColor" stroke-linecap="round" fill="none"/></symbol>
+  <symbol id="i-laptop" viewBox="0 0 16 16"><rect x="3" y="3.5" width="10" height="7" rx="1" stroke="currentColor" fill="none"/><path d="M1.5 12.5h13" stroke="currentColor" stroke-linecap="round"/></symbol>
   <symbol id="i-mem" viewBox="0 0 16 16"><path d="M2.5 4.5h11v6h-11z" stroke="currentColor" stroke-linejoin="round" fill="none"/><path d="M5 6.5v2M8 6.5v2M11 6.5v2" stroke="currentColor" stroke-linecap="round"/><path d="M4 10.5v2.5M6.5 10.5v2.5M9.5 10.5v2.5M12 10.5v2.5M7 2.5v2M9 2.5v2" stroke="currentColor" stroke-linecap="round"/></symbol>
 </defs></svg>
 <div class="ide" id="ide" data-ide-theme="dark" data-left="agent" data-right="project" data-bottom="run" role="application" aria-label="DevEco Studio">
@@ -175,9 +283,10 @@
         <div class="tw-body"><div class="ai">
           <div class="ai-scroll" id="ai-scroll">
           <div class="ai-thread" data-thread="jank">
-            <div class="umsg"><div class="bubble">列表滑起来卡</div></div>
+            <div class="umsg"><div class="bubble" id="jank-ask">列表滑起来卡</div></div>
             <div class="amsg" id="amsg">
-              <div class="step ok"><svg class="i"><use href="#i-locate"/></svg>已定位：ListPage.ets:28 同步解码 · 真机记录 #12</div>
+              <div class="ai-toolrow"><svg class="ai-ico"><use href="#ai-tool"/></svg><span class="what" id="jank-read">读真机记录 #12 · 60 帧 trace</span><span class="end"><span class="ok">✓</span></span></div>
+              <div class="ai-toolrow"><svg class="ai-ico"><use href="#ai-explain"/></svg><span class="what" id="jank-loc">定位 <code>createPixelMapSync</code> · ListPage.ets:28</span><span class="end"><span class="ok">✓</span> 9 帧</span></div>
               <div class="md"><p>那 9 帧都卡在 <code>loadCover</code> 的同步解码上（每帧 38 ms）。改成异步解码 + 占位图，两处改动逐条审：</p></div>
 
               <div class="diffcard" id="d1">
@@ -189,10 +298,11 @@
               <div class="diffcard" id="d2">
                 <div class="dh"><svg class="i"><use href="#i-ets"/></svg><span class="fn">ItemCard.ets</span><span class="cnt"><span class="add">+3</span> <span class="del">−0</span></span><span class="note">封面没到时先画占位图</span><span class="grow"></span><span class="dm-pill ok" data-state hidden></span></div>
                 <pre id="d2-pre"></pre>
-                <div class="actions" data-actions><button class="btn" data-diff="reject">Reject</button><button class="btn primary" data-diff="accept">Accept</button></div>
+                <div class="actions" data-actions><button class="btn" data-diff="reject">Reject</button><button class="btn" data-diff="accept">Accept</button></div>
               </div>
 
               <div class="step" id="retest-note"><svg class="i"><use href="#i-phone"/></svg>接受后会在 Mate 70 Pro 上自动重跑记录 #12，给你前后对比</div>
+              <div class="step lease" id="jank-lease" hidden></div>
             </div>
           </div>
 
@@ -211,9 +321,10 @@
                 <div class="diffcard" id="l2">
                   <div class="dh"><svg class="i"><use href="#i-ets"/></svg><span class="fn">CartBadge.ets</span><span class="cnt"><span class="add">+4</span> <span class="del">−0</span></span><span class="note">订阅了 cart_changed 没有 off</span><span class="grow"></span><span class="dm-pill ok" data-state hidden></span></div>
                   <pre id="l2-pre"></pre>
-                  <div class="actions" data-actions><button class="btn" data-diff="reject">Reject</button><button class="btn primary" data-diff="accept">Accept</button></div>
+                  <div class="actions" data-actions><button class="btn" data-diff="reject">Reject</button><button class="btn" data-diff="accept">Accept</button></div>
                 </div>
                 <div class="step" id="lk-retest"><svg class="i"><use href="#i-phone"/></svg>接受后会在 Mate 70 Pro 上自动重跑同一条「列表 → 详情 → 返回 ×8」，给你前后对比</div>
+                <div class="step lease" id="lk-lease" hidden></div>
               </div>
             </div>
           </div>
@@ -250,6 +361,8 @@
       <div class="tw-body">
         <div class="pane on" data-pane="run"><div class="prof">
           <div class="sym-col" id="sym-col">
+            <button class="sym tap" data-sym="tap" id="tap-entry"><svg class="i"><use href="#i-tap"/></svg>碰一碰取现场<span class="sub" id="tap-sub">最近 30 s</span></button>
+            <div class="sym-sep"></div>
             <button class="sym on" data-sym="jank"><svg class="i"><use href="#i-gauge"/></svg>列表滑起来卡<span class="sub">帧耗时</span></button>
             <button class="sym" data-sym="power"><svg class="i"><use href="#i-bolt"/></svg>耗电快<span class="sub">电流</span></button>
             <button class="sym" data-sym="launch"><svg class="i"><use href="#i-clock"/></svg>启动慢<span class="sub">冷启动</span></button>
@@ -264,6 +377,41 @@
                 <svg id="svg-main"></svg>
               </div>
               <div class="dm-callout info" id="loc-callout"><svg><use href="#i-locate"/></svg><div id="loc-text">这 9 帧都卡在 <code>loadCover</code> 的同步解码上（每帧 38 ms）· 已定位到 <b>ListPage.ets:28</b></div></div>
+            </div>
+
+            <div id="view-tap" class="tap-grid" hidden>
+              <div class="tap-stage" id="tap-stage" data-ph="idle">
+                <span class="dm-pill muted st-tag" id="stage-tag">等待碰一碰</span>
+                <div class="deck"><div class="keys"></div><div class="pad"></div>
+                  <div class="nfc" id="nfc-zone" title="碰一碰区域"><svg class="i"><use href="#i-tap"/></svg></div><div class="nfc-l">碰一碰</div>
+                  <div class="name">MateBook Pro · 鸿蒙电脑</div></div>
+                <div class="ripple" id="rip1"></div><div class="ripple r2" id="rip2"></div>
+                <div class="tphone" id="tphone" data-ph="idle">
+                  <button class="tp-hit" id="tap-hit" aria-label="拿这台手机碰一下电脑" title="拿这台手机碰一下电脑"></button>
+                  <div class="scr">
+                    <div class="tp-st"><span>09:41</span><span class="hole"></span><svg viewBox="0 0 22 8" aria-hidden="true"><path d="M1 7h1.4V5.5H1zM3.4 7h1.4V4H3.4zM5.8 7h1.4V2.5H5.8zM8.2 7h1.4V1H8.2z" fill="#1a1a1a"/><rect x="11.5" y="1" width="8.5" height="6" rx="1.5" fill="none" stroke="#1a1a1a" stroke-width=".9"/><rect x="12.6" y="2.1" width="5.4" height="3.8" rx=".7" fill="#1a1a1a"/><path d="M20.7 3v2" stroke="#1a1a1a" stroke-linecap="round"/></svg></div>
+                    <div class="tp-list" id="tp-list"></div>
+                    <div class="tp-finger"></div>
+                    <div class="tp-live" id="tp-live" hidden></div>
+                    <div class="tp-scrim"></div>
+                    <div class="tp-sheet">
+                      <div class="dv"><svg viewBox="0 0 16 16"><use href="#i-phone"/></svg><i></i><svg viewBox="0 0 16 16"><use href="#i-laptop"/></svg></div>
+                      <b>连接到 MateBook Pro 上的 DevEco Studio</b>
+                      <p>把这台手机最近 30 秒的帧、CPU、内存、温度和 HiLog 交给电脑分析</p>
+                      <div class="bt"><button type="button" data-tp="cancel">取消</button><button type="button" class="ok" id="tp-allow" data-tp="allow">允许</button></div>
+                    </div>
+                    <div class="tp-bar"></div>
+                  </div>
+                </div>
+              </div>
+              <div class="tap-side">
+                <div class="dm-chart conn" id="tap-conn"></div>
+                <div class="dm-chart">
+                  <div class="ch-t"><b>最近 30 秒</b><span id="tl-sub">· 手机本地环形缓冲 · 碰一碰那一刻记为 0</span><span class="grow"></span><span class="dm-pill muted" id="tl-pill">未回捞</span></div>
+                  <svg id="svg-tl"></svg>
+                </div>
+                <div class="dm-callout tap-go" id="tap-callout"><svg><use href="#i-info"/></svg><div id="tap-callout-t"></div><button class="btn primary" id="tap-go" hidden>进入症状分析</button></div>
+              </div>
             </div>
 
             <div id="view-leak" class="dm-col" hidden>
@@ -286,7 +434,7 @@
                 <div class="dm-callout ok" id="cmp-ok" hidden><svg><use href="#i-check"/></svg><div id="cmp-ok-t"></div></div>
               </div>
               <div class="cmp-bar">
-                <span>同一条操作路径</span><span class="path" id="cmp-path"></span><span>· Mate 70 Pro</span>
+                <span>同一条操作路径</span><span class="path" id="cmp-path"></span><span id="cmp-dev">· Mate 70 Pro</span>
                 <span class="grow"></span>
                 <span>改前 / 改后每边跑</span>
                 <span class="dm-seg" id="cmp-runs"><button data-n="1" class="on">1 次</button><button data-n="3">3 次</button><button data-n="5">5 次</button></span>
@@ -474,7 +622,6 @@
   })();
   document.getElementById('tabs').insertAdjacentHTML('afterbegin',DemoFrame.tabs([{file:'ListPage.ets',on:true}]));
   DemoFrame.init({device:'HUAWEI Mate 70 Pro',deviceIcon:'#i-phone',pos:'28:12',stripeLeft:[{left:'agent',icon:'#i-genie',title:'DevEco Code'},{left:'project',icon:'#i-tw-project',title:'Project|Alt+1'},{left:'structure',icon:'#i-tw-structure',title:'Structure|Alt+7'},{more:1},{gap:1},{bottom:'build',icon:'#i-tw-build',title:'Build'},{bottom:'log',icon:'#i-tw-device',title:'Log'},{bottom:'services',icon:'#i-tw-todo',title:'Services|Alt+8'},{bottom:'problems',icon:'#i-tw-problems',title:'Problems|Alt+6'},{bottom:'run',icon:'#i-tw-services',title:'Run|Alt+4'},{bottom:'terminal',icon:'#i-tw-terminal',title:'Terminal|Alt+F12'},{bottom:'debug',icon:'#i-info',title:'Debug|Alt+5'},{bottom:'vcs',icon:'#i-vcs',title:'Version Control|Alt+9'}],stripeRight:[{right:'notifications',icon:'#i-tw-notifications',title:'Notifications',dot:1},{right:'project',icon:'#i-tw-project',title:'Project|Alt+1'},{right:'docs',icon:'#i-hdoc',title:'HarmonyOS Docs'},{right:'inspector',icon:'#i-pen',title:'Code Review'},{right:'web',icon:'#i-puzzle',title:'Extensions'},{right:'previewer',icon:'#i-tw-preview',title:'Previewer'},{more:1},{right:'devices',icon:'#i-phone',title:'Device Manager'}],onReady:function(){
-    $('#status-slot').innerHTML='<span class="dm-capsule" id="cap"><span class="dm-dot err"></span>记录 #12 · 掉帧 9 · Mate 70 Pro</span>';
   }});
 
   /* ---------- 数据：固定种子，截图稳定 ---------- */
@@ -582,19 +729,19 @@
   /* ---------- 多次运行：各指标每边 5 次（第 1 次就是原记录 / 第一次复测） ---------- */
   var SC={
     jank:{
-      path:['ListPage','上滑 60 帧'],pathName:'滑动路径',
-      runText:'已应用改动，正在 Mate 70 Pro 上自动重跑同一条滑动记录…',
-      okText:function(){return '改完在 Mate 70 Pro 上自动重跑了同一条滑动记录：<b>掉帧 9 → 0</b>，平均帧耗时 <b>21.4 → 9.8 ms</b>。差异集中在第 23–31 帧。'},
+      path:function(){return isTap()?['回放手机上刚才的手势','ListPage','上滑 ×3']:['ListPage','上滑 60 帧']},pathName:'滑动路径',
+      runText:function(){return isTap()?'已应用改动，正在王磊的 Mate 70 Pro 上装改后的包，回放刚才那段手势（ListPage 上滑 ×3）…':'已应用改动，正在 Mate 70 Pro 上自动重跑同一条滑动记录…'},
+      okText:function(){return isTap()?'改完在碰过的那台 <b>王磊的 Mate 70 Pro</b> 上回放了刚才那段手势：<b>掉帧 9 → 0</b>，平均帧耗时 <b>21.4 → 9.8 ms</b>。问题就是在这台手机上被复现、也是在这台手机上被确认修好的。':'改完在 Mate 70 Pro 上自动重跑了同一条滑动记录：<b>掉帧 9 → 0</b>，平均帧耗时 <b>21.4 → 9.8 ms</b>。差异集中在第 23–31 帧。'},
       beforePill:['err','掉帧 9'],afterPill:['ok','掉帧 0'],
       drawBefore:function(svg,h){drawBars(svg,BEFORE,{h:h,anom:[23,31],anomLabel:'掉帧 9'})},
       drawAfter:function(svg,h,done){if(done)drawBars(svg,AFTER,{h:h,band:[23,31],bandLabel:'原掉帧区间 · 已无掉帧'});else drawBars(svg,[],{h:h})},
-      noteIdle:'接受后会在 Mate 70 Pro 上自动重跑记录 #12，给你前后对比',
-      noteRun:function(){return '正在 Mate 70 Pro 上重跑记录 #12 的滑动…'},
-      noteDone:function(st){return '已在 Mate 70 Pro 上重跑同一条记录：#12 → '+st.rec1+'，掉帧 9 → 0'},
-      noteUndo:function(){return '已退回 ListPage.ets 的改动，真机上还是记录 #12 的样子'},
-      capBase:function(){return '记录 #12 · 掉帧 9 · Mate 70 Pro'},
+      noteIdle:function(st){return isTap()?'接受后会在碰过的王磊的 Mate 70 Pro 上回放刚才那段手势，给你前后对比':'接受后会在 Mate 70 Pro 上自动重跑记录 '+st.rec0+'，给你前后对比'},
+      noteRun:function(st){return isTap()?'正在王磊的 Mate 70 Pro 上回放刚才的手势（'+st.rec0+' 里录下的上滑 ×3）…':'正在 Mate 70 Pro 上重跑记录 '+st.rec0+' 的滑动…'},
+      noteDone:function(st){return '已在'+jd()+'上'+(isTap()?'回放同一段手势':'重跑同一条记录')+'：'+st.rec0+' → '+st.rec1+'，掉帧 9 → 0'},
+      noteUndo:function(st){return '已退回 ListPage.ets 的改动，'+jd()+'上还是记录 '+st.rec0+' 的样子'},
+      capBase:function(st){return '记录 '+st.rec0+' · 掉帧 9 · '+jd().trim()},
       capDone:function(st){return '记录 '+st.rec1+' · 掉帧 0 · 已复测'},
-      recRow:function(st){return {icon:'#i-gauge',text:'滑动 ListPage · 自动复测（和 #12 同一条操作）',pill:['ok','掉帧 0']}},
+      recRow:function(st){return {icon:'#i-gauge',text:(isTap()?'回放刚才的手势 · '+jd()+' · ':'滑动 ListPage · ')+'自动复测（和 '+st.rec0+' 同一条操作）',pill:['ok','掉帧 0']}},
       recIcon:'#i-gauge',batchText:'滑动 ListPage',
       metrics:[
         {label:'平均帧耗时',unit:'ms',dec:1,chg:'pct',b:[21.4,20.6,22.9,21.9,21.1],a:[9.8,9.4,10.3,9.6,10.0]},
@@ -633,7 +780,11 @@
   var ST={jank:newSt(),leak:newSt()};
   ST.jank.rec0='#12';
   ST.leak.phase='idle';ST.leak.upto=0;ST.leak.snap=8;ST.leak.node=null;ST.leak.line=16;
-  var S={sym:'jank',view:'sym',topSort:'self',topSel:{},cartFixed:false};
+  var S={sym:'jank',view:'sym',topSort:'self',topSel:{},cartFixed:false,src:'usb',tap:'idle',tapP:0,tapRec:null,tapT:null};
+  function isTap(){return S.src==='tap'}
+  function jd(){return isTap()?' 王磊的 Mate 70 Pro ':' Mate 70 Pro '}
+  function devOf(sc){return sc==='jank'?jd():' Mate 70 Pro '}
+  function val(x,a){return typeof x==='function'?x(a):x}
   var nextRec=13;
   var REC=[
     {id:'#12',icon:'#i-gauge',text:'滑动 ListPage · 60 帧',pill:['err','掉帧 9'],when:'10:41',sel:1},
@@ -646,7 +797,7 @@
   /* ---------- 最重调用栈：按记录给前几个函数，每行落到代码 ---------- */
   var VS=['UI 主线程 · vsync 帧回调'];
   var TOPD={
-    '#12':{sub:'· 记录 #12 · 主线程 · 滑动 60 帧 · 1.28 s',total:1284,rows:[
+    '#12':{sub:function(){return '· 记录 '+ST.jank.rec0+(isTap()?' · 王磊的 Mate 70 Pro':'')+' · 主线程 · 滑动 60 帧 · 1.28 s'},total:1284,rows:[
       {fn:'image.createPixelMapSync',tag:'系统',file:'ListPage.ets',line:28,site:1,self:331.2,total:331.2,stack:[VS,['ListPage.build › ForEach','ListPage.ets',15],['ItemCard({ cover: … })','ListPage.ets',17],['ListPage.loadCover','ListPage.ets',27],['image.createPixelMapSync','ListPage.ets',28]]},
       {fn:'ItemCard.build',file:'ItemCard.ets',line:8,self:37.5,total:49.8,stack:[VS,['ListPage.build › ForEach','ListPage.ets',15],['ItemCard.build','ItemCard.ets',8]]},
       {fn:'ListPage.build › ForEach',file:'ListPage.ets',line:15,self:18.4,total:415.7,stack:[VS,['ListPage.build','ListPage.ets',10],['ListPage.build › ForEach','ListPage.ets',15]]},
@@ -677,7 +828,7 @@
   function renderFixable(file,fixed,marks,newLines){
     var el=codeEl(file);if(!el)return;
     el.innerHTML=DemoFrame.code(fixed?file+'#fix':file,fixed?{}:{marks:marks});
-    if(fixed)newLines.forEach(function(n){var l=$('.ln[data-ln="'+n+'"]',el);if(l)l.classList.add('hl-ok')});
+    if(fixed)newLines.forEach(function(n){var l=$('.ln[data-ln="'+n+'"]',el);if(l)aiLine(l)});
   }
   function renderDetail(fixed){renderFixable('DetailPage.ets',fixed,{16:'warn',19:'warn'},DETAIL_FIX_NEW)}
   function renderCart(){renderFixable('CartBadge.ets',S.cartFixed,{9:'warn'},[11,12,13,14])}
@@ -710,9 +861,11 @@
     '      .<span class="f">then</span>((<span class="p">pm</span>: <span class="ty">PixelMap</span>) =&gt; <span class="k">this</span>.<span class="p">coverCache</span>.<span class="f">set</span>(<span class="p">id</span>, <span class="p">pm</span>));',
     '    <span class="k">return</span> <span class="k">this</span>.<span class="p">placeholder</span>;'
   ];
+  /* Agent·调优 写的行：ai.css 的 gutter 竖条 + 极淡底，悬停看来源（人改的不打标） */
+  function aiLine(l){l.classList.add('ai-block');if(!$('.ai-gut',l))l.insertAdjacentHTML('afterbegin','<span class="ai-gut" data-src="Agent·调优 · 补丁已接受"></span>')}
   function applyToEditor(){
     var ln=$('#code .ln[data-ln="28"]');if(!ln)return;
-    var h=NEW28.map(function(t){return '<div class="ln hl-ok"><span class="g"><span class="n"></span><span class="m"></span><span class="fold"></span></span><span class="t">'+t+'</span></div>'}).join('');
+    var h=NEW28.map(function(t){return '<div class="ln ai-block"><span class="ai-gut" data-src="Agent·调优 · 异步解码"></span><span class="g"><span class="n"></span><span class="m"></span><span class="fold"></span></span><span class="t">'+t+'</span></div>'}).join('');
     ln.insertAdjacentHTML('afterend',h);ln.remove();
     $$('#code .ln').forEach(function(l,i){l.dataset.ln=i+1;$('.g .n',l).textContent=i+1});
     $$('#code .ln').forEach(function(l){l.classList.toggle('cur',+l.dataset.ln===28)});
@@ -780,10 +933,12 @@
     var v=S.view,sym=S.sym,cmp=(sym==='jank'&&ST.jank.applied)?'jank':((sym==='leak'&&ST.leak.applied)?'leak':null);
     $('#view-rec').hidden=v!=='rec';
     $('#view-top').hidden=v!=='top';
-    $('#view-before').hidden=!(v==='sym'&&sym!=='leak'&&!cmp);
+    $('#view-tap').hidden=!(v==='sym'&&sym==='tap');
+    $('#view-before').hidden=!(v==='sym'&&sym!=='leak'&&sym!=='tap'&&!cmp);
     $('#view-leak').hidden=!(v==='sym'&&sym==='leak'&&!cmp);
     $('#view-compare').hidden=!(v==='sym'&&cmp);
     $$('.tw-bottom .btab').forEach(function(b){b.classList.toggle('on',b.dataset.view===v)});
+    if(!$('#view-tap').hidden)renderTap();
     if(!$('#view-before').hidden)drawMain();
     if(!$('#view-leak').hidden)renderLeak();
     if(!$('#view-compare').hidden)renderCompare(cmp);
@@ -909,15 +1064,16 @@
     var C=SC[sc],st=ST[sc],running=!st.retested,batching=!!st.batch,multi=st.n>1;
     var run=$('#cmp-run'),ok=$('#cmp-ok'),prog=$('#cmp-prog');
     run.hidden=!(running||batching);ok.hidden=running||batching;
-    if(running){$('#cmp-run-t').textContent=C.runText;prog.className='dm-progress indet';prog.style.removeProperty('--v')}
-    else if(batching){$('#cmp-run-t').textContent='正在 Mate 70 Pro 上交替装改前 / 改后两个包，同一条'+C.pathName+'各跑 '+st.n+' 次… 改前 '+st.prog.b+'/'+st.n+' · 改后 '+st.prog.a+'/'+st.n;
+    if(running){$('#cmp-run-t').textContent=val(C.runText);prog.className='dm-progress indet';prog.style.removeProperty('--v')}
+    else if(batching){$('#cmp-run-t').textContent='正在'+devOf(sc)+'上交替装改前 / 改后两个包，同一条'+C.pathName+'各跑 '+st.n+' 次… 改前 '+st.prog.b+'/'+st.n+' · 改后 '+st.prog.a+'/'+st.n;
       prog.className='dm-progress';prog.style.setProperty('--v',Math.round((st.prog.a+st.prog.b)/(2*st.n)*100)+'%')}
     else{
       var t=$('#cmp-ok-t'),icon=$('use',ok);
       if(multi&&st.done>=st.n){var mt=multiText(sc);t.innerHTML=mt.html;ok.className='dm-callout '+(mt.v.k==='up'?'ok':'warn');icon.setAttribute('href',mt.v.k==='up'?'#i-check':'#i-warn')}
       else{t.innerHTML=C.okText();ok.className='dm-callout ok';icon.setAttribute('href','#i-check')}
     }
-    $('#cmp-path').innerHTML=C.path.map(function(p){return '<span>'+esc(p)+'</span>'}).join('<svg class="i"><use href="#i-arrowR"/></svg>')+(C.suffix?'<i>'+C.suffix+'</i>':'');
+    $('#cmp-dev').textContent='·'+devOf(sc).replace(/ $/,'');
+    $('#cmp-path').innerHTML=val(C.path).map(function(p){return '<span>'+esc(p)+'</span>'}).join('<svg class="i"><use href="#i-arrowR"/></svg>')+(C.suffix?'<i>'+C.suffix+'</i>':'');
     $$('#cmp-runs button').forEach(function(b){b.classList.toggle('on',+b.dataset.n===st.n);b.disabled=running||batching});
     $('#cmp-single').hidden=multi;$('#cmp-multi').hidden=!multi;
     if(!multi){
@@ -948,20 +1104,43 @@
   function dot(c){return '<span class="dm-dot '+c+'"></span>'}
   function capFor(sc){
     var C=SC[sc],st=ST[sc];
+    var dv=devOf(sc).trim();
     if(sc==='leak'&&st.phase!=='done')return SPIN+'录制中 · 进出详情 '+Math.max(1,startedCycles(st.upto))+'/8 · Mate 70 Pro';
     if(st.batch)return SPIN+'各跑 '+st.n+' 次 · 改前 '+st.prog.b+'/'+st.n+' · 改后 '+st.prog.a+'/'+st.n;
-    if(st.applied&&!st.retested)return SPIN+'自动复测中 · Mate 70 Pro';
-    if(st.retested&&st.done>1){var v=primaryVerdict(sc,st.done);return dot(v.k==='up'?'ok':'warn')+'各跑 '+st.done+' 次 · '+(v.k==='up'?'改善显著':v.t)+' · Mate 70 Pro'}
+    if(st.applied&&!st.retested)return SPIN+'自动复测中 · '+dv;
+    if(st.retested&&st.done>1){var v=primaryVerdict(sc,st.done);return dot(v.k==='up'?'ok':'warn')+'各跑 '+st.done+' 次 · '+(v.k==='up'?'改善显著':v.t)+' · '+dv}
     if(st.retested)return dot('ok')+C.capDone(st);
     return dot('err')+C.capBase(st);
   }
-  function updateCap(){var c=$('#cap');if(c)c.innerHTML=capFor(scOf(S.sym))}
+  /* 顶栏 Agent 胶囊（取代原来状态栏的记录胶囊）：Agent·调优 在干什么、在不在等你 */
+  function pendingCard(sc){var ids=sc==='leak'?['l1','l2']:['d1','d2'];for(var i=0;i<ids.length;i++){var c=$('#'+ids[i]);if(c&&!c.classList.contains('applied')&&!c.classList.contains('rejected'))return c}return null}
+  function goCard(c){return function(){setThread(c.id.charAt(0)==='l'?'leak':'jank');c.scrollIntoView({block:'center',behavior:'smooth'})}}
+  function updateCap(){
+    renderTapLive();
+    if(!window.DemoFrame||!$('#hdr-agent'))return;
+    var A=function(st,t,o){DemoFrame.agent(st,t,o)};
+    if(S.sym==='tap'){
+      if(S.tap==='pull')return A('tool','Agent·调优 · 回捞最近 30 s <code>'+S.tapP+'%</code>');
+      if(S.tap==='done')return A('done','认出症状：列表滑起来卡 · 22 秒前',{onClick:tapAnalyze});
+      return A('idle','待命 · 碰一下手机就回捞');
+    }
+    var sc=scOf(S.sym),st=ST[sc],C=SC[sc],pc=pendingCard(sc);
+    if(sc==='leak'&&st.phase!=='done')return A('tool','Agent·调优 · 录制 进出详情 <code>'+Math.max(1,startedCycles(st.upto))+'/8</code>');
+    if(st.batch)return A('verifying','设备验证 · 各跑 '+st.n+' 次 <code>'+st.prog.b+'/'+st.prog.a+'</code>');
+    if(st.applied&&!st.retested)return A('verifying','设备验证 · 同手势复测 · Mate 70 Pro 独占');
+    if(st.retested&&st.done>1){var v=primaryVerdict(sc,st.done);return A('done','各跑 '+st.done+' 次 · '+(v.k==='up'?'改善显著':v.t))}
+    if(st.retested)return A('done',C.capDone(st)+' · 可各跑 5 次',{onClick:function(){S.view='sym';showViews();var r=$('#cmp-runs');if(r)r.scrollIntoView({block:'nearest'})}});
+    if(pc)return A('waiting','在等你 · '+(sc==='leak'?'泄漏补丁待审':'2 个补丁待审'),{onClick:goCard(pc)});
+    return A('idle','待命 · '+C.capBase(st));
+  }
   function updateRecPill(){
-    var s=S.sym,id;
+    var s=S.sym,id,dv='Mate 70 Pro';
+    if(s==='tap'){$('#rec-pill').innerHTML='<svg><use href="#i-tap"/></svg>'+(S.tap==='idle'||S.tap==='touch'||S.tap==='ask'?'碰一碰 · 等待手机':(S.tap==='pull'?'王磊的 Mate 70 Pro · 回捞中…':'王磊的 Mate 70 Pro · 最近 30 s'));return}
     if(s==='leak'){var L=ST.leak;id=L.phase!=='done'?null:(L.retested?L.rec1:L.rec0)}
     else if(s==='launch')id='#11';
-    else id=ST.jank.retested?ST.jank.rec1:'#12';
-    $('#rec-pill').innerHTML='<svg><use href="#i-phone"/></svg>Mate 70 Pro · '+(id?'记录 '+id:'录制中…');
+    else{id=ST.jank.retested?ST.jank.rec1:ST.jank.rec0;dv=jd().trim()}
+    var sk=s==='leak'?ST.leak:ST.jank,busy=s!=='launch'&&(sk.applied&&!sk.retested||sk.batch);
+    $('#rec-pill').innerHTML='<svg><use href="'+(dv!=='Mate 70 Pro'?'#i-tap':'#i-phone')+'"/></svg>'+dv+' · '+(busy?'调优在复测，勿动':(id?'记录 '+id:'录制中…'));
   }
   function noteEl(sc){return $(sc==='jank'?'#retest-note':'#lk-retest')}
   function setNote(sc,cls,icon,html){var n=noteEl(sc);n.className='step'+(cls?' '+cls:'');n.innerHTML=(icon==='spin'?SPIN:'<svg class="i"><use href="'+icon+'"/></svg>')+html}
@@ -971,11 +1150,16 @@
     var C=SC[sc],st=ST[sc];
     st.applied=true;st.retested=false;st.n=1;st.done=0;st.ids={b:[st.rec0],a:[]};
     setNote(sc,'run','spin',C.noteRun(st));
-    updateCap();showViews();
+    /* 多 Agent：复测要独占这台手机（别的负载会污染帧率），Agent·回归 的装包排到后面 */
+    var ls=$(sc==='jank'?'#jank-lease':'#lk-lease');ls.hidden=false;
+    ls.innerHTML='<svg class="i"><use href="#i-phone"/></svg><span><b>'+devOf(sc).trim()+'</b> 由 Agent·调优 独占复测 · Agent·回归 的装包排在后面</span>';
+    ls.scrollIntoView({block:'nearest'});
+    updateCap();updateRecPill();showViews();
     st.timer=setTimeout(function(){
       st.timer=null;st.retested=true;st.done=1;if(!st.rec1)st.rec1='#'+(nextRec++);st.ids.a=[st.rec1];
       var r=C.recRow(st);r.id=st.rec1;r.when='刚刚';r.key=sc+'-rt';addRec(r);
       setNote(sc,'ok','#i-checkS',C.noteDone(st));
+      ls.innerHTML='<svg class="i"><use href="#i-phone"/></svg><span>复测完已释放 '+devOf(sc).trim()+' · Agent·回归 开始装包</span>';
       updateCap();updateRecPill();showViews();
     },1300);
   }
@@ -991,7 +1175,7 @@
         var v=primaryVerdict(sc,st.n),last=nextRec-1;
         addRec({id:'#'+first+'–'+String(last).slice(-2),icon:C.recIcon,text:C.batchText+' · 改前 / 改后各补跑 '+need+' 次（交替）',pill:[v.k==='up'?'ok':'warn',v.k==='up'?'改善显著':v.t],when:'刚刚',key:sc+'-bt'});
         var P=C.metrics[0],b=stats(P.b.slice(0,st.n)),a=stats(P.a.slice(0,st.n));
-        setNote(sc,v.k==='up'?'ok':'',v.k==='up'?'#i-checkS':'#i-warn','已在 Mate 70 Pro 上把同一条'+C.pathName+'改前 / 改后各跑 '+st.n+' 次：'+P.label.replace(/（.*）/,'')+'中位数 '+fv(P,b.med)+' → '+fv(P,a.med)+' '+P.unit+' · '+(v.k==='up'?'改善显著（p = '+fmtP(v.p)+'）':(v.k==='few'?'样本不足，建议跑到 5 次':v.t)));
+        setNote(sc,v.k==='up'?'ok':'',v.k==='up'?'#i-checkS':'#i-warn','已在'+devOf(sc)+'上把同一条'+C.pathName+'改前 / 改后各跑 '+st.n+' 次：'+P.label.replace(/（.*）/,'')+'中位数 '+fv(P,b.med)+' → '+fv(P,a.med)+' '+P.unit+' · '+(v.k==='up'?'改善显著（p = '+fmtP(v.p)+'）':(v.k==='few'?'样本不足，建议跑到 5 次':v.t)));
       }
       updateCap();showViews();
     }
@@ -1003,6 +1187,7 @@
     if(st.batch){clearTimeout(st.batch);st.batch=null}
     st.applied=false;st.retested=false;st.n=1;st.done=0;st.prog={b:0,a:0};st.ids={b:[],a:[]};
     dropRec(sc+'-rt');dropRec(sc+'-bt');
+    var ls=$(sc==='jank'?'#jank-lease':'#lk-lease');if(ls)ls.hidden=true;
     setNote(sc,'','#i-undo',C.noteUndo(st));
     updateCap();updateRecPill();showViews();
   }
@@ -1021,7 +1206,7 @@
       $('#top-sub').textContent='· 正在录制「列表 → 详情 → 返回 ×8」';
       list.innerHTML='<div class="tf-wait"><span class="spin"></span>这条操作录完就出结果（'+doneCycles(L.upto)+' / 8）</div>';stk.innerHTML='';return;
     }
-    $('#top-sub').textContent=typeof d.sub==='function'?d.sub():d.sub;
+    $('#top-sub').textContent=val(d.sub);
     var k=S.topSort,rows=d.rows.slice().sort(function(a,b){return b[k]-a[k]}),mx={self:Math.max.apply(null,d.rows.map(function(r){return r.self})),total:Math.max.apply(null,d.rows.map(function(r){return r.total}))};
     var sel=S.topSel[key]||rows[0].fn,cur=d.rows.filter(function(r){return r.fn===sel})[0]||rows[0];
     function ms(r,kk){return '<span class="ms'+(k===kk?' on':'')+'"><span>'+r[kk].toFixed(1)+' ms</span><span class="bar"><i style="--v:'+Math.max(2,r[kk]/mx[kk]*100).toFixed(1)+'%"></i></span></span>'}
@@ -1060,13 +1245,15 @@
   }
   function pickSym(name){
     S.sym=name;$$('#sym-col .sym').forEach(function(b){b.classList.toggle('on',b.dataset.sym===name)});
-    if(name==='leak'){
+    if(name==='tap'){
+      if(S.tap==='analyzed')setThread('jank');
+    }else if(name==='leak'){
       setThread('leak');var L=ST.leak;
       if(L.phase==='idle')startLeakRec();
       else if(L.phase==='done'){locate(L.applied?22:(L.node?NODES[L.node].line:16),'DetailPage.ets',L.applied);if(!L.applied)revealCard('l1')}
     }else{
       setThread('jank');
-      var m=SYM[name];$('#ch-title').textContent=m.title;$('#ch-sub').textContent=m.sub;
+      var m=SYM[name];$('#ch-title').textContent=m.title;$('#ch-sub').textContent=(name==='jank'&&isTap())?'· 碰一碰回捞 '+ST.jank.rec0+' · 王磊的 Mate 70 Pro · 22 秒前那 1 s · 滑动 ListPage':m.sub;
       var pill=$('#ch-pill'),co=$('#loc-callout');
       if(name==='jank'){pill.className='dm-pill err';pill.textContent='掉帧 9 / 60';$('#ch-hint').textContent='点柱子定位到代码';
         co.className='dm-callout info';co.innerHTML='<svg><use href="#i-locate"/></svg><div>这 9 帧都卡在 <code>loadCover</code> 的同步解码上（每帧 38 ms）· 已定位到 <b>ListPage.ets:28</b></div>';locate(28);}
@@ -1096,7 +1283,8 @@
     card.classList.toggle('applied',st==='applied');card.classList.toggle('rejected',st==='rejected');
     if(st==='applied'){pill.hidden=false;pill.className='dm-pill ok';pill.textContent='已应用 · 可退回';acts.innerHTML='<button class="btn" data-diff="revert"><svg class="i" style="width:12px;height:12px"><use href="#i-undo"/></svg>退回这条</button>'}
     else if(st==='rejected'){pill.hidden=false;pill.className='dm-pill muted';pill.textContent='已拒绝';acts.innerHTML='<button class="btn" data-diff="restore">重新考虑</button>'}
-    else{pill.hidden=true;acts.innerHTML='<button class="btn" data-diff="reject">Reject</button><button class="btn primary" data-diff="accept">Accept</button>'}
+    else{pill.hidden=true;acts.innerHTML='<button class="btn" data-diff="reject">Reject</button><button class="btn'+(id==='d1'||id==='l1'?' primary':'')+'" data-diff="accept">Accept</button>'}
+    updateCap();
   }
   $('#ai-scroll').addEventListener('click',function(e){
     var b=e.target.closest('[data-diff]');if(!b)return;var card=b.closest('.diffcard'),id=card.id,act=b.dataset.diff;
@@ -1112,16 +1300,149 @@
     else if(act==='restore'){setCard(id,'pending')}
   });
 
+  /* ---------- 碰一碰取现场：手机碰电脑 → 自动连上 → 回捞最近 30 s → 认出症状 → 进分析；复测也回到这台手机 ---------- */
+  var TL=(function(){ /* 手机本地环形缓冲：每 0.25 s 一个桶 */
+    var sd=41,r=function(){sd=(sd*9301+49297)%233280;return sd/233280},fr=[],cpu=[],mem=[],tmp=[];
+    var TOUCH=[[-27.4,-26.3],[-23.1,-20.3],[-14.2,-13.1],[-6.4,-5.5]];
+    function touching(t){return TOUCH.some(function(g){return t>=g[0]&&t<=g[1]})}
+    for(var i=0;i<120;i++){var t=-30+i*.25+.125,jank=t>=-22.75&&t<=-20.5,sw=touching(t);
+      fr.push(jank?34+Math.round(r()*8):(sw?11+Math.round(r()*4):8+Math.round(r()*3)));
+      cpu.push(jank?62+r()*8:(sw?36+r()*10:14+r()*6));
+      mem.push(208+i*.03+(jank?3:0)+r()*1.2);
+      tmp.push(36.3+i*.003+r()*.05);
+    }
+    return {fr:fr,cpu:cpu,mem:mem,tmp:tmp,touch:TOUCH,logs:[-28.8,-27.1,-25.4,-23.0,-19.8,-17.2,-13.6,-11.0,-6.1,-3.3],warn:[-22.4,-21.6]};
+  })();
+  function drawTL(svg,upto){
+    var W=svgW(svg),rows=['帧耗时','CPU','内存','温度','触摸','HiLog'],rowH=22,padL=50,padR=10,padT=4,pw=W-padL-padR,yb=padT+rows.length*rowH,H=yb+18;
+    var x=function(t){return padL+(t+30)/30*pw},f1=function(v){return v.toFixed(1)},s='',bw=Math.max(1,pw/120-1);
+    rows.forEach(function(nm,i){var y0=padT+i*rowH;s+='<text class="tl-lbl" x="0" y="'+(y0+rowH/2+4)+'">'+nm+'</text>';if(i)s+='<line class="tl-sep" x1="'+padL+'" x2="'+(W-padR)+'" y1="'+y0+'" y2="'+y0+'"/>'});
+    s+='<line class="tl-sep" x1="'+padL+'" x2="'+(W-padR)+'" y1="'+yb+'" y2="'+yb+'"/>';
+    [-30,-25,-20,-15,-10,-5,0].forEach(function(t){s+='<text class="lbl" x="'+f1(x(t))+'" y="'+(yb+13)+'" text-anchor="'+(t===-30?'start':(t===0?'end':'middle'))+'">'+(t===0?'0 · 碰一碰':t+' s')+'</text>'});
+    if(upto>-30){
+      TL.fr.forEach(function(v,i){var t=-30+i*.25;if(t+.25>upto+1e-9)return;var h=Math.min(rowH-5,v/44*(rowH-5));s+='<rect class="tl-bar'+(v>16.7?' bad':'')+'" x="'+f1(x(t)+.5)+'" y="'+f1(padT+rowH-2-h)+'" width="'+f1(bw)+'" height="'+f1(h)+'"><title>'+(t.toFixed(2))+' s · 最长帧 '+v+' ms</title></rect>'});
+      var line=function(arr,ri,lo,hi,area,unit){var y0=padT+ri*rowH,pts=[];arr.forEach(function(v,i){var t=-30+i*.25+.125;if(t>upto)return;pts.push([x(t),y0+rowH-4-(v-lo)/(hi-lo)*(rowH-8)])});if(pts.length<2)return '';var d=pts.map(function(p,i){return (i?'L':'M')+f1(p[0])+','+f1(p[1])}).join('');return (area?'<path class="tl-area" d="'+d+'L'+f1(pts[pts.length-1][0])+','+(y0+rowH-2)+'L'+f1(pts[0][0])+','+(y0+rowH-2)+'Z"/>':'')+'<path class="tl-line" d="'+d+'"/>'};
+      s+=line(TL.cpu,1,0,100,true)+line(TL.mem,2,196,224)+line(TL.tmp,3,36,37.2);
+      TL.touch.forEach(function(g){if(g[0]>upto)return;var b=Math.min(g[1],upto);s+='<rect class="tl-touch" x="'+f1(x(g[0]))+'" y="'+(padT+4*rowH+6)+'" width="'+f1(Math.max(2,x(b)-x(g[0])))+'" height="'+(rowH-12)+'" rx="3"><title>上滑 · ListPage</title></rect>'});
+      TL.logs.forEach(function(t){if(t<=upto)s+='<line class="tl-log" x1="'+f1(x(t))+'" x2="'+f1(x(t))+'" y1="'+(padT+5*rowH+7)+'" y2="'+(padT+6*rowH-7)+'"/>'});
+      TL.warn.forEach(function(t){if(t<=upto)s+='<line class="tl-log w" x1="'+f1(x(t))+'" x2="'+f1(x(t))+'" y1="'+(padT+5*rowH+5)+'" y2="'+(padT+6*rowH-5)+'"><title>W ImageSource · 主线程同步解码 38 ms</title></line>'});
+      if(upto>=-20.2){var a1=x(-23.2),a2=x(-20.2);
+        s+='<rect class="tl-anom" x="'+f1(a1)+'" y="'+(padT+1)+'" width="'+f1(a2-a1)+'" height="'+(yb-padT-2)+'" rx="4"><title>22 秒前 · 连续掉帧 9 · 点这里进入分析</title></rect>';
+        s+='<text class="lbl err" x="'+f1(a2+6)+'" y="'+(padT+11)+'">22 秒前 · 连续掉帧 9 · 最长 42 ms</text>'}
+      if(upto<0)s+='<line class="tl-now" x1="'+f1(x(upto))+'" x2="'+f1(x(upto))+'" y1="'+padT+'" y2="'+yb+'"/>';
+    }
+    svg.setAttribute('viewBox','0 0 '+W+' '+H);svg.style.height=H+'px';svg.innerHTML=s;
+  }
+  var TP_ITEMS=[['无线鼠标','¥129 · 全新'],['机械键盘','¥389 · 二手'],['显示器支架','¥159 · 全新'],['蓝牙音箱','¥219 · 二手'],['降噪耳机','¥699 · 全新'],['移动电源','¥99 · 全新'],['智能手表','¥1299 · 二手'],['平板支架','¥59 · 全新'],['USB-C 扩展坞','¥249 · 全新'],['桌面台灯','¥189 · 二手']];
+  $('#tp-list').innerHTML='<div class="tp-hd">商品</div><div class="tp-search">搜索</div>'+TP_ITEMS.map(function(t){return '<div class="tp-row"><i></i><div><b>'+t[0]+'</b><span>'+t[1]+'</span></div></div>'}).join('');
+  function tapLinked(){return S.tap==='pull'||S.tap==='done'||S.tap==='analyzed'}
+  function tapCap(){
+    if(S.tap==='pull')return SPIN+'碰一碰 · 回捞最近 30 s · '+S.tapP+'%';
+    if(S.tap==='done'||S.tap==='analyzed')return dot('err')+'王磊的 Mate 70 Pro · 22 秒前掉帧 9';
+    return dot('muted')+'碰一碰 · 等待手机';
+  }
+  function renderTapLive(){
+    var el=$('#tp-live'),ph=$('#tphone');if(!el)return;
+    var t=S.tap,j=ST.jank,h=null,p=null,replay=false;
+    if(t==='pull'){h=['回捞中','把最近 30 秒交给 MateBook Pro'];p=S.tapP}
+    else if(t==='done'){h=['已交给电脑','30 秒记录 · 认出：列表滑起来卡'];p=100}
+    else if(t==='analyzed'){
+      if(j.batch){h=['复测中','改前 / 改后交替回放 '+(j.prog.b+j.prog.a)+' / '+(2*j.n)+' · 先别动'];p=Math.round((j.prog.a+j.prog.b)/(2*j.n)*100);replay=true}
+      else if(j.applied&&!j.retested){h=['复测中','回放刚才的手势 · 先别动手机'];p=-1;replay=true}
+      else if(j.retested){h=['复测完成','同一段手势 · 掉帧 9 → 0'];p=100}
+      else h=['分析中','ListPage 掉帧 9 · 已定位 ListPage.ets:28'];
+    }
+    ph.classList.toggle('replay',replay);
+    if(!h){el.hidden=true;return}
+    el.hidden=false;
+    el.innerHTML='<span class="l1"><svg viewBox="0 0 64 64"><use href="#i-logo"/></svg>DevEco Studio<em>'+h[0]+'</em></span><span class="l2">'+h[1]+'</span>'+(p==null?'':'<span class="pg'+(p<0?' indet':'')+'"><i style="--v:'+Math.max(0,p)+'%"></i></span>');
+  }
+  function renderTap(){
+    var t=S.tap,linked=tapLinked(),stage=$('#tap-stage'),ph=$('#tphone');
+    stage.dataset.ph=t;ph.dataset.ph=t;$('#tap-hit').hidden=t!=='idle';
+    var tag=$('#stage-tag'),TAG={idle:['muted','等待碰一碰'],touch:['info','碰到了 · 握手中'],ask:['info','等手机上允许'],pull:['info','已连接 · 回捞中'],done:['ok','已连接 · 无线调试'],analyzed:['ok','已连接 · 无线调试']}[t];
+    tag.className='dm-pill st-tag '+TAG[0];tag.textContent=TAG[1];
+    var c=$('#tap-conn');
+    if(!linked)c.innerHTML='<div class="ch-t"><b>连接</b><span>· '+(t==='ask'?'等手机上允许':(t==='touch'?'碰到了，正在握手':'还没有手机'))+'</span><span class="grow"></span><span class="dm-pill '+(t==='idle'?'muted':'info')+'">'+(t==='idle'?'未连接':'配对中')+'</span></div><div class="wait">拿起刚卡的那台手机，背面碰一下触控板右侧的碰一碰区。自动配对无线调试，不用插线，也不用输 IP 和配对码。</div>';
+    else c.innerHTML='<div class="ch-t"><span class="dm-dot ok"></span><b>王磊的 Mate 70 Pro</b><span>· 碰一碰连上 · 无线调试</span><span class="grow"></span><span class="dm-pill ok">已连接</span></div>'
+      +'<div class="kvs"><span><em>系统</em><span>HarmonyOS 6.0.0.120 · API 20</span></span><span><em>应用</em><span>com.example.shop 5.2.0 · debug · 与本工程同签名</span></span><span><em>符号</em><span>用本工程 sourcemap 还原到 ArkTS 行号</span></span><span><em>通道</em><span>hdc tconn 192.168.3.24:5555 · 已加入设备列表</span></span></div>';
+    var upto=t==='pull'?-30+30*S.tapP/100:(t==='done'||t==='analyzed'?0:-30);
+    drawTL($('#svg-tl'),upto);
+    var pill=$('#tl-pill');
+    if(t==='pull'){pill.className='dm-pill info';pill.textContent='回捞中 '+S.tapP+'%'}
+    else if(t==='done'||t==='analyzed'){pill.className='dm-pill err';pill.textContent='22 秒前 · 掉帧 9'}
+    else{pill.className='dm-pill muted';pill.textContent='未回捞'}
+    var co=$('#tap-callout'),ct=$('#tap-callout-t'),go=$('#tap-go'),ic=$('use',co);
+    go.hidden=!(t==='done'||t==='analyzed');
+    if(t==='idle'){co.className='dm-callout tap-go';ic.setAttribute('href','#i-info');ct.innerHTML='刚才那一下还在这台手机最近 30 秒的记录里：碰一下就拿回来，不用插线，也不用让他再滑几遍等复现。'}
+    else if(t==='touch'||t==='ask'){co.className='dm-callout tap-go';ic.setAttribute('href','#i-sync');ct.innerHTML='在手机上点「允许」。记录只走这条碰一碰建立的调试通道，不经过云端。'}
+    else if(t==='pull'){co.className='dm-callout tap-go';ic.setAttribute('href','#i-sync');ct.innerHTML='正在回捞：帧 → CPU → 内存 → 温度 → HiLog，再用本工程的 sourcemap 把调用栈对回 ArkTS 行号…'}
+    else if(t==='done'){co.className='dm-callout warn tap-go';ic.setAttribute('href','#i-warn');ct.innerHTML='认出症状：<b>列表滑起来卡</b>。22 秒前在 <code>ListPage</code> 上滑时连续掉帧 9 帧（最长 42 ms），同一时刻 HiLog 有 2 条主线程解码告警；CPU、内存、温度正常。';go.textContent='进入症状分析'}
+    else{co.className='dm-callout ok tap-go';ic.setAttribute('href','#i-check');ct.innerHTML='已进入「列表滑起来卡」· 记录 <b>'+esc(S.tapRec)+'</b>。改完会在这台手机上回放同一段手势复测。';go.textContent='回到症状分析'}
+    var en=$('#tap-entry');en.classList.toggle('linked',linked);
+    $('#tap-sub').innerHTML=t==='pull'?S.tapP+'%':(linked?'<span class="dm-dot ok"></span>已连':'最近 30 s');
+    renderTapLive();
+  }
+  function tapStart(){
+    if(S.tap!=='idle'||S.sym!=='tap')return;
+    S.tap='touch';
+    var ph=$('#tphone'),z=$('#nfc-zone'),st=$('#tap-stage'),sr=st.getBoundingClientRect(),zr=z.getBoundingClientRect(),pr=ph.getBoundingClientRect();
+    var cx=zr.left+zr.width/2,cy=zr.top+zr.height/2;
+    ph.style.transform='translate('+Math.round(cx-(pr.left+pr.width/2))+'px,'+Math.round(cy-(pr.top+70))+'px) rotate(8deg)';
+    [$('#rip1'),$('#rip2')].forEach(function(r){r.style.left=Math.round(cx-sr.left)+'px';r.style.top=Math.round(cy-sr.top)+'px'});
+    renderTap();updateCap();updateRecPill();
+    S.tapT=setTimeout(function(){st.classList.add('hit');
+      S.tapT=setTimeout(function(){S.tapT=null;ph.style.transform='';st.classList.remove('hit');S.tap='ask';renderTap();updateCap();updateRecPill()},900)},560);
+  }
+  function tapAllow(){
+    if(S.tap!=='ask')return;
+    var fb=document.activeElement;if(fb&&fb.blur)fb.blur();$('#tphone .scr').scrollTop=0;
+    S.tap='pull';S.tapP=0;
+    var hb=$('#hdr-device span');if(hb)hb.textContent='Mate 70 Pro（王磊）· 无线';
+    renderTap();updateCap();updateRecPill();
+    S.tapT=setInterval(function(){
+      S.tapP=Math.min(100,S.tapP+4);
+      if(S.tapP>=100){clearInterval(S.tapT);S.tapT=null;S.tap='done'}
+      if(S.sym==='tap'&&S.view==='sym')renderTap();else renderTapLive();
+      updateCap();updateRecPill();
+    },60);
+  }
+  function tapCancel(){if(S.tap!=='ask')return;S.tap='idle';renderTap();updateCap();updateRecPill()}
+  function tapAnalyze(){
+    if(S.tap==='analyzed'){S.view='sym';pickSym('jank');return}
+    if(S.tap!=='done')return;
+    var j=ST.jank;
+    if(j.applied){setCard('d1','pending');renderCode();retestUndo('jank')}
+    S.tapRec='#'+(nextRec++);
+    REC.forEach(function(r){r.sel=0});
+    addRec({id:S.tapRec,icon:'#i-tap',text:'碰一碰回捞 · 王磊的 Mate 70 Pro · 最近 30 s · 22 秒前滑动 ListPage',pill:['err','掉帧 9'],when:'刚刚',key:'tap-rec',sel:1});
+    S.src='tap';S.tap='analyzed';j.rec0=S.tapRec;j.rec1=null;
+    $('#jank-ask').innerHTML='<span class="tap-att"><svg class="i"><use href="#i-tap"/></svg>碰一碰现场 · 王磊的 Mate 70 Pro · 最近 30 s</span>刚才这台手机滑列表卡了一下';
+    $('#jank-read').innerHTML='读碰一碰回捞 '+esc(S.tapRec)+' · 王磊的 Mate 70 Pro 最近 30 s';
+    setNote('jank','','#i-tap',SC.jank.noteIdle(j));
+    S.view='sym';pickSym('jank');revealCard('d1');
+  }
+  $('#tap-hit').addEventListener('click',tapStart);
+  $('#nfc-zone').addEventListener('click',tapStart);
+  $('#tphone').addEventListener('click',function(e){var b=e.target.closest('[data-tp]');if(!b)return;if(b.dataset.tp==='allow')tapAllow();else tapCancel()});
+  $('#tap-go').addEventListener('click',tapAnalyze);
+  $('#svg-tl').addEventListener('click',function(e){if(e.target.closest('.tl-anom'))tapAnalyze()});
+
   /* ---------- 初始：已经“点进去”的状态 ---------- */
-  renderCode();locate(28);renderRec();showViews();
+  renderCode();locate(28);renderRec();showViews();updateCap();updateRecPill();
   window.addEventListener('resize',showViews);
 DemoGuide.init([
-  {"target": "#d1 [data-diff=\"accept\"]", "kind": "click", "pos": "top", "label": "点 Accept 出补丁"},
-  {"target": "#sym-col .sym[data-sym=\"leak\"]", "kind": "click", "pos": "bottom", "label": "内存涨：自动走一遍找泄漏链"},
-  {"target": ".tw-bottom .btab[data-view=\"top\"]", "kind": "click", "pos": "top", "label": "最重调用栈"},
-  {"target": "#cmp-runs", "kind": "click", "pos": "top", "label": "各跑 5 次看显著性"},
-  {"target": "#prof-main", "kind": "change", "pos": "left", "label": "掉帧自动复测"}
-]);
+  {target:'#d1 [data-diff="accept"]',kind:'click',pos:'top',label:'接受补丁，它就在那台手机上同手势复测'},
+  {target:'#tap-entry',kind:'click',pos:'bottom',label:'同事说刚卡了？拿他手机碰一下'},
+  {target:'#cmp-runs',kind:'click',pos:'top',label:'让它各跑 5 次判显著'},
+  {target:'#sym-col .sym[data-sym="leak"]',kind:'click',pos:'right',label:'内存涨：它自动走一遍找泄漏链'}
+], {scene:{
+  at:'测试拿着刚卡过的 Mate 70 Pro 来找你：列表滑着卡',
+  goal:'找到卡在哪一行，改完确认那台手机上真不卡了',
+  pain:'插线、让他再滑几遍等复现；改完跑一次像好了就算',
+  fix:'说一句哪里卡，Agent 定位出补丁；接受后它同手势复测判显著',
+  agent:'它读 trace、出补丁、复测；复测独占真机，别的 Agent 排队；你接受'
+}});
 })();
 </script>
 </body>

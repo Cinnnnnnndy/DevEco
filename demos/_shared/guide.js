@@ -16,7 +16,7 @@ window.DemoGuide = (function(){
   'use strict';
   var $ = function(s,r){ return (r||document).querySelector(s); };
   var esc = function(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;'); };
-  var marks = [], visible = true, raf = null, KEY = 'deveco-guide';
+  var marks = [], visible = true, raf = null, KEY = 'deveco-guide', SKEY = 'deveco-guide-scene', scene = null;
   function saved(){ try{ return localStorage.getItem(KEY); }catch(e){ return null; } }
   function save(on){ try{ localStorage.setItem(KEY, on ? 'on' : 'off'); }catch(e){} }
 
@@ -63,9 +63,37 @@ window.DemoGuide = (function(){
 
     var legend = document.createElement('div');
     legend.id = 'gd-legend'; legend.className = 'gd-legend';
-    legend.innerHTML = '<div class="hd"><b>页面标注</b><button type="button" class="x" title="关闭全部标注（Esc）" aria-label="关闭全部标注">'
-      + '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button></div>'
-      + '<span class="row"><i></i>点这里，触发这条创新点的关键交互</span><span class="row"><i></i>这里会变，是点完之后的结果</span>';
+    var X = '<button type="button" class="x" title="关闭全部标注（Esc）" aria-label="关闭全部标注">'
+      + '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button>';
+    var keys = '<div class="keys"><span class="row"><i></i>点这里</span><span class="row"><i></i>点完这里会变</span></div>';
+    if(scene){
+      var rows = [['在做', scene.at], ['要做成', scene.goal], ['卡在', scene.pain], ['这里', scene.fix], ['Agent', scene.agent]]
+        .filter(function(r){ return r[1]; })
+        .map(function(r){ return '<div class="sc' + (r[0] === '这里' ? ' fix' : r[0] === 'Agent' ? ' agent' : '') + '"><em>' + r[0] + '</em><span>' + esc(r[1]) + '</span></div>'; }).join('');
+      legend.classList.add('gd-scene');
+      legend.innerHTML = '<div class="hd"><button type="button" class="fold" aria-expanded="true" title="折叠 / 展开场景">'
+        + '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 6.5 8 10l3.5-3.5" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+        + '<b>这一页解决什么</b><span class="brief">' + esc(scene.at || scene.goal || '') + '</span></button>' + X + '</div>'
+        + '<div class="bd">' + rows + keys + '</div>';
+      var fold = legend.querySelector('.fold');
+      var setFold = function(c){ legend.classList.toggle('folded', c); fold.setAttribute('aria-expanded', String(!c)); };
+      var sv = null; try{ sv = localStorage.getItem(SKEY); }catch(e){}
+      setFold(sv === 'folded');
+      fold.addEventListener('click', function(){
+        var c = !legend.classList.contains('folded'); setFold(c);
+        try{ localStorage.setItem(SKEY, c ? 'folded' : 'open'); }catch(e){}
+      });
+      /* 读完场景开始动手：第一次点页面别处就自动折成一行，不挡操作（不记忆，下次进来仍展开） */
+      var autoFold = function(e){
+        if(legend.contains(e.target)) return;
+        document.removeEventListener('pointerdown', autoFold, true);
+        setFold(true);
+      };
+      document.addEventListener('pointerdown', autoFold, true);
+    } else {
+      legend.innerHTML = '<div class="hd"><b>页面标注</b>' + X + '</div>'
+        + '<span class="row"><i></i>点这里，触发这条创新点的关键交互</span><span class="row"><i></i>这里会变，是点完之后的结果</span>';
+    }
     legend.querySelector('.x').addEventListener('click', function(){ setVisible(false); });
     document.body.appendChild(legend);
 
@@ -73,8 +101,9 @@ window.DemoGuide = (function(){
     document.addEventListener('keydown', function(e){ if(e.key === 'Escape' && visible) setVisible(false, false); });
   }
 
-  function init(list){
+  function init(list, opts){
     if(!list || !list.length) return;
+    scene = (opts && opts.scene) || null;
     var layer = document.createElement('div');
     layer.id = 'gd-layer'; layer.className = 'gd-layer';
     list.forEach(function(m, i){

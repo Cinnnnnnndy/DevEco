@@ -6,6 +6,7 @@ deveco-intui-kit 构建脚本
   python3 build.py              把 demo 与 docs 各打包成一个单文件 HTML，输出到 dist/
                                 （单文件版没有外链，适合发给别人 / 发布成 Artifact）
   python3 build.py sync-icons   src/icons.svg 改过之后，重新生成 src/icons.js
+                                （也会把 icons/ai-icons.svg 同步成 icons/ai-icons.js）
   python3 build.py docs         只重新生成 docs/index.html（等同 tools/gen_docs_page.py）
 
 日常在 demo/index.html 与 docs/index.html 上直接双击预览即可，不需要构建。
@@ -32,6 +33,16 @@ def sync_icons():
           "d.innerHTML=window.INT_UI_SPRITE;"
           "document.body.insertBefore(d,document.body.firstChild)});\n")
     wr('src/icons.js', js)
+    # DevEco 智能图标：icons/ai-icons.svg → icons/ai-icons.js（同样以 JS 注入）
+    if os.path.exists(os.path.join(ROOT, 'icons/ai-icons.svg')):
+        ai = rd('icons/ai-icons.svg').strip()
+        wr('icons/ai-icons.js',
+           '/* 由 build.py sync-icons 生成，不要直接改这个文件；改 icons/ai-icons.svg */\n'
+           'window.AI_SPRITE = ' + json.dumps(ai, ensure_ascii=False) + ';\n'
+           "(function(){function put(){var d=document.createElement('div');"
+           "d.style.cssText='position:absolute;width:0;height:0;overflow:hidden';"
+           "d.innerHTML=window.AI_SPRITE;document.body.insertBefore(d,document.body.firstChild)}"
+           "if(document.body)put();else document.addEventListener('DOMContentLoaded',put)})();\n")
 
 def inline(page_path, out_path, title=None):
     """把一个多文件页面打成单文件：内联 css / js / 图标雪碧图"""

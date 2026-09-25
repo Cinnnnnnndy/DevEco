@@ -1,0 +1,391 @@
+/* ============================================================
+   DevEco 智能 · 视觉与交互 token 与组件（DevEco Code / CodeGenie / 所有 AI 能力共用）
+   规范页：../docs/ai-system.html          图标：../icons/ai-icons.svg（ai-icons.js 注入）
+   依赖：tokens.css（--ui-* / --font-* / --diff-*）。引入顺序：tokens.css → components.css → ai.css
+
+   三条底线（改之前先读）：
+   1. 智能色 ≠ 品牌蓝。蓝色只给主操作与聚焦；智能色只表示「这是 AI 做的 / AI 正在做」。
+   2. 小字、图标一律用纯色 --ai-ink；渐变只用于标识、生成中的输入框光、进行中的光环，
+      同一屏最多两处渐变，不做大面积渐变底，不给整块面板染色。
+   3. 「在等你」用琥珀色 --ai-wait，是唯一需要抢注意力的态；其余进行态都安静。
+   4. 简洁优先（2026-09 对照 Xcode 27 / Android Studio 后收敛）：能用中性色和层次解决的不用渐变，
+      能不动的不加动效；不做外发光、文字扫光、多层阴影、描边叠加。圆角按「同心」取值：
+      容器 --ai-r，紧贴嵌套的内层 = 外层圆角 − 内边距（--ai-r-in），状态与芯片用胶囊。
+
+   主题选择器与 tokens.css 完全一致：浅色 → 深色（显式）→ 深色（跟随系统）。
+   注意：--ai-w 是 tokens.css 里 AI 面板的宽度，不属于这套色板，别混。
+   ============================================================ */
+
+@property --ai-angle{syntax:'<angle>';inherits:false;initial-value:0deg}
+
+:root,
+.ide[data-ide-theme="light"]{
+  /* 光：紫罗兰 → 兰紫 → 玫瑰（只用于渐变与图形，不用于小字） */
+  --ai-violet:#6E56F0;--ai-orchid:#A452E0;--ai-rose:#E0457F;
+  /* 字与图标：纯色。#6541D6 对白 6.40、对 Gray13 6.02、对 Gray12 5.42（WCAG AA 小字 ≥ 4.5） */
+  --ai-ink:#6541D6;
+  /* 幽灵建议：浅色取 --ai-ink 66%（合成 #9982E4，对白 3.15），与深色 55% 的对比度对齐到 3:1 */
+  --ai-ghost:#9982E4;
+  --ai-tint:rgba(110,86,240,.06);     /* AI 生成代码行底：几乎看不见，只在并排时可辨 */
+  --ai-tint-2:rgba(110,86,240,.11);   /* 来源标记 / 智能胶囊底 */
+  --ai-glow:rgba(164,82,224,.30);     /* 外发光与脉冲 */
+  --ai-on:#FFFFFF;                    /* 渐变 / 实色底上的字 */
+  /* 在等你：琥珀。点 #BF7000 对白 3.80（非文字图形 ≥ 3）；字 #9A5B00 对白 5.43 */
+  --ai-wait:#BF7000;--ai-wait-ink:#9A5B00;--ai-wait-tint:rgba(224,138,0,.10);
+  /* 智能组件自身的面：填充分层，不靠描边。深色比 AI 面板底（Gray2）亮一档，放在面板上也分得开 */
+  --ai-surface:#FFFFFF;--ai-surface-2:#EEEFF2;--ai-field-line:#DFE1E5;
+  --ai-grad:linear-gradient(120deg,#6E56F0 0%,#A452E0 55%,#E0457F 100%);
+  --ai-grad-v:linear-gradient(180deg,#6E56F0 0%,#A452E0 55%,#E0457F 100%);
+}
+
+.ide[data-ide-theme="dark"],
+:root[data-theme="dark"]{
+  --ai-violet:#8F7CFF;--ai-orchid:#C08AF7;--ai-rose:#F27BAE;
+  /* #B69CFF 对 Gray1 7.21、对 Gray2 6.04、对 Gray3 4.90 */
+  --ai-ink:#B69CFF;
+  --ai-ghost:#72649C;                 /* --ai-ink 55% 合成，对 Gray1 3.15 */
+  --ai-tint:rgba(143,124,255,.08);--ai-tint-2:rgba(143,124,255,.16);
+  --ai-glow:rgba(192,138,247,.32);--ai-on:#FFFFFF;
+  --ai-wait:#F5A524;--ai-wait-ink:#F5B64F;--ai-wait-tint:rgba(245,165,36,.13);
+  --ai-surface:#323438;--ai-surface-2:#393B40;--ai-field-line:#43454A;
+  --ai-grad:linear-gradient(120deg,#8F7CFF 0%,#C08AF7 55%,#F27BAE 100%);
+  --ai-grad-v:linear-gradient(180deg,#8F7CFF 0%,#C08AF7 55%,#F27BAE 100%);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+  --ai-violet:#8F7CFF;--ai-orchid:#C08AF7;--ai-rose:#F27BAE;
+  --ai-ink:#B69CFF;--ai-ghost:#72649C;
+  --ai-tint:rgba(143,124,255,.08);--ai-tint-2:rgba(143,124,255,.16);
+  --ai-glow:rgba(192,138,247,.32);--ai-on:#FFFFFF;
+  --ai-wait:#F5A524;--ai-wait-ink:#F5B64F;--ai-wait-tint:rgba(245,165,36,.13);
+  --ai-surface:#323438;--ai-surface-2:#393B40;--ai-field-line:#43454A;
+  --ai-grad:linear-gradient(120deg,#8F7CFF 0%,#C08AF7 55%,#F27BAE 100%);
+  --ai-grad-v:linear-gradient(180deg,#8F7CFF 0%,#C08AF7 55%,#F27BAE 100%);
+  }
+}
+
+/* 动效与形状：不随主题变 */
+:root,.ide{
+  --ai-t-shimmer:1.8s;   /* 思考 / 生成：一轮色相流动（只给星芒与输入框描边） */
+  --ai-t-ring:1s;        /* 调用工具 / 验证：小环一圈 */
+  --ai-t-wait:1.6s;      /* 在等你：琥珀点脉冲 */
+  --ai-t-done:1s;        /* 完成：勾停留后回中性 */
+  --ai-t-fade:3s;        /* 接受后 AI 行底色淡出 */
+  --ai-t-touch:1.2s;     /* AI 刚改过的元素：光晕脉冲一次 */
+  --ai-ease:cubic-bezier(.2,.8,.2,1);   /* 只减速，不回弹 */
+  --ai-r:12px;           /* 容器：输入框、回答卡、浮层、审批卡 */
+  --ai-r-in:6px;         /* 紧贴嵌套的内层：浮层 12 − 内边距 6 = 6（同心） */
+  --ai-spark-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M8 0Q9.12 6.88 16 8Q9.12 9.12 8 16Q6.88 9.12 0 8Q6.88 6.88 8 0Z'/%3E%3C/svg%3E");
+}
+
+/* ------------------------------------------------------------
+   0 · 基础件：图标、星芒、光环、键帽、按钮
+   ------------------------------------------------------------ */
+svg.ai-ico{width:16px;height:16px;flex:none;display:block;color:currentColor}
+.ai-ink{color:var(--ai-ink)}
+
+/* 星芒：纯色（默认）或流动（.is-live，思考 / 生成） */
+.ai-spark{display:inline-block;flex:none;width:12px;height:12px;background:var(--ai-ink);
+  -webkit-mask:var(--ai-spark-mask) center/contain no-repeat;mask:var(--ai-spark-mask) center/contain no-repeat}
+.ai-spark.is-live{background:linear-gradient(90deg,var(--ai-violet),var(--ai-orchid),var(--ai-rose),var(--ai-orchid),var(--ai-violet));
+  background-size:300% 100%;animation:ai-flow var(--ai-t-shimmer) linear infinite}
+
+/* 任意现有 16px 图标 → AI 变体：右上角挖一个圆，放 5px 星芒（和 ai-icons.svg 的 mask 规则一致） */
+.ai-derive{position:relative;display:inline-block;width:16px;height:16px;flex:none;line-height:0}
+.ai-derive>svg{width:16px;height:16px;display:block;
+  -webkit-mask:radial-gradient(circle 3.9px at 12.5px 3.5px,transparent 97%,#000 100%);
+          mask:radial-gradient(circle 3.9px at 12.5px 3.5px,transparent 97%,#000 100%)}
+.ai-derive::after{content:"";position:absolute;left:9.9px;top:.9px;width:5.2px;height:5.2px;background:currentColor;
+  -webkit-mask:var(--ai-spark-mask) center/contain no-repeat;mask:var(--ai-spark-mask) center/contain no-repeat}
+
+/* 小环：调用工具 / 在设备上验证 */
+.ai-ring{display:inline-block;flex:none;width:12px;height:12px;border-radius:50%;
+  background:conic-gradient(from 0deg,transparent 0 12%,var(--ai-violet) 40%,var(--ai-orchid) 70%,var(--ai-rose));
+  -webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 2px),#000 calc(100% - 1.6px));
+          mask:radial-gradient(farthest-side,transparent calc(100% - 2px),#000 calc(100% - 1.6px));
+  animation:ai-spin var(--ai-t-ring) linear infinite}
+
+/* 在等你：琥珀点，脉冲是唯一被允许「抢注意力」的动效 */
+.ai-wait-dot{position:relative;display:inline-block;flex:none;width:8px;height:8px;border-radius:50%;background:var(--ai-wait)}
+.ai-wait-dot::after{content:"";position:absolute;inset:0;border-radius:50%;background:var(--ai-wait);
+  animation:ai-ping var(--ai-t-wait) var(--ai-ease) infinite}
+
+.ai-kbd{display:inline-block;min-width:18px;padding:0 5px;height:18px;line-height:18px;border-radius:5px;text-align:center;
+  font-family:var(--font-code);font-size:11px;background:var(--ai-surface-2);color:var(--ui-fg-info)}
+
+.ai-btn{appearance:none;border:0;display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px;border-radius:8px;
+  background:transparent;color:var(--ui-fg);font:inherit;font-size:12px;line-height:16px;cursor:pointer;white-space:nowrap}
+.ai-btn:hover{background:var(--ui-action-hover)}
+.ai-btn:active{background:var(--ui-action-pressed)}
+.ai-btn:focus-visible{outline:2px solid var(--ui-accent);outline-offset:1px}
+.ai-btn svg{width:14px;height:14px;color:var(--ui-icon)}
+.ai-btn--fill{background:var(--ai-surface-2)}
+.ai-btn--fill:hover{background:var(--ui-hover)}
+.ai-btn--primary{background:var(--ui-accent);color:var(--ui-accent-fg)}   /* 每屏最多一个 */
+.ai-btn--primary:hover{background:var(--ui-accent);filter:brightness(1.08)}
+.ai-btn--primary svg{color:currentColor}
+.ai-btn--quiet{color:var(--ui-fg-info);height:24px;padding:0 6px}
+
+/* ------------------------------------------------------------
+   1 · 高亮：代码里、画布上，哪些是 AI 做的
+   ------------------------------------------------------------ */
+/* AI 生成的代码块：gutter 渐变竖条 + 极淡底色；接受后 3 s 淡出；悬停 gutter 看来源 */
+.ai-block{position:relative;background:var(--ai-tint)}
+.ai-gut{position:absolute;left:0;top:0;bottom:0;width:12px;cursor:help;z-index:1}
+.ai-gut::before{content:"";position:absolute;left:3px;top:2px;bottom:2px;width:2px;border-radius:2px;background:var(--ai-grad-v)}
+.ai-gut::after{content:attr(data-src);position:absolute;left:14px;top:0;white-space:nowrap;padding:4px 8px;border-radius:6px;
+  background:var(--ui-tooltip-bg);color:var(--ui-tooltip-fg);font:12px/16px var(--font-ui);box-shadow:var(--ui-shadow);
+  opacity:0;transform:translateX(-4px);pointer-events:none;transition:opacity .12s,transform .12s}
+.ai-gut:hover::after{opacity:1;transform:none}
+.ai-block.is-accepted{animation:ai-tint-out var(--ai-t-fade) ease-in forwards}
+.ai-block.is-accepted .ai-gut::before{animation:ai-bar-out var(--ai-t-fade) ease-in forwards}
+.ai-block.is-accepted .ai-gut:hover::before{animation:none;opacity:.5}
+
+/* 幽灵建议：还没接受的 AI 续写 */
+.ai-ghost{color:var(--ai-ghost)}
+
+/* AI diff：增删仍用绿红，来源星芒只出现在 gutter */
+.ai-add{background:var(--diff-add)}
+.ai-del{background:var(--diff-del)}
+.ai-gmark{display:inline-block;width:9px;height:9px;background:var(--ai-ink);vertical-align:-1px;
+  -webkit-mask:var(--ai-spark-mask) center/contain no-repeat;mask:var(--ai-spark-mask) center/contain no-repeat}
+
+/* 画布 / 预览上 AI 选中（或将要改）的区域：虚线 + 角标 */
+.ai-select{position:relative;outline:1.5px dashed var(--ai-ink);outline-offset:2px}
+.ai-select[data-ai-tag]::after{content:attr(data-ai-tag);position:absolute;left:-3.5px;top:-4px;transform:translateY(-100%);
+  padding:1px 6px;border-radius:5px 5px 5px 0;background:var(--ai-ink);color:var(--ai-on);
+  font:500 11px/16px var(--font-ui);white-space:nowrap;pointer-events:none}
+/* AI 刚改过的元素：光晕脉冲一次，然后什么都不留（人改的不打标） */
+.ai-touched{animation:ai-touch var(--ai-t-touch) var(--ai-ease) 1}
+
+/* 来源标记：由 AI 改 · 可退回 */
+.ai-src{display:inline-flex;align-items:center;gap:5px;height:20px;padding:0 8px 0 6px;border-radius:10px;
+  background:var(--ai-tint-2);color:var(--ai-ink);font-size:11px;line-height:16px;white-space:nowrap;vertical-align:middle}
+.ai-src .ai-spark{width:9px;height:9px}
+.ai-src button{appearance:none;border:0;background:none;padding:0;font:inherit;color:inherit;cursor:pointer;
+  text-decoration:underline;text-decoration-color:transparent;text-underline-offset:2px}
+.ai-src button:hover{text-decoration-color:currentColor}
+.ai-src i{font-style:normal;opacity:.55}
+
+/* ------------------------------------------------------------
+   2 · 进行态：状态胶囊 .ai-status[data-state]
+   idle 待命 · thinking 理解中 · tool 调用工具 · generating 生成中 · waiting 在等你
+   verifying 在设备上验证 · done 完成 · error 中断 / 失败
+   ------------------------------------------------------------ */
+.ai-status{display:inline-flex;align-items:center;gap:7px;height:26px;padding:0 11px 0 9px;border-radius:13px;
+  background:var(--ai-surface-2);color:var(--ui-fg);font-size:12px;line-height:16px;white-space:nowrap;max-width:100%;
+  transition:background .2s,color .2s}
+.ai-status>.lbl{overflow:hidden;text-overflow:ellipsis;min-width:0}
+.ai-status .ai-ico{width:14px;height:14px;color:var(--ui-icon)}
+.ai-status code,.ai-status .mono{font-family:var(--font-code);font-size:11.5px;color:var(--ui-fg-info)}
+.ai-status .t{font-family:var(--font-code);font-size:11px;color:var(--ui-fg-info);font-variant-numeric:tabular-nums}
+.ai-status[data-state="waiting"]{background:var(--ai-wait-tint);color:var(--ai-wait-ink)}
+.ai-status[data-state="done"] .ai-ico{animation:ai-done calc(var(--ai-t-done) + .4s) linear forwards}
+.ai-status[data-state="error"] .ai-ico{color:var(--ui-error)}
+.ai-status .act{appearance:none;border:0;background:none;padding:0;margin-left:2px;font:inherit;color:var(--ui-link);cursor:pointer}
+
+/* 思考 / 生成时的文字：不做扫光，就是正文色——动的只有星芒（2026-09 收敛：一个状态只留一处在动） */
+.ai-shimmer{color:var(--ui-fg)}
+
+/* ------------------------------------------------------------
+   3 · 组件
+   ------------------------------------------------------------ */
+/* 3.1 智能输入框：待命 / 聚焦 / 生成中（流动光 + 外发光）/ 可停止 */
+.ai-field{position:relative;border-radius:var(--ai-r);background:var(--ui-field-bg);box-shadow:inset 0 0 0 1px var(--ai-field-line);
+  padding:10px 10px 8px 12px;display:flex;flex-direction:column;gap:8px;transition:box-shadow .15s}
+.ai-field:focus-within{box-shadow:inset 0 0 0 1px var(--ui-accent)}
+.ai-field__ta{appearance:none;border:0;background:transparent;resize:none;outline:none;width:100%;min-height:38px;
+  font:inherit;font-size:13px;line-height:19px;color:var(--ui-fg);padding:0}
+.ai-field__ta::placeholder{color:var(--ui-fg-disabled)}
+.ai-field__bar{display:flex;align-items:center;gap:4px;color:var(--ui-fg-info);font-size:12px;min-width:0}
+.ai-field__bar .grow{flex:1;min-width:0}
+.ai-field__model{display:inline-flex;align-items:center;gap:5px;height:24px;padding:0 6px;border-radius:6px;white-space:nowrap}
+.ai-field__model svg{width:14px;height:14px}
+.ai-field__send{appearance:none;border:0;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;cursor:pointer;
+  background:var(--ui-fg);color:var(--ui-editor-bg);flex:none;transition:transform .12s}
+.ai-field__send:active{transform:scale(.94)}
+.ai-field__send:disabled{background:var(--ai-surface-2);color:var(--ui-fg-disabled);cursor:default}
+.ai-field__send svg{width:14px;height:14px}
+.ai-field::before,.ai-field::after{content:"";position:absolute;border-radius:inherit;pointer-events:none;opacity:0;transition:opacity .3s;
+  background:conic-gradient(from var(--ai-angle),var(--ai-violet),var(--ai-orchid),var(--ai-rose),var(--ai-orchid),var(--ai-violet));
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;
+  mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);mask-composite:exclude}
+/* 流动描边：1.5px 的锥形渐变环（挖掉内容区，只剩一圈） */
+.ai-field::before{inset:0;padding:1.5px}
+/* 不做外发光（2026-09 收敛）：Apple Intelligence 的边缘光在 IDE 里会盖住代码，一圈流动描边已足够说明「正在写」 */
+.ai-field::after{display:none}
+.ai-field[data-state="generating"]{box-shadow:none}
+.ai-field[data-state="generating"]::before{opacity:1;animation:ai-angle var(--ai-t-shimmer) linear infinite}
+.ai-field__gen{display:none;align-items:center;gap:7px;font-size:12px;color:var(--ui-fg-info);min-width:0;min-height:38px}
+.ai-field[data-state="generating"] .ai-field__gen{display:flex}
+.ai-field[data-state="generating"] .ai-field__ta{display:none}
+
+/* 兼容 kit 里已有的 .ai-input：加 data-ai-state="generating" 即获得同样的流动光 */
+.ai-input[data-ai-state="generating"]{border-color:transparent}
+.ai-input[data-ai-state="generating"]::after{inset:-1px;padding:1.5px;opacity:1;
+  background:conic-gradient(from var(--ai-angle),var(--ai-violet),var(--ai-orchid),var(--ai-rose),var(--ai-orchid),var(--ai-violet));
+  animation:ai-angle var(--ai-t-shimmer) linear infinite}
+
+/* 3.2 就地问答浮层：选中代码 / 选中画布元素后出现 */
+.ai-pop{width:min(360px,100%);border-radius:var(--ai-r);background:var(--ui-popup-bg);box-shadow:0 0 0 1px var(--ui-popup-border),var(--ui-shadow);
+  padding:6px;display:flex;flex-direction:column;gap:6px}
+.ai-pop__ctx,.ai-pop__eg,.ai-pop__foot{padding:0 4px}
+.ai-pop__ctx{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--ui-fg-info);min-width:0}
+.ai-pop__ctx code{font-family:var(--font-code);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ai-pop__in{display:flex;align-items:center;gap:8px;height:32px;padding:0 6px 0 10px;border-radius:var(--ai-r-in);background:var(--ai-surface-2)}
+.ai-pop__in input{flex:1;min-width:0;border:0;background:transparent;outline:none;font:inherit;font-size:13px;color:var(--ui-fg)}
+.ai-pop__in input::placeholder{color:var(--ui-fg-disabled)}
+.ai-pop__eg{display:flex;flex-wrap:wrap;gap:6px}
+.ai-pop__eg button{appearance:none;border:0;height:24px;padding:0 9px;border-radius:12px;background:var(--ai-surface-2);
+  color:var(--ui-fg);font:inherit;font-size:12px;cursor:pointer}
+.ai-pop__eg button:hover{background:var(--ui-hover)}
+.ai-pop__foot{display:flex;gap:10px;font-size:11px;color:var(--ui-fg-info)}
+
+/* 3.3 回答卡：结论先行，过程折叠；编辑 / 退回 / 重试 / 调整 就在旁边；反馈放在不打断处 */
+.ai-answer{border-radius:var(--ai-r);background:var(--ai-surface);padding:14px 16px 10px;display:flex;flex-direction:column;gap:10px}
+.ai-answer__meta{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--ui-fg-info)}
+.ai-answer__meta svg{width:14px;height:14px}
+.ai-answer__lead{margin:0;font-size:14px;line-height:22px;font-weight:500;color:var(--ui-fg)}
+.ai-answer__body{margin:0;font-size:13px;line-height:20px;color:var(--ui-fg)}
+.ai-answer__body code{font-family:var(--font-code);font-size:12px;padding:0 4px;border-radius:4px;background:var(--ai-surface-2)}
+.ai-answer details{border-radius:8px;background:var(--ai-surface-2)}
+.ai-answer summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:8px;padding:6px 10px;font-size:12px;color:var(--ui-fg-info)}
+.ai-answer summary::-webkit-details-marker{display:none}
+.ai-answer summary::after{content:"";margin-left:auto;width:6px;height:6px;border-right:1.2px solid currentColor;border-bottom:1.2px solid currentColor;
+  transform:rotate(45deg) translateY(-2px);transition:transform .15s}
+.ai-answer details[open] summary::after{transform:rotate(225deg) translate(-2px,0)}
+.ai-answer details>div{padding:0 6px 6px}
+.ai-answer__applied{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:12px;color:var(--ui-fg-info)}
+.ai-answer__foot{display:flex;align-items:center;gap:2px;flex-wrap:wrap;margin:0 -6px}
+.ai-answer__foot .grow{flex:1}
+.ai-fb{display:inline-flex;gap:0}
+.ai-fb button{appearance:none;border:0;background:none;width:26px;height:26px;border-radius:6px;display:grid;place-items:center;
+  color:var(--ui-fg-disabled);cursor:pointer}
+.ai-fb button:hover{background:var(--ui-action-hover);color:var(--ui-fg-info)}
+.ai-fb button[aria-pressed="true"]{color:var(--ui-fg)}
+.ai-fb svg{width:14px;height:14px}
+
+/* 3.4 工具调用行 */
+.ai-toolrow{display:grid;grid-template-columns:16px minmax(0,1fr) auto;align-items:center;gap:8px;min-height:28px;padding:4px 6px;
+  border-radius:6px;font-size:12px;line-height:16px;color:var(--ui-fg)}
+.ai-toolrow:hover{background:var(--ui-action-hover)}
+.ai-toolrow .ai-ico{width:14px;height:14px;color:var(--ui-icon)}
+.ai-toolrow .what{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ai-toolrow .what code{font-family:var(--font-code);font-size:11.5px;color:var(--ui-fg-info)}
+.ai-toolrow .end{display:inline-flex;align-items:center;gap:6px;font-family:var(--font-code);font-size:11px;color:var(--ui-fg-info)}
+.ai-toolrow .ok{color:var(--ui-success)}
+
+/* 3.5 审批卡：危险 / 不可逆操作先问；这是「在等你」，用琥珀 */
+.ai-approve{border-radius:var(--ai-r);background:var(--ai-surface);padding:12px 14px;display:flex;flex-direction:column;gap:10px;
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--ai-wait) 38%,transparent)}
+.ai-approve__h{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ai-wait-ink);font-weight:500}
+.ai-approve__cmd{font-family:var(--font-code);font-size:12px;line-height:18px;padding:8px 10px;border-radius:8px;background:var(--ai-surface-2);
+  color:var(--ui-fg);overflow-x:auto;white-space:pre}
+.ai-approve__why{margin:0;font-size:12.5px;line-height:19px;color:var(--ui-fg)}
+.ai-approve__why b{font-weight:500}
+.ai-approve__act{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+
+/* 3.6 分段选择（可视化修改的作用范围等）：中性，不用蓝 */
+.ai-seg{display:inline-flex;gap:2px;padding:2px;border-radius:9px;background:var(--ai-surface-2);max-width:100%;overflow-x:auto}
+.ai-seg button{appearance:none;border:0;background:transparent;height:26px;padding:0 10px;border-radius:7px;font:inherit;font-size:12px;
+  color:var(--ui-fg-info);cursor:pointer;white-space:nowrap}
+.ai-seg button:hover{color:var(--ui-fg)}
+.ai-seg button[aria-pressed="true"]{background:var(--ai-surface);color:var(--ui-fg);box-shadow:0 1px 2px rgba(0,0,0,.12)}
+.ai-seg button:focus-visible{outline:2px solid var(--ui-accent);outline-offset:0}
+
+
+/* 3.7 输入框的零件：上下文芯片、功能 pill、模式 / 模型下拉、深度思考、容量环、弹出菜单、语音、错误条、计划与澄清
+   （规范页「输入框」一章逐场景说明；状态与上面的状态机一致：生成中 = 流动光，要你拍板 = 琥珀，出错 = 白话 + 下一步） */
+.ai-field__ctx{display:flex;flex-wrap:wrap;align-items:center;gap:4px;min-width:0}
+.ai-chip{display:inline-flex;align-items:center;gap:4px;height:22px;padding:0 6px 0 5px;border-radius:6px;background:var(--ai-surface-2);
+  color:var(--ui-fg);font-size:11.5px;line-height:16px;white-space:nowrap;max-width:180px}
+.ai-chip>span{overflow:hidden;text-overflow:ellipsis}
+.ai-chip svg{width:12px;height:12px;flex:none;color:var(--ui-icon)}
+.ai-chip .x{color:var(--ui-fg-disabled);font-size:12px;line-height:1;margin-left:1px}
+.ai-chip--add{background:transparent;color:var(--ui-fg-info)}
+.ai-chip--more{font-family:var(--font-code);color:var(--ui-fg-info)}
+.ai-chip[aria-disabled="true"]{opacity:.45}
+.ai-pill{display:inline-flex;align-items:center;gap:4px;height:22px;padding:0 6px 0 8px;border-radius:11px;background:var(--ai-tint-2);color:var(--ai-ink);
+  font-size:11.5px;line-height:16px;white-space:nowrap;vertical-align:middle}
+.ai-pill .x{opacity:.6}
+.ai-dd{display:inline-flex;align-items:center;gap:4px;height:24px;padding:0 6px;border-radius:6px;color:var(--ui-fg);font-size:12px;white-space:nowrap}
+.ai-dd::after{content:"";width:5px;height:5px;border-right:1.2px solid currentColor;border-bottom:1.2px solid currentColor;transform:rotate(45deg) translateY(-2px);opacity:.6}
+.ai-dd svg{width:14px;height:14px;color:var(--ui-icon)}
+.ai-dd.is-err{color:var(--ui-error)}
+.ai-dd[aria-disabled="true"]{color:var(--ui-fg-disabled)}
+.ai-toggle{appearance:none;border:0;display:inline-flex;align-items:center;gap:4px;height:22px;padding:0 8px;border-radius:11px;background:transparent;
+  box-shadow:inset 0 0 0 1px var(--ai-field-line);color:var(--ui-fg-info);font:inherit;font-size:11.5px;white-space:nowrap}
+.ai-toggle[aria-pressed="true"]{background:var(--ui-fg);color:var(--ui-editor-bg);box-shadow:none}   /* 开关用中性反色，不用蓝 */
+.ai-toggle:disabled,.ai-toggle[aria-disabled="true"]{opacity:.4}
+.ai-cap{--p:0;--c:var(--ui-fg-disabled);display:inline-block;flex:none;width:14px;height:14px;border-radius:50%;
+  background:conic-gradient(var(--c) calc(var(--p) * 1%),var(--ai-field-line) 0);
+  -webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 2.4px),#000 calc(100% - 2px));
+          mask:radial-gradient(farthest-side,transparent calc(100% - 2.4px),#000 calc(100% - 2px))}
+.ai-cap.is-warn{--c:var(--ui-warning)}
+.ai-cap.is-full{--c:var(--ui-error)}
+
+.ai-menu{min-width:220px;border-radius:10px;background:var(--ui-popup-bg);box-shadow:0 0 0 1px var(--ui-popup-border),var(--ui-shadow);
+  padding:4px;display:flex;flex-direction:column;gap:1px;font-size:12.5px;line-height:18px}
+.ai-menu .grp{padding:6px 8px 2px;font-size:11px;color:var(--ui-fg-info)}
+.ai-menu .it{display:grid;grid-template-columns:16px minmax(0,1fr) auto;align-items:center;gap:8px;padding:4px 8px;border-radius:6px;color:var(--ui-fg)}
+.ai-menu .it svg{width:14px;height:14px;color:var(--ui-icon)}
+.ai-menu .it small{color:var(--ui-fg-info);font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ai-menu .it.on{background:var(--ui-action-hover)}
+.ai-menu .it[aria-disabled="true"]{color:var(--ui-fg-disabled)}
+.ai-menu .it[aria-disabled="true"] svg{opacity:.5}
+.ai-menu mark{background:none;color:inherit;font-weight:600}
+
+.ai-wave{display:inline-flex;align-items:center;gap:2px;height:18px}
+.ai-wave i{display:block;width:2px;height:6px;border-radius:1px;background:var(--ui-fg);animation:ai-wave 1s ease-in-out infinite}
+.ai-wave i:nth-child(2n){animation-delay:-.3s}.ai-wave i:nth-child(3n){animation-delay:-.6s}.ai-wave i:nth-child(5n){animation-delay:-.15s}
+.ai-rec{display:inline-block;flex:none;width:8px;height:8px;border-radius:50%;background:var(--ui-error)}   /* 录音中：录音惯例红点，不是 AI 态 */
+
+.ai-field__err{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:8px;font-size:12px;line-height:17px;color:var(--ui-fg);
+  background:color-mix(in srgb,var(--ui-error) 10%,transparent)}
+.ai-field__err svg{width:14px;height:14px;flex:none;color:var(--ui-error)}
+.ai-field__err .grow{flex:1;min-width:0}
+.ai-field[data-state="disabled"] .ai-field__ta,.ai-field[data-state="disabled"] .ai-field__bar{opacity:.45;pointer-events:none}
+.ai-skel{display:block;height:8px;border-radius:4px;background:var(--ai-surface-2)}
+
+/* 计划预览（发送键变 Proceed）与执行中澄清（在等你，不停工） */
+.ai-plan{display:flex;flex-direction:column;gap:6px;font-size:12.5px;line-height:18px}
+.ai-plan .step{display:grid;grid-template-columns:14px minmax(0,1fr);gap:8px;align-items:center;color:var(--ui-fg)}
+.ai-plan .step.todo{color:var(--ui-fg-info)}
+.ai-plan .step .ok{color:var(--ui-success);font-size:12px;line-height:1;text-align:center}
+.ai-plan .step .todo-dot{width:10px;height:10px;border-radius:50%;box-shadow:inset 0 0 0 1.2px var(--ui-fg-disabled);margin:0 2px}
+.ai-ask{border-radius:10px;background:var(--ai-surface);padding:10px 12px;display:flex;flex-direction:column;gap:8px;font-size:12.5px;line-height:19px;
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--ai-wait) 38%,transparent)}
+.ai-ask__h{display:flex;align-items:center;gap:8px;color:var(--ai-wait-ink);font-size:12px;font-weight:500}
+.ai-ask__opts{display:flex;gap:6px;flex-wrap:wrap}
+@keyframes ai-wave{0%,100%{height:4px}50%{height:16px}}
+@media (prefers-reduced-motion:reduce){.ai-wave i{animation:none;height:10px}}
+.ai-reduce .ai-wave i{animation:none;height:10px}
+
+/* ------------------------------------------------------------
+   4 · 动效
+   ------------------------------------------------------------ */
+@keyframes ai-flow{to{background-position:300% 0}}
+@keyframes ai-angle{to{--ai-angle:360deg}}
+@keyframes ai-spin{to{transform:rotate(360deg)}}
+@keyframes ai-ping{0%{transform:scale(1);opacity:.55}80%,100%{transform:scale(2.6);opacity:0}}
+@keyframes ai-touch{0%{box-shadow:0 0 0 0 var(--ai-glow),0 0 0 1.5px var(--ai-orchid)}
+  60%{box-shadow:0 0 0 8px transparent,0 0 0 1.5px var(--ai-orchid)}100%{box-shadow:0 0 0 10px transparent,0 0 0 1.5px transparent}}
+@keyframes ai-tint-out{0%,40%{background-color:var(--ai-tint)}100%{background-color:transparent}}
+@keyframes ai-bar-out{0%,40%{opacity:1}100%{opacity:0}}
+@keyframes ai-done{0%,70%{color:var(--ui-success)}100%{color:var(--ui-icon)}}
+
+/* 降低动效：系统设置或祖先加 .ai-reduce（规范页用它预览）。
+   替代原则：动的信息改成字（步骤数、已用时），光改成静态，时长不变 */
+@media (prefers-reduced-motion:reduce){
+  .ai-spark.is-live{animation:none;background:var(--ai-grad)}
+  .ai-ring{animation:none;background:conic-gradient(var(--ai-ink) 0 75%,transparent 0)}
+  .ai-wait-dot::after{animation:none;inset:-3px;opacity:.28}
+  .ai-field[data-state="generating"]::before,.ai-input[data-ai-state="generating"]::after{animation:none}
+  .ai-touched{animation:ai-touch-reduced var(--ai-t-touch) linear 1}
+}
+.ai-reduce .ai-spark.is-live{animation:none;background:var(--ai-grad)}
+.ai-reduce .ai-ring{animation:none;background:conic-gradient(var(--ai-ink) 0 75%,transparent 0)}
+.ai-reduce .ai-wait-dot::after{animation:none;inset:-3px;opacity:.28}
+.ai-reduce .ai-field[data-state="generating"]::before,.ai-reduce .ai-input[data-ai-state="generating"]::after{animation:none}
+.ai-reduce .ai-touched{animation:ai-touch-reduced var(--ai-t-touch) linear 1}
+@keyframes ai-touch-reduced{0%,80%{box-shadow:0 0 0 1.5px var(--ai-orchid)}100%{box-shadow:0 0 0 1.5px transparent}}

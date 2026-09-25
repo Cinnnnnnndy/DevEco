@@ -3,14 +3,15 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='32' y2='32' gradientUnits='userSpaceOnUse'%3E%3Cstop stop-color='%232C8DDD'/%3E%3Cstop offset='1' stop-color='%233357AC'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='32' height='32' rx='7' fill='url(%23g)'/%3E%3Ctext x='16' y='22.5' font-family='Arial,Helvetica,sans-serif' font-size='13' font-weight='700' fill='white' text-anchor='middle'%3EDE%3C/text%3E%3C/svg%3E">
+<link rel="icon" type="image/svg+xml" href="../../deveco-intui-kit/icons/deveco-code-logo-16.svg">
 <title>25 · 手机客户端：一句话，就在这台手机上调试</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;500&display=swap">
 <link rel="stylesheet" href="../../deveco-intui-kit/src/tokens.css">
 <link rel="stylesheet" href="../../deveco-intui-kit/src/components.css">
+<link rel="stylesheet" href="../../deveco-intui-kit/src/ai.css">
 <link rel="stylesheet" href="../_shared/frame.css">
 <link rel="stylesheet" href="../_shared/guide.css">
 <script src="../../deveco-intui-kit/src/icons.js"></script>
+<script src="../../deveco-intui-kit/icons/ai-icons.js"></script>
 <script src="../_shared/frame.js"></script>
 <script src="../_shared/guide.js"></script>
 <style>
@@ -25,18 +26,18 @@
   .pd .topbar .hbtn:hover{background:var(--hdr-hover)}
   .pd .topbar .hbtn svg{width:16px;height:16px;color:var(--hdr-icon)}
   .pd .stage{flex:1;min-height:0;overflow:auto;background:var(--ui-editor-bg);
-    background-image:radial-gradient(color-mix(in srgb,var(--ui-fg) 12%,transparent) 1px,transparent 1px);background-size:16px 16px;
-    display:flex;justify-content:center;align-items:flex-start;gap:40px;padding:16px 32px 20px}
+    display:flex;justify-content:center;align-items:flex-start;gap:28px;padding:16px 28px 20px}
   .pd .col{width:320px;flex:none;display:flex;flex-direction:column;gap:14px;padding-top:6px}
-  .pd .col .dm-card{background:var(--ui-bg);box-shadow:var(--ui-shadow)}
+  .pd .col .dm-card{background:var(--ui-bg);border:0;border-radius:var(--ai-r)}
   .pd .dm-card-hd svg.i{width:16px;height:16px}
   .pd .dm-card-hd .sub{font-weight:400;color:var(--ui-fg-info);font-size:var(--fs-sm)}
 
   /* ---------- 大号手机 ---------- */
-  .phone-wrap{display:flex;flex-direction:column;align-items:center;gap:12px;flex:none;zoom:.9}
-  .bigphone{width:420px;height:860px;background:#0f1012;border-radius:50px;padding:8px;box-shadow:0 18px 50px rgba(0,0,0,.45),inset 0 0 0 2px #2a2c31;position:relative}
+  .phone-wrap{display:flex;flex-direction:column;align-items:center;gap:12px;flex:none;zoom:.9;position:relative;z-index:5}
+  .bigphone{transform-origin:210px 928px;transition:transform .6s cubic-bezier(.4,.1,.25,1)}
+  .bigphone{width:420px;height:928px;background:#0f1012;border-radius:50px;padding:8px;box-shadow:0 18px 50px rgba(0,0,0,.35);position:relative}
   .bigphone::before{content:"";position:absolute;right:-3px;top:170px;width:3px;height:70px;border-radius:0 2px 2px 0;background:#2a2c31}
-  .bigphone .scr{position:relative;width:404px;height:844px;border-radius:42px;overflow:hidden;background:var(--ui-bg)}
+  .bigphone .scr{position:relative;width:404px;height:912px;border-radius:42px;overflow:hidden;background:var(--ui-bg)}
   .bigphone .hole{position:absolute;top:10px;left:50%;width:12px;height:12px;margin-left:-6px;border-radius:50%;background:#050506;z-index:30}
   .sysbar{position:absolute;left:0;right:0;top:0;height:30px;z-index:20;display:flex;align-items:center;justify-content:space-between;padding:4px 28px 0;font-size:12px;font-weight:600;background:#fff;color:#1a1a1a;transition:background .3s,color .3s}
   .sysbar .ic{display:flex;gap:5px;align-items:center}
@@ -50,21 +51,21 @@
   /* 两块窗格：被调试 App / DevEco Code；三种布局：分屏、对话 + App 小窗、App + 对话小窗 */
   .pane-app,.pane-chat{position:absolute;left:0;width:404px;transition:top .35s ease,height .35s ease,transform .35s ease,right .35s ease,left .35s ease,border-radius .35s,box-shadow .35s;overflow:hidden}
   .pane-app{top:30px;height:292px;background:#fff;color:#1a1a1a;z-index:2}
-  .pane-chat{top:334px;height:510px;background:var(--ui-bg);color:var(--ui-fg);z-index:1;display:flex;flex-direction:column}
+  .pane-chat{top:334px;height:578px;background:var(--ui-bg);color:var(--ui-fg);z-index:1;display:flex;flex-direction:column}
   .divider{position:absolute;left:0;right:0;top:322px;height:12px;z-index:3;background:var(--ui-bg);display:grid;place-items:center;transition:opacity .2s}
   .divider i{width:36px;height:4px;border-radius:2px;background:var(--ui-fg-disabled)}
   .bigphone[data-mode="pip"] .divider,.bigphone[data-mode="pip-app"] .divider{opacity:0;pointer-events:none}
-  .bigphone[data-mode="pip"] .pane-chat{top:30px;height:814px}
-  .bigphone[data-mode="pip"] .pane-app{top:44px;left:auto;right:12px;height:814px;transform:scale(.36);transform-origin:top right;border-radius:34px;box-shadow:0 0 0 3px #3a3d44,0 20px 50px rgba(0,0,0,.5);z-index:10;cursor:pointer}
-  .bigphone[data-mode="pip-app"] .pane-app{top:30px;height:814px}
-  .bigphone[data-mode="pip-app"] .pane-chat{top:44px;left:auto;right:12px;height:814px;transform:scale(.36);transform-origin:top right;border-radius:34px;box-shadow:0 0 0 3px #3a3d44,0 20px 50px rgba(0,0,0,.5);z-index:10;cursor:pointer}
+  .bigphone[data-mode="pip"] .pane-chat{top:30px;height:882px}
+  .bigphone[data-mode="pip"] .pane-app{top:44px;left:auto;right:12px;height:882px;transform:scale(.36);transform-origin:top right;border-radius:34px;box-shadow:0 0 0 3px #3a3d44,0 20px 50px rgba(0,0,0,.5);z-index:10;cursor:pointer}
+  .bigphone[data-mode="pip-app"] .pane-app{top:30px;height:882px}
+  .bigphone[data-mode="pip-app"] .pane-chat{top:44px;left:auto;right:12px;height:882px;transform:scale(.36);transform-origin:top right;border-radius:34px;box-shadow:0 0 0 3px #3a3d44,0 20px 50px rgba(0,0,0,.5);z-index:10;cursor:pointer}
   .bigphone[data-mode="pip"] .pane-app > *,.bigphone[data-mode="pip-app"] .pane-chat > *{pointer-events:none}
 
   /* ---------- 被调试的 App（手机里的应用，固定浅色） ---------- */
   .shop{position:relative;height:100%;color:#1a1a1a;background:#fff;font-family:var(--font-ui);font-size:12px;line-height:1.45}
   .shop .apphd{height:40px;display:flex;align-items:center;gap:8px;padding:0 16px;font-size:13px;color:#666}
   .shop .apphd .dbg{margin-left:auto;font-size:10px;padding:1px 6px;border-radius:4px;background:#FFF1D6;color:#9A6A00}
-  .shop .lt{padding:6px 24px 2px;font-size:22px;font-weight:700}
+  .shop .lt{padding:6px 24px 2px;font-size:22px;font-weight:600}
   .shop .ls{padding:0 24px 12px;color:#8a8f99;font-size:12px}
   .shop .fld{margin:0 24px 10px;height:40px;border-radius:10px;background:#F1F3F5;display:flex;align-items:center;padding:0 14px;color:#1a1a1a;font-size:13px;gap:8px}
   .shop .fld span{color:#8a8f99;width:48px}
@@ -81,11 +82,11 @@
   .shop .ways i{width:36px;height:36px;border-radius:50%;background:#F1F3F5;display:block}
   .shop .home{position:absolute;inset:0;background:#fff;opacity:0;transform:translateX(30px);transition:opacity .3s,transform .3s;pointer-events:none}
   .shop .home.on{opacity:1;transform:none}
-  .shop .home .hh{height:40px;display:flex;align-items:center;padding:0 16px;font-size:16px;font-weight:700}
+  .shop .home .hh{height:40px;display:flex;align-items:center;padding:0 16px;font-size:16px;font-weight:600}
   .shop .home .sr{margin:0 16px 10px;height:32px;border-radius:16px;background:#F1F3F5;color:#9aa0ab;display:flex;align-items:center;padding:0 14px;font-size:12px}
-  .shop .home .ban{margin:0 16px 10px;height:92px;border-radius:12px;background:linear-gradient(120deg,#5B8CFF,#9C7BFF);color:#fff;padding:14px;font-size:15px;font-weight:700}
+  .shop .home .ban{margin:0 16px 10px;height:92px;border-radius:12px;background:#E9EDF7;color:#1a1a1a;padding:14px;font-size:15px;font-weight:600}
   .shop .home .it{display:flex;gap:10px;align-items:center;padding:8px 16px}
-  .shop .home .it i{width:48px;height:48px;border-radius:8px;background:linear-gradient(135deg,#dfe7ff,#b9c9ff);flex:none}
+  .shop .home .it i{width:48px;height:48px;border-radius:8px;background:#EEF0F4;flex:none}
   .shop .home .it b{display:block;font-size:13px}
   .shop .home .it span{font-size:11px;color:#8a8f99}
   .finger{position:absolute;width:34px;height:34px;border-radius:50%;background:rgba(10,89,247,.28);border:2px solid rgba(10,89,247,.8);left:0;top:0;opacity:0;pointer-events:none;z-index:6;transition:left .35s ease,top .35s ease,opacity .2s}
@@ -98,14 +99,14 @@
   .hlbox.ok .lab{background:#2E9E5B}
   .inst{position:absolute;inset:0;background:rgba(255,255,255,.92);display:none;flex-direction:column;align-items:center;justify-content:center;gap:10px;z-index:8;color:#333;font-size:12px}
   .inst.on{display:flex}
-  .inst .ico{width:52px;height:52px;border-radius:14px;background:linear-gradient(135deg,#5B8CFF,#3357AC);color:#fff;display:grid;place-items:center;font-weight:700;font-size:18px}
+  .inst .ico{width:52px;height:52px;border-radius:14px;background:#2C6BD8;color:#fff;display:grid;place-items:center;font-weight:600;font-size:18px}
   .inst .bar{width:160px;height:4px;border-radius:2px;background:#e3e6eb;overflow:hidden}
   .inst .bar i{display:block;height:100%;width:0;background:#0A59F7;transition:width .2s linear}
   @keyframes ripple{from{transform:scale(1);opacity:1}to{transform:scale(2.2);opacity:0}}
   @keyframes spin{to{transform:rotate(360deg)}}
 
   /* ---------- DevEco Code 手机客户端 ---------- */
-  .chd{height:44px;flex:none;display:flex;align-items:center;gap:8px;padding:0 10px 0 14px;border-bottom:1px solid var(--ui-border)}
+  .chd{height:44px;flex:none;display:flex;align-items:center;gap:8px;padding:0 10px 0 14px}
   .chd .logo{width:20px;height:20px}
   .chd .tt{display:flex;flex-direction:column;line-height:1.15;min-width:0}
   .chd .tt b{font-weight:600;font-size:var(--fs)}
@@ -114,13 +115,13 @@
   .chd .abtn svg{width:16px;height:16px}
   .msgs{flex:1;min-height:0;overflow-y:auto;padding:12px 12px 8px;display:flex;flex-direction:column;gap:12px;scroll-behavior:smooth;font-size:var(--fs-sm);line-height:var(--lh-sm)}
   .msgs::-webkit-scrollbar{width:0}
-  .m-user{align-self:flex-end;max-width:78%;background:var(--ui-accent);color:var(--ui-accent-fg);padding:8px 12px;border-radius:14px 14px 4px 14px;font-size:var(--fs-para);line-height:var(--lh-para)}
+  .m-user{align-self:flex-end;max-width:78%;background:var(--ai-surface-2);color:var(--ui-fg);padding:8px 12px;border-radius:14px 14px 4px 14px;font-size:var(--fs-para);line-height:var(--lh-para)}
   .m-ai{display:flex;flex-direction:column;gap:8px}
   .m-ai .who{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--ui-fg-info)}
   .m-ai .who svg{width:14px;height:14px}
   .m-ai p{margin:0;font-size:var(--fs-para);line-height:var(--lh-para)}
   .m-ai code,.dm-card code{font-family:var(--font-code);font-size:11px;background:var(--ui-tag-bg);padding:1px 4px;border-radius:4px}
-  .pst{border:1px solid var(--ui-border);border-radius:10px;background:var(--ui-field-bg);padding:8px 10px;display:flex;flex-direction:column;gap:6px}
+  .pst{border-radius:10px;background:var(--ai-surface);padding:8px 10px;display:flex;flex-direction:column;gap:6px}
   .pst .ph{display:flex;align-items:center;gap:8px;font-weight:600}
   .pst .ph .grow{flex:1;min-width:0}
   .pst .ph .tm{font-weight:400;font-size:11px;color:var(--ui-fg-info);font-variant-numeric:tabular-nums}
@@ -130,26 +131,26 @@
   .pst.env .ph{font-weight:400}
   .pst .sub{color:var(--ui-fg-info)}
   .pst .dm-progress{height:4px}
-  .spin{display:inline-block;border-radius:50%;border:2px solid var(--ui-progress-track);border-top-color:var(--ui-accent);animation:spin .8s linear infinite}
+  .spin{display:inline-block;border-radius:50%;border:2px solid var(--ui-progress-track);border-top-color:var(--ai-ink);animation:spin .8s linear infinite}
   .shot{display:flex;align-items:center;gap:8px;border:0;background:transparent;padding:0;color:var(--ui-link);font-size:11px;text-align:left}
   .shot .th{width:66px;height:48px;border-radius:6px;overflow:hidden;position:relative;border:1px solid var(--ui-border);background:#fff;flex:none}
   .shot .th > div{position:absolute;left:0;top:0;width:404px;height:292px;transform:scale(.1634);transform-origin:top left;pointer-events:none}
-  .shot:hover .th{outline:2px solid var(--ui-accent)}
-  .logbox{font-family:var(--font-code);font-size:10.5px;line-height:16px;background:var(--ui-code-bg);border:1px solid var(--ui-code-border);border-radius:6px;padding:6px 8px;overflow:hidden;white-space:pre;color:var(--ed-text)}
+  .shot:hover .th{outline:1px solid var(--ui-fg-info)}
+  .logbox{font-family:var(--font-code);font-size:10.5px;line-height:16px;background:var(--ui-code-bg);border-radius:6px;padding:6px 8px;overflow:hidden;white-space:pre;color:var(--ed-text)}
   .logbox .e{color:var(--ui-error)}
   .logbox .i2{color:var(--ui-fg-info)}
   .logbox .hl{background:color-mix(in srgb,var(--ui-error) 16%,transparent);display:inline-block;width:100%}
-  .loc{font-family:var(--font-code);font-size:10.5px;line-height:18px;background:var(--ui-editor-bg);border:1px solid var(--ui-border);border-radius:6px;overflow:hidden}
+  .loc{font-family:var(--font-code);font-size:10.5px;line-height:18px;background:var(--ui-editor-bg);border-radius:6px;overflow:hidden}
   .loc .r{display:flex;white-space:pre}
   .loc .r b{width:26px;flex:none;text-align:right;padding-right:6px;color:var(--ed-linenum);font-weight:400}
   .loc .r.hl{background:color-mix(in srgb,var(--ui-error) 14%,transparent)}
   .loc .r.hl b{color:var(--ui-error)}
   .m-ai .diffcard pre{font-size:10.5px;line-height:17px}
-  .m-ai .diffcard .ft{display:flex;gap:6px;padding:8px;border-top:1px solid var(--ui-border);background:var(--ui-bg)}
+  .m-ai .diffcard .ft{display:flex;gap:6px;padding:8px}
   .m-ai .diffcard .ft .btn{height:30px;border-radius:15px;font-size:12px;padding:0 14px}
   .m-ai .diffcard .ft .grow{flex:1}
   .cmp{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-  .cmp .c{border:1px solid var(--ui-border);border-radius:8px;overflow:hidden;background:var(--ui-field-bg)}
+  .cmp .c{border-radius:8px;overflow:hidden;background:var(--ui-field-bg)}
   .cmp .cc .th{width:auto;border:0;border-bottom:1px solid var(--ui-border);border-radius:0;height:84px;position:relative;overflow:hidden;background:#fff}
   .cmp .cc .th > div{position:absolute;left:0;top:0;width:404px;height:292px;transform:scale(.4);transform-origin:top left}
   .cmp .cc .cap{padding:4px 8px;font-size:11px;display:flex;align-items:center;gap:4px}
@@ -159,10 +160,10 @@
   .chips2{flex:none;display:flex;gap:6px;padding:0 12px 8px;overflow:hidden}
   .chips2 button{flex:none;height:28px;border-radius:14px;border:1px solid var(--ui-component-border);background:var(--ui-field-bg);color:var(--ui-fg);font-size:12px;padding:0 12px;white-space:nowrap}
   .chips2 button:hover{background:var(--ui-hover)}
-  .chips2 button.hot{border-color:var(--ui-accent);color:var(--ui-link);background:color-mix(in srgb,var(--ui-accent) 10%,var(--ui-field-bg))}
-  .cin{flex:none;display:flex;align-items:center;gap:8px;padding:8px 12px 18px;border-top:1px solid var(--ui-border)}
+  .chips2 button.hot{border-color:var(--ui-fg-info);color:var(--ui-fg)}
+  .cin{flex:none;display:flex;align-items:center;gap:8px;padding:8px 12px 18px}
   .cin .fld{flex:1;min-height:36px;border-radius:18px;background:var(--ui-field-bg);border:1px solid var(--ui-component-border);display:flex;align-items:center;gap:6px;padding:0 6px 0 14px;font-size:var(--fs-para);color:var(--ui-fg-info)}
-  .cin .fld.filled{color:var(--ui-fg);border-color:var(--ui-accent)}
+  .cin .fld.filled{color:var(--ui-fg)}
   .cin .fld svg{width:16px;height:16px}
   .cin .fld .grow{flex:1}
   .cin .send{width:36px;height:36px;border-radius:50%;border:0;background:var(--ui-accent);color:var(--ui-accent-fg);display:grid;place-items:center;flex:none}
@@ -193,7 +194,7 @@
   .tl .r .nd{width:20px;height:20px;border-radius:50%;border:2px solid var(--ui-component-border);display:grid;place-items:center;font-size:10px;font-weight:600;background:var(--ui-bg);position:relative;z-index:1}
   .tl .r .t2{font-size:11px;font-variant-numeric:tabular-nums}
   .tl .r.run{color:var(--ui-fg)}
-  .tl .r.run .nd{border-color:var(--ui-accent);color:var(--ui-accent)}
+  .tl .r.run .nd{border-color:var(--ai-ink);color:var(--ai-ink)}
   .tl .r.done{color:var(--ui-fg)}
   .tl .r.done .nd{border-color:var(--ui-success);background:var(--ui-success);color:#fff}
   .sync-row{display:flex;flex-direction:column;gap:6px;padding:10px 0;border-bottom:1px solid var(--ui-border)}
@@ -203,11 +204,155 @@
   .sync-row .h svg{width:16px;height:16px}
   .sync-row .h .grow{flex:1}
   .sync-row .d{font-size:var(--fs-sm);line-height:var(--lh-sm);color:var(--ui-fg-info)}
-  .sync-row .mono{font-family:var(--font-code);font-size:10.5px;line-height:16px;color:var(--ed-text);background:var(--ui-code-bg);border:1px solid var(--ui-code-border);border-radius:6px;padding:5px 8px;white-space:pre;overflow:hidden;min-height:58px}
+  .sync-row .mono{font-family:var(--font-code);font-size:10.5px;line-height:16px;color:var(--ed-text);background:var(--ui-editor-bg);border-radius:6px;padding:5px 8px;white-space:pre;overflow:hidden;min-height:58px}
   .cmp-card[hidden]{display:none}
   .metric{display:grid;grid-template-columns:1fr auto auto;gap:4px 10px;font-size:var(--fs-sm);line-height:var(--lh-sm)}
   .metric .b{color:var(--ui-error)}
   .metric .g{color:var(--ui-success);font-weight:600}
+  /* 终轮：Agent 胶囊、在等你、统一队列 */
+  #pd-agent{display:inline-flex;min-width:0;max-width:420px}
+  #pd-agent .ai-status{max-width:100%;background:rgba(255,255,255,.08);color:var(--hdr-fg)}
+  #pd-agent .ai-status[data-state="waiting"]{background:rgba(245,165,36,.16);color:#F5B64F}
+  #pd-agent .ai-status .ai-ico{color:var(--hdr-icon)}
+  .pst .sico .ai-ring{width:12px;height:12px}
+  .m-ai .ai-approve{background:var(--ai-surface);padding:10px 10px 10px}
+  .m-ai .ai-approve .diffcard{border:0;background:var(--ui-editor-bg)}
+  .m-ai .ai-approve .diffcard .dh{background:transparent}
+  .m-ai .ai-approve__act .grow{flex:1}
+  .m-ai .ai-approve__act .ai-btn{height:30px;border-radius:15px;padding:0 14px}
+  .diffcard .dh .ai-gmark{margin-right:2px}
+  .qnext{display:flex;align-items:flex-start;gap:8px;padding:6px 10px;border-radius:8px;background:var(--ai-wait-tint);font-size:11px;line-height:16px;color:var(--ui-fg)}
+  .qnext .ai-wait-dot{margin-top:4px}
+  .qnext b{font-weight:500}
+  .qcard{display:flex;flex-direction:column;gap:6px}
+  .dm-pill.info{background:var(--ui-tag-bg);color:var(--ui-fg)}
+  .dm-progress>i{background:var(--ui-fg-info)}
+  .qcard .ai-approve__act .ai-btn{height:28px;border-radius:14px;padding:0 12px}
+
+  /* ---------- 碰一碰：接到鸿蒙电脑 MateBook Pro（3120 × 2080，3:2） ---------- */
+  .pcol{flex:none;width:720px;display:flex;flex-direction:column;gap:12px;padding-top:6px}
+  .mb{position:relative;width:720px}
+  .mb-scr{margin:0 auto;width:660px;height:451px;background:#0f1012;border-radius:14px 14px 4px 4px;padding:10px 10px 14px;box-shadow:0 18px 40px rgba(0,0,0,.3);position:relative}
+  .mb-scr::before{content:"";position:absolute;top:4px;left:50%;width:4px;height:4px;margin-left:-2px;border-radius:50%;background:#2a2c31}
+  .mb-in{position:relative;width:640px;height:427px;overflow:hidden;border-radius:3px;background:#050506;font-family:var(--font-ui)}
+  .mb-base{display:block;width:720px;height:62px}
+  .mb-cap{display:flex;justify-content:center;gap:10px;font-size:11px;color:var(--ui-fg-info);margin-top:2px}
+  .slp{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:#80848e;font-size:11px;transition:opacity .4s}
+  .slp b{font-size:40px;font-weight:300;color:#4a4e57;font-variant-numeric:tabular-nums}
+  .mb-in[data-st]:not([data-st="sleep"]) .slp{opacity:0;pointer-events:none}
+  .dsk{position:absolute;inset:0;background:#2A3050;opacity:0;transition:opacity .45s}
+  .mb-in[data-st]:not([data-st="sleep"]) .dsk{opacity:1}
+  .dsk .top{position:absolute;top:0;left:0;right:0;height:18px;display:flex;align-items:center;justify-content:flex-end;gap:10px;padding:0 12px;font-size:10px;color:rgba(255,255,255,.85)}
+  .dock{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);height:40px;padding:0 10px;border-radius:14px;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.22);display:flex;align-items:center;gap:9px}
+  .dock i{width:26px;height:26px;border-radius:8px;display:block;position:relative}
+  .dock .dv{background:#fff;display:grid;place-items:center;cursor:pointer}
+  .dock .dv svg{width:18px;height:18px}
+  .dock .dv .bd{position:absolute;right:-5px;top:-5px;width:14px;height:14px;border-radius:50%;background:#0A59F7;color:#fff;display:none;place-items:center;box-shadow:0 0 0 2px rgba(255,255,255,.9)}
+  .dock .dv .bd svg{width:9px;height:9px}
+  .mb-in[data-st="later"] .dock .dv .bd{display:grid}
+  .mb-in[data-st="later"] .dock .dv{animation:dockbob 1s ease-in-out infinite}
+  @keyframes dockbob{50%{transform:translateY(-4px)}}
+  .dock .dv.run::after{content:"";position:absolute;bottom:-5px;left:50%;width:4px;height:4px;margin-left:-2px;border-radius:50%;background:#fff}
+  .hcard{position:absolute;top:26px;right:12px;width:268px;border-radius:14px;background:var(--ui-popup-bg);box-shadow:0 14px 36px rgba(0,0,0,.4);padding:10px 12px 12px;display:none;flex-direction:column;gap:8px;color:var(--ui-fg)}
+  .mb-in[data-st="card"] .hcard{display:flex;animation:popin .38s cubic-bezier(.2,.8,.2,1)}
+  @keyframes popin{from{opacity:0;transform:translateY(-10px) scale(.97)}to{opacity:1;transform:none}}
+  .hcard .h{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--ui-fg-info)}
+  .hcard .h svg{width:13px;height:13px}
+  .hcard .h .grow{flex:1}
+  .hcard .t{display:flex;align-items:center;gap:8px}
+  .hcard .t .ic{width:30px;height:30px;border-radius:8px;background:var(--ui-tag-bg);display:grid;place-items:center;flex:none}
+  .hcard .t .ic svg{width:20px;height:20px}
+  .hcard .t b{display:block;font-size:13px;line-height:17px}
+  .hcard .t span{font-size:11px;color:var(--ui-fg-info)}
+  .hcard .rows{display:grid;grid-template-columns:40px minmax(0,1fr);gap:4px 8px;font-size:11px;line-height:16px;background:var(--ui-bg);border-radius:8px;padding:6px 8px}
+  .hcard .rows .k{color:var(--ui-fg-info)}
+  .hcard .rows span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .hcard .rows code{font-size:10.5px}
+  .hcard .ft{display:flex;gap:8px}
+  .hcard .ft .btn{flex:1;height:28px;border-radius:14px;justify-content:center}
+  .ripple{position:absolute;width:0;height:0;pointer-events:none;z-index:4}
+  .ripple i{position:absolute;left:-14px;top:-14px;width:28px;height:28px;border-radius:50%;border:2px solid rgba(255,255,255,.7);opacity:0}
+  .ripple.on i{animation:rip 1.2s ease-out infinite}
+  .ripple.on i:nth-child(2){animation-delay:.3s}
+  .ripple.on i:nth-child(3){animation-delay:.6s}
+  @keyframes rip{0%{transform:scale(.3);opacity:.95}100%{transform:scale(3.6);opacity:0}}
+  .tapov{position:absolute;inset:0;z-index:24;background:rgba(10,12,16,.72);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;font-size:22px;font-weight:600;text-align:center;line-height:1.4}
+  .tapov[hidden]{display:none}
+  .tapov .spin{width:40px;height:40px;border-width:4px;border-color:rgba(255,255,255,.3);border-top-color:#fff}
+  .tapov span{font-size:15px;font-weight:400;opacity:.85}
+  .lvcap{display:inline-flex;align-items:center;gap:4px;height:18px;padding:0 8px;border-radius:9px;background:#1a1a1a;color:#fff;font-size:10.5px;font-weight:600;margin-left:8px}
+  .lvcap i{width:6px;height:6px;border-radius:50%;background:#fff;animation:dmpulse 1.4s ease-in-out infinite}
+  .lvcap.ok{background:#2E9E5B}
+  .lvcap.ok i{animation:none}
+  .lvcap[hidden]{display:none}
+  .sysbar .l{display:flex;align-items:center}
+  /* 电脑屏里的 DevEco Studio：自由窗口 */
+  .win{position:absolute;top:20px;left:10px;right:10px;bottom:52px;border-radius:10px;overflow:hidden;background:var(--ui-bg);color:var(--ui-fg);box-shadow:0 16px 40px rgba(0,0,0,.45);border:1px solid var(--ui-border);display:none;flex-direction:column;font-size:11px;line-height:16px;transform-origin:50% 100%}
+  .mb-in[data-st="ide"] .win{display:flex;animation:winin .4s cubic-bezier(.2,.8,.2,1)}
+  @keyframes winin{from{opacity:0;transform:scale(.94) translateY(12px)}to{opacity:1;transform:none}}
+  .win .wt{height:24px;flex:none;display:flex;align-items:center;gap:6px;padding:0 4px 0 8px;background:var(--hdr-bg);color:var(--hdr-fg)}
+  .win .wt svg.lg{width:14px;height:14px}
+  .win .wt b{font-weight:600}
+  .win .wt span{color:var(--hdr-fg-dim);font-size:10.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .win .wt .grow{flex:1}
+  .win .wt i{width:24px;height:20px;display:grid;place-items:center;color:var(--hdr-icon);border-radius:4px}
+  .win .wt i svg{width:12px;height:12px}
+  .win .wb{flex:1;min-height:0;display:flex}
+  .win .wl{width:186px;flex:none;border-right:1px solid var(--ui-border);display:flex;flex-direction:column;padding:6px 8px;gap:6px;min-height:0}
+  .win .wl-hd{display:flex;align-items:center;gap:5px;font-weight:600}
+  .win .wl-hd svg{width:13px;height:13px}
+  .win .wl-hd .grow{flex:1}
+  .win .ho{display:flex;flex-direction:column;border-radius:6px;background:var(--ui-field-bg);padding:2px 0}
+  .win .ho .it{display:flex;gap:6px;padding:2px 7px;font-size:10.5px;line-height:15px}
+  .win .ho .it .k{width:30px;flex:none;color:var(--ui-fg-info)}
+  .win .ho .it span:last-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .win .ho .it code{font-size:10px;padding:0 3px}
+  .win .wl-msg{font-size:10.5px;line-height:15px;color:var(--ui-fg-info)}
+  .win .wl-msg b{color:var(--ui-fg);font-weight:600}
+  .win .we{flex:1;min-width:0;display:flex;flex-direction:column;background:var(--ui-editor-bg)}
+  .win .wtabs{height:20px;flex:none;display:flex;align-items:stretch;border-bottom:1px solid var(--ui-border);background:var(--ui-bg);font-size:10.5px}
+  .win .wtabs span{display:flex;align-items:center;gap:4px;padding:0 10px;color:var(--ui-fg-info)}
+  .win .wtabs span.on{color:var(--ui-fg);box-shadow:inset 0 -2px 0 var(--ui-accent)}
+  .win .wtabs em{font-style:normal;font-size:9.5px;padding:0 5px;border-radius:4px;background:color-mix(in srgb,var(--ui-warning) 22%,transparent);color:color-mix(in srgb,var(--ui-warning) 80%,var(--ui-fg))}
+  .win .wtabs em.ok{background:color-mix(in srgb,var(--ui-success) 18%,transparent);color:var(--ui-success)}
+  .win .wrev{height:24px;flex:none;display:flex;align-items:center;gap:6px;padding:0 8px;border-bottom:1px solid var(--ui-border);background:var(--ai-wait-tint);font-size:10.5px}
+  .win .wrev svg{width:12px;height:12px}
+  .win .wrev .grow{flex:1}
+  .win .wrev .btn{height:20px;padding:0 8px;font-size:10.5px}
+  .win .wrev .btn[disabled]{opacity:.5}
+  .win .wrev .add{color:var(--ui-success)} .win .wrev .del{color:var(--ui-error)}
+  .win .wcode{flex:1;min-height:0;overflow:hidden;font-family:var(--font-code);font-size:10.5px;line-height:14px;padding:0;color:var(--ed-text)}
+  .win .wcode .r{display:flex;white-space:pre}
+  .win .wcode .r b{width:30px;flex:none;text-align:right;padding-right:4px;color:var(--ed-linenum);font-weight:400}
+  .win .wcode .r i{width:12px;flex:none;font-style:normal;text-align:center;color:var(--ed-linenum)}
+  .win .wcode .r.add{background:color-mix(in srgb,var(--ui-success) 14%,transparent)}
+  .win .wcode .r.add i{color:var(--ui-success)}
+  .win .wcode .r.del{background:color-mix(in srgb,var(--ui-error) 13%,transparent)}
+  .win .wcode .r.del i{color:var(--ui-error)}
+  .win .wcode .r.me{background:var(--diff-add)}
+  .win .wcode .r.me i{color:var(--ui-success)}
+  .win .wcode .r.err b{color:var(--ui-error)}
+  .win .wcode .caret{display:inline-block;width:1.5px;height:12px;background:var(--ui-fg);vertical-align:-2px;animation:blink 1s steps(1) infinite}
+  @keyframes blink{50%{opacity:0}}
+  .win .wcode .tag{margin-left:8px;font-family:var(--font-ui);font-size:9.5px;color:var(--ui-link)}
+  .win .wbt{height:84px;flex:none;border-top:1px solid var(--ui-border);display:flex;flex-direction:column}
+  .win .wbt-tabs{height:20px;flex:none;display:flex;align-items:stretch;gap:2px;padding:0 6px;font-size:10.5px}
+  .win .wbt-tabs span{display:flex;align-items:center;padding:0 6px;color:var(--ui-fg-info)}
+  .win .wbt-tabs span.on{color:var(--ui-fg);font-weight:600;box-shadow:inset 0 -2px 0 var(--ui-accent)}
+  .win .wbt-tabs .grow{flex:1}
+  .win .wbt-body{flex:1;min-height:0;overflow:hidden;font-family:var(--font-code);font-size:9.5px;line-height:12px;padding:2px 8px;white-space:pre;color:var(--ed-text)}
+  .win .wbt-body .e{color:var(--ui-error)}
+  .win .wbt-body .hl{background:color-mix(in srgb,var(--ui-error) 14%,transparent);display:block}
+  .win .wbt-body .ok{color:var(--ui-success)}
+  .win .wbt-body .dim{color:var(--ui-fg-info)}
+  .win .wst{height:16px;flex:none;display:flex;align-items:center;gap:6px;padding:0 8px;border-top:1px solid var(--ui-border);font-size:10px;color:var(--ui-fg-info)}
+  .win .wst .dm-dot{width:6px;height:6px}
+  .pcol .dm-card{background:var(--ui-bg);border:0;border-radius:var(--ai-r)}
+  .sync3 .dm-card-bd{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr) minmax(0,1fr);gap:0}
+  .sync3 .sync-row{padding:0 12px;border-bottom:0;border-left:1px solid var(--ui-border)}
+  .sync3 .sync-row:first-child{padding-left:0;border-left:0}
+  .sync3 .sync-row:last-child{padding-right:0}
+  .phone-ctl .btn[disabled]{opacity:.5}
 </style>
 </head>
 <body>
@@ -226,12 +371,17 @@
     <symbol id="i-branch" viewBox="0 0 16 16"><circle cx="4" cy="3.5" r="1.5" stroke="currentColor" fill="none"/><circle cx="4" cy="12.5" r="1.5" stroke="currentColor" fill="none"/><circle cx="12" cy="5.5" r="1.5" stroke="currentColor" fill="none"/><path d="M4 5v6M12 7c0 3-8 1-8 4" stroke="currentColor" fill="none"/></symbol>
     <symbol id="i-back" viewBox="0 0 16 16"><path d="M10 3L5 8l5 5" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
     <symbol id="i-err" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6" stroke="currentColor" fill="none"/><path d="M5.8 5.8l4.4 4.4M10.2 5.8l-4.4 4.4" stroke="currentColor" stroke-linecap="round"/></symbol>
+    <symbol id="i-tap" viewBox="0 0 16 16"><rect x="2" y="4.5" width="5.5" height="10" rx="1.2" stroke="currentColor" fill="none" transform="rotate(-18 4.75 9.5)"/><path d="M9.5 5.2a2.6 2.6 0 0 1 2.2 2.3M10.2 2.6a5.2 5.2 0 0 1 4.1 4.3" stroke="currentColor" stroke-linecap="round" fill="none"/></symbol>
+    <symbol id="i-check2" viewBox="0 0 16 16"><path d="M3.5 8.5l3 3 6-7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
+    <symbol id="i-wmin" viewBox="0 0 16 16"><path d="M4 8h8" stroke="currentColor" stroke-linecap="round"/></symbol>
+    <symbol id="i-wmax" viewBox="0 0 16 16"><rect x="4" y="4" width="8" height="8" rx="1.5" stroke="currentColor" fill="none"/></symbol>
+    <symbol id="i-wclose" viewBox="0 0 16 16"><path d="M4.5 4.5l7 7M11.5 4.5l-7 7" stroke="currentColor" stroke-linecap="round"/></symbol>
     <symbol id="i-bug" viewBox="0 0 16 16"><rect x="4.5" y="4.5" width="7" height="9" rx="3.5" stroke="currentColor" fill="none"/><path d="M8 7v6M2 8h2.5M11.5 8H14M2.5 12.5l2-1M13.5 12.5l-2-1M2.5 4l2 1.5M13.5 4l-2 1.5M6 4.5a2 2 0 0 1 4 0" stroke="currentColor" stroke-linecap="round" fill="none"/></symbol>
   </defs></svg>
 
   <div class="topbar">
     <svg class="logo"><use href="#i-logo"/></svg><b>DevEco Code</b><span class="dim">手机客户端 · 本机即调试设备</span>
-    <span class="grow"></span>
+    <span class="grow"></span><span id="pd-agent"></span><span class="grow"></span>
     <button class="hbtn" id="theme-btn" title="切换深浅色"><svg><use href="#i-moon"/></svg></button>
   </div>
 
@@ -248,19 +398,6 @@
             <dt>被调试应用</dt><dd><code>com.example.shop</code></dd>
             <dt>工程</dt><dd>ShopDemo · <span class="dm-muted">main</span></dd>
           </dl>
-        </div>
-      </div>
-      <div class="dm-card">
-        <div class="dm-card-hd">本次调试<span class="grow"></span><span class="sub" id="tl-total">等待描述问题</span></div>
-        <div class="dm-card-bd" style="padding:8px 12px">
-          <div class="tl" id="tl">
-            <div class="r" data-k="install"><span class="nd">1</span><span>安装调试包</span><span class="t2"></span></div>
-            <div class="r" data-k="repro"><span class="nd">2</span><span>自动复现</span><span class="t2"></span></div>
-            <div class="r" data-k="log"><span class="nd">3</span><span>抓 HiLog</span><span class="t2"></span></div>
-            <div class="r" data-k="locate"><span class="nd">4</span><span>定位根因</span><span class="t2"></span></div>
-            <div class="r" data-k="patch"><span class="nd">5</span><span>应用补丁并重装</span><span class="t2"></span></div>
-            <div class="r" data-k="verify"><span class="nd">6</span><span>自动验证</span><span class="t2"></span></div>
-          </div>
         </div>
       </div>
       <div class="dm-card cmp-card" id="cmp-card" hidden>
@@ -280,7 +417,7 @@
       <div class="bigphone" id="phone" data-mode="split">
         <div class="scr" id="scr">
           <span class="hole"></span>
-          <div class="sysbar"><span>14:02</span><span class="ic"><span><em style="height:3px"></em><em style="height:5px"></em><em style="height:7px"></em><em style="height:9px"></em></span><i></i></span></div>
+          <div class="sysbar"><span class="l">14:02<span class="lvcap" id="lvcap" hidden><i></i><span id="lvcap-t">电脑审补丁中</span></span></span><span class="ic"><span><em style="height:3px"></em><em style="height:5px"></em><em style="height:7px"></em><em style="height:9px"></em></span><i></i></span></div>
 
           <div class="pane-app" id="app">
             <div class="shop" id="shop">
@@ -340,6 +477,7 @@
             </div>
           </div>
 
+          <div class="tapov" id="tapov" hidden><span class="spin"></span><div id="tapov-t">正在接续到 MateBook Pro</div><span id="tapov-s">复现步骤、HiLog、定位、补丁草稿一起带过去</span></div>
           <div class="lightbox" id="lightbox" hidden>
             <div class="big" id="lb-img"></div>
             <div class="meta" id="lb-meta"></div>
@@ -357,10 +495,69 @@
       </div>
     </div>
 
-    <!-- 右：电脑端同步 -->
-    <aside class="col">
-      <div class="dm-card">
-        <div class="dm-card-hd">电脑端同步<span class="grow"></span><span class="sub">不用回到电脑前</span></div>
+    <!-- 右：鸿蒙电脑（碰一碰接着调）+ 电脑端同步 -->
+    <aside class="pcol">
+      <div class="mb" id="mb">
+        <div class="mb-scr">
+          <div class="mb-in" id="mbin" data-st="sleep">
+            <div class="slp"><b>14:02</b><span>MateBook Pro · 休眠中</span></div>
+            <div class="dsk">
+              <div class="top"><span>Wi-Fi</span><span id="mb-clock">14:04</span></div>
+              <div class="dock"><i style="background:#3B8FE0"></i><i style="background:#F0A63A"></i><i class="dv" id="dock-dv" title="稍后接：点这里把手机上的调试会话接进 IDE"><svg><use href="#i-logo"/></svg><span class="bd"><svg><use href="#i-phone"/></svg></span></i><i style="background:linear-gradient(135deg,#9be38a,#3aa55b)"></i><i style="background:linear-gradient(135deg,#c7ccd6,#8a90a0)"></i></div>
+            </div>
+            <div class="hcard" id="sc" role="dialog" aria-label="接续卡片">
+              <div class="h"><svg class="i"><use href="#i-tap"/></svg>来自 Mate 70 Pro · 碰一碰<span class="grow"></span>刚刚</div>
+              <div class="t"><span class="ic"><svg><use href="#i-logo"/></svg></span><div><b>在电脑上接着调</b><span>DevEco Code · ShopDemo · 登录无反应</span></div></div>
+              <div class="rows">
+                <span class="k">复现</span><span>点「登录」×3 · 无跳转无提示</span>
+                <span class="k">HiLog</span><span>5 行 · BusinessError 1008</span>
+                <span class="k">定位</span><span><code>LoginPage.ets:27</code></span>
+                <span class="k">补丁</span><span>草稿 +7 −2 · 待审</span>
+              </div>
+              <div class="ft"><button class="btn primary" id="sc-go">在 IDE 里接续</button><button class="btn" id="sc-no">稍后</button></div>
+            </div>
+            <div class="win" id="win">
+              <div class="wt"><svg class="lg"><use href="#i-logo"/></svg><b>DevEco Studio</b><span>ShopDemo · ~/DevEcoStudioProjects/ShopDemo</span><span class="grow"></span><i><svg><use href="#i-wmin"/></svg></i><i><svg><use href="#i-wmax"/></svg></i><i><svg><use href="#i-wclose"/></svg></i></div>
+              <div class="wb">
+                <div class="wl">
+                  <div class="wl-hd"><svg class="i"><use href="#i-tap"/></svg>接续自 Mate 70 Pro<span class="grow"></span><span class="dm-pill ok">原样</span></div>
+                  <div class="ho">
+                    <div class="it"><span class="k">复现</span><span>点「登录」×3 · 无反应</span></div>
+                    <div class="it"><span class="k">截图</span><span>14:02:11 · 本机截屏</span></div>
+                    <div class="it"><span class="k">HiLog</span><span>1008 code expired</span></div>
+                    <div class="it"><span class="k">定位</span><span><code>LoginPage.ets:27</code></span></div>
+                    <div class="it"><span class="k">补丁</span><span id="ho-patch">草稿 +7 −2 · 待审</span></div>
+                    <div class="it"><span class="k">真机</span><span>Mate 70 Pro · 无线已连</span></div>
+                  </div>
+                  <div class="wl-msg" id="wl-msg">补丁已在编辑器里打开。改完点<b>保存</b>，手机上自动重装、复测。</div>
+                </div>
+                <div class="we">
+                  <div class="wtabs"><span class="on">LoginPage.ets<em id="wtab-em">补丁待审</em></span><span>AuthService.ets</span></div>
+                  <div class="wrev" id="wrev"><svg class="i"><use href="#i-phone"/></svg><span id="wrev-t">来自手机的补丁草稿 · <b class="add">+7</b> <b class="del">−2</b></span><span class="grow"></span><button class="btn sm" id="ide-edit">在这里改</button><button class="btn sm primary" id="ide-save">接受并保存</button></div>
+                  <div class="wcode" id="wcode"></div>
+                </div>
+              </div>
+              <div class="wbt">
+                <div class="wbt-tabs"><span class="on" id="wbt-log">HiLog</span><span id="wbt-run">Run</span><span class="grow"></span><span>Mate 70 Pro · com.example.shop</span></div>
+                <div class="wbt-body" id="wbt-body"></div>
+              </div>
+              <div class="wst"><span class="dm-dot ok"></span><span id="wst-t">Mate 70 Pro · 无线 hdc 已连接 · 从手机接续</span></div>
+            </div>
+          </div>
+        </div>
+        <svg class="mb-base" viewBox="0 0 720 62" aria-hidden="true">
+          <polygon points="30,0 690,0 720,52 0,52" fill="#2a2c31" stroke="#3a3d44" stroke-width="1"/>
+          <rect x="0" y="51" width="720" height="10" rx="4" fill="#1c1d20"/>
+          <rect x="320" y="51" width="80" height="3" rx="1.5" fill="#15161a"/>
+          <g id="mb-keys"></g>
+          <polygon points="290,35 430,35 435,49 285,49" fill="#34373d" stroke="#474a52" stroke-width=".8"/>
+          <g id="mb-nfc" transform="translate(418 38)"><path d="M1 1.5a4 4 0 0 1 3.5 3.8M1 -1.2a6.6 6.6 0 0 1 6 6.2" stroke="#8FB4FF" stroke-width="1.1" stroke-linecap="round" fill="none"/><circle cx="1" cy="5.2" r="1.2" fill="#8FB4FF"/></g>
+        </svg>
+        <div class="mb-cap"><span>MateBook Pro · 3120×2080 · HarmonyOS 6</span><span>触控板右下角：碰一碰区</span></div>
+        <div class="ripple" id="ripple"><i></i><i></i><i></i></div>
+      </div>
+      <div class="dm-card sync3">
+        <div class="dm-card-hd">电脑端同步<span class="grow"></span><span class="sub">不用回到电脑前 · 回来了碰一下接着调</span></div>
         <div class="dm-card-bd">
           <div class="sync-row">
             <div class="h"><svg class="i"><use href="#i-cloud"/></svg>云端构建机<span class="grow"></span><span class="dm-pill muted" id="cb-pill">空闲</span></div>
@@ -369,8 +566,8 @@
             <div class="mono" id="cb-log"><span class="dm-muted">$ 等待任务</span></div>
           </div>
           <div class="sync-row">
-            <div class="h"><svg class="i"><use href="#i-pc"/></svg>我的电脑<span class="grow"></span><span class="dm-pill muted">休眠中</span></div>
-            <div class="d">wangxd-MateBook · DevEco Studio 6.0<br>醒来后自动接上这次调试记录</div>
+            <div class="h"><svg class="i"><use href="#i-pc"/></svg>我的电脑<span class="grow"></span><span class="dm-pill muted" id="pc-pill">休眠中</span></div>
+            <div class="d" id="pc-d">MateBook Pro · DevEco Studio<br>手机碰一下，就接上这次调试</div>
           </div>
           <div class="sync-row">
             <div class="h"><svg class="i"><use href="#i-branch"/></svg>代码<span class="grow"></span><span class="dm-pill muted" id="git-pill">无改动</span></div>
@@ -393,6 +590,7 @@
   var saved='dark';try{saved=localStorage.getItem('deveco-theme')||'dark'}catch(e){}
   setTheme(saved==='dark'?'dark':'light');
   $('#theme-btn').addEventListener('click',function(){setTheme(ide.getAttribute('data-ide-theme')==='dark'?'light':'dark')});
+  setTimeout(function(){cap('idle','DevEco Code 待命 · 本机已连接',1)},0);
 
   /* ---------- 分屏 / 小窗 / 对调 ---------- */
   function setMode(m){
@@ -409,13 +607,23 @@
   function add(html,cls){var d=document.createElement('div');d.className=cls||'m-ai';d.innerHTML=html;msgs.appendChild(d);scroll();return d}
   function step(parent,title){
     var s=document.createElement('div');s.className='pst';
-    s.innerHTML='<div class="ph"><span class="sico"><span class="spin"></span></span><span class="grow">'+title+'</span><span class="tm"></span></div>';
+    s.innerHTML='<div class="ph"><span class="sico"><span class="ai-ring"></span></span><span class="grow">'+title+'</span><span class="tm"></span></div>';
     parent.appendChild(s);scroll();return s;
   }
   function done(s,tm){s.classList.add('done');$('.sico',s).innerHTML='<svg class="i" style="width:14px;height:14px;color:var(--ui-success)"><use href="#i-check"/></svg>';if(tm)$('.tm',s).textContent=tm;scroll()}
   function detail(s,html){var d=document.createElement('div');d.innerHTML=html;while(d.firstChild)s.appendChild(d.firstChild);scroll()}
   var t0=0;
-  function tl(k,state,txt){var r=$('#tl .r[data-k="'+k+'"]');r.classList.remove('run','done');if(state)r.classList.add(state);if(state==='done')$('.nd',r).innerHTML='✓';if(txt!=null)$('.t2',r).textContent=txt}
+  /* Agent 胶囊：顶栏中间，状态取 ai.css 状态机；多 Agent 时只推最挡路的一件 */
+  var LABEL={install:'在这台手机上装调试包',repro:'自动复现：点「登录」',log:'抓 HiLog',locate:'定位根因',verify:'在这台手机上复测'};
+  function cap(st,txt,q){
+    var ico=st==='tool'||st==='verifying'?'<span class="ai-ring"></span>':st==='thinking'||st==='generating'?'<span class="ai-spark is-live"></span>':st==='waiting'?'<span class="ai-wait-dot"></span>':'<svg class="ai-ico"><use href="#ai-logo-16-mono"/></svg>';
+    $('#pd-agent').innerHTML='<span class="ai-status" data-state="'+st+'">'+ico+'<span class="lbl">'+txt+'</span>'+(q?'<span class="t">还有 '+q+' 件</span>':'')+'</span>';
+  }
+  function tl(k,state,txt){
+    if(state!=='run')return;
+    if(k==='patch')cap('waiting',txt==='电脑上'?'在等你 · 电脑上审补丁':'在等你 · 补丁待你确认',1);
+    else cap(k==='verify'?'verifying':'tool',LABEL[k]);
+  }
   function cloud(pill,cls,d,log,v){
     var p=$('#cb-pill');p.className='dm-pill '+cls;p.innerHTML=pill;
     if(d)$('#cb-d').textContent=d;
@@ -451,9 +659,10 @@
     if(running)return;running=true;
     $('#chips').remove();$('#fld-t').textContent='AI 正在这台手机上调试…';$('#fld').classList.remove('filled');$('#send').disabled=true;
     add(PRESET,'m-user');
+    cap('thinking','理解中 · 登录按钮点了没反应',1);
     await wait(350);
     var ai=add('<div class="who"><svg><use href="#i-logo"/></svg>DevEco Code</div><p>收到。先在这台手机上复现一下。</p>');
-    $('#tl-total').textContent='进行中';
+    
 
     /* 1 安装 */
     tl('install','run');
@@ -515,8 +724,9 @@
 
     /* 补丁卡片 */
     await wait(300);
-    var fix=add('<p>补丁如下：捕获异常，把原因提示给用户；按钮加载中不可重复点。</p>'
-      +'<div class="diffcard"><div class="dh"><span class="fn">LoginPage.ets</span><span class="cnt"><span class="add">+7</span> <span class="del">−2</span></span><span class="grow"></span><span class="dm-pill muted">:27</span></div>'
+    var fix=add('<div class="ai-approve" id="ag-wait"><div class="ai-approve__h"><span class="ai-wait-dot"></span>在等你 · 补丁应用到这台手机？</div>'
+      +'<p class="ai-approve__why">捕获异常、把原因提示给用户；加载中按钮不可重复点。应用后重装 ShopDemo，用同一组点击复测。</p>'
+      +'<div class="diffcard"><div class="dh"><span class="ai-gmark" title="Agent 写的补丁"></span><span class="fn">LoginPage.ets</span><span class="cnt"><span class="add">+7</span> <span class="del">−2</span></span><span class="grow"></span><span class="dm-pill muted">:27</span></div>'
       +'<pre><span class="l">  .<span class="f">onClick</span>(<span class="k">async</span> () =&gt; {</span>'
       +'<span class="l del">-   <span class="k">await</span> auth.<span class="f">login</span>(<span class="k">this</span>.phone, <span class="k">this</span>.code)</span>'
       +'<span class="l del">-   router.<span class="f">pushUrl</span>({ url: <span class="s">\'pages/Home\'</span> })</span>'
@@ -528,33 +738,39 @@
       +'<span class="l add">+     <span class="k">this</span>.error = <span class="f">toTip</span>(e <span class="k">as</span> <span class="ty">BusinessError</span>)</span>'
       +'<span class="l add">+   } <span class="k">finally</span> { <span class="k">this</span>.loading = <span class="k">false</span> }</span>'
       +'<span class="l">  })</span></pre>'
-      +'<div class="ft"><button class="btn primary" id="btn-apply">在手机上应用并重装</button><span class="grow"></span><button class="btn" id="btn-later">回电脑再看</button></div></div>');
-    tl('patch','run');$('#tl-total').textContent='等你确认补丁';
-    $('#btn-apply').addEventListener('click',apply);
-    $('#btn-later').addEventListener('click',function(){
-      $('#git-pill').className='dm-pill info';$('#git-pill').textContent='待处理';
-      $('#git-d').innerHTML='补丁已存为草稿 · 电脑醒来后在 DevEco Studio 里打开';
-    });
+      +'</div><div class="ai-approve__act"><button class="ai-btn ai-btn--primary" id="btn-apply">在手机上应用并重装</button><span class="grow"></span><button class="ai-btn ai-btn--fill" id="btn-later" title="拿手机碰一下电脑触控板，整个调试会话接到 IDE 里">碰一碰 · 回电脑细看</button></div></div>'
+      +'<div class="qnext" id="qnext"><span class="ai-wait-dot"></span><span>还有 1 件在等你：<b>Agent·多语言</b> 想给登录页 3 条文案补维吾尔语 · 不挡路，排在这件后面</span></div>');
+    tl('patch','run');
+    $('#btn-apply').addEventListener('click',function(){apply('phone')});
+    $('#btn-later').addEventListener('click',tapToPC);
+    patchReady=true;
   }
 
-  async function apply(){
-    var b=$('#btn-apply');if(!b||b.disabled)return;b.disabled=true;b.textContent='已应用';b.removeAttribute('id');$('#btn-later').remove();
-    $('#tl-total').textContent='进行中';
-    var ai=add('<div class="who"><svg><use href="#i-logo"/></svg>DevEco Code</div>');
-    var s5=step(ai,'增量构建并重装');
+  var applied=false;
+  async function apply(src){
+    if(applied)return;applied=true;
+    var b=$('#btn-apply');if(b){b.disabled=true;b.textContent=src==='pc'?'已在电脑上保存':'已应用';b.removeAttribute('id');}
+    var wh=$('#ag-wait .ai-approve__h');if(wh)wh.textContent=src==='pc'?'电脑上已保存 · 在这台手机上重装复测':'已应用 · 在这台手机上重装复测';
+    var bl=$('#btn-later');if(bl)bl.remove();
+    
+    var ai=add('<div class="who"><svg><use href="#i-logo"/></svg>DevEco Code</div>'+(src==='pc'?'<p>电脑上保存了补丁（你加了一行：过期时清空验证码）。我在这台手机上重装、复测。</p>':''));
+    cap('tool',src==='pc'?'电脑上增量构建 · 推到这台手机':'增量构建并重装',1);
+    var s5=step(ai,src==='pc'?'电脑增量构建 · 推到这台手机重装':'增量构建并重装');
     detail(s5,'<div class="dm-progress"><i id="s5-bar" style="--v:0%"></i></div>');
     $('#git-pill').className='dm-pill info';$('#git-pill').textContent='1 个提交';
-    $('#git-d').innerHTML='<code>fix/login-onclick</code> · 已推送';
+    $('#git-d').innerHTML='<code>fix/login-onclick</code> · '+(src==='pc'?'电脑上审过 · 已推送':'已推送');
     var logs=['<span class="dm-muted">$</span> hvigorw assembleHap --incremental','&gt; 仅重编 LoginPage.ets（1 个文件）','&gt; :entry:default@SignHap  <span style="color:var(--ui-success)">OK</span>'];
+    if(src==='pc'){lvcap('重装复测中',false);pcState('info','构建 · 推到手机','本机 hvigor 增量构建<br>hdc 无线推到 Mate 70 Pro');}
     for(var i=0;i<=100;i+=10){
       $('#s5-bar').style.setProperty('--v',i+'%');
-      cloud('<span class="spin" style="width:10px;height:10px"></span>增量构建','info','fix/login-onclick · entry · debug',logs.slice(0,1+Math.min(2,Math.floor(i/40))).join('\n'),i);
+      if(src==='pc')runLog(i);
+      else cloud('<span class="spin" style="width:10px;height:10px"></span>增量构建','info','fix/login-onclick · entry · debug',logs.slice(0,1+Math.min(2,Math.floor(i/40))).join('\n'),i);
       if(i===50)install('正在重装 ShopDemo (debug)');
       await wait(110);
     }
-    cloud('完成','ok',null,logs.join('\n')+'\n<span style="color:var(--ui-success)">BUILD SUCCESSFUL in 3 s</span>',null);
+    if(src!=='pc')cloud('完成','ok',null,logs.join('\n')+'\n<span style="color:var(--ui-success)">BUILD SUCCESSFUL in 3 s</span>',null);
     await wait(400);
-    done(s5,'3.4 s');tl('patch','done','3.4 s');
+    done(s5,src==='pc'?'2.9 s':'3.4 s');tl('patch','done',src==='pc'?'2.9 s':'3.4 s');
 
     /* 6 验证 */
     tl('verify','run');
@@ -575,13 +791,25 @@
     await wait(400);
     $('#v2').innerHTML='<span style="color:var(--ui-success)">✓</span> ② 有效验证码 → 进入首页';
     done(s6,'3.0 s');tl('verify','done','3.0 s');
-    $('#tl-total').textContent='共 17.5 s · 全程在手机上';
+    cap('done',src==='pc'?'已修好 · 手机调、电脑审、手机复测':'已修好 · 复测 2/2 · 17.5 s',1);
+    if(src==='pc'){lvcap('复测通过 2/2',true);pcState('ok','复测通过','补丁已提交 fix/login-onclick<br>手机上 2 条复测都过了');runLog(200);
+      $('#wtab-em').className='ok';$('#wtab-em').textContent='已合入';$('#wst-t').textContent='Mate 70 Pro · 复测通过 2/2 · 已提交 fix/login-onclick';$('#wl-msg').innerHTML='手机上复测 <b>2 / 2 通过</b>：过期验证码有提示，有效验证码进首页。';}
 
     add('<div class="who"><svg><use href="#i-logo"/></svg>DevEco Code</div><p><b>已修好。</b>前后对比：</p>'
       +'<div class="cmp"><button type="button" class="cc bad shot" data-shot="before" style="display:block;color:inherit"><div class="th">'+shotBeforeG+'</div><div class="cap"><svg class="i"><use href="#i-err"/></svg>修复前 · 点了无反应</div></button>'
       +'<button type="button" class="cc good shot" data-shot="after" style="display:block;color:inherit"><div class="th">'+shotAfter+'</div><div class="cap"><svg class="i"><use href="#i-check"/></svg>修复后 · 提示并可重试</div></button></div>'
-      +'<p class="dm-muted" style="font-size:var(--fs-sm)">改动在 <code>fix/login-onclick</code>，电脑醒来后 DevEco Studio 会提示合入。</p>');
+      +'<p class="dm-muted" style="font-size:var(--fs-sm)">'+(src==='pc'?'改动在电脑上审过，已提交到 <code>fix/login-onclick</code>。':'改动在 <code>fix/login-onclick</code>，电脑醒来后 DevEco Studio 会提示合入。')+'</p>');
     $('#cmp-card').hidden=false;
+    /* 统一队列的下一件：手机上只推最挡路的那一件，这件轮到了才出现 */
+    var qn=$('#qnext');if(qn)qn.remove();
+    await wait(600);
+    add('<div class="who"><svg><use href="#i-logo"/></svg>DevEco Code · 队列里的下一件</div>'
+      +'<div class="ai-approve qcard" id="q2"><div class="ai-approve__h"><span class="ai-wait-dot"></span>在等你 · Agent·多语言 想给登录页补 3 条维吾尔语文案</div>'
+      +'<p class="ai-approve__why">不挡路。改的是 <code>resources/ug/element/string.json</code>，和刚才的补丁不在同一个文件；「登录」按钮文案会变长约 30%，它已在这台手机上截图确认没截断。</p>'
+      +'<div class="ai-approve__act"><button class="ai-btn ai-btn--primary" id="q2-ok">批准</button><button class="ai-btn ai-btn--fill" id="q2-pc">回电脑再看</button></div></div>');
+    cap('waiting','在等你 · Agent·多语言 · 不挡路');
+    $('#q2-ok').addEventListener('click',function(){$('#q2').outerHTML='<div class="pst done"><div class="ph"><span class="sico"><svg class="i" style="width:14px;height:14px;color:var(--ui-success)"><use href="#i-check"/></svg></span><span class="grow">已批准 · Agent·多语言 继续跑</span></div></div>';cap('done','队列清空 · 2 件都处理了');});
+    $('#q2-pc').addEventListener('click',function(){$('#q2').outerHTML='<div class="pst env"><div class="ph"><span class="sico"><svg class="i" style="width:14px;height:14px;color:var(--ui-fg-info)"><use href="#i-pc"/></svg></span><span class="grow">留在队列里 · 回到电脑前再看</span></div></div>';cap('idle','在等你 1 件 · 回电脑再看');});
     $('#fld-t').textContent='继续描述问题';$('#send').disabled=false;
   }
 
@@ -594,11 +822,129 @@
   $('#lb-close').addEventListener('click',function(){$('#lightbox').hidden=true});
   $('#lightbox').addEventListener('click',function(e){if(e.target.id==='lightbox')$('#lightbox').hidden=true});
 
+  /* ================= 碰一碰：手机上调到一半，接到鸿蒙电脑的 IDE 里 ================= */
+  var patchReady=false, handed=false, edited=false, mbin=$('#mbin');
+  (function(){
+    var g='',rows=[[4,64,656],[12,58,662],[20,52,668],[28,46,674]];
+    rows.forEach(function(r){var n=15,w=(r[2]-r[1])/n;for(var i=0;i<n;i++)g+='<rect x="'+(r[1]+i*w+1.5).toFixed(1)+'" y="'+r[0]+'" width="'+(w-3).toFixed(1)+'" height="6" rx="1.2" fill="#1c1d20"/>';});
+    $('#mb-keys').innerHTML=g;
+  })();
+  function lvcap(t,ok){var c=$('#lvcap');c.hidden=false;c.classList.toggle('ok',!!ok);$('#lvcap-t').textContent=t}
+  function pcState(cls,pill,d){var p=$('#pc-pill');p.className='dm-pill '+cls;p.textContent=pill;if(d)$('#pc-d').innerHTML=d}
+
+  /* 电脑编辑器里的补丁（新文件行号；删掉的行不占行号） */
+  var CODE=[
+    ['cx',26,'  .<span class="f">width</span>(<span class="s">\'100%\'</span>)'],
+    ['err',27,'  .<span class="f">onClick</span>(<span class="k">async</span> () =&gt; {'],
+    ['del','','    <span class="k">await</span> auth.<span class="f">login</span>(<span class="k">this</span>.phone, <span class="k">this</span>.code)'],
+    ['del','','    router.<span class="f">pushUrl</span>({ url: <span class="s">\'pages/Home\'</span> })'],
+    ['add',28,'    <span class="k">this</span>.loading = <span class="k">true</span>'],
+    ['add',29,'    <span class="k">try</span> {'],
+    ['add',30,'      <span class="k">await</span> auth.<span class="f">login</span>(<span class="k">this</span>.phone, <span class="k">this</span>.code)'],
+    ['add',31,'      router.<span class="f">pushUrl</span>({ url: <span class="s">\'pages/Home\'</span> })'],
+    ['add',32,'    } <span class="k">catch</span> (e) {'],
+    ['add',33,'      <span class="k">this</span>.error = <span class="f">toTip</span>(e <span class="k">as</span> <span class="ty">BusinessError</span>)'],
+    ['add',34,'    } <span class="k">finally</span> { <span class="k">this</span>.loading = <span class="k">false</span> }'],
+    ['cx',35,'  })']
+  ];
+  function renderCode(){
+    $('#wcode').innerHTML=CODE.map(function(l){
+      var m=l[0]==='add'?'+':(l[0]==='del'?'−':(l[0]==='me'?'+':''));
+      return '<div class="r '+l[0]+'"'+(l[3]?' id="'+l[3]+'"':'')+'><b>'+l[1]+'</b><i>'+m+'</i><span class="c">'+l[2]+'</span>'+(l[0]==='err'?'<span class="tag">← 手机上定位到这里</span>':'')+'</div>';
+    }).join('');
+  }
+  function hilog(){
+    $('#wbt-log').classList.add('on');$('#wbt-run').classList.remove('on');
+    $('#wbt-body').innerHTML='<span class="dim">14:02:11.382 I A00001/Login:</span> onClick submit\n<span class="dim">14:02:11.905 I A00001/Auth:</span> POST /v1/login 200\n<span class="hl"><span class="e">14:02:11.906 E C03f00/ArkCompiler:</span> Unhandled promise rejection</span><span class="hl"><span class="e">14:02:11.906 E C03f00/ArkCompiler:</span> BusinessError 1008: code expired</span><span class="hl"><span class="e">14:02:11.906 E C03f00/ArkCompiler:</span>   at onClick (LoginPage.ets:27:7)</span>';
+  }
+  var RUN=['<span class="dim">$</span> hvigorw assembleHap --incremental     <span class="dim"># 本机构建</span>','&gt; 仅重编 LoginPage.ets（1 个文件） · :entry:default@SignHap <span class="ok">OK</span>','&gt; hdc -t Mate70Pro install -r entry-default-signed.hap  <span class="ok">✓ 1.1 s</span>','&gt; 手机复测 ① 过期验证码 → 提示「请重新获取」 <span class="ok">✓</span>','&gt; 手机复测 ② 有效验证码 → 进入首页 <span class="ok">✓</span>'];
+  function runLog(i){
+    $('#wbt-run').classList.add('on');$('#wbt-log').classList.remove('on');
+    var n=i>=200?5:(i>=60?3:(i>=20?2:1));
+    $('#wbt-body').innerHTML=RUN.slice(0,n).join('\n');
+  }
+
+  async function tapToPC(){
+    if(!patchReady||handed||applied)return;handed=true;
+    var bl=$('#btn-later');if(bl)bl.disabled=true;
+    var ph=$('#phone'),z=parseFloat(getComputedStyle($('.phone-wrap')).zoom)||1;
+    var pr=ph.getBoundingClientRect(),nr=$('#mb-nfc').getBoundingClientRect(),mr=$('#mb').getBoundingClientRect();
+    var tx=nr.left+4,ty=nr.top+10;
+    var ox=pr.left+pr.width/2,oy=pr.top+pr.height;
+    ph.style.transform='translate('+((tx-ox)/z)+'px,'+((ty-oy)/z)+'px) rotate(-10deg) scale(.4)';
+    $('#tapov').hidden=false;$('#tapov-t').textContent='正在接续到 MateBook Pro';
+    await wait(650);
+    var rp=$('#ripple');rp.style.left=(tx-mr.left)+'px';rp.style.top=(ty-mr.top)+'px';rp.classList.add('on');
+    mbin.dataset.st='desk';
+    pcState('info','已唤醒','碰一碰唤醒 · 弹出接续卡片');
+    await wait(900);
+    ph.style.transform='';
+    await wait(450);
+    rp.classList.remove('on');
+    $('#tapov-t').textContent='电脑上已弹出接续卡片';$('#tapov-s').textContent='在电脑上点「在 IDE 里接续」';
+    mbin.dataset.st='card';
+    await wait(900);$('#tapov').hidden=true;
+    tl('patch','run','电脑上');
+  }
+  function openIDE(){
+    if(mbin.dataset.st!=='card'&&mbin.dataset.st!=='later')return;
+    mbin.dataset.st='ide';$('#dock-dv').classList.add('run');
+    renderCode();hilog();
+    pcState('info','审补丁中','LoginPage.ets 补丁在编辑器里待审<br>保存后手机自动重装、复测');
+    lvcap('电脑审补丁中',false);
+    var b=$('#btn-apply');if(b){b.disabled=true;b.textContent='已交给电脑';}
+    var wh=$('#ag-wait .ai-approve__h');if(wh)wh.textContent='已交给电脑 · 在 MateBook Pro 上审';
+    var bl=$('#btn-later');if(bl)bl.remove();
+    $('#git-pill').className='dm-pill info';$('#git-pill').textContent='草稿';$('#git-d').innerHTML='补丁草稿 · 电脑上待审';
+    
+    add('<div class="who"><svg><use href="#i-logo"/></svg>DevEco Code</div><p>已接续到 <b>MateBook Pro</b>：复现步骤、截图、HiLog、定位到的 <code>LoginPage.ets:27</code>、补丁草稿都带过去了，补丁在编辑器里待审。</p>'
+      +'<div class="pst env"><div class="ph"><span class="sico"><span class="spin"></span></span><span class="grow">这台手机保持连接 · 电脑上一保存就重装、复测</span></div></div>');
+  }
+  /* 电脑上改一行：过期就清空验证码 */
+  async function editOnPC(){
+    if(edited||applied)return;edited=true;$('#ide-edit').disabled=true;
+    CODE.splice(10,0,['me',34,'','me-line']);
+    CODE[11][1]=35;CODE[12][1]=36;
+    renderCode();
+    var txt='      <span class="k">if</span> (<span class="f">isExpired</span>(e)) <span class="k">this</span>.code = <span class="s">\'\'</span>';
+    var plain="      if (isExpired(e)) this.code = ''";
+    var c=$('#me-line .c');
+    for(var i=0;i<=plain.length;i+=3){c.innerHTML=plain.slice(0,i).replace(/</g,'&lt;')+'<span class="caret"></span>';await wait(30)}
+    c.innerHTML=txt;
+    $('#wrev-t').innerHTML='补丁 <b class="add">+8</b> <b class="del">−2</b> · 你改了 1 行';
+    $('#ho-patch').textContent='+8 −2 · 你改了 1 行';
+    $('#ide-save').textContent='保存 · 手机复测';
+  }
+  function saveOnPC(){
+    if(applied||mbin.dataset.st!=='ide')return;
+    $('#ide-save').disabled=true;$('#ide-edit').disabled=true;$('#ide-save').textContent='已保存';
+    $('#wtab-em').textContent='已保存';
+    $('#wl-msg').innerHTML='已保存。手机上正在<b>重装、复测</b>…';
+    $('#wst-t').textContent='已保存 · hvigor 增量构建 → Mate 70 Pro';
+    var p=$('#msgs .pst.env:last-child .sico');if(p)p.innerHTML='<svg class="i" style="width:14px;height:14px;color:var(--ui-success)"><use href="#i-check"/></svg>';
+    apply('pc');
+  }
+  $('#sc-go').addEventListener('click',openIDE);
+  $('#dock-dv').addEventListener('click',openIDE);
+  $('#sc-no').addEventListener('click',function(){mbin.dataset.st='later';pcState('muted','稍后接','会话留在 Dock 的 DevEco 图标上<br>想接时点它就行')});
+  $('#ide-edit').addEventListener('click',editOnPC);
+  $('#ide-save').addEventListener('click',saveOnPC);
+  $('#wbt-log').addEventListener('click',hilog);
+  $('#wbt-run').addEventListener('click',function(){runLog(applied?200:0)});
+
   DemoGuide.init([
-    {target:'#chip-login',kind:'click',pos:'top',label:'点这句话发给 AI'},
-    {target:'#btn-apply',kind:'click',pos:'top',label:'在手机上应用并重装'},
-    {target:'#app',kind:'change',pos:'top',label:'被调试 App：自动复现、修好后再验证'}
-  ]);
+    {target:'#chip-login',kind:'click',pos:'top',label:'说一句交给 Agent：它在这台手机上调'},
+    {target:'#btn-apply',kind:'click',pos:'top',label:'在等你：补丁应用到这台手机'},
+    {target:'#qnext',kind:'change',pos:'bottom',label:'别的 Agent 的待办排在后面，不插队'},
+    {target:'#btn-later',kind:'click',pos:'top',label:'想细看补丁：碰一下电脑'},
+    {target:'#ide-save',kind:'click',pos:'left',label:'电脑上保存：手机自动重装复测'}
+  ],{scene:{
+    at:'不在工位，测试说登录点了没反应，手边只有手机',
+    goal:'复现、定位到 ArkTS 行、修好装回手机验证',
+    pain:'得回工位插线复现翻 HiLog，手机上的线索回电脑再找',
+    fix:'手机一句话调到补丁；碰一下电脑接着审，保存即复测',
+    agent:'它装包复现定位出补丁；手机只推最挡路的一件；你批补丁'
+  }});
 })();
 </script>
 </body>
