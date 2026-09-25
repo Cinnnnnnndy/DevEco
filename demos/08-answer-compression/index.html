@@ -186,10 +186,10 @@
               <summary>占用明细</summary>
               <div class="fb">
                 <div class="dm-legend" id="ctx-legend">
-                  <span><i></i>对话 <b data-k="a">22%</b></span>
-                  <span><i style="background:var(--Purple6,#8150BE)"></i>读的文件 <b data-k="b">31%</b></span>
-                  <span><i style="background:var(--ui-warning)"></i>工具输出 <b data-k="c">15%</b></span>
-                  <span><i style="background:var(--ui-fg-info)"></i>系统提示 <b data-k="d">0%</b></span>
+                  <span><i class="a"></i>对话 <b data-k="a">22%</b></span>
+                  <span><i class="b"></i>读的文件 <b data-k="b">31%</b></span>
+                  <span><i class="c"></i>工具输出 <b data-k="c">15%</b></span>
+                  <span><i class="d"></i>系统提示 <b data-k="d">0%</b></span>
                 </div>
                 <div class="dm-small dm-muted" id="ctx-note">到 80% 会自动摘要；现在也可以手动压</div>
               </div>
@@ -201,73 +201,65 @@
 
               <div class="umsg"><span class="time">10:42</span><div class="bubble">把列表卡顿修一下，顺便看看还有没有别的性能问题</div></div>
 
-              <!-- 回复侧：结论 + 改动清单在前，过程收起 -->
-              <div class="amsg" id="ans">
-                <div class="step"><svg class="i"><use href="#i-collapseAll"/></svg><span id="ans-step">结论先行 · 过程已收起，展开可看全部推理</span></div>
-                <div class="md">
-                  <p class="concl"><b>卡顿来自封面同步解码，改成异步后掉帧 9 → 0。</b></p>
-                  <div class="cl-h">改动清单</div>
-                  <div class="dm-card chg"><div class="dm-list" id="chg-list">
-                    <div class="dm-item"><svg class="i"><use href="#i-ets"/></svg><span class="grow">ListPage.ets</span><span class="cnt"><span class="add">+6</span> <span class="del">−1</span></span></div>
-                    <div class="dm-item"><svg class="i"><use href="#i-ets"/></svg><span class="grow">ItemCard.ets</span><span class="cnt"><span class="add">+3</span> <span class="del">−0</span></span></div>
-                    <div class="dm-item"><svg class="i"><use href="#i-ets"/></svg><span class="grow">CoverPlaceholder.ets</span><span class="cnt"><span class="add">+18</span> <span class="del">−0</span></span></div>
-                  </div></div>
-                  <details class="dm-fold" id="fold">
-                    <summary>过程 · 12 步 · 读了 6 个文件</summary>
-                    <div class="fb">
-                      <div class="pl"><i>1</i><span>读 <code>ListPage.ets</code>，定位 List / ForEach 的渲染路径</span></div>
-                      <div class="pl"><i>2</i><span>读 <code>ItemCard.ets</code>，确认 cover 是同步传入的 PixelMap</span></div>
-                      <div class="pl"><i>3</i><span>读 <code>ItemSource.ets</code>，<code>rawCover()</code> 返回原始字节，不缓存</span></div>
-                      <div class="pl"><i>4</i><span>用 hiperf 抓 3 秒滑动，主线程 62% 耗在 <code>createPixelMapSync</code></span></div>
-                      <div class="pl"><i>5</i><span>排除 <code>cachedCount(0)</code>：改 4 后掉帧 9 → 7，不是主因</span></div>
-                      <div class="pl"><i>6</i><span>排除布局：<code>layoutWeight</code> 每帧 &lt; 1 ms</span></div>
-                      <div class="pl"><i>7</i><span>方案：<code>loadCover</code> 改 async，返回 <code>Promise&lt;PixelMap&gt;</code></span></div>
-                      <div class="pl"><i>8</i><span><code>ItemCard</code> 先渲染占位，拿到 PixelMap 再替换</span></div>
-                      <div class="pl"><i>9</i><span>新建 <code>CoverPlaceholder.ets</code>：灰底 + 固定尺寸，避免跳动</span></div>
-                      <div class="pl"><i>10</i><span>复测：Mate 70 Pro 滑动 3 秒，掉帧 0，主线程解码 0%</span></div>
-                      <div class="pl"><i>11</i><span>顺带扫 <code>oh-package.json5</code>，发现 <code>@ohos/imageknife</code> 还是 2.x</span></div>
-                      <div class="pl"><i>12</i><span>查 <code>LegacyCache.ets</code> 引用（3 处），可删，等确认</span></div>
-                    </div>
-                  </details>
+              <!-- 回复：结论一句 + 改动清单在前，过程收起 -->
+              <div class="ai-answer" id="ans">
+                <div class="ai-answer__meta"><svg class="i ai-ico"><use href="#ai-mark"/></svg><span><span class="agt">Agent·调优</span> · <span id="ans-step">过程已收起</span></span></div>
+                <p class="ai-answer__lead">卡顿来自封面同步解码，改成异步后掉帧 9 → 0。</p>
+                <div class="cl-h">改动清单</div>
+                <div class="chg" id="chg-list">
+                  <div class="dm-item"><svg class="i"><use href="#i-ets"/></svg><span class="grow">ListPage.ets</span><span class="cnt"><span class="add">+6</span> <span class="del">−1</span></span></div>
+                  <div class="dm-item"><svg class="i"><use href="#i-ets"/></svg><span class="grow">ItemCard.ets</span><span class="cnt"><span class="add">+3</span> <span class="del">−0</span></span></div>
+                  <div class="dm-item"><svg class="i"><use href="#i-ets"/></svg><span class="grow">CoverPlaceholder.ets</span><span class="cnt"><span class="add">+18</span> <span class="del">−0</span></span></div>
                 </div>
+                <details id="fold">
+                  <summary>过程 · 12 步 · 读了 6 个文件</summary>
+                  <div>
+                    <div class="pl"><i>1</i><span>读 <code>ListPage.ets</code>，定位 List / ForEach 的渲染路径</span></div>
+                    <div class="pl"><i>2</i><span>读 <code>ItemCard.ets</code>，确认 cover 是同步传入的 PixelMap</span></div>
+                    <div class="pl"><i>3</i><span>读 <code>ItemSource.ets</code>，<code>rawCover()</code> 返回原始字节，不缓存</span></div>
+                    <div class="pl"><i>4</i><span>用 hiperf 抓 3 秒滑动，主线程 62% 耗在 <code>createPixelMapSync</code></span></div>
+                    <div class="pl"><i>5</i><span>排除 <code>cachedCount(0)</code>：改 4 后掉帧 9 → 7，不是主因</span></div>
+                    <div class="pl"><i>6</i><span>排除布局：<code>layoutWeight</code> 每帧 &lt; 1 ms</span></div>
+                    <div class="pl"><i>7</i><span>方案：<code>loadCover</code> 改 async，返回 <code>Promise&lt;PixelMap&gt;</code></span></div>
+                    <div class="pl"><i>8</i><span><code>ItemCard</code> 先渲染占位，拿到 PixelMap 再替换</span></div>
+                    <div class="pl"><i>9</i><span>新建 <code>CoverPlaceholder.ets</code>：灰底 + 固定尺寸，避免跳动</span></div>
+                    <div class="pl"><i>10</i><span>复测：Mate 70 Pro 滑动 3 秒，掉帧 0，主线程解码 0%</span></div>
+                    <div class="pl"><i>11</i><span>顺带扫 <code>oh-package.json5</code>，发现 <code>@ohos/imageknife</code> 还是 2.x</span></div>
+                    <div class="pl"><i>12</i><span>查 <code>LegacyCache.ets</code> 引用（3 处），可删，等确认</span></div>
+                  </div>
+                </details>
               </div>
 
-              <!-- 警告：永远完整显示 -->
+              <!-- 警告：永远完整显示（状态色，不是在等你） -->
               <div class="dm-callout warn" id="co-warn">
                 <svg class="lead"><use href="#i-warn"/></svg>
                 <div class="cb">
-                  <div class="cb-t"><span id="warn-t">依赖有已知内存泄漏</span><span class="dm-pill muted"><svg><use href="#i-pin"/></svg>永不折叠</span></div>
-                  <div id="warn-b">顺手发现 <code>oh-package.json5</code> 里 <code>@ohos/imageknife</code> 还是 2.x，有已知内存泄漏。这条不会被折叠。</div>
+                  <div class="cb-t"><span id="warn-t">依赖有已知内存泄漏</span><span class="pin">永不折叠</span></div>
+                  <div id="warn-b"><code>oh-package.json5</code> 里 <code>@ohos/imageknife</code> 还是 2.x，有已知内存泄漏。</div>
                 </div>
                 <button class="btn sm" id="btn-upg">升到 3.1</button>
               </div>
 
-              <!-- 危险操作：永远完整显示，等确认 -->
-              <div class="dm-callout err" id="co-del">
-                <svg class="lead"><use href="#i-hand"/></svg>
-                <div class="cb">
-                  <div class="cb-t"><span id="del-t">危险操作，等你确认</span><span class="dm-pill muted"><svg><use href="#i-pin"/></svg>永不折叠</span></div>
-                  <div id="del-b">接下来要删除 <code>entry/src/main/ets/model/LegacyCache.ets</code>（3 处引用）。删了就不在回退清单里，所以先问你。</div>
-                  <div class="acts" id="del-acts"><button class="btn sm" id="btn-cancel">取消</button><button class="btn sm primary" id="btn-del">确认删除</button></div>
-                </div>
+              <!-- 危险操作：永远完整显示，在等你（琥珀审批卡） -->
+              <div class="ai-approve" id="co-del">
+                <div class="ai-approve__h"><span class="ai-wait-dot"></span><span id="del-t">在等你 · 危险操作</span><span class="pin">永不折叠</span></div>
+                <div class="ai-approve__cmd">rm entry/src/main/ets/model/LegacyCache.ets</div>
+                <p class="ai-approve__why" id="del-b"><b>Agent·调优</b> 要删掉它（3 处引用会一起改）。删了就不在回退清单里，所以先问你。</p>
+                <div class="ai-approve__act" id="del-acts"><button class="btn sm" id="btn-cancel">取消</button><button class="btn sm primary" id="btn-del">确认删除</button></div>
               </div>
 
-              <!-- 鸿蒙电脑版：长任务，结束时结论上实况窗 -->
-              <div class="sugg" id="sugg"><button class="chip" id="btn-long" type="button"><svg class="i"><use href="#i-clock"/></svg>长任务：3 台设备全量回归（约 6 分钟）</button></div>
+              <!-- 鸿蒙电脑版：长任务交给另一个 Agent，结束时结论上实况窗 -->
+              <div class="sugg" id="sugg"><button class="ai-btn ai-btn--fill" id="btn-long" type="button"><svg><use href="#i-clock"/></svg>交给 Agent·回归：3 台设备全量回归（约 6 分钟）</button></div>
 
             </div>
           </div>
 
-          <div class="ai-input">
-            <div class="top"><button class="ctx"><svg class="i" style="width:12px;height:12px"><use href="#i-at"/></svg>Add Context</button><span class="ctx"><svg class="i" style="width:12px;height:12px"><use href="#i-ets"/></svg>ListPage.ets</span><span class="grow"></span><button class="toggle on" id="tog-live" title="长任务结束时，把结论一句话推到鸿蒙电脑和手机的实况窗；危险操作不推"><svg class="i"><use href="#i-bell-new"/></svg>实况窗</button><button class="toggle on" id="tog-concl" title="回复先说结论，过程收起来；报错与警告不受影响"><svg class="i" style="width:12px;height:12px"><use href="#i-collapseAll"/></svg>结论先行</button></div>
-            <textarea id="ai-text" rows="2" placeholder="Type @ to add context. Type / to switch between functions." aria-label="Message"></textarea>
-            <div class="bot"><button class="mode" id="mode-btn" data-pop="mode" aria-expanded="false"><svg class="i" style="width:12px;height:12px"><use href="#i-tw-agent"/></svg><span id="mode-label">HarmonyOS Act</span><svg class="i" style="width:12px;height:12px"><use href="#i-chevD"/></svg>
-                <div class="popup" hidden style="top:auto;bottom:28px;left:0"><div class="mi"><svg class="i"><use href="#i-chat"/></svg>HarmonyOS Ask<span class="sc">Q&amp;A · explain · snippets</span></div><div class="mi"><svg class="i"><use href="#i-tw-agent"/></svg>HarmonyOS Act<span class="sc">multi-file edits · build · review</span></div></div></button>
-              <button class="mode" id="model-btn" data-pop="model" aria-expanded="false"><span id="model-label">deepseek-v4-pro</span><svg class="i" style="width:12px;height:12px"><use href="#i-chevD"/></svg>
-                <div class="popup" hidden style="top:auto;bottom:28px;left:0"><div class="mi">deepseek-v4-flash<span class="sc">fast</span></div><div class="mi">deepseek-v4-pro<span class="sc">reasoning</span></div><div class="mi">pangu-5.5</div></div></button>
-              <span class="grow"></span><span class="ring" id="counter" title="0 / 30000"></span><button class="send" id="send" title="Send|Enter"><svg><use href="#i-send-o"/></svg></button></div>
+          <div class="ai-field in8">
+            <div class="ai-field__ctx"><span class="ai-chip"><svg><use href="#i-ets"/></svg><span>ListPage.ets</span></span><span class="grow"></span><button type="button" class="ai-toggle" aria-pressed="true" id="tog-live" title="长任务结束时，把结论一句话推到鸿蒙电脑和手机的实况窗；危险操作不推"><svg class="i"><use href="#i-bell-new"/></svg>实况窗</button><button type="button" class="ai-toggle" aria-pressed="true" id="tog-concl" title="回复先说结论，过程收起来；报错与警告不受影响"><svg class="i"><use href="#i-collapseAll"/></svg>结论先行</button></div>
+            <textarea class="ai-field__ta" id="ai-text" rows="2" placeholder="说一句要做什么…" aria-label="Message"></textarea>
+            <div class="ai-field__bar"><span class="ai-dd">Agent</span><span class="ai-field__model"><svg><use href="#ai-cloud"/></svg>云端 · deepseek-v4-pro</span><span class="grow"></span><button class="ai-field__send" id="send" type="button" title="发送|Enter"><svg><use href="#ai-send"/></svg></button></div>
           </div>
-          <div class="ai-foot">The content is generated by AI and may not be entirely accurate or complete. It is for reference only | <a href="#">Terms of Use</a>&nbsp;&nbsp;<a href="#">Privacy Policy</a></div>
+          <div class="ai-foot">The content is generated by AI and may not be entirely accurate or complete.</div>
         </div></div>
       </div>
     </div>
@@ -293,9 +285,8 @@
 
   <!-- 鸿蒙电脑右上角 + 旁边的 Mate 70 Pro：实况窗 -->
   <div class="desk" id="desk" aria-label="实况窗">
-    <div class="pcbar"><button class="lcap" id="lv-cap" type="button"><span class="lg"><svg><use href="#i-genie"/></svg></span><span id="lv-cap-t">回归 0/42</span><span class="mb"><i id="lv-cap-p"></i></span></button><svg class="i"><use href="#i-wifi"/></svg><span>86%</span><span class="tm" id="pc-time">10:52</span></div>
+    <div class="pcbar"><button class="lcap" id="lv-cap" type="button"><span class="lg"><svg><use href="#ai-mark"/></svg></span><span id="lv-cap-t">回归 0/42</span><span class="mb"><i id="lv-cap-p"></i></span></button><svg class="i"><use href="#i-wifi"/></svg><span>86%</span><span class="tm" id="pc-time">10:52</span></div>
     <div class="lv" id="lv-pc" role="button" tabindex="0" aria-label="实况窗：点开回到 DevEco Studio"></div>
-    <div class="dev-cap"><svg class="i"><use href="#i-layout"/></svg>本机 · 鸿蒙电脑 · 状态栏实况窗</div>
     <div class="grow-v"></div>
     <div class="lph" id="lph"><div class="scr" id="lph-scr"><div class="in" id="lph-in"></div></div></div>
     <div class="dev-cap"><svg class="i"><use href="#i-phone"/></svg>Mate 70 Pro · 1260 × 2844 · 锁屏实况窗</div>
