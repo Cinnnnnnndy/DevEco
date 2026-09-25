@@ -329,7 +329,7 @@ window.DEVECO_CATALOG = {
         },
         {
           title: 'DevEco 智能：视觉与交互体系', subtitle: 'DevEco Intelligence · Visual & Interaction System',
-          desc: '智能色独立于品牌蓝（紫罗兰 → 兰紫 → 玫瑰，小字用纯色、过 AA）；‹✦› 标识、28 个 AI 图标与「基础字形 + 星芒徽标」派生规则；AI 代码高亮、8 个进行态、输入框 / 回答卡 / 审批卡等组件；专题：设计稿到代码之后，可视化修改 × AI Coding（作用范围 × 一多断点、人机冲突、设计稿漂移）。每条规则都从开发者任务出发。',
+          desc: '智能色独立于品牌蓝（紫罗兰 → 兰紫 → 玫瑰，小字用纯色、过 AA）；‹✦› 标识、28 个 AI 图标与「基础字形 + 星芒徽标」派生规则；AI 代码高亮、8 个进行态、输入框 / 回答卡 / 审批卡等组件；Agent 输入框九个场景（并入原「输入框场景与状态说明」）；专题：设计稿到代码之后，可视化修改 × AI Coding（作用范围 × 一多断点、人机冲突、设计稿漂移）。每条规则都从开发者任务出发，并配一张「在 IDE 里的样子」，共 70 张实时渲染配图。',
           view: 'ready', date: '2026-09-24', href: 'deveco-intui-kit/docs/ai-system.html',
           links: [{ label: 'ai.css', href: 'deveco-intui-kit/src/ai.css' }, { label: '图标', href: 'deveco-intui-kit/icons/ai-icons.svg' }],
           tags: ['智能色', '进行态', 'D2C'], thumb: { type: 'image', src: 'site/thumbs/ai-system.jpg' },
@@ -353,12 +353,6 @@ window.DEVECO_CATALOG = {
           desc: '外部事实、DevEco 家族的版本节奏、开发者原声（IDE 内 / IDE 外）、同行 2026 年把 IDE 做成了什么、从舆情到动作的三个同心圆、1100 万注册开发者里的七类人群与漏斗。',
           view: 'doc', date: '2026-09-03', href: 'deveco-ecosystem-sentiment.html',
           tags: ['舆情', '开发者原声', '同行对照'], thumb: { type: 'image', src: 'site/thumbs/sentiment.jpg' },
-        },
-        {
-          title: 'DevEco Code Agent 输入框：场景与状态说明', subtitle: 'Agent Input Box · Scenarios & States',
-          desc: '只管 Agent 面板输入框本身：九个场景按「触发条件 → 状态变化 → 反馈/边界」拆开——输入编辑、@ 上下文、/ 功能切换、模型与深度思考、语音输入、意图确认与计划预览、发送/生成中/终止、异常边界、快捷键。每组配一段设计依据与来源，末尾附已知局限。',
-          view: 'doc', date: '2026-09-17', href: 'deveco-code-agent-input-states.html',
-          tags: ['输入框', '状态详解', '9 个场景'], thumb: { type: 'image', src: 'site/thumbs/agent-input-states.jpg' },
         },
         {
           title: 'DevEco Studio 三端交互差异：鸿蒙电脑版 vs Windows / macOS', subtitle: 'HarmonyOS PC Edition vs IntelliJ-based Editions',
