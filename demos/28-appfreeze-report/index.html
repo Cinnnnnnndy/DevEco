@@ -232,11 +232,13 @@ h1{font-size:30px;font-weight:600;line-height:1.3;color:var(--ink)}
   <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7"/></symbol>
   <symbol id="i-chev" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></symbol>
   <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z"/></symbol>
 </svg>
 
 <div class="top">
   <div class="sub">
-    <span class="prod">DevEco Code</span>
+    <span class="prod">DevEco Code</span><span class="grow"></span>
+    <button class="tbtn" id="theme-btn" type="button" title="切换深浅色"><svg class="i"><use href="#i-moon"/></svg></button>
   </div>
 </div>
 <div id="hero"></div>
@@ -245,7 +247,6 @@ h1{font-size:30px;font-weight:600;line-height:1.3;color:var(--ink)}
   <aside class="side" id="side">
     <nav class="tree">
       <a href="#sec-verdict" data-s="sec-verdict">结论</a>
-      <a href="#sec-strength" data-s="sec-strength">证据强度</a>
       <a href="#sec-timeline" data-s="sec-timeline">时间线与发生经过</a>
       <a href="#sec-fix" data-s="sec-fix">修复建议<span class="n" id="nav-fixn">3</span></a>
       <a href="#sec-checks" data-s="sec-checks">证据清单<span class="n" id="nav-ckn">9</span></a>
@@ -342,10 +343,15 @@ function checks(v){
     {id:'special', s:'excl', t:'专项排除', one:'7 类阻塞模式均未命中', chips:EXCL,
      pts:['binder catcher 区段不存在（调用 0 条），无 IPC FULL 特征','5 个 binder 线程均停在 ioctl 的 Binder 等待循环（空闲）'], raw:RAW.special},
     {id:'others', s:'excl', t:'其他线程', one:'除主线程外全部空闲等待，无持锁、无跨线程依赖', table:THREADS},
-    {id:'sample', s:'miss', t:'采样栈', one:'本 faultlog 未包含采样栈区段',
-     pts:['繁忙类三级根因需按采样栈占比（>30%）判定；无采样栈，按规则默认匹配「执行耗时操作」']},
+    AG.ref
+      ? {id:'sample', s:'hit', t:'采样栈', who:'引自 Agent·性能', one:'主线程 96% 采样落在 ArkTS 解释器字节码，与忙等循环一致',
+         pts:['引自任务「ListPage 掉帧」：Agent·性能 同一时段在同一台 Mate 70 Pro 上录的 trace（11:14:50 – 11:15:20）','主线程采样 96% 落在 BCStub_HandleJeqz / BCStub_HandleLdobjbyname，超过 30% 阈值','「执行耗时操作」从默认匹配变为有采样支撑；原始 trace 仍归那个任务，这里只存引用']}
+      : {id:'sample', s:'miss', t:'采样栈', one:'本 faultlog 未包含采样栈区段',
+         ref:'<span>同一时段有一份 <b>Agent·性能</b> 的 trace（任务「ListPage 掉帧」· Mate 70 Pro · 11:14:50 – 11:15:20）。证据归那个任务，不混进这份报告；要用就引用过来。</span><span class="act"><button class="ai-btn ai-btn--fill" type="button" data-ag="ref">引用到本任务</button></span>',
+         pts:['繁忙类三级根因需按采样栈占比（>30%）判定；无采样栈，按规则默认匹配「执行耗时操作」']},
     Object.assign({id:'source'}, src),
-  ];
+  ].concat(AG.phase==='done'&&v==='v2'?[{id:'retest', s:'pass', t:'真机复测', one:'HUAWEI Mate 70 Pro · 连点两次保存 × 3 轮 · 主线程最长任务 21 ms',
+     pts:['复测前：主线程单任务 4.0 s，两轮叠加约 8 s，触发 THREAD_BLOCK_6S','复测后：saveNoteWithAttachmentsAsync 8 步都在 await 间让出主线程，最长任务 21 ms','EventHandler 队列峰值 115 → 6；3 轮都没有 appfreeze 上报'], raw:'11:42:07.118 I A00000/NoteRepository: saveNoteWithAttachmentsAsync: start note_00000\n11:42:11.130 I A00000/NoteRepository: saveNoteWithAttachmentsAsync: completed note_00000\nEventHandler max pending: 6 · longest task: 21 ms\nfaultlog: no new appfreeze'}]:[]);
 }
 
 const V = {
@@ -356,7 +362,7 @@ const V = {
       ['为什么','<code>hasAttachment()</code> 把笔记已有的封面图当成「本次待保存附件」，使 <code>options.sync</code> 恒为 true；保存因此走同步路径，<code>saveNoteSync</code> 在主线程连续执行 8 次 <code>injectDelay(500)</code> 忙等，一次保存 4s，连点两次叠加到约 8s'],
       ['改哪里','<span class="loc">FreezeNoteDetailPage.ets:48</span><span class="loc">NoteRepository.ets:44-48</span><span class="loc">NoteRepository.ets:64-102</span><span class="muted">行号以故障版本 4ca0c7e 为准</span>'],
       ['谁来改','应用开发：问题全部在应用自身代码（FreezeNoteDetailPage 的保存流程），没有系统侧参与'],
-      ['怎么改','修正 hasAttachment 的判断，只认本次新增的附件；保存改为逐步 await，让出主线程。共 3 处修改，当前工作区已包含，验证不再复现后提交即可'],
+      ['怎么改','修正 hasAttachment 的判断，只认本次新增的附件；保存改为逐步 await，让出主线程。共 3 处，下面「修复建议」里让 Agent 写入并在真机上复测'],
     ],
     axes:[['根因类别','高','yes'],['粒度','行级','yes'],['精度','源码差异','yes']],
     chain:[['11:14:58','冻屏测试模式已开启，进入 FreezeNoteDetailPage，页面加载的笔记带封面图',null],['02.631','第 1 次点击保存：hasAttachment() 把封面图误判为附件，options.sync = true，saveNote 同步调用 saveNoteSync',[[2.631,2.631]]],['02.632 – 06.639','saveNoteSync 在主线程顺序执行 8 次 injectDelay(500) 忙等，共 4.0s；state=R、CPU 近满核',[[2.632,6.639]]],['03.418','第 2 次点击：主线程还没回到事件循环，保存中的禁用态没来得及重渲染，点击排进队列',[[3.418,6.639]]],['06.639','第 1 轮结束，第 2 轮立即开始；主线程自 02.632 起连续占用约 8s，VIP 队列积压 105 个',[[6.639,10.313]]],['07.142 / 10.140','3S、6S 两次抓栈，均在执行保存流水线；10.313 上报 6S 冻屏',[[7.142,7.142],[10.14,10.14],[10.313,10.313]]]],
@@ -374,6 +380,13 @@ const V = {
     chain:[['11:14:58','进入 FreezeNoteDetailPage',null],['02.631','第 1 次点击 Save：onSaveClick 调用 NoteRepository.saveNote(sync=true)，在主线程同步执行 saveNoteSync',[[2.631,2.631]]],['02.632 – 06.639','保存流水线 8 步（写库 → 搜索索引 → 附件引用 → 标签关联 → 分类归属 → 缩略图元数据 → 云同步排队 → 偏好清理），每步约 0.5s，共 4.0s',[[2.632,6.639]]],['03.418','第 2 次点击：排队到 06.639 才分发',[[3.418,6.639]]],['06.639','第 2 轮紧接执行；主线程连续约 8s 满负荷，EventHandler 队列 62 → 115',[[6.639,10.313]]],['07.142 / 10.140','3S、6S 两次抓栈；10.313 上报 6S 冻屏',[[7.142,7.142],[10.14,10.14],[10.313,10.313]]]],
   }
 };
+
+/* 每条结论是量到的（证据）还是推出来的（推断）：悬停看依据 */
+const KIND={
+  v2:[['ev','faultlog：THREAD_BLOCK_6S，主线程 state=R'],['inf','栈里没有应用帧：靠任务时长吻合、页面历史与 git 版本考古推出'],['ev','故障版本 4ca0c7e 的源码'],['inf','栈与日志里没有系统侧参与'],null],
+  v1:[['ev','faultlog：THREAD_BLOCK_6S，主线程 state=R'],['ev','HiLog 8 步保存流水线 + EventHandler 队列 4.0 s'],['inf','没检索源码，只能定位到业务函数'],['inf','栈与日志里没有系统侧参与'],['inf','通用方向，要对照源码确认']]
+};
+function kindTag(k){if(!k)return '';return `<span class="tag ${k[0]}" title="${k[0]==='ev'?'证据':'推断'}：${esc(k[1])}">${k[0]==='ev'?'证据':'推断'}</span>`}
 
 /* 修复建议：代码与说明取自原报告（原报告 diff 不带行号） */
 const FIX = {
@@ -398,7 +411,7 @@ const $ = s=>document.querySelector(s), $$ = s=>[...document.querySelectorAll(s)
 const esc = s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 const ic = (id,cls='')=>`<svg class="i ${cls}"><use href="#i-${id}"/></svg>`;
 let mode=location.hash==='#v1'?'v1':'v2';
-const openChecks=new Set(['queue']);
+const openChecks=new Set(['queue','sample']);
 
 function render(anim){
   const d=V[mode], cks=checks(mode), fixes=FIX[mode], v2=mode==='v2';
@@ -414,14 +427,11 @@ function render(anim){
     </div></div></div>`;
   $('#main').innerHTML=`<div class="stack ${anim?'fade':''}">
     <section id="sec-verdict" class="card verdict">
-      <div class="vlabel">结论</div>
+      <div class="meta-ai"><svg><use href="#ai-logo-16"/></svg><span>报告由 <b>Agent·冻屏</b> 生成 · 任务「FREEZE-0605 保存卡死」· 读了 faultlog、HiLog${v2?'、源码 4ca0c7e':''} · ${v2?'22:07':'21:04'}</span></div>
       <h3>${esc(d.title)}</h3>
-      <dl class="vrows">${d.rows.map(r=>`<dt>${r[0]}</dt><dd>${r[1]}</dd>`).join('')}</dl>
-    </section>
-
-    <section id="sec-strength">
-      <div class="sec-t"><h2>证据强度</h2></div>
-      <div class="axes">${d.axes.map(a=>`<div class="ax ${a[2]}"><span class="k">${a[0]}</span><span class="v"><i></i>${a[1]}</span></div>`).join('')}</div>
+      <div class="strength">${d.axes.map(a=>`<span class="${a[2]}">${a[0]} <b>${a[1]}</b></span>`).join('')}</div>
+      <dl class="vrows">${d.rows.map((r,i)=>`<dt>${r[0]}</dt><dd>${kindTag(KIND[mode][i])}${r[1]}</dd>`).join('')}</dl>
+      ${AG.phase==='done'&&v2?`<div class="vfixed">${ic('check')}已修复 · Agent·冻屏 在 HUAWEI Mate 70 Pro 上复测 3 / 3 通过</div>`:''}
     </section>
 
     <section id="sec-timeline">
@@ -435,6 +445,7 @@ function render(anim){
 
     <section id="sec-fix">
       <div class="sec-t"><h2>修复建议</h2><span class="sub2">${v2?'源码差异对比':'源码不可达，提供通用方向与模板'}</span></div>
+      <div class="agbox" id="agbox">${agHTML(v2)}</div>
       ${fixes.map((f,i)=>fixCard(f,i)).join('')}
     </section>
 
@@ -453,18 +464,20 @@ function fixCard(f,i){
     : f.diff.map(([k,t])=>`<div class="r ${k==='a'?'add':k==='d'?'del':'ctx'}"><span class="s">${k==='a'?'+':k==='d'?'−':''}</span><span>${esc(t)||' '}</span></div>`).join('');
   return `<div class="fix ${f.dir?'dir':''}">
     <div class="fix-h"><span class="no">${i+1}</span><h4>${f.t}</h4>
-      ${f.dir?`<span class="pill part">通用方向</span>`:`<span class="loc">${f.loc}</span>`}<button class="copy" type="button" title="复制" aria-label="复制">${ic('copy')}</button></div>
+      ${f.dir?`<span class="pill part">通用方向</span>`:`<span class="loc">${f.loc}</span>`}${AG.written&&!f.dir?`<span class="ai-src"><span class="ai-spark"></span>Agent·冻屏 写入<i>·</i><button type="button" data-ag="revert">退回</button></span>`:''}<button class="copy" type="button" title="复制" aria-label="复制">${ic('copy')}</button></div>
     <div class="code ${f.dir?'plain':''}">${rows}</div>
   </div>`;
 }
 
 function ckRow(c){
   const lbl={hit:'命中',pass:'通过',excl:'已排除',miss:'缺数据'}[c.s];
+  const who=c.who?`<span class="who">${c.who}</span>`:'';
   const open=openChecks.has(c.id);
-  return `<div class="ck s-${c.s} ${open?'open':''}" data-id="${c.id}">
+  return `<div class="ck s-${c.s} ${c.who?'refd':''} ${open?'open':''}" data-id="${c.id}">
     <button class="ck-h" aria-expanded="${open}"><span class="st-t">${lbl}</span>
-      <span><span class="tt">${c.t}</span><span class="one">${c.one}</span></span>${ic('chev','chev')}</button>
+      <span><span class="tt">${c.t}${who}</span><span class="one">${c.one}</span></span>${ic('chev','chev')}</button>
     <div class="ck-b">
+      ${c.ref?`<div class="ref">${c.ref}</div>`:''}
       ${c.frames?`<div class="frames">${c.frames.map(f=>`<span class="f">${f[0]}</span><span class="e">${f[1]}</span>`).join('')}</div>`:''}
       ${c.chips?`<div class="chips">${c.chips.map(x=>`<span class="xchip">${ic('x')}${x}</span>`).join('')}</div>`:''}
       ${c.pts?`<ul>${c.pts.map(p=>`<li>${esc(p)}</li>`).join('')}</ul>`:''}
