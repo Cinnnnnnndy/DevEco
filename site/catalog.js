@@ -82,8 +82,15 @@ window.DEVECO_CATALOG = {
       id: 'ai',
       title: 'AI 辅助开发',
       icon: 'i-cat-ai',
-      note: '这一类竞争最挤。七家都在解「让 AI 干得更多」，没人解「人对这一串过程能不能看清楚、挑着退回去」——十一条里的空位集中在这儿。',
+      note: '这一类竞争最挤。七家都在解「让 AI 干得更多」，没人解「人对这一串过程能不能看清楚、挑着退回去」——十二条里的空位集中在这儿。',
       items: [
+        {
+          no: '31', title: 'Agent 工作台：AI Coding 下，你真正看的是任务、决定、结果和证据', subtitle: 'Agent Workspace · Tasks, Decisions, Results & Evidence', key: '鸿蒙电脑版默认视图',
+          desc: '默认视图不再是文件树 + 编辑器：左边是任务列表（多个 Agent 并行，各有状态），中间是当前任务（可改的计划、收起的步骤、置顶的「在等你」），右边是应用在鸿蒙电脑上原生运行的 sm / md / lg 多形态，Agent 在验哪台哪台上台。改动按风险排、只看需要你看的几处，每行标是哪个 Agent 写的；证据页签放构建、ArkTS 检查、多设备验证和滑动帧率改前改后。多 Agent 共用一个按阻塞排序的「在等你」队列，真机按租约排队、两个 Agent 撞到同一行时先停下问你。点改动行或结果上的元素才「接手」打开编辑器，你改一个值，Agent 接着你的改动继续；随时可切回经典编辑视图，同一个任务。',
+          view: 'ready', date: '2026-09-25', href: 'demos/31-agent-workspace/index.html',
+          links: [{ label: '设计说明', href: 'analysis/agent-workspace/README.md' }],
+          tags: ['多 Agent', '默认视图'], note: '鸿蒙电脑版的默认视图蓝本，待确认后推到其余 demo', thumb: { type: 'image', src: 'site/thumbs/31-agent-workspace.jpg' },
+        },
         {
           no: '05', title: '就地对话：从编辑器长进 Build、Debug、HiLog', subtitle: 'Inline AI · Editor / Build / Debug / HiLog', mark: '半投', key: 'AI 和 IDE 的深度融合',
           desc: '选中一段就地问、就地改，覆盖代码、界面预览和 Markdown 文档。新增 AI 与 IDE 深度融合：Build 失败时在 Build 面板里读完 hvigor 报错，一键补权限并重建成功；断点停下时在变量旁回答「为什么是 undefined」并加条件断点；HiLog 里选中崩溃栈就解释并跳到代码；回答里的按钮直接调试到设备、打开 Profiler，不用去找菜单。新增下一处编辑预测：改一处类型，文件里其余要跟着改的位置一起给出，Tab 逐处接受，可跨文件，本机模型离线也能用。',
