@@ -8,6 +8,9 @@
    2. 小字、图标一律用纯色 --ai-ink；渐变只用于标识、生成中的输入框光、进行中的光环，
       同一屏最多两处渐变，不做大面积渐变底，不给整块面板染色。
    3. 「在等你」用琥珀色 --ai-wait，是唯一需要抢注意力的态；其余进行态都安静。
+   4. 简洁优先（2026-09 对照 Xcode 27 / Android Studio 后收敛）：能用中性色和层次解决的不用渐变，
+      能不动的不加动效；不做外发光、文字扫光、多层阴影、描边叠加。圆角按「同心」取值：
+      容器 --ai-r，紧贴嵌套的内层 = 外层圆角 − 内边距（--ai-r-in），状态与芯片用胶囊。
 
    主题选择器与 tokens.css 完全一致：浅色 → 深色（显式）→ 深色（跟随系统）。
    注意：--ai-w 是 tokens.css 里 AI 面板的宽度，不属于这套色板，别混。
@@ -63,13 +66,15 @@
 
 /* 动效与形状：不随主题变 */
 :root,.ide{
-  --ai-t-shimmer:1.8s;   /* 思考 / 生成：一轮色相流动 */
+  --ai-t-shimmer:1.8s;   /* 思考 / 生成：一轮色相流动（只给星芒与输入框描边） */
   --ai-t-ring:1s;        /* 调用工具 / 验证：小环一圈 */
   --ai-t-wait:1.6s;      /* 在等你：琥珀点脉冲 */
   --ai-t-done:1s;        /* 完成：勾停留后回中性 */
   --ai-t-fade:3s;        /* 接受后 AI 行底色淡出 */
   --ai-t-touch:1.2s;     /* AI 刚改过的元素：光晕脉冲一次 */
-  --ai-ease:cubic-bezier(.2,.8,.2,1);
+  --ai-ease:cubic-bezier(.2,.8,.2,1);   /* 只减速，不回弹 */
+  --ai-r:12px;           /* 容器：输入框、回答卡、浮层、审批卡 */
+  --ai-r-in:6px;         /* 紧贴嵌套的内层：浮层 12 − 内边距 6 = 6（同心） */
   --ai-spark-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M8 0Q9.12 6.88 16 8Q9.12 9.12 8 16Q6.88 9.12 0 8Q6.88 6.88 8 0Z'/%3E%3C/svg%3E");
 }
 
@@ -179,16 +184,14 @@ svg.ai-ico{width:16px;height:16px;flex:none;display:block;color:currentColor}
 .ai-status[data-state="error"] .ai-ico{color:var(--ui-error)}
 .ai-status .act{appearance:none;border:0;background:none;padding:0;margin-left:2px;font:inherit;color:var(--ui-link);cursor:pointer}
 
-/* 思考 / 生成时的文字：一道光扫过（Apple 式 shimmer），底色仍是正文色，读得清 */
-.ai-shimmer{background:linear-gradient(100deg,var(--ui-fg) 0 38%,var(--ai-orchid) 48%,var(--ai-rose) 52%,var(--ui-fg) 62% 100%);
-  background-size:260% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;
-  animation:ai-sweep var(--ai-t-shimmer) linear infinite}
+/* 思考 / 生成时的文字：不做扫光，就是正文色——动的只有星芒（2026-09 收敛：一个状态只留一处在动） */
+.ai-shimmer{color:var(--ui-fg)}
 
 /* ------------------------------------------------------------
    3 · 组件
    ------------------------------------------------------------ */
 /* 3.1 智能输入框：待命 / 聚焦 / 生成中（流动光 + 外发光）/ 可停止 */
-.ai-field{position:relative;border-radius:12px;background:var(--ui-field-bg);box-shadow:inset 0 0 0 1px var(--ai-field-line);
+.ai-field{position:relative;border-radius:var(--ai-r);background:var(--ui-field-bg);box-shadow:inset 0 0 0 1px var(--ai-field-line);
   padding:10px 10px 8px 12px;display:flex;flex-direction:column;gap:8px;transition:box-shadow .15s}
 .ai-field:focus-within{box-shadow:inset 0 0 0 1px var(--ui-accent)}
 .ai-field__ta{appearance:none;border:0;background:transparent;resize:none;outline:none;width:100%;min-height:38px;
@@ -209,11 +212,10 @@ svg.ai-ico{width:16px;height:16px;flex:none;display:block;color:currentColor}
   mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);mask-composite:exclude}
 /* 流动描边：1.5px 的锥形渐变环（挖掉内容区，只剩一圈） */
 .ai-field::before{inset:0;padding:1.5px}
-/* 外发光：同一道光画在输入框大小的区域里、模糊后只留框外那一圈，不压到输入内容 */
-.ai-field::after{inset:-18px;padding:18px;border-radius:30px;background-clip:content-box;background-origin:content-box;filter:blur(9px)}
+/* 不做外发光（2026-09 收敛）：Apple Intelligence 的边缘光在 IDE 里会盖住代码，一圈流动描边已足够说明「正在写」 */
+.ai-field::after{display:none}
 .ai-field[data-state="generating"]{box-shadow:none}
 .ai-field[data-state="generating"]::before{opacity:1;animation:ai-angle var(--ai-t-shimmer) linear infinite}
-.ai-field[data-state="generating"]::after{opacity:.75;animation:ai-angle var(--ai-t-shimmer) linear infinite}
 .ai-field__gen{display:none;align-items:center;gap:7px;font-size:12px;color:var(--ui-fg-info);min-width:0;min-height:38px}
 .ai-field[data-state="generating"] .ai-field__gen{display:flex}
 .ai-field[data-state="generating"] .ai-field__ta{display:none}
@@ -225,11 +227,12 @@ svg.ai-ico{width:16px;height:16px;flex:none;display:block;color:currentColor}
   animation:ai-angle var(--ai-t-shimmer) linear infinite}
 
 /* 3.2 就地问答浮层：选中代码 / 选中画布元素后出现 */
-.ai-pop{width:min(360px,100%);border-radius:12px;background:var(--ui-popup-bg);box-shadow:0 12px 32px rgba(0,0,0,.16),0 0 0 1px var(--ui-popup-border);
-  padding:10px;display:flex;flex-direction:column;gap:8px}
+.ai-pop{width:min(360px,100%);border-radius:var(--ai-r);background:var(--ui-popup-bg);box-shadow:0 0 0 1px var(--ui-popup-border),var(--ui-shadow);
+  padding:6px;display:flex;flex-direction:column;gap:6px}
+.ai-pop__ctx,.ai-pop__eg,.ai-pop__foot{padding:0 4px}
 .ai-pop__ctx{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--ui-fg-info);min-width:0}
 .ai-pop__ctx code{font-family:var(--font-code);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.ai-pop__in{display:flex;align-items:center;gap:8px;height:32px;padding:0 6px 0 10px;border-radius:8px;background:var(--ai-surface-2)}
+.ai-pop__in{display:flex;align-items:center;gap:8px;height:32px;padding:0 6px 0 10px;border-radius:var(--ai-r-in);background:var(--ai-surface-2)}
 .ai-pop__in input{flex:1;min-width:0;border:0;background:transparent;outline:none;font:inherit;font-size:13px;color:var(--ui-fg)}
 .ai-pop__in input::placeholder{color:var(--ui-fg-disabled)}
 .ai-pop__eg{display:flex;flex-wrap:wrap;gap:6px}
@@ -239,7 +242,7 @@ svg.ai-ico{width:16px;height:16px;flex:none;display:block;color:currentColor}
 .ai-pop__foot{display:flex;gap:10px;font-size:11px;color:var(--ui-fg-info)}
 
 /* 3.3 回答卡：结论先行，过程折叠；编辑 / 退回 / 重试 / 调整 就在旁边；反馈放在不打断处 */
-.ai-answer{border-radius:12px;background:var(--ai-surface);padding:14px 16px 10px;display:flex;flex-direction:column;gap:10px}
+.ai-answer{border-radius:var(--ai-r);background:var(--ai-surface);padding:14px 16px 10px;display:flex;flex-direction:column;gap:10px}
 .ai-answer__meta{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--ui-fg-info)}
 .ai-answer__meta svg{width:14px;height:14px}
 .ai-answer__lead{margin:0;font-size:14px;line-height:22px;font-weight:500;color:var(--ui-fg)}
@@ -273,7 +276,7 @@ svg.ai-ico{width:16px;height:16px;flex:none;display:block;color:currentColor}
 .ai-toolrow .ok{color:var(--ui-success)}
 
 /* 3.5 审批卡：危险 / 不可逆操作先问；这是「在等你」，用琥珀 */
-.ai-approve{border-radius:12px;background:var(--ai-surface);padding:12px 14px;display:flex;flex-direction:column;gap:10px;
+.ai-approve{border-radius:var(--ai-r);background:var(--ai-surface);padding:12px 14px;display:flex;flex-direction:column;gap:10px;
   box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--ai-wait) 38%,transparent)}
 .ai-approve__h{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ai-wait-ink);font-weight:500}
 .ai-approve__cmd{font-family:var(--font-code);font-size:12px;line-height:18px;padding:8px 10px;border-radius:8px;background:var(--ai-surface-2);
@@ -321,7 +324,7 @@ svg.ai-ico{width:16px;height:16px;flex:none;display:block;color:currentColor}
 .ai-cap.is-warn{--c:var(--ui-warning)}
 .ai-cap.is-full{--c:var(--ui-error)}
 
-.ai-menu{min-width:220px;border-radius:10px;background:var(--ui-popup-bg);box-shadow:0 10px 28px rgba(0,0,0,.16),0 0 0 1px var(--ui-popup-border);
+.ai-menu{min-width:220px;border-radius:10px;background:var(--ui-popup-bg);box-shadow:0 0 0 1px var(--ui-popup-border),var(--ui-shadow);
   padding:4px;display:flex;flex-direction:column;gap:1px;font-size:12.5px;line-height:18px}
 .ai-menu .grp{padding:6px 8px 2px;font-size:11px;color:var(--ui-fg-info)}
 .ai-menu .it{display:grid;grid-template-columns:16px minmax(0,1fr) auto;align-items:center;gap:8px;padding:4px 8px;border-radius:6px;color:var(--ui-fg)}
@@ -362,7 +365,6 @@ svg.ai-ico{width:16px;height:16px;flex:none;display:block;color:currentColor}
    4 · 动效
    ------------------------------------------------------------ */
 @keyframes ai-flow{to{background-position:300% 0}}
-@keyframes ai-sweep{from{background-position:130% 0}to{background-position:-130% 0}}
 @keyframes ai-angle{to{--ai-angle:360deg}}
 @keyframes ai-spin{to{transform:rotate(360deg)}}
 @keyframes ai-ping{0%{transform:scale(1);opacity:.55}80%,100%{transform:scale(2.6);opacity:0}}
@@ -376,18 +378,14 @@ svg.ai-ico{width:16px;height:16px;flex:none;display:block;color:currentColor}
    替代原则：动的信息改成字（步骤数、已用时），光改成静态，时长不变 */
 @media (prefers-reduced-motion:reduce){
   .ai-spark.is-live{animation:none;background:var(--ai-grad)}
-  .ai-shimmer{animation:none;background:none;color:var(--ui-fg)}
   .ai-ring{animation:none;background:conic-gradient(var(--ai-ink) 0 75%,transparent 0)}
   .ai-wait-dot::after{animation:none;inset:-3px;opacity:.28}
   .ai-field[data-state="generating"]::before,.ai-input[data-ai-state="generating"]::after{animation:none}
-  .ai-field[data-state="generating"]::after{animation:none;opacity:.3}
   .ai-touched{animation:ai-touch-reduced var(--ai-t-touch) linear 1}
 }
 .ai-reduce .ai-spark.is-live{animation:none;background:var(--ai-grad)}
-.ai-reduce .ai-shimmer{animation:none;background:none;color:var(--ui-fg)}
 .ai-reduce .ai-ring{animation:none;background:conic-gradient(var(--ai-ink) 0 75%,transparent 0)}
 .ai-reduce .ai-wait-dot::after{animation:none;inset:-3px;opacity:.28}
 .ai-reduce .ai-field[data-state="generating"]::before,.ai-reduce .ai-input[data-ai-state="generating"]::after{animation:none}
-.ai-reduce .ai-field[data-state="generating"]::after{animation:none;opacity:.3}
 .ai-reduce .ai-touched{animation:ai-touch-reduced var(--ai-t-touch) linear 1}
 @keyframes ai-touch-reduced{0%,80%{box-shadow:0 0 0 1.5px var(--ai-orchid)}100%{box-shadow:0 0 0 1.5px transparent}}
