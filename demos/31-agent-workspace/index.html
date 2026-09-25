@@ -349,6 +349,7 @@
             <button type="button" data-act="navtab" data-t="files" aria-pressed="false"><svg class="i"><use href="#ws-files"/></svg>文件</button>
           </div>
         </div>
+        <div id="queue"></div>
         <div class="nav-list" id="nav-list"></div>
       </nav>
 
@@ -371,7 +372,7 @@
 
       <section class="res" id="res" aria-label="结果">
         <div class="rhead">
-          <b>结果</b><span class="ws-muted">MallApp 在本机原生运行 · 3 个窗口 · sm / md / lg</span><span class="grow"></span>
+          <b>结果</b><span class="ws-muted">MallApp 在本机原生运行 · Agent·列表 的 3 个窗口 + 真机 1 台</span><span class="grow"></span>
           <div class="ws-seg" id="stage-seg">
             <button type="button" data-act="tile" aria-pressed="true">平铺</button>
             <button type="button" data-act="stage" aria-pressed="false" id="stage-btn"><span id="stage-ico"></span>台前调度</button>
@@ -380,18 +381,22 @@
         </div>
         <div id="stage">
           <div class="cue" id="cue" hidden></div>
-          <div class="ws-win" data-form="sm" id="w-sm"><span class="tag">Mate 70 Pro · sm</span>
-            <div class="wt" data-act="win"><span class="aico"></span><b>MallApp</b><span class="dim">Mate 70 Pro · sm</span><span class="ctl"><svg><use href="#ws-min"/></svg><svg><use href="#ws-max"/></svg><svg><use href="#ws-x"/></svg></span></div>
+          <div class="ws-win" data-form="sm" id="w-sm"><span class="tag">Mate 70 Pro · sm · <span class="own">Agent·列表</span></span>
+            <div class="wt" data-act="win"><span class="aico"></span><b>MallApp</b><span class="dim">Mate 70 Pro · sm</span></div>
             <div class="wc"><div class="app" data-form="sm"></div></div><span class="hr-pill">热重载 0.3 s</span>
-            <div class="cap"><b>sm</b>1260×2844 · 360 vp</div></div>
-          <div class="ws-win" data-form="md" id="w-md"><span class="tag">Mate X6 展开 · md</span>
+            <div class="cap"><b>sm</b>360 vp<span class="own"> · Agent·列表 的窗口</span></div></div>
+          <div class="ws-win" data-form="md" id="w-md"><span class="tag">Mate X6 展开 · md · <span class="own">Agent·列表</span></span>
             <div class="wt" data-act="win"><span class="aico"></span><b>MallApp</b><span class="dim">Mate X6 展开 · md</span><span class="ctl"><svg><use href="#ws-min"/></svg><svg><use href="#ws-max"/></svg><svg><use href="#ws-x"/></svg></span></div>
             <div class="wc"><div class="app" data-form="md"></div></div><span class="hr-pill">热重载 0.3 s</span>
-            <div class="cap"><b>md</b>2440×2240 · 813 vp</div></div>
-          <div class="ws-win" data-form="lg" id="w-lg"><span class="tag">MatePad Pro 13.2 · lg</span>
+            <div class="cap"><b>md</b>2440×2240 · 813 vp<span class="own"> · Agent·列表 的窗口</span></div></div>
+          <div class="ws-win" data-form="lg" id="w-lg"><span class="tag">MatePad Pro 13.2 · lg · <span class="own">Agent·列表</span></span>
             <div class="wt" data-act="win"><span class="aico"></span><b>MallApp</b><span class="dim">MatePad Pro 13.2 · lg</span><span class="ctl"><svg><use href="#ws-min"/></svg><svg><use href="#ws-max"/></svg><svg><use href="#ws-x"/></svg></span></div>
             <div class="wc"><div class="app" data-form="lg"></div></div><span class="hr-pill">热重载 0.3 s</span>
-            <div class="cap"><b>lg</b>2880×1920 · 1280 vp</div></div>
+            <div class="cap"><b>lg</b>2880×1920 · 1280 vp<span class="own"> · Agent·列表 的窗口</span></div></div>
+          <div class="ws-win real" data-form="real" id="w-real"><span class="tag">Mate 70 Pro 真机 · <span class="own" id="real-tag"></span></span>
+            <div class="wt" data-act="win"><span class="aico"></span><b>Mate 70 Pro</b><span class="dim">真机</span></div>
+            <div class="wc"><div class="app" data-form="sm" id="real-app"></div></div>
+            <div class="cap"><b>真机</b><span class="lease own" id="real-cap"></span></div></div>
           <div class="pick" id="pick" hidden></div>
         </div>
         <div class="lower" id="ws-lower">
@@ -430,6 +435,7 @@ var shell = WorkspaceShell.init({
 $('#stage-ico').outerHTML = DeviceStage.icon.replace('<svg', '<svg class="i"');
 
 /* ============================ 状态 ============================ */
+var AG = { list: 'Agent·列表', i18n: 'Agent·多语言', reg: 'Agent·回归' };
 var S = {
   view: 'ws', navTab: 'tasks', task: 'grid', fullTree: false,
   phase: 'idle',                 // idle → planning → plan → working → waiting → applying → verifying → review → (handedit) → done
@@ -439,33 +445,57 @@ var S = {
   plan: [], planEdited: 0, log: [], read: [],
   ev: { build: null, lint: null, dev: null, fps: null }, evSel: 'dev',
   dev: { sm: null, md: null, lg: null }, checking: null,
-  fpsAfter: null, seen: {}, onlyNeed: true, lowTab: 'changes',
+  seen: {}, onlyNeed: true, lowTab: 'changes',
   editor: { open: false, file: 'ListPage.ets', line: 23 }, classicFile: 'ListPage.ets',
-  pin: false, cue: null, committed: false, pick: null
+  pin: false, cue: null, committed: false,
+  /* 多 Agent */
+  conflict: null,               // null | 'open' | '2' | '3'：ProductCard 标题行数，列表 × 多语言
+  rtl: 'open',                  // 多语言的问题：阿语下价格跟着镜像吗
+  reg: 21, regDone: false,      // 回归占着真机
+  real: null,                   // 列表的真机复核：null | 'queued' | 'run' | 'ok'
+  realYou: false,               // 你拿起了真机：回归让路
+  i18n: 42
 };
 var FORMS = {
   sm: { name: 'Mate 70 Pro', w: 360, h: 813, full: 'Mate 70 Pro · sm' },
   md: { name: 'Mate X6 展开', w: 813, h: 747, full: 'Mate X6 展开 · md' },
   lg: { name: 'MatePad Pro 13.2', w: 1280, h: 853, full: 'MatePad Pro 13.2 · lg' }
 };
-var FPS_BEFORE = { sm: 120, md: 119, lg: 143 }, FPS_MAX = { sm: 120, md: 120, lg: 144 };
+var FPS_BEFORE = { sm: 120, md: 119, lg: 143 };
 function fpsAfter(){
   if(S.choice === 'grid') return { sm: 104, md: 98, lg: S.handEdited ? 93 : 96 };
   return { sm: 120, md: 119, lg: S.handEdited ? 142 : 143 };
 }
-var OTHER = [
-  { id: 'dark', title: '购物车页适配深色模式', state: 'verifying', sub: '在 Mate 70 Pro 真机上验 · 2/3',
-    said: '购物车页跟随系统深色，别再写死 #FFFFFF', lead: '颜色已换成 $r(\'sys.color.*\')，正在真机上逐页比对。', ev: [['ok', '构建'], ['ok', 'ArkTS 检查'], ['run', '多设备 2/3']] },
-  { id: 'login', title: '登录失败提示改成人话', state: 'done', sub: '已提交 · 2 小时前',
-    said: '登录失败别显示 ERR_AUTH_401', lead: 'ERR_AUTH_401 改成「验证码不对，再试一次」，string.json 加了中英 3 条。', ev: [['ok', '构建'], ['ok', 'UI 测试 6/6'], ['ok', '多设备 3/3']] },
-  { id: 'cold', title: '首页冷启动 1.4 s 排查', state: 'error', sub: 'Mate 70 Pro 锁屏，抓不到 trace',
-    said: '首页冷启动要 1.4 s，查查卡在哪', lead: '中断：Mate 70 Pro 锁屏了，启动 trace 抓不到。解锁后重试会接着第 2 步。', ev: [['ok', '构建'], ['bad', '启动 trace']] },
-  { id: 'card', title: '详情页加降价提醒服务卡片', state: 'idle', sub: '排队 · 等商品列表这条完成',
-    said: '详情页加一个降价提醒的 2×2 服务卡片', lead: '排在「商品列表按断点多列」后面，它改完 ListPage 再开始，免得两边冲突。', ev: [] }
-];
+var OTHER = {
+  i18n: { title: '多语言：加英文、阿拉伯语', agent: AG.i18n, said: '加英文和阿拉伯语，阿语要 RTL',
+    get state(){ return S.i18n >= 60 ? 'verifying' : 'generating'; },
+    get sub(){ return S.i18n >= 60 ? '在本机窗口验 RTL 布局' : 'string.json ' + S.i18n + '/60 条'; },
+    get lead(){ return '已翻 ' + S.i18n + '/60 条；ProductCard 标题在德语、阿语下更长，它把标题改成最多 3 行' + (S.conflict === 'open' ? '——和 Agent·列表 撞在同一行，等你定。' : '。'); },
+    get ev(){ return [['ok', '构建'], [S.i18n >= 60 ? 'run' : 'todo', 'RTL 截图 0/3']]; } },
+  reg: { title: '全量回归 · 38 条旅程', agent: AG.reg, said: '合主干前把 38 条用户旅程在真机上跑一遍',
+    get state(){ return S.regDone ? 'done' : 'verifying'; },
+    get sub(){ return S.regDone ? '38/38 通过 · 已归还真机' : S.realYou ? '你在用真机 · 已暂停 ' + S.reg + '/38' : 'Mate 70 Pro 真机 · ' + S.reg + '/38'; },
+    get lead(){ return S.regDone ? '38 条旅程全部通过，已把 Mate 70 Pro 还回设备池。' : '在 Mate 70 Pro 真机上跑到第 ' + S.reg + ' 条（购物车结算）。真机只有一台：别的 Agent 要用得排队。'; },
+    get ev(){ return [['ok', '构建'], [S.regDone ? 'ok' : 'run', '旅程 ' + S.reg + '/38']]; } },
+  login: { title: '登录失败提示改成人话', agent: AG.list, state: 'done', sub: '已提交 · 2 小时前', said: '登录失败别显示 ERR_AUTH_401',
+    lead: 'ERR_AUTH_401 改成「验证码不对，再试一次」，string.json 加了中英 3 条。', ev: [['ok', '构建'], ['ok', 'UI 测试 6/6'], ['ok', '多设备 3/3']] },
+  cold: { title: '首页冷启动 1.4 s 排查', agent: 'Agent·调优', state: 'error', sub: '真机锁屏，抓不到 trace', said: '首页冷启动要 1.4 s，查查卡在哪',
+    lead: '中断：Mate 70 Pro 锁屏了，启动 trace 抓不到。解锁后重试会接着第 2 步。', ev: [['ok', '构建'], ['bad', '启动 trace']] }
+};
+var ORDER = ['grid', 'i18n', 'reg', 'login', 'cold'];
+
+/* 统一的「在等你」队列：所有 Agent 的待决放一处，按阻塞程度排 */
+function queue(){
+  var q = [];
+  if(S.phase === 'plan') q.push({ id: 'plan', task: 'grid', who: AG.list, title: '看一眼计划，可以改', block: 2, how: '挡住它开工' });
+  if(S.phase === 'waiting') q.push({ id: 'choose', task: 'grid', who: AG.list, title: '大屏多列用哪种写法', block: 3, how: '挡住它' });
+  if(S.choice === 'grid' && (S.phase === 'review' || S.phase === 'done')) q.push({ id: 'fps', task: 'grid', who: AG.list, title: '平板滑动掉到 ' + fpsAfter().lg + ' fps，要换写法吗', block: 2, how: '挡住合并' });
+  if(S.conflict === 'open') q.push({ id: 'conflict', task: 'grid', who: AG.list + ' × ' + AG.i18n, title: 'ProductCard 标题最多几行', block: 2, how: '两边都改了这一行' });
+  if(S.rtl === 'open') q.push({ id: 'rtl', task: 'i18n', who: AG.i18n, title: '阿语下价格跟着镜像吗', block: 1, how: '不挡 · 先按镜像做' });
+  return q.sort(function(a, b){ return b.block - a.block; });
+}
 
 /* ============================ 代码模型 ============================ */
-/* 行：[源码, 标记]；标记 ai=Agent 写的，lg=带可编辑的 lg 值 */
 var LG = '⟦lg⟧';
 function listPage(){
   var L = [
@@ -515,12 +545,14 @@ function listPage(){
   }
   return L.concat([['    }'], ['    .padding({ left: 16, right: 16 })'], ['  }'], ['}']]);
 }
+function titleLines(){ return !S.applied ? 1 : S.conflict === '3' ? 3 : 2; }
 function productCard(){
+  var ml = titleLines();
   return [
     ['@Component'], ['export struct ProductCard {'], ['  @ObjectLink item: Product;'], [''], ['  build() {'],
     ['    Row({ space: 12 }) {'], ['      Image(this.item.cover)'], ['        .width(72).height(72)'], ['        .borderRadius(12)'],
     ['      Column({ space: 4 }) {'], ['        Text(this.item.title)'], ['          .fontSize(17)'],
-    S.applied ? ['          .maxLines(2)', 'ai'] : ['          .maxLines(1)'],
+    S.applied ? ['          .maxLines(' + ml + ')', S.conflict === '3' ? 'ai i18n' : 'ai'] : ['          .maxLines(1)'],
     ['          .textOverflow({ overflow: TextOverflow.Ellipsis })'],
     ['        Text(`¥${this.item.price}`)'], ["          .fontSize(17).fontColor($r('app.color.price'))"],
     ['      }'], ['      .alignItems(HorizontalAlign.Start)'], ['      .layoutWeight(1)'], ['    }'],
@@ -545,52 +577,59 @@ function lgLineNo(){ var L = listPage(); for(var i = 0; i < L.length; i++){ if(L
 
 function codeLine(src, flags, n, opts){
   flags = flags || ''; opts = opts || {};
-  var ai = /\bai\b/.test(flags), isLg = /\blg\b/.test(flags);
+  var ai = /\bai\b/.test(flags), isLg = /\blg\b/.test(flags), who = /\bi18n\b/.test(flags) ? AG.i18n : AG.list;
   if(isLg && S.handEdited) ai = false;               /* 你改过的这一行：人是默认作者，不打标 */
   var t;
   if(src.indexOf(LG) >= 0){
     var p = src.split(LG);
     t = hl(p[0]) + (opts.edit ? '<input class="ws-num" data-act="num" value="' + S.lg + '" maxlength="1" inputmode="numeric" aria-label="lg 列数">' : '<span class="n">' + S.lg + '</span>') + hl(p[1]);
   } else t = hl(src);
-  var cls = 'ln' + (ai && S.phase !== 'idle' ? ' ai-block' : '') + (opts.cur === n ? ' cur' : '');
-  var gut = ai ? '<span class="ai-gut" data-src="DevEco Code · ' + (isLg ? '第 2 步 · 各断点列数' : '按断点多列') + '"></span>' : '';
-  var who = isLg && S.handEdited && opts.who ? '<span class="who">你改的</span>' : '';
-  return '<div class="' + cls + '" data-n="' + n + '">' + gut + '<span class="g">' + n + '</span><span class="t">' + (t || ' ') + '</span>' + who + '</div>';
+  var cls = 'ln' + (ai ? ' ai-block' : '') + (opts.cur === n ? ' cur' : '');
+  var gut = ai ? '<span class="ai-gut" data-src="' + who + ' · ' + (isLg ? '各断点列数' : '按断点多列') + '"></span>' : '';
+  var tail = isLg && S.handEdited ? '<span class="who">你改的</span>' : '';
+  return '<div class="' + cls + '" data-n="' + n + '">' + gut + '<span class="g">' + n + '</span><span class="t">' + (t || ' ') + '</span>' + tail + '</div>';
 }
 function codeHTML(f, opts){
-  var L = fileLines(f);
-  return L.map(function(l, i){ return codeLine(l[0], l[1], i + 1, { edit: opts.edit && (f === 'ListPage.ets'), cur: opts.cur, who: true }); }).join('');
+  return fileLines(f).map(function(l, i){ return codeLine(l[0], l[1], i + 1, { edit: opts.edit && f === 'ListPage.ets', cur: opts.cur }); }).join('');
 }
 
-/* 改动：按意图分组、按风险排序；只看需要你看的 */
+/* 改动：按意图分组、按风险排序；每处标是哪个 Agent（或你）写的 */
 function hunks(){
   if(!S.applied) return [];
-  var lgN = lgLineNo();
+  var lgN = lgLineNo(), H = [];
+  var conflictHunk = { id: 'h3', file: 'ProductCard.ets', line: 13, risk: S.conflict === 'open' ? 'conflict' : 'low', need: S.conflict === 'open', who: AG.list + ' × ' + AG.i18n,
+    title: S.conflict === 'open' ? 'ProductCard 标题最多几行 · 和 Agent·多语言 撞了' : '标题最多 ' + titleLines() + ' 行（你定的）',
+    why: S.conflict === 'open' ? '列表要 2 行：多列时同一排卡片才等高。多语言要 3 行：德语、阿语标题长。它已基于多语言的改动继续。'
+                               : (S.conflict === '3' ? '按多语言的 3 行；列表给多列卡片加了等高。' : '按列表的 2 行；多语言那边改用省略号收尾。'),
+    lines: S.conflict === 'open'
+      ? [['del', 13, '          .maxLines(1)'], ['add', 13, '          .maxLines(2)', 'list'], ['alt', 13, '          .maxLines(3)', 'i18n']]
+      : [['del', 13, '          .maxLines(1)'], ['add', 13, '          .maxLines(' + titleLines() + ')', S.conflict === '3' ? 'i18n' : 'list']] };
   if(S.choice === 'grid'){
-    return [
-      { id: 'h1', file: 'ListPage.ets', line: 15, risk: 'high', need: true, title: 'List 换成 Scroll + GridRow：懒加载没了',
-        why: '2000 个 ProductCard 一次建完；证据里平板滑动 143 → 96 fps。', lg: true,
-        lines: [['del', 15, 'List({ space: 12 }) {'], ['del', 16, '  LazyForEach(this.source, (item: Product) => {'],
-                ['add', 15, 'Scroll() {'], ['add', 16, '  GridRow({ columns: { sm: 1, md: 2, lg: ' + LG + ' }, gutter: 12 }) {', 'lg'], ['add', 17, '    ForEach(this.source.all(), (item: Product) => {']] },
-      { id: 'h2', file: 'ListPage.ets', line: 24, risk: 'mid', need: true, title: '删掉平板「左右分栏」预留的半宽',
+    H = [
+      { id: 'h1', file: 'ListPage.ets', line: 15, risk: 'high', need: true, lg: true, who: AG.list, title: 'List 换成 Scroll + GridRow：懒加载没了',
+        why: '2000 个 ProductCard 一次建完；证据里平板滑动 143 → ' + fpsAfter().lg + ' fps。',
+        lines: [['del', 15, '      List({ space: 12 }) {'], ['del', 16, '        LazyForEach(this.source, (item: Product) => {'],
+                ['add', 15, '      Scroll() {'], ['add', 16, '        GridRow({ columns: { sm: 1, md: 2, lg: ' + LG + ' }, gutter: 12 }) {', 'lg'], ['add', 17, '          ForEach(this.source.all(), (item: Product) => {']] },
+      { id: 'h2', file: 'ListPage.ets', line: 24, risk: 'mid', need: true, who: AG.list, title: '删掉平板「左右分栏」预留的半宽',
         why: '右半空白就是它。注释说给详情分栏预留，但工程里没有分栏——确认不要了？',
-        lines: [['del', 22, ".width(this.bp === 'sm' ? '100%' : '50%')   // 为平板左右分栏预留"], ['add', 24, ".width('100%')"]] },
-      { id: 'h3', file: 'ProductCard.ets', line: 13, risk: 'low', need: false, title: '窄列里标题放两行',
-        why: '只在多列时生效；sm 下标题都放得下，截图逐像素一致。', lines: [['del', 13, '.maxLines(1)'], ['add', 13, '.maxLines(2)']] }
+        lines: [['del', 22, "      .width(this.bp === 'sm' ? '100%' : '50%')   // 为平板左右分栏预留"], ['add', 24, "      .width('100%')"]] }
+    ];
+  } else {
+    H = [
+      { id: 'h1', file: 'ListPage.ets', line: 22, risk: 'high', need: true, who: AG.list, title: '删掉平板「左右分栏」预留的半宽',
+        why: '右半空白就是它。注释说给详情分栏预留，但工程里没有分栏——确认不要了？',
+        lines: [['del', 22, "      .width(this.bp === 'sm' ? '100%' : '50%')   // 为平板左右分栏预留"], ['add', 22, "      .width('100%')"]] },
+      { id: 'h2', file: 'ListPage.ets', line: lgN, risk: 'mid', need: true, lg: true, who: S.handEdited ? '你 + ' + AG.list : AG.list, title: '各断点列数',
+        why: S.handEdited ? '你把平板改成 ' + S.lg + ' 列；它跟着把预取行数调成 ' + S.cached + ' 并重验。' : '列数是产品取舍：按卡片最小宽 360 vp 算出 1 / 2 / 3。',
+        lines: [['add', lgN, '      .lanes(new BreakpointType({ sm: 1, md: 2, lg: ' + LG + ' }).getValue(this.bp), 12)', 'lg']] }
     ];
   }
-  return [
-    { id: 'h1', file: 'ListPage.ets', line: 22, risk: 'high', need: true, title: '删掉平板「左右分栏」预留的半宽',
-      why: '右半空白就是它。注释说给详情分栏预留，但工程里没有分栏——确认不要了？',
-      lines: [['del', 22, ".width(this.bp === 'sm' ? '100%' : '50%')   // 为平板左右分栏预留"], ['add', 22, ".width('100%')"]] },
-    { id: 'h2', file: 'ListPage.ets', line: lgN, risk: 'mid', need: true, title: '各断点列数', lg: true,
-      why: S.handEdited ? '你把平板改成了 ' + S.lg + ' 列；它跟着调了预取行数并重验。' : '列数是产品取舍：按卡片最小宽 360 vp 算出 1 / 2 / 3。',
-      lines: [['add', lgN, '.lanes(new BreakpointType({ sm: 1, md: 2, lg: ' + LG + ' }).getValue(this.bp), 12)', 'lg']] },
-    { id: 'h3', file: 'ProductCard.ets', line: 13, risk: 'low', need: false, title: '窄列里标题放两行',
-      why: '只在多列时生效；sm 下标题都放得下，截图逐像素一致。', lines: [['del', 13, '.maxLines(1)'], ['add', 13, '.maxLines(2)']] },
-    { id: 'h4', file: 'ListPage.ets', line: 24, risk: 'low', need: false, mech: true, title: '预取行数跟着列数',
-      why: '多列时一屏卡片更多：cachedCount 4 → ' + S.cached + '。', lines: [['del', 23, '.cachedCount(4)'], ['add', 24, '.cachedCount(' + S.cached + ')']] }
-  ];
+  H.push(conflictHunk);
+  if(S.choice !== 'grid') H.push({ id: 'h4', file: 'ListPage.ets', line: lgN + 1, risk: 'low', need: false, mech: true, who: AG.list, title: '预取行数跟着列数',
+    why: '多列时一屏卡片更多：cachedCount 4 → ' + S.cached + '。', lines: [['del', 23, '      .cachedCount(4)'], ['add', lgN + 1, '      .cachedCount(' + S.cached + ')']] });
+  /* 按风险：撞了 / 高 → 中 → 低 */
+  var rank = { conflict: 0, high: 1, mid: 2, low: 3 };
+  return H.sort(function(a, b){ return rank[a.risk] - rank[b.risk]; });
 }
 function needCount(){ return hunks().filter(function(h){ return h.need && !S.seen[h.id]; }).length; }
 
@@ -607,25 +646,38 @@ var ITEMS = [
 ];
 function appState(f){
   if(!S.applied) return { cols: 1, half: f !== 'sm', ml: 1 };
-  return { cols: f === 'sm' ? 1 : f === 'md' ? 2 : S.lg, half: false, ml: 2 };
+  return { cols: f === 'sm' ? 1 : f === 'md' ? 2 : S.lg, half: false, ml: titleLines() };
 }
+function sbar(){ return '<div class="sbar"><span>9:41</span><span class="hole"></span><span class="sig"><u></u><i></i></span></div>'; }
 function appHTML(f){
   var s = appState(f), n = f === 'sm' ? 7 : f === 'md' ? 12 : 16;
   var cards = ITEMS.slice(0, n).map(function(it, i){
     return '<div class="card" data-i="' + i + '"><span class="th" style="background:' + it[3] + '"><i></i></span><span class="tx"><span class="tt">' + it[0] + '</span><span class="ds">' + it[1] + '</span><span class="pr">¥' + it[2] + '</span></span></div>';
   }).join('');
-  return '<div class="sbar"><span>9:41</span><span class="hole"></span><span class="sig"><u></u><i></i></span></div>'
-    + '<div class="hd"><b>商品</b><span></span></div><div class="search">搜索商品</div>'
+  return sbar() + '<div class="hd"><b>商品</b><span></span></div><div class="search">搜索商品</div>'
     + '<div class="lst' + (s.half ? ' half' : '') + '"><div class="grid" style="--cols:' + s.cols + ';--ml:' + s.ml + '">' + cards + '</div></div>'
     + '<div class="tabs"><span class="on"><i></i>首页</span><span><i></i>分类</span><span><i></i>购物车</span><span><i></i>我的</span></div><span class="gbar"></span>';
 }
+/* 真机上现在跑的是回归 Agent 的旅程（购物车结算），不是你的列表 */
+function realHTML(){
+  var rows = [ITEMS[0], ITEMS[4], ITEMS[6]].map(function(it){ return '<div class="rrow"><span class="ck"></span><span class="th" style="background:' + it[3] + '"></span><span><b>' + it[0] + '</b><span class="pr2">¥' + it[2] + '</span></span></div>'; }).join('');
+  var listOnIt = S.real === 'run';
+  if(listOnIt) return appHTML('sm');
+  return sbar() + '<div class="hd"><b>购物车</b><span></span></div><div class="rstack">' + rows + '</div>'
+    + '<div class="paybar"><span>合计 <b>¥1,827</b></span><i>结算</i></div><span class="tap' + (S.realYou || S.regDone ? ' pause' : '') + '"></span><span class="gbar"></span>';
+}
 function renderApps(forms){
   (forms || ['sm', 'md', 'lg']).forEach(function(f){ var a = $('#w-' + f + ' .app'); if(a) a.innerHTML = appHTML(f); });
-  scaleApps();
+  renderReal(); scaleApps();
+}
+function renderReal(){
+  var who = S.realYou ? '你在用 · 回归已暂停' : S.real === 'run' ? AG.list + ' 在复核' : S.regDone ? '空闲' : AG.reg + ' 占用 · ' + S.reg + '/38 · 还要约 ' + Math.max(1, Math.ceil((38 - S.reg) / 8)) + ' 分';
+  $('#real-cap').textContent = who; $('#real-tag').textContent = who;
+  $('#real-app').innerHTML = realHTML();
 }
 function scaleApps(){
-  ['sm', 'md', 'lg'].forEach(function(f){
-    var w = $('#w-' + f), wc = $('.wc', w), a = $('.app', w), F = FORMS[f];
+  ['sm', 'md', 'lg', 'real'].forEach(function(f){
+    var w = $('#w-' + f), wc = $('.wc', w), a = $('.app', w), F = FORMS[f === 'real' ? 'sm' : f];
     if(!wc.offsetWidth) return;
     a.style.width = F.w + 'px'; a.style.height = F.h + 'px';
     a.style.transform = 'scale(' + (wc.offsetWidth / F.w) + ')';
@@ -637,8 +689,8 @@ function hotReload(forms){
 }
 
 /* ============================ 台前调度 ============================ */
-var st = DeviceStage.init({ root: '#stage', items: '.ws-win', rail: 'left', railWidth: 120,
-  onChange: function(f){ syncStageSeg(); if(!f.length){ S.cue = null; renderCue(); } } });
+var st = DeviceStage.init({ root: '#stage', items: '.ws-win', rail: 'left', railWidth: 116,
+  onChange: function(f){ syncStageSeg(); if(!f.length){ S.cue = null; renderCue(); $$('.ws-win').forEach(function(w){ w.classList.remove('checking'); }); } } });
 function win(f){ return $('#w-' + f); }
 function syncStageSeg(){
   var on = st && st.isOn();
@@ -649,65 +701,83 @@ function renderCue(){
   var c = $('#cue');
   if(!S.cue){ c.hidden = true; c.innerHTML = ''; return; }
   c.hidden = false;
-  if(S.cue.kind === 'verify'){
-    c.innerHTML = '<span class="ai-status" data-state="verifying"><span class="ai-ring"></span><span class="lbl">Agent 在验 · ' + esc(S.cue.text) + '</span></span>';
-  } else {
-    c.innerHTML = '<span class="ai-status"><svg class="ai-ico"><use href="#ai-g-cursor"/></svg><span class="lbl">按光标所在代码 · ' + esc(S.cue.text) + '</span></span>'
+  var k = S.cue.kind;
+  if(k === 'verify') c.innerHTML = '<span class="ai-status" data-state="verifying"><span class="ai-ring"></span><span class="lbl"><span class="agt">' + AG.list + '</span> 在验 · ' + esc(S.cue.text) + '</span></span>';
+  else if(k === 'lease') c.innerHTML = '<span class="ai-status lease"><svg class="ai-ico"><use href="#ws-phone"/></svg><span class="lbl">' + esc(S.cue.text) + '</span></span>';
+  else if(k === 'you') c.innerHTML = '<span class="ai-status lease"><svg class="ai-ico"><use href="#i-user"/></svg><span class="lbl">' + esc(S.cue.text) + '</span></span><button class="pin" type="button" data-act="real-done">用完了</button>';
+  else c.innerHTML = '<span class="ai-status"><svg class="ai-ico"><use href="#ai-g-cursor"/></svg><span class="lbl">按光标所在代码 · ' + esc(S.cue.text) + '</span></span>'
       + '<button class="pin" type="button" data-act="pin" aria-pressed="' + S.pin + '">' + (S.pin ? '已固定' : '固定') + '</button>';
-  }
 }
 function stageFocus(f, cue){
   S.cue = cue || null;
   $$('.ws-win').forEach(function(w){ w.classList.toggle('checking', !!(cue && cue.kind === 'verify') && w.id === 'w-' + f); });
-  st.focus(win(f)); renderCue();
+  st.focus(Array.isArray(f) ? f.map(win) : win(f)); renderCue();
 }
 
 /* ============================ Agent 状态 ============================ */
-var LABEL = { idle: '待命', thinking: '理解中', tool: '调用工具', generating: '生成中', waiting: '在等你', verifying: '设备验证中', done: '完成', error: '失败' };
+var LABEL = { idle: '待命', thinking: '理解中', tool: '调用工具', generating: '生成中', waiting: '在等你', verifying: '设备验证中', done: '完成', error: '失败', todo: '排队' };
+var BUSY = /thinking|tool|generating|verifying/;
 function setAgent(state, text){
-  if(state !== S.agent && /thinking|tool|generating|verifying/.test(state) && !/thinking|tool|generating|verifying/.test(S.agent)) S.t0 = Date.now();
+  if(BUSY.test(state) && !BUSY.test(S.agent)) S.t0 = Date.now();
   S.agent = state; S.agentText = text;
 }
 function elapsed(){ return Math.max(1, Math.round((Date.now() - S.t0) / 1000)); }
 function renderAgent(){
-  var busy = /thinking|tool|generating|verifying/.test(S.agent);
-  shell.capsule(S.agent, esc(S.agentText) + (busy ? ' <span class="t">' + elapsed() + ' s</span>' : '') + (S.agent === 'waiting' ? ' <span class="act">去看</span>' : ''));
-  shell.status('<span class="it agent" data-state="' + S.agent + '"><svg class="i"><use href="#ai-logo-16-mono"/></svg>DevEco Code · ' + LABEL[S.agent] + '</span>'
-    + '<span class="it"><span class="gdot"></span>3 个窗口 · 本机原生运行</span>');
-  var fld = $('#field'); fld.setAttribute('data-state', /thinking|generating/.test(S.agent) && S.phase !== 'handedit' ? 'generating' : 'idle');
+  var q = queue(), top = q[0];
+  /* 胶囊只推最需要你的那一件；不挡路的问题不抢胶囊 */
+  if(top && top.block >= 2){
+    shell.capsule('waiting', '在等你 · ' + esc(top.title) + (q.length > 1 ? ' <span class="t">还有 ' + (q.length - 1) + ' 件</span>' : '') + ' <span class="act">去看</span>');
+  } else {
+    var busy = BUSY.test(S.agent);
+    shell.capsule(S.agent, '<span class="agt">' + AG.list + '</span> ' + esc(S.agentText) + (busy ? ' <span class="t">' + elapsed() + ' s</span>' : ''));
+  }
+  var running = ['grid', 'i18n', 'reg'].filter(function(id){ return BUSY.test(id === 'grid' ? S.agent : OTHER[id].state); }).length;
+  shell.status('<span class="it agent" data-state="' + (q.length ? 'waiting' : S.agent) + '"><svg class="i"><use href="#ai-logo-16-mono"/></svg>' + running + ' 个 Agent 在跑' + (q.length ? ' · 在等你 ' + q.length : '') + '</span>'
+    + '<span class="it"><span class="gdot"></span>本机窗口 3 · 真机 1</span>');
+  $('#field').setAttribute('data-state', /thinking|generating/.test(S.agent) && S.phase !== 'handedit' ? 'generating' : 'idle');
   $('#gen-txt').textContent = S.agentText;
 }
-setInterval(function(){ if(/thinking|tool|generating|verifying/.test(S.agent)){ var t = $('#ws-capsule .t'); if(t) t.textContent = elapsed() + ' s'; } }, 1000);
+setInterval(function(){ if(BUSY.test(S.agent)){ var t = $('#ws-capsule .t'); if(t && !queue().some(function(x){ return x.block >= 2; })) t.textContent = elapsed() + ' s'; } }, 1000);
 
 /* ============================ 渲染 ============================ */
 function stIcon(state){
   return '<span class="ws-st">' + ({
-    idle: '<span class="idle"></span>', waiting: '<span class="ai-wait-dot"></span>',
+    idle: '<span class="idle"></span>', todo: '<span class="idle"></span>', waiting: '<span class="ai-wait-dot"></span>',
     thinking: '<span class="ai-spark is-live"></span>', generating: '<span class="ai-spark is-live"></span>',
     tool: '<span class="ai-ring"></span>', verifying: '<span class="ai-ring"></span>',
-    done: '<svg class="ok"><use href="#ws-okc"/></svg>', error: '<svg class="bad"><use href="#ws-err"/></svg>'
+    done: '<svg class="ok"><use href="#ws-okc"/></svg>', error: '<svg class="bad"><use href="#ws-err"/></svg>', bad: '<svg class="bad"><use href="#ws-err"/></svg>'
   }[state] || '') + '</span>';
 }
-function gridTaskRow(){
-  var title = S.phase === 'idle' ? '新任务' : '商品列表按断点多列';
-  var sub = S.phase === 'idle' ? '还没开始' : S.committed ? '已提交 · 刚刚' : S.agentText;
-  return { id: 'grid', title: title, state: S.agent, sub: sub };
+function gridRow(){
+  var q = queue().filter(function(x){ return x.task === 'grid'; });
+  return { id: 'grid', title: S.phase === 'idle' ? '新任务' : '商品列表按断点多列', agent: AG.list,
+    state: q.length && q[0].block >= 2 ? 'waiting' : S.agent,
+    sub: S.phase === 'idle' ? '还没开始' : S.committed ? '已提交 · 刚刚' : (q.length ? '在等你 · ' + q[0].title : S.agentText) };
+}
+function taskRow(id){ if(id === 'grid') return gridRow(); var t = OTHER[id]; return { id: id, title: t.title, agent: t.agent, state: t.state, sub: t.sub }; }
+function renderQueue(){
+  var q = queue(), box = $('#queue');
+  if(!q.length){ box.innerHTML = ''; return; }
+  box.innerHTML = '<div class="q" id="q"><div class="q-h"><span class="ai-wait-dot"></span>在等你 · ' + q.length + '<span class="grow"></span><small>按阻塞排</small></div>'
+    + q.map(function(x, i){ return '<button type="button" class="q-item" data-act="q" data-q="' + x.id + '"><span class="qn">' + (i + 1) + '</span><span class="qt">' + esc(x.title) + '</span><span class="qs"><b>' + esc(x.who) + '</b> · ' + esc(x.how) + '</span></button>'; }).join('') + '</div>';
 }
 function renderNav(){
+  renderQueue();
   var box = $('#nav-list');
   $$('.nav-head [data-act="navtab"]').forEach(function(b){ b.setAttribute('aria-pressed', String(b.dataset.t === S.navTab)); });
   if(S.navTab === 'tasks'){
-    var rows = [gridTaskRow()].concat(OTHER);
-    box.innerHTML = rows.map(function(t){
+    var qs = queue();
+    box.innerHTML = '<div class="nav-grp">任务 · 3 个 Agent 在跑</div>' + ORDER.map(taskRow).map(function(t){
       var subCls = t.state === 'waiting' ? ' wait' : t.state === 'error' ? ' err' : '';
+      var soft = t.state !== 'waiting' && qs.some(function(x){ return x.task === t.id; }) ? '<span class="qdot" title="有 1 件在等你（不挡路）"></span>' : '';
       return '<button type="button" class="tk" data-act="task" data-id="' + t.id + '" aria-current="' + (S.task === t.id) + '">' + stIcon(t.state)
-        + '<span><span class="tt">' + esc(t.title) + '</span><span class="sub' + subCls + '">' + esc(t.sub) + '</span></span></button>';
+        + '<span><span class="tt">' + esc(t.title) + '</span><span class="sub' + subCls + '"><span class="agt">' + t.agent + '</span>' + soft + esc(t.sub) + '</span></span></button>';
     }).join('');
   } else {
-    var ch = S.applied ? [['ListPage.ets', S.choice === 'grid' ? '+7' : '+3', S.choice === 'grid' ? '−3' : '−2'], ['ProductCard.ets', '+1', '−1']] : [];
+    var ch = S.applied ? [['ListPage.ets', S.choice === 'grid' ? '+7' : '+3', S.choice === 'grid' ? '−3' : '−2', AG.list], ['ProductCard.ets', '+1', '−1', AG.list + ' · ' + AG.i18n]] : [];
     var rd = S.read.length ? [['BreakpointSystem.ets', '断点取值'], ['Index.ets', '首页 GridRow 写法']] : [];
     box.innerHTML = '<div class="nav-grp">本次改动 · ' + ch.length + '</div>'
-      + (ch.length ? ch.map(function(c){ return '<button type="button" class="fl" data-act="openfile" data-f="' + c[0] + '"><svg class="i"><use href="#i-ets"/></svg><span class="nm">' + c[0] + '</span><span class="ai-gmark" title="Agent 写的"></span><span class="dd"><span class="ad">' + c[1] + '</span><span class="rm">' + c[2] + '</span></span></button>'; }).join('') : '<div class="fl-empty">还没有改动</div>')
+      + (ch.length ? ch.map(function(c){ return '<button type="button" class="fl" data-act="openfile" data-f="' + c[0] + '" title="' + c[3] + '"><svg class="i"><use href="#i-ets"/></svg><span class="nm">' + c[0] + '</span><span class="ai-gmark"></span><span class="dd"><span class="ad">' + c[1] + '</span><span class="rm">' + c[2] + '</span></span></button>'; }).join('') : '<div class="fl-empty">还没有改动</div>')
       + '<div class="nav-grp">它读过、没改 · ' + rd.length + '</div>'
       + (rd.length ? rd.map(function(c){ return '<button type="button" class="fl" data-act="openfile" data-f="' + c[0] + '"><svg class="i"><use href="#i-ets"/></svg><span class="nm">' + c[0] + '</span><span class="why">' + c[1] + '</span></button>'; }).join('') : '<div class="fl-empty">它还没读文件</div>')
       + '<div class="nav-grp"><button type="button" class="ws-link" data-act="fulltree">' + (S.fullTree ? '收起完整工程树' : '展开完整工程树') + '</button></div>'
@@ -742,7 +812,7 @@ function planHTML(){
     + (S.planEdited ? '<span class="edited">你改了 ' + S.planEdited + ' 处</span>' : '')
     + '<button type="button" class="ai-btn ai-btn--primary" data-act="start" id="btn-start">按这个计划开始</button></div>' : '';
   return '<div class="blk" id="plan-blk"><div class="blk-h"><svg class="ai-ico"><use href="#ai-plan"/></svg>它理解成 · 计划' + (canEdit ? '（可改）' : '') + '<span class="grow"></span></div>'
-    + '<p class="under">只动商品列表页。右半空白来自 <code>ListPage.ets:22</code> 的 <code>.width(\'50%\')</code>，注释说给平板分栏预留，但工程里没有分栏。</p>'
+    + '<p class="under">只动商品列表页。右半空白来自 <code>ListPage.ets:22</code> 的 <code>.width(\'50%\')</code>，注释说给平板分栏预留，但工程里没有分栏。<br>Agent·多语言 也在改 ProductCard，撞到同一行会先停下问你。</p>'
     + '<ol class="plan">' + lis + '</ol>' + act + '</div>';
 }
 function waitHTML(){
@@ -755,30 +825,32 @@ function waitHTML(){
 }
 function logHTML(){
   return S.log.map(function(g){
-    var head = g.you ? '<svg class="i"><use href="#i-user"/></svg>' : g.running ? '<span class="ai-ring"></span>' : '<svg class="ai-ico"><use href="#ai-tool"/></svg>';
+    var head = g.you ? '<svg class="i"><use href="#i-user"/></svg>' : g.other ? '<svg class="ai-ico"><use href="#ai-agent"/></svg>' : g.running ? '<span class="ai-ring"></span>' : '<svg class="ai-ico"><use href="#ai-tool"/></svg>';
     var items = (g.items || []).map(function(it){ return '<div class="ai-toolrow"><svg class="ai-ico"><use href="#' + (it.ico || 'ai-tool') + '"/></svg><span class="what">' + it.what + '</span><span class="end">' + (it.end || '') + '</span></div>'; }).join('');
     var chev = items ? '<svg class="i chev"><use href="#i-chevR"/></svg>' : '';
-    return '<details class="grp' + (g.you ? ' you' : '') + '"' + (g.open ? ' open' : '') + ' data-g="' + g.id + '"><summary>' + head + '<span class="w">' + g.title + '</span><span class="tm">' + (g.tm || '') + '</span>' + chev + '</summary>' + (items ? '<div class="items">' + items + '</div>' : '') + '</details>';
+    return '<details class="grp' + (g.you ? ' you' : '') + '" data-g="' + g.id + '"><summary>' + head + '<span class="w">' + g.title + '</span><span class="tm">' + (g.tm || '') + '</span>' + chev + '</summary>' + (items ? '<div class="items">' + items + '</div>' : '') + '</details>';
   }).join('');
 }
 function answerHTML(){
-  var A = S.choice !== 'grid', f = fpsAfter();
-  var lead, body, act = '';
+  var A = S.choice !== 'grid', f = fpsAfter(), lead, body, act = '';
+  var cf = S.conflict === 'open' ? '其中 1 处和 Agent·多语言 撞了。' : '';
   if(S.phase === 'done'){
     lead = A ? '完成。平板按你改的 ' + S.lg + ' 列；手机仍 1 列、折叠屏 2 列。' : '完成，但平板滑动仍掉到 ' + f.lg + ' fps。';
-    body = A ? '读到你把 lg 改成 ' + S.lg + '，它顺手把 <code>cachedCount</code> 改成 ' + S.cached + '（多预取一行），并在 MatePad 上重验：滑动 ' + f.lg + ' fps，无溢出。'
+    body = A ? '读到你把 lg 改成 ' + S.lg + '，它顺手把 <code>cachedCount</code> 改成 ' + S.cached + '（多预取一行），并在 MatePad 上重验：滑动 ' + f.lg + ' fps，无溢出。' + (S.conflict === 'open' ? '<br>还差一件：ProductCard 标题行数等你和多语言定。' : '')
              : '你改的 ' + S.lg + ' 列已生效；GridRow 没有懒加载的问题还在。';
-    act = S.committed ? '<span class="edited">已提交到 feature/grid-list · 3f2a1c9</span>' : '<button type="button" class="ai-btn ai-btn--primary" data-act="commit">提交到 feature/grid-list</button>';
-    if(!A) act = '<button type="button" class="ai-btn ai-btn--primary" data-act="redo">改用 List.lanes 重做</button>';
+    act = !A ? '<button type="button" class="ai-btn ai-btn--primary" data-act="redo">改用 List.lanes 重做</button>'
+      : S.committed ? '<span class="edited">已提交到 feature/grid-list · 3f2a1c9</span>'
+      : S.conflict === 'open' ? '<button type="button" class="ai-btn ai-btn--fill" data-act="q" data-q="conflict">去定标题行数</button>'
+      : '<button type="button" class="ai-btn ai-btn--primary" data-act="commit">提交到 feature/grid-list</button>';
   } else {
     lead = A ? '商品列表已按断点多列：手机 1 列不变，折叠屏展开 2 列，平板 3 列。' : '已按断点多列，但手机和平板滑动都掉帧了。';
-    body = A ? '右半空白来自 <code>.width(\'50%\')</code>，已去掉；多列用 <code>List.lanes</code>，懒加载保留。需要你看的 2 处在「改动」里。'
+    body = A ? '右半空白来自 <code>.width(\'50%\')</code>，已去掉；多列用 <code>List.lanes</code>，懒加载保留。需要你看的 ' + needCount() + ' 处在「改动」里，' + cf
              : 'GridRow 没有懒加载，2000 个 ProductCard 一次建完：平板 143 → ' + f.lg + ' fps，手机 120 → ' + f.sm + ' fps。要换成 List.lanes 吗？';
     act = A ? '<button type="button" class="ai-btn ai-btn--fill" data-act="lowtab" data-t="changes"><svg><use href="#ai-review"/></svg>看改动</button><button type="button" class="ai-btn" data-act="lowtab" data-t="evidence">看证据</button>'
             : '<button type="button" class="ai-btn ai-btn--primary" data-act="redo">改用 List.lanes 重做</button><button type="button" class="ai-btn" data-act="lowtab" data-t="evidence">看证据</button>';
   }
   var files = S.choice === 'grid' ? [['ListPage.ets', '+7', '−3'], ['ProductCard.ets', '+1', '−1']] : [['ListPage.ets', '+3', '−2'], ['ProductCard.ets', '+1', '−1']];
-  return '<div class="ai-answer" id="answer"><div class="ai-answer__meta"><svg><use href="#ai-logo-16"/></svg>DevEco Code · 云端 · 盘古</div>'
+  return '<div class="ai-answer" id="answer"><div class="ai-answer__meta"><svg><use href="#ai-logo-16"/></svg><span class="agt">' + AG.list + '</span> · 云端 · 盘古</div>'
     + '<p class="ai-answer__lead">' + lead + '</p><p class="ai-answer__body">' + body + '</p>'
     + '<div class="ai-answer__applied">已写入 2 个文件 · 可退回 ' + files.map(function(x){ return '<span class="fchip">' + x[0] + ' <span class="ad">' + x[1] + '</span><span class="rm">' + x[2] + '</span></span>'; }).join('') + '</div>'
     + '<div class="ai-answer__foot">' + act + '<span class="grow"></span><span class="ai-fb"><button type="button" title="有用"><svg><use href="#ai-thumb-up"/></svg></button><button type="button" title="没用"><svg><use href="#ai-thumb-down"/></svg></button></span></div></div>';
@@ -786,7 +858,7 @@ function answerHTML(){
 function taskBodyHTML(){
   if(S.task !== 'grid') return otherBodyHTML();
   if(S.phase === 'idle'){
-    return '<div class="tp-empty"><p>MallApp 已在本机跑起来：右边三个窗口就是手机、折叠屏展开、平板三种形态。说一句要改什么，它先出计划给你改。</p>'
+    return '<div class="tp-empty"><p>MallApp 已在本机跑起来：右边三个窗口是手机、折叠屏展开、平板三种形态，最右是被 Agent·回归 占着的真机。说一句要改什么，它先出计划给你改。</p>'
       + '<div class="ai-pop__eg"><button type="button" data-act="eg">商品列表在折叠屏和平板上只占左半…</button><button type="button" data-act="eg2">购物车页适配深色模式</button></div></div>';
   }
   var h = '';
@@ -794,38 +866,39 @@ function taskBodyHTML(){
   h += '<div class="you"><small>你</small>' + esc(S.intent) + '</div>';
   if(S.plan.length) h += planHTML();
   h += logHTML();
-  if(S.phase === 'review' || S.phase === 'done' || (S.phase === 'handedit' && S.choice)) h += answerHTML();
+  if(S.choice && (S.phase === 'review' || S.phase === 'done' || S.phase === 'handedit')) h += answerHTML();
   return h;
 }
-function otherTask(){ for(var i = 0; i < OTHER.length; i++) if(OTHER[i].id === S.task) return OTHER[i]; return null; }
 function evChip(e){
-  var ic = e[0] === 'ok' ? '<svg><use href="#ws-okc"/></svg>' : e[0] === 'run' ? '<span class="ai-ring"></span>' : '<svg style="color:var(--ui-error)"><use href="#ws-err"/></svg>';
-  return '<span class="evc ' + (e[0] === 'ok' ? 'ok' : '') + '">' + ic + e[1] + '</span>';
+  var ic = e[0] === 'ok' ? '<svg><use href="#ws-okc"/></svg>' : e[0] === 'run' ? '<span class="ai-ring"></span>' : e[0] === 'todo' ? '<svg><use href="#ws-okc"/></svg>' : '<svg style="color:var(--ui-error)"><use href="#ws-err"/></svg>';
+  return '<span class="evc ' + (e[0] === 'ok' ? 'ok' : e[0] === 'todo' ? 'todo' : '') + '">' + ic + e[1] + '</span>';
 }
 function otherBodyHTML(){
-  var t = otherTask();
-  var act = t.id === 'cold' ? '<div class="blk-act"><button type="button" class="ai-btn ai-btn--fill" data-act="retry-cold"><svg><use href="#ai-retry"/></svg>解锁后重试</button></div>' : '';
-  return '<div class="you"><small>你</small>' + esc(t.said) + '</div><div class="blk"><div class="blk-h">' + stIcon(t.state) + LABEL[t.state] + '</div><p class="under">' + esc(t.lead) + '</p>' + act + '</div>';
+  var t = OTHER[S.task], extra = '';
+  if(S.task === 'cold') extra = '<div class="blk-act"><button type="button" class="ai-btn ai-btn--fill" data-act="retry-cold"><svg><use href="#ai-retry"/></svg>解锁后重试</button></div>';
+  var wait = '';
+  if(S.task === 'i18n' && S.rtl === 'open'){
+    wait = '<div class="ai-approve ws-wait"><div class="ai-approve__h"><span class="ai-wait-dot"></span>在等你 · 阿语下价格跟着镜像吗 <span style="font-weight:400;color:var(--ui-fg-info)">不挡路</span></div>'
+      + '<p class="ai-approve__why">RTL 下整张卡片会左右镜像，价格跑到左边。它先按系统镜像做着，你定了再改。</p>'
+      + '<button type="button" class="opt" data-act="rtl" data-v="mirror"><b>跟着镜像</b><span class="rec">它推荐</span><span class="d">符合阿语阅读顺序，和系统设置一致。</span></button>'
+      + '<button type="button" class="opt" data-act="rtl" data-v="fixed"><b>价格固定在右</b><span class="d">和中文版视觉一致，<em>但阿语用户会觉得别扭。</em></span></button></div>';
+  }
+  if(S.task === 'i18n' && S.conflict === 'open') extra = '<div class="blk-act"><button type="button" class="ai-btn ai-btn--fill" data-act="q" data-q="conflict">和 Agent·列表 撞了 1 处 · 去定</button></div>';
+  return wait + '<div class="you"><small>你</small>' + esc(t.said) + '</div><div class="blk"><div class="blk-h">' + stIcon(t.state) + '<span class="agt">' + t.agent + '</span>' + LABEL[t.state] + '</div><p class="under">' + esc(t.lead) + '</p>' + extra + '</div>';
 }
 function renderTask(){
-  var head = $('#tp-head');
-  if(S.task === 'grid'){
-    var r = gridTaskRow();
-    head.innerHTML = '<span class="ttl">' + esc(r.title) + '</span><span class="ai-status" data-state="' + S.agent + '">' + stIcon(S.agent).replace('ws-st', 'ws-st') + '<span class="lbl">' + LABEL[S.agent] + '</span></span>';
-  } else {
-    var t = otherTask();
-    head.innerHTML = '<span class="ttl">' + esc(t.title) + '</span><span class="ai-status" data-state="' + t.state + '">' + stIcon(t.state) + '<span class="lbl">' + LABEL[t.state] + '</span></span>';
-  }
+  var r = taskRow(S.task);
+  $('#tp-head').innerHTML = '<span class="ttl">' + esc(r.title) + '</span><span class="ai-status" data-state="' + r.state + '">' + stIcon(r.state) + '<span class="lbl">' + LABEL[r.state] + '</span></span>';
   var body = $('#tp-body'), keep = body.scrollTop, atEnd = body.scrollTop + body.clientHeight >= body.scrollHeight - 30;
   var open = {}; $$('details.grp[open]', body).forEach(function(d){ open[d.dataset.g] = 1; });
   body.innerHTML = taskBodyHTML();
   $$('details.grp', body).forEach(function(d){ if(open[d.dataset.g]) d.open = true; });
   if(S.scrollEnd || atEnd){ body.scrollTop = body.scrollHeight; S.scrollEnd = false; } else body.scrollTop = keep;
-  var foot = $('.tp-foot'); foot.hidden = S.task !== 'grid';
+  $('.tp-foot').hidden = S.task !== 'grid';
   $('#vws').setAttribute('data-other', S.task === 'grid' ? '0' : '1');
   if(S.task !== 'grid'){
-    var o = otherTask();
-    $('#other').innerHTML = stIcon(o.state).replace('ws-st', 'ws-st" style="transform:scale(1.6);margin-bottom:6px') + '<h3>' + esc(o.title) + '</h3><p>' + esc(o.lead) + '</p>'
+    var o = OTHER[S.task];
+    $('#other').innerHTML = stIcon(o.state).replace('ws-st', 'ws-st" style="transform:scale(1.6);margin-bottom:6px') + '<h3>' + esc(o.title) + '</h3><p><span class="agt">' + o.agent + '</span> · ' + esc(o.lead) + '</p>'
       + (o.ev.length ? '<div class="ev-chips" style="justify-content:center">' + o.ev.map(evChip).join('') + '</div>' : '')
       + '<button type="button" class="ws-link" data-act="task" data-id="grid">回到「商品列表按断点多列」</button>';
   }
@@ -834,33 +907,35 @@ function renderTask(){
 /* 改动 / 证据 */
 function renderLower(){
   var need = needCount(), evDone = ['build', 'lint', 'dev', 'fps'].filter(function(k){ return S.ev[k] === 'ok' || S.ev[k] === 'warn'; }).length;
-  var evWarn = S.ev.fps === 'warn';
   $('#lw-tabs').innerHTML = '<button type="button" class="lw-tab" role="tab" data-act="lowtab" data-t="changes" aria-selected="' + (S.lowTab === 'changes') + '">改动'
     + (S.applied ? '<span class="cnt' + (need ? ' need' : '') + '">' + (need ? '需要你看 ' + need : '都看过了') + '</span>' : '') + '</button>'
     + '<button type="button" class="lw-tab" role="tab" data-act="lowtab" data-t="evidence" aria-selected="' + (S.lowTab === 'evidence') + '">证据'
-    + (evDone ? '<span class="cnt">' + (evWarn ? '3 过 · 1 掉帧' : evDone + '/4 通过') + '</span>' : '') + '</button><span class="grow"></span>'
+    + (evDone ? '<span class="cnt">' + (S.ev.fps === 'warn' ? '3 过 · 1 掉帧' : evDone + '/4 通过') + '</span>' : '') + '</button><span class="grow"></span>'
     + (S.lowTab === 'changes' && S.applied ? '<div class="ws-seg"><button type="button" data-act="only" data-v="1" aria-pressed="' + S.onlyNeed + '">只看需要你看的</button><button type="button" data-act="only" data-v="0" aria-pressed="' + !S.onlyNeed + '">全部 ' + hunks().length + ' 处</button></div>' : '');
   $('#lw-main').innerHTML = S.lowTab === 'changes' ? changesHTML() : evidenceHTML();
 }
 function hunkHTML(h){
-  var rk = h.risk === 'high' ? '<span class="rk high">需要你看 · 高</span>' : h.risk === 'mid' ? '<span class="rk high">需要你看</span>' : '<span class="rk">它核对过</span>';
+  var rk = h.risk === 'conflict' ? '<span class="rk high">撞了 · 等你定</span>' : h.risk === 'high' ? '<span class="rk high">需要你看 · 高</span>' : h.risk === 'mid' ? '<span class="rk high">需要你看</span>' : '<span class="rk">它核对过</span>';
   var ind = Math.min.apply(null, h.lines.map(function(l){ return l[2].match(/^ */)[0].length; }));
   var code = h.lines.map(function(l){
-    var src = l[2].slice(ind), isLg = l[3] === 'lg', ai = l[0] === 'add' && !(isLg && S.handEdited);
+    var src = l[2].slice(ind), tag = l[3] || '', isLg = tag === 'lg';
+    var you = isLg && S.handEdited, ai = (l[0] === 'add' || l[0] === 'alt') && !you;
+    var who = l[0] === 'del' ? '' : you ? '<span class="who you">你改的</span>' : '<span class="who">' + (tag === 'i18n' ? AG.i18n : AG.list) + (l[0] === 'alt' ? ' 要的' : '') + '</span>';
     var t = src.indexOf(LG) >= 0 ? hl(src.split(LG)[0]) + '<span class="n">' + S.lg + '</span>' + hl(src.split(LG)[1]) : hl(src);
-    return '<div class="ln ' + l[0] + '"><span class="g">' + (ai ? '<span class="ai-gmark" title="Agent 写的"></span>' : '') + '<span class="pm">' + (l[0] === 'add' ? '+' : '−') + '</span>' + l[1] + '</span><span class="t">' + t + '</span>'
-      + (isLg && S.handEdited ? '<span class="who">你改的</span>' : '') + '</div>';
+    var pm = l[0] === 'add' ? '+' : l[0] === 'alt' ? '±' : '−';
+    return '<div class="ln ' + l[0] + '"><span class="g">' + (ai ? '<span class="ai-gmark"></span>' : '') + '<span class="pm">' + pm + '</span>' + l[1] + '</span><span class="t">' + t + '</span>' + who + '</div>';
   }).join('');
-  var acts = '<span class="acts">' + (h.need && !S.seen[h.id] ? '<button type="button" class="ai-btn ai-btn--quiet" data-act="seen" data-h="' + h.id + '">看过</button>' : '')
+  var acts = '<span class="acts">' + (h.need && !S.seen[h.id] && h.risk !== 'conflict' ? '<button type="button" class="ai-btn ai-btn--quiet" data-act="seen" data-h="' + h.id + '">看过</button>' : '')
     + '<button type="button" class="ai-btn ai-btn--fill" data-act="takeover" data-h="' + (h.lg ? 'lg' : h.id) + '" data-f="' + h.file + '" data-l="' + h.line + '"><svg><use href="#ai-g-pencil"/></svg>接手</button></span>';
-  return '<div class="hk' + (S.seen[h.id] ? ' seen' : '') + (h.mech ? ' mech' : '') + '"><div class="hk-h">' + rk + '<span class="tx"><b>' + esc(h.title) + '</b><span>' + esc(h.why) + '</span></span><span class="loc">' + h.file + ':' + h.line + '</span>' + acts + '</div>'
-    + '<div class="ws-code">' + code + '</div></div>';
+  var res = h.risk === 'conflict' ? '<div class="hk-res"><button type="button" class="ai-btn ai-btn--fill" data-act="resolve" data-v="2">用 2 行 · 列表</button><button type="button" class="ai-btn ai-btn--fill" data-act="resolve" data-v="3">用 3 行 · 多语言，列表给卡片等高</button></div>' : '';
+  return '<div class="hk' + (S.seen[h.id] ? ' seen' : '') + (h.mech ? ' mech' : '') + (h.risk === 'conflict' ? ' conflict' : '') + '" id="hk-' + h.id + '"><div class="hk-h">' + rk + '<span class="tx"><b>' + esc(h.title) + '</b><span>' + esc(h.why) + '</span></span><span class="loc">' + h.file + ':' + h.line + '<br><span class="who2 agt">' + esc(h.who) + '</span></span>' + acts + '</div>'
+    + '<div class="ws-code">' + code + '</div>' + res + '</div>';
 }
 function changesHTML(){
   if(!S.applied) return '<div class="ws-empty">' + (S.phase === 'idle' ? '还没有改动。它动手后，改了什么按风险排在这里。' : '它还在改，写进去的会先排在这里。') + '</div>';
   var H = hunks(), show = S.onlyNeed ? H.filter(function(h){ return h.need; }) : H, rest = H.length - show.length;
-  return '<div class="grp-t"><b>按断点多列</b>· 2 个文件 · 按风险排</div>' + show.map(hunkHTML).join('')
-    + (rest ? '<button type="button" class="folded" data-act="only" data-v="0"><svg class="ai-ico" style="width:14px;height:14px"><use href="#ai-verify"/></svg>另外 ' + rest + ' 处它已核对（标题两行、预取行数），展开看</button>' : '');
+  return '<div class="grp-t"><b>按断点多列</b>· 2 个文件 · 按风险排 · 每处标了是谁写的</div>' + show.map(hunkHTML).join('')
+    + (rest ? '<button type="button" class="folded" data-act="only" data-v="0"><svg class="ai-ico" style="width:14px;height:14px"><use href="#ai-verify"/></svg>另外 ' + rest + ' 处它已核对（' + H.filter(function(h){ return !h.need; }).map(function(h){ return h.title.replace(/（.*/, ''); }).join('、') + '），展开看</button>' : '');
 }
 function evChipBtn(k, label, val){
   var s = S.ev[k];
@@ -868,27 +943,29 @@ function evChipBtn(k, label, val){
   var ic = s === 'run' ? '<span class="ai-ring"></span>' : s === 'warn' ? '<svg><use href="#ws-warn"/></svg>' : '<svg><use href="#ws-okc"/></svg>';
   return '<button type="button" class="evc ' + (s === 'run' ? '' : s) + '" data-act="ev" data-k="' + k + '" aria-pressed="' + (S.evSel === k) + '">' + ic + label + (s !== 'run' ? ' <span class="v">' + val + '</span>' : '') + '</button>';
 }
-function evidenceHTML(){
-  if(!S.ev.build) return '<div class="ws-empty">还没跑过验证。它改完会自己构建、检查，并在三种形态上验一遍。</div>';
+function devVal(){ return S.real === 'ok' ? '4/4 · 含真机' : S.real === 'queued' ? '3/3 · 真机排队' : S.real === 'run' ? '3/3 · 真机复核中' : '3/3'; }
+function evChipsRow(){
   var f = fpsAfter();
-  var chips = '<div class="ev-chips">' + evChipBtn('build', '构建', '8.2 s') + evChipBtn('lint', 'ArkTS 检查', '0 问题') + evChipBtn('dev', '多设备验证', '3/3')
-    + evChipBtn('fps', '滑动帧率', S.ev.fps === 'warn' ? 'lg 143 → ' + f.lg : 'lg ' + FPS_BEFORE.lg + ' → ' + f.lg) + '</div>';
-  var d = '', k = S.evSel;
+  return evChipBtn('build', '构建', '8.2 s') + evChipBtn('lint', 'ArkTS 检查', '0 问题') + evChipBtn('dev', '多设备验证', devVal())
+    + evChipBtn('fps', '滑动帧率', 'lg ' + FPS_BEFORE.lg + ' → ' + f.lg);
+}
+function evidenceHTML(){
+  if(!S.ev.build) return '<div class="ws-empty">还没跑过验证。它改完会自己构建、检查，并在三种形态和真机上验一遍。</div>';
+  var f = fpsAfter(), k = S.evSel, d = '';
   if(k === 'build') d = '<h4>构建 <small>hvigor · entry@default</small></h4><div class="log">&gt; hvigorw assembleHap --mode module -p module=entry@default\n&gt; hvigor  Finished :entry:default@CompileArkTS... after 5 s 902 ms\n&gt; hvigor  Finished :entry:default@PackageHap... after 1 s 116 ms\n<span class="okl">BUILD SUCCESSFUL in 8 s 214 ms</span></div>';
   else if(k === 'lint') d = '<h4>ArkTS 检查 <small>code-linter · 132 条规则</small></h4><div class="log">ListPage.ets       0 错误  0 警告\nProductCard.ets    0 错误  0 警告\n@performance/hp-arkui-use-lazyforeach    ' + (S.choice === 'grid' ? '<span style="color:var(--ui-warning)">建议：长列表用 LazyForEach（ListPage.ets:17）</span>' : '<span class="okl">通过</span>') + '</div>';
   else if(k === 'dev') d = '<h4>多设备验证 <small>同一手势：进页 → 快速上滑 3 次 → 点第 5 张卡</small></h4>' + devRows();
-  else d = '<h4>滑动帧率 · 改前改后 <small>每台各跑 5 次取中位 · 满帧 120 / 120 / 144</small></h4>' + fpsRows(f)
-    + '<div class="fps-lg"><span><i></i>改前</span><span><i class="aft"></i>改后</span></div>';
+  else d = '<h4>滑动帧率 · 改前改后 <small>每台各跑 5 次取中位 · 满帧 120 / 120 / 144</small></h4>' + fpsRows(f) + '<div class="fps-lg"><span><i></i>改前</span><span><i class="aft"></i>改后</span></div>';
   if(S.ev[k] === 'run') d = '<h4>' + { build: '构建', lint: 'ArkTS 检查', dev: '多设备验证', fps: '滑动帧率' }[k] + ' <small>正在跑…</small></h4>' + (k === 'dev' ? devRows() : '');
-  return chips + '<div class="ev-d">' + d + '</div>';
+  return '<div class="ev-own">归档在本任务 · 由 <b>' + AG.list + '</b> 在它自己的 3 个本机窗口上跑；真机只有一台，按租约排队</div><div class="ev-chips">' + evChipsRow() + '</div><div class="ev-d">' + d + '</div>';
 }
 function devRows(){
   var R = {
-    sm: ['本机窗口 + Mate 70 Pro 真机复核', '与改前逐像素一致'],
+    sm: ['本机窗口 · 截图比对', '与改前逐像素一致'],
     md: ['本机窗口 2440×2240', '2 列，无溢出、无截断'],
     lg: ['本机窗口 2880×1920', S.lg + ' 列，无溢出、无截断']
   };
-  return ['sm', 'md', 'lg'].map(function(f){
+  var rows = ['sm', 'md', 'lg'].map(function(f){
     var s = S.dev[f], r;
     if(!s) r = '<span class="r ws-muted">排队</span>';
     else if(s === 'run') r = '<span class="r"><span class="ai-ring"></span>正在验</span>';
@@ -896,32 +973,37 @@ function devRows(){
     else r = '<span class="r ok"><svg><use href="#ws-okc"/></svg>' + R[f][1] + '</span>';
     return '<div class="dv"><span>' + FORMS[f].name + '</span><span class="bp">' + f + '</span><span class="wh">' + R[f][0] + '</span>' + r
       + '<button type="button" class="ai-btn ai-btn--quiet" data-act="show" data-f="' + f + '"><svg><use href="#ws-eye"/></svg>看这台</button></div>';
-  }).join('');
+  });
+  var rr = !S.real ? '<span class="r ws-muted">等 sm 截图过了再复核</span>'
+    : S.real === 'queued' ? '<span class="r ws-muted">排队 · ' + AG.reg + ' 占用 ' + S.reg + '/38</span>'
+    : S.real === 'run' ? '<span class="r"><span class="ai-ring"></span>复核中</span>' : '<span class="r ok"><svg><use href="#ws-okc"/></svg>真机复核一致</span>';
+  rows.push('<div class="dv"><span>Mate 70 Pro 真机</span><span class="bp">sm</span><span class="wh">租约 · 回归用完就轮到</span>' + rr
+    + '<button type="button" class="ai-btn ai-btn--quiet" data-act="show" data-f="real"><svg><use href="#ws-eye"/></svg>看这台</button></div>');
+  return rows.join('');
 }
 function fpsRows(f){
-  return ['sm', 'md', 'lg'].map(function(k){
+  return '<div class="fps">' + ['sm', 'md', 'lg'].map(function(k){
     var bad = f[k] < FPS_BEFORE[k] - 5;
     return '<span>' + FORMS[k].name + ' <span class="ws-muted" style="font-family:var(--font-code);font-size:11px">' + k + '</span></span>'
       + '<span class="bars"><i style="--v:' + FPS_BEFORE[k] + '"></i><i class="aft' + (bad ? ' bad' : '') + '" style="--v:' + f[k] + '"></i></span>'
       + '<span class="vv">' + FPS_BEFORE[k] + ' → <b class="' + (bad ? 'bad' : '') + '">' + f[k] + '</b> fps</span>';
-  }).join('').replace(/^/, '<div class="fps">') + '</div>';
+  }).join('') + '</div>';
 }
 
 /* 编辑器：接手时才出现，分栏就地打开 */
 function renderEditor(){
-  var ed = $('#lw-ed'), res = $('#res');
-  res.classList.toggle('ed-open', S.editor.open);
+  var ed = $('#lw-ed');
+  $('#res').classList.toggle('ed-open', S.editor.open);
   ed.hidden = !S.editor.open;
   if(!S.editor.open){ ed.innerHTML = ''; return; }
   var f = S.editor.file;
   var head = '<div class="ed-h"><svg class="i"><use href="#i-ets"/></svg><span class="fn">' + f + '</span><span class="pth">' + PATHS[f] + ' · 第 ' + S.editor.line + ' 行</span><span class="grow"></span>'
     + '<button class="ws-hb icon" type="button" data-act="ed-close" title="关掉，回到工作台"><svg class="i"><use href="#ws-x"/></svg></button></div>';
-  var html = codeHTML(f, { edit: true, cur: S.editor.line });
-  patchCode(ed, head, html);
+  patchCode(ed, head, codeHTML(f, { edit: true, cur: S.editor.line }));
 }
 /* 重绘代码时保住正在输入的那一行（光标不丢） */
 function patchCode(host, head, html){
-  var code = $('.ws-code', host), act = document.activeElement;
+  var code = head === null ? host : $('.ws-code', host), act = document.activeElement;
   if(code && act && act.classList && act.classList.contains('ws-num') && code.contains(act)){
     var tmp = document.createElement('div'); tmp.innerHTML = html;
     var olds = $$('.ln', code), news = $$('.ln', tmp);
@@ -939,7 +1021,7 @@ function scrollEditorTo(line){
   code.scrollTop = Math.max(0, ln.offsetTop - code.clientHeight / 2 + 11);
 }
 
-/* 编辑视图 */
+/* 编辑视图：同一份状态换一种摆法 */
 function renderClassic(){
   $('#c-tree').innerHTML = treeRows(false);
   var files = ['ListPage.ets', 'ProductCard.ets'];
@@ -947,21 +1029,30 @@ function renderClassic(){
   $('#c-tabs').innerHTML = files.map(function(f){ return '<button type="button" class="c-tab" data-act="cfile" data-f="' + f + '" aria-selected="' + (S.classicFile === f) + '"><svg class="i"><use href="#i-ets"/></svg>' + f + (S.applied && /ListPage|ProductCard/.test(f) ? ' <span class="ai-gmark" title="Agent 写的"></span>' : '') + '</button>'; }).join('');
   var cur = S.classicFile === 'ListPage.ets' && S.applied ? lgLineNo() : 0;
   patchCode($('#c-code'), null, codeHTML(S.classicFile, { edit: true, cur: cur }));
-  var body = $('#c-agent');
-  var head = '<div class="blk-h" style="padding:0 4px">' + stIcon(S.agent) + '<span>' + esc(gridTaskRow().title) + ' · ' + esc(S.agentText) + '</span></div>';
-  body.innerHTML = head + (S.task === 'grid' ? taskBodyHTML() : '');
+  var q = queue();
+  var qh = q.length ? '<div class="q" style="margin:0"><div class="q-h"><span class="ai-wait-dot"></span>在等你 · ' + q.length + '<span class="grow"></span><small>和工作台同一个队列</small></div>'
+    + q.map(function(x, i){ return '<button type="button" class="q-item" data-act="q" data-q="' + x.id + '"><span class="qn">' + (i + 1) + '</span><span class="qt">' + esc(x.title) + '</span><span class="qs"><b>' + esc(x.who) + '</b> · ' + esc(x.how) + '</span></button>'; }).join('') + '</div>' : '';
+  $('#c-agent').innerHTML = qh + '<div class="blk-h" style="padding:4px 4px 0">' + stIcon(gridRow().state) + '<span><span class="agt">' + AG.list + '</span> ' + esc(gridRow().title) + ' · ' + esc(S.agentText) + '</span></div>' + taskBodyHTML.call(null);
   var run = ['sm', 'md', 'lg'].map(function(f){
     var s = S.dev[f];
     var ic = s === 'run' ? '<span class="ai-ring"></span>' : s === 'ok' ? '<svg style="color:var(--ui-success)"><use href="#ws-okc"/></svg>' : s === 'bad' ? '<svg style="color:var(--ui-error)"><use href="#ws-warn"/></svg>' : '<svg><use href="#' + (f === 'sm' ? 'ws-phone' : f === 'md' ? 'ws-fold' : 'ws-tablet') + '"/></svg>';
     return '<div>' + ic + '<span>' + FORMS[f].full + '<br><span class="ws-muted">' + appState(f).cols + ' 列' + (appState(f).half ? ' · 只占左半' : '') + '</span></span></div>';
-  }).join('');
-  $('#c-bot').innerHTML = '<div class="c-run">' + run + '</div>' + (S.ev.build ? '<div class="ev-chips">' + evChipBtn('build', '构建', '8.2 s') + evChipBtn('lint', 'ArkTS 检查', '0 问题') + evChipBtn('dev', '多设备验证', '3/3') + evChipBtn('fps', '滑动帧率', 'lg ' + FPS_BEFORE.lg + ' → ' + fpsAfter().lg) + '</div>' : '');
+  }).join('') + '<div><svg><use href="#ws-phone"/></svg><span>Mate 70 Pro 真机<br><span class="ws-muted">' + esc($('#real-cap').textContent) + '</span></span></div>';
+  $('#c-bot').innerHTML = '<div class="c-run" style="grid-template-columns:repeat(4,minmax(0,1fr))">' + run + '</div>' + (S.ev.build ? '<div class="ev-chips">' + evChipsRow() + '</div>' : '');
 }
 
 function render(){
   renderAgent(); renderNav();
   if(S.view === 'ws'){ renderTask(); renderLower(); renderEditor(); }
   else renderClassic();
+}
+/* 后台 Agent 的进度：只刷不会打断你输入的地方 */
+function renderBG(){
+  renderAgent(); renderNav(); renderReal();
+  if(S.view === 'ws'){
+    if(S.task !== 'grid' && !(document.activeElement && document.activeElement.dataset && document.activeElement.dataset.act === 'plan-input')) renderTask();
+    if(S.lowTab === 'evidence') renderLower();
+  } else renderClassic();
 }
 
 /* ============================ 流程 ============================ */
@@ -970,11 +1061,33 @@ function later(ms, fn){ timers.push(setTimeout(fn, ms)); }
 function seq(steps){ var t = 0; steps.forEach(function(s){ t += s[0]; later(t, s[1]); }); }
 function clearTimers(){ timers.forEach(clearTimeout); timers = []; }
 
+/* 其他 Agent 在后台跑：回归占着真机，多语言在翻 */
+var bgTick = setInterval(function(){
+  var ch = false;
+  if(!S.regDone && !S.realYou && S.reg < 34){ S.reg++; ch = true; }
+  if(S.i18n < 60){ S.i18n = Math.min(60, S.i18n + 2); ch = true; }
+  if(ch) renderBG();
+}, 3000);
+function finishRegression(){
+  var n = 0;
+  (function step(){
+    if(S.realYou){ setTimeout(step, 1000); return; }
+    if(S.reg < 38){ S.reg++; renderBG(); setTimeout(step, 700); return; }
+    S.regDone = true; renderBG();
+    if(S.real === 'queued'){
+      setTimeout(function(){
+        S.real = 'run'; renderReal(); renderBG();
+        setTimeout(function(){ S.real = 'ok'; renderReal(); render(); }, 1600);
+      }, 500);
+    }
+  })();
+}
+
 var PLAN0 = [
   ['去掉 <code>.width(\'50%\')</code>，右半空白的原因', '去掉 .width(\'50%\')，右半空白的原因'],
   ['按断点给列数：sm 1 列（不变）· md 2 列 · lg 3 列', '按断点给列数：sm 1 列（不变）· md 2 列 · lg 3 列'],
   ['ProductCard 长标题在窄列里放两行', 'ProductCard 长标题在窄列里放两行'],
-  ['验证：sm 截图与改前逐像素一致；三台各滑 5 次比帧率', '验证：sm 截图与改前逐像素一致；三台各滑 5 次比帧率']
+  ['验证：sm 截图逐像素一致、真机复核；三台各滑 5 次比帧率', '验证：sm 截图逐像素一致、真机复核；三台各滑 5 次比帧率']
 ];
 function send(){
   var ta = $('#ask'), text = ta.value.trim(); if(!text) return;
@@ -989,8 +1102,9 @@ function send(){
   files.forEach(function(f, i){ later(260 + i * 260, function(){ g.items.push({ ico: 'ai-context', what: '读取 <code>' + f[0] + '</code>', end: f[1] }); S.read.push(f[0]); render(); }); });
   later(1500, function(){
     g.running = false; g.tm = '0.6 s';
+    S.log.push({ id: 'peer', other: true, title: '<b>Agent·多语言</b> 也在改 ProductCard.ets，已订阅它的改动' });
     S.plan = PLAN0.map(function(p){ return { h: p[0], t: p[1], st: '' }; });
-    S.phase = 'plan'; setAgent('waiting', '在等你 · 看一眼计划，可以改'); render();
+    S.phase = 'plan'; setAgent('waiting', '计划好了，等你看一眼'); render();
   });
 }
 function start(){
@@ -998,7 +1112,7 @@ function start(){
   var g = { id: 'w1', title: '改 <b>ListPage.ets</b>：去掉半宽', running: true, items: [] }; S.log.push(g); S.scrollEnd = true; render();
   later(1100, function(){
     g.running = false; g.tm = '0.9 s'; g.items.push({ ico: 'ai-edit', what: '编辑 <code>ListPage.ets:22</code>', end: '0.4 s' });
-    S.plan[0].st = 'done'; S.plan[1].st = 'run'; S.phase = 'waiting'; setAgent('waiting', '在等你 · 大屏多列用哪种写法');
+    S.plan[0].st = 'done'; S.plan[1].st = 'run'; S.phase = 'waiting'; setAgent('waiting', '大屏多列用哪种写法');
     render(); $('#tp-body').scrollTop = 0;
   });
 }
@@ -1006,10 +1120,12 @@ function choose(v){
   clearTimers();
   S.choice = v; S.phase = 'applying'; S.handEdited = false; S.lg = 3; S.cached = 6; S.seen = {};
   S.ev = { build: null, lint: null, dev: null, fps: null }; S.dev = { sm: null, md: null, lg: null };
+  if(S.real !== 'ok') S.real = null;
   ['sm', 'md', 'lg'].forEach(function(f){ st.flag(win(f), null); });
   S.log.push({ id: 'c' + S.log.length, you: true, title: '你选了 <b>' + (v === 'lanes' ? 'List.lanes' : 'GridRow / GridCol') + '</b>' });
   var g = { id: 'w2' + S.log.length, title: '改 <b>ListPage.ets</b>、<b>ProductCard.ets</b>', running: true, items: [] }; S.log.push(g);
   setAgent('generating', '正在改 ListPage.ets · 第 2 处，共 3 处'); S.scrollEnd = true; render();
+  var vid = 'v' + S.log.length;
   seq([
     [900, function(){
       S.applied = true; S.plan[1].st = 'done'; S.plan[2].st = 'run';
@@ -1019,23 +1135,38 @@ function choose(v){
     }],
     [800, function(){
       g.running = false; g.tm = '1.7 s'; g.items.push({ ico: 'ai-edit', what: '编辑 <code>ProductCard.ets:13</code>', end: '0.2 s' });
-      S.plan.forEach(function(p, i){ if(i < 3 || (i > 3)) p.st = 'done'; }); S.plan[3].st = 'run';
+      if(!S.conflict){
+        S.conflict = 'open';
+        S.log.push({ id: 'cf', other: true, title: '<b>ProductCard.ets:13</b> 和 <b>Agent·多语言</b> 撞了：它要 3 行、我要 2 行。已基于它的改动继续，行数排进在等你' });
+      }
+      S.plan.forEach(function(p, i){ if(i !== 3) p.st = 'done'; }); S.plan[3].st = 'run';
       S.phase = 'verifying'; S.ev.build = 'run'; S.evSel = 'build'; S.lowTab = 'evidence';
-      S.log.push({ id: 'v1', title: '构建、检查、在三种形态上验', running: true, items: [] });
+      S.log.push({ id: vid, title: '构建、检查、在三种形态和真机上验', running: true, items: [] });
       setAgent('tool', 'hvigor assembleHap · entry@default'); S.scrollEnd = true; render();
     }],
-    [1100, function(){ S.ev.build = 'ok'; S.ev.lint = 'run'; S.evSel = 'lint'; logItem('v1', 'ai-tool', 'hvigor 构建 <code>entry@default</code>', '8.2 s'); setAgent('tool', 'code-linter · ArkTS 检查'); render(); }],
-    [700, function(){ S.ev.lint = 'ok'; S.ev.dev = 'run'; S.evSel = 'dev'; logItem('v1', 'ai-tool', 'ArkTS 检查 · 0 问题', '0.6 s'); verify('sm', 1); }],
-    [1300, function(){ doneDev('sm'); verify('md', 2); }],
+    [1100, function(){ S.ev.build = 'ok'; S.ev.lint = 'run'; S.evSel = 'lint'; logItem(vid, 'ai-tool', 'hvigor 构建 <code>entry@default</code>', '8.2 s'); setAgent('tool', 'code-linter · ArkTS 检查'); render(); }],
+    [700, function(){ S.ev.lint = 'ok'; S.ev.dev = 'run'; S.evSel = 'dev'; logItem(vid, 'ai-tool', 'ArkTS 检查 · 0 问题', '0.6 s'); verify('sm', 1); }],
+    [1300, function(){
+      doneDev('sm');
+      if(S.real !== 'ok'){
+        S.real = S.regDone ? 'run' : 'queued';
+        logItem(vid, 'ws-phone', '真机复核要用 Mate 70 Pro：' + (S.regDone ? '空闲，直接用' : '被 <b>Agent·回归</b> 占着（' + S.reg + '/38），排队，先验 md / lg'), '');
+        stageFocus('real', { kind: 'lease', text: 'Mate 70 Pro 真机被 Agent·回归 占用 · ' + S.reg + '/38 · 真机复核排队，先验 md / lg' });
+        renderReal(); render();
+      }
+    }],
+    [1300, function(){ verify('md', 2); }],
     [1300, function(){ doneDev('md'); verify('lg', 3); }],
     [1300, function(){
       doneDev('lg'); S.ev.dev = 'ok'; S.ev.fps = v === 'lanes' ? 'ok' : 'warn'; S.evSel = 'fps';
-      var grp = findLog('v1'); grp.running = false; grp.tm = '6.1 s';
-      S.plan[3].st = 'done'; st.clear(); $$('.ws-win').forEach(function(w){ w.classList.remove('checking'); });
+      var grp = findLog(vid); if(grp){ grp.running = false; grp.tm = '6.1 s'; }
+      S.plan[3].st = 'done'; st.clear();
       if(v === 'grid'){ st.flag(win('lg'), 'broken', '滑动 96 fps'); st.flag(win('sm'), 'broken', '滑动 104 fps'); }
       S.phase = 'review'; S.lowTab = 'changes';
-      setAgent(v === 'lanes' ? 'done' : 'waiting', v === 'lanes' ? '完成 · 需要你看 2 处' : '在等你 · 平板滑动掉到 96 fps');
+      setAgent('done', v === 'lanes' ? '完成 · 需要你看 ' + needCount() + ' 处' : '改完了，但滑动掉帧');
       S.scrollEnd = true; render();
+      if(S.real === 'queued' && !S.regDone) setTimeout(finishRegression, 2500);
+      else if(S.real === 'run') setTimeout(function(){ S.real = 'ok'; renderReal(); render(); }, 1600);
     }]
   ]);
 }
@@ -1049,12 +1180,22 @@ function verify(f, i){
 }
 function doneDev(f){
   S.dev[f] = S.choice === 'grid' && f !== 'md' ? 'bad' : 'ok';
-  logItem('v1', 'ai-verify', '在 ' + FORMS[f].full + ' 上验：' + (f === 'sm' ? '与改前逐像素一致' : (f === 'md' ? '2' : S.lg) + ' 列，无溢出'), '1.2 s');
+  var grp = S.log.filter(function(g){ return /^v/.test(g.id); }).pop();
+  if(grp) grp.items.push({ ico: 'ai-verify', what: '在 ' + FORMS[f].full + ' 上验：' + (f === 'sm' ? '与改前逐像素一致' : (f === 'md' ? '2' : S.lg) + ' 列，无溢出'), end: '1.2 s' });
+}
+
+/* 两个 Agent 撞在同一行：你定 */
+function resolve(v){
+  S.conflict = v;
+  S.log.push({ id: 'rs' + S.log.length, you: true, title: '你定了 ProductCard 标题最多 <b>' + v + ' 行</b>（' + (v === '2' ? '按列表' : '按多语言') + '），两个 Agent 都已同步' });
+  hotReload(['md', 'lg']);
+  if(S.phase === 'review') setAgent('done', '完成 · 需要你看 ' + needCount() + ' 处');
+  render();
 }
 
 /* 接手：编辑器就地分栏打开，定位到行 */
 function takeover(file, line, focusLg){
-  S.task = 'grid'; S.lowTab = 'changes'; S.pick = null; $('#pick').hidden = true;
+  S.task = 'grid'; S.lowTab = 'changes'; $('#pick').hidden = true;
   $$('.card.picked').forEach(function(c){ c.classList.remove('picked'); });
   S.editor = { open: true, file: file, line: line };
   if(S.view !== 'ws') shell.setView('ws');
@@ -1064,14 +1205,14 @@ function takeover(file, line, focusLg){
 function onNum(input){
   var v = parseInt(input.value, 10);
   if(!(v >= 1 && v <= 6) || v === S.lg) return;
-  var old = S.lg; S.lg = v; S.handEdited = true;
+  S.lg = v; S.handEdited = true;
   hotReload(['lg']);
   clearTimers();
   if(S.choice === 'lanes') S.cached = 6;
   render();
-  later(900, function(){ incorporate(old, v); });
+  later(900, function(){ incorporate(v); });
 }
-function incorporate(old, v){
+function incorporate(v){
   S.phase = 'handedit';
   S.log.push({ id: 'h' + S.log.length, you: true, title: '你改了 <b>ListPage.ets:' + lgLineNo() + '</b> · lg ' + S.lgAI + ' → ' + v });
   var g = { id: 'inc' + S.log.length, title: '接着你的手改：' + (S.choice === 'lanes' ? '预取行数、重验平板' : '重验平板'), running: true, items: [] }; S.log.push(g);
@@ -1088,7 +1229,7 @@ function incorporate(old, v){
       S.dev.lg = S.choice === 'grid' ? 'bad' : 'ok'; S.ev.fps = S.choice === 'grid' ? 'warn' : 'ok';
       g.running = false; g.tm = '2.3 s'; g.items.push({ ico: 'ai-verify', what: '在 MatePad Pro 13.2 上重验：' + v + ' 列，滑动 ' + fpsAfter().lg + ' fps', end: '1.4 s' });
       $$('.ws-win').forEach(function(w){ w.classList.remove('checking'); }); S.cue = { kind: 'cursor', text: 'lg → MatePad Pro 13.2' }; renderCue();
-      S.phase = 'done'; setAgent(S.choice === 'grid' ? 'waiting' : 'done', S.choice === 'grid' ? '在等你 · 平板仍掉帧' : '完成 · 商品列表按断点多列');
+      S.phase = 'done'; setAgent('done', S.choice === 'grid' ? '平板仍掉帧' : '完成 · 商品列表按断点多列');
       S.scrollEnd = true; render();
     }]
   ]);
@@ -1104,22 +1245,32 @@ function pickCard(card, ev){
   p.innerHTML = '<div class="ai-pop"><div class="ai-pop__ctx"><svg class="ai-ico" style="width:14px;height:14px"><use href="#ai-g-cursor"/></svg>ProductCard · 第 ' + (i + 1) + ' 项 · ' + FORMS[f].name + ' · <code>ListPage.ets:' + line + '</code></div>'
     + '<div class="ai-pop__ctx" style="color:var(--ui-fg)">这块的列数来自 <code>' + what + '</code></div>'
     + '<div class="row"><button type="button" class="ai-btn ai-btn--fill" data-act="takeover" data-h="' + (S.applied ? 'lg' : 'h0') + '" data-f="ListPage.ets" data-l="' + line + '"><svg><use href="#ai-g-pencil"/></svg>接手改代码</button>'
-    + '<button type="button" class="ai-btn" data-act="ask-el" data-f="' + f + '"><svg><use href="#ai-chat"/></svg>让 Agent 改…</button><span style="flex:1"></span><button type="button" class="ai-btn ai-btn--quiet" data-act="pick-x">Esc</button></div></div>';
+    + '<button type="button" class="ai-btn" data-act="ask-el" data-f="' + f + '"><svg><use href="#ai-chat"/></svg>让 Agent 改…</button></div></div>';
   p.hidden = false;
   var x = ev.clientX - sr.left + 12, y = ev.clientY - sr.top + 12;
-  p.style.left = Math.min(x, sr.width - 310) + 'px'; p.style.top = Math.min(y, sr.height - 140) + 'px';
+  p.style.left = Math.max(8, Math.min(x, sr.width - 310)) + 'px'; p.style.top = Math.max(8, Math.min(y, sr.height - 130)) + 'px';
+}
+function closePick(){ $('#pick').hidden = true; $$('.card.picked').forEach(function(c){ c.classList.remove('picked'); }); }
+/* 你拿起真机：占用它的 Agent 让路 */
+function touchReal(){
+  if(S.regDone && S.real !== 'queued'){ return; }
+  S.realYou = true; renderReal(); renderBG();
+  stageFocus('real', { kind: 'you', text: '你在用 Mate 70 Pro：Agent·回归 已暂停在 ' + S.reg + '/38，你用完它接着跑' });
 }
 
 /* ============================ 事件 ============================ */
 document.addEventListener('click', function(e){
   var card = e.target.closest('.ws-win .card');
-  if(card && !card.closest('.ds-side')){ e.stopPropagation(); pickCard(card, e); return; }
-  if(!e.target.closest('#pick') && !$('#pick').hidden && !e.target.closest('.card')){ $('#pick').hidden = true; $$('.card.picked').forEach(function(c){ c.classList.remove('picked'); }); }
+  if(card && !card.closest('.ds-side') && !card.closest('#w-real')){ e.stopPropagation(); pickCard(card, e); return; }
+  var real = e.target.closest('#w-real .wc');
+  if(real && !e.target.closest('.ds-side')){ touchReal(); return; }
+  if(!e.target.closest('#pick') && !$('#pick').hidden) closePick();
   var a = e.target.closest('[data-act]'); if(!a) return;
   var act = a.dataset.act;
   switch(act){
     case 'navtab': S.navTab = a.dataset.t; renderNav(); break;
     case 'task': S.task = a.dataset.id; if(S.view === 'classic') shell.setView('ws'); render(); if(S.task === 'grid') setTimeout(scaleApps, 0); break;
+    case 'q': openQueue(a.dataset.q); break;
     case 'eg': $('#ask').value = '商品列表在折叠屏展开和平板上只占左半，改成按断点多列，并保证手机不变'; $('#ask').focus(); break;
     case 'eg2': $('#ask').value = '购物车页适配深色模式'; $('#ask').focus(); break;
     case 'start': start(); break;
@@ -1128,11 +1279,13 @@ document.addEventListener('click', function(e){
     case 'plan-add': S.plan.push({ h: '', t: '', st: '', editing: true }); S.planEdited++; render(); var ni = $('#tp-body [data-act="plan-input"]'); if(ni) ni.focus(); break;
     case 'choose': choose(a.dataset.v); break;
     case 'redo': choose('lanes'); break;
+    case 'rtl': S.rtl = a.dataset.v; render(); break;
+    case 'resolve': resolve(a.dataset.v); break;
     case 'lowtab': S.lowTab = a.dataset.t; if(S.view !== 'ws') shell.setView('ws'); renderLower(); break;
     case 'only': S.onlyNeed = a.dataset.v === '1'; renderLower(); break;
     case 'seen': S.seen[a.dataset.h] = true; render(); break;
     case 'takeover': takeover(a.dataset.f || 'ListPage.ets', +a.dataset.l || 22, a.dataset.h === 'lg'); break;
-    case 'ed-close': S.editor.open = false; S.cue = null; st.clear(); render(); break;
+    case 'ed-close': S.editor.open = false; S.cue = null; st.clear(); render(); setTimeout(scaleApps, 300); break;
     case 'ev': S.evSel = a.dataset.k; if(S.view !== 'ws'){ S.lowTab = 'evidence'; shell.setView('ws'); } renderLower(); break;
     case 'show': stageFocus(a.dataset.f, null); break;
     case 'tile': st.clear(); break;
@@ -1140,22 +1293,29 @@ document.addEventListener('click', function(e){
     case 'win': if(!a.closest('.ds-side')) stageFocus(a.closest('.ws-win').dataset.form, null); break;
     case 'rerun': hotReload(['sm', 'md', 'lg']); break;
     case 'pin': S.pin = !S.pin; renderCue(); break;
-    case 'pick-x': $('#pick').hidden = true; $$('.card.picked').forEach(function(c){ c.classList.remove('picked'); }); break;
-    case 'ask-el': $('#pick').hidden = true; $('#ask').value = '@ProductCard（' + FORMS[a.dataset.f].full + '）'; $('#ask').focus(); break;
+    case 'real-done': S.realYou = false; S.cue = null; renderCue(); st.clear(); renderReal(); renderBG(); break;
+    case 'ask-el': closePick(); $('#ask').value = '@ProductCard（' + FORMS[a.dataset.f].full + '）'; $('#ask').focus(); break;
     case 'openfile': takeover(a.dataset.f, a.dataset.f === 'ListPage.ets' ? (S.applied ? lgLineNo() : 22) : a.dataset.f === 'ProductCard.ets' ? 13 : 1, false); break;
     case 'fulltree': S.fullTree = !S.fullTree; renderNav(); break;
     case 'cfile': S.classicFile = a.dataset.f; renderClassic(); break;
     case 'commit': S.committed = true; setAgent('done', '已提交 · feature/grid-list'); render(); break;
-    case 'retry-cold': OTHER[2].state = 'verifying'; OTHER[2].sub = '在 Mate 70 Pro 上抓启动 trace'; OTHER[2].lead = '重试中：接着第 2 步，在 Mate 70 Pro 上冷启动 5 次抓 trace。'; OTHER[2].ev = [['ok', '构建'], ['run', '启动 trace']]; render(); break;
+    case 'retry-cold':
+      Object.defineProperty(OTHER.cold, 'state', { value: 'todo', configurable: true });
+      OTHER.cold.sub = '排队 · 等真机空出来'; OTHER.cold.lead = '重试已排队：真机现在归 Agent·回归，它用完就轮到这条，接着第 2 步抓 trace。'; OTHER.cold.ev = [['ok', '构建'], ['todo', '启动 trace · 排队']]; render(); break;
   }
 });
+function openQueue(id){
+  var x = queue().filter(function(q){ return q.id === id; })[0];
+  S.task = x ? x.task : 'grid';
+  if(S.view !== 'ws') shell.setView('ws');
+  if(id === 'conflict'){ S.task = 'grid'; S.lowTab = 'changes'; S.onlyNeed = true; }
+  render(); setTimeout(scaleApps, 0);
+  if(id === 'conflict'){ var h = $('#hk-h3'); if(h) $('#lw-main').scrollTop = h.offsetTop - 50; }
+  else { var w = $('#tp-body .ws-wait') || $('#plan-blk') || $('#answer'); if(w) w.scrollIntoView({ block: 'nearest' }); }
+}
 $('#send').addEventListener('click', send);
 $('#ask').addEventListener('keydown', function(e){ if(e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); send(); } });
-shell.onCapsule(function(){
-  if(S.task !== 'grid'){ S.task = 'grid'; }
-  if(S.view !== 'ws') shell.setView('ws');
-  render(); var w = $('#wait-card') || $('#plan-blk') || $('#answer'); if(w) w.scrollIntoView({ block: 'nearest' });
-});
+shell.onCapsule(function(){ var q = queue(); openQueue(q.length && q[0].block >= 2 ? q[0].id : 'grid'); });
 document.addEventListener('input', function(e){ if(e.target.classList && e.target.classList.contains('ws-num')) onNum(e.target); });
 document.addEventListener('focusin', function(e){
   if(e.target.classList && e.target.classList.contains('ws-num') && S.view === 'ws' && !S.pin){
@@ -1168,7 +1328,7 @@ document.addEventListener('keydown', function(e){
     if(e.key === 'Enter'){ savePlan(t); }
     if(e.key === 'Escape'){ var p = S.plan[+t.dataset.i]; p.editing = false; if(!p.t) S.plan.splice(+t.dataset.i, 1); render(); e.preventDefault(); }
   }
-  if(e.key === 'Escape' && !$('#pick').hidden){ $('#pick').hidden = true; $$('.card.picked').forEach(function(c){ c.classList.remove('picked'); }); }
+  if(e.key === 'Escape' && !$('#pick').hidden) closePick();
 });
 document.addEventListener('focusout', function(e){ var t = e.target; if(t.dataset && t.dataset.act === 'plan-input') savePlan(t); });
 function savePlan(t){
@@ -1186,15 +1346,16 @@ window.__ws = { S: S, st: st };
 
 DemoGuide.init([
   { target: '#send', kind: 'click', pos: 'top', label: '把这句需求交给 Agent' },
-  { target: '#ws-task .ws-wait', kind: 'click', pos: 'right', label: '它在等你拍板：选一种写法' },
-  { target: '#stage', kind: 'change', pos: 'bottom', label: '它验哪台，哪台上台' },
+  { target: '#q .q-item', kind: 'click', pos: 'right', label: '所有 Agent 在等你的，排成一队' },
+  { target: '#stage', kind: 'change', pos: 'bottom', label: '它验哪台，哪台上台；真机谁占着' },
   { target: '#ws-lower [data-act="takeover"][data-h="lg"]', kind: 'click', pos: 'left', label: '接手：就地改这一行' },
   { target: '#view-switch', kind: 'click', pos: 'bottom', label: '同一个任务，切到编辑视图' }
 ], { scene: {
   at: '让 Agent 把商品列表改成折叠屏、平板上多列',
   goal: '大屏多列、手机不变，而且敢合进主干',
   pain: '它改完你得开三台模拟器挨个看、翻文件树找改动',
-  fix: '任务、待拍板、运行结果、改动、证据一屏看完，代码按需接手'
+  fix: '任务、待拍板、运行结果、改动、证据一屏看完，代码按需接手',
+  agent: '它改码、三形态验；多 Agent 共排一个在等你队列、真机按租约排队，你只拍板'
 } });
 })();
 </script>
