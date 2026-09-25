@@ -18,7 +18,6 @@
   .ide > .body{grid-row:3}
   .ide > .status{grid-row:4}
   .ide[data-ide-theme]{--proj-w:clamp(400px,34vw,520px)}
-  .ide[data-ide-theme="light"]:not([data-light-header="1"]) #hdr-agent{--ai-surface-2:#393B40;--ai-wait-ink:#F5B64F;--ai-wait-tint:rgba(245,165,36,.16);--ai-ink:#B69CFF;--ui-fg:#DFE1E5;--ui-fg-info:#9DA0A8;--ui-icon:#CED0D6}
   #hdr-agent .ai-status .agt{color:var(--ai-ink)}
   /* 上下文占用：一条细条钉在会话顶部，谁占了多少用灰阶分段（不用蓝 / 紫，那是按钮和 AI 的颜色）；明细收进展开区 */
   .ctx-slim{flex:none;margin:8px 12px 0;display:flex;flex-direction:column;gap:4px}
@@ -84,7 +83,7 @@
   /* 输入框：ai.css 智能输入框 */
   .ai-field.in8{margin:6px 12px 4px;flex:none}
   .ai-field.in8 .ai-field__ctx .grow{flex:1}
-  .ai-field.in8 .ai-toggle svg{width:12px;height:12px}
+  .ai-field.in8 .ai-toggle svg{width:12px;height:12px;color:currentColor}
   /* ===== 鸿蒙电脑版：长任务结论上实况窗（本机 + Mate 70 Pro），点开回 IDE ===== */
   .ide[data-ide-theme]{--desk-w:clamp(360px,24vw,392px)}
   .ide{grid-template-columns:minmax(0,1fr);transition:padding .45s cubic-bezier(.2,.8,.2,1)}
@@ -301,17 +300,18 @@
   document.getElementById('code').innerHTML=DemoFrame.code('ListPage.ets',{cur:28,hl:[28]});
   DemoFrame.init({device:'HUAWEI Mate 70 Pro',deviceIcon:'#i-phone',pos:'28:12',
     stripeLeft:[{left:'agent',icon:'#i-genie',title:'DevEco Code'},{left:'project',icon:'#i-tw-project',title:'Project|Alt+1'},{left:'structure',icon:'#i-tw-structure',title:'Structure|Alt+7'},{more:1},{gap:1},{bottom:'build',icon:'#i-tw-build',title:'Build'},{bottom:'log',icon:'#i-tw-device',title:'Log'},{bottom:'services',icon:'#i-tw-todo',title:'Services|Alt+8'},{bottom:'problems',icon:'#i-tw-problems',title:'Problems|Alt+6'},{bottom:'run',icon:'#i-tw-services',title:'Run|Alt+4'},{bottom:'terminal',icon:'#i-tw-terminal',title:'Terminal|Alt+F12'},{bottom:'debug',icon:'#i-info',title:'Debug|Alt+5'},{bottom:'vcs',icon:'#i-vcs',title:'Version Control|Alt+9'}],
-    stripeRight:[{right:'notifications',icon:'#i-tw-notifications',title:'Notifications',dot:1},{right:'project',icon:'#i-tw-project',title:'Project|Alt+1'},{right:'docs',icon:'#i-hdoc',title:'HarmonyOS Docs'},{right:'inspector',icon:'#i-pen',title:'Code Review'},{right:'web',icon:'#i-puzzle',title:'Extensions'},{right:'previewer',icon:'#i-tw-preview',title:'Previewer'},{more:1},{right:'devices',icon:'#i-phone',title:'Device Manager'}],
-    onReady:function(){
-    $('#status-slot').innerHTML='<span class="dm-capsule" id="cap-ctx" title="上下文占用 · 谁占了多少见 DevEco Code 顶部"><svg class="i" style="width:12px;height:12px"><use href="#i-gauge"/></svg>上下文 <b id="cap-pct">68%</b><span class="bar"><i id="cap-bar" style="--v:68%"></i></span></span>';
-  }});
+    stripeRight:[{right:'notifications',icon:'#i-tw-notifications',title:'Notifications',dot:1},{right:'project',icon:'#i-tw-project',title:'Project|Alt+1'},{right:'docs',icon:'#i-hdoc',title:'HarmonyOS Docs'},{right:'inspector',icon:'#i-pen',title:'Code Review'},{right:'web',icon:'#i-puzzle',title:'Extensions'},{right:'previewer',icon:'#i-tw-preview',title:'Previewer'},{more:1},{right:'devices',icon:'#i-phone',title:'Device Manager'}]});
+
+  var M='<svg class="i ai-ico"><use href="#ai-mark"/></svg>';
+  var OK='<svg class="i ai-ico ok"><use href="#i-checkS"/></svg>';
+  function ic2(id){return '<svg class="i"><use href="#'+id+'"/></svg>'}
+  function tr(st,what,end,id){return '<div class="ai-toolrow"'+(id?' data-s="'+id+'"':'')+'>'+(st==='done'?OK:st==='run'?'<span class="ai-ring"></span>':'<span class="todo"></span>')+'<span class="what">'+what+'</span><span class="end">'+(end||'')+'</span></div>';}
 
   /* 上下文占比：手动压缩 → 对话段大幅缩，读过的文件与工具输出也跟着瘦 */
   function setCtx(v){
     var total=v.a+v.b+v.c+v.d;
     ['a','b','c','d'].forEach(function(k){$('#ctx-bar i.'+k).style.setProperty('--v',v[k]+'%');$('#ctx-legend b[data-k="'+k+'"]').textContent=v[k]+'%'});
     $('#ctx-title').textContent=total+'%';
-    var p=$('#cap-pct'),b=$('#cap-bar');if(p)p.textContent=total+'%';if(b)b.style.setProperty('--v',total+'%');
   }
   $('#btn-compress').addEventListener('click',function(){
     var btn=this;if(btn.disabled)return;btn.disabled=true;btn.innerHTML='<span class="spin" style="width:10px;height:10px"></span>';
@@ -330,10 +330,11 @@
   });
 
   /* 结论先行开关：只影响过程折不折，警告与危险操作不受影响 */
+  function tog(b){var on=b.getAttribute('aria-pressed')!=='true';b.setAttribute('aria-pressed',String(on));return on;}
   $('#tog-concl').addEventListener('click',function(){
-    var on=this.classList.toggle('on');
-    $('#fold').open=!on;
-    $('#ans-step').textContent=on?'结论先行 · 过程已收起，展开可看全部推理':'完整形态 · 过程全部展开';
+    var on=tog(this);
+    $$('#ai-thread .ai-answer details').forEach(function(d){d.open=!on;});
+    $('#ans-step').textContent=on?'过程已收起':'完整形态 · 过程全部展开';
     $('#ai-scroll').scrollTop=0;
   });
 
@@ -347,59 +348,75 @@
     $('#chg-list').insertAdjacentHTML('beforeend','<div class="dm-item"><svg class="i"><use href="#i-json"/></svg><span class="grow">oh-package.json5</span><span class="cnt"><span class="add">+1</span> <span class="del">−1</span></span></div>');
   });
 
-  /* 危险操作：确认 / 取消 */
+  /* ========== 统一的「在等你」：多个 Agent 的危险操作都在 IDE 里等；胶囊、实况窗只推最挡路的一件 ========== */
+  var LV={st:'idle',n:0,total:42,t0:52,opened:false,dangerDone:null},DEL=null;
+  function queue(){
+    var q=[];
+    if(LV.st==='done'&&LV.dangerDone==null)q.push({id:'co-long',who:'Agent·回归',title:'卸载重装 Mate 70 Pro',cap:'卸载重装 Mate 70 Pro',block:3,how:'挡住回归收尾'});
+    if(DEL==null)q.push({id:'co-del',who:'Agent·调优',title:'删 LegacyCache.ets',cap:'删 LegacyCache.ets',block:2,how:'挡住它收尾'});
+    return q.sort(function(a,b){return b.block-a.block;});
+  }
+  function goWait(id){var el=$('#'+id);if(!el)return;scrollToEl(el);el.classList.remove('flash');void el.offsetWidth;el.classList.add('flash');}
+  function renderAgent(){
+    var q=queue(),top=q[0];
+    if(top){DemoFrame.agent('waiting','在等你 · '+top.cap+' <span class="act">去看</span>',{queue:q.length-1,onClick:function(){goWait(top.id);}});return;}
+    if(LV.st==='run'){DemoFrame.agent('verifying','<span class="agt">Agent·回归</span> 3 台设备 · UI 用例 '+LV.n+'/42');return;}
+    DemoFrame.agent('done',LV.st==='done'?'回归 42/42 · 列表掉帧 9 → 0':'Agent·调优 · 列表卡顿已修');
+  }
+  renderAgent();
+
+  /* 危险操作：确认 / 取消（只在 IDE 里做） */
+  function resolveCard(id,ok,title,body){
+    var co=$('#'+id);co.classList.add('done');
+    $('.ai-approve__h',co).innerHTML=(ok?ic2('i-checkS'):ic2('i-undo'))+'<span>'+title+'</span>';
+    var c=$('.ai-approve__cmd',co);if(c)c.remove();
+    $('.ai-approve__why',co).innerHTML=body;
+    var a=$('.ai-approve__act',co);if(a)a.remove();
+  }
   $('#btn-del').addEventListener('click',function(){
-    var co=$('#co-del');co.classList.remove('err');co.classList.add('ok');
-    $('use',$('svg.lead',co)).setAttribute('href','#i-check');
-    $('#del-t').textContent='已删除 LegacyCache.ets';
-    $('#del-b').innerHTML='已删除 <code>LegacyCache.ets</code>，3 处引用已改：<code>ItemSource.ets</code> <code>ListPage.ets</code> <code>EntryAbility.ets</code>。';
-    $('#del-acts').remove();
+    DEL='ok';resolveCard('co-del',true,'已删除 LegacyCache.ets','3 处引用已改：<code>ItemSource.ets</code> <code>ListPage.ets</code> <code>EntryAbility.ets</code>。');
     $('#chg-list').insertAdjacentHTML('beforeend','<div class="dm-item"><svg class="i"><use href="#i-ets"/></svg><span class="grow">LegacyCache.ets</span><span class="cnt"><span class="del">−41</span></span></div>');
+    renderAgent();refreshLive();
   });
   $('#btn-cancel').addEventListener('click',function(){
-    var co=$('#co-del');co.classList.remove('err');
-    $('use',$('svg.lead',co)).setAttribute('href','#i-undo');
-    $('#del-t').textContent='已取消';
-    $('#del-b').innerHTML='<code>LegacyCache.ets</code> 保留，3 处引用不动。';
-    $('#del-acts').remove();
+    DEL='no';resolveCard('co-del',false,'已取消','<code>LegacyCache.ets</code> 保留，3 处引用不动。');
+    renderAgent();refreshLive();
   });
 
   /* =====================================================================
      鸿蒙电脑版：长任务结论上实况窗
-     跑长任务 → 本机状态栏胶囊 + Mate 70 Pro 锁屏实况窗显示进度 →
-     结束推「一句话结论」→ 点开回到 IDE 的完整回答；危险操作不走实况窗，只在 IDE 确认
+     交给 Agent·回归 → 本机状态栏胶囊 + Mate 70 Pro 锁屏实况窗显示进度 →
+     结束推「一句话结论」+ 队首那一件在等你 → 点开回到 IDE；危险操作不走实况窗，只在 IDE 确认
      ===================================================================== */
-  var LV={st:'idle',n:0,total:42,t0:52,opened:false,dangerDone:null};
   var SUMMARY='41/42 通过，列表掉帧 9 → 0；1 条失败是 Mate 70 Pro 上的旧数据，要卸载重装。';
-  function ic2(id){return '<svg class="i"><use href="#'+id+'"/></svg>'}
   function clock(){var m=LV.t0+Math.floor(LV.n/42*6);return '10:'+(m<10?'0':'')+m}
-  function el2(n){var k=Math.round(LV.n/LV.total*372);var mm=Math.floor(k/60),ss=k%60;return mm+':'+(ss<10?'0':'')+ss}
+  function el2(){var k=Math.round(LV.n/LV.total*372);var mm=Math.floor(k/60),ss=k%60;return mm+':'+(ss<10?'0':'')+ss}
   function renderLive(){
-    var pc=$('#lv-pc'),pct=Math.round(LV.n/LV.total*100)+'%',run=LV.st==='run',done=LV.st==='done';
+    var pc=$('#lv-pc'),pct=Math.round(LV.n/LV.total*100)+'%',run=LV.st==='run';
+    var q=queue(),top=q[0],more=q.length>1?'还有 '+(q.length-1)+' 件在 IDE 队列里':'';
     $('#pc-time').textContent=clock();
-    /* 胶囊 */
-    var cap=$('#lv-cap');cap.classList.toggle('done',!run);
-    $('#lv-cap-t').textContent=run?'回归 '+LV.n+'/42':(LV.dangerDone==='ok'?'42/42 通过':'回归完成');
+    /* 胶囊：进行中显示进度；有在等你的就换成琥珀，只写队首 */
+    var cap=$('#lv-cap');cap.classList.toggle('wait',!run&&!!top);
+    $('#lv-cap-t').textContent=run?'回归 '+LV.n+'/42':(top?'等你 '+q.length:(LV.dangerDone==='ok'?'42/42 通过':'回归完成'));
     $('#lv-cap-p').style.setProperty('width',run?pct:'100%');
-    /* 电脑卡片 */
-    var danger=LV.dangerDone==null
-      ?'<div class="lv-d">'+ic2('i-hand')+'<span>1 项危险操作等你确认 · 只能回 IDE 确认</span></div>'
+    var head=run?'':(LV.dangerDone==='ok'?'42/42 通过，列表掉帧 9 → 0。':SUMMARY);
+    var wait=top?'<div class="lv-d"><span class="ai-wait-dot"></span><span>在等你 · '+top.who+' '+top.title+' · 只能回 IDE 确认<span class="more">'+more+'</span></span></div>'
       :'<div class="lv-d ok">'+ic2('i-checkS')+'<span>'+(LV.dangerDone==='ok'?'已在 IDE 确认：卸载重装，重跑通过':'已在 IDE 取消：Mate 70 Pro 保持原样')+'</span></div>';
-    pc.innerHTML='<div class="lv-h"><span class="ap"><svg><use href="#i-genie"/></svg></span><b>DevEco Code</b>· 全量回归<span class="grow"></span>'+(run?'进行中':'刚刚')+'</div>'
+    pc.innerHTML='<div class="lv-h"><span class="ap"><svg><use href="#ai-mark"/></svg></span><b>DevEco Code</b>· Agent·回归<span class="grow"></span>'+(run?'进行中':'刚刚')+'</div>'
       +(run
         ?'<div class="lv-t">UI 用例 '+LV.n+' / 42</div><div class="lv-p" style="--p:'+pct+'"><i></i></div><div class="lv-m"><span>Mate 70 Pro · MatePad Pro · 本机</span><span>已用 '+el2()+'</span></div>'
-        :'<div class="lv-t">'+(LV.dangerDone==='ok'?'42/42 通过，列表掉帧 9 → 0。':SUMMARY)+'</div>'+danger
-          +'<div class="lv-f"><span class="btn sm'+(LV.opened?'':' primary')+'">'+(LV.opened?'已在 DevEco Studio 打开':'打开 DevEco Studio 看完整回答')+'</span></div>');
-    /* 手机锁屏 */
+        :'<div class="lv-t">'+head+'</div>'+wait
+          +'<div class="lv-f"><span class="btn sm">'+(LV.opened?'已在 DevEco Studio 打开':'打开 DevEco Studio 看完整回答')+'</span></div>');
+    /* 手机锁屏：同一件，只推队首 */
     var card=run
       ?'<div class="t">全量回归 · '+LV.n+' / 42</div><div class="p" style="--p:'+pct+'"><i></i></div><div class="m"><span>3 台设备</span><span>已用 '+el2()+'</span></div>'
-      :'<div class="t">'+(LV.dangerDone==='ok'?'全量回归 · 已处理完':'全量回归 · 完成')+'</div><div class="s">'+(LV.dangerDone==='ok'?'42/42 通过，列表掉帧 9 → 0。':SUMMARY)+'</div>'
-        +(LV.dangerDone==null?'<div class="d"><svg><use href="#i-lock"/></svg><span>有 1 项危险操作，需在电脑上确认</span></div>':'<div class="d ok"><svg><use href="#i-checkS"/></svg><span>已在电脑上处理</span></div>')
+      :'<div class="t">'+(LV.dangerDone==='ok'?'全量回归 · 已处理完':'全量回归 · 完成')+'</div><div class="s">'+head+'</div>'
+        +(top?'<div class="d"><svg viewBox="0 0 16 16"><use href="#i-lock"/></svg><span>'+top.who+' 等你：'+top.title+'，需在电脑上确认'+(more?'<small>'+more+'</small>':'')+'</span></div>':'<div class="d ok"><svg viewBox="0 0 16 16"><use href="#i-checkS"/></svg><span>已在电脑上处理</span></div>')
         +'<div class="o'+(LV.opened?' dim':'')+'">'+(LV.opened?'已在电脑上打开':'在电脑上查看完整回答')+'</div>';
     $('#lph-in').innerHTML='<div class="sb"><span>中国移动</span><span class="hole"></span><span class="ri"><span class="sig"><i style="height:5px"></i><i style="height:8px"></i><i style="height:11px"></i><i style="height:13px"></i></span><span class="bat"><i></i></span></span></div>'
       +'<div class="lk"><svg viewBox="0 0 16 16"><rect x="3.5" y="7.5" width="9" height="6" rx="1" stroke="currentColor" fill="none"/><path d="M5.5 7.5V5.5a2.5 2.5 0 0 1 5 0v2" stroke="currentColor" fill="none"/></svg></div>'
       +'<div class="clk">'+clock()+'</div><div class="dt">9月24日 星期四</div>'
-      +'<div class="card" id="lv-ph" role="button" tabindex="0"><div class="h"><span class="ap"><svg><use href="#i-genie"/></svg></span><b>DevEco Code</b><span class="grow"></span>'+(run?'进行中':'刚刚')+'</div>'+card+'</div>'
+      +'<div class="card" id="lv-ph" role="button" tabindex="0"><div class="h"><span class="ap"><svg><use href="#ai-mark"/></svg></span><b>DevEco Code</b><span class="grow"></span>'+(run?'进行中':'刚刚')+'</div>'+card+'</div>'
       +'<i class="gb"></i>';
   }
   function fitPhone(){
@@ -408,19 +425,20 @@
     var sw=w-12,sh=h-12;$('#lph-scr').style.width=sw+'px';$('#lph-scr').style.height=sh+'px';
     $('#lph-in').style.transform='scale('+(sw/360)+')';$('#lph-in').style.height=Math.round(sh/(sw/360))+'px';
   }
-  function showDesk(){if(!$('#tog-live').classList.contains('on'))return;$('#ide').classList.add('desk-on');renderLive();requestAnimationFrame(fitPhone)}
+  function liveOn(){return $('#tog-live').getAttribute('aria-pressed')==='true';}
+  function showDesk(){if(!liveOn())return;$('#ide').classList.add('desk-on');renderLive();requestAnimationFrame(fitPhone)}
+  function refreshLive(){if($('#ide').classList.contains('desk-on')&&LV.st!=='idle'){renderLive();requestAnimationFrame(fitPhone)}}
 
   function scrollToEl(el){var sc=$('#ai-scroll');sc.scrollTop=Math.max(0,el.offsetTop-12)}
   function longAnswerHTML(){
-    return '<div class="step"><svg class="i"><use href="#i-collapseAll"/></svg><span>结论先行 · 过程已收起 · 实况窗只推了第一句</span></div>'
-      +'<div class="md">'
-      +'<p class="concl"><b>'+SUMMARY+'</b></p>'
+    return '<div class="ai-answer__meta">'+M+'<span><span class="agt">Agent·回归</span> · 过程已收起 · 实况窗只推了第一句</span></div>'
+      +'<p class="ai-answer__lead">'+SUMMARY+'</p>'
       +'<div class="cl-h">改动清单</div>'
-      +'<div class="dm-card chg"><div class="dm-list">'
+      +'<div class="chg">'
       +'<div class="dm-item"><svg class="i"><use href="#i-json"/></svg><span class="grow">perf/baseline.json5</span><span class="cnt"><span class="add">+12</span> <span class="del">−12</span></span></div>'
       +'<div class="dm-item"><svg class="i"><use href="#i-ets"/></svg><span class="grow">ohosTest/ListPage.test.ets</span><span class="cnt"><span class="add">+8</span> <span class="del">−0</span></span></div>'
-      +'</div></div>'
-      +'<details class="dm-fold long-fold"><summary>过程 · 9 步 · 3 台设备</summary><div class="fb">'
+      +'</div>'
+      +'<details'+($('#tog-concl').getAttribute('aria-pressed')==='true'?'':' open')+'><summary>过程 · 9 步 · 3 台设备</summary><div>'
       +'<div class="pl"><i>1</i><span><code>hvigorw assembleHap --mode release</code>，38 s</span></div>'
       +'<div class="pl"><i>2</i><span><code>hdc install</code> 到 Mate 70 Pro、MatePad Pro 13.2、本机</span></div>'
       +'<div class="pl"><i>3</i><span>跑 <code>ohosTest</code> 42 条 UI 用例，三台并行</span></div>'
@@ -430,79 +448,77 @@
       +'<div class="pl"><i>7</i><span>hiperf 滑动 3 秒：三台掉帧均为 0，Mate 70 Pro 主线程解码 0%</span></div>'
       +'<div class="pl"><i>8</i><span>更新 <code>perf/baseline.json5</code>：冷启动 612 → 540 ms</span></div>'
       +'<div class="pl"><i>9</i><span>卸载重装会清数据，没做，等你确认</span></div>'
-      +'</div></details></div>';
+      +'</div></details>';
   }
   function longDangerHTML(){
-    return '<svg class="lead"><use href="#i-hand"/></svg><div class="cb">'
-      +'<div class="cb-t"><span id="ld-t">危险操作，等你确认</span><span class="dm-pill muted"><svg><use href="#i-pin"/></svg>永不折叠 · 不走实况窗</span></div>'
-      +'<div id="ld-b">要在 Mate 70 Pro 上执行 <code>hdc uninstall com.example.list</code> 再重装，会清掉这台手机上的应用数据（登录态、本地收藏 126 条）。只在这里确认，实况窗里点不了。</div>'
-      +'<div class="acts" id="ld-acts"><button class="btn sm" id="ld-cancel">取消</button><button class="btn sm primary" id="ld-ok">确认卸载重装</button></div></div>';
+    return '<div class="ai-approve__h"><span class="ai-wait-dot"></span><span>在等你 · 危险操作</span><span class="pin">永不折叠 · 不走实况窗</span></div>'
+      +'<div class="ai-approve__cmd">hdc uninstall com.example.list &amp;&amp; hdc install entry-default-signed.hap</div>'
+      +'<p class="ai-approve__why"><b>Agent·回归</b> 要在 Mate 70 Pro 上卸载重装，会清掉这台手机上的应用数据（登录态、本地收藏 126 条）。只在这里确认，实况窗里点不了。</p>'
+      +'<div class="ai-approve__act"><button class="btn sm" id="ld-cancel">取消</button><button class="btn sm primary" id="ld-ok">确认卸载重装</button></div>';
   }
   $('#btn-long').addEventListener('click',function(){
     if(LV.st!=='idle')return;
     LV.st='run';LV.n=0;
     $('#sugg').hidden=true;
-    var th=$('#ai-thread'),live=$('#tog-live').classList.contains('on');
+    var th=$('#ai-thread'),live=liveOn();
     th.insertAdjacentHTML('beforeend','<div class="umsg"><span class="time">10:52</span><div class="bubble">跑一遍全量回归：Mate 70 Pro、MatePad Pro、本机三台，跑完告诉我</div></div>'
-      +'<div class="amsg" id="long"><div class="step" id="long-step"><span class="spin"></span><span>长任务 · 全量回归 · 预计 6 分钟</span></div>'
-      +'<div class="md"><p>在后台跑，你可以先去忙。'+(live?'跑完把结论推到<b>本机</b>和 <b>Mate 70 Pro</b> 的实况窗；':'')+'要你拍板的操作不推，回这里确认。</p>'
-      +'<div class="run-steps" id="run-steps">'
-      +'<div class="rs" data-s="0"><span class="todo"></span>构建 <code>hvigorw assembleHap</code><span class="n"></span></div>'
-      +'<div class="rs" data-s="1"><span class="todo"></span>安装到 3 台设备<span class="n"></span></div>'
-      +'<div class="rs" data-s="2"><span class="todo"></span>跑 42 条 UI 用例<span class="n" id="rs-n">0 / 42</span></div>'
-      +'<div class="rs" data-s="3"><span class="todo"></span>对比性能基线<span class="n"></span></div></div>'
-      +(live?'<div class="lv-note">'+ic2('i-bell-new')+'实况窗<span class="dm-pill info">本机</span><span class="dm-pill info">Mate 70 Pro</span>只推一句结论</div>':'')
-      +'</div></div>');
+      +'<div class="ai-answer" id="long"><div class="ai-answer__meta">'+M+'<span><span class="agt">Agent·回归</span> 接手 · 长任务 · 预计 6 分钟</span></div>'
+      +'<p class="ai-answer__body">在后台跑，你可以先去忙。'+(live?'跑完把结论推到本机和 Mate 70 Pro 的实况窗；':'')+'要你拍板的不推，回这里确认。</p>'
+      +'<div id="run-steps">'+tr('run','构建 <code>hvigorw assembleHap</code>','',0)+tr('todo','安装到 3 台设备','',1)+tr('todo','跑 42 条 UI 用例','<span id="rs-n">0 / 42</span>',2)+tr('todo','对比性能基线','',3)+'</div>'
+      +'</div>');
     scrollToEl($('#long').previousElementSibling);
-    showDesk();
-    function tick(i){var r=$('.rs[data-s="'+i+'"]',$('#run-steps'));if(r)$('.todo',r).outerHTML=ic2('i-checkS')}
+    showDesk();renderAgent();
+    function step(i,st){var r=$('#run-steps [data-s="'+i+'"]');if(!r)return;var n=$('.end',r).innerHTML;r.outerHTML=tr(st,$('.what',r).innerHTML,n,i);}
     var k=0;
     var timer=setInterval(function(){
       k++;
-      if(k===3)tick(0);if(k===6)tick(1);
-      if(k>6){LV.n=Math.min(42,LV.n+3);$('#rs-n').textContent=LV.n+' / 42'}
-      if(LV.n>=42){tick(2);clearInterval(timer);setTimeout(function(){tick(3);finish()},500)}
-      if(LV.st==='run'&&$('#ide').classList.contains('desk-on'))renderLive();
+      if(k===3){step(0,'done');step(1,'run');}if(k===6){step(1,'done');step(2,'run');}
+      if(k>6){LV.n=Math.min(42,LV.n+3);var n=$('#rs-n');if(n)n.textContent=LV.n+' / 42';}
+      if(LV.n>=42){step(2,'done');step(3,'run');clearInterval(timer);setTimeout(function(){step(3,'done');finish()},500)}
+      if(LV.st==='run'){renderAgent();if($('#ide').classList.contains('desk-on'))renderLive();}
     },160);
   });
   function finish(){
     LV.st='done';
     var a=$('#long');a.innerHTML=longAnswerHTML();
-    a.insertAdjacentHTML('afterend','<div class="dm-callout err" id="co-long">'+longDangerHTML()+'</div>');
+    a.insertAdjacentHTML('afterend','<div class="ai-approve" id="co-long">'+longDangerHTML()+'</div>');
     $('#ld-ok').addEventListener('click',function(){longDanger('ok')});
     $('#ld-cancel').addEventListener('click',function(){longDanger('no')});
+    renderAgent();
     if($('#ide').classList.contains('desk-on')){renderLive();requestAnimationFrame(fitPhone)}
     else scrollToEl(a);
   }
   function longDanger(how){
-    var co=$('#co-long');co.classList.remove('err');if(how==='ok')co.classList.add('ok');
-    $('use',$('svg.lead',co)).setAttribute('href',how==='ok'?'#i-check':'#i-undo');
-    $('#ld-t').textContent=how==='ok'?'已卸载重装 Mate 70 Pro':'已取消';
-    $('#ld-b').innerHTML=how==='ok'?'<code>hdc uninstall</code> 后重装，重跑 <code>ListPage.test.ets:41</code>：通过。现在 42 / 42。':'Mate 70 Pro 保持原样，失败用例留着，下次回归还会报。';
-    $('#ld-acts').remove();
     LV.dangerDone=how;
-    if($('#ide').classList.contains('desk-on')){renderLive();requestAnimationFrame(fitPhone)}
+    resolveCard('co-long',how==='ok',how==='ok'?'已卸载重装 Mate 70 Pro':'已取消',how==='ok'?'<code>hdc uninstall</code> 后重装，重跑 <code>ListPage.test.ets:41</code>：通过。现在 42 / 42。':'Mate 70 Pro 保持原样，失败用例留着，下次回归还会报。');
+    renderAgent();refreshLive();
   }
+  /* 在实况窗上点一下：回到 IDE，直接落在队首那件在等你的上 */
   function openInIde(){
     if(LV.st!=='done')return;
     LV.opened=true;renderLive();requestAnimationFrame(fitPhone);
-    var a=$('#long');scrollToEl(a);a.classList.remove('flash');a.offsetWidth;a.classList.add('flash');
-    var co=$('#co-long');if(co&&LV.dangerDone==null){co.classList.remove('pulse');co.offsetWidth;co.classList.add('pulse')}
+    var top=queue()[0];
+    if(top)goWait(top.id);
+    else{var a=$('#long');scrollToEl(a);a.classList.remove('ai-touched');void a.offsetWidth;a.classList.add('ai-touched');}
   }
   $('#desk').addEventListener('click',function(e){if(e.target.closest('#lv-pc')||e.target.closest('#lv-ph')||e.target.closest('#lv-cap'))openInIde()});
   $('#tog-live').addEventListener('click',function(){
-    var on=this.classList.toggle('on');
+    var on=tog(this);
     if(!on)$('#ide').classList.remove('desk-on');else if(LV.st!=='idle')showDesk();
   });
   window.addEventListener('resize',function(){if($('#ide').classList.contains('desk-on'))fitPhone()});
-DemoGuide.init([{"target": "#btn-compress", "kind": "click", "pos": "top", "label": "点这里压缩历史"}, {"target": "#ctx-bar", "kind": "change", "pos": "top", "label": "占比条跟着变"},
-  {"target": "#btn-long", "kind": "click", "pos": "top", "label": "要跑 6 分钟的回归？点这里，不用守着"},
-  {"target": "#lv-pc", "kind": "change", "pos": "bottom", "label": "跑完，结论一句话推到这里"},
-  {"target": "#lv-ph", "kind": "click", "pos": "left", "label": "手机上点一下，电脑上打开完整回答"}],
-  {scene:{at:"你让 Agent 修列表卡顿，接着跑 6 分钟全量回归",
-    goal:"一眼拿到结论，要你拍板的一条不漏",
-    pain:"长回答翻半天找结论；跑长任务只能守着 IDE 等",
-    fix:"结论先行、危险项常驻；长任务结论推实况窗"}});
+  DemoGuide.init([
+    {target:'#btn-compress', kind:'click', pos:'bottom', label:'上下文快满了？点这里压缩历史'},
+    {target:'#btn-long', kind:'click', pos:'top', label:'6 分钟的回归交给另一个 Agent，不用守着'},
+    {target:'#lv-pc', kind:'change', pos:'bottom', label:'跑完只推一句结论 + 最挡路的那一件'},
+    {target:'#lv-ph', kind:'click', pos:'left', label:'手机上点一下，电脑上直接落到要你确认的那处'}
+  ], {scene:{
+    at:'你让 Agent 修列表卡顿，接着要跑 6 分钟全量回归',
+    goal:'一眼拿到结论，要你拍板的一条不漏',
+    pain:'长回答翻半天找结论；跑长任务只能守着 IDE 等',
+    fix:'结论先行、危险项常驻；长任务结论推实况窗',
+    agent:'调优、回归两个 Agent 各干各的；实况窗只推最挡路的一件；你拍板'
+  }});
 })();
 </script>
 </body>

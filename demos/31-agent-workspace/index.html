@@ -141,7 +141,7 @@
   .ws-win .wt .ai-ring{width:11px;height:11px}
   .cue{display:flex;align-items:center;gap:6px;min-width:0}
   .cue:not([hidden]) + #rsub{display:none}
-  .cue .ai-status{max-width:560px}
+  .cue .ai-status{max-width:440px}
   .cue .ai-status{background:var(--ws-card)}
   .cue .pin{appearance:none;border:0;height:26px;padding:0 10px;border-radius:13px;background:var(--ws-card);flex:none;font:inherit;font-size:12px;color:var(--ui-fg-info);cursor:pointer}
   .cue .pin[aria-pressed="true"]{color:var(--ui-fg)}
@@ -193,7 +193,7 @@
   .lw-tab .cnt.need{color:var(--ai-wait-ink)}
   .lw-tabs .grow{flex:1}
   .lw-body{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr)}
-  .res.ed-open .lw-body{grid-template-columns:minmax(0,40%) minmax(0,60%)}
+  .res.ed-open .lw-body{grid-template-columns:minmax(420px,1fr) minmax(0,1.15fr)}
   .lw-main{min-height:0;overflow:auto;padding:4px 12px 16px}
   .ed{display:flex;flex-direction:column;min-height:0;box-shadow:inset 1px 0 0 var(--ws-line)}
   .ed-h{display:flex;align-items:center;gap:8px;height:34px;padding:0 6px 0 12px;flex:none;font-size:12.5px;background:var(--ws-pane)}
@@ -287,6 +287,8 @@
   .ws-win.real .cap .lease{font-family:var(--font-ui)}
   .ws-win.real .cap{white-space:normal;left:-14px;right:-14px;bottom:auto;top:calc(100% + 4px);line-height:15px}
   .ws-win .tag .own{color:var(--ai-ink);font-weight:400}
+  /* 台前调度侧边：名称 + 归属签限宽省略，不压到台上窗口（完整信息在台上窗口的 cap 与证据里） */
+  #stage.ds-on .ws-win.ds-side > .tag{max-width:200px;overflow:hidden;text-overflow:ellipsis}
   .cue .ai-status.lease{background:var(--ws-card)}
   .cue .ai-status.lease .ai-ico{color:var(--ui-fg-info)}
   .app .rrow{display:flex;gap:12px;align-items:center;padding:12px;border-radius:16px;background:#fff}
@@ -743,7 +745,7 @@ function renderAgent(){
   }
   var running = runningCount();
   shell.status('<span class="it agent" data-state="' + (q.length ? 'waiting' : S.agent) + '"><svg class="i"><use href="#ai-logo-16-mono"/></svg>' + running + ' 个 Agent 在跑' + (q.length ? ' · 在等你 ' + q.length : '') + '</span>'
-    + '<span class="it"><span class="gdot"></span>本机窗口 3 · 真机 1</span>');
+    );
   $('#field').setAttribute('data-state', /thinking|generating/.test(S.agent) && S.phase !== 'handedit' ? 'generating' : 'idle');
   $('#gen-txt').textContent = S.agentText;
 }
@@ -869,7 +871,7 @@ function taskBodyHTML(){
   if(S.task !== 'grid') return otherBodyHTML();
   if(S.phase === 'idle'){
     return '<div class="tp-empty"><p>MallApp 已在本机跑起来：右边三个窗口是手机、折叠屏展开、平板三种形态，最右是被 Agent·回归 占着的真机。说一句要改什么，它先出计划给你改。</p>'
-      + '<div class="ai-pop__eg"><button type="button" data-act="eg">商品列表在折叠屏和平板上只占左半…</button><button type="button" data-act="eg2">购物车页适配深色模式</button></div></div>';
+      + '<div class="ai-pop__eg"><button type="button" data-act="eg2">购物车页适配深色模式</button></div></div>';
   }
   var h = '';
   if(S.phase === 'waiting') h += waitHTML();
@@ -1356,10 +1358,9 @@ window.__ws = { S: S, st: st };
 
 DemoGuide.init([
   { target: '#send', kind: 'click', pos: 'top', label: '把这句需求交给 Agent' },
-  { target: '#q .q-item', kind: 'click', pos: 'right', label: '所有 Agent 在等你的，排成一队' },
-  { target: '#w-real', kind: 'change', pos: 'left', label: '每台谁在用：真机被回归占着，排队' },
-  { target: '#ws-lower [data-act="takeover"][data-h="lg"]', kind: 'click', pos: 'left', label: '接手：就地改这一行' },
-  { target: '#view-switch', kind: 'click', pos: 'bottom', label: '同一个任务，切到编辑视图' }
+  { target: '#q', kind: 'click', pos: 'bottom', label: '所有 Agent 在等你的，排成一队' },
+  { target: '#w-real:not(.ds-side) .cap', kind: 'change', pos: 'left', label: '每台谁在用：真机被回归占着，排队' },
+  { target: '#ws-lower [data-act="takeover"][data-h="lg"]', kind: 'click', pos: 'left', label: '接手：就地改这一行' }
 ], { scene: {
   at: '让 Agent 把商品列表改成折叠屏、平板上多列',
   goal: '大屏多列、手机不变，而且敢合进主干',

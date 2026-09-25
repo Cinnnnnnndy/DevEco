@@ -3,24 +3,31 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>28 · 冻屏分析报告 — saveNoteSync 主线程同步保存导致 THREAD_BLOCK_6S</title>
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230A59F7'/%3E%3Cpath d='M8 20h4l3-9 3 12 3-7h3' fill='none' stroke='white' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<title>冻屏分析报告</title>
+<script>try{var t=localStorage.getItem('deveco-theme');if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)}catch(e){}</script>
+<link rel="stylesheet" href="../../deveco-intui-kit/src/tokens.css">
+<link rel="stylesheet" href="../../deveco-intui-kit/src/ai.css">
+<link rel="stylesheet" href="../_shared/guide.css">
+<script src="../../deveco-intui-kit/icons/ai-icons.js"></script>
+<link rel="icon" type="image/svg+xml" href="../../deveco-intui-kit/icons/deveco-code-logo-16.svg">
 <style>
-/* ===== 令牌：鸿蒙开发者官网（按 developer.huawei.com 文档中心 / 开发 / DevEco Studio 页截图） ===== */
+/* ===== 令牌：全部取自 deveco-intui-kit/src/tokens.css，深浅两套 ===== */
 :root{
-  --page:#F1F3F5; --paper:#FFFFFF; --fill:#F1F3F5; --fill2:#E8EBEE; --hdr-bg:#EFF1F3;
-  --ink:#000000; --ink1:#191919; --ink2:#4D4D4D; --ink3:#808080; --ink4:#A6A6A6;
-  --line:#E3E5E8; --accent:#0A59F7; --accent-hover:#0047D6; --soft:#E6EEFE; --soft2:#DCE6FB;
-  --btn:#000000; --btn-hover:#2B2B2B;
-  --yes:#237A45; --yes-soft:#E4F2E9; --part:#8F5A00; --part-soft:#FBF0DC; --no:#C4322A; --no-soft:#FBE7E5;
-  --font:'HarmonyOS Sans SC','HarmonyOS Sans','PingFang SC','Microsoft YaHei','Noto Sans CJK SC',system-ui,sans-serif;
-  --mono:'JetBrains Mono','SFMono-Regular',Consolas,'Liberation Mono',monospace;
-  --r-card:16px; --r-sm:10px;
-  --top:40px; --wrap:1440px;
+  --page:var(--Gray13); --paper:var(--Gray14); --fill:var(--Gray12); --fill2:var(--Gray11);
+  --ink:var(--ui-fg); --ink1:var(--ui-fg); --ink2:var(--Gray4); --ink3:var(--ui-fg-info); --ink4:var(--ui-fg-disabled);
+  --line:var(--Gray12); --accent:var(--ui-accent); --soft:var(--ui-hover);
+  --yes:var(--ui-success); --yes-soft:color-mix(in srgb,var(--ui-success) 14%,transparent);
+  --part:#9A5B00; --part-soft:color-mix(in srgb,var(--ui-warning) 20%,transparent);
+  --no:var(--ui-error); --no-soft:color-mix(in srgb,var(--ui-error) 12%,transparent);
+  --step:color-mix(in srgb,var(--ui-warning) 30%,var(--paper)); --step-over:color-mix(in srgb,var(--ui-error) 26%,var(--paper));
+  --font:var(--font-ui); --mono:var(--font-code);
+  --r-card:12px; --r-sm:8px; --top:40px; --wrap:1440px;
 }
+:root[data-theme="dark"]{--page:var(--Gray1);--paper:var(--Gray2);--fill:var(--Gray3);--fill2:var(--Gray4);--ink2:var(--Gray10);--line:var(--Gray3);--part:#E8B65C}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--page:var(--Gray1);--paper:var(--Gray2);--fill:var(--Gray3);--fill2:var(--Gray4);--ink2:var(--Gray10);--line:var(--Gray3);--part:#E8B65C}}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{scroll-padding-top:calc(var(--top) + 16px)}
-body{font-family:var(--font);color:var(--ink1);background:var(--page);font-size:14px;line-height:1.6;-webkit-font-smoothing:antialiased}
+body{font-family:var(--font);color:var(--ink1);background:var(--page);font-size:14px;line-height:1.6;-webkit-font-smoothing:antialiased;margin:0}
 button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 code,.mono{font-family:var(--mono);font-size:12.5px}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
@@ -28,23 +35,26 @@ svg.i{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.6;stro
 
 /* ===== 顶部：产品栏（白） ===== */
 .top{position:sticky;top:0;z-index:50}
-.sub{height:40px;background:var(--paper);display:flex;align-items:center;gap:20px;padding:0 56px;box-shadow:0 1px 0 var(--line)}
-.sub .prod{font-weight:700;font-size:14px;white-space:nowrap}
+.sub{height:40px;background:var(--paper);display:flex;align-items:center;gap:12px;padding:0 56px}
+.sub .grow{flex:1}
+.sub .tbtn{width:28px;height:28px;border-radius:6px;display:grid;place-items:center;color:var(--ink3)}
+.sub .tbtn:hover{background:var(--fill)}
+.sub .prod{font-weight:600;font-size:14px;white-space:nowrap}
 @media (max-width:900px){.sub .prod{display:none}.sub{gap:8px}}
 
 
 /* ===== 头图：DevEco Studio 页式的蓝色渐变淡出 ===== */
-.hero{background:linear-gradient(180deg,#C9D9FF 0%,#E4ECFD 55%,var(--page) 100%)}
+.hero{background:transparent}
 .hero-in{max-width:var(--wrap);margin:0 auto;padding:22px 56px 18px;display:flex;align-items:flex-end;gap:24px;flex-wrap:wrap}
 .hero .l{flex:1;min-width:320px}
 .pill{display:inline-flex;align-items:center;gap:5px;height:24px;padding:0 10px;border-radius:999px;font-size:12px;background:var(--fill);color:var(--ink2);white-space:nowrap}
-.hero .pill{background:rgba(255,255,255,.72)}
+.hero .pill{background:var(--fill)}
 .pill.yes{background:var(--yes-soft);color:var(--yes)}
 .pill.part{background:var(--part-soft);color:var(--part)}
 .pill.no{background:var(--no-soft);color:var(--no)}
-.hero .pill.no{background:#fff;color:var(--no)}
+.hero .pill.no{background:var(--no-soft);color:var(--no)}
 .pill svg.i{width:13px;height:13px}
-h1{font-size:30px;font-weight:700;line-height:1.3;color:var(--ink)}
+h1{font-size:30px;font-weight:600;line-height:1.3;color:var(--ink)}
 .subtitle{margin-top:4px;font-size:18px;font-weight:500;line-height:1.5;color:var(--ink2)}
 .meta{margin-top:10px;font-size:13px;color:var(--ink2);display:flex;flex-wrap:wrap;align-items:center;gap:6px 16px}
 .meta .pill+.pill{margin-left:-8px}
@@ -52,10 +62,10 @@ h1{font-size:30px;font-weight:700;line-height:1.3;color:var(--ink)}
 /* ===== 骨架：文档中心式居中容器，左树 + 正文 ===== */
 .wrap{max-width:var(--wrap);margin:0 auto;display:flex;gap:36px;padding:8px 56px 88px}
 .side{width:196px;flex:none;position:sticky;top:calc(var(--top) + 20px);align-self:flex-start;max-height:calc(100vh - var(--top) - 40px);overflow:auto;padding-top:6px}
-.tree{border-left:1px solid #D5D8DC;display:flex;flex-direction:column;margin-bottom:24px}
+.tree{border-left:1px solid var(--line);display:flex;flex-direction:column;margin-bottom:24px}
 .tree a{display:flex;align-items:center;gap:8px;min-height:30px;padding:3px 0 3px 18px;margin-left:-1px;border-left:2px solid transparent;color:var(--ink2);text-decoration:none;font-size:13px}
 .tree a:hover{color:var(--ink1)}
-.tree a.on{border-left-color:var(--ink);color:var(--ink);font-weight:700}
+.tree a.on{border-left-color:var(--ink);color:var(--ink);font-weight:600}
 .tree a .n{margin-left:auto;font-size:11.5px;color:var(--ink4);font-family:var(--mono);font-weight:400}
 .main{flex:1;min-width:0}
 @media (min-width:901px){.wrap{padding-right:104px}.hero-in{padding-left:calc(56px + 196px + 36px);padding-right:104px}.hero-in .l{max-width:1040px}}
@@ -63,7 +73,7 @@ h1{font-size:30px;font-weight:700;line-height:1.3;color:var(--ink)}
 
 /* ===== 两栏正文 ===== */
 .sec-t{display:flex;align-items:baseline;gap:10px;margin-bottom:12px}
-.sec-t h2{font-size:18px;font-weight:700;color:var(--ink)}
+.sec-t h2{font-size:18px;font-weight:600;color:var(--ink)}
 .sec-t .sub2{font-size:13px;color:var(--ink3)}
 .card{background:var(--paper);border-radius:var(--r-card);padding:20px}
 
@@ -78,7 +88,7 @@ h1{font-size:30px;font-weight:700;line-height:1.3;color:var(--ink)}
 .vrows code{background:var(--fill);border-radius:4px;padding:0 4px}
 .vrows .pill{margin-left:8px;vertical-align:1px}
 .vrows .muted{color:var(--ink4);font-size:13px}
-.verdict h3{font-size:22px;font-weight:700;line-height:1.45;color:var(--ink)}
+.verdict h3{font-size:22px;font-weight:600;line-height:1.45;color:var(--ink)}
 
 /* 时间线卡 */
 .chart{background:var(--paper);border-radius:var(--r-card);padding:14px 16px 12px}
@@ -87,19 +97,19 @@ h1{font-size:30px;font-weight:700;line-height:1.3;color:var(--ink)}
 #tl .ln{font-family:var(--font);font-size:13px;font-weight:600;fill:var(--ink1)}
 #tl .st{cursor:pointer;transition:opacity .15s}
 #tl .st:hover{opacity:.7}
-.story-t{font-size:15px;font-weight:700;color:var(--ink);margin:18px 0 8px;padding-top:16px;border-top:1px solid var(--line)}
+.story-t{font-size:15px;font-weight:600;color:var(--ink);margin:18px 0 8px;padding-top:16px;border-top:1px solid var(--line)}
 .story{list-style:none;display:flex;flex-direction:column;gap:8px;margin-bottom:6px}
 .story li{display:grid;grid-template-columns:128px minmax(0,1fr);gap:12px;font-size:14px;color:var(--ink2);line-height:1.6}
 .story li{border-radius:8px;padding:4px 8px;margin:0 -8px;transition:background .12s}
 .story li:not(.off){cursor:default}
-.story li.on{background:var(--soft)}
-.story li.on .t{color:var(--accent)}
+.story li.on{background:var(--fill)}
+.story li.on .t{color:var(--ink)}
 .story .t{font-family:var(--mono);font-size:12.5px;color:var(--ink1);padding-top:1px}
 .legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--ink3);margin-top:8px}
 .legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
 .tip{position:fixed;z-index:90;pointer-events:none;background:#191919;color:#fff;border-radius:10px;padding:8px 10px;font-size:12px;line-height:1.5;max-width:420px;opacity:0;transition:opacity .1s}
 .tip.on{opacity:1}
-.tip code{font-size:11.5px;color:#C9D7FF}
+.tip code{font-size:11.5px;color:#DFE1E5}
 
 /* 因果链 */
 
@@ -107,9 +117,9 @@ h1{font-size:30px;font-weight:700;line-height:1.3;color:var(--ink)}
 .fix{background:var(--paper);border-radius:var(--r-card);padding:18px 22px}
 .fix+.fix{margin-top:12px}
 .fix-h{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
-.fix-h .no{width:24px;height:24px;border-radius:50%;background:var(--ink);color:#fff;font-size:12px;font-weight:600;display:grid;place-items:center;flex:none}
-.fix.dir .fix-h .no{background:var(--part)}
-.fix-h h4{font-size:16px;font-weight:700;flex:1;min-width:200px;color:var(--ink)}
+.fix-h .no{width:24px;height:24px;border-radius:50%;background:var(--fill);color:var(--ink);font-size:12px;font-weight:600;display:grid;place-items:center;flex:none}
+.fix.dir .fix-h .no{background:var(--part-soft);color:var(--part)}
+.fix-h h4{font-size:16px;font-weight:600;flex:1;min-width:200px;color:var(--ink)}
 .code{background:var(--fill);border-radius:var(--r-sm);overflow:auto;font-family:var(--mono);font-size:12.5px;line-height:20px;padding:8px 0}
 .code .r{display:grid;grid-template-columns:22px 1fr;white-space:pre;padding-right:12px}
 .code.plain .r{grid-template-columns:1fr;padding-left:16px}
@@ -122,7 +132,7 @@ h1{font-size:30px;font-weight:700;line-height:1.3;color:var(--ink)}
 .axes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
 .ax{background:var(--paper);border-radius:var(--r-card);padding:14px 16px 12px;display:flex;flex-direction:column;gap:4px}
 .ax .k{font-size:12px;color:var(--ink3)}
-.ax .v{font-size:18px;font-weight:700;display:flex;align-items:center;gap:6px}
+.ax .v{font-size:18px;font-weight:600;display:flex;align-items:center;gap:6px}
 .ax .v i{width:8px;height:8px;border-radius:50%;display:inline-block}
 .ax.yes .v{color:var(--yes)}.ax.yes .v i{background:var(--yes)}
 .ax.part .v{color:var(--part)}.ax.part .v i{background:var(--part)}
@@ -148,7 +158,7 @@ h1{font-size:30px;font-weight:700;line-height:1.3;color:var(--ink)}
 .ck-b ul{list-style:none;display:flex;flex-direction:column;gap:5px;margin-bottom:10px}
 .ck-b li{font-size:13px;color:var(--ink2);padding-left:12px;position:relative}
 .ck-b li::before{content:'';position:absolute;left:0;top:9px;width:4px;height:4px;border-radius:50%;background:var(--ink3)}
-.raw summary{font-size:12.5px;color:var(--accent);cursor:pointer;list-style:none;display:inline-flex;align-items:center;gap:4px}
+.raw summary{font-size:12.5px;color:var(--ui-link);cursor:pointer;list-style:none;display:inline-flex;align-items:center;gap:4px}
 .raw summary::-webkit-details-marker{display:none}
 .copy{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:6px;color:var(--ink3);background:none;flex:none}
 .copy:hover{color:var(--ink1)}
@@ -182,6 +192,38 @@ h1{font-size:30px;font-weight:700;line-height:1.3;color:var(--ink)}
 .tt2 td{padding:6px 8px;border-bottom:1px solid var(--line);color:var(--ink2);vertical-align:top}
 .tt2 td.mono{font-size:12px}
 .ck-b .chips{margin-bottom:10px}
+/* ===== 终轮：Agent 生成的报告 · 证据 / 推断 · 让 Agent 修 ===== */
+#tl .grid{stroke:var(--line)} #tl .qbar{fill:var(--fill)} #tl .hlr{fill:color-mix(in srgb,var(--ui-fg) 8%,transparent)}
+#tl text.tc{fill:var(--ink2)} #tl .lc{stroke:var(--ink3)} #tl .cc{fill:var(--ink1)}
+#tl .s0{fill:var(--step)} #tl .s1{fill:var(--step-over)} #tl .rno{fill:none;stroke:var(--no)} #tl .lno{stroke:var(--no)} #tl .lpart{stroke:var(--part)}
+#tl text.tpart{fill:var(--part)} #tl text.tno{fill:var(--no)} #tl .qn{fill:var(--no)}
+.meta-ai{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--ink3);margin-bottom:10px;flex-wrap:wrap}
+.meta-ai svg{width:14px;height:14px;flex:none}
+.meta-ai b{color:var(--ink1);font-weight:500}
+.strength{margin-top:8px;display:flex;gap:6px 14px;flex-wrap:wrap;font-size:12.5px;color:var(--ink3)}
+.strength span b{font-weight:500;color:var(--ink1)} .strength .part b{color:var(--part)}
+.tag{display:inline-flex;align-items:center;height:18px;padding:0 6px;border-radius:9px;font-size:11px;line-height:18px;white-space:nowrap;vertical-align:1px;margin-right:6px;font-weight:400;cursor:help}
+.tag.ev{background:var(--fill);color:var(--ink1)}
+.tag.inf{background:transparent;color:var(--ink3);box-shadow:inset 0 0 0 1px var(--fill2)}
+.tag.ok{background:var(--yes-soft);color:var(--yes)}
+.vfixed{margin-top:14px;display:flex;align-items:center;gap:8px;font-size:13px;color:var(--yes)}
+.agbox{background:var(--paper);border-radius:var(--r-card);padding:14px 16px;margin-bottom:12px;display:flex;flex-direction:column;gap:10px}
+.agbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:13.5px;color:var(--ink2)}
+.agbar svg.lg{width:16px;height:16px;flex:none}
+.agbar .grow{flex:1;min-width:200px}
+.agbox .ai-btn{font-family:var(--font)}
+.agbox .ai-toolrow{cursor:default;margin:0 -6px}
+.agbox .ai-toolrow .end .ok{color:var(--ui-success)}
+.agbox .ai-approve{background:var(--fill)}
+.agbox .ai-approve__cmd{background:var(--paper)!important;white-space:pre-wrap}
+.agbox .ai-answer{background:var(--fill);padding:12px 14px 8px}
+.agbox .ai-answer code,.agbox .ai-approve__why code,.ck-b .ref code{font-family:var(--mono);font-size:12px;padding:0 4px;border-radius:4px;background:var(--paper)}
+.agbox .evl{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:12px;color:var(--ink3)}
+.fix-h .ai-src{flex:none}
+.ck-h .who{font-size:11.5px;color:var(--ink3);margin-left:6px;font-weight:400}
+.ck-b .ref{display:flex;flex-direction:column;gap:8px;padding:10px 12px;border-radius:var(--r-sm);background:var(--fill);font-size:13px;color:var(--ink2);margin-bottom:10px}
+.ck-b .ref .act{display:flex;gap:6px}
+.s-hit.refd .st-t{background:var(--no-soft)}
 </style>
 </head>
 <body>
@@ -385,7 +427,7 @@ function render(anim){
     <section id="sec-timeline">
       <div class="sec-t"><h2>主线程时间线与发生经过</h2><span class="sub2">2026-06-05 11:15:02 – 11:15:11</span></div>
       <div class="chart"><svg id="tl" viewBox="0 0 1000 222"></svg>
-        <div class="legend"><span><i style="background:#F3E3C6"></i>保存流水线的一步（约 500ms）</span><span><i style="background:var(--no-soft)"></i>单任务执行超过 3s</span><span><i style="background:var(--accent);border-radius:50%"></i>点击</span><span><i style="background:rgba(10,89,247,.18)"></i>点击排队等待</span></div>
+        <div class="legend"><span><i style="background:var(--step)"></i>保存流水线的一步（约 500ms）</span><span><i style="background:var(--no-soft)"></i>单任务执行超过 3s</span><span><i style="background:var(--ink1);border-radius:50%"></i>点击</span><span><i style="background:var(--fill)"></i>点击排队等待</span></div>
         <h3 class="story-t">发生经过</h3>
         <ol class="story" id="story">${d.chain.map(([t,x,r],i)=>`<li data-i="${i}" class="${r?'':'off'}"><span class="t">${t}</span><span>${esc(x)}</span></li>`).join('')}</ol>
       </div>
@@ -437,31 +479,31 @@ const tx=s=>X0+(parseFloat(s)-2)*PX;
 function drawTimeline(){
   const svg=$('#tl'); if(!svg) return;
   const Y={click:34,main:86,dog:136,queue:180}, axisY=214; let g='<g id="hl"></g>';
-  for(let s=2;s<=11;s++){const x=tx(s);g+=`<line x1="${x}" y1="10" x2="${x}" y2="${axisY-12}" stroke="rgba(0,0,0,.06)"/><text x="${x}" y="${axisY}" text-anchor="middle">:${String(s).padStart(2,'0')}</text>`;}
+  for(let s=2;s<=11;s++){const x=tx(s);g+=`<line x1="${x}" y1="10" x2="${x}" y2="${axisY-12}" class="grid"/><text x="${x}" y="${axisY}" text-anchor="middle">:${String(s).padStart(2,'0')}</text>`;}
   [['点击',Y.click],['主线程',Y.main],['看门狗',Y.dog],['任务队列',Y.queue]].forEach(([n,y])=>g+=`<text class="ln" x="0" y="${y+4}">${n}</text>`);
   // 点击：第 2 次点击到被分发之间画成水平「排队」条，终点对齐第 2 轮开始
-  g+=`<rect x="${tx(3.418)}" y="${Y.click-6}" width="${tx(6.639)-tx(3.418)}" height="12" rx="6" fill="rgba(10,89,247,.10)"/>`;
-  g+=`<text x="${(tx(3.418)+tx(6.639))/2}" y="${Y.click+4}" text-anchor="middle" fill="#0A59F7">排队 3.2s</text>`;
-  g+=`<line x1="${tx(6.639)}" y1="${Y.click+6}" x2="${tx(6.639)}" y2="${Y.main-12}" stroke="#0A59F7" stroke-dasharray="3 3"/>`;
-  g+=`<line x1="${tx(2.631)}" y1="${Y.click+6}" x2="${tx(2.631)}" y2="${Y.main-12}" stroke="#0A59F7" stroke-dasharray="3 3"/>`;
-  g+=`<circle cx="${tx(2.631)}" cy="${Y.click}" r="6" fill="#0A59F7"/><text x="${tx(2.631)-10}" y="${Y.click+4}" text-anchor="end">02.631</text>`;
-  g+=`<circle cx="${tx(3.418)}" cy="${Y.click}" r="6" fill="#0A59F7"/>`;
+  g+=`<rect x="${tx(3.418)}" y="${Y.click-6}" width="${tx(6.639)-tx(3.418)}" height="12" rx="6" class="qbar"/>`;
+  g+=`<text x="${(tx(3.418)+tx(6.639))/2}" y="${Y.click+4}" text-anchor="middle" class="tc">排队 3.2s</text>`;
+  g+=`<line x1="${tx(6.639)}" y1="${Y.click+6}" x2="${tx(6.639)}" y2="${Y.main-12}" class="lc" stroke-dasharray="3 3"/>`;
+  g+=`<line x1="${tx(2.631)}" y1="${Y.click+6}" x2="${tx(2.631)}" y2="${Y.main-12}" class="lc" stroke-dasharray="3 3"/>`;
+  g+=`<circle cx="${tx(2.631)}" cy="${Y.click}" r="6" class="cc"/><text x="${tx(2.631)-10}" y="${Y.click+4}" text-anchor="end">02.631</text>`;
+  g+=`<circle cx="${tx(3.418)}" cy="${Y.click}" r="6" class="cc"/>`;
   g+=`<text x="${tx(3.418)}" y="${Y.click-12}" text-anchor="middle">03.418</text>`;
   // 主线程：两轮保存，每段对应一条应用日志
   const round=(arr,r)=>arr.map((st,i)=>{const s=parseFloat(st[0]);const e=i<arr.length-1?parseFloat(arr[i+1][0]):(r===1?6.639:10.313);
     const over=r===2 && s>=9.639; const x=tx(s), w=Math.max(2,tx(e)-x-1.5);
-    return `<rect class="st" data-tip="11:15:${st[0]} saveNoteSync: ${st[1]}..." x="${x}" y="${Y.main-12}" width="${w}" height="24" rx="3" fill="${over?'#F6D5D2':'#F3E3C6'}"/>`}).join('');
+    return `<rect data-tip="11:15:${st[0]} saveNoteSync: ${st[1]}..." x="${x}" y="${Y.main-12}" width="${w}" height="24" rx="3" class="st ${over?'s1':'s0'}"/>`}).join('');
   g+=round(ROUND1,1)+round(ROUND2,2);
-  g+=`<rect x="${tx(10.313)}" y="${Y.main-12}" width="${tx(10.8)-tx(10.313)}" height="24" rx="3" fill="none" stroke="#C4322A" stroke-dasharray="3 3"/>`;
-  g+=`<text x="${(tx(2.632)+tx(6.639))/2}" y="${Y.main+28}" text-anchor="middle" fill="#8F5A00">第 1 轮保存 · 4.0s</text>`;
-  g+=`<text x="${(tx(6.639)+tx(10.313))/2}" y="${Y.main+28}" text-anchor="middle" fill="#8F5A00">第 2 轮保存 · 至 10.313 上报仍在执行</text>`;
+  g+=`<rect x="${tx(10.313)}" y="${Y.main-12}" width="${tx(10.8)-tx(10.313)}" height="24" rx="3" class="rno" stroke-dasharray="3 3"/>`;
+  g+=`<text x="${(tx(2.632)+tx(6.639))/2}" y="${Y.main+28}" text-anchor="middle" class="tpart">第 1 轮保存 · 4.0s</text>`;
+  g+=`<text x="${(tx(6.639)+tx(10.313))/2}" y="${Y.main+28}" text-anchor="middle" class="tpart">第 2 轮保存 · 至 10.313 上报仍在执行</text>`;
   // 看门狗：两次抓栈
-  g+=`<line x1="${tx(7.142)}" y1="${Y.dog-14}" x2="${tx(7.142)}" y2="${Y.dog+16}" stroke="#8F5A00" stroke-width="2"/><text x="${tx(7.142)+8}" y="${Y.dog-2}" fill="#8F5A00">3S 抓栈 07.142</text><text x="${tx(7.142)+8}" y="${Y.dog+12}">栈顶 Jeqz</text>`;
-  g+=`<line x1="${tx(10.14)}" y1="${Y.dog-14}" x2="${tx(10.14)}" y2="${Y.dog+16}" stroke="#C4322A" stroke-width="2"/><text x="${tx(10.14)-8}" y="${Y.dog-2}" fill="#C4322A" text-anchor="end">6S 抓栈 10.140</text><text x="${tx(10.14)-8}" y="${Y.dog+12}" text-anchor="end">栈顶 Ldobjbyname</text>`;
+  g+=`<line x1="${tx(7.142)}" y1="${Y.dog-14}" x2="${tx(7.142)}" y2="${Y.dog+16}" class="lpart" stroke-width="2"/><text x="${tx(7.142)+8}" y="${Y.dog-2}" class="tpart">3S 抓栈 07.142</text><text x="${tx(7.142)+8}" y="${Y.dog+12}">栈顶 Jeqz</text>`;
+  g+=`<line x1="${tx(10.14)}" y1="${Y.dog-14}" x2="${tx(10.14)}" y2="${Y.dog+16}" class="lno" stroke-width="2"/><text x="${tx(10.14)-8}" y="${Y.dog-2}" class="tno" text-anchor="end">6S 抓栈 10.140</text><text x="${tx(10.14)-8}" y="${Y.dog+12}" text-anchor="end">栈顶 Ldobjbyname</text>`;
   // 任务队列：只有两次采样，画两根比例柱，不连线
   const base=Y.queue+14, hq=n=>Math.round(n/115*26);
   [[7.127,62],[10.128,115]].forEach(([t,n])=>{const x=tx(t);
-    g+=`<rect x="${x-5}" y="${base-hq(n)}" width="10" height="${hq(n)}" rx="2" fill="#C4322A" opacity=".75"/><text x="${x+10}" y="${base-hq(n)+10}" fill="#C4322A">${n}</text>`;});
+    g+=`<rect x="${x-5}" y="${base-hq(n)}" width="10" height="${hq(n)}" rx="2" class="qn" opacity=".75"/><text x="${x+10}" y="${base-hq(n)+10}" class="tno">${n}</text>`;});
   g+=`<text x="${tx(7.127)-12}" y="${base-2}" text-anchor="end">总任务数</text>`;
   svg.innerHTML=g;
 }
@@ -471,7 +513,7 @@ function highlight(i){
   const hl=$('#hl'); if(!hl) return;
   $$('#story li').forEach(li=>li.classList.toggle('on',+li.dataset.i===i));
   const step=i==null?null:V[mode].chain[i]; const r=step&&step[2];
-  hl.innerHTML=r?r.map(([a,b])=>`<rect x="${tx(a)-4}" y="6" width="${Math.max(8,tx(b)-tx(a)+8)}" height="196" rx="4" fill="rgba(10,89,247,.10)"/>`).join(''):'';
+  hl.innerHTML=r?r.map(([a,b])=>`<rect x="${tx(a)-4}" y="6" width="${Math.max(8,tx(b)-tx(a)+8)}" height="196" rx="4" class="hlr"/>`).join(''):'';
 }
 document.addEventListener('mouseover',e=>{const li=e.target.closest('#story li'); if(li && !li.classList.contains('off')) highlight(+li.dataset.i);});
 document.addEventListener('mouseout',e=>{if(e.target.closest('#story li') && !e.relatedTarget?.closest?.('#story li')) highlight(null);});

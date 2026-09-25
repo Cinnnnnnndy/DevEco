@@ -225,6 +225,8 @@
   .qnext .ai-wait-dot{margin-top:4px}
   .qnext b{font-weight:500}
   .qcard{display:flex;flex-direction:column;gap:6px}
+  .dm-pill.info{background:var(--ui-tag-bg);color:var(--ui-fg)}
+  .dm-progress>i{background:var(--ui-fg-info)}
   .qcard .ai-approve__act .ai-btn{height:28px;border-radius:14px;padding:0 12px}
 
   /* ---------- 碰一碰：接到鸿蒙电脑 MateBook Pro（3120 × 2080，3:2） ---------- */
@@ -748,6 +750,7 @@
   async function apply(src){
     if(applied)return;applied=true;
     var b=$('#btn-apply');if(b){b.disabled=true;b.textContent=src==='pc'?'已在电脑上保存':'已应用';b.removeAttribute('id');}
+    var wh=$('#ag-wait .ai-approve__h');if(wh)wh.textContent=src==='pc'?'电脑上已保存 · 在这台手机上重装复测':'已应用 · 在这台手机上重装复测';
     var bl=$('#btn-later');if(bl)bl.remove();
     
     var ai=add('<div class="who"><svg><use href="#i-logo"/></svg>DevEco Code</div>'+(src==='pc'?'<p>电脑上保存了补丁（你加了一行：过期时清空验证码）。我在这台手机上重装、复测。</p>':''));
@@ -847,7 +850,7 @@
   function renderCode(){
     $('#wcode').innerHTML=CODE.map(function(l){
       var m=l[0]==='add'?'+':(l[0]==='del'?'−':(l[0]==='me'?'+':''));
-      return '<div class="r '+l[0]+'"'+(l[3]?' id="'+l[3]+'"':'')+'><b>'+l[1]+'</b><i>'+m+'</i><span class="c">'+l[2]+'</span>'+(l[0]==='err'?'<span class="tag">← 手机上定位到这里</span>':'')+(l[0]==='me'?'<span class="tag" id="me-tag"></span>':'')+'</div>';
+      return '<div class="r '+l[0]+'"'+(l[3]?' id="'+l[3]+'"':'')+'><b>'+l[1]+'</b><i>'+m+'</i><span class="c">'+l[2]+'</span>'+(l[0]==='err'?'<span class="tag">← 手机上定位到这里</span>':'')+'</div>';
     }).join('');
   }
   function hilog(){
@@ -890,6 +893,7 @@
     pcState('info','审补丁中','LoginPage.ets 补丁在编辑器里待审<br>保存后手机自动重装、复测');
     lvcap('电脑审补丁中',false);
     var b=$('#btn-apply');if(b){b.disabled=true;b.textContent='已交给电脑';}
+    var wh=$('#ag-wait .ai-approve__h');if(wh)wh.textContent='已交给电脑 · 在 MateBook Pro 上审';
     var bl=$('#btn-later');if(bl)bl.remove();
     $('#git-pill').className='dm-pill info';$('#git-pill').textContent='草稿';$('#git-d').innerHTML='补丁草稿 · 电脑上待审';
     
@@ -906,7 +910,7 @@
     var plain="      if (isExpired(e)) this.code = ''";
     var c=$('#me-line .c');
     for(var i=0;i<=plain.length;i+=3){c.innerHTML=plain.slice(0,i).replace(/</g,'&lt;')+'<span class="caret"></span>';await wait(30)}
-    c.innerHTML=txt;$('#me-tag').textContent='你在电脑上加的';
+    c.innerHTML=txt;
     $('#wrev-t').innerHTML='补丁 <b class="add">+8</b> <b class="del">−2</b> · 你改了 1 行';
     $('#ho-patch').textContent='+8 −2 · 你改了 1 行';
     $('#ide-save').textContent='保存 · 手机复测';
@@ -933,7 +937,7 @@
     {target:'#btn-apply',kind:'click',pos:'top',label:'在等你：补丁应用到这台手机'},
     {target:'#qnext',kind:'change',pos:'bottom',label:'别的 Agent 的待办排在后面，不插队'},
     {target:'#btn-later',kind:'click',pos:'top',label:'想细看补丁：碰一下电脑'},
-    {target:'#ide-save',kind:'click',pos:'bottom',label:'电脑上保存：手机自动重装复测'}
+    {target:'#ide-save',kind:'click',pos:'left',label:'电脑上保存：手机自动重装复测'}
   ],{scene:{
     at:'不在工位，测试说登录点了没反应，手边只有手机',
     goal:'复现、定位到 ArkTS 行、修好装回手机验证',
