@@ -529,7 +529,7 @@
   .ds-cue .agt{color:var(--ai-ink)}
   /* 面板里的 Agent 轨迹、在等你、结论 */
   .ip-hd .ag-task{color:var(--ui-fg-info);overflow:hidden;text-overflow:ellipsis;min-width:0}
-  .ip-hd > svg.agl{color:var(--ai-ink)}
+  .ip[data-agent] .ip-hd > svg{color:var(--ai-ink)}
   .ag-you{margin:6px 12px 6px auto;width:fit-content;max-width:86%;padding:6px 10px;border-radius:10px;background:var(--ai-surface-2);font-size:12px;line-height:18px}
   .ag-trace{display:flex;flex-direction:column;gap:1px;padding:0 6px}
   .ag-trace .ai-toolrow{align-items:start}
@@ -1894,6 +1894,7 @@
   }
   function panelScanning(S){
     if(A.on){renderAgent();return}
+    delete $('#ip').dataset.agent;
     $('#ip').hidden=false;$('#ip-ico').innerHTML='<use href="#i-scene"/>';
     $('#ip-title').textContent='场景 · '+S.name;
     $('#ip-sum').innerHTML='<span class="dm-pill info"><span class="spin" style="width:9px;height:9px;border-width:1.5px"></span>'+devCount()+' 台同时进入</span>';
@@ -1909,6 +1910,7 @@
   }
   function renderPanel(){
     if(A.on){renderAgent();return}
+    delete $('#ip').dataset.agent;
     var ip=$('#ip');ip.hidden=false;
     if(mode==='scene'&&scene){
       var S=SC[scene.id],rows='',bads=sceneIssues(),nb=0;
@@ -2125,7 +2127,7 @@
   }
   function renderAgent(){
     var ip=$('#ip');ip.hidden=false;
-    $('#ip-ico').outerHTML='<svg id="ip-ico" class="agl"><use href="#ai-logo-16-mono"/></svg>';
+    ip.dataset.agent='1';$('#ip-ico').innerHTML='<use href="#ai-logo-16-mono"/>';
     $('#ip-title').textContent=AG;
     $('#ip-sum').innerHTML='<span class="ag-task">'+esc(A.q)+'</span>';
     var h='<div class="ag-you">'+esc(A.q)+'</div><div class="ag-trace">'+A.trace.map(function(x){
@@ -2267,21 +2269,17 @@
   ensureFile('MainPage.ets');renderQA();initStage();
   owners(false);capA('idle',AG+' 待命 · 画布上 '+devCount()+' 台');
 DemoGuide.init([
-  {"target": "#code .ln[data-ln=\"12\"]", "kind": "click", "pos": "top", "label": "你刚改了这行搜索框：点一下，7 块屏一起刷"},
-  {"target": "#feat-spec", "kind": "click", "pos": "top", "label": "切折叠姿态：展开 / 悬停 / 折叠"},
-  {"target": "#gest-bar [data-g=\"back\"]", "kind": "click", "pos": "bottom", "label": "选设备后点手势，屏上出轨迹和结果"},
-  {"target": "#gest-bar [data-to=\"d-tab\"]", "kind": "click", "pos": "bottom", "label": "商品卡流转到平板（也可直接拖）"},
-  {"target": "#sc-bar [data-sc=\"call\"]", "kind": "click", "pos": "bottom", "label": "选一个场景，全部设备同时进入"},
-  {"target": "#btn-check", "kind": "click", "pos": "left", "label": "一键扫 sm / md / lg 全部形态"},
-  {"target": "#pc-grip", "kind": "click", "pos": "right", "label": "拖本机窗口右边，一口气走完 xs→xl"},
-  {"target": "#ip", "kind": "change", "pos": "top", "label": "问题定位到 ArkTS 行，修复后各设备一起刷新复验"},
-  {"target": "#btn-stage", "kind": "click", "pos": "bottom", "label": "改哪台哪台上台，其余缩到侧边"},
-  {"target": "#canvas .ds-side.ds-broken", "kind": "change", "pos": "right", "label": "被带坏的侧边设备亮红点，点它换上台"}
+  {target:'#ag-eg [data-task="net"]',kind:'click',pos:'bottom',label:'说一句（或点这句），交给 Agent 跑全部设备'},
+  {target:'#ds-cue.on',kind:'change',pos:'bottom',label:'它在验哪台，哪台上台'},
+  {target:'#ip [data-agacc]',kind:'click',pos:'top',label:'补丁备好在等你：接受后全部复验'},
+  {target:'#d-phone > .tag .own.lease',kind:'change',pos:'bottom',label:'真机被 Agent·回归 占着，它不抢'},
+  {target:'#canvas .ds-side.ds-broken',kind:'change',pos:'right',label:'红点：被带坏的那台，点它换上台'}
 ], {scene:{
-  at:"你在修 XT 三屏列表只占左半，画布上 7 台并排",
-  goal:"把这台改对，同时确认手机等其他台没被带坏",
-  pain:"平铺每台都看不清，放大一台又看不到别的台",
-  fix:"光标在哪段代码哪台上台，其余侧边实时刷新、坏了亮红点"
+  at:'你改完商品列表，画布上 7 台设备并排',
+  goal:'弱网、各断点都过一遍，而且不把手机带坏',
+  pain:'逐台切形态、逐个点场景，平铺看不清、放大又漏看别台',
+  fix:'说一句它就在全部设备上跑，验哪台哪台上台，你只接受补丁',
+  agent:'它跑场景、一多检查、出补丁；真机被别的 Agent 占就用本机窗口；你接受'
 }});
 })();
 </script>
