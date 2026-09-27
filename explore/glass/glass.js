@@ -12,6 +12,7 @@
   var NS = 'http://www.w3.org/2000/svg';
   var root = document.documentElement, body = document.body;
   var stage = $('#stage'), bg = $('#bg'), defs = $('#lq-defs'), lab = $('#lab');
+  if (!root.lang) root.lang = 'zh-CN';
 
   ['INT_UI_SPRITE', 'AI_SPRITE'].forEach(function (k) {
     if (window[k]) body.insertAdjacentHTML('afterbegin', window[k]);
