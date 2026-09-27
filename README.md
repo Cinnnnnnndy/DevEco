@@ -19,6 +19,7 @@
 | `analysis/ablation/` | 终轮消融记录：每个 demo 一份（没有 / 有 / 多 Agent 三种做法 + 元素·结果·依据），`build.py` 汇成 `index.html` |
 | `analysis/agent-workspace/` | Agent 工作台设计说明：为什么默认视图不是文件树 + 编辑器、各 demo 里 Agent 的角色与多 Agent 时怎么办 |
 | `deveco-intui-kit/` | DevEco Studio（Windows · IntelliJ Int UI）组件库：token、组件样式、图标、主窗口界面稿、规范页。详见 [它的 README](deveco-intui-kit/README.md) |
+| `explore/` | 不定场景的视觉碎片，不进启动页。目前有 `glass/` 毛玻璃实验台：DevEco 界面碎片压在自然照片上，试经典毛玻璃五档厚度与液态玻璃。详见 [它的 README](explore/README.md) |
 | `鸿蒙开发工具_创新方向_20260913.pptx` | 三个方向 21 条创新点的 deck，demo 的出处 |
 | `deveco-ecosystem-sentiment.html` | 《DevEco 生态位与体验舆情》单文件分析页 |
 
