@@ -1,15 +1,21 @@
-/* 质感卡片 · 每张卡片的底是一段片元着色器（WebGL1），内容是普通 DOM 叠在上面。
-   - 所有着色器共用 COMMON：噪声、fbm、颗粒；坐标 v_uv 左上 (0,0) 右下 (1,1)，p = 按宽高比拉正的坐标
-   - u_ptr / u_hover：鼠标在卡片上的位置（0–1）和「在不在卡片上」，都做了缓动；光源跟着它走
-   - 会动的（云、雾、水）只在卡片进入视口时逐帧画；静态的只在光源变化时重画；减少动效时全部停在一帧
-   塑料膜多一层画在内容上面：高光和折痕的暗部要压在印刷的标签和字上。 */
+/* 质感卡片 · 每张参考图只抽三样：序列（结构和节奏）、颜色对比（哪些色、各占多少）、质感（材质细节），
+   全部由片元着色器（WebGL1）现算，不画具体的东西。
+   每个着色器都算出四个结果，由 u_view 选一个输出：
+     0 合成   三层叠在一起
+     1 序列   灰度的结构：条、环、带、流线怎么排
+     2 配色   平涂色块：只看用了哪些色、各占多少
+     3 质感   颜色换成中性灰：只看颗粒、纤维、反光
+   u_ptr / u_hover：鼠标在卡片上的位置（0–1）和「在不在卡片上」，已缓动。各卡跟着鼠标走的东西不同：
+   塑料膜、冰沙是光源，石塔是最高那格，月晕是光心，天水镜像是对称轴，冰泉是漩涡，彩虹是色带位置，苔原是地层视差。
+   会动的（横带、雾、水）只在卡片进入视口时逐帧画，静态的只在鼠标或视图变化时重画；减少动效时停在一帧。
+   塑料膜多一层画在内容上面：高光压在印刷的字上（只在合成和质感视图里出现）。 */
 (function () {
   'use strict';
 
   var COMMON = [
     'precision highp float;',
     'varying vec2 v_uv;',
-    'uniform vec2 u_res;uniform float u_time;uniform vec2 u_ptr;uniform float u_hover;uniform float u_mode;',
+    'uniform vec2 u_res;uniform float u_time;uniform vec2 u_ptr;uniform float u_hover;uniform float u_mode;uniform float u_view;',
     'float hash12(vec2 p){vec3 p3=fract(vec3(p.xyx)*.1031);p3+=dot(p3,p3.yzx+33.33);return fract((p3.x+p3.y)*p3.z);}',
     'vec2 hash22(vec2 p){vec3 p3=fract(vec3(p.xyx)*vec3(.1031,.1030,.0973));p3+=dot(p3,p3.yzx+33.33);return fract((p3.xx+p3.yz)*p3.zy);}',
     'float gnoise(vec2 p){vec2 i=floor(p),f=fract(p);vec2 u=f*f*f*(f*(f*6.-15.)+10.);',
@@ -23,249 +29,243 @@
     'float grain(){return hash12(gl_FragCoord.xy+fract(u_time*.37)*391.)-.5;}',
     'float asp(){return u_res.x/u_res.y;}',
     'vec2 P(){return vec2(v_uv.x*asp(),v_uv.y);}',
+    'float lum(vec3 c){return dot(c,vec3(.2126,.7152,.0722));}',
+    'vec3 pick(vec3 comb,vec3 seqc,vec3 flatc,vec3 texc){if(u_view<.5)return comb;if(u_view<1.5)return seqc;if(u_view<2.5)return flatc;return texc;}',
     ''
   ].join('\n');
 
   var SHADERS = {};
 
-  /* 塑料膜：膨化食品袋的铝膜。高度场 = 大鼓包 + 十几道折痕（帐篷形截面，折线处法线突变）+ 细皱；
-     颜色来自「反射到的影棚」：左上一块柔光箱、顶上一根灯管，再加跟着鼠标的点光；朝右下倾的面偏紫。
-     u_mode 0 = 膜本身（在内容下面），1 = 高光与折痕暗部（在内容上面，压住印刷的标签） */
+  /* 塑料膜 · 序列：两组斜褶，一密一疏，折线处是硬的（三角波）；对比：洋红、黑、白硬碰硬，背光的褶转紫；
+     质感：镜面反光——影棚的柔光箱和灯管反射在褶上，再加跟着鼠标的点光 */
   SHADERS.film = [
-    'float crease(vec2 p,float fi){',
-    '  vec2 r1=hash22(vec2(fi,1.7)),r2=hash22(vec2(fi,9.1)),r3=hash22(vec2(fi,4.3)),r4=hash22(vec2(fi,6.6));',
-    '  vec2 a=vec2(r1.x*asp(),r1.y);float ang=r2.x*3.14159;vec2 dir=vec2(cos(ang),sin(ang));',
-    '  vec2 d=p-a;float al=dot(d,dir),pe=dot(d,vec2(-dir.y,dir.x))+.05*gnoise(p*2.5+fi*3.1);',
-    '  float len=.12+r2.y*.32;float fade=1.-smoothstep(len*.3,len,abs(al));',
-    '  float w=.035+r3.x*.09;float x=abs(pe)/w;',
-    '  float sharp=max(1.-x,0.);sharp*=sharp;float rnd=exp(-x*x*2.2);',
-    '  float pr=mix(rnd,sharp,step(.62,r4.y));',
-    '  return (r4.x-.5)*(.35+r3.y*.5)*pr*fade;}',
-    'float H(vec2 p){vec2 w=vec2(fbm3(p*1.2+1.3),fbm3(p*1.2+7.1));',
-    '  float h=1.15*fbm3(p*vec2(1.25,1.7)+w*.9+3.7);',
-    '  for(int i=0;i<10;i++)h+=crease(p,float(i));',
-    '  return h+.022*fbm3(p*vec2(14.,20.)+11.);}',
+    'float tri(float x){return abs(fract(x)-.5)*2.;}',
+    'vec2 warp(vec2 p){return p+vec2(fbm3(p*1.1+1.3),fbm3(p*1.1+7.1))*.14;}',
+    'float pleat(vec2 q){return tri(dot(q,vec2(.876,.482))*3.4+fbm3(q*1.4)*.6)*.6+tri(dot(q,vec2(-.371,.928))*1.9+fbm3(q*1.8+4.)*.5)*.4;}',
+    'float H(vec2 p){vec2 q=warp(p);return pleat(q)*.17+.55*fbm3(q*vec2(1.2,1.6)+3.7)+.035*fbm3(p*vec2(12.,17.)+11.)+.012*gnoise(p*60.);}',
     'void main(){',
     '  vec2 p=P();float e=1.5/u_res.y;',
     '  float h0=H(p),hx=H(p+vec2(e,0.)),hy=H(p+vec2(0.,e));',
-    '  vec3 N=normalize(vec3(-(hx-h0)/e*.085,-(hy-h0)/e*.085,1.));',
+    '  vec3 N=normalize(vec3(-(hx-h0)/e*.08,-(hy-h0)/e*.08,1.));',
     '  vec2 lp=mix(vec2(.2*asp(),.1),vec2(u_ptr.x*asp(),u_ptr.y),u_hover);',
     '  vec3 L=normalize(vec3(lp-p,.45));vec3 V=vec3(0.,0.,1.);float nh=max(dot(N,normalize(L+V)),0.);',
     '  vec3 R=reflect(-V,N);',
     '  float box=smoothstep(.62,.97,dot(R,normalize(vec3(-.42,-.55,.72))));',
     '  float tube=smoothstep(.06,0.,abs(R.y+.46+.12*R.x))*smoothstep(.9,.35,abs(R.x+.1));',
-    '  float E=.24+.85*box+.5*tube+.4*pow(nh,6.)+.16*N.z;',
-    '  vec3 foil=hex(234.,42.,144.),dark=hex(104.,12.,60.),violet=hex(130.,72.,226.);',
-    '  vec3 col=mix(dark,foil,clamp(E,0.,1.15));',
+    '  float E=.26+.85*box+.5*tube+.4*pow(nh,6.)+.16*N.z;',
+    '  vec3 col=mix(hex(104.,12.,60.),hex(234.,42.,144.),clamp(E,0.,1.15));',
     '  float irid=smoothstep(.05,.32,N.x+.15*N.y)*(1.-clamp(E*.85,0.,1.));',
-    '  col=mix(col,violet*(.35+.8*E),irid*.62);',
+    '  col=mix(col,hex(130.,72.,226.)*(.35+.8*E),irid*.62);',
     '  col=mix(col,hex(255.,182.,222.),smoothstep(.95,1.4,E)*.55);',
     '  float gloss=pow(nh,70.)*1.1+smoothstep(1.1,1.5,E)*.45+tube*.12;',
-    '  if(u_mode<.5){gl_FragColor=vec4(col+grain()*.015,1.);return;}',
-    '  float a=clamp(gloss,0.,1.)*.62;vec3 gc=mix(vec3(1.),hex(255.,196.,232.),.4);',
-    '  float sh=(1.-smoothstep(.05,.35,E))*.16;float A=a+sh*(1.-a);',
-    '  gl_FragColor=vec4(gc*a,A);}'
+    '  if(u_mode>.5){',
+    '    if(u_view>.5&&u_view<2.5){gl_FragColor=vec4(0.);return;}',
+    '    float a=clamp(gloss,0.,1.)*.62;vec3 gc=u_view>2.5?vec3(1.):mix(vec3(1.),hex(255.,196.,232.),.4);',
+    '    float sh=(1.-smoothstep(.05,.35,E))*.16;gl_FragColor=vec4(gc*a,a+sh*(1.-a));return;}',
+    '  vec3 seqc=vec3(.12+.76*pleat(warp(p)));',
+    '  vec3 flatc=E<.4?hex(120.,14.,68.):(irid>.4?hex(128.,70.,224.):(E<1.05?hex(232.,40.,142.):hex(255.,176.,218.)));',
+    '  vec3 texc=vec3(lum(col))*1.05;',
+    '  gl_FragColor=vec4(pick(col+grain()*.015,seqc,flatc,texc),1.);}'
   ].join('\n');
 
-  /* 月晕：满月透过薄云。中间冷白的光，往外一圈淡黄、再外一圈偏紫的光环（华）；
-     云是横向拉长的 fbm，慢慢往左飘；离月亮近的云被照亮、带银边，远处的云压暗 */
+  /* 月晕 · 序列：以光心为圆心的几圈光环，被一条条横向暗带切开（暗带慢慢往左漂）；
+     对比：大面积近黑，中间一小块冷白，环上很淡的黄和紫；质感：柔、散、胶片颗粒。光心跟着鼠标 */
   SHADERS.moon = [
     'void main(){',
-    '  vec2 p=P();float t=u_time;vec2 mc=vec2(.64*asp(),.25);float mr=.064;',
-    '  vec2 d=p-mc;float r=length(d*vec2(1.,1.1));',
-    '  vec2 q=vec2(p.x*.95-t*.007,p.y*3.3);',
-    '  float w=fbm3(q*1.3+vec2(t*.004,0.));float c=fbm(q+vec2(w*.9,w*.35));',
-    '  float dens=smoothstep(-.3,.42,c);',
-    '  float core=exp(-r*14.),veilL=exp(-r*3.4),wide=exp(-r*1.6);',
-    '  float ring=exp(-pow((r-.34)/.07,2.)),ring2=exp(-pow((r-.46)/.08,2.));',
-    '  vec3 col=mix(hex(4.,5.,7.),hex(12.,13.,16.),v_uv.y);',
-    '  vec3 ml=hex(212.,224.,238.);float veil=.45+.55*smoothstep(-.45,.6,c);',
-    '  col+=ml*(veilL*.62+wide*.14)*veil+ml*core*.7;',
-    '  col+=(hex(196.,190.,128.)*ring*.34+hex(150.,118.,150.)*ring2*.18)*veil;',
-    '  float lit=exp(-r*2.9);',
-    '  vec3 cc=mix(hex(16.,18.,22.),hex(126.,138.,152.),lit)+ml*lit*.18;',
-    '  col=mix(col,cc,smoothstep(.5,.98,dens)*.8);',
-    '  col+=ml*smoothstep(.38,.58,dens)*smoothstep(.8,.58,dens)*lit*.4;',
-    '  float md=1.-smoothstep(mr-1.5/u_res.y,mr,length(d));',
-    '  float maria=fbm3(d*34.+2.)*.5+fbm3(d*84.)*.2;',
-    '  vec3 mcol=hex(240.,236.,230.)-vec3(.15,.15,.14)*smoothstep(-.05,.35,maria);',
-    '  col=mix(col,mcol,md*(1.-smoothstep(.6,.98,dens)*.7));',
-    '  gl_FragColor=vec4(col+grain()*.035,1.);}'
+    '  vec2 p=P();float t=u_time;',
+    '  vec2 c=mix(vec2(.62*asp(),.27),vec2(u_ptr.x*asp(),u_ptr.y),u_hover*.85);',
+    '  float r=length((p-c)*vec2(1.,1.06));',
+    '  float yy=p.y+.03*fbm3(vec2(p.x*1.4-t*.03,p.y*5.));',
+    '  float bands=sin(yy*30.+sin(yy*6.3+1.)*1.8)*.5+.5;',
+    '  float dark=smoothstep(.4,.78,bands)*smoothstep(-.35,.25,fbm3(vec2(p.x*1.8-t*.025,yy*8.)));',
+    '  float core=smoothstep(.058,.054,r);',
+    '  float halo=exp(-r*4.2)*.78+exp(-r*1.7)*.2;',
+    '  float r1=exp(-pow((r-.30)/.05,2.)),r2=exp(-pow((r-.42)/.065,2.));',
+    '  vec3 cool=hex(214.,226.,240.);',
+    '  vec3 Lc=cool*halo+hex(198.,190.,124.)*r1*.32+hex(150.,116.,152.)*r2*.18;',
+    '  float occ=dark*(1.-exp(-r*6.)*.55);',
+    '  vec3 comb=mix(hex(5.,6.,9.),hex(14.,15.,19.),v_uv.y)+Lc*(1.-occ*.85);',
+    '  comb+=cool*exp(-r*3.)*.1*smoothstep(.1,.5,dark)*smoothstep(.95,.5,dark);',
+    '  comb=mix(comb,hex(244.,246.,248.),core*(1.-dark*.35));',
+    '  float g=grain();comb+=g*.035;',
+    '  float st=floor(clamp(1.-r/.62,0.,1.)*6.)/6.;',
+    '  vec3 seqc=mix(vec3(.07+.82*st*(1.-dark*.75)),vec3(1.),core);',
+    '  vec3 flatc=hex(10.,11.,14.);',
+    '  if(r<.2)flatc=hex(150.,162.,176.);else if(r<.34)flatc=hex(92.,100.,110.);else if(r<.38)flatc=hex(186.,178.,120.);else if(r<.48)flatc=hex(122.,102.,126.);',
+    '  flatc=mix(flatc,hex(24.,26.,32.),step(.5,dark)*step(.058,r)*.9);flatc=mix(flatc,hex(244.,246.,248.),core);',
+    '  gl_FragColor=vec4(pick(comb,seqc,flatc,vec3(lum(comb))+g*.04),1.);}'
   ].join('\n');
 
-  /* 石塔：哈尔格林姆斯教堂的黄昏。中间是尖塔 + 平整的塔身，两侧竖向柱子一格格往外降；
-     混凝土灰里带一点紫，柱子有圆柱的明暗；尖塔上错落的小窗、钟楼的拱窗和钟面是暖黄的灯 */
+  /* 石塔 · 序列：23 根竖条从最高处往两边一级级降（每级同样的落差），最高那格跟着鼠标；
+     对比：大面积钴蓝对暖灰，只在最高的几根上有错落的暖黄点；质感：混凝土细颗粒、竖向雨痕、柱面圆弧明暗 */
   SHADERS.tower = [
-    'float warm(vec2 uv,vec2 c,vec2 hs){vec2 d=abs(uv-c)/hs;return smoothstep(1.,.6,max(d.x,d.y));}',
     'void main(){',
-    '  vec2 uv=v_uv;float x=uv.x,y=uv.y;float ax=abs(x-.5);',
-    '  vec3 col=mix(hex(38.,88.,194.),hex(108.,152.,230.),smoothstep(0.,.62,y));',
-    '  float stepH=.021;float ys=floor(y/stepH)*stepH;',
-    '  float sh=mix(.016,.17,smoothstep(.03,.30,ys));',
-    '  bool inSpire=y>.03&&y<.30&&ax<sh;bool inBody=ax<.25&&y>=.30;',
-    '  float cw=.042;float ci=floor((ax-.25)/cw);float cx=fract((ax-.25)/cw);',
-    '  bool inCol=ax>=.25&&y>.33+ci*.034;',
-    '  float glowAcc=0.;',
-    '  if(inSpire||inBody||inCol){',
-    '    vec3 c=hex(140.,134.,141.);',
-    '    float n=fbm3(vec2(x*55.,y*6.))*.08+(hash12(gl_FragCoord.xy*.7)-.5)*.05+fbm3(vec2(x*150.,y*2.4))*.06;',
-    '    c*=1.+n;',
-    '    if(inCol){float s=.8+.3*sin(3.14159*cx);s-=.28*smoothstep(.14,0.,cx)+.1*smoothstep(.86,1.,cx);c*=s;}',
-    '    if(inSpire){float sx=fract((x-.5)/.034+.5);c*=.84+.22*sin(3.14159*sx);}',
-    '    if(inBody){c*=1.-.05*smoothstep(.2,.25,ax);}',
-    '    c*=mix(.86,1.05,smoothstep(.2,1.,y));c*=1.-.06*step(.5,x);',
-    '    c+=hex(255.,196.,110.)*smoothstep(.86,1.,y)*.1;',
-    '    col=c;',
-    '    if(inSpire&&y>.055&&y<.235){',
-    '      vec2 g=vec2((x-.5)/.022,(y-.055)/.026);float row=floor(g.y);g.x+=mod(row,2.)*.5;',
-    '      vec2 gi=floor(g),gf=fract(g);float on=step(.38,hash12(gi+vec2(3.,row)));',
-    '      float slot=smoothstep(.2,.08,abs(gf.x-.5))*smoothstep(.34,.18,abs(gf.y-.5))*on;',
-    '      col=mix(col,hex(255.,206.,104.),slot);glowAcc+=slot;}',
-    '    for(int i=0;i<3;i++){float fi=float(i)-1.;vec2 wc=vec2(.5+fi*.052,.268);',
-    '      float arch=warm(uv,wc,vec2(.013,.022))*step(abs(x-wc.x),.013);',
-    '      col=mix(col,mix(hex(255.,190.,80.),hex(190.,110.,30.),smoothstep(.25,.29,y)),arch);glowAcc+=arch;}',
-    '    vec2 cd=vec2((x-.5)*asp(),y-.35);float cr=length(cd);',
-    '    float face=smoothstep(.03,.026,cr);col=mix(col,hex(246.,210.,116.),face);',
-    '    float hand=face*(smoothstep(.003,.0,abs(cd.x))*step(-.02,cd.y)*step(cd.y,0.)+smoothstep(.003,.0,abs(cd.y+cd.x*.3))*step(0.,cd.x)*step(cd.x,.016));',
-    '    col=mix(col,hex(70.,52.,30.),hand*.9);glowAcc+=face;',
-    '    for(int i=0;i<2;i++){float fy=.455+float(i)*.1;float win=warm(uv,vec2(.5,fy),vec2(.006,.016));',
-    '      col=mix(col,hex(236.,232.,220.),win*.85);}',
-    '  }',
-    '  vec2 sp=vec2((x-.5)*asp(),y-.15);col+=hex(255.,190.,90.)*exp(-length(sp*vec2(3.,1.2))*9.)*.12;',
-    '  col+=hex(255.,200.,110.)*exp(-length(vec2((x-.5)*asp(),y-.35))*28.)*.35;',
-    '  gl_FragColor=vec4(col+grain()*.02,1.);}'
+    '  vec2 uv=v_uv;float x=uv.x,y=uv.y;float N=15.;',
+    '  float fi=floor(x*N),fx=fract(x*N);',
+    '  float c=mix(N*.5-.5,clamp(u_ptr.x,0.,1.)*N-.5,u_hover);',
+    '  float k=min(floor(abs(fi-c)+.5),5.);float s=k/5.;',
+    '  vec3 conc=hex(112.,106.,116.),cob=hex(30.,78.,186.),warm=hex(252.,200.,92.);',
+    '  vec3 fc=mix(conc,cob,s);',
+    '  fc*=mix(1.08,.92,smoothstep(0.,1.,y));fc+=hex(255.,190.,110.)*smoothstep(.8,1.,y)*.06*(1.-s);',
+    '  float ly=(y-.1)/.034;float row=floor(ly);float lxv=fract(fx*1.+mod(row,2.)*.5);',
+    '  float on=step(.45,hash12(vec2(fi,row)+3.))*step(k,1.)*step(0.,ly)*step(ly,12.);',
+    '  float slot=smoothstep(.16,.09,abs(lxv-.5))*smoothstep(.34,.18,abs(fract(ly)-.5))*on;',
+    '  float glow=on*exp(-length(vec2(lxv-.5,(fract(ly)-.5)*1.3))*5.)*.3;',
+    '  float flute=.82+.3*sin(3.14159*fx);float groove=smoothstep(0.,.06,fx)*smoothstep(1.,.94,fx);',
+    '  float gr=(hash12(gl_FragCoord.xy*.73)-.5)*.08;float streak=fbm3(vec2(x*130.,y*2.2))*.08;',
+    '  float T=(flute+gr+streak)*(.45+.55*groove);',
+    '  vec3 comb=mix(fc*T,warm,slot)+warm*glow*(1.-slot);',
+    '  vec3 seqc=vec3(.18+.66*(1.-s))*(.55+.45*groove);seqc=mix(seqc,vec3(1.),slot);',
+    '  vec3 flatc=mix(fc,warm,slot);',
+    '  vec3 texc=mix(vec3(.55)*T,vec3(.95),slot*.7);',
+    '  gl_FragColor=vec4(pick(comb,seqc,flatc,texc),1.);}'
   ].join('\n');
 
-  /* 冰沙：橙红的底从里面透亮（中心亮、边缘深），表面一颗颗小冰晶（Voronoi 小圆顶，
-     朝光的一侧亮、背光一侧暗，个别跟着鼠标闪一下）；挖过的地方留一道带光泽的弧 */
+  /* 冰沙 · 序列：颗粒沿着挖痕的同心弧一道道排开，每四道弧有一道亮边；
+     对比：同一个橙色系从深砖红到杏色，高光是奶白；质感：半透明，每颗冰晶一个小圆顶，光跟着鼠标 */
   SHADERS.slush = [
-    'float crystals(vec2 p,float sc,vec2 lp,float seed,float keep,out float dome){',
-    '  vec2 g=p*sc;vec2 gi=floor(g),gf=fract(g);float f1=9.;vec2 cid=vec2(0.),rp1=vec2(0.);',
-    '  for(int j=-1;j<=1;j++)for(int i=-1;i<=1;i++){vec2 o=vec2(float(i),float(j));vec2 rp=o+hash22(gi+o+seed)-gf;float dd=dot(rp,rp);',
-    '    if(dd<f1){f1=dd;cid=gi+o;rp1=rp;}}',
-    '  f1=sqrt(f1);float cr=hash12(cid*1.3+seed);float rad=.3+.2*hash12(cid+7.+seed);',
-    '  dome=smoothstep(rad,rad*.55,f1)*step(keep,cr);',
-    '  vec3 dn=normalize(vec3(rp1/max(rad,.001)*1.1,1.));vec3 L=normalize(vec3(lp-p,.5));',
-    '  float spk=pow(max(dot(reflect(-L,dn),vec3(0.,0.,1.)),0.),26.)*dome;',
-    '  return (dot(dn,L)-.72)*dome+spk*(.6+.8*step(.8,cr));}',
     'void main(){',
-    '  vec2 p=P();vec2 lp=mix(vec2(.28*asp(),.1),vec2(u_ptr.x*asp(),u_ptr.y),u_hover);',
-    '  float n=fbm(p*2.+1.3);',
-    '  vec3 deep=hex(186.,72.,16.),mid=hex(232.,132.,30.),hi=hex(250.,190.,108.);',
-    '  float glow=exp(-length((p-vec2(.4*asp(),.3))*vec2(1.,1.25))*1.9);',
-    '  vec3 col=mix(deep,mid,smoothstep(-.5,.4,n)*.8+.2);col=mix(col,hi,glow*.62);',
-    '  float a1=length(p-vec2(1.25*asp(),-.18))-.95+fbm3(p*2.6)*.04;',
-    '  float fold1=smoothstep(-.02,.03,a1)*smoothstep(.16,.03,a1);float lip1=smoothstep(.014,0.,abs(a1));float sh1=smoothstep(0.,-.05,a1)*smoothstep(-.12,-.05,a1);',
-    '  float a2=length(p-vec2(-.22*asp(),1.05))-.62+fbm3(p*3.+5.)*.035;',
-    '  float fold2=smoothstep(-.02,.025,a2)*smoothstep(.11,.02,a2);float lip2=smoothstep(.011,0.,abs(a2));',
-    '  col=mix(col,hi*1.06,fold1*.5+fold2*.35);col*=1.-sh1*.14;',
-    '  float var1=smoothstep(-.3,.5,fbm3(p*vec2(4.,6.)+2.)),var2=smoothstep(-.3,.5,fbm3(p*vec2(4.,6.)+9.));',
-    '  col+=hex(255.,236.,206.)*(lip1*.38*var1+lip2*.28*var2);',
-    '  float d1,d2;float big=crystals(p,26.,lp,0.,.45,d1);float small=crystals(p,58.,lp,3.7,.25,d2);',
-    '  col*=1.+big*.55+small*.4;',
-    '  col+=hex(255.,242.,224.)*max(big,0.)*.12;',
-    '  float fr=smoothstep(.15,.6,fbm3(p*3.3+7.));col=mix(col,hex(255.,226.,190.),fr*.14);',
-    '  gl_FragColor=vec4(col+grain()*.02,1.);}'
+    '  vec2 p=P();vec2 lp=mix(vec2(.3*asp(),.1),vec2(u_ptr.x*asp(),u_ptr.y),u_hover);',
+    '  vec2 s0=vec2(1.08*asp(),-.12);vec2 d=p-s0;float rr=length(d)+fbm3(p*3.)*.012;float ang=atan(d.y,d.x);',
+    '  float n=fbm(p*1.8+1.3);',
+    '  vec3 deep=hex(182.,66.,18.),mid=hex(232.,130.,32.),hi=hex(250.,192.,110.),cream=hex(255.,242.,226.);',
+    '  float glow=exp(-length((p-vec2(.42*asp(),.34))*vec2(1.,1.2))*1.9);',
+    '  float tone=smoothstep(-.5,.4,n)*.75+.25;',
+    '  vec3 base=mix(deep,mid,tone);base=mix(base,hi,glow*.62);',
+    '  float lanes=rr*20.;float lane=floor(lanes);',
+    '  float lip=smoothstep(.07,0.,fract(lanes))*step(mod(lane,4.),.5)*smoothstep(1.5,.6,rr);',
+    '  float rl=(lane+.5)/20.;vec2 g=vec2(ang*rl*20.+mod(lane,2.)*.5,lanes);vec2 gi=floor(g),gf=fract(g);',
+    '  vec2 dv=gf-(vec2(.5)+(hash22(gi)-.5)*vec2(.3,.2));',
+    '  float rad=.2+.18*hash12(gi+4.)+.08*glow;',
+    '  float gm=smoothstep(rad,rad*.6,length(dv))*step(.3,hash12(gi+9.));',
+    '  vec3 dn=normalize(vec3(dv/max(rad,.001)*1.1,1.));vec3 Ld=normalize(vec3(lp-p,.5));',
+    '  float shade=(dot(dn,Ld)-.7)*gm;',
+    '  float spk=pow(max(dot(reflect(-Ld,dn),vec3(0.,0.,1.)),0.),26.)*gm;',
+    '  vec3 comb=base*(1.+shade*.6)+cream*spk*.85+cream*lip*.3;',
+    '  comb=mix(comb,cream,gm*smoothstep(.6,1.,dot(dn,Ld))*.24);',
+    '  float gg=grain();comb+=gg*.02;',
+    '  vec3 seqc=vec3(.1)+vec3(.78)*gm+vec3(.45)*lip;',
+    '  float lev=tone*.6+glow*.55;',
+    '  vec3 flatc=lev<.52?deep:(lev<.78?mid:hi);flatc=mix(flatc,cream,max(step(.5,gm),lip));',
+    '  vec3 texc=vec3(.55)*(1.+shade*.6)+vec3(spk*.85+lip*.3)+gg*.03;',
+    '  gl_FragColor=vec4(pick(comb,seqc,flatc,texc),1.);}'
   ].join('\n');
 
-  /* 苔原：上面是阴天的灰；山体的土黄、赭石、橄榄一层层横着叠（带草的纤维感）；
-     中间一条发黄的苔藓绿；下面是湿的玄武岩，零星苔藓和石子，内容放在这一块上 */
+  /* 苔原 · 序列：横向地层，厚薄交替、微微倾斜，中间夹一条亮绿，下面一大块炭黑；
+     对比：土黄、赭石、橄榄占大面积，苔藓绿一小条，炭黑压底；质感：草的纤维、苔藓的团块、玄武岩碎粒。鼠标上下有一点视差 */
   SHADERS.tundra = [
     'void main(){',
-    '  vec2 uv=v_uv;vec2 p=P();float y=uv.y;',
-    '  vec2 w=vec2(fbm3(p*1.6+2.),fbm3(p*1.6+8.));',
-    '  float z=y+.12*fbm(p*2.2+w*1.3)+.03*gnoise(p*9.);',
+    '  vec2 uv=v_uv;vec2 p=P();float x=uv.x;',
+    '  float yy=uv.y+x*.05+.018*fbm3(vec2(x*3.,uv.y*2.))+(u_ptr.y-.5)*.03*u_hover*(1.-uv.y);',
+    '  float m;vec3 fc;',
+    '  if(yy<.07){m=0.;fc=hex(212.,216.,219.);}',
+    '  else if(yy<.16){m=1.;fc=hex(178.,140.,70.);}',
+    '  else if(yy<.20){m=1.;fc=hex(156.,123.,76.);}',
+    '  else if(yy<.27){m=1.;fc=hex(110.,102.,48.);}',
+    '  else if(yy<.29){m=2.;fc=hex(140.,78.,46.);}',
+    '  else if(yy<.37){m=1.;fc=hex(184.,146.,72.);}',
+    '  else if(yy<.40){m=1.;fc=hex(150.,118.,74.);}',
+    '  else if(yy<.46){m=3.;fc=hex(160.,170.,58.);}',
+    '  else if(yy<.48){m=1.;fc=hex(96.,92.,44.);}',
+    '  else if(yy<.965){m=4.;fc=hex(44.,45.,41.);}',
+    '  else if(yy<.98){m=5.;fc=hex(94.,103.,108.);}',
+    '  else{m=4.;fc=hex(44.,45.,41.);}',
     '  float fib=gnoise(vec2(p.x*260.,p.y*46.))*.45+gnoise(vec2(p.x*110.+3.,p.y*24.))*.3+gnoise(p*60.)*.25;',
-    '  vec3 col;',
-    '  if(z<.1){col=mix(hex(216.,220.,222.),hex(198.,203.,206.),z/.1)+fbm3(p*vec2(3.,9.))*.035;}',
-    '  else if(z<.44){',
-    '    float slope=(p.y*1.-p.x*.3);',
-    '    float band=sin(slope*26.+fbm3(p*vec2(2.,5.))*4.);',
-    '    vec3 gold=hex(184.,146.,72.),tan=hex(158.,124.,76.),olive=hex(112.,102.,48.),rust=hex(142.,82.,46.);',
-    '    col=mix(gold,tan,smoothstep(-.2,.6,fbm3(p*vec2(3.,6.))+.2));',
-    '    col=mix(col,olive,smoothstep(.35,.95,band)*.55);',
-    '    col=mix(col,rust,smoothstep(.45,.8,fbm3(p*4.5+3.))*.35);',
-    '    col*=.86+.26*fib;',
-    '    float rock=smoothstep(.62,.72,fbm(p*7.+1.))*.8;col=mix(col,hex(52.,52.,46.),rock);',
-    '    col=mix(col,col*.78,smoothstep(.02,0.,abs(z-.1)));',
-    '  }else if(z<.56){',
-    '    float cl=fbm(p*8.+w);vec3 m1=hex(122.,136.,40.),m2=hex(168.,174.,58.);',
-    '    col=mix(m1,m2,smoothstep(-.25,.45,cl));col*=.82+.34*fib;',
-    '    col=mix(col,hex(184.,146.,72.)*(.9+.2*fib),smoothstep(.49,.44,z)*smoothstep(.1,.5,fbm3(p*5.))*.6);',
-    '  }else{',
-    '    col=mix(hex(38.,39.,36.),hex(58.,59.,54.),fbm3(p*5.)*.5+.5);',
-    '    float wet=pow(max(fbm3(p*vec2(9.,5.)+4.),0.),2.)*.35;col+=hex(150.,160.,168.)*wet*.25;',
-    '    float mp=smoothstep(.25,.6,fbm(p*4.+w*1.5+2.))*(1.-smoothstep(.56,.8,z));',
-    '    col=mix(col,hex(118.,130.,40.)*(.78+.34*fib),mp*.8);',
-    '    float foam=smoothstep(.55,.9,gnoise(vec2(p.x*9.,p.y*40.)+w*3.))*smoothstep(.02,0.,abs(y-.93-fbm3(vec2(p.x*2.,9.))*.04));',
-    '    col=mix(col,hex(226.,232.,232.),foam*.6);',
-    '  }',
-    '  gl_FragColor=vec4(col+grain()*.03,1.);}'
+    '  float T=1.;',
+    '  if(m<.5)T=1.+fbm3(p*vec2(3.,9.))*.06;',
+    '  else if(m<1.5)T=.84+.28*fib;',
+    '  else if(m<2.5)T=.9+.2*fib;',
+    '  else if(m<3.5)T=.78+.4*smoothstep(-.25,.45,fbm(p*9.))+.14*smoothstep(.45,.75,gnoise(p*140.));',
+    '  else if(m<4.5){vec2 g=p*22.;vec2 gi=floor(g),gf=fract(g);float f1=9.;vec2 rp1=vec2(0.);',
+    '    for(int j=-1;j<=1;j++)for(int i=-1;i<=1;i++){vec2 o=vec2(float(i),float(j));vec2 rp=o+hash22(gi+o)-gf;float dd=dot(rp,rp);if(dd<f1){f1=dd;rp1=rp;}}',
+    '    float peb=smoothstep(.42,.3,sqrt(f1))*(.5+.5*(-rp1.y+.3));T=.9+.25*peb+fbm3(p*6.)*.12;}',
+    '  else T=1.+.06*gnoise(vec2(p.x*2.,p.y*120.));',
+    '  float gg=grain();',
+    '  vec3 comb=fc*T+gg*.03;',
+    '  vec3 seqc=vec3(smoothstep(.02,.8,lum(fc)));',
+    '  gl_FragColor=vec4(pick(comb,seqc,fc,vec3(.55)*T+gg*.03),1.);}'
   ].join('\n');
 
-  /* 彩虹薄雾：阴天的灰蓝，雾慢慢飘；一道很淡的彩虹斜着穿过，外侧杏色、内侧偏蓝，
-     被雾吃掉一半，边缘没有硬线；彩虹里侧的天比外侧亮一点 */
+  /* 彩虹薄雾 · 序列：一道主虹、一道颜色反过来的淡副虹，中间夹一条更暗的天；
+     对比：灰蓝底上几乎没有饱和度的粉彩；质感：雾的颗粒和慢慢飘的明暗，没有硬边。鼠标左右推动色带 */
   SHADERS.rainbow = [
     'vec3 pastel(float x){vec3 c0=hex(236.,190.,160.),c1=hex(236.,218.,156.),c2=hex(203.,226.,176.),c3=hex(182.,224.,212.),c4=hex(168.,200.,236.),c5=hex(188.,180.,222.);',
     '  x=clamp(x,0.,1.)*5.;if(x<1.)return mix(c0,c1,x);if(x<2.)return mix(c1,c2,x-1.);if(x<3.)return mix(c2,c3,x-2.);if(x<4.)return mix(c3,c4,x-3.);return mix(c4,c5,x-4.);}',
     'void main(){',
     '  vec2 uv=v_uv;vec2 p=P();float t=u_time;',
-    '  vec3 col=mix(hex(128.,142.,162.),hex(172.,182.,192.),smoothstep(0.,.5,uv.y));col=mix(col,hex(206.,208.,205.),smoothstep(.45,1.,uv.y));',
-    '  float m=fbm(p*1.6+vec2(t*.015,-t*.006));col=mix(col,hex(226.,229.,230.),smoothstep(-.15,.55,m)*.3);',
+    '  vec3 base=mix(hex(128.,142.,162.),hex(172.,182.,192.),smoothstep(0.,.5,uv.y));base=mix(base,hex(206.,208.,205.),smoothstep(.45,1.,uv.y));',
+    '  float m=fbm(p*1.6+vec2(t*.015,-t*.006));',
     '  vec2 A=vec2(.08*asp(),1.18),B=vec2(.9*asp(),-.22);vec2 D=normalize(B-A);vec2 Nn=vec2(-D.y,D.x);',
-    '  float s=dot(p-A,Nn);float al=dot(p-A,D)/length(B-A);float xs=s/.22;',
-    '  float band=smoothstep(1.,.3,abs(xs));float fade=smoothstep(.04,.42,al)*smoothstep(1.04,.58,al);',
+    '  float bw=.2;float s=dot(p-A,Nn)+(u_ptr.x-.5)*.1*u_hover;float al=dot(p-A,D)/length(B-A);',
+    '  float xs=s/bw,xs2=(s+bw*2.9)/(bw*1.25);',
+    '  float band=smoothstep(1.,.3,abs(xs)),band2=smoothstep(1.,.35,abs(xs2));',
+    '  float gap=smoothstep(-.95,-1.15,xs)*smoothstep(1.,1.2,xs2);',
+    '  float fade=smoothstep(.04,.42,al)*smoothstep(1.04,.58,al);',
     '  float patchy=.5+.5*smoothstep(-.3,.5,fbm(p*2.2+vec2(t*.01,t*.012)));',
-    '  col=mix(col,pastel(xs*.5+.5)*1.04,band*fade*patchy*.74);',
-    '  col+=smoothstep(.3,1.6,xs)*fade*.045;',
-    '  gl_FragColor=vec4(col+grain()*.018,1.);}'
+    '  vec3 comb=mix(base,hex(226.,229.,230.),smoothstep(-.15,.55,m)*.3);',
+    '  comb*=1.-gap*fade*.07;',
+    '  comb=mix(comb,pastel(xs*.5+.5)*1.04,band*fade*patchy*.74);',
+    '  comb=mix(comb,pastel(.5-.5*xs2),band2*fade*patchy*.32);',
+    '  comb+=smoothstep(.3,1.6,xs)*fade*.045;',
+    '  float gg=grain();comb+=gg*.018;',
+    '  float q1=floor(clamp(xs*.5+.5,0.,.999)*6.)/5.,q2=floor(clamp(.5-.5*xs2,0.,.999)*6.)/5.;',
+    '  vec3 seqc=vec3(.34-gap*fade*.12);seqc=mix(seqc,vec3(.5+.45*q1),step(.5,band)*step(.2,fade));seqc=mix(seqc,vec3(.42+.25*q2),step(.5,band2)*step(.2,fade));',
+    '  vec3 flatc=uv.y<.45?hex(132.,146.,166.):hex(196.,200.,202.);',
+    '  flatc=mix(flatc,pastel(q1),step(.5,band)*step(.2,fade));flatc=mix(flatc,mix(flatc,pastel(q2),.6),step(.5,band2)*step(.2,fade));',
+    '  gl_FragColor=vec4(pick(comb,seqc,flatc,vec3(lum(comb))+gg*.02),1.);}'
   ].join('\n');
 
-  /* 天水镜像：上面是日落后的天，云底带杏粉色，地平线一道橙光；下面的水把整片天倒过来，
-     压暗、偏蓝，越往下越暗，有很细的横向波纹；地平线是一条暗的岸线，岸上几点灯也倒映下来 */
+  /* 天水镜像 · 序列：一条水平对称轴，上下是同一片纹理，下半部分越往下水纹越疏；轴跟着鼠标上下；
+     对比：冷的蓝紫对轴线上一道暖橙，下半部整体压暗偏蓝；质感：上面柔的云絮，下面水的横纹 */
   SHADERS.mirror = [
-    'vec3 sky(vec2 q,float t){float y=q.y;',
-    '  vec3 base=mix(hex(246.,156.,82.),hex(214.,222.,236.),smoothstep(0.,.09,y));base=mix(base,hex(104.,136.,196.),smoothstep(.09,.42,y));',
-    '  vec2 cq=vec2(q.x*1.1+t*.004,y*2.7);vec2 wq=vec2(fbm3(cq*1.6),fbm3(cq*1.6+5.));',
-    '  float c=fbm(cq*1.5+wq*.9);float dens=smoothstep(-.08,.32,c);',
-    '  float sh=fbm3(cq*3.2+wq*1.5+4.);',
-    '  vec3 cc=mix(hex(88.,98.,128.),hex(238.,242.,250.),smoothstep(-.3,.45,sh));',
-    '  cc=mix(cc,mix(hex(240.,168.,140.),hex(250.,196.,160.),smoothstep(-.2,.4,sh)),smoothstep(.2,.03,y)*.85);',
-    '  base=mix(base,cc,dens*.9);',
-    '  return base+hex(255.,146.,52.)*exp(-y*34.)*.65;}',
+    'float F(vec2 q,float t){vec2 cq=vec2(q.x*1.1+t*.004,q.y*2.6);vec2 wq=vec2(fbm3(cq*1.6),fbm3(cq*1.6+5.));return fbm(cq*1.5+wq*.9);}',
+    'vec3 skyP(float h,float f){',
+    '  vec3 base=mix(hex(246.,158.,86.),hex(206.,212.,232.),smoothstep(0.,.08,h));base=mix(base,hex(108.,134.,194.),smoothstep(.08,.42,h));',
+    '  vec3 cl=mix(hex(92.,100.,132.),hex(236.,238.,248.),smoothstep(-.3,.45,f*1.2+.1));cl=mix(cl,hex(240.,172.,146.),smoothstep(.18,.03,h)*.8);',
+    '  return mix(base,cl,smoothstep(-.08,.32,f)*.85);}',
     'void main(){',
-    '  vec2 uv=v_uv;float t=u_time;float hz=.40;vec3 col;',
-    '  float shore=hz-.014+gnoise(vec2(uv.x*14.,.5))*.007;',
-    '  if(uv.y<hz){col=sky(vec2(uv.x*asp(),hz-uv.y),t);}',
-    '  else{float dy=uv.y-hz;',
-    '    float rip=(gnoise(vec2(uv.x*5.,uv.y*80.-t*.4))*.004+sin(uv.y*430.+t*1.2+gnoise(vec2(uv.x*3.,uv.y*18.))*4.)*.0011)*smoothstep(.01,.2,dy);',
-    '    col=sky(vec2(uv.x*asp()+rip*asp(),dy*1.04+rip*.4),t)*vec3(.7,.78,.9)*mix(1.,.58,smoothstep(0.,.6,dy));',
-    '    col+=hex(220.,230.,240.)*smoothstep(.93,1.,gnoise(vec2(uv.x*2.,uv.y*150.)))*.05;}',
-    '  float land=step(shore,uv.y)*step(uv.y,hz);float rland=step(hz,uv.y)*step(uv.y,hz+(hz-shore)*.9);',
-    '  col=mix(col,hex(24.,32.,32.),land);col=mix(col,hex(30.,38.,40.),rland*.85);',
-    '  vec2 lg=vec2(uv.x*60.,0.);float li=step(.82,hash12(floor(lg)))*smoothstep(.5,.1,abs(fract(lg.x)-.5));',
-    '  float ly=smoothstep(.004,0.,abs(uv.y-(hz-.006)));float lry=smoothstep(.01,0.,abs(uv.y-(hz+.008)))*.5;',
-    '  col+=hex(255.,214.,140.)*li*(ly+lry);',
-    '  gl_FragColor=vec4(col+grain()*.02,1.);}'
+    '  vec2 uv=v_uv;float t=u_time;',
+    '  float axis=mix(.40,clamp(u_ptr.y,.30,.46),u_hover);',
+    '  float dy=uv.y-axis;float below=step(0.,dy);float depth=max(dy,0.);',
+    '  float lc=pow(depth,.75)*22.;',
+    '  float rip=below*(sin(lc*6.2832+gnoise(vec2(uv.x*3.,lc))*2.)*.004+gnoise(vec2(uv.x*5.,lc*2.))*.003);',
+    '  vec2 q=vec2(uv.x*asp()+rip*asp(),abs(dy)*mix(1.,1.05,below)+rip*.3);',
+    '  float f=F(q,t);',
+    '  vec3 col=skyP(q.y,f);',
+    '  col=mix(col,col*vec3(.7,.78,.9)*mix(1.,.6,smoothstep(0.,.6,depth)),below);',
+    '  float line=smoothstep(.965,1.,sin(lc*6.2832))*below*smoothstep(.02,.14,depth);',
+    '  col+=hex(200.,214.,236.)*line*.05;',
+    '  float ax=exp(-abs(dy)*u_res.y*.35);vec3 warm=hex(255.,156.,64.);',
+    '  col=mix(col,warm*1.05,ax*.9);col+=warm*exp(-abs(dy)*40.)*.18;',
+    '  float gg=grain();col+=gg*.02;',
+    '  float dens=smoothstep(-.08,.32,f);',
+    '  vec3 seqc=vec3(.2+.55*dens)*mix(1.,.68,below)+line*.14;seqc=mix(seqc,vec3(1.),ax);',
+    '  float zone=step(.08,q.y)+step(.25,q.y);',
+    '  vec3 flatc=zone<.5?hex(240.,170.,120.):(zone<1.5?hex(200.,206.,228.):hex(112.,136.,194.));',
+    '  flatc=mix(flatc,hex(226.,230.,242.),step(.5,dens));flatc=mix(flatc,flatc*vec3(.62,.72,.86),below);flatc=mix(flatc,warm,step(.5,ax));',
+    '  gl_FragColor=vec4(pick(col,seqc,flatc,vec3(lum(col))),1.);}'
   ].join('\n');
 
-  /* 冰泉：冰川融水的蓝。乳白里透青绿，白色水花一缕一缕（域扭曲的 fbm 取脊线），
-     整体往下流；右上有个漩涡，中心颜色最深；下半部分水花收一点，好放字 */
+  /* 冰泉 · 序列：流函数的等值线——绕漩涡的一根根白丝，往外被水流拉直；漩涡跟着鼠标；
+     对比：青绿、乳白、深青同一冷色系，漩涡中心最深；质感：乳白的通透和水花颗粒。下半部白丝收一点，好放字 */
   SHADERS.spring = [
     'void main(){',
-    '  vec2 p=P();float t=u_time*.3;vec2 c=vec2(.64*asp(),.27);vec2 d=p-c;float r=length(d);',
-    '  float sw=1.5*exp(-r*4.2);float cs=cos(sw),sn=sin(sw);vec2 q=c+mat2(cs,-sn,sn,cs)*d;q.y-=t*.32;',
-    '  vec2 w=vec2(fbm3(q*2.5+vec2(0.,t)),fbm3(q*2.5+vec2(4.2,-t)));',
-    '  float n=fbm(q*vec2(3.,4.)+w*1.4);',
-    '  float ridge=pow(clamp(1.-abs(n)*2.3,0.,1.),4.);',
-    '  float fine=pow(clamp(1.-abs(fbm3(q*vec2(9.,12.)+w*2.))*3.,0.,1.),5.);',
-    '  vec3 col=mix(hex(14.,120.,148.),hex(52.,190.,212.),smoothstep(-.45,.15,n));',
-    '  col=mix(col,hex(144.,226.,238.),smoothstep(.0,.5,n)*.8);',
-    '  float calm=mix(1.,.5,smoothstep(.42,.72,v_uv.y));float foam=clamp(ridge*.9+fine*.6,0.,1.)*calm;',
-    '  col=mix(col,hex(220.,246.,250.),foam);col+=pow(foam,4.)*.22;',
-    '  col=mix(col,hex(10.,96.,122.),smoothstep(.1,.0,r)*.55);',
-    '  col=mix(col,col*vec3(.9,.97,1.),smoothstep(.5,1.,v_uv.y)*.4);',
-    '  gl_FragColor=vec4(col+grain()*.02,1.);}'
+    '  vec2 p=P();float t=u_time*.22;',
+    '  vec2 c=mix(vec2(.62*asp(),.3),vec2(u_ptr.x*asp(),u_ptr.y),u_hover*.8);',
+    '  vec2 d=p-c;float r=length(d)+.002;',
+    '  float psi=.5*log(r)+p.x*.85+.32*fbm(p*2.1+vec2(0.,-t));',
+    '  float lf=abs(fract(psi*8.)-.5);float w=.025+.08*smoothstep(-.35,.5,fbm3(p*3.+t));',
+    '  float calm=mix(1.,.45,smoothstep(.45,.75,v_uv.y));',
+    '  float fil=smoothstep(w,0.,lf)*calm*smoothstep(-.45,.05,fbm3(p*5.+vec2(t*.5,0.)));',
+    '  float foam=smoothstep(.25,.75,fbm(p*6.5+vec2(0.,-t*2.)));',
+    '  vec3 deep=hex(10.,100.,128.),mid=hex(46.,184.,206.),hi=hex(150.,226.,238.),milk=hex(228.,247.,250.);',
+    '  float g=smoothstep(0.,.5,r);float hz=fbm3(p*1.5+t*.2)+.3;',
+    '  vec3 base=mix(deep,mid,g);base=mix(base,hi,smoothstep(.1,.7,hz)*.6);',
+    '  vec3 comb=mix(base,milk,clamp(fil*.85+foam*fil*.1+smoothstep(.22,0.,lf)*.12*calm,0.,1.));',
+    '  float gg=grain();comb+=gg*.02;',
+    '  vec3 seqc=vec3(.1)+vec3(.85)*fil;',
+    '  vec3 flatc=g<.35?deep:(hz>.4?hi:mid);flatc=mix(flatc,milk,step(.5,fil));',
+    '  gl_FragColor=vec4(pick(comb,seqc,flatc,vec3(lum(comb))+gg*.02),1.);}'
   ].join('\n');
 
   var VERT = 'attribute vec2 a;varying vec2 v_uv;void main(){v_uv=vec2(a.x*.5+.5,.5-a.y*.5);gl_Position=vec4(a,0.,1.);}';
@@ -299,7 +299,7 @@
     gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
     this.gl = gl; this.canvas = canvas; this.mode = mode; this.scale = scale;
     this.u = {};
-    ['u_res', 'u_time', 'u_ptr', 'u_hover', 'u_mode'].forEach(function (k) { this.u[k] = gl.getUniformLocation(prog, k); }, this);
+    ['u_res', 'u_time', 'u_ptr', 'u_hover', 'u_mode', 'u_view'].forEach(function (k) { this.u[k] = gl.getUniformLocation(prog, k); }, this);
   }
   Layer.prototype.draw = function (t, card) {
     var gl = this.gl, c = this.canvas;
@@ -312,6 +312,7 @@
     gl.uniform2f(this.u.u_ptr, card.ptr[0], card.ptr[1]);
     gl.uniform1f(this.u.u_hover, card.hover);
     gl.uniform1f(this.u.u_mode, this.mode);
+    gl.uniform1f(this.u.u_view, view);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
   };
 
@@ -326,7 +327,8 @@
     mirror: { animate: true, scale: .85 },
     spring: { animate: true, scale: .85 }
   };
-
+  var VIEWS = ['all', 'seq', 'color', 'tex'];
+  var view = 0;
   var reduced = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
   var cards = [];
 
@@ -335,8 +337,7 @@
     if (!kind || !SHADERS[name]) return;
     var card = { el: el, kind: kind, layers: [], ptr: [.5, .5], target: [.5, .5], hover: 0, hoverTarget: 0, visible: true, dirty: true };
     try {
-      var under = el.querySelector('canvas.fx-under');
-      card.layers.push(new Layer(under, name, 0, kind.scale));
+      card.layers.push(new Layer(el.querySelector('canvas.fx-under'), name, 0, kind.scale));
       if (kind.over) card.layers.push(new Layer(el.querySelector('canvas.fx-over'), name, 1, kind.scale));
     } catch (e) {
       el.classList.add('no-fx');
@@ -389,5 +390,31 @@
   }
   requestAnimationFrame(frame);
 
-  window.textureCards = { count: function () { return cards.length; } };
+  /* ---------- 视图切换：合成 / 序列 / 配色 / 质感 ---------- */
+  var NOTES = [
+    '三层叠在一起的样子。',
+    '只留结构和节奏：去掉颜色和材质，用灰度看条、环、带、流线怎么排。',
+    '只留颜色和面积：每块平涂，看用了哪些色、各占多少。',
+    '只留材质：颜色换成中性灰，看颗粒、纤维、反光。'
+  ];
+  function setView(v) {
+    view = Math.max(0, Math.min(3, v | 0));
+    document.body.setAttribute('data-view', VIEWS[view]);
+    Array.prototype.forEach.call(document.querySelectorAll('.views [data-view]'), function (b) {
+      b.setAttribute('aria-checked', String(Number(b.getAttribute('data-view')) === view));
+    });
+    var note = document.getElementById('view-note');
+    if (note) note.textContent = NOTES[view];
+    cards.forEach(function (c) { c.dirty = true; });
+  }
+  Array.prototype.forEach.call(document.querySelectorAll('.views [data-view]'), function (b) {
+    b.addEventListener('click', function () {
+      setView(Number(b.getAttribute('data-view')));
+      try { history.replaceState(null, '', view ? '#' + VIEWS[view] : location.pathname); } catch (e) { /* 预览环境不让改地址就算了 */ }
+    });
+  });
+  var fromHash = VIEWS.indexOf(location.hash.replace('#', ''));
+  setView(fromHash > 0 ? fromHash : 0);
+
+  window.textureCards = { count: function () { return cards.length; }, view: setView };
 })();

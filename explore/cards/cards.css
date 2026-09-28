@@ -1,33 +1,40 @@
 /* 质感卡片 · 页面与卡片样式
-   每张卡片同一套内容，只换这一组变量：--ink / --ink2（字）、--chip-*（左上标签）、--b1-*（主按钮）、
-   --b2-*（次按钮）、--bar-*（进度）、--fallback（WebGL 起不来时的底）。质感本身在 cards.js 的着色器里。 */
+   卡片上只有名字、一行抽象描述和左上角的颜色占比条；每张只换 --ink / --ink2（字）和 --fallback（WebGL 起不来时的底）。
+   序列、配色、质感都在 cards.js 的着色器里；页面顶部的切换把 data-view 写到 body 上。 */
 
 :root{
   color-scheme:light;
-  --bg:#ECEBE7;--fg:#1B1C1F;--fg2:#606268;--line:rgb(0 0 0 / .08);--link:#2F66D6;--sw-ring:rgb(0 0 0 / .16);
+  --bg:#ECEBE7;--fg:#1B1C1F;--fg2:#606268;--fg3:#8A8C91;--line:rgb(0 0 0 / .08);--seg:rgb(0 0 0 / .06);--seg-on:#FFFFFF;
+  --sw-ring:rgb(0 0 0 / .16);
   --font:"HarmonyOS Sans SC","HarmonyOS Sans","PingFang SC","Microsoft YaHei",system-ui,sans-serif;
   --mono:"JetBrains Mono","HarmonyOS Sans SC",ui-monospace,Menlo,Consolas,monospace;
 }
 @media (prefers-color-scheme: dark){
-  :root:not([data-theme="light"]){color-scheme:dark;--bg:#121315;--fg:#ECECE9;--fg2:#9B9EA4;--line:rgb(255 255 255 / .08);--link:#8AB0FF;--sw-ring:rgb(255 255 255 / .28)}
+  :root:not([data-theme="light"]){color-scheme:dark;--bg:#121315;--fg:#ECECE9;--fg2:#9B9EA4;--fg3:#6E7177;--line:rgb(255 255 255 / .08);
+    --seg:rgb(255 255 255 / .07);--seg-on:rgb(255 255 255 / .16);--sw-ring:rgb(255 255 255 / .28)}
 }
-:root[data-theme="dark"]{color-scheme:dark;--bg:#121315;--fg:#ECECE9;--fg2:#9B9EA4;--line:rgb(255 255 255 / .08);--link:#8AB0FF;--sw-ring:rgb(255 255 255 / .28)}
+:root[data-theme="dark"]{color-scheme:dark;--bg:#121315;--fg:#ECECE9;--fg2:#9B9EA4;--fg3:#6E7177;--line:rgb(255 255 255 / .08);
+  --seg:rgb(255 255 255 / .07);--seg-on:rgb(255 255 255 / .16);--sw-ring:rgb(255 255 255 / .28)}
 
 *{box-sizing:border-box}
 [hidden]{display:none!important}
 body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--font);font-size:14px;line-height:22px;-webkit-font-smoothing:antialiased}
-a{color:var(--link)}
 .page{max-width:1280px;margin:0 auto;padding-inline:32px;padding-block:40px 80px}
 
-.head{max-width:62ch;margin-bottom:40px}
-.head h1{margin:0 0 10px;font-size:30px;line-height:38px;font-weight:600;letter-spacing:.01em;text-wrap:balance}
-.head p{margin:0;color:var(--fg2)}
-.head p+p{margin-top:6px}
+.head{margin-bottom:40px;display:flex;flex-direction:column;gap:14px}
+.head h1{margin:0;font-size:30px;line-height:38px;font-weight:600;letter-spacing:.01em;text-wrap:balance}
+.head p{margin:0;color:var(--fg2);max-width:64ch}
+.viewbar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:6px}
+.views{display:inline-flex;padding:3px;border-radius:12px;background:var(--seg)}
+.views button{height:32px;padding:0 16px;border:0;border-radius:9px;background:transparent;color:var(--fg2);font:inherit;font-size:14px;cursor:pointer}
+.views button[aria-checked="true"]{background:var(--seg-on);color:var(--fg);font-weight:600;box-shadow:0 1px 3px rgb(0 0 0 / .12)}
+.views button:focus-visible{outline:2px solid var(--fg);outline-offset:2px}
+.view-note{margin:0;font-size:13px;color:var(--fg3)}
 
 .wall{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:48px 36px}
-.cell{margin:0;display:flex;flex-direction:column;gap:16px;min-width:0}
+.cell{margin:0;display:flex;flex-direction:column;gap:18px;min-width:0}
 
-/* ---------------- 卡片（内容一样，只换变量） ---------------- */
+/* ---------------- 卡片 ---------------- */
 .card{position:relative;aspect-ratio:4/5;width:100%;border-radius:22px;overflow:hidden;isolation:isolate;
   color:var(--ink);background:var(--fallback,#888);
   box-shadow:0 1px 2px rgb(0 0 0 / .08),0 22px 44px -22px rgb(0 0 0 / .5)}
@@ -35,93 +42,44 @@ a{color:var(--link)}
 .card .fx-under{z-index:0}
 .card .fx-over{z-index:2;pointer-events:none}
 .card.no-fx canvas.fx{display:none}
-.card-body{position:relative;z-index:1;height:100%;display:flex;flex-direction:column;padding:22px 22px 22px}
-.row-top{display:flex;align-items:center;justify-content:space-between;gap:12px}
-.chip{height:26px;padding:0 10px;border-radius:8px;display:inline-flex;align-items:center;font-size:12px;font-weight:600;letter-spacing:.02em;
-  background:var(--chip-bg);color:var(--chip-ink);white-space:nowrap}
-.meta{font-size:12px;color:var(--meta,var(--ink2))}
+.card-body{position:relative;z-index:1;height:100%;display:flex;flex-direction:column;padding:22px}
 .spacer{flex:1}
-.title{margin:0;font-size:26px;line-height:32px;font-weight:600;letter-spacing:.01em}
-.title small{display:block;margin-top:2px;font-size:15px;line-height:22px;font-weight:500;letter-spacing:0;color:var(--ink2)}
-.body{margin:10px 0 14px;font-size:13px;line-height:19px;color:var(--ink2)}
-.bar-row{display:flex;align-items:center;gap:10px;margin-bottom:16px}
-.bar{flex:1;height:6px;border-radius:3px;background:var(--bar-track);overflow:hidden}
-.bar i{display:block;height:100%;width:100%;border-radius:inherit;background:var(--bar-fill)}
-.num{font-family:var(--mono);font-size:12px;color:var(--ink2);font-variant-numeric:tabular-nums}
-.actions{display:flex;gap:8px}
-.btn{flex:1;height:38px;border:0;border-radius:var(--btn-r,12px);font:inherit;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap}
-.btn1{background:var(--b1-bg);color:var(--b1-ink);box-shadow:var(--b1-glow,none)}
-.btn2{background:var(--b2-bg);color:var(--b2-ink);box-shadow:var(--b2-edge,none)}
-.btn:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.title{margin:0;font-size:28px;line-height:34px;font-weight:600;letter-spacing:.02em}
+.line{margin:6px 0 0;font-size:13px;line-height:19px;color:var(--ink2)}
+/* 颜色占比条：每段宽度 = 这个颜色在卡片里大约占的面积 */
+.prop{display:flex;width:96px;height:8px;border-radius:4px;overflow:hidden;box-shadow:0 0 0 1px var(--prop-ring,rgb(0 0 0 / .18))}
+.prop i{flex:var(--w) 1 0;background:var(--c)}
 
-/* 毛玻璃：卡片压在一张照片上，照片从左上角露出来一截，看得出里外的差别 */
+/* 毛玻璃：卡片压在其余八张卡片的主色排成的色条上，色条从左上角露出一截，看得出里外的差别 */
 .glass-wrap{position:relative}
-.glass-wrap .print{position:absolute;inset:-18px 34px 34px -18px;border-radius:18px;background:#3a3f38 url("refs/glass-bg.jpg") center / cover no-repeat}
+.glass-wrap .print{position:absolute;inset:-18px 34px 34px -18px;border-radius:18px;
+  background:linear-gradient(90deg,#1E4FB6 0 13%,#8E8890 13% 25%,#F6C454 25% 28%,#E0228A 28% 40%,#16090F 40% 43%,
+    #34BED4 43% 57%,#0E7894 57% 61%,#A0AA3A 61% 68%,#B28C46 68% 79%,#EEA890 79% 87%,#7090C0 87% 100%)}
 .c-glass{background:rgb(248 249 251 / .42);-webkit-backdrop-filter:blur(26px) saturate(1.8);backdrop-filter:blur(26px) saturate(1.8);
   box-shadow:inset 0 .5px 0 rgb(255 255 255 / .75),inset 0 0 0 .5px rgb(255 255 255 / .3),0 0 0 .5px rgb(0 0 0 / .08),0 24px 48px -22px rgb(0 0 0 / .45);
-  --ink:#111317;--ink2:rgb(17 19 23 / .7);--chip-bg:rgb(255 255 255 / .6);--chip-ink:#111317;
-  --b1-bg:#3574F0;--b1-ink:#FFFFFF;--b2-bg:rgb(255 255 255 / .55);--b2-ink:#111317;--bar-track:rgb(0 0 0 / .1);--bar-fill:#3574F0}
+  --ink:#111317;--ink2:rgb(17 19 23 / .7)}
+body[data-view="seq"] .glass-wrap .print,body[data-view="tex"] .glass-wrap .print{filter:grayscale(1)}
+body[data-view="color"] .c-glass{-webkit-backdrop-filter:none;backdrop-filter:none;background:rgb(248 249 251 / .16)}
+/* 序列视图里冰沙、冰泉的底是近黑的，字换成浅色 */
+body[data-view="seq"] .c-slush,body[data-view="seq"] .c-spring{--ink:#F2F2F0;--ink2:rgb(242 242 240 / .74);--prop-ring:rgb(255 255 255 / .3)}
 
-/* 塑料膜：黑色标签印在洋红铝膜上；标题像袋子上的大字，又黑又重 */
-.c-film{--fallback:linear-gradient(140deg,#F04BA0,#B0165F 55%,#5A0A34);
-  --ink:#12070C;--ink2:rgb(18 7 12 / .74);--chip-bg:#16090F;--chip-ink:#FF4DA6;
-  --b1-bg:#16090F;--b1-ink:#FF5CAE;--b2-bg:rgb(18 7 12 / .12);--b2-ink:#12070C;--b2-edge:inset 0 0 0 1.5px rgb(18 7 12 / .8);
-  --bar-track:rgb(18 7 12 / .22);--bar-fill:#16090F;--btn-r:9px}
-.c-film .chip{height:30px;padding:0 12px;border-radius:7px;font-size:13px}
-.c-film .title{font-size:34px;line-height:38px;letter-spacing:-.01em}
-.c-film .title small{color:var(--ink);font-weight:600}
+.c-film{--fallback:linear-gradient(140deg,#F04BA0,#B0165F 55%,#5A0A34);--ink:#12070C;--ink2:rgb(18 7 12 / .76)}
+.c-film .title{font-size:36px;line-height:40px;letter-spacing:0}
+.c-moon{--fallback:radial-gradient(60% 45% at 62% 27%,#9aa4b0,#2a2e36 55%,#07080b);--ink:#EEF2F6;--ink2:rgb(214 222 232 / .72);--prop-ring:rgb(255 255 255 / .22)}
+.c-tower{--fallback:linear-gradient(90deg,#1E4EBA,#4A5E96 20%,#706A74 42% 58%,#4A5E96 80%,#1E4EBA);--ink:#F4F5F8;--ink2:rgb(236 238 244 / .8);--prop-ring:rgb(255 255 255 / .3)}
+.c-slush{--fallback:radial-gradient(70% 60% at 42% 30%,#F8B05C,#E2721C 55%,#A8380E);--ink:#3E1406;--ink2:rgb(62 20 6 / .78)}
+.c-tundra{--fallback:linear-gradient(180deg,#D4D8DB 7%,#B28C46 7%,#6E6630 27%,#B8924A 29%,#A0AA3A 40%,#2C2D29 48%);--ink:#F2EFE4;--ink2:rgb(236 232 218 / .74)}
+.c-rainbow{--fallback:linear-gradient(160deg,#8290A4,#C8CDD0 60%,#D8D8CE);--ink:#1B2430;--ink2:rgb(27 36 48 / .74)}
+.c-mirror{--fallback:linear-gradient(180deg,#6C88C2,#D8DDEE 32%,#FF9C40 40%,#4E6282 41%,#34465A);--ink:#F7F9FC;--ink2:rgb(236 242 250 / .8);--prop-ring:rgb(255 255 255 / .3)}
+.c-spring{--fallback:radial-gradient(60% 50% at 62% 30%,#0A6480,#2EB8CE 45%,#96E2EE);--ink:#042A33;--ink2:rgb(4 42 51 / .78)}
 
-/* 月晕：夜里的云，字是月光的冷白；主按钮带一圈晕 */
-.c-moon{--fallback:radial-gradient(60% 45% at 66% 25%,#9aa4b0,#2a2e36 55%,#07080b);
-  --ink:#EEF2F6;--ink2:rgb(214 222 232 / .72);--chip-bg:rgb(220 228 238 / .12);--chip-ink:#E6ECF2;
-  --b1-bg:#E9EEF3;--b1-ink:#0D1014;--b1-glow:0 0 0 1px rgb(255 255 255 / .28),0 0 26px 4px rgb(200 214 230 / .3),0 0 64px 12px rgb(196 188 140 / .14);
-  --b2-bg:rgb(220 228 238 / .1);--b2-ink:#E6ECF2;--bar-track:rgb(220 228 238 / .16);
-  --bar-fill:linear-gradient(90deg,#7E8894,#E6ECF2 62%,#CFC897);--btn-r:999px}
-
-/* 石塔：混凝土灰带一点紫，天是蓝调时刻的蓝；主按钮是亮着的窗 */
-.c-tower{--fallback:linear-gradient(180deg,#2B5FC4,#6C98E6 38%,#8C868D 38%,#6F6B72);
-  --ink:#1C1B1F;--ink2:rgb(28 27 31 / .74);--meta:rgb(232 240 255 / .86);--chip-bg:rgb(20 30 60 / .5);--chip-ink:#FFD27A;
-  --b1-bg:#F6C454;--b1-ink:#2A200E;--b1-glow:0 0 0 1px rgb(255 222 140 / .6),0 8px 24px -6px rgb(246 196 84 / .7);
-  --b2-bg:rgb(28 27 31 / .12);--b2-ink:#1C1B1F;--bar-track:rgb(28 27 31 / .2);--bar-fill:#F6C454;--btn-r:6px}
-
-/* 冰沙：橙红的冰，字是深的焦糖色；主按钮是椰子片的奶白 */
-.c-slush{--fallback:radial-gradient(70% 60% at 42% 30%,#F8B05C,#E2721C 55%,#A8380E);
-  --ink:#3E1406;--ink2:rgb(62 20 6 / .76);--chip-bg:#FFF4E8;--chip-ink:#8A3414;
-  --b1-bg:#FFF4E8;--b1-ink:#6E2710;--b1-glow:0 6px 18px -8px rgb(110 39 16 / .6);
-  --b2-bg:rgb(62 20 6 / .14);--b2-ink:#3E1406;--bar-track:rgb(62 20 6 / .2);--bar-fill:#FFF4E8;--btn-r:14px}
-
-/* 苔原：内容压在湿的玄武岩上，字用浅的亚麻色；主按钮是苔藓绿 */
-.c-tundra{--fallback:linear-gradient(180deg,#D6DADD 9%,#B28C46 9%,#8C7040 39%,#9AA43A 39%,#7C8A2C 50%,#2E2F2B 50%);
-  --ink:#F2EFE4;--ink2:rgb(236 232 218 / .72);--meta:#4A4A42;--chip-bg:#2E2F2B;--chip-ink:#D8C27A;
-  --b1-bg:#A2AC3C;--b1-ink:#1B1E08;--b2-bg:rgb(242 239 228 / .12);--b2-ink:#F2EFE4;
-  --bar-track:rgb(242 239 228 / .18);--bar-fill:#C9A452;--btn-r:10px}
-
-/* 彩虹薄雾：雾里的灰蓝，字是深石板色；进度条是那道淡彩虹 */
-.c-rainbow{--fallback:linear-gradient(160deg,#8290A4,#C8CDD0 60%,#D8D8CE);
-  --ink:#1B2430;--ink2:rgb(27 36 48 / .72);--chip-bg:rgb(255 255 255 / .55);--chip-ink:#2A3645;
-  --b1-bg:#243140;--b1-ink:#F4F6F8;--b2-bg:rgb(255 255 255 / .45);--b2-ink:#1B2430;--bar-track:rgb(27 36 48 / .14);
-  --bar-fill:linear-gradient(90deg,#ECBE9E,#EADA9C,#CBE2B0,#B6E0D4,#A8C8EC,#BCB4DE);--btn-r:999px}
-
-/* 天水镜像：内容在倒影的水面上，字是白的；主按钮是地平线上那道余晖 */
-.c-mirror{--fallback:linear-gradient(180deg,#7090C0,#D8E0EE 30%,#F4A060 39%,#26343C 40%,#5E7690 60%,#34465A);
-  --ink:#F7F9FC;--ink2:rgb(236 242 250 / .78);--meta:rgb(247 249 252 / .9);--chip-bg:rgb(20 30 50 / .42);--chip-ink:#FFD7B0;
-  --b1-bg:#F4A36A;--b1-ink:#2B1609;--b1-glow:0 8px 22px -8px rgb(244 163 106 / .7);
-  --b2-bg:rgb(236 242 250 / .16);--b2-ink:#F7F9FC;--bar-track:rgb(236 242 250 / .2);
-  --bar-fill:linear-gradient(90deg,#F4A36A,#F7CB94);--btn-r:12px}
-
-/* 冰泉：乳白透青的水，字是深青；主按钮是漩涡中心的深色 */
-.c-spring{--fallback:radial-gradient(60% 50% at 64% 27%,#0E7894,#34BED4 45%,#90E2EE);
-  --ink:#042A33;--ink2:rgb(4 42 51 / .76);--chip-bg:rgb(255 255 255 / .62);--chip-ink:#0A5566;
-  --b1-bg:#0B5E72;--b1-ink:#EFFDFF;--b2-bg:rgb(255 255 255 / .5);--b2-ink:#042A33;--bar-track:rgb(4 42 51 / .16);--bar-fill:#0B5E72;--btn-r:999px}
-
-/* ---------------- 说明 ---------------- */
+/* ---------------- 说明：参考图 + 序列 / 对比 / 质感 ---------------- */
 .cell figcaption{display:grid;grid-template-columns:72px minmax(0,1fr);gap:14px;align-items:start}
 .ref{width:72px;height:72px;border-radius:12px;object-fit:cover;display:block;background:var(--line)}
-.cap-h{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-.cap-h b{font-size:16px;line-height:22px;font-weight:600}
-.sw{display:flex;gap:4px}
-.sw i{width:14px;height:14px;border-radius:4px;background:var(--c);box-shadow:inset 0 0 0 1px var(--sw-ring)}
-.cell figcaption p{margin:4px 0 0;font-size:13px;line-height:20px;color:var(--fg2)}
+.abs{margin:0;display:flex;flex-direction:column;gap:4px}
+.abs div{display:grid;grid-template-columns:30px minmax(0,1fr);gap:8px}
+.abs dt{font-size:12px;line-height:20px;color:var(--fg3);letter-spacing:.04em}
+.abs dd{margin:0;font-size:13px;line-height:20px;color:var(--fg2)}
 
 @media (max-width:1099px){
   .wall{grid-template-columns:repeat(2,minmax(0,1fr))}
@@ -130,6 +88,7 @@ a{color:var(--link)}
   .page{padding-inline:16px;padding-block:28px 56px}
   .wall{grid-template-columns:minmax(0,1fr);max-width:440px;margin:0 auto}
   .head h1{font-size:26px;line-height:34px}
+  .views button{padding:0 12px}
   .glass-wrap .print{inset:-14px 20px 20px 0}
 }
 @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
