@@ -1,94 +1,92 @@
 /* 质感卡片 · 页面与卡片样式
-   卡片上只有名字、一行抽象描述和左上角的颜色占比条；每张只换 --ink / --ink2（字）和 --fallback（WebGL 起不来时的底）。
-   序列、配色、质感都在 cards.js 的着色器里；页面顶部的切换把 data-view 写到 body 上。 */
+   卡片的画面全部在 cards.js 的着色器里（背景光场 → 玻璃 → 字底下的液态玻璃片），字底下那块玻璃也是着色器按 .plate 的位置画的，
+   所以 .plate 本身透明。这里只管版式、字色（--ink / --ink2），以及 WebGL 起不来时的退路：--fallback 渐变垫底，.plate 换成 CSS 毛玻璃。 */
 
 :root{
   color-scheme:light;
-  --bg:#ECEBE7;--fg:#1B1C1F;--fg2:#606268;--fg3:#8A8C91;--line:rgb(0 0 0 / .08);--seg:rgb(0 0 0 / .06);--seg-on:#FFFFFF;
-  --sw-ring:rgb(0 0 0 / .16);
+  --bg:#ECEBE7;--fg:#1B1C1F;--fg2:#606268;--fg3:#8A8C91;--line:rgb(0 0 0 / .08);
   --font:"HarmonyOS Sans SC","HarmonyOS Sans","PingFang SC","Microsoft YaHei",system-ui,sans-serif;
-  --mono:"JetBrains Mono","HarmonyOS Sans SC",ui-monospace,Menlo,Consolas,monospace;
 }
 @media (prefers-color-scheme: dark){
-  :root:not([data-theme="light"]){color-scheme:dark;--bg:#121315;--fg:#ECECE9;--fg2:#9B9EA4;--fg3:#6E7177;--line:rgb(255 255 255 / .08);
-    --seg:rgb(255 255 255 / .07);--seg-on:rgb(255 255 255 / .16);--sw-ring:rgb(255 255 255 / .28)}
+  :root:not([data-theme="light"]){color-scheme:dark;--bg:#121315;--fg:#ECECE9;--fg2:#9B9EA4;--fg3:#6E7177;--line:rgb(255 255 255 / .08)}
 }
-:root[data-theme="dark"]{color-scheme:dark;--bg:#121315;--fg:#ECECE9;--fg2:#9B9EA4;--fg3:#6E7177;--line:rgb(255 255 255 / .08);
-  --seg:rgb(255 255 255 / .07);--seg-on:rgb(255 255 255 / .16);--sw-ring:rgb(255 255 255 / .28)}
+:root[data-theme="dark"]{color-scheme:dark;--bg:#121315;--fg:#ECECE9;--fg2:#9B9EA4;--fg3:#6E7177;--line:rgb(255 255 255 / .08)}
 
 *{box-sizing:border-box}
 [hidden]{display:none!important}
 body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--font);font-size:14px;line-height:22px;-webkit-font-smoothing:antialiased}
 .page{max-width:1280px;margin:0 auto;padding-inline:32px;padding-block:40px 80px}
 
-.head{margin-bottom:40px;display:flex;flex-direction:column;gap:14px}
+.head{margin-bottom:40px;display:flex;flex-direction:column;gap:12px}
 .head h1{margin:0;font-size:30px;line-height:38px;font-weight:600;letter-spacing:.01em;text-wrap:balance}
-.head p{margin:0;color:var(--fg2);max-width:64ch}
-.viewbar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:6px}
-.views{display:inline-flex;padding:3px;border-radius:12px;background:var(--seg)}
-.views button{height:32px;padding:0 16px;border:0;border-radius:9px;background:transparent;color:var(--fg2);font:inherit;font-size:14px;cursor:pointer}
-.views button[aria-checked="true"]{background:var(--seg-on);color:var(--fg);font-weight:600;box-shadow:0 1px 3px rgb(0 0 0 / .12)}
-.views button:focus-visible{outline:2px solid var(--fg);outline-offset:2px}
-.view-note{margin:0;font-size:13px;color:var(--fg3)}
+.head p{margin:0;color:var(--fg2);max-width:68ch}
+.head .hint{color:var(--fg3);font-size:13px}
+
+/* 新加的一张放大在最上面，参考图和说明放右边 */
+.feature{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:36px;align-items:end;margin-bottom:64px}
+.feature .card{aspect-ratio:16/10}
+.feature .title{font-size:30px;line-height:38px}
+.feature .line{font-size:14px;line-height:20px}
+.feature .plate{right:auto;min-width:240px;padding:16px 22px 18px}
+.feature-note{display:flex;flex-direction:column;gap:18px;min-width:0}
 
 .wall{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:48px 36px}
 .cell{margin:0;display:flex;flex-direction:column;gap:18px;min-width:0}
 
 /* ---------------- 卡片 ---------------- */
-.card{position:relative;aspect-ratio:4/5;width:100%;border-radius:22px;overflow:hidden;isolation:isolate;
+.card{position:relative;aspect-ratio:4/5;width:100%;border-radius:28px;overflow:hidden;isolation:isolate;
   color:var(--ink);background:var(--fallback,#888);
-  box-shadow:0 1px 2px rgb(0 0 0 / .08),0 22px 44px -22px rgb(0 0 0 / .5)}
+  box-shadow:0 1px 2px rgb(0 0 0 / .08),0 24px 48px -24px rgb(0 0 0 / .5)}
 .card canvas.fx{position:absolute;inset:0;width:100%;height:100%;display:block}
-.card .fx-under{z-index:0}
-.card .fx-over{z-index:2;pointer-events:none}
 .card.no-fx canvas.fx{display:none}
-.card-body{position:relative;z-index:1;height:100%;display:flex;flex-direction:column;padding:22px}
-.spacer{flex:1}
-.title{margin:0;font-size:28px;line-height:34px;font-weight:600;letter-spacing:.02em}
-.line{margin:6px 0 0;font-size:13px;line-height:19px;color:var(--ink2)}
-/* 颜色占比条：每段宽度 = 这个颜色在卡片里大约占的面积 */
-.prop{display:flex;width:96px;height:8px;border-radius:4px;overflow:hidden;box-shadow:0 0 0 1px var(--prop-ring,rgb(0 0 0 / .18))}
-.prop i{flex:var(--w) 1 0;background:var(--c)}
+/* 字底下的液态玻璃片：位置和圆角由 cards.js 量了去画，自己不画东西 */
+.plate{position:absolute;left:12px;right:12px;bottom:12px;z-index:1;padding:13px 16px 15px;border-radius:18px}
+.no-fx .plate{background:var(--plate-fb);-webkit-backdrop-filter:blur(18px) saturate(1.6);backdrop-filter:blur(18px) saturate(1.6);
+  box-shadow:inset 0 .5px 0 rgb(255 255 255 / .45),inset 0 0 0 .5px rgb(255 255 255 / .2)}
+.title{margin:0;font-size:22px;line-height:28px;font-weight:600;letter-spacing:.02em}
+.line{margin:3px 0 0;font-size:13px;line-height:18px;color:var(--ink2)}
 
-/* 毛玻璃：卡片压在其余八张卡片的主色排成的色条上，色条从左上角露出一截，看得出里外的差别 */
-.glass-wrap{position:relative}
-.glass-wrap .print{position:absolute;inset:-18px 34px 34px -18px;border-radius:18px;
-  background:linear-gradient(90deg,#1E4FB6 0 13%,#8E8890 13% 25%,#F6C454 25% 28%,#E0228A 28% 40%,#16090F 40% 43%,
-    #34BED4 43% 57%,#0E7894 57% 61%,#A0AA3A 61% 68%,#B28C46 68% 79%,#EEA890 79% 87%,#7090C0 87% 100%)}
-.c-glass{background:rgb(248 249 251 / .42);-webkit-backdrop-filter:blur(26px) saturate(1.8);backdrop-filter:blur(26px) saturate(1.8);
-  box-shadow:inset 0 .5px 0 rgb(255 255 255 / .75),inset 0 0 0 .5px rgb(255 255 255 / .3),0 0 0 .5px rgb(0 0 0 / .08),0 24px 48px -22px rgb(0 0 0 / .45);
-  --ink:#111317;--ink2:rgb(17 19 23 / .7)}
-body[data-view="seq"] .glass-wrap .print,body[data-view="tex"] .glass-wrap .print{filter:grayscale(1)}
-body[data-view="color"] .c-glass{-webkit-backdrop-filter:none;backdrop-filter:none;background:rgb(248 249 251 / .16)}
-/* 序列视图里冰沙、冰泉的底是近黑的，字换成浅色 */
-body[data-view="seq"] .c-slush,body[data-view="seq"] .c-spring{--ink:#F2F2F0;--ink2:rgb(242 242 240 / .74);--prop-ring:rgb(255 255 255 / .3)}
+/* 浅色玻璃片 + 深字 / 深色玻璃片 + 浅字，跟着卡片底下的明暗 */
+.c-fall{--fallback:linear-gradient(100deg,#2A2C20,#5C6A2C 30%,#D8DCD4 55%,#F4F2EA 75%,#8A8E68);--ink:#141A16;--ink2:rgb(20 26 22 / .7);--plate-fb:rgb(248 250 246 / .5)}
+.c-glass{--fallback:linear-gradient(90deg,#E9ECE8 0 6%,#6F7A34 6% 11%,#E0228A 11% 21%,#16090F 21% 28%,#1E4FB6 30% 41%,#F08A2C 49% 58%,#B28C46 60% 68%,#C3C9D0 72% 78%,#6C88C2 80% 87%,#34BED4 89% 97%,#0E7894 97%);
+  --ink:#111317;--ink2:rgb(17 19 23 / .7);--plate-fb:rgb(250 250 252 / .45)}
+.c-film{--fallback:linear-gradient(140deg,#F04BA0,#B0165F 55%,#5A0A34);--ink:#FFF3F9;--ink2:rgb(255 232 244 / .72);--plate-fb:rgb(12 6 9 / .78)}
+.c-moon{--fallback:radial-gradient(60% 45% at 62% 30%,#9aa4b0,#2a2e36 55%,#07080b);--ink:#EEF2F6;--ink2:rgb(214 222 232 / .7);--plate-fb:rgb(14 16 20 / .5)}
+.c-tower{--fallback:linear-gradient(90deg,#1E4EBA,#4A5E96 20%,#9A9096 42% 58%,#4A5E96 80%,#1E4EBA);--ink:#F4F6FB;--ink2:rgb(232 236 246 / .76);--plate-fb:rgb(12 26 64 / .45)}
+.c-slush{--fallback:radial-gradient(70% 60% at 42% 36%,#FFC47C,#EC7A22 55%,#A0360E);--ink:#3A1405;--ink2:rgb(58 20 5 / .74);--plate-fb:rgb(255 244 232 / .5)}
+.c-tundra{--fallback:linear-gradient(172deg,#D4D8DB 8%,#B28C46 8% 25%,#6E6630 25% 37%,#B8924A 37% 52%,#A0AA3A 52% 62%,#2C2D29 62%);--ink:#F3F0E6;--ink2:rgb(240 236 222 / .74);--plate-fb:rgb(26 26 20 / .55)}
+.c-rainbow{--fallback:linear-gradient(170deg,#7E8CA2,#C8CDD0 60%,#D8D8CE);--ink:#1B2430;--ink2:rgb(27 36 48 / .72);--plate-fb:rgb(244 244 240 / .5)}
+.c-mirror{--fallback:linear-gradient(180deg,#34509C,#8C98D2 30%,#FF9C48 46%,#6A7494 47%,#1C2A44);--ink:#F7F9FC;--ink2:rgb(236 242 250 / .76);--plate-fb:rgb(20 26 50 / .45)}
+.c-spring{--fallback:radial-gradient(60% 50% at 60% 30%,#A8EAF0,#2EB8CE 45%,#0A6280);--ink:#03303A;--ink2:rgb(3 48 58 / .74);--plate-fb:rgb(236 250 252 / .5)}
 
-.c-film{--fallback:linear-gradient(140deg,#F04BA0,#B0165F 55%,#5A0A34);--ink:#12070C;--ink2:rgb(18 7 12 / .76)}
-.c-film .title{font-size:36px;line-height:40px;letter-spacing:0}
-.c-moon{--fallback:radial-gradient(60% 45% at 62% 27%,#9aa4b0,#2a2e36 55%,#07080b);--ink:#EEF2F6;--ink2:rgb(214 222 232 / .72);--prop-ring:rgb(255 255 255 / .22)}
-.c-tower{--fallback:linear-gradient(90deg,#1E4EBA,#4A5E96 20%,#706A74 42% 58%,#4A5E96 80%,#1E4EBA);--ink:#F4F5F8;--ink2:rgb(236 238 244 / .8);--prop-ring:rgb(255 255 255 / .3)}
-.c-slush{--fallback:radial-gradient(70% 60% at 42% 30%,#F8B05C,#E2721C 55%,#A8380E);--ink:#3E1406;--ink2:rgb(62 20 6 / .78)}
-.c-tundra{--fallback:linear-gradient(180deg,#D4D8DB 7%,#B28C46 7%,#6E6630 27%,#B8924A 29%,#A0AA3A 40%,#2C2D29 48%);--ink:#F2EFE4;--ink2:rgb(236 232 218 / .74)}
-.c-rainbow{--fallback:linear-gradient(160deg,#8290A4,#C8CDD0 60%,#D8D8CE);--ink:#1B2430;--ink2:rgb(27 36 48 / .74)}
-.c-mirror{--fallback:linear-gradient(180deg,#6C88C2,#D8DDEE 32%,#FF9C40 40%,#4E6282 41%,#34465A);--ink:#F7F9FC;--ink2:rgb(236 242 250 / .8);--prop-ring:rgb(255 255 255 / .3)}
-.c-spring{--fallback:radial-gradient(60% 50% at 62% 30%,#0A6480,#2EB8CE 45%,#96E2EE);--ink:#042A33;--ink2:rgb(4 42 51 / .78)}
+/* 毛玻璃卡片：字底下那块磨砂拉高到半张，和上面清透的透镜对比 */
+.c-glass .plate{top:52%;display:flex;flex-direction:column;justify-content:flex-end}
 
-/* ---------------- 说明：参考图 + 序列 / 对比 / 质感 ---------------- */
+/* ---------------- 说明：参考图 + 渐变 / 光感 / 质感 ---------------- */
 .cell figcaption{display:grid;grid-template-columns:72px minmax(0,1fr);gap:14px;align-items:start}
 .ref{width:72px;height:72px;border-radius:12px;object-fit:cover;display:block;background:var(--line)}
+.ref.ref-lg{width:100%;height:auto;aspect-ratio:6/5;border-radius:16px}
 .abs{margin:0;display:flex;flex-direction:column;gap:4px}
 .abs div{display:grid;grid-template-columns:30px minmax(0,1fr);gap:8px}
 .abs dt{font-size:12px;line-height:20px;color:var(--fg3);letter-spacing:.04em}
 .abs dd{margin:0;font-size:13px;line-height:20px;color:var(--fg2)}
+.feature-note .abs{gap:8px}
+.feature-note .abs dd{font-size:14px;line-height:22px}
 
 @media (max-width:1099px){
   .wall{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .feature{grid-template-columns:minmax(0,1fr);gap:20px}
+  .feature-note{display:grid;grid-template-columns:200px minmax(0,1fr);gap:20px;align-items:start}
 }
 @media (max-width:699px){
   .page{padding-inline:16px;padding-block:28px 56px}
-  .wall{grid-template-columns:minmax(0,1fr);max-width:440px;margin:0 auto}
   .head h1{font-size:26px;line-height:34px}
-  .views button{padding:0 12px}
-  .glass-wrap .print{inset:-14px 20px 20px 0}
+  .wall{grid-template-columns:minmax(0,1fr);max-width:440px;margin:0 auto}
+  .feature{max-width:440px;margin-inline:auto;margin-bottom:48px}
+  .feature .card{aspect-ratio:4/5}
+  .feature .title{font-size:24px;line-height:30px}
+  .feature .plate{right:12px;min-width:0;padding:13px 16px 15px}
+  .feature-note{grid-template-columns:minmax(0,1fr)}
+  .ref-lg{max-width:240px}
 }
 @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
