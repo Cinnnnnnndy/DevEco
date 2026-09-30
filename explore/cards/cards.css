@@ -1,107 +1,92 @@
-/* 质感卡片 · 页面与卡片样式
-   卡片的画面是 tools/texture.py 从参考照片算出来的纹理图（img.tex）；cards.js 在上面盖一层 WebGL 画布，
-   让纹理顺着拖曳方向慢慢流、加鼠标的柔光，并按 .plate 的位置画字底下的液态玻璃（所以 .plate 本身透明）。
-   画布第一次画好之前、或者 WebGL 起不来 / 直接双击打开时，只显示纹理图，字底下换成 CSS 毛玻璃（--plate-fb）。 */
+/* 质感色卡 · 色卡页样式
+   每张色卡：上面是最抽象的一版（tex/abs），鼠标移上去换成纹理（tex）；中间一条按占比分宽的色条；
+   下面是编号、名字、做法和六个颜色。卡片由 deck.js 按 cards-data.js 生成，点进 workbench.html。 */
 
 :root{
   color-scheme:light;
-  --bg:#ECEBE7;--fg:#1B1C1F;--fg2:#606268;--fg3:#8A8C91;--line:rgb(0 0 0 / .08);--panel:rgb(255 255 255 / .55);
+  --bg:#ECEBE7;--paper:#FBFBF9;--fg:#1B1C1F;--fg2:#606268;--fg3:#8A8C91;--line:rgb(0 0 0 / .08);--ring:rgb(0 0 0 / .12);--panel:rgb(255 255 255 / .55);
+  --shadow:0 1px 2px rgb(0 0 0 / .06),0 22px 44px -26px rgb(0 0 0 / .5);
   --font:"HarmonyOS Sans SC","HarmonyOS Sans","PingFang SC","Microsoft YaHei",system-ui,sans-serif;
   --mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
 }
 @media (prefers-color-scheme: dark){
-  :root:not([data-theme="light"]){color-scheme:dark;--bg:#121315;--fg:#ECECE9;--fg2:#9B9EA4;--fg3:#6E7177;--line:rgb(255 255 255 / .08);--panel:rgb(255 255 255 / .04)}
+  :root:not([data-theme="light"]){color-scheme:dark;--bg:#121315;--paper:#1C1D20;--fg:#ECECE9;--fg2:#9B9EA4;--fg3:#6E7177;--line:rgb(255 255 255 / .08);--ring:rgb(255 255 255 / .16);--panel:rgb(255 255 255 / .04);
+    --shadow:0 1px 2px rgb(0 0 0 / .4),0 22px 44px -26px rgb(0 0 0 / .9)}
 }
-:root[data-theme="dark"]{color-scheme:dark;--bg:#121315;--fg:#ECECE9;--fg2:#9B9EA4;--fg3:#6E7177;--line:rgb(255 255 255 / .08);--panel:rgb(255 255 255 / .04)}
+:root[data-theme="dark"]{color-scheme:dark;--bg:#121315;--paper:#1C1D20;--fg:#ECECE9;--fg2:#9B9EA4;--fg3:#6E7177;--line:rgb(255 255 255 / .08);--ring:rgb(255 255 255 / .16);--panel:rgb(255 255 255 / .04);
+  --shadow:0 1px 2px rgb(0 0 0 / .4),0 22px 44px -26px rgb(0 0 0 / .9)}
 
 *{box-sizing:border-box}
 [hidden]{display:none!important}
 body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--font);font-size:14px;line-height:22px;-webkit-font-smoothing:antialiased}
-.page{max-width:1280px;margin:0 auto;padding-inline:32px;padding-block:40px 80px}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--fg);outline-offset:3px}
+.page{max-width:1320px;margin:0 auto;padding-inline:32px;padding-block:40px 80px}
 
-.head{margin-bottom:40px;display:flex;flex-direction:column;gap:12px}
-.head h1{margin:0;font-size:30px;line-height:38px;font-weight:600;letter-spacing:.01em;text-wrap:balance}
-.head p{margin:0;color:var(--fg2);max-width:70ch}
+.head{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;margin-bottom:36px}
+.head-text{display:flex;flex-direction:column;gap:12px;min-width:0}
+.head h1{margin:0;font-size:30px;line-height:38px;font-weight:600;letter-spacing:.01em}
+.head p{margin:0;color:var(--fg2);max-width:46em}
 .head .hint{color:var(--fg3);font-size:13px}
+.view{flex:none;display:flex;gap:2px;padding:3px;border-radius:12px;background:var(--line)}
+.view button{height:30px;padding:0 16px;border:0;border-radius:9px;background:transparent;cursor:pointer;font-size:13px;color:var(--fg2)}
+.view button:hover{color:var(--fg)}
+.view button[aria-checked="true"]{background:var(--paper);color:var(--fg);box-shadow:0 1px 2px rgb(0 0 0 / .12)}
 
-/* 新加的一张放大在最上面，参考图和说明放右边 */
-.feature{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:36px;align-items:end;margin-bottom:64px}
-.feature .card{aspect-ratio:16/10}
-.feature .title{font-size:30px;line-height:38px}
-.feature .line{font-size:14px;line-height:20px}
-.feature .plate{right:auto;min-width:260px;padding:16px 22px 18px}
-.feature-note{display:flex;flex-direction:column;gap:18px;min-width:0}
+/* ---------------- 色卡 ---------------- */
+.deck{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:32px 24px}
+.chip{display:flex;flex-direction:column;min-width:0;border-radius:18px;overflow:hidden;background:var(--paper);color:inherit;text-decoration:none;
+  box-shadow:var(--shadow);transition:transform .25s cubic-bezier(.2,.7,.2,1),box-shadow .25s}
+.chip:hover{transform:translateY(-4px);box-shadow:0 1px 2px rgb(0 0 0 / .06),0 30px 50px -26px rgb(0 0 0 / .6)}
+.chip:focus-visible{outline-offset:4px}
+.field{position:relative;aspect-ratio:4/5;overflow:hidden;isolation:isolate;background:var(--line)}
+.field img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;transition:opacity .45s ease}
+.field .f-tex{opacity:0}
+.chip:hover .f-tex,.chip:focus-visible .f-tex,.view-tex .f-tex{opacity:1}
+.view-tex .chip:hover .f-tex,.view-tex .chip:focus-visible .f-tex{opacity:0}
+.tag{position:absolute;top:12px;left:12px;z-index:1;padding:1px 9px;border-radius:10px;font-size:12px;line-height:20px;font-weight:600;
+  color:#141A16;background:rgb(255 255 255 / .72);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+.bar{display:flex;height:12px;border-top:2px solid var(--paper)}
+.bar i{display:block;min-width:2px}
 
-.wall{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:48px 36px}
-.cell{margin:0;display:flex;flex-direction:column;gap:18px;min-width:0}
-
-/* ---------------- 卡片 ---------------- */
-.card{position:relative;aspect-ratio:4/5;width:100%;max-width:100%;border-radius:28px;overflow:hidden;isolation:isolate;
-  color:var(--ink);background:var(--fallback,#888);
-  box-shadow:0 1px 2px rgb(0 0 0 / .08),0 24px 48px -24px rgb(0 0 0 / .5)}
-.card img.tex{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
-.card canvas.fx{position:absolute;inset:0;width:100%;height:100%;display:block;opacity:0}
-.card.fx-on canvas.fx{opacity:1}
-.card.no-fx canvas.fx{display:none}
-/* 字底下的液态玻璃片：画布画好以后由 cards.js 画，在那之前是 CSS 毛玻璃 */
-.plate{position:absolute;left:12px;right:12px;bottom:12px;z-index:1;padding:13px 16px 15px;border-radius:18px}
-.card:not(.fx-on) .plate{background:var(--plate-fb);-webkit-backdrop-filter:blur(18px) saturate(1.6);backdrop-filter:blur(18px) saturate(1.6);
-  box-shadow:inset 0 .5px 0 rgb(255 255 255 / .45),inset 0 0 0 .5px rgb(255 255 255 / .2)}
-.title{margin:0;font-size:22px;line-height:28px;font-weight:600;letter-spacing:.02em}
-.line{margin:3px 0 0;font-size:13px;line-height:18px;color:var(--ink2)}
-
-/* 浅色玻璃片 + 深字 / 深色玻璃片 + 浅字，跟着纹理底部的明暗 */
-.c-fall{--fallback:#5A5E50;--ink:#141A16;--ink2:rgb(20 26 22 / .72);--plate-fb:rgb(248 250 246 / .5)}
-.c-glass{--fallback:#8A8C90;--ink:#111317;--ink2:rgb(17 19 23 / .7);--plate-fb:rgb(250 250 252 / .45)}
-.c-film{--fallback:#C8196E;--ink:#FFF3F9;--ink2:rgb(255 232 244 / .74);--plate-fb:rgb(20 6 12 / .6)}
-.c-moon{--fallback:#23262C;--ink:#EEF2F6;--ink2:rgb(214 222 232 / .72);--plate-fb:rgb(14 16 20 / .5)}
-.c-tower{--fallback:#6C7488;--ink:#F4F6FB;--ink2:rgb(232 236 246 / .78);--plate-fb:rgb(14 24 52 / .45)}
-.c-slush{--fallback:#E9812A;--ink:#3A1405;--ink2:rgb(58 20 5 / .74);--plate-fb:rgb(255 244 232 / .5)}
-.c-tundra{--fallback:#6E6630;--ink:#F3F0E6;--ink2:rgb(240 236 222 / .76);--plate-fb:rgb(26 26 20 / .55)}
-.c-rainbow{--fallback:#B8BEC4;--ink:#1B2430;--ink2:rgb(27 36 48 / .72);--plate-fb:rgb(244 244 240 / .5)}
-.c-mirror{--fallback:#4E5E80;--ink:#F7F9FC;--ink2:rgb(236 242 250 / .78);--plate-fb:rgb(20 26 50 / .45)}
-.c-spring{--fallback:#7DD0DC;--ink:#03303A;--ink2:rgb(3 48 58 / .74);--plate-fb:rgb(236 250 252 / .5)}
-
-/* 毛玻璃卡片：字底下那块磨砂拉高到半张，和上面清透的透镜对比 */
-.c-glass .plate{top:52%;display:flex;flex-direction:column;justify-content:flex-end}
-
-/* ---------------- 说明：参考图 + 取样 / 算法 / 留下 ---------------- */
-.cell figcaption{display:grid;grid-template-columns:72px minmax(0,1fr);gap:14px;align-items:start}
-.ref{width:72px;height:72px;border-radius:12px;object-fit:cover;display:block;background:var(--line)}
-.ref.ref-lg{width:100%;height:auto;aspect-ratio:6/5;border-radius:16px}
-.abs{margin:0;display:flex;flex-direction:column;gap:4px}
-.abs div{display:grid;grid-template-columns:30px minmax(0,1fr);gap:8px}
-.abs dt{font-size:12px;line-height:20px;color:var(--fg3);letter-spacing:.04em}
-.abs dd{margin:0;font-size:13px;line-height:20px;color:var(--fg2)}
-.feature-note .abs{gap:8px}
-.feature-note .abs dd{font-size:14px;line-height:22px}
+.info{display:flex;flex-direction:column;padding:12px 14px 14px;min-width:0}
+.info-top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.no{font-family:var(--mono);font-size:11px;line-height:18px;color:var(--fg3);letter-spacing:.06em}
+.go{font-size:12px;line-height:18px;color:var(--fg3);transition:color .2s}
+.chip:hover .go{color:var(--fg)}
+.nm{margin:4px 0 0;font-size:18px;line-height:26px;font-weight:600;letter-spacing:.02em}
+.ln{margin:2px 0 0;font-size:12px;line-height:18px;color:var(--fg2);min-height:36px}
+.hx{list-style:none;margin:12px 0 0;padding:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px 10px}
+.hx li{display:flex;align-items:center;gap:6px;min-width:0;font-family:var(--mono);font-size:11px;line-height:16px;color:var(--fg2);letter-spacing:.02em}
+.hx i{flex:none;width:11px;height:11px;border-radius:3px;box-shadow:inset 0 0 0 1px var(--ring)}
 
 /* ---------------- 纹理算法 ---------------- */
-.algo{margin-top:80px;padding-top:32px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:14px}
+.algo{margin-top:88px;padding-top:32px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:14px}
 .algo h2{margin:0;font-size:20px;line-height:28px;font-weight:600}
-.algo-lead{margin:0;color:var(--fg2);max-width:70ch}
+.algo-lead{margin:0;color:var(--fg2);max-width:52em}
 .algo-lead code{font-family:var(--mono);font-size:13px;padding:1px 6px;border-radius:6px;background:var(--line)}
-.algo-list{margin:8px 0 0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.algo-list{margin:8px 0 0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
 .algo-list div{padding:16px 18px;border-radius:16px;background:var(--panel);box-shadow:inset 0 0 0 1px var(--line);min-width:0}
 .algo-list dt{font-weight:600;font-size:14px;line-height:22px;margin-bottom:4px}
 .algo-list dd{margin:0;font-size:13px;line-height:20px;color:var(--fg2)}
 
-@media (max-width:1099px){
-  .wall{grid-template-columns:repeat(2,minmax(0,1fr))}
-  .feature{grid-template-columns:minmax(0,1fr);gap:20px}
-  .feature-note{display:grid;grid-template-columns:200px minmax(0,1fr);gap:20px;align-items:start}
+@media (max-width:1199px){
+  .deck{grid-template-columns:repeat(4,minmax(0,1fr))}
   .algo-list{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width:959px){
+  .deck{grid-template-columns:repeat(3,minmax(0,1fr))}
 }
 @media (max-width:699px){
   .page{padding-inline:16px;padding-block:28px 56px}
+  .head{flex-direction:column;align-items:flex-start;gap:18px;margin-bottom:28px}
   .head h1{font-size:26px;line-height:34px}
-  .wall{grid-template-columns:minmax(0,1fr);max-width:440px;margin:0 auto}
-  .feature{max-width:440px;margin-inline:auto;margin-bottom:48px}
-  .feature .card{aspect-ratio:4/5}
-  .feature .title{font-size:24px;line-height:30px}
-  .feature .plate{right:12px;min-width:0;padding:13px 16px 15px}
-  .feature-note{grid-template-columns:minmax(0,1fr)}
-  .ref.ref-lg{max-width:240px}
+  .deck{grid-template-columns:repeat(2,minmax(0,1fr));gap:20px 12px}
+  .chip{border-radius:14px}
+  .info{padding:10px 11px 12px}
+  .nm{font-size:16px;line-height:22px}
+  .ln{min-height:0}
+  .hx{grid-template-columns:minmax(0,1fr);gap:4px}
   .algo{margin-top:56px}
   .algo-list{grid-template-columns:minmax(0,1fr)}
 }
