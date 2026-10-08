@@ -282,7 +282,7 @@ window.DEVECO_CATALOG = {
         },
         {
           title: '冻屏分析报告 V2：先给判决，再给卷宗', subtitle: 'AppFreeze Report · Verdict First',
-          desc: '原报告内容一字不改，只改呈现：结论、证据强度和时间线放在最前，证据折叠成清单。',
+          desc: '原报告的内容、顺序、用词都不改，只改呈现：证据折叠成清单，根本原因配主线程时间线。',
           view: 'ready', date: '2026-10-08', href: 'demos/28-appfreeze-report/v2.html',
           links: [
             { label: '源码不可达版', href: 'demos/28-appfreeze-report/v2.html#v1' },
