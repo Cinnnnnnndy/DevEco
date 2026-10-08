@@ -5,105 +5,136 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='32' y2='32' gradientUnits='userSpaceOnUse'%3E%3Cstop stop-color='%232C8DDD'/%3E%3Cstop offset='1' stop-color='%233357AC'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='32' height='32' rx='7' fill='url(%23g)'/%3E%3Ctext x='16' y='22.5' font-family='Arial,Helvetica,sans-serif' font-size='13' font-weight='700' fill='white' text-anchor='middle'%3EDE%3C/text%3E%3C/svg%3E">
 <title>07 · Agent Team：多 Agent 分工、交接与冲突合并</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;500&display=swap">
 <link rel="stylesheet" href="../../deveco-intui-kit/src/tokens.css">
 <link rel="stylesheet" href="../../deveco-intui-kit/src/components.css">
 <link rel="stylesheet" href="../_shared/frame.css">
 <link rel="stylesheet" href="../_shared/guide.css">
 <script src="../../deveco-intui-kit/src/icons.js"></script>
+<script src="../../deveco-intui-kit/icons/ai-icons.js"></script>
 <script src="../_shared/frame.js"></script>
 <script src="../_shared/guide.js"></script>
 <style>
-  .tasks{display:flex;flex-direction:column;padding:6px 0 12px}
-  .tgroup{display:flex;align-items:center;gap:6px;height:28px;padding:0 12px;font-weight:600}
+  /* 统一到 ai.css：卡片用填充分层；「在等你」= 琥珀；在干 = 智能色小字；进度条不用蓝 */
+  .dm-card{border:0;background:var(--ai-surface)}
+  .dm-card-ft{border-top:0;background:transparent;padding-top:2px}
+  .dm-callout{border:0;background:var(--ai-surface)}
+  .dm-callout.info{background:var(--ai-surface)}.dm-callout.info svg{color:var(--ai-ink)}
+  .dm-callout.ok{background:color-mix(in srgb,var(--ui-success) 10%,transparent)}
+  .dm-callout.wt{background:var(--ai-wait-tint)}.dm-callout.wt svg{color:var(--ai-wait-ink)}
+  .dm-seg{border:0;background:var(--ai-surface-2);padding:2px;gap:2px;border-radius:8px}
+  .dm-seg button{border-radius:6px;height:24px}
+  .dm-seg button + button{border-left:0}
+  .dm-seg button.on{background:var(--ai-surface);font-weight:500}
+  .dm-pill.info{background:var(--ai-tint-2);color:var(--ai-ink)}
+  .dm-pill.warn{background:var(--ai-wait-tint);color:var(--ai-wait-ink)}
+  .dm-progress > i{background:var(--ai-ink)}
+  #hdr-agent .ai-status .agt{color:var(--ai-ink)}
+
+  /* ---- 统一的「在等你」队列：所有 Agent 的待决放一处，按阻塞排（与 31 工作台同一套） ---- */
+  .q{margin:6px 8px 8px;padding:8px 6px 6px;border-radius:12px;background:var(--ai-wait-tint)}
+  .q-h{display:flex;align-items:center;gap:8px;padding:0 6px 6px;font-size:12px;line-height:16px;color:var(--ai-wait-ink);font-weight:500}
+  .q-h .grow{flex:1}
+  .q-h small{font-weight:400;font-size:11px;color:var(--ui-fg-info)}
+  .q-item{appearance:none;border:0;width:100%;display:grid;grid-template-columns:18px minmax(0,1fr);gap:2px 6px;text-align:left;padding:6px;border-radius:8px;background:transparent;font:inherit;color:var(--ui-fg);cursor:pointer}
+  .q-item:hover{background:var(--ui-hover)}
+  .q-item .qn{grid-row:1/3;width:18px;height:18px;border-radius:50%;display:grid;place-items:center;font-size:11px;font-family:var(--font-code);background:var(--ai-surface);color:var(--ui-fg-info);margin-top:1px}
+  .q-item:first-of-type .qn{background:var(--ai-wait);color:#fff}
+  .q-item .qt{font-size:12.5px;line-height:18px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .q-item .qs{font-size:11px;line-height:15px;color:var(--ui-fg-info);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .q-item .qs b{font-weight:400;color:var(--ai-ink)}
+  .q-empty{margin:6px 8px 8px;padding:8px 12px;border-radius:12px;background:var(--ai-surface-2);font-size:12px;color:var(--ui-fg-info)}
+  .flash{animation:qflash 1.2s var(--ai-ease) 1}
+  @keyframes qflash{0%,40%{box-shadow:inset 0 0 0 1.5px var(--ai-wait)}100%{box-shadow:inset 0 0 0 1.5px transparent}}
+
+  .tasks{display:flex;flex-direction:column;padding:0 0 12px}
+  .tgroup{display:flex;align-items:center;gap:6px;height:28px;padding:0 12px;font-weight:500;font-size:12px;color:var(--ui-fg-info)}
   .tgroup .cnt{font-family:var(--font-code);font-size:11px;font-weight:400;color:var(--ui-fg-info)}
   .tgroup .grow{flex:1}
   .tgroup.wait{color:var(--ui-fg)}
-  .task{margin:0 8px 6px;border:1px solid var(--ui-border);border-radius:var(--arc);background:var(--ui-field-bg);padding:8px 10px;display:flex;flex-direction:column;gap:6px;font-size:var(--fs-para);line-height:var(--lh-para)}
-  .task.wait{border-color:color-mix(in srgb,var(--ui-accent) 55%,transparent);background:color-mix(in srgb,var(--ui-accent) 6%,var(--ui-field-bg))}
+  .task{margin:0 8px 6px;border-radius:10px;background:var(--ai-surface);padding:8px 10px;display:flex;flex-direction:column;gap:6px;font-size:var(--fs-para);line-height:var(--lh-para)}
+  .task.wait{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--ai-wait) 38%,transparent)}
+  .task .t1 .ai-wait-dot{margin-right:2px}
   .task .t1{display:flex;align-items:center;gap:6px}
-  .task .t1 b{font-weight:600;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .task .t1 b{font-weight:500;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .task .t1 .when{font-size:11px;color:var(--ui-fg-info);white-space:nowrap}
   .task .t2{color:var(--ui-fg);font-size:var(--fs-sm);line-height:var(--lh-sm)}
-  .task .t2 code{font-family:var(--font-code);font-size:11px;background:var(--ui-tag-bg);padding:1px 4px;border-radius:4px}
+  .task .t2 code{font-family:var(--font-code);font-size:11px;background:var(--ai-surface-2);padding:1px 4px;border-radius:4px}
+  .task .t2 .agt{color:var(--ai-ink)}
   .task .t3{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
   .task .t3 .grow{flex:1}
   .task.done{opacity:.85}
   .queue{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--ui-fg-info)}
   .queue i{width:18px;height:6px;border-radius:3px;background:var(--ui-progress-track)}
-  .queue i.me{background:var(--ui-accent)}
+  .queue i.me{background:var(--ai-ink)}
   .queue i.run{background:var(--ui-success)}
   .task .t3 .dm-progress{flex:1;min-width:60px}
   .empty-hint{padding:12px;color:var(--ui-fg-info);font-size:var(--fs-sm);text-align:center}
 
   /* ---- Agent Team：成员小头像 ---- */
-  .av{width:20px;height:20px;border-radius:6px;display:inline-grid;place-items:center;flex:none;color:#fff;font-size:10px;font-weight:600;background:var(--c)}
-  .av svg{width:12px;height:12px;color:#fff}
+  .av{width:20px;height:20px;border-radius:6px;display:inline-grid;place-items:center;flex:none;color:var(--ui-fg);font-size:10px;font-weight:500;background:var(--ai-surface-2)}
+  .av svg{width:12px;height:12px;color:var(--ui-icon)}
   .avs{display:inline-flex}
-  .avs .av{width:16px;height:16px;border-radius:5px;font-size:9px;margin-right:-3px;outline:2px solid var(--ui-field-bg)}
-  [data-m="plan"]{--c:var(--Teal4)}
-  [data-m="ui"]{--c:#3574F0}
-  [data-m="logic"]{--c:var(--Purple4)}
-  [data-m="test"]{--c:var(--Orange4)}
-  [data-m="dev"]{--c:#4E8052}
+  .avs .av{width:16px;height:16px;border-radius:5px;font-size:9px;margin-right:-3px;outline:2px solid var(--ai-surface)}
   .task.team .t2 .bl{display:flex;gap:6px;align-items:flex-start;margin-top:3px}
-  .task.team .t2 .bl::before{content:"";width:5px;height:5px;border-radius:50%;background:var(--ui-accent);margin-top:6px;flex:none}
+  .task.team .t2 .bl::before{content:"";width:5px;height:5px;border-radius:50%;background:var(--ai-wait);margin-top:6px;flex:none}
   /* 左栏「团队」视图 */
-  .mlist .mrow{display:flex;align-items:center;gap:8px;margin:0 8px 4px;padding:6px 8px;border:1px solid var(--ui-border);border-radius:var(--arc);background:var(--ui-field-bg);font-size:var(--fs-sm);line-height:var(--lh-sm);cursor:default}
-  .mlist .mrow:hover{border-color:var(--ui-component-border)}
-  .mlist .mrow.sel{border-color:var(--ui-accent);background:color-mix(in srgb,var(--ui-accent) 8%,var(--ui-field-bg))}
+  .mlist .mrow{display:flex;align-items:center;gap:8px;margin:0 8px 4px;padding:6px 8px;border-radius:8px;background:var(--ai-surface);font-size:var(--fs-sm);line-height:var(--lh-sm);cursor:default}
+  .mlist .mrow:hover{background:var(--ui-hover)}
+  .mlist .mrow.sel{background:var(--ui-selection)}
   .mlist .mrow .tx{flex:1;min-width:0}
-  .mlist .mrow .tx b{display:block;font-weight:600;font-size:var(--fs-para)}
+  .mlist .mrow .tx b{display:block;font-weight:500;font-size:var(--fs-para)}
   .mlist .mrow .tx span{display:block;color:var(--ui-fg-info);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .mlist .mrow .n{font-family:var(--font-code);font-size:11px;color:var(--ui-fg-info)}
 
   /* ---- 编辑区：团队看板 ---- */
   .team{flex:1;min-height:0;display:flex;flex-direction:column;overflow:auto}
   .team[hidden]{display:none}
-  .lead{display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--ui-border);background:var(--ui-bg);flex:none}
-  .lead .av{width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,#5B8CF7,#9B6CF6)}
-  .lead .av svg{width:16px;height:16px}
+  .lead{display:flex;align-items:center;gap:10px;padding:10px 16px;flex:none}
+  .lead .av{width:28px;height:28px;border-radius:8px}
+  .lead .av svg{width:16px;height:16px;color:var(--ai-ink)}
   .lead .tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
-  .lead .tx b{font-weight:600;font-size:var(--fs-para);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .lead .tx b{font-weight:500;font-size:var(--fs-para);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .lead .tx span{font-size:var(--fs-sm);color:var(--ui-fg-info)}
-  .lead .dm-progress{width:90px}
-  .graph{position:relative;flex:none;height:292px;overflow:hidden;border-bottom:1px solid var(--ui-border)}
-  .graph .stage{position:absolute;left:50%;top:18px;width:752px;height:260px;transform:translateX(-50%)}
-  .graph .lg{position:absolute;left:12px;bottom:8px;display:flex;gap:12px;font-size:11px;color:var(--ui-fg-info);z-index:2}
-  .graph .lg i{display:inline-block;width:14px;height:0;border-top:2px dashed var(--ui-component-border);vertical-align:middle;margin-right:4px}
-  .graph .lg i.ok{border-top:2px solid var(--ui-success)}
-  .graph .lg i.err{border-top-color:var(--ui-error)}
-  .mnode{position:absolute;left:var(--x);top:var(--y);width:152px;height:104px;border:1px solid var(--ui-component-border);border-radius:var(--arc);background:var(--ui-bg);box-shadow:var(--ui-shadow);font-size:var(--fs-sm);line-height:var(--lh-sm);display:flex;flex-direction:column;padding:7px 9px;gap:5px;cursor:default;transition:border-color .2s,box-shadow .2s}
-  .mnode:hover{border-color:var(--ui-accent)}
-  .mnode.sel{border-color:var(--ui-accent);box-shadow:0 0 0 2px color-mix(in srgb,var(--ui-accent) 35%,transparent)}
-  .mnode .nh{display:flex;align-items:center;gap:6px;font-weight:600;font-size:var(--fs-para)}
+  .graph{position:relative;flex:none;height:282px;overflow:hidden}
+  .graph .stage{position:absolute;left:50%;top:8px;width:752px;height:264px;transform:translateX(-50%)}
+  .mnode{position:absolute;left:var(--x);top:var(--y);width:152px;height:112px;border-radius:10px;background:var(--ai-surface);font-size:var(--fs-sm);line-height:var(--lh-sm);display:flex;flex-direction:column;padding:7px 9px;gap:5px;cursor:default;transition:box-shadow .2s}
+  .mnode:hover{box-shadow:inset 0 0 0 1px var(--ui-border)}
+  .mnode.sel{box-shadow:inset 0 0 0 1px var(--ui-accent)}
+  .mnode .nh{display:flex;align-items:center;gap:6px;font-weight:500;font-size:var(--fs-para)}
   .mnode .nh .grow{flex:1}
   .mnode .now{flex:none;max-height:32px;color:var(--ui-fg);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
   .mnode .nf{margin-top:auto;display:flex;align-items:center;gap:6px;font-family:var(--font-code);font-size:10px;color:var(--ui-fg-info)}
   .mnode .nf .dm-progress{flex:1}
-  .mnode.wait{border-color:var(--ui-accent);background:color-mix(in srgb,var(--ui-accent) 8%,var(--ui-bg))}
+  .mnode.wait{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--ai-wait) 55%,transparent)}
+  .mnode.wait.sel{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--ai-wait) 55%,transparent),0 0 0 1px var(--ui-accent)}
   .mnode.idle .now{color:var(--ui-fg-info)}
   .mnode.done .nf .dm-progress > i{background:var(--ui-success)}
   .medges{position:absolute;inset:0;overflow:visible;pointer-events:none}
   .medges path{fill:none;stroke:var(--ui-component-border);stroke-width:1.6;stroke-dasharray:5 4}
   .medges path.done{stroke:var(--ui-success);stroke-dasharray:none}
-  .medges path.flow{stroke:var(--ui-accent);stroke-dasharray:6 4;animation:flow .6s linear infinite}
+  .medges path.flow{stroke:var(--ai-ink);stroke-dasharray:6 4}
   .medges path.cf{stroke:var(--ui-error);stroke-width:1.6;stroke-dasharray:3 3}
   .medges text{font-family:var(--font-code);font-size:10px;fill:var(--ui-fg-info)}
-  .medges circle.tok{fill:var(--ui-accent);stroke:var(--ui-bg);stroke-width:2}
-  @keyframes flow{to{stroke-dashoffset:-10}}
-  .cfbadge{position:absolute;left:218px;top:117px;display:inline-flex;align-items:center;gap:4px;height:22px;padding:0 8px;border-radius:11px;background:var(--ui-error);color:#fff;font-size:11px;font-weight:600;border:0;box-shadow:var(--ui-shadow);white-space:nowrap}
+  .medges circle.tok{fill:var(--ai-ink);stroke:var(--ui-editor-bg);stroke-width:2}
+  .cfbadge{position:absolute;left:218px;top:121px;display:inline-flex;align-items:center;gap:4px;height:22px;padding:0 8px;border-radius:11px;background:var(--ui-error);color:#fff;font-size:11px;font-weight:500;border:0;white-space:nowrap;cursor:pointer}
   .cfbadge svg{width:12px;height:12px;color:#fff}
   .cfbadge[hidden]{display:none}
   .hlabel{position:absolute;font-family:var(--font-code);font-size:10px;color:var(--ui-fg-info);white-space:nowrap;background:var(--ui-editor-bg);padding:0 3px}
 
-  .decide{padding:14px 16px 20px;display:flex;flex-direction:column;gap:10px}
+  .decide{padding:10px 16px 14px;display:flex;flex-direction:column;gap:10px}
   .decide .sec{display:flex;align-items:center;gap:6px;font-size:var(--fs-sm);color:var(--ui-fg-info)}
-  .decide .sec b{color:var(--ui-fg);font-weight:600}
+  .decide .sec b{color:var(--ui-fg);font-weight:500}
+  .decide .ai-approve .dm-card{background:transparent}
+  .decide .ai-approve .dm-card-bd,.decide .ai-approve .dm-card-ft{padding-left:0;padding-right:0}
+  .decide .ai-approve .dm-card-bd{padding-top:0}
+  .decide .diffcard{border:0;background:var(--ai-surface-2)}
+  .decide .diffcard .dh{background:transparent}
   .decide .sec .grow{flex:1}
   .cf2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
   .cf2 .diffcard .dh{gap:6px}
+  .cf2 .diffcard pre{line-height:18px;padding:4px 0}
   .cf2 .diffcard pre .l{white-space:pre;overflow:hidden;text-overflow:ellipsis}
+  .editor:has(.team:not([hidden])) .breadcrumbs{display:none}
   .opts{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
   .opts .dm-opt{font-size:var(--fs-sm);line-height:var(--lh-sm)}
   .opts .dm-opt b{font-size:var(--fs-para)}
@@ -124,20 +155,227 @@
   .mhd .av{width:32px;height:32px;border-radius:9px;font-size:13px}
   .mhd .av svg{width:16px;height:16px}
   .mhd .tx{flex:1;min-width:0}
-  .mhd .tx b{display:block;font-weight:600;font-size:var(--fs-h2);line-height:var(--lh-h2)}
+  .mhd .tx b{display:block;font-weight:500;font-size:var(--fs-h2);line-height:var(--lh-h2)}
   .mhd .tx span{font-size:var(--fs-sm);color:var(--ui-fg-info)}
   .mnow{margin:0 12px 10px}
   .mkv{padding:0 12px 10px}
   .mkv code{font-family:var(--font-code);font-size:11px;background:var(--ui-tag-bg);padding:1px 4px;border-radius:4px}
-  .msec{padding:6px 12px 2px;font-size:var(--fs-sm);color:var(--ui-fg-info);font-weight:600}
-  .dm-vstep.wt .node{border-color:var(--ui-accent);background:var(--ui-accent);color:#fff}
+  .msec{padding:6px 12px 2px;font-size:var(--fs-sm);color:var(--ui-fg-info);font-weight:500}
+  .dm-vstep.wt .node{border-color:var(--ai-wait);background:var(--ai-wait);color:#fff}
   .dm-vstep .body-t .grow{white-space:normal}
   .dm-vstep.idle .body-t{color:var(--ui-fg-info)}
-  @media (prefers-reduced-motion:reduce){.medges path.flow{animation:none}}
+
+  /* ---- 团队共享的项目规则条 ---- */
+  .rules{display:flex;align-items:center;gap:8px;padding:0 16px 6px;flex:none;min-width:0}
+  .rfile{display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 8px;border:0;border-radius:6px;background:var(--ai-surface-2);color:var(--ui-fg);font-size:var(--fs-sm);white-space:nowrap;flex:none;cursor:pointer}
+  .rfile:hover{background:var(--ui-hover)}
+  .rfile svg{width:14px;height:14px;color:var(--ui-icon)}
+  .rfile .dm-mono{font-size:11px}
+  .rules .who{font-size:11px;color:var(--ui-fg-info);white-space:nowrap;flex:none}
+  .rchips{display:flex;gap:4px;min-width:0;flex-wrap:nowrap;overflow:hidden}
+  .rchip{display:inline-flex;align-items:center;gap:4px;height:22px;padding:0 8px 0 3px;border:0;border-radius:11px;background:transparent;color:var(--ui-fg);font-size:11px;white-space:nowrap;flex:none;cursor:pointer}
+  .rchip:hover{background:var(--ui-hover)}
+  .rchip.on{background:var(--ui-selection)}
+  .rchip .hit{color:var(--ui-error);font-weight:500}
+  .rchip .hit.fx{color:var(--ui-success)}
+  .rn{display:inline-grid;place-items:center;min-width:16px;height:16px;padding:0 3px;border-radius:8px;background:var(--ai-surface-2);color:var(--ui-fg-info);font-family:var(--font-code);font-size:10px;font-weight:500;flex:none;line-height:1}
+  .rn.hit{background:var(--ui-error);color:var(--ui-accent-fg)}
+  .rn.fx{background:color-mix(in srgb,var(--ui-success) 24%,transparent);color:var(--ui-success)}
+  .rn.on{background:var(--ui-fg);color:var(--ui-editor-bg)}
+
+  /* ---- 节点上：引用了哪几条规则 + 隔离副本 ---- */
+  .mnode .nr{display:flex;align-items:center;gap:3px;min-width:0}
+  .mnode .nr .rn{min-width:14px;height:14px;padding:0 2px;border-radius:4px;font-size:9px}
+  .mnode .nr .wt{margin-left:auto;display:inline-flex;align-items:center;gap:3px;font-family:var(--font-code);font-size:10px;color:var(--ui-fg-info);white-space:nowrap}
+  .mnode .nr .wt svg{width:11px;height:11px}
+  .mnode .now{flex:none}
+  .mnode.block{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--ui-error) 60%,transparent)}
+  .stage.rfocus .mnode:not(.cite){opacity:.38}
+
+  /* ---- 并行副本 ---- */
+  .wts{padding:6px 16px 8px;display:flex;flex-direction:column;gap:5px;flex:none}
+  .wsec{display:flex;align-items:center;gap:6px;font-size:var(--fs-sm);color:var(--ui-fg-info)}
+  .wsec b{color:var(--ui-fg);font-weight:500}
+  .wsec svg{width:14px;height:14px}
+  .wsec .grow{flex:1}
+  .wgrid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
+  .wc{border-radius:8px;background:var(--ai-surface);padding:5px 8px 6px;display:flex;flex-direction:column;gap:2px;min-width:0;font-size:11px;cursor:default}
+  .wc:hover{background:var(--ui-hover)}
+  .wc.sel{box-shadow:inset 0 0 0 1px var(--ui-accent)}
+  .wc .wh{display:flex;align-items:center;gap:5px;font-family:var(--font-code);font-size:11px;font-weight:500;min-width:0;white-space:nowrap}
+  .wc .wh .av{width:14px;height:14px;border-radius:4px}.wc .wh .av svg{width:9px;height:9px}
+  .wc .wh > svg{width:14px;height:14px;color:var(--ui-fg-info)}
+  .wc .wf{display:flex;gap:4px;font-family:var(--font-code);font-size:10px;line-height:15px;white-space:nowrap;color:var(--ui-fg)}
+  .wc .wf .fn{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis}
+  .wc .wf .pa{color:var(--ui-success)}.wc .wf .pd{color:var(--ui-error)}
+  .wc .wf.cf .fn,.wc .wf.blk .fn{color:var(--ui-error)}
+  .wc .wf.fix .fn{color:var(--ui-success)}
+  .wc .wf.mute{color:var(--ui-fg-info);font-family:inherit}
+  .wc .ws{margin-top:auto;padding-top:2px}
+  .wc.main{background:var(--ai-surface-2)}
+  .wc.main.merged{background:color-mix(in srgb,var(--ui-success) 10%,var(--ai-surface))}
+
+  /* ---- 合并闸门：规则检查 ---- */
+  .gate2{display:grid;grid-template-columns:246px minmax(0,1fr);gap:10px}
+  .rcheck{display:flex;flex-direction:column;gap:2px}
+  .rcheck .r{display:flex;align-items:center;gap:6px;height:25px;font-size:var(--fs-sm);padding:0 6px;border-radius:5px}
+  .rcheck .r .grow{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .rcheck .r .res{font-size:11px;color:var(--ui-fg-info);white-space:nowrap}
+  .rcheck .r.ok .res{color:var(--ui-success)}
+  .rcheck .r.bad{background:color-mix(in srgb,var(--ui-error) 12%,transparent)}
+  .rcheck .r.bad .res{color:var(--ui-error);font-weight:500}
+  .rcheck .r.fix .res{color:var(--ui-success);font-weight:500}
+  .rcheck .r.wait{color:var(--ui-fg-info)}
+  .gate2 .diffcard pre .l{display:flex;gap:8px}
+  .gate2 .diffcard pre .l .cx{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:pre}
+  .gate2 .diffcard pre .l .rt{flex:none;font-family:var(--font-ui);font-size:10px;padding:0 6px;border-radius:4px;line-height:16px;margin-top:2px;background:color-mix(in srgb,var(--ui-error) 18%,transparent);color:var(--ui-error)}
+  .gate2 .diffcard pre .l .rt.fx{background:color-mix(in srgb,var(--ui-success) 18%,transparent);color:var(--ui-success)}
+  .gate2 .diffcard pre .l.blk{background:color-mix(in srgb,var(--ui-error) 12%,transparent)}
+  .gscan{display:flex;flex-direction:column;gap:6px;padding:10px 12px;font-size:var(--fs-sm);color:var(--ui-fg-info)}
+  .gscan .r{display:flex;align-items:center;gap:6px}
+  .gscan code{font-family:var(--font-code);font-size:11px;color:var(--ui-fg)}
+  .decide code{font-family:var(--font-code);font-size:11px;background:var(--ui-tag-bg);padding:1px 4px;border-radius:4px}
+
+  /* ---- 合并前旅程：按真实比例画设备 ---- */
+  .jgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+  .jd{border-radius:10px;background:var(--ai-surface);padding:10px 10px 8px;display:flex;flex-direction:column;gap:8px;min-width:0}
+  .jstage{height:146px;display:flex;align-items:center;justify-content:center}
+  .jmeta{display:flex;flex-direction:column;gap:3px;font-size:var(--fs-sm);line-height:var(--lh-sm);min-width:0}
+  .jmeta .t1{display:flex;align-items:center;gap:6px}
+  .jmeta .t1 b{font-weight:500;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .jmeta .spec{font-family:var(--font-code);font-size:10px;line-height:14px;color:var(--ui-fg-info)}
+  .jsteps{display:flex;gap:3px;align-items:center;font-size:11px;color:var(--ui-fg-info)}
+  .jsteps i{width:14px;height:4px;border-radius:2px;background:var(--ui-progress-track);flex:none}
+  .jsteps i.d{background:var(--ui-success)}.jsteps i.c{background:var(--ai-ink)}
+  .jsteps span{margin-left:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .dev{position:relative;border:3px solid var(--dv);border-radius:12px;background:var(--ui-editor-bg);overflow:hidden;flex:none;box-sizing:content-box;--dv:color-mix(in srgb,var(--ui-fg) 70%,var(--ui-bg));transition:width .25s,height .25s}
+  .dev.phone{width:62px;height:140px}
+  .dev.pad{width:198px;height:132px;border-radius:9px}
+  .dev.fin{width:132px;height:121px;border-radius:9px}
+  .dev.fout{width:58px;height:131px;border-radius:11px}
+  .dev .sb{position:absolute;left:0;right:0;top:0;height:9px;display:flex;align-items:center;justify-content:space-between;padding:0 6px;z-index:1}
+  .dev .sb i{display:block;height:2px;border-radius:1px;background:var(--ui-fg-info)}
+  .dev .ph{position:absolute;top:3px;left:50%;width:4px;height:4px;margin-left:-2px;border-radius:50%;background:var(--dv);z-index:2}
+  .dev .gb{position:absolute;bottom:3px;left:50%;width:30%;height:2px;margin-left:-15%;border-radius:1px;background:var(--ui-fg-info)}
+  .dev .crease{position:absolute;top:0;bottom:0;left:50%;border-left:1px dashed var(--ui-component-border)}
+  .dev .bk{position:absolute;border-radius:2px;background:var(--ui-tag-bg)}
+  .dev .bk.pri{background:var(--ui-accent)}
+  .dev .bk.img{background:color-mix(in srgb,var(--ui-fg) 16%,var(--ui-tag-bg))}
+  /* 真机验证 Agent 在设备上点的位置：智能色，不动 */
+  .dev .tap{position:absolute;width:10px;height:10px;margin:-5px 0 0 -5px;border-radius:50%;border:2px solid var(--ai-ink);background:var(--ai-tint-2);z-index:3}
+  .dev .idle{position:absolute;inset:0;display:grid;place-items:center;font-size:10px;color:var(--ui-fg-info)}
+  .mrg{display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:10px;background:var(--ai-surface);font-size:var(--fs-sm)}
+  .mrg svg{width:14px;height:14px;color:var(--ui-fg-info)}
+  .mrg .grow{flex:1}
+  .mrg.ok{background:color-mix(in srgb,var(--ui-success) 10%,transparent)}
+  .mrg.ok svg{color:var(--ui-success)}.mrg b{font-weight:500}
+  .mrg .ck{color:var(--ui-fg-info)}.mrg .ck b{color:var(--ui-success);font-weight:500}
+
+  /* ---- 右栏：副本文件、规则引用 ---- */
+  .flist{padding:0 12px 10px;display:flex;flex-direction:column;gap:2px}
+  .flist .fr{display:flex;align-items:center;gap:6px;font-family:var(--font-code);font-size:11px;line-height:20px;min-width:0}
+  .flist .fr .fn{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .flist .fr .pa{color:var(--ui-success)}.flist .fr .pd{color:var(--ui-error)}
+  .rref{padding:0 12px 10px;display:flex;flex-direction:column;gap:4px}
+  .rref .rr{display:flex;align-items:center;gap:6px;font-size:var(--fs-sm);line-height:var(--lh-sm);min-width:0}
+  .rref .rr b{font-weight:500;white-space:nowrap}
+  .rref .rr .at{flex:1;min-width:0;color:var(--ui-fg-info);font-family:var(--font-code);font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .dm-vstep.blk .node{border-color:var(--ui-error);background:var(--ui-error);color:var(--ui-accent-fg)}
+  .dm-vstep.blk .plan{color:var(--ui-error)}
+  /* harmony.md 里的引用提示 */
+  .inlay{display:inline-block;margin-left:14px;padding:0 6px;border-radius:4px;background:var(--ui-tag-bg);color:var(--ui-fg-info);font-family:var(--font-ui);font-size:11px;line-height:17px;font-style:normal;font-weight:400;vertical-align:1px}
+  .inlay.err{background:color-mix(in srgb,var(--ui-error) 16%,transparent);color:var(--ui-error)}
+  .inlay.fx{background:color-mix(in srgb,var(--ui-success) 16%,transparent);color:var(--ui-success)}
+
+  /* ---- 我的设备：实况窗推送 + 应用接续（鸿蒙电脑版） ---- */
+  .mydev{display:flex;flex-direction:column;gap:10px;padding:10px 12px 16px}
+  .mdrow{display:flex;align-items:center;gap:8px;min-width:0}
+  .mdrow .grow{flex:1}
+  .mdstage{display:flex;align-items:flex-start;justify-content:center;gap:22px;padding:14px 8px 8px;margin-bottom:22px;border-radius:12px;background:var(--ai-surface)}
+  .pdcol{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0}
+  .pdlab{font-size:11px;color:var(--ui-fg-info);text-align:center;line-height:14px;font-family:var(--font-code)}
+  .pdlab b{display:block;color:var(--ui-fg);font-weight:500;font-family:var(--font-ui)}
+  .pphone,.pwatch{--pdv:color-mix(in srgb,var(--ui-fg) 78%,var(--ui-bg));--wall:var(--ui-editor-bg)}
+  .pphone{position:relative;width:168px;height:379px;border:4px solid var(--pdv);border-radius:26px;overflow:hidden;background:var(--wall);color:var(--ui-fg);font-size:10px;line-height:13px;flex:none}
+  .pphone .psb{position:absolute;left:0;right:0;top:0;height:22px;display:flex;align-items:center;gap:4px;padding:0 12px;font-size:10px;font-weight:600;z-index:3}
+  .pphone .psb .grow{flex:1}
+  .pphone .psb .sig{display:inline-flex;align-items:flex-end;gap:1px;height:8px}
+  .pphone .psb .sig i{width:2px;background:var(--ui-fg);border-radius:1px}
+  .pphone .psb .bat{width:16px;height:8px;border:1px solid var(--ui-fg);border-radius:2px;position:relative}
+  .pphone .psb .bat::after{content:"";position:absolute;left:1px;top:1px;bottom:1px;width:70%;background:var(--ui-fg);border-radius:1px}
+  .pphone .phole{position:absolute;top:7px;left:50%;width:9px;height:9px;margin-left:-4.5px;border-radius:50%;background:var(--pdv);z-index:4}
+  .pphone .pgb{position:absolute;bottom:5px;left:50%;width:56px;height:3px;margin-left:-28px;border-radius:2px;background:var(--ui-fg);opacity:.7;z-index:3}
+  .pphone .pclock{position:absolute;top:34px;left:0;right:0;text-align:center;font-size:38px;line-height:42px;font-weight:400;letter-spacing:1px}
+  .pphone .pdate{position:absolute;top:78px;left:0;right:0;text-align:center;font-size:10px;color:var(--ui-fg-info)}
+  .pphone .plk{position:absolute;bottom:20px;width:26px;height:26px;border-radius:50%;background:color-mix(in srgb,var(--ui-fg) 12%,transparent);display:grid;place-items:center}
+  .pphone .plk svg{width:12px;height:12px}
+  .plw{position:absolute;left:8px;right:8px;border-radius:14px;padding:8px 9px;background:var(--ai-surface-2);display:flex;flex-direction:column;gap:5px;z-index:2}
+  .plw .ph1{display:flex;align-items:center;gap:5px;font-size:9px;color:var(--ui-fg-info);white-space:nowrap}
+  .plw .ph1 b{color:var(--ui-fg);font-weight:600}
+  .plw .ph1 .grow{flex:1}
+  .papp{width:14px;height:14px;border-radius:4px;background:var(--ai-surface);display:grid;place-items:center;flex:none}
+  .papp svg{width:10px;height:10px;color:var(--ai-ink)}
+  .plw .pt{font-size:11px;line-height:14px;font-weight:500}
+  .plw .pbd{color:var(--ui-fg-info);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+  .plw .pbtns{display:flex;gap:6px}
+  .pbtn{flex:1;height:24px;border-radius:12px;border:0;background:var(--ai-surface);color:var(--ui-fg);font-size:10px;font-weight:500;padding:0 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .pbtn.pri{background:var(--ui-accent);color:var(--ui-accent-fg)}
+  .pbtn:hover{filter:brightness(1.08)}
+  .plw .dm-progress{height:3px}
+  .ptoast{position:absolute;left:50%;bottom:34px;transform:translateX(-50%);white-space:nowrap;padding:3px 10px;border-radius:10px;background:var(--ui-success);color:var(--ui-accent-fg);font-size:10px;z-index:5}
+  .pcap{position:absolute;top:4px;left:10px;height:15px;padding:0 7px 0 4px;border-radius:8px;border:0;background:var(--ai-wait);color:#fff;font-size:9px;font-weight:500;display:inline-flex;align-items:center;gap:4px;z-index:5}
+  .pcap i{width:6px;height:6px;border-radius:50%;background:#fff}
+  .papps{position:absolute;top:44px;left:14px;right:14px;display:grid;grid-template-columns:repeat(4,1fr);gap:14px 10px}
+  .papps i,.pdock i{display:block;aspect-ratio:1;border-radius:8px;background:color-mix(in srgb,var(--ui-fg) 14%,transparent)}
+  .pdock{position:absolute;left:12px;right:12px;bottom:16px;display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:6px;border-radius:14px;background:color-mix(in srgb,var(--ui-fg) 8%,transparent)}
+  .pcont{position:absolute;left:10px;right:10px;bottom:62px;border-radius:14px;padding:8px 9px;background:var(--ai-surface-2);display:flex;align-items:center;gap:7px;cursor:pointer;z-index:2}
+  .pcont .tx{flex:1;min-width:0}
+  .pcont .tx b{display:block;font-size:10px;font-weight:500}
+  .pcont .tx span{display:block;font-size:9px;color:var(--ui-fg-info);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .pcont .tag{font-size:9px;color:var(--ui-fg-info);font-weight:500;white-space:nowrap}
+  .pcont .tx b{white-space:nowrap}
+  .pcont > svg{width:18px;height:18px;color:var(--ai-ink);flex:none}
+  .pbd-wrap{position:absolute;inset:22px 0 14px;background:var(--ui-editor-bg);display:flex;flex-direction:column;gap:5px;padding:4px 9px 6px;overflow:hidden}
+  .pbd-wrap .bh{display:flex;align-items:center;gap:4px;font-size:11px;font-weight:500}
+  .pbd-wrap .bh .grow{flex:1}
+  .pbd-wrap .bh button{border:0;background:transparent;color:var(--ui-fg);font-size:14px;line-height:14px;padding:0 3px 0 0}
+  .pbd-wrap .bh .n{font-family:var(--font-code);font-size:9px;color:var(--ui-fg-info);font-weight:400}
+  .pbd-wrap .ld{font-size:9px;color:var(--ui-fg-info);line-height:12px}
+  .pbd-wrap .ar{display:flex;align-items:center;gap:5px;height:17px;font-size:10px}
+  .pbd-wrap .ar .av{width:13px;height:13px;border-radius:4px}.pbd-wrap .ar .av svg{width:8px;height:8px}
+  .pbd-wrap .ar .grow{flex:1;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+  .pbd-wrap .ar .dm-pill{height:14px;line-height:14px;font-size:9px;padding:0 5px}
+  .pbd-wrap .plw{position:static;background:var(--ai-wait-tint)}
+  .pbd-wrap .ft{margin-top:auto;font-size:9px;color:var(--ui-fg-info);font-family:var(--font-code)}
+  .pwwrap{position:relative;width:150px;height:150px;flex:none}
+  .pwwrap::after{content:"";position:absolute;right:-7px;top:58px;width:6px;height:20px;border-radius:2px;background:color-mix(in srgb,var(--ui-fg) 78%,var(--ui-bg))}
+  .pwatch{position:absolute;inset:0;border:5px solid var(--pdv);border-radius:50%;overflow:hidden;background:var(--ui-editor-bg);color:var(--ui-fg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;text-align:center;padding:14px}
+  .pwatch .wt{font-size:9px;color:var(--ui-fg-info);font-family:var(--font-code)}
+  .pwatch .wtt{font-size:10px;line-height:12px;font-weight:500;max-width:96px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .pwatch .wq{font-size:9px;color:var(--ui-fg-info)}
+  .pwatch .wb{display:flex;gap:14px;margin-top:2px}
+  .pwatch .wb button{width:28px;height:28px;border-radius:50%;border:0;display:grid;place-items:center;background:var(--ui-tag-bg);color:var(--ui-error)}
+  .pwatch .wb button.pri{background:var(--ui-success);color:var(--ui-accent-fg)}
+  .pwatch .wb svg{width:14px;height:14px}
+  .pwatch .ring{position:relative;width:62px;height:62px}
+  .pwatch .ring svg{width:62px;height:62px;transform:rotate(-90deg)}
+  .pwatch .ring circle{fill:none;stroke-width:6}
+  .pwatch .ring .tr{stroke:var(--ui-progress-track)}.pwatch .ring .fg{stroke:var(--ai-ink);stroke-linecap:round}
+  .pwatch .ring b{position:absolute;inset:0;display:grid;place-items:center;font-size:13px;font-weight:500}
+  .pwatch .wtoast{position:absolute;inset:0;border-radius:50%;background:color-mix(in srgb,var(--ui-success) 92%,transparent);color:var(--ui-accent-fg);display:grid;place-items:center;font-size:11px;font-weight:500}
+  .mdlog{display:flex;flex-direction:column;gap:2px}
+  .mdlog .lr{display:flex;align-items:flex-start;gap:6px;font-size:var(--fs-sm);line-height:var(--lh-sm);padding:3px 0}
+  .mdlog .lr code{font-family:var(--font-code);font-size:11px;color:var(--ui-fg-info);flex:none}
+  .mdlog .lr svg{width:14px;height:14px;color:var(--ui-fg-info);flex:none;margin-top:1px}
+  .mdlog .lr span{flex:1;min-width:0}
 </style>
 </head>
 <body>
-<div class="ide" id="ide" data-ide-theme="dark" data-left="agent" data-right="member" data-bottom="none" role="application" aria-label="DevEco Studio">
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <symbol id="i-rules" viewBox="0 0 16 16"><path d="M8 1.5l5 2v4c0 3.2-2.1 5.6-5 7-2.9-1.4-5-3.8-5-7v-4z" stroke="currentColor" stroke-linejoin="round" fill="none"/><path d="M5.6 8l1.7 1.7 3.2-3.4" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
+  <symbol id="i-merge" viewBox="0 0 16 16"><circle cx="4" cy="3.5" r="1.5" stroke="currentColor" fill="none"/><circle cx="4" cy="12.5" r="1.5" stroke="currentColor" fill="none"/><circle cx="12" cy="12.5" r="1.5" stroke="currentColor" fill="none"/><path d="M4 5v6M4 5c0 4 6 3 8 6" stroke="currentColor" fill="none"/></symbol>
+</defs></svg>
+<div class="ide" id="ide" data-ide-theme="dark" data-left="agent" data-right="mydev" data-bottom="none" role="application" aria-label="DevEco Studio">
   <div class="body">
     <div class="tw tw-left">
       <div class="pane on" data-pane="agent">
@@ -148,50 +386,48 @@
           <button class="abtn" title="Skills"><svg class="i"><use href="#i-skills"/></svg></button>
           <button class="abtn" title="Settings"><svg class="i"><use href="#i-settings"/></svg></button>
           <button class="abtn" title="Options"><svg class="i"><use href="#i-moreV"/></svg></button>
-          <button class="abtn" title="Hide|Shift+Esc" data-act="hide-left"><svg class="i"><use href="#i-hide"/></svg></button></div>
+          <button class="abtn" title="Hide" data-act="hide-left"><svg class="i"><use href="#i-hide"/></svg></button></div>
         <div class="tw-body">
-          <div class="dm-pad dm-row" style="padding-bottom:0"><div class="dm-seg" id="lseg"><button data-v="chat">会话</button><button class="on" data-v="tasks">任务</button><button data-v="team">团队</button></div><span class="grow"></span><span class="dm-small dm-muted" id="lseg-hint">按状态分档</span></div>
+          <div class="dm-pad dm-row" style="padding-bottom:0"><div class="dm-seg" id="lseg"><button class="on" data-v="tasks">任务</button><button data-v="team">团队</button></div></div>
+          <div id="queue"></div>
           <div class="tasks" id="tasks">
 
-            <div class="tgroup wait" data-g="wait"><span class="dm-dot info pulse"></span>在等你<span class="cnt" data-cnt>3</span><span class="grow"></span><span class="dm-small dm-muted" style="font-weight:400">排在最前</span></div>
-            <div class="task wait team" id="t-team">
+            <div class="tgroup" data-g="run">在跑<span class="cnt" data-cnt>5</span></div>
+            <div class="task team" id="t-team">
               <div class="t1"><b>商品详情页 · Agent Team</b><span class="avs"><span class="av" data-m="plan">规</span><span class="av" data-m="ui">UI</span><span class="av" data-m="logic">逻</span><span class="av" data-m="test">测</span><span class="av" data-m="dev">机</span></span></div>
               <div class="t2" id="t-team-t2"></div>
-              <div class="t3"><span class="dm-small dm-muted" id="t-team-meta"></span><span class="grow"></span><button class="btn sm primary" id="t-team-go">去看板处理</button></div>
+              <div class="t3"><span class="dm-small dm-muted" id="t-team-meta"></span><span class="grow"></span><button class="btn sm" id="t-team-go">看团队看板</button></div>
             </div>
             <div class="task wait" id="t-fix">
-              <div class="t1"><b>修复 ListPage 滑动卡顿</b><span class="when">等了 58 分钟</span></div>
-              <div class="t2">要不要把封面解码改成异步加占位图？会改 <code>ListPage.ets</code>、<code>ItemCard.ets</code>，不动数据层。</div>
-              <div class="t3"><button class="btn sm">查看它的理解</button><span class="grow"></span><button class="btn sm">拒绝</button><button class="btn sm primary" data-approve="t-fix">批准</button></div>
+              <div class="t1"><span class="ai-wait-dot"></span><b>修复 ListPage 滑动卡顿</b><span class="when">等了 58 分钟</span></div>
+              <div class="t2"><span class="agt">Agent·调优</span> 要不要把封面解码改成异步加占位图？会改 <code>ListPage.ets</code>、<code>ItemCard.ets</code>，不动数据层。</div>
+              <div class="t3"><span class="grow"></span><button class="btn sm" data-reject="t-fix">拒绝</button><button class="btn sm" data-approve="t-fix">批准</button></div>
             </div>
             <div class="task wait" id="t-a11y">
-              <div class="t1"><b>补齐 LoginPage 无障碍描述</b><span class="when">等了 3 分钟</span></div>
-              <div class="t2">登录失败的提示读给屏幕阅读器时，用「验证码错误」还是原错误码 <code>ERR_AUTH_401</code>？</div>
-              <div class="t3"><button class="btn sm primary" data-approve="t-a11y">用「验证码错误」</button><button class="btn sm" data-approve="t-a11y">保留错误码</button></div>
+              <div class="t1"><span class="ai-wait-dot"></span><b>补齐 LoginPage 无障碍描述</b><span class="when">等了 3 分钟</span></div>
+              <div class="t2"><span class="agt">Agent·无障碍</span> 读屏时用「验证码错误」还是原错误码 <code>ERR_AUTH_401</code>？先按前者做着。</div>
+              <div class="t3"><span class="grow"></span><button class="btn sm" data-approve="t-a11y">用「验证码错误」</button><button class="btn sm" data-approve="t-a11y">保留错误码</button></div>
             </div>
-
-            <div class="tgroup" data-g="run"><span class="dm-dot ok"></span>在干<span class="cnt" data-cnt>2</span></div>
             <div class="task" id="t-deck">
               <div class="t1"><b>生成上架材料</b><span class="when">排队中</span></div>
-              <div class="t2">服务端并发排队 · <b>排第 3 位</b> · 预计还要 <b>2 分钟</b></div>
+              <div class="t2"><span class="agt">Agent·上架</span> 服务端并发排队 · 排第 3 位 · 预计还要 2 分钟</div>
               <div class="t3"><span class="queue"><i class="run"></i><i></i><i></i><i class="me"></i><span>前面还有 2 个</span></span><span class="grow"></span><button class="btn sm">取消</button></div>
             </div>
             <div class="task" id="t-card">
               <div class="t1"><b>把 ItemCard 抽成组件</b><span class="when">第 5 / 7 步</span></div>
-              <div class="t2">正在改 <code>ItemCard.ets</code>：把封面尺寸从写死改成参数</div>
+              <div class="t2"><span class="agt">Agent·重构</span> 正在改 <code>ItemCard.ets</code>：把封面尺寸从写死改成参数</div>
               <div class="t3"><div class="dm-progress"><i style="--v:71%"></i></div><button class="btn sm">中止</button></div>
             </div>
 
-            <div class="tgroup" data-g="done"><span class="dm-dot"></span>干完了<span class="cnt" data-cnt>1</span></div>
+            <div class="tgroup" data-g="done">干完了<span class="cnt" data-cnt>1</span></div>
             <div class="task done" id="t-readme">
               <div class="t1"><b>翻译 README 为英文</b><span class="when">12 分钟前</span></div>
-              <div class="t2">改了 1 个文件 · <span style="color:var(--ui-success)">+41</span> <span style="color:var(--ui-error)">−0</span></div>
+              <div class="t2"><span class="agt">Agent·多语言</span> 改了 1 个文件 · <span style="color:var(--ui-success)">+41</span> <span style="color:var(--ui-error)">−0</span></div>
               <div class="t3"><button class="btn sm">查看改动</button><button class="btn sm"><svg class="i" style="width:12px;height:12px"><use href="#i-undo"/></svg>回退</button></div>
             </div>
 
           </div>
           <div class="tasks mlist" id="mlist" hidden></div>
-          <div class="empty-hint" id="chat-hint" hidden>会话记录在「任务」和「团队」里按状态归档</div>
         </div>
       </div>
     </div>
@@ -202,41 +438,54 @@
       <!-- 团队看板 -->
       <div class="team" data-for-file="Team" id="team">
         <div class="lead">
-          <span class="av"><svg><use href="#i-genie"/></svg></span>
+          <span class="av"><svg><use href="#ai-mark"/></svg></span>
           <div class="tx"><b>主 Agent · 做商品详情页，适配手机 + 折叠屏并上真机验证</b><span id="lead-sub"></span></div>
-          <div class="dm-progress"><i id="lead-bar" style="--v:20%"></i></div><span class="dm-mono dm-muted" id="lead-n">1/5</span>
+          <span class="dm-mono dm-muted" id="lead-n">1/5</span>
+        </div>
+        <div class="rules" id="rules">
+          <button class="rfile" id="rules-open" title="打开 .codegenie/rules/harmony.md"><svg><use href="#i-rules"/></svg><span class="dm-mono">harmony.md</span></button>
+          <span class="who" title="随仓库提交，主 Agent 与 5 个子 Agent 共读">团队共享</span>
+          <span class="rchips" id="rchips"></span>
         </div>
         <div class="graph">
-          <div class="lg"><span><i class="ok"></i>已交接</span><span><i></i>等上游</span><span><i class="err"></i>同改一个文件</span></div>
           <div class="stage" id="stage">
-            <svg class="medges" id="edges" viewBox="0 0 752 260">
-              <path id="e-pu" d="M152 142 C176 142 176 58 200 58"/>
-              <path id="e-pl" d="M152 142 C176 142 176 206 200 206"/>
-              <path id="e-ut" d="M352 58 C376 58 376 142 400 142"/>
-              <path id="e-lt" d="M352 206 C376 206 376 142 400 142"/>
-              <path id="e-td" d="M552 142 L600 142"/>
-              <path id="e-cf" class="cf" d="M276 110 L276 154"/>
+            <svg class="medges" id="edges" viewBox="0 0 752 264">
+              <path id="e-pu" d="M152 132 C176 132 176 60 200 60"/>
+              <path id="e-pl" d="M152 132 C176 132 176 204 200 204"/>
+              <path id="e-ut" d="M352 60 C376 60 376 132 400 132"/>
+              <path id="e-lt" d="M352 204 C376 204 376 132 400 132"/>
+              <path id="e-td" d="M552 132 L600 132"/>
+              <path id="e-cf" class="cf" d="M276 116 L276 148"/>
             </svg>
-            <div class="mnode" data-m="plan" style="--x:0px;--y:90px"></div>
-            <div class="mnode" data-m="ui" style="--x:200px;--y:6px"></div>
-            <div class="mnode" data-m="logic" style="--x:200px;--y:154px"></div>
-            <div class="mnode" data-m="test" style="--x:400px;--y:90px"></div>
-            <div class="mnode" data-m="dev" style="--x:600px;--y:90px"></div>
+            <div class="mnode" data-m="plan" style="--x:0px;--y:76px"></div>
+            <div class="mnode" data-m="ui" style="--x:200px;--y:4px"></div>
+            <div class="mnode" data-m="logic" style="--x:200px;--y:148px"></div>
+            <div class="mnode" data-m="test" style="--x:400px;--y:76px"></div>
+            <div class="mnode" data-m="dev" style="--x:600px;--y:76px"></div>
             <button class="cfbadge" id="cfbadge" title="两个 Agent 改了同一段"><svg><use href="#i-warn"/></svg>DetailPage.ets 冲突</button>
           </div>
         </div>
+        <div class="wts" id="wts"></div>
         <div class="decide" id="decide"></div>
       </div>
+
+      <div class="code-wrap" data-for-file="harmony.md" hidden><div class="code" id="rules-code"></div></div>
 
       <div class="code-wrap" data-for-file="ListPage.ets" hidden><div class="code" id="code"></div></div>
       <div class="breadcrumbs" id="crumbs"></div>
     </div>
 
     <div class="tw tw-right">
+      <div class="pane" data-pane="mydev">
+        <div class="tw-hdr"><span class="title">我的设备</span><span class="grow"></span>
+          <button class="abtn" title="Options"><svg class="i"><use href="#i-moreV"/></svg></button>
+          <button class="abtn" title="Hide" data-act="hide-right"><svg class="i"><use href="#i-hide"/></svg></button></div>
+        <div class="tw-body"><div class="mydev" id="mydev"></div></div>
+      </div>
       <div class="pane on" data-pane="member">
         <div class="tw-hdr"><span class="title">Agent 成员</span><span class="grow"></span>
           <button class="abtn" title="Options"><svg class="i"><use href="#i-moreV"/></svg></button>
-          <button class="abtn" title="Hide|Shift+Esc" data-act="hide-right"><svg class="i"><use href="#i-hide"/></svg></button></div>
+          <button class="abtn" title="Hide" data-act="hide-right"><svg class="i"><use href="#i-hide"/></svg></button></div>
         <div class="tw-body" id="mdetail"></div>
       </div>
       <div class="pane" data-pane="project">
@@ -245,7 +494,7 @@
           <button class="abtn" title="Expand All"><svg class="i"><use href="#i-expandAll"/></svg></button>
           <button class="abtn" title="Collapse All"><svg class="i"><use href="#i-collapseAll"/></svg></button>
           <button class="abtn" title="Options"><svg class="i"><use href="#i-moreV"/></svg></button>
-          <button class="abtn" title="Hide|Shift+Esc" data-act="hide-right"><svg class="i"><use href="#i-hide"/></svg></button></div>
+          <button class="abtn" title="Hide" data-act="hide-right"><svg class="i"><use href="#i-hide"/></svg></button></div>
         <div class="tw-body" id="tree-slot"></div>
       </div>
     </div>
@@ -255,137 +504,390 @@
 <script>
 (function(){
   var $=DemoFrame.$, $$=DemoFrame.$$;
-  document.getElementById('tree-slot').innerHTML=DemoFrame.tree({sel:'ListPage.ets'});
-  document.getElementById('tabs').insertAdjacentHTML('afterbegin',DemoFrame.tabs([{file:'Team',label:'Team · 商品详情页',icon:'#i-user-sync',on:true},{file:'ListPage.ets'},{file:'ItemCard.ets'}]));
-  document.getElementById('code').innerHTML=DemoFrame.code('ListPage.ets',{cur:28,hl:[28]});
-  DemoFrame.init({device:'HUAWEI Mate 70 Pro',deviceIcon:'#i-phone',stripeLeft:[{left:'agent',icon:'#i-genie',title:'DevEco Code'},{left:'project',icon:'#i-tw-project',title:'Project|Alt+1'},{left:'structure',icon:'#i-tw-structure',title:'Structure|Alt+7'},{more:1},{gap:1},{bottom:'build',icon:'#i-tw-build',title:'Build'},{bottom:'log',icon:'#i-tw-device',title:'Log'},{bottom:'services',icon:'#i-tw-todo',title:'Services|Alt+8'},{bottom:'problems',icon:'#i-tw-problems',title:'Problems|Alt+6'},{bottom:'run',icon:'#i-tw-services',title:'Run|Alt+4'},{bottom:'terminal',icon:'#i-tw-terminal',title:'Terminal|Alt+F12'},{bottom:'debug',icon:'#i-info',title:'Debug|Alt+5'},{bottom:'vcs',icon:'#i-vcs',title:'Version Control|Alt+9'}],stripeRight:[{right:'notifications',icon:'#i-tw-notifications',title:'Notifications',dot:1},{right:'member',icon:'#i-user-sync',title:'Agent 成员'},{right:'project',icon:'#i-tw-project',title:'Project|Alt+1'},{right:'docs',icon:'#i-hdoc',title:'HarmonyOS Docs'},{right:'inspector',icon:'#i-pen',title:'Code Review'},{right:'previewer',icon:'#i-tw-preview',title:'Previewer'},{more:1},{right:'devices',icon:'#i-phone',title:'Device Manager'}]});
 
-  /* 状态栏胶囊：在等你 + 团队 + 排队中 */
-  $('#status-slot').innerHTML=
-    '<span class="dm-capsule wait" id="cap-wait"><span class="dm-dot info pulse"></span><span id="cap-wait-t">等你确认 · 修复 ListPage 滑动卡顿</span></span>'
-   +'<span class="dm-capsule" id="cap-team"></span>'
-   +'<span class="dm-capsule"><span class="spin" style="width:10px;height:10px"></span>生成上架材料 · 排第 3<span class="bar"><i style="--v:30%"></i></span></span>';
+  /* ================= 团队共享的项目规则：.codegenie/rules/harmony.md ================= */
+  var RULES=[
+    {id:1,short:'严格模式',title:'ArkTS 严格模式'},
+    {id:2,short:'GridRow 断点',title:'一多断点用 GridRow'},
+    {id:3,short:'V2 装饰器',title:'状态管理用 V2 装饰器'},
+    {id:4,short:'http 封装',title:'网络请求走 http 统一封装'},
+    {id:5,short:'$r 引用',title:'资源必须 $r 引用'},
+    {id:6,short:'颜色 token',title:'颜色走 token'}
+  ];
+  var CITE={plan:[2,3,4],ui:[1,2,5,6],logic:[1,3,4],test:[1,2],dev:[2]};
+  var REF={
+    plan:{2:'detail-spec.md §3 sm 单栏 · md/lg 双栏',3:'§4 状态用 @Local / @Param',4:'§5 接口走 HttpClient'},
+    ui:{1:'3 个文件 0 处 any',2:'DetailPage.ets:24 GridRow sm/md/lg',5:'BuyBar.ets:15 按钮文案',6:'BuyBar.ets:17 按钮颜色'},
+    logic:{1:'DetailVM.ets 类型全部声明',3:'DetailVM.ets:8 @Local sku',4:'ProductApi.ets:15 HttpClient.get'},
+    test:{1:'DetailPage.test.ets 0 处 any',2:'sm / md / lg 三个断点各截一张'},
+    dev:{2:'Mate 70 Pro sm · Mate X6 md · MatePad lg'}
+  };
+  /* 各子 Agent 的隔离工作副本 */
+  var WT={
+    plan:{b:'agent/plan',files:[['docs/detail-spec.md',86,0]]},
+    ui:{b:'agent/ui',files:[['pages/DetailPage.ets',38,4],['components/BuyBar.ets',22,0],['components/SkuPanel.ets',31,0]]},
+    logic:{b:'agent/logic',files:[['pages/DetailPage.ets',12,1],['model/ProductApi.ets',27,0],['viewmodel/DetailVM.ets',44,0]]},
+    test:{b:'agent/test',files:[['ohosTest/DetailPage.test.ets',64,0]]}
+  };
+  var HIT={};              /* 规则 id → 本次拦下几处 */
+  var gate={st:'idle',i:0}; /* idle → scan → blocked → fixing → passed */
+  var rfocus=0;
+
+  function rulesFile(){
+    function h(id,txt){
+      var who=Object.keys(CITE).filter(function(k){return CITE[k].indexOf(id)>=0}).map(function(k){return M[k].short}).join(' · ');
+      var tag='<span class="inlay">'+who+' 引用</span>';
+      if(HIT[id])tag+='<span class="inlay '+(gate.st==='passed'?'fx':'err')+'">本次拦下 '+HIT[id]+' 处'+(gate.st==='passed'?' · 已自动改写':'')+'</span>';
+      return ['<span class="k">## '+id+' · '+txt+'</span>'+tag];
+    }
+    return [
+      ['<span class="k"># 鸿蒙工程规则 · MyApplication</span>'],
+      ['<span class="c">&gt; 团队共享：随仓库提交。主 Agent 与子 Agent 动手前都会读，合并前逐条检查，不符合的改动拦下。</span>'],
+      [''],
+      h(1,'ArkTS 严格模式'),
+      ['- 不写 <span class="s">any</span> / <span class="s">unknown</span>，不用 <span class="s">as</span> 绕过类型检查'],
+      ['- 对象字面量要有声明好的 interface / class'],
+      [''],
+      h(2,'一多断点用 GridRow'),
+      ['- 随断点变化的布局用 <span class="f">GridRow</span> / <span class="f">GridCol</span>，不手写 if (width &gt; 600)'],
+      ['- 断点 sm [320,600) · md [600,840) · lg [840,1440) vp，每个断点都给 span'],
+      [''],
+      h(3,'状态管理用 V2 装饰器'),
+      ['- 新组件用 <span class="m">@ComponentV2</span>，状态用 <span class="m">@Local</span> / <span class="m">@Param</span> / <span class="m">@Event</span> / <span class="m">@Monitor</span>'],
+      ['- 不再新增 <span class="m">@State</span> / <span class="m">@Prop</span> / <span class="m">@Link</span>'],
+      [''],
+      h(4,'网络请求走 http 统一封装'),
+      ['- 只调 <span class="s">common/net/HttpClient.ets</span>（带超时、重试、HiLog 打点）'],
+      ['- 页面和 ViewModel 里不直接 <span class="f">http.createHttp()</span>'],
+      [''],
+      h(5,'资源必须 $r 引用'),
+      ['- 文案放 <span class="s">resources/base/element/string.json</span>，用 <span class="f">$r</span>(<span class="s">\'app.string.xxx\'</span>)'],
+      ['- 图片放 <span class="s">resources/base/media</span>，用 <span class="f">$r</span>(<span class="s">\'app.media.xxx\'</span>)'],
+      [''],
+      h(6,'颜色走 token'),
+      ['- 颜色用 <span class="f">$r</span>(<span class="s">\'app.color.xxx\'</span>)，base / dark 两份 color.json 各定义一次'],
+      ['- 不写 <span class="s">\'#RRGGBB\'</span>，也不写 Color.Red 这类固定色']
+    ];
+  }
+  DemoFrame.FILES['harmony.md']={path:['.codegenie','rules'],crumbs:['harmony.md','规则 6 条'],md:1,lines:[]};
+
+  document.getElementById('tree-slot').innerHTML=DemoFrame.tree({sel:'ListPage.ets'});
+  document.getElementById('tabs').insertAdjacentHTML('afterbegin',DemoFrame.tabs([{file:'Team',label:'Team · 商品详情页',icon:'#i-user-sync',on:true},{file:'harmony.md',icon:'#i-text'},{file:'ListPage.ets'},{file:'ItemCard.ets'}]));
+  document.getElementById('code').innerHTML=DemoFrame.code('ListPage.ets',{cur:28,hl:[28]});
+  DemoFrame.init({device:'HUAWEI Mate 70 Pro',deviceIcon:'#i-phone',stripeLeft:[{left:'agent',icon:'#i-genie',title:'DevEco Code'},{left:'project',icon:'#i-tw-project',title:'Project'},{left:'structure',icon:'#i-tw-structure',title:'Structure'},{more:1},{gap:1},{bottom:'build',icon:'#i-tw-build',title:'Build'},{bottom:'log',icon:'#i-tw-device',title:'Log'},{bottom:'services',icon:'#i-tw-todo',title:'Services'},{bottom:'problems',icon:'#i-tw-problems',title:'Problems'},{bottom:'run',icon:'#i-tw-services',title:'Run'},{bottom:'terminal',icon:'#i-tw-terminal',title:'Terminal'},{bottom:'debug',icon:'#i-info',title:'Debug'},{bottom:'vcs',icon:'#i-vcs',title:'Version Control'}],stripeRight:[{right:'notifications',icon:'#i-tw-notifications',title:'Notifications',dot:1},{right:'mydev',icon:'#i-watch',title:'我的设备'},{right:'member',icon:'#i-user-sync',title:'Agent 成员'},{right:'project',icon:'#i-tw-project',title:'Project'},{right:'docs',icon:'#i-hdoc',title:'HarmonyOS Docs'},{right:'inspector',icon:'#i-pen',title:'Code Review'},{right:'previewer',icon:'#i-tw-preview',title:'Previewer'},{more:1},{right:'devices',icon:'#i-phone',title:'Device Manager'}]});
 
   /* ================= Agent Team 模型 ================= */
   var ICON={plan:'#i-scene',ui:'#i-ui',logic:'#i-code',test:'#i-check',dev:'#i-phone'};
   var M={
     plan:{short:'规划',name:'规划 Agent',role:'拆任务、定交接物',st:'done',now:'拆了 6 个子任务，定好页面结构和接口约定',done:6,
-      files:['docs/detail-spec.md'],from:'主 Agent',to:'UI Agent、逻辑 Agent',
-      steps:['读需求和现有 ItemCard、ListPage','拆成 5 个角色、6 个子任务','定页面结构：图集 / 价格 / SKU / 购买栏','定接口约定 ProductApi.getDetail(id)','定一多断点：sm 单栏、md 及以上双栏','交接给 UI、逻辑']},
+      from:'主 Agent',to:'UI Agent、逻辑 Agent',
+      steps:['读需求、harmony.md 和现有 ItemCard','拆成 5 个角色、6 个子任务','定页面结构：图集 / 价格 / SKU / 购买栏','定接口约定 ProductApi.getDetail(id)','定一多断点：sm 单栏、md / lg 双栏','交接给 UI、逻辑']},
     ui:{short:'UI',name:'UI Agent',role:'页面与一多布局',st:'run',now:'写 DetailPage 的 GridRow 断点：手机单栏、折叠屏展开双栏',done:3,
-      files:['pages/DetailPage.ets','components/SkuPanel.ets'],from:'规划 Agent',to:'测试 Agent',
-      steps:['新建 pages/DetailPage.ets','图集 Swiper + 价格区','复用 ItemCard 做推荐位','GridRow 断点：sm 单栏 / md 双栏','折叠屏展开态预览','交给测试']},
+      from:'规划 Agent',to:'测试 Agent',
+      steps:['新建 pages/DetailPage.ets','图集 Swiper + 价格区','复用 ItemCard 做推荐位','GridRow 断点：sm 单栏 / md·lg 双栏','折叠屏展开态预览','过合并前规则检查','交给测试']},
     logic:{short:'逻辑',name:'逻辑 Agent',role:'数据与交互',st:'wait',now:'给购买按钮接 addToCart()，和 UI 改到了同一段，等你定怎么合',done:2,
-      files:['pages/DetailPage.ets','model/ProductApi.ets'],from:'规划 Agent',to:'测试 Agent',
-      steps:['接 ProductApi.getDetail(id)','SKU 选择用 @State 管','购买栏接 addToCart()','错误与空态','交给测试']},
+      from:'规划 Agent',to:'测试 Agent',
+      steps:['接 ProductApi.getDetail(id)','SKU 选择用 @Local 管（V2）','购买栏接 addToCart()','错误与空态','过合并前规则检查','交给测试']},
     test:{short:'测试',name:'测试 Agent',role:'UI 测试与断点截图',st:'idle',now:'等 UI、逻辑交接后跑 DetailPage 的 UI 测试',done:0,
-      files:['ohosTest/DetailPage.test.ets'],from:'UI Agent、逻辑 Agent',to:'真机验证 Agent',
-      steps:['写 DetailPage UI 测试','手机 sm 断点截图比对','折叠屏 md 断点截图比对','交给真机验证']},
-    dev:{short:'真机',name:'真机验证 Agent',role:'hdc 装机与多设备验证',st:'idle',now:'等测试通过后装到 Mate 70 Pro 和 Mate X6',done:0,
-      files:['entry-default-signed.hap'],from:'测试 Agent',to:'主 Agent',
-      steps:['hdc install → Mate 70 Pro','hdc install → Mate X6','折叠 ↔ 展开切换，看有无白屏与错位']}
+      from:'UI Agent、逻辑 Agent',to:'真机验证 Agent',
+      steps:['写 DetailPage UI 测试','手机 sm 断点截图比对','平板 lg、折叠屏 md 截图比对','交给真机验证']},
+    dev:{short:'真机',name:'真机验证 Agent',role:'合并前旅程与多设备验证',st:'idle',now:'等测试通过后跑合并前旅程：真机 + 模拟器',done:0,
+      from:'测试 Agent',to:'主 Agent（合入 main）',
+      steps:['旅程 · Mate 70 Pro 真机','旅程 · MatePad Pro 13.2 模拟器','Mate X6 折叠 ↔ 展开 6 次','全部通过 → 4 个副本合入 main']}
   };
   var ORDER=['plan','ui','logic','test','dev'];
-  var phase='conflict';   /* conflict → running → handoff → verifying → done */
+  var phase='conflict';   /* conflict → running → rules → handoff → verifying → done */
   var sel='logic', edges={pu:'done',pl:'done',ut:'',lt:'',td:''};
-  var ST={done:['ok','干完了'],run:['info','在干'],wait:['warn','等你'],idle:['muted','等上游']};
+  var ST={done:['ok','干完了'],run:['info','在干'],wait:['warn','等你'],idle:['muted','等上游'],block:['err','被拦下']};
   function grp(st){return st==='wait'?'wait':(st==='done'?'done':'run')}
+  var J={p:-1,t:-1,x:-1,merging:false};   /* 合并前旅程：手机 / 平板 / 折叠屏进度 */
+  var HASH='3f9a1c2';
 
+  function rnHTML(id,k){
+    var c='';
+    if(HIT[id]&&k==='ui')c=gate.st==='passed'?' fx':' hit';
+    if(rfocus===id)c=' on';
+    return '<span class="rn'+c+'" title="规则 '+id+' · '+RULES[id-1].title+'">'+id+'</span>';
+  }
   function nodeHTML(k){
     var m=M[k],n=m.steps.length,s=ST[m.st];
+    var wt=WT[k]?'<span class="wt"><svg><use href="#i-branch"/></svg>wt/'+k+' · '+files(k).length+'</span>':'<span class="wt"><svg><use href="#i-merge"/></svg>合并候选包</span>';
     return '<div class="nh"><span class="av" data-m="'+k+'"><svg><use href="'+ICON[k]+'"/></svg></span>'+m.short+'<span class="grow"></span><span class="dm-pill '+s[0]+'">'+s[1]+'</span></div>'
       +'<div class="now">'+m.now+'</div>'
-      +'<div class="nf"><div class="dm-progress'+(m.st==='run'?'':'')+'"><i style="--v:'+Math.round(m.done/n*100)+'%"></i></div>'+m.done+'/'+n+' 步</div>';
+      +'<div class="nr">'+CITE[k].map(function(id){return rnHTML(id,k)}).join('')+wt+'</div>'
+      +'<div class="nf"><div class="dm-progress"><i style="--v:'+Math.round(m.done/n*100)+'%"></i></div>'+m.done+'/'+n+' 步</div>';
   }
   function renderGraph(){
     $$('#stage .mnode').forEach(function(el){
-      var k=el.dataset.m;el.className='mnode '+M[k].st+(k===sel?' sel':'');el.innerHTML=nodeHTML(k);
+      var k=el.dataset.m;el.className='mnode '+M[k].st+(k===sel?' sel':'')+(rfocus&&CITE[k].indexOf(rfocus)>=0?' cite':'');el.innerHTML=nodeHTML(k);
     });
+    $('#stage').classList.toggle('rfocus',!!rfocus);
     Object.keys(edges).forEach(function(e){$('#e-'+e).setAttribute('class',edges[e])});
     var cf=phase==='conflict';$('#e-cf').style.display=cf?'':'none';$('#cfbadge').hidden=!cf;
   }
+  function renderRules(){
+    $('#rchips').innerHTML=RULES.map(function(r){
+      var hit=HIT[r.id]?'<span class="hit'+(gate.st==='passed'?' fx':'')+'">'+(gate.st==='passed'?'改 ':'拦 ')+HIT[r.id]+'</span>':'';
+      return '<button class="rchip'+(rfocus===r.id?' on':'')+'" data-rule="'+r.id+'" title="规则 '+r.id+' · '+r.title+'"><span class="rn'+(HIT[r.id]?(gate.st==='passed'?' fx':' hit'):'')+'">'+r.id+'</span>'+r.short+hit+'</button>';
+    }).join('');
+    DemoFrame.FILES['harmony.md'].lines=rulesFile();
+    $('#rules-code').innerHTML=DemoFrame.code('harmony.md',{cur:rfocus?[4,8,12,16,20,24][rfocus-1]:1});
+  }
+
+  /* ---------- 副本：改了哪些文件 ---------- */
+  function files(k){
+    var f=WT[k]?WT[k].files.slice():[];
+    if(k==='ui'&&(gate.st==='fixing'||gate.st==='passed'))f.push(['resources/base/element/string.json',4,0]);
+    return f;
+  }
+  function fflag(k,path){
+    if(/DetailPage\.ets$/.test(path)&&(k==='ui'||k==='logic')&&phase==='conflict')return 'cf';
+    if(k==='ui'&&/BuyBar|string\.json/.test(path)){if(gate.st==='blocked')return /BuyBar/.test(path)?'blk':'';if(gate.st==='fixing'||gate.st==='passed')return 'fix';}
+    return '';
+  }
+  function base(p){return p.split('/').pop()}
+  function wtStatus(k){
+    if(phase==='done')return ['ok','已合入 main'];
+    if(k==='plan')return ['muted','已提交 · 待合入'];
+    if(k==='test'){if(M.test.st==='idle')return ['muted','等上游交接'];if(M.test.st==='run')return ['info','写用例中'];return ['ok','规则 6/6 ✓'];}
+    if(phase==='conflict')return k==='ui'?['err','同改 1 个文件']:['warn','已暂停 · 等你'];
+    if(phase==='running')return ['info','冲突已解 · 收尾'];
+    if(phase==='rules'){
+      if(gate.st==='scan')return ['info','规则检查中'];
+      if(k==='ui')return gate.st==='blocked'?['err','拦下 2 处']:(gate.st==='fixing'?['info','自动改写中']:['ok','复检 6/6 ✓']);
+      return ['ok','规则 6/6 ✓'];
+    }
+    return ['ok','规则 6/6 ✓'];
+  }
+  function mainStatus(){
+    if(phase==='done')return ['ok','已合入 · '+HASH];
+    if(phase==='rules')return ['info','规则闸门'];
+    if(phase==='verifying')return J.merging?['info','合入中']:['info','旅程 '+jDone()+'/3'];
+    if(phase==='handoff'||phase==='retest')return ['muted','等旅程'];
+    return ['muted','等闸门'];
+  }
+  function jDone(){return (J.p>=5?1:0)+(J.t>=5?1:0)+(J.x>=6?1:0)}
+  function renderWts(){
+    var cells=['plan','ui','logic','test'].map(function(k){
+      var st=wtStatus(k),f=files(k);
+      var rows=(k==='test'&&M.test.st==='idle')?'<div class="wf mute">还没开副本</div>':f.map(function(x){var fl=fflag(k,x[0]);return '<div class="wf '+fl+'" title="'+x[0]+'"><span class="fn">'+base(x[0])+'</span><span class="pa">+'+x[1]+'</span>'+(x[2]?'<span class="pd">−'+x[2]+'</span>':'')+'</div>'}).join('');
+      return '<div class="wc'+(k===sel?' sel':'')+'" data-pick="'+k+'"><div class="wh"><span class="av" data-m="'+k+'"><svg><use href="'+ICON[k]+'"/></svg></span>wt/'+k+'</div>'+rows+'<div class="ws"><span class="dm-pill '+st[0]+'">'+st[1]+'</span></div></div>';
+    }).join('');
+    var ms=mainStatus(),gOk=gate.st==='passed';
+    var main='<div class="wc main'+(phase==='done'?' merged':'')+'"><div class="wh"><svg><use href="#i-merge"/></svg>main</div>'
+      +'<div class="wf"><span class="fn">规则闸门</span><span class="'+(gOk?'pa':'')+'">'+(gOk?'6/6 ✓':(phase==='rules'?Math.min(gate.i,6)+'/6':'—'))+'</span></div>'
+      +'<div class="wf"><span class="fn">合并前旅程</span><span class="'+(jDone()===3?'pa':'')+'">'+(phase==='verifying'||phase==='done'?jDone()+'/3':'—')+'</span></div>'
+      +'<div class="wf"><span class="fn">'+(phase==='done'?'已合入':'待合入')+'</span><span>4 副本 · 8 文件</span></div>'
+      +'<div class="ws"><span class="dm-pill '+ms[0]+'">'+ms[1]+'</span></div></div>';
+    $('#wts').innerHTML='<div class="wsec"><svg><use href="#i-branch"/></svg><b>并行副本</b></div><div class="wgrid">'+cells+main+'</div>';
+  }
+
   function renderDetail(){
     var m=M[sel],s=ST[m.st];
     var steps=m.steps.map(function(t,i){
-      var c=i<m.done?'done':(i===m.done?(m.st==='run'?'run':(m.st==='wait'?'wt':'idle')):'idle');
+      var c=i<m.done?'done':(i===m.done?(m.st==='run'?'run':(m.st==='wait'?'wt':(m.st==='block'?'blk':'idle'))):'idle');
       var extra='';
       if(c==='wt'&&sel==='logic')extra='<div class="plan"><svg><use href="#i-warn"/></svg>和 UI Agent 同改 DetailPage.ets 第 24–31 行</div>';
       if(c==='wt'&&sel==='test')extra='<div class="plan"><svg><use href="#i-hand"/></svg>18/18 通过，等你批准交接</div>';
+      if(c==='blk')extra='<div class="plan"><svg><use href="#i-warn"/></svg>BuyBar.ets 第 15、17 行违反规则 5、6</div>';
       return '<div class="dm-vstep '+c+'"><span class="node">'+(i+1)+'</span><div class="body"><div class="body-t"><span class="grow">'+t+'</span>'+(c==='run'?'<span class="spin"></span>':'')+'</div>'+extra+'</div></div>';
     }).join('');
+    var wt=WT[sel]?'<code>.codegenie/worktrees/'+sel+'</code> · 分支 <code>'+WT[sel].b+'</code>':'不开副本，装合并候选包 <code>entry-default-signed.hap</code>';
+    var fl=files(sel);
+    var flist=fl.length&&!(sel==='test'&&M.test.st==='idle')?'<div class="msec">副本里改了 '+fl.length+' 个文件</div><div class="flist">'+fl.map(function(x){var f=fflag(sel,x[0]);
+      var tag=f==='cf'?'<span class="dm-pill err">同改</span>':(f==='blk'?'<span class="dm-pill err">拦下</span>':(f==='fix'?'<span class="dm-pill ok">已改写</span>':''));
+      return '<div class="fr"><span class="fn">'+x[0]+'</span>'+tag+'<span class="pa">+'+x[1]+'</span>'+(x[2]?'<span class="pd">−'+x[2]+'</span>':'')+'</div>'}).join('')+'</div>':'';
+    var rref='<div class="msec">引用的规则 · harmony.md</div><div class="rref">'+CITE[sel].map(function(id){
+      var tag='';if(sel==='ui'&&HIT[id])tag=gate.st==='passed'?'<span class="dm-pill ok">已改写</span>':'<span class="dm-pill err">拦下</span>';
+      return '<div class="rr">'+rnHTML(id,sel)+'<b>'+RULES[id-1].title+'</b><span class="at">'+REF[sel][id]+'</span>'+tag+'</div>'}).join('')+'</div>';
+    var cls=m.st==='wait'?'wt':(m.st==='done'?'ok':(m.st==='block'?'err':'info'));
+    var ic=m.st==='wait'?'#i-hand':(m.st==='done'?'#i-checkS':(m.st==='block'?'#i-warn':'#i-think'));
     $('#mdetail').innerHTML=
       '<div class="mhd"><span class="av" data-m="'+sel+'"><svg><use href="'+ICON[sel]+'"/></svg></span><div class="tx"><b>'+m.name+'</b><span>'+m.role+'</span></div><span class="dm-pill '+s[0]+'">'+s[1]+'</span></div>'
-      +'<div class="dm-callout '+(m.st==='wait'?'info':(m.st==='done'?'ok':''))+' mnow"><svg><use href="'+(m.st==='wait'?'#i-hand':(m.st==='done'?'#i-checkS':'#i-think'))+'"/></svg><span>'+m.now+'</span></div>'
-      +'<dl class="dm-kv mkv"><dt>接谁的活</dt><dd>'+m.from+'</dd><dt>交给谁</dt><dd>'+m.to+'</dd><dt>动的文件</dt><dd>'+m.files.map(function(f){return '<code>'+f+'</code>'}).join(' ')+'</dd></dl>'
+      +'<div class="dm-callout '+cls+' mnow"><svg><use href="'+ic+'"/></svg><span>'+m.now+'</span></div>'
+      +'<dl class="dm-kv mkv"><dt>接谁的活</dt><dd>'+m.from+'</dd><dt>交给谁</dt><dd>'+m.to+'</dd><dt>工作副本</dt><dd>'+wt+'</dd></dl>'
+      +flist+rref
       +'<div class="msec">步骤 '+m.done+' / '+m.steps.length+'</div><div class="dm-vtl">'+steps+'</div>';
   }
   function renderList(){
     var g={wait:[],run:[],done:[]};
     ORDER.forEach(function(k){g[grp(M[k].st)].push(k)});
-    var H={wait:['info pulse','在等你'],run:['ok','在干'],done:['','干完了']};
+    var H={wait:'在等你',run:'在干',done:'干完了'};
     $('#mlist').innerHTML=['wait','run','done'].map(function(x){
-      return '<div class="tgroup'+(x==='wait'?' wait':'')+'"><span class="dm-dot '+H[x][0]+'"></span>'+H[x][1]+'<span class="cnt">'+g[x].length+'</span></div>'
+      return '<div class="tgroup">'+(x==='wait'?'<span class="ai-wait-dot"></span>':'')+H[x]+'<span class="cnt">'+g[x].length+'</span></div>'
         +g[x].map(function(k){var m=M[k];return '<div class="mrow'+(k===sel?' sel':'')+'" data-pick="'+k+'"><span class="av" data-m="'+k+'"><svg><use href="'+ICON[k]+'"/></svg></span><div class="tx"><b>'+m.name+'</b><span>'+m.now+'</span></div><span class="n">'+m.done+'/'+m.steps.length+'</span></div>'}).join('')
         +(g[x].length?'':'<div class="empty-hint" style="padding:4px 12px 8px">没有</div>');
     }).join('');
   }
-  var LEAD={conflict:'2 个 Agent 同改 DetailPage.ets，已暂停逻辑 Agent，等你定怎么合',running:'UI、逻辑收尾中 → 交给测试',handoff:'测试通过，等你批准交给真机验证',verifying:'真机验证 Agent 在两台设备上跑',done:'全部完成 · 两台真机验证通过'};
+  var LEAD={conflict:'2 个副本同改 DetailPage.ets，已暂停逻辑 Agent，等你定怎么合',running:'UI、逻辑在各自副本里收尾 → 过规则闸门',rules:'合并前规则闸门：对照 harmony.md 逐条查 3 个副本',retest:'测试 Agent 按你的要求再跑一轮 UI 测试',handoff:'测试通过，等你批准跑合并前旅程',verifying:'合并前旅程：Mate 70 Pro 真机 + MatePad 模拟器，通过才合入 main',done:'全部完成 · 旅程 3/3 通过 · 4 个副本已合入 main'};
   function renderTeamTask(){
     var t=$('#t-team'),nd=ORDER.filter(function(k){return M[k].st==='done'}).length;
     var waits=[];
     if(phase==='conflict')waits.push('<span class="bl"><span>UI 和逻辑同改 <code>DetailPage.ets</code>，选保留哪边</span></span>');
-    if(phase==='handoff')waits.push('<span class="bl"><span>测试 18/18 通过，批准交给真机验证</span></span>');
-    $('#t-team-t2').innerHTML=waits.length?waits.join(''):(phase==='done'?'5 个角色都交了活 · Mate 70 Pro、Mate X6 验证通过':'主 Agent：'+LEAD[phase]);
+    if(phase==='handoff')waits.push('<span class="bl"><span>测试 18/18 通过，批准后跑合并前旅程（真机 + 模拟器）</span></span>');
+    var info=phase==='done'?'5 个角色都交了活 · 旅程 3/3 通过 · 已合入 main '+HASH:(phase==='rules'&&gate.st!=='scan'?'规则闸门拦下 <code>BuyBar.ets</code> 2 处，'+(gate.st==='passed'?'已自动改写':'正在自动改写'):'主 Agent：'+LEAD[phase]);
+    $('#t-team-t2').innerHTML=waits.length?waits.join(''):info;
     $('#t-team-meta').textContent=nd+'/5 个角色完成';
-    $('#t-team-go').textContent=waits.length?'去看板处理':'看团队看板';
-    $('#t-team-go').classList.toggle('primary',!!waits.length);
-    var target=waits.length?'wait':(phase==='done'?'done':'run');
-    t.classList.toggle('wait',target==='wait');t.classList.toggle('done',target==='done');
+    $('#t-team-go').textContent=waits.length?'去看板拍板':'看团队看板';
+    var target=phase==='done'?'done':'run';
+    t.classList.toggle('wait',!!waits.length);t.classList.toggle('done',target==='done');
     var cur=t.previousElementSibling;while(cur&&!cur.classList.contains('tgroup'))cur=cur.previousElementSibling;
     if(!cur||cur.dataset.g!==target){$('#tasks .tgroup[data-g="'+target+'"]').after(t);}
     $('#lead-sub').textContent=LEAD[phase];
-    $('#lead-bar').style.setProperty('--v',(nd/5*100)+'%');$('#lead-n').textContent=nd+'/5';
-    var cap=$('#cap-team');
-    cap.className='dm-capsule'+(waits.length?' wait':'');
-    cap.innerHTML=(phase==='done'?'<span class="dm-dot ok"></span>':(waits.length?'<span class="dm-dot info pulse"></span>':'<span class="spin" style="width:10px;height:10px"></span>'))+'Team · 商品详情页 · '+(waits.length?'1 处等你':nd+'/5');
+    $('#lead-n').textContent=nd+'/5';
   }
 
-  /* 需要人拍板的地方：冲突 → 交接确认 → 真机进度 */
+  /* ---------- 合并闸门：规则检查卡 ---------- */
+  function gateCard(){
+    var rows=RULES.map(function(r,i){
+      var c='wait',res='待查';
+      if(gate.st!=='scan'||i<gate.i){
+        if(HIT[r.id]){c=gate.st==='passed'?'fix':'bad';res=gate.st==='passed'?'已改写 · 复检 ✓':'wt/ui 拦下 1 处';}
+        else{c='ok';res='3 个副本 ✓';}
+      }else if(i===gate.i){c='cur';res='<span class="spin" style="width:10px;height:10px;display:inline-block;vertical-align:-1px"></span>';}
+      return '<div class="r '+c+'"><span class="rn'+(c==='bad'?' hit':(c==='fix'?' fx':''))+'">'+r.id+'</span><span class="grow">'+r.title+'</span><span class="res">'+res+'</span></div>';
+    }).join('');
+    var right;
+    if(gate.st==='scan'&&gate.i<5){
+      right='<div class="diffcard"><div class="dh"><svg class="i" style="width:14px;height:14px"><use href="#i-branch"/></svg><span>逐条对照副本里的改动</span></div><div class="gscan">'
+        +['plan','ui','logic'].map(function(k){return '<div class="r"><span class="av" data-m="'+k+'" style="width:16px;height:16px;border-radius:5px"><svg style="width:10px;height:10px"><use href="'+ICON[k]+'"/></svg></span><code>wt/'+k+'</code>'+files(k).length+' 个文件 · +'+files(k).reduce(function(a,x){return a+x[1]},0)+'</div>'}).join('')
+        +'<div class="r"><span class="spin" style="width:10px;height:10px"></span>正在查规则 '+(gate.i+1)+'：'+RULES[Math.min(gate.i,5)].title+'</div></div></div>';
+    }else{
+      var fixed=gate.st==='fixing'||gate.st==='passed';
+      var L=function(n,t,cls,tag){return '<span class="l '+(cls||'')+'"><span class="cx">'+n+' '+t+'</span>'+(tag||'')+'</span>'};
+      var body=L('12','  @Param sku: Sku | undefined = undefined')+L('13','  @Event onBuy: () =&gt; void = () =&gt; {}')+L('14','  build() {');
+      if(!fixed){
+        body+=L('15','+   Button(\'立即购买\')','add blk','<span class="rt">规则 5 · 文案写死</span>')
+          +L('16','+     .enabled(this.sku !== undefined)','add')
+          +L('17','+     .backgroundColor(\'#FF0000\')','add blk','<span class="rt">规则 6 · 颜色写死</span>');
+      }else{
+        body+=L('15','-   Button(\'立即购买\')','del')+L('15','+   Button($r(\'app.string.buy_now\'))','add','<span class="rt fx">规则 5 · 已改写</span>')
+          +L('16','      .enabled(this.sku !== undefined)')
+          +L('17','-     .backgroundColor(\'#FF0000\')','del')+L('17','+     .backgroundColor($r(\'app.color.brand\'))','add','<span class="rt fx">规则 6 · 已改写</span>');
+      }
+      right='<div class="diffcard"><div class="dh"><span class="av" data-m="ui" style="width:16px;height:16px;border-radius:5px"><svg style="width:10px;height:10px"><use href="#i-ui"/></svg></span><span class="fn">wt/ui · components/BuyBar.ets</span><span class="grow"></span>'
+        +(fixed?'<span class="dm-pill ok">自动改写</span>':'<span class="dm-pill err">拦下 2 处 · 不合入</span>')+'</div><pre>'+body+'</pre></div>';
+    }
+    var pill={scan:'<span class="dm-pill info">检查中 '+Math.min(gate.i,6)+'/6</span>',blocked:'<span class="dm-pill err">拦下 2 处</span>',fixing:'<span class="dm-pill info">自动改写中</span>',passed:'<span class="dm-pill ok">复检 6/6 通过</span>'}[gate.st];
+    var ft={scan:'对照 harmony.md 逐条查 wt/plan、wt/ui、wt/logic 的改动',blocked:'wt/ui 这 2 处不进 main，按规则 5、6 自动改写',fixing:'改写 BuyBar.ets，同时在 string.json 补 <code>buy_now</code>，<code>app.color.brand</code> 已有深浅两份',passed:'复检通过，放行交给测试 Agent'}[gate.st];
+    return '<div class="sec"><svg class="i" style="width:14px;height:14px;color:var(--ai-ink)"><use href="#i-rules"/></svg><b>合并闸门 · 规则</b>主 Agent 逐条对照团队规则，违规自动改写<span class="grow"></span>'+pill+'</div>'
+      +'<div class="dm-card" id="gate-card"><div class="dm-card-bd"><div class="gate2"><div class="rcheck">'+rows+'</div>'+right+'</div></div>'
+      +'<div class="dm-card-ft"><span class="dm-small">'+ft+'</span><span class="grow"></span><button class="btn sm" data-open-rules="'+(HIT[6]?6:0)+'">打开 harmony.md</button></div></div>';
+  }
+  function gateRecord(){
+    return '<div class="dm-callout ok"><svg><use href="#i-rules"/></svg><span>规则闸门：<b>wt/ui</b> 被拦下 2 处（规则 5 文案写死、规则 6 颜色写死），已改成 <code>$r(\'app.string.buy_now\')</code>、<code>$r(\'app.color.brand\')</code>，复检 6/6 通过。</span></div>';
+  }
+
+  /* ---------- 合并前旅程：设备按真实比例 ---------- */
+  var LIST_SM=[[4,11,92,6,''],[4,21,26,12,'img'],[34,22,58,3,''],[34,27,40,3,''],[4,36,26,12,'img'],[34,37,58,3,''],[34,42,40,3,''],[4,51,26,12,'img'],[34,52,58,3,''],[34,57,40,3,''],[4,66,26,12,'img'],[34,67,58,3,''],[34,72,40,3,'']];
+  var LIST_LG=[[3,12,94,7,'']].concat([0,1,2,3].reduce(function(a,c){return a.concat([[3+c*24,23,22,30,'img'],[3+c*24,55,18,4,''],[3+c*24,62,12,4,'']])},[]));
+  var DET_SM=[[0,7,100,36,'img'],[5,47,40,5,''],[5,55,80,3,''],[5,60,60,3,''],[5,68,20,6,''],[28,68,20,6,''],[51,68,20,6,''],[5,86,90,7,'pri']];
+  var DET_2C=[[3,11,52,82,'img'],[60,14,22,7,''],[60,25,36,4,''],[60,32,26,4,''],[60,44,11,9,''],[73,44,11,9,''],[86,44,11,9,''],[60,78,37,10,'pri']];
+  var TAP_SM=[[17,27],[17,42],[50,25],[38,71],[50,89]], TAP_LG=[[14,38],[38,38],[29,52],[78,48],[78,83]];
+  var JSTEP=['首页','列表','详情','选 SKU','加购'];
+  function scr(layout,wide,step,tap){
+    var bl=(step<2?(wide?LIST_LG:LIST_SM):(wide?DET_2C:DET_SM));
+    var h=bl.map(function(b){return '<span class="bk '+b[4]+'" style="left:'+b[0]+'%;top:'+b[1]+'%;width:'+b[2]+'%;height:'+b[3]+'%"></span>'}).join('');
+    if(tap&&step>=0&&step<5){var tp=(wide?TAP_LG:TAP_SM)[step];h+='<span class="tap" style="left:'+tp[0]+'%;top:'+tp[1]+'%"></span>';}
+    return h;
+  }
+  function devHTML(cls,wide,step,opt){
+    opt=opt||{};
+    var inner=step<0?'<span class="idle">待装</span>':scr(cls,wide,step,step<5&&!opt.notap);
+    return '<div class="dev '+cls+'"><span class="sb"><i style="width:9px"></i><i style="width:12px"></i></span>'+(opt.hole!==false?'<span class="ph"></span>':'')+(cls==='fin'?'<span class="crease"></span>':'')+inner+'<span class="gb"></span></div>';
+  }
+  function jsteps(i){
+    return '<div class="jsteps">'+JSTEP.map(function(t,k){return '<i class="'+(k<i?'d':(k===i?'c':''))+'"></i>'}).join('')+'<span>'+(i<0?'等交接':(i>=5?'旅程走通 · 5/5':JSTEP[i]))+'</span></div>';
+  }
+  function journeyCard(){
+    var pS=J.p<0?'':(J.p>=5?'ok':'run'), tS=J.t<0?'':(J.t>=5?'ok':'run'), xS=J.x<0?'':(J.x>=6?'ok':'run');
+    var pill=function(s,okt){return s==='ok'?'<span class="dm-pill ok">'+okt+'</span>':(s==='run'?'<span class="dm-pill info">进行中</span>':'<span class="dm-pill muted">排队</span>')};
+    var folded=J.x>=0&&J.x<6&&J.x%2===1;
+    var xDev=J.x<0?devHTML('fin',true,-1):(folded?devHTML('fout',false,2,{notap:1}):devHTML('fin',true,J.x>=6?2:2,{notap:1}));
+    var xTxt=J.x<0?'等前两台走通':(J.x>=6?'折叠 ↔ 展开 6 次 · 无白屏':(folded?'折叠 · 外屏 sm':'展开 · 内屏 md')+' · 第 '+J.x+'/6 次');
+    return '<div class="sec"><span class="av" data-m="dev" style="width:16px;height:16px;border-radius:5px"><svg style="width:10px;height:10px"><use href="#i-phone"/></svg></span><b>合并前旅程</b>真机验证 Agent · 首页 → 列表 → 详情 → 选 SKU → 加购<span class="grow"></span>'+(phase==='done'?'<span class="dm-pill ok">通过 · 已合入</span>':'<span class="dm-pill info">进行中</span>')+'</div>'
+      +'<div class="jgrid" id="jgrid">'
+      +'<div class="jd '+pS+'"><div class="jstage">'+devHTML('phone',false,J.p)+'</div><div class="jmeta"><div class="t1"><svg class="i" style="width:14px;height:14px"><use href="#i-phone"/></svg><b>HUAWEI Mate 70 Pro</b>'+pill(pS,'1.8 s')+'</div><span class="spec">真机 · hdc · 1260×2844<br>9:20.3 · sm 断点</span>'+jsteps(J.p)+'</div></div>'
+      +'<div class="jd '+tS+'"><div class="jstage">'+devHTML('pad',true,J.t)+'</div><div class="jmeta"><div class="t1"><svg class="i" style="width:14px;height:14px"><use href="#i-tablet"/></svg><b>MatePad Pro 13.2</b>'+pill(tS,'2.3 s')+'</div><span class="spec">模拟器 · 2880×1920<br>3:2 横屏 · lg 断点</span>'+jsteps(J.t)+'</div></div>'
+      +'<div class="jd '+xS+'"><div class="jstage">'+xDev+'</div><div class="jmeta"><div class="t1"><svg class="i" style="width:14px;height:14px"><use href="#i-fold"/></svg><b>HUAWEI Mate X6</b>'+pill(xS,'6 次')+'</div><span class="spec">真机 · 外屏 1080×2440 sm<br>内屏 2440×2240 md</span><div class="jsteps"><span style="margin-left:0">'+xTxt+'</span></div></div></div>'
+      +'</div>'
+      +(phase==='done'?'<div class="mrg ok" id="mrg"><svg><use href="#i-merge"/></svg><span><b>已合入 main</b> · 4 个副本 8 个文件 · 规则闸门改写 2 处 · 旅程 3/3 · Mate X6 折叠 6 次无白屏</span><span class="grow"></span><span class="dm-pill ok">'+HASH+'</span></div>':'<div class="mrg" id="mrg"><svg><use href="#i-merge"/></svg><span>合入 main</span><span class="ck">规则 <b>6/6 ✓</b> · 旅程 '+(jDone()===3?'<b>3/3 ✓</b>':jDone()+'/3')+'</span><span class="grow"></span>'
+      +(J.merging?'<span class="dm-pill info">合入中</span>':'<span class="dm-pill muted">三台都走通才合入</span>')+'</div>');
+  }
+
+  /* 需要人拍板的地方：冲突 → 规则闸门 → 交接确认 → 合并前旅程 */
   var cfPick='merge';
   function renderDecide(){
     var d=$('#decide');
     if(phase==='conflict'){
-      d.innerHTML='<div class="sec"><svg class="i" style="width:14px;height:14px;color:var(--ui-error)"><use href="#i-warn"/></svg><b>冲突</b>UI Agent 和逻辑 Agent 同时改了 <b class="dm-mono">DetailPage.ets</b> 第 24–31 行<span class="grow"></span>逻辑 Agent 已暂停</div>'
-        +'<div class="dm-card" id="cf-card"><div class="dm-card-bd">'
+      d.innerHTML='<div class="ai-approve" id="cf-card"><div class="ai-approve__h"><span class="ai-wait-dot"></span>在等你 · wt/ui 和 wt/logic 同改了 <span class="dm-mono">DetailPage.ets</span> 第 24–31 行<span class="grow"></span><span style="font-weight:400;color:var(--ui-fg-info)">逻辑 Agent 已暂停</span></div>'
+        +'<div class="dm-card"><div class="dm-card-bd">'
         +'<div class="cf2">'
         +'<div class="diffcard"><div class="dh"><span class="av" data-m="ui" style="width:16px;height:16px;border-radius:5px"><svg style="width:10px;height:10px"><use href="#i-ui"/></svg></span><span>UI Agent</span><span class="grow"></span><span class="cnt"><span class="add">+4</span> <span class="del">−2</span></span></div>'
-        +'<pre><span class="l del">- Column() {</span><span class="l add">+ GridRow({ columns: { sm: 4, md: 8 } }) {</span><span class="l add">+   GridCol({ span: { sm: 4, md: 4 } }) {</span><span class="l">      this.Gallery()</span><span class="l add">+   }</span><span class="l del">-   Button(\'立即购买\')</span><span class="l add">+   BuyBar()</span></pre></div>'
+        +'<pre><span class="l del">- Column() {</span><span class="l add">+ GridRow({ columns: { sm: 4, md: 8, lg: 12 } }) {</span><span class="l add">+   GridCol({ span: { sm: 4, md: 4, lg: 7 } }) {</span><span class="l">      this.Gallery()</span><span class="l add">+   }</span><span class="l del">-   Button(\'立即购买\')</span><span class="l add">+   BuyBar()</span></pre></div>'
         +'<div class="diffcard"><div class="dh"><span class="av" data-m="logic" style="width:16px;height:16px;border-radius:5px"><svg style="width:10px;height:10px"><use href="#i-code"/></svg></span><span>逻辑 Agent</span><span class="grow"></span><span class="cnt"><span class="add">+3</span> <span class="del">−1</span></span></div>'
         +'<pre><span class="l">  Column() {</span><span class="l">    this.Gallery()</span><span class="l del">-   Button(\'立即购买\')</span><span class="l add">+   Button(\'立即购买\')</span><span class="l add">+     .enabled(this.sku !== undefined)</span><span class="l add">+     .onClick(() =&gt; this.addToCart())</span></pre></div>'
         +'</div>'
         +'<div class="opts" id="cf-opts">'
-        +'<div class="dm-opt" data-o="ui"><span class="rd"></span><div><b>保留 UI 的</b><span>断点布局在，购买按钮没接逻辑</span></div></div>'
-        +'<div class="dm-opt" data-o="logic"><span class="rd"></span><div><b>保留逻辑的</b><span>能下单，折叠屏还是单栏</span></div></div>'
-        +'<div class="dm-opt on" data-o="merge"><span class="rd"></span><div><b>合并两边 · 主 Agent 建议</b><span>布局用 UI 的，下单逻辑挪进 BuyBar</span></div></div>'
+        +'<div class="dm-opt'+(cfPick==='ui'?' on':'')+'" data-o="ui"><span class="rd"></span><div><b>保留 UI 的</b><span>断点布局在，购买按钮没接逻辑</span></div></div>'
+        +'<div class="dm-opt'+(cfPick==='logic'?' on':'')+'" data-o="logic"><span class="rd"></span><div><b>保留逻辑的</b><span>能下单，折叠屏还是单栏</span></div></div>'
+        +'<div class="dm-opt'+(cfPick==='merge'?' on':'')+'" data-o="merge"><span class="rd"></span><div><b>合并两边 · 主 Agent 建议</b><span>布局用 UI 的，下单逻辑挪进 BuyBar</span></div></div>'
         +'</div></div>'
-        +'<div class="dm-card-ft"><span class="dm-small">定了以后，两个 Agent 按这个结果继续</span><span class="grow"></span><button class="btn sm">在 Diff 里看</button><button class="btn sm primary" id="cf-apply">按「合并两边」处理</button></div></div>';
+        +'<div class="dm-card-ft"><span class="dm-small">定了以后，两个 Agent 在各自副本里按这个结果继续</span><span class="grow"></span><button class="btn sm">在 Diff 里看</button><button class="btn sm primary" id="cf-apply">按「'+{ui:'保留 UI 的',logic:'保留逻辑的',merge:'合并两边'}[cfPick]+'」处理</button></div></div></div>';
     }else if(phase==='running'){
-      d.innerHTML='<div class="dm-callout ok"><svg><use href="#i-checkS"/></svg><span>'+(cfPick==='merge'?'已合并：布局用 UI 的 GridRow，购买按钮的 <b>enabled / onClick</b> 挪进 <b>BuyBar</b>':(cfPick==='ui'?'已保留 UI 的改动，逻辑 Agent 改到 BuyBar 里重接 addToCart()':'已保留逻辑的改动，UI Agent 重新套一遍断点布局'))+'。UI、逻辑继续收尾，完了自动交给测试。</span></div>';
+      d.innerHTML='<div class="dm-callout ok"><svg><use href="#i-checkS"/></svg><span>'+(cfPick==='merge'?'已合并：布局用 UI 的 GridRow，购买按钮的 <b>enabled / onClick</b> 挪进 <b>BuyBar</b>':(cfPick==='ui'?'已保留 UI 的改动，逻辑 Agent 改到 BuyBar 里重接 addToCart()':'已保留逻辑的改动，UI Agent 重新套一遍断点布局'))+'。UI、逻辑在各自副本里收尾，完了先过规则闸门再交给测试。</span></div>';
+    }else if(phase==='rules'){
+      d.innerHTML=gateCard();
+    }else if(phase==='retest'){
+      d.innerHTML='<div class="dm-callout info"><svg><use href="#i-think"/></svg><span>测试 Agent 按你的要求再跑一轮：sm / md / lg 三个断点重新截图比对，跑完再问你一次。</span></div>'+gateRecord();
     }else if(phase==='handoff'){
-      d.innerHTML='<div class="sec"><svg class="i" style="width:14px;height:14px;color:var(--ui-accent)"><use href="#i-hand"/></svg><b>交接确认</b>测试 Agent → 真机验证 Agent<span class="grow"></span>装真机要占用设备，交接前问你一次</div>'
-        +'<div class="dm-card accent handoff"><div class="dm-card-bd"><dl class="dm-kv">'
-        +'<dt>交接物</dt><dd><span class="dm-mono">entry-default-signed.hap</span> · UI 测试报告 18/18 通过</dd>'
-        +'<dt>截图比对</dt><dd>sm 断点单栏 ✓ · md 断点双栏 ✓ · 差异 0 处</dd>'
-        +'<dt>目标设备</dt><dd class="devs"><span class="dm-pill info"><svg><use href="#i-phone"/></svg>HUAWEI Mate 70 Pro</span><span class="dm-pill info"><svg><use href="#i-fold"/></svg>HUAWEI Mate X6 折叠屏</span><span class="dm-pill ok">hdc 已连接</span></dd>'
-        +'</dl></div><div class="dm-card-ft"><span class="dm-small">批准后真机验证 Agent 接手，不用你再去点 Run</span><span class="grow"></span><button class="btn sm">让测试再跑一轮</button><button class="btn sm primary" id="ho-approve">批准交接</button></div></div>';
+      d.innerHTML='<div class="ai-approve"><div class="ai-approve__h"><span class="ai-wait-dot"></span>在等你 · 交接：测试 Agent → 真机验证 Agent<span class="grow"></span><span style="font-weight:400;color:var(--ui-fg-info)">装真机要占用设备，交接前问你一次</span></div>'
+        +'<div class="dm-card handoff"><div class="dm-card-bd"><dl class="dm-kv">'
+        +'<dt>交接物</dt><dd><span class="dm-mono">entry-default-signed.hap</span>（4 个副本的合并候选）· UI 测试 18/18 通过</dd>'
+        +'<dt>截图比对</dt><dd>sm 单栏 ✓ · md 双栏 ✓ · lg 双栏 ✓ · 差异 0 处</dd>'
+        +'<dt>合并前旅程</dt><dd class="devs"><span class="dm-pill muted"><svg><use href="#i-phone"/></svg>Mate 70 Pro 真机</span><span class="dm-pill muted"><svg><use href="#i-tablet"/></svg>MatePad Pro 13.2 模拟器</span><span class="dm-pill muted"><svg><use href="#i-fold"/></svg>Mate X6 真机</span><span class="dm-pill ok">hdc 已连 2 台 · 模拟器已启动</span></dd>'
+        +'</dl></div><div class="dm-card-ft"><span class="dm-small">批准后真机验证 Agent 接手跑旅程，三台都走通才合入 main</span><span class="grow"></span><button class="btn sm" id="ho-retest">让测试再跑一轮</button><button class="btn sm primary" id="ho-approve">批准交接</button></div></div></div>'
+        +gateRecord();
     }else{
-      var dv=M.dev,rows=dv.steps.map(function(t,i){var c=i<dv.done?'done':(i===dv.done&&phase==='verifying'?'run':'');return '<div class="r '+c+'"><span class="mk"></span><span class="grow">'+t+'</span><code>'+(i<dv.done?['1.8 s','2.1 s','6 次切换'][i]:'')+'</code></div>'}).join('');
-      d.innerHTML='<div class="sec"><span class="av" data-m="dev" style="width:16px;height:16px;border-radius:5px"><svg style="width:10px;height:10px"><use href="#i-phone"/></svg></span><b>真机验证</b>测试 Agent 已交接<span class="grow"></span>'+(phase==='done'?'<span class="dm-pill ok">通过</span>':'<span class="dm-pill info">进行中</span>')+'</div>'
-        +'<div class="dm-card"><div class="dm-card-bd dstep">'+rows+'</div></div>'
-        +(phase==='done'?'<div class="dm-callout ok"><svg><use href="#i-checkS"/></svg><span>商品详情页完成：5 个角色都交了活，改了 4 个文件；两台真机折叠 ↔ 展开 6 次无白屏、无错位。</span></div>':'');
+      d.innerHTML=journeyCard();
     }
   }
-  function render(){renderGraph();renderDetail();renderList();renderTeamTask();renderDecide();recount();}
+  /* ================= 统一的「在等你」队列（与 31 工作台同一套）=================
+     所有 Agent 的待决放一处，按阻塞程度排：挡住它（3）> 挡住它开工 / 合并（2）> 不挡（1）。
+     顶栏胶囊、手机 / 手表实况窗都只推队首那一件；不挡路的不抢胶囊。 */
+  function waiting(id){var t=$('#'+id);return !!(t&&t.classList.contains('wait'));}
+  function queue(){
+    var q=[];
+    if(phase==='conflict')q.push({id:'team-cf',who:'UI Agent × 逻辑 Agent',title:'DetailPage.ets 两边都改了，选怎么合',cap:'DetailPage.ets 冲突要你定',block:3,how:'挡住逻辑 Agent'});
+    if(phase==='handoff')q.push({id:'team-ho',who:'测试 → 真机验证 Agent',title:'批准跑合并前旅程（要占真机）',cap:'批准跑合并前旅程',block:2,how:'挡住合并'});
+    if(waiting('t-fix'))q.push({id:'t-fix',who:'Agent·调优',title:'封面解码改异步，要改 2 个文件',cap:'ListPage 改异步要你批',block:2,how:'挡住它开工 · 等了 58 分钟'});
+    if(waiting('t-a11y'))q.push({id:'t-a11y',who:'Agent·无障碍',title:'读屏用「验证码错误」还是错误码',block:1,how:'不挡 · 先按「验证码错误」做'});
+    return q.sort(function(a,b){return b.block-a.block;});
+  }
+  function renderQueue(){
+    var q=queue(),box=$('#queue');
+    box.innerHTML=q.length?'<div class="q" id="q"><div class="q-h"><span class="ai-wait-dot"></span>在等你 · '+q.length+'<span class="grow"></span><small>按阻塞排</small></div>'
+      +q.map(function(x,i){return '<button type="button" class="q-item" data-q="'+x.id+'"><span class="qn">'+(i+1)+'</span><span class="qt">'+x.title+'</span><span class="qs"><b>'+x.who+'</b> · '+x.how+'</span></button>';}).join('')+'</div>'
+      :'<div class="q-empty">没有在等你的事 · '+ORDER.filter(function(k){return M[k].st==='done'}).length+'/5 个角色交了活</div>';
+  }
+  function renderAgent(){
+    var q=queue(),top=q[0];
+    if(top&&top.block>=2){
+      DemoFrame.agent('waiting','在等你 · '+top.cap+' <span class="act">去看</span>',{queue:q.length-1,onClick:function(){openQ(top.id);}});
+      return;
+    }
+    var st={running:['generating','<span class="agt">UI、逻辑</span> 在各自副本里收尾'],rules:['tool','<span class="agt">主 Agent</span> 规则闸门 · '+(gate.st==='passed'?'复检 6/6':'wt/ui')],retest:['verifying','<span class="agt">测试 Agent</span> 再跑一轮 UI 测试'],verifying:['verifying','<span class="agt">真机验证 Agent</span> 旅程 '+jDone()+'/3'],done:['done','Team · 已合入 main '+HASH]}[phase]||['idle','Team · 商品详情页'];
+    DemoFrame.agent(st[0],st[1],{queue:q.length,onClick:q.length?function(){openQ(q[0].id);}:null});
+  }
+  /* 点队列里的一件 / 点胶囊：跳到它在等你的那处 */
+  function openQ(id){
+    var el;
+    if(id.indexOf('team-')===0){var tb=$('.tab[data-file="Team"]');if(tb)tb.click();el=$('#decide .ai-approve');}
+    else{if($('#tasks').hidden)$('#lseg [data-v="tasks"]').click();el=$('#'+id);}
+    if(!el)return;el.scrollIntoView({block:'nearest',behavior:'smooth'});
+    el.classList.remove('flash');void el.offsetWidth;el.classList.add('flash');
+  }
+  function render(){renderGraph();renderRules();renderWts();renderDetail();renderList();renderTeamTask();renderDecide();recount();renderQueue();renderAgent();renderDevices();}
 
   /* 交接动画：小圆点沿连线走过去 */
   function handoff(id,cb){
@@ -398,50 +900,212 @@
     requestAnimationFrame(step);
   }
 
-  /* 处理冲突 */
+  /* 合并前规则闸门：逐条查 → 拦下 → 自动改写 → 复检 → 交给测试 */
+  function runGate(){
+    phase='rules';gate={st:'scan',i:0};sel='ui';
+    M.ui.st='run';M.ui.done=5;M.ui.now='wt/ui 提交，过合并前规则检查';
+    M.logic.st='run';M.logic.done=4;M.logic.now='wt/logic 提交，过合并前规则检查';
+    render();
+    var t=setInterval(function(){
+      gate.i++;
+      if(gate.i>=6){clearInterval(t);
+        gate.st='blocked';HIT={5:1,6:1};
+        M.ui.st='block';M.ui.now='BuyBar.ets 写死了文案和 #FF0000，被规则 5、6 拦下';edges.ut='cf';
+        M.logic.st='done';M.logic.done=6;M.logic.now='规则 6/6 通过，数据、SKU、下单都接好，已交给测试';
+        render();
+        setTimeout(function(){
+          gate.st='fixing';M.ui.st='run';M.ui.now='按规则自动改写 BuyBar.ets，补 string.json 的 buy_now';render();
+          setTimeout(function(){
+            gate.st='passed';M.ui.st='done';M.ui.done=7;M.ui.now='复检 6/6 通过，DetailPage 一多布局已交给测试';edges.ut='';render();
+            setTimeout(function(){
+              handoff('ut');handoff('lt',function(){
+                M.test.st='run';M.test.done=1;M.test.now='跑 DetailPage UI 测试：手机 sm · 折叠屏 md · 平板 lg';sel='test';
+                setTimeout(function(){M.test.st='wait';M.test.done=3;M.test.now='18/18 通过，截图比对 0 差异，等你批准跑合并前旅程';phase='handoff';render();},1600);
+              });
+            },1300);
+          },1200);
+        },1800);
+      }else render();
+    },300);
+  }
+
+  /* 合并前旅程：Mate 70 Pro 真机 + MatePad 模拟器并行 → Mate X6 折叠切换 → 合入 main */
+  function runJourney(){
+    M.dev.st='run';M.dev.now='Mate 70 Pro 真机、MatePad 模拟器并行跑旅程';J.p=0;J.t=0;render();
+    var k=0;
+    var tick=setInterval(function(){
+      k++;J.p=Math.min(k,5);J.t=Math.min(Math.max(k-1,0),5);
+      if(J.p>=5&&M.dev.done<1){M.dev.done=1;M.dev.now='Mate 70 Pro 走通，MatePad 模拟器还差最后一步';}
+      if(J.t>=5){clearInterval(tick);M.dev.done=2;M.dev.now='在 Mate X6 上折叠 ↔ 展开切换';J.x=0;render();
+        var ft=setInterval(function(){
+          J.x++;
+          if(J.x>=6){clearInterval(ft);M.dev.done=3;M.dev.now='3 台都走通，把 4 个副本合入 main';J.merging=true;render();
+            setTimeout(function(){J.merging=false;M.dev.done=4;M.dev.st='done';M.dev.now='旅程 3/3 通过，4 个副本已合入 main';phase='done';render();},1000);
+          }else render();
+        },420);
+        return;}
+      render();
+    },520);
+  }
+
+  /* 点击 */
   document.addEventListener('click',function(e){
     var o=e.target.closest('#cf-opts .dm-opt');
     if(o){cfPick=o.dataset.o;$$('#cf-opts .dm-opt').forEach(function(x){x.classList.toggle('on',x===o)});
       $('#cf-apply').textContent='按「'+$('b',o).textContent.replace(' · 主 Agent 建议','')+'」处理';return;}
-    if(e.target.closest('#cf-apply')){
-      phase='running';M.logic.st='run';M.logic.done=3;M.logic.now='合并后继续：补错误与空态';
-      M.ui.done=4;M.ui.now='折叠屏展开态预览，检查 md 断点';sel='logic';render();
-      setTimeout(function(){
-        M.ui.st='done';M.ui.done=6;M.ui.now='DetailPage 一多布局写完，已交给测试';
-        M.logic.st='done';M.logic.done=5;M.logic.now='数据、SKU、下单都接好，已交给测试';render();
-        handoff('ut');handoff('lt',function(){
-          M.test.st='run';M.test.done=1;M.test.now='跑 DetailPage UI 测试：手机 + 折叠屏断点';sel='test';
-          setTimeout(function(){M.test.st='wait';M.test.done=3;M.test.now='18/18 通过，截图比对 0 差异，等你批准交给真机验证';phase='handoff';render();},1600);
-        });
-      },1300);
-      return;
-    }
-    if(e.target.closest('#ho-approve')){
-      M.test.st='done';M.test.done=4;M.test.now='18/18 通过，已交给真机验证';phase='verifying';sel='dev';render();
-      handoff('td',function(){
-        M.dev.st='run';M.dev.now='hdc install 到 Mate 70 Pro';
-        var i=0,NOW=['hdc install 到 Mate X6','在 Mate X6 上折叠 ↔ 展开切换'];
-        var tick=setInterval(function(){
-          i++;M.dev.done=i;
-          if(i>=3){clearInterval(tick);M.dev.st='done';M.dev.now='两台真机验证通过，折叠切换无白屏';phase='done';}
-          else M.dev.now=NOW[i-1];
-          render();
-        },1000);
-      });
-      return;
-    }
+    if(e.target.closest('#cf-apply')){applyConflict();return;}
+    if(e.target.closest('#ho-approve')){approveHandoff();return;}
+    if(e.target.closest('#ho-retest')){retest();return;}
+    var da=e.target.closest('[data-dact]');
+    if(da){devAct(da.dataset.did,da.dataset.dact==='ok',da.dataset.dev);return;}
+    var aw=e.target.closest('[data-away]');
+    if(aw){setAway(aw.dataset.away==='1');return;}
+    if(e.target.closest('#pcont')){phMode='board';addLog('phone','在 Mate 70 Pro 上接续 Team 看板');renderDevices();return;}
+    if(e.target.closest('[data-pback]')){phMode='home';renderDevices();return;}
+    if(e.target.closest('#pcap')){phExpand=!phExpand;renderDevices();return;}
+    var qi=e.target.closest('[data-q]');if(qi){openQ(qi.dataset.q);return;}
+    var rc=e.target.closest('[data-rule]');
+    if(rc){var id=+rc.dataset.rule;rfocus=rfocus===id?0:id;render();return;}
+    var ro=e.target.closest('#rules-open,[data-open-rules]');
+    if(ro){var id2=+(ro.dataset.openRules||0);if(id2)rfocus=id2;render();var tb2=$('.tab[data-file="harmony.md"]');if(tb2)tb2.click();
+      var ln=$('#rules-code .ln.cur');if(ln){var cd=$('#rules-code');cd.scrollTop=Math.max(0,ln.offsetTop-cd.clientHeight/3);}return;}
     if(e.target.closest('#cfbadge')){sel='logic';render();var c=$('#cf-card');if(c)c.scrollIntoView({block:'nearest',behavior:'smooth'});return;}
     var n=e.target.closest('#stage .mnode,[data-pick]');
     if(n){sel=n.dataset.m||n.dataset.pick;DemoFrame.setSide('right','member');render();return;}
     if(e.target.closest('#t-team-go')){var tb=$('.tab[data-file="Team"]');if(tb)tb.click();}
   });
 
+  /* ================= 鸿蒙电脑版：在等你时推到手机 / 手表实况窗，离开电脑后应用接续 ================= */
+  function applyConflict(){
+    phase='running';M.logic.st='run';M.logic.done=3;M.logic.now='合并后继续：补错误与空态';
+    M.ui.done=4;M.ui.now='折叠屏展开态预览，检查 md 断点';sel='logic';render();
+    setTimeout(runGate,1300);
+  }
+  function approveHandoff(){
+    M.test.st='done';M.test.done=4;M.test.now='18/18 通过，已交给真机验证';phase='verifying';sel='dev';render();
+    handoff('td',runJourney);
+  }
+  function retest(){
+    phase='retest';M.test.st='run';M.test.done=2;M.test.now='按你的要求再跑一轮：sm / md / lg 重新截图比对';sel='test';render();
+    setTimeout(function(){M.test.st='wait';M.test.done=3;M.test.now='第 2 轮 18/18 通过，等你批准跑合并前旅程';phase='handoff';render();},1800);
+  }
+  function approveTask(id,variant){
+    var t=$('#'+id);if(!t||!t.classList.contains('wait'))return;
+    t.classList.remove('wait');
+    $('.when',t).textContent='第 1 / 6 步';
+    $('.t2',t).innerHTML=id==='t-fix'?'正在读取 <code>ListPage.ets</code>，准备把 <code>loadCover</code> 改成异步':(variant==='keep'?'正在给 <code>LoginPage.ets</code> 补 accessibilityText，读屏保留 <code>ERR_AUTH_401</code>':'正在给 <code>LoginPage.ets</code> 的错误提示补 accessibilityText');
+    var dot=$('.t1 .ai-wait-dot',t);if(dot)dot.remove();
+    $('.t3',t).innerHTML='<div class="dm-progress indet"><i></i></div><button class="btn sm">中止</button>';
+    render();
+  }
+  function rejectTask(id){
+    var t=$('#'+id);if(!t||!t.classList.contains('wait'))return;
+    t.classList.remove('wait');t.classList.add('done');
+    $('.when',t).textContent='刚刚';
+    $('.t2',t).innerHTML='已拒绝：不动 <code>ListPage.ets</code>、<code>ItemCard.ets</code>';
+    var dot=$('.t1 .ai-wait-dot',t);if(dot)dot.remove();
+    $('.t3',t).innerHTML='<button class="btn sm">重新打开</button>';
+    $('#tasks .tgroup[data-g="done"]').after(t);
+    render();
+  }
+
+  var away=false, phMode='lock', phExpand=false, deferred={}, logs=[], pushed={}, toast=null, clock=41;
+  var DEVN={phone:'Mate 70 Pro',watch:'WATCH 5',pc:'电脑'};
+  function now(){return '09:'+(clock<10?'0':'')+clock}
+  function addLog(dev,txt){logs.unshift({t:now(),dev:dev,x:txt});if(logs.length>6)logs.length=6;}
+  /* 实况窗与胶囊同源：按队列顺序，只推队首 */
+  var WI={
+    'team-cf':{title:'Team · DetailPage.ets 冲突',w:'合并冲突',body:'UI 和逻辑同改第 24–31 行，按主 Agent 建议合并两边？',ok:'合并两边',no:'回电脑定'},
+    'team-ho':{title:'Team · 批准合并前旅程',w:'合并前旅程',body:'测试 18/18 通过、规则 6/6。批准后在真机 + 模拟器跑旅程，走通才合入 main',ok:'批准',no:'再测一轮'},
+    't-fix':{title:'修复 ListPage 滑动卡顿',w:'ListPage 卡顿',body:'Agent·调优：封面解码改成异步加占位图，改 ListPage.ets、ItemCard.ets',ok:'批准',no:'拒绝'},
+    't-a11y':{title:'补齐 LoginPage 无障碍描述',w:'读屏提示',body:'Agent·无障碍：读屏时用「验证码错误」还是保留 ERR_AUTH_401？',ok:'验证码错误',no:'保留错误码'}
+  };
+  function waitItems(){return queue().map(function(x){var o=WI[x.id];return {id:x.id,title:o.title,w:o.w,body:o.body,ok:o.ok,no:o.no};});}
+  function pending(){return waitItems().filter(function(x){return !deferred[x.id]})}
+  function devAct(id,ok,dev){
+    var it=waitItems().filter(function(x){return x.id===id})[0];if(!it)return;
+    clock++;
+    var verb=ok?it.ok:it.no;
+    if(id==='t-fix'){ok?approveTask('t-fix'):rejectTask('t-fix');}
+    else if(id==='t-a11y'){approveTask('t-a11y',ok?'':'keep');}
+    else if(id==='team-cf'){if(ok){cfPick='merge';applyConflict();}else deferred[id]=1;}
+    else if(id==='team-ho'){ok?approveHandoff():retest();}
+    addLog(dev,'在 '+DEVN[dev]+' 上点「'+verb+'」· '+it.title+(id==='team-cf'&&!ok?'（电脑上还在等你）':' → 看板已同步'));
+    toast={dev:dev,t:ok?'已'+(it.ok==='批准'?'批准':'选「'+verb+'」'):(it.no==='拒绝'?'已拒绝':'已选「'+verb+'」')};
+    renderDevices();render();
+    setTimeout(function(){toast=null;renderDevices();},1500);
+  }
+  function setAway(v){
+    away=v;phExpand=false;phMode=v?'home':'lock';clock++;
+    addLog(v?'phone':'pc',v?'离开电脑 · Team 看板接续到 Mate 70 Pro':'回到电脑 · 看板回到 DevEco Studio');
+    renderDevices();
+  }
+  function lwHTML(it,n,total,dev){
+    if(!it){
+      var nd=ORDER.filter(function(k){return M[k].st==='done'}).length;
+      return '<div class="ph1"><span class="papp"><svg><use href="#ai-mark"/></svg></span><b>DevEco</b><span class="grow"></span>'+(phase==='done'?'完成':'进行中')+'</div>'
+        +'<div class="pt">Team · 商品详情页</div><div class="pbd">'+LEAD[phase]+'</div>'
+        +'<div class="dm-progress"><i style="--v:'+(nd/5*100)+'%"></i></div><div class="ph1"><span>'+nd+'/5 个 Agent 交了活</span><span class="grow"></span><span>'+(phase==='verifying'?'旅程 '+jDone()+'/3':'')+'</span></div>';
+    }
+    return '<div class="ph1"><span class="papp"><svg><use href="#ai-mark"/></svg></span><b>DevEco</b><span class="grow"></span>等你 '+n+'/'+total+'</div>'
+      +'<div class="pt">'+it.title+'</div><div class="pbd">'+it.body+'</div>'
+      +'<div class="pbtns"><button class="pbtn" data-dact="no" data-did="'+it.id+'" data-dev="'+dev+'">'+it.no+'</button><button class="pbtn pri" data-dact="ok" data-did="'+it.id+'" data-dev="'+dev+'"'+(dev==='phone'?' id="ph-ok"':'')+'>'+it.ok+'</button></div>';
+  }
+  function phoneHTML(){
+    var P=pending(),it=P[0];
+    var sb='<span class="psb">'+(phMode==='lock'?'<span></span>':'<span>'+now()+'</span>')+'<span class="grow"></span><span class="sig"><i style="height:3px"></i><i style="height:5px"></i><i style="height:7px"></i><i style="height:8px"></i></span><span class="bat"></span></span><span class="phole"></span>';
+    var body='';
+    if(phMode==='lock'){
+      body='<div class="pclock">'+now()+'</div><div class="pdate">9月24日 星期四</div>'
+        +'<div class="plw" style="top:100px">'+lwHTML(it,1,P.length,'phone')+'</div>'
+        +'<span class="plk" style="left:16px"><svg><use href="#i-bolt"/></svg></span><span class="plk" style="right:16px"><svg><use href="#i-camera"/></svg></span>';
+    }else if(phMode==='home'){
+      body='<button class="pcap" id="pcap"><i></i>DevEco '+(P.length?'等你 '+P.length:'进行中')+'</button>'
+        +'<div class="papps">'+new Array(13).join('<i></i>')+'</div>'
+        +(phExpand?'<div class="plw" style="top:26px">'+lwHTML(it,1,P.length,'phone')+'</div>':'')
+        +'<div class="pcont" id="pcont" role="button" title="应用接续"><svg><use href="#ai-mark"/></svg><div class="tx"><span class="tag">接续 · MateBook Pro</span><b>DevEco · Team 看板</b><span>'+ORDER.filter(function(k){return M[k].st==='done'}).length+'/5 · 点按继续</span></div></div>'
+        +'<div class="pdock"><i></i><i></i><i></i><i></i></div>';
+    }else{
+      var nd=ORDER.filter(function(k){return M[k].st==='done'}).length;
+      body='<div class="pbd-wrap"><div class="bh"><button data-pback="1" title="返回">‹</button>Team · 商品详情页<span class="grow"></span><span class="n">'+nd+'/5</span></div>'
+        +'<div class="dm-progress"><i style="--v:'+(nd/5*100)+'%"></i></div><div class="ld">'+LEAD[phase]+'</div>'
+        +ORDER.map(function(k){var s=ST[M[k].st];return '<div class="ar"><span class="av" data-m="'+k+'"><svg><use href="'+ICON[k]+'"/></svg></span><span class="grow">'+M[k].name+'</span><span class="dm-pill '+s[0]+'">'+s[1]+'</span></div>'}).join('')
+        +(it?'<div class="plw">'+lwHTML(it,1,P.length,'phone')+'</div>':'')
+        +'<div class="ft">规则 '+(gate.st==='passed'?'6/6 ✓':'—')+' · 旅程 '+jDone()+'/3 · '+(phase==='done'?'已合入 main':'main 待合入')+'</div></div>';
+    }
+    var ts=toast&&toast.dev==='phone'?'<span class="ptoast">'+toast.t+' · 电脑已同步</span>':'';
+    return '<div class="pphone" id="mydev-phone">'+sb+body+ts+'<span class="pgb"></span></div>';
+  }
+  function watchHTML(){
+    var P=pending(),it=P[0],h;
+    if(it){
+      h='<span class="wt">'+now()+' · DevEco</span><span class="papp"><svg><use href="#ai-mark"/></svg></span><span class="wtt">'+it.w+'</span><span class="wq">等你 1/'+P.length+'</span>'
+        +'<span class="wb"><button data-dact="no" data-did="'+it.id+'" data-dev="watch" title="'+it.no+'"><svg><use href="#i-close"/></svg></button><button class="pri" data-dact="ok" data-did="'+it.id+'" data-dev="watch" title="'+it.ok+'"><svg><use href="#i-check"/></svg></button></span>';
+    }else{
+      var nd=ORDER.filter(function(k){return M[k].st==='done'}).length,C=2*Math.PI*26;
+      h='<span class="wt">'+now()+' · DevEco</span><span class="ring"><svg viewBox="0 0 62 62"><circle class="tr" cx="31" cy="31" r="26"/><circle class="fg" cx="31" cy="31" r="26" stroke-dasharray="'+(C*nd/5).toFixed(1)+' '+C.toFixed(1)+'"/></svg><b>'+nd+'/5</b></span><span class="wq">'+(phase==='done'?'已合入 main':'Team 在干')+'</span>';
+    }
+    if(toast&&toast.dev==='watch')h+='<span class="wtoast">'+toast.t+'</span>';
+    return '<div class="pwwrap"><div class="pwatch" id="mydev-watch">'+h+'</div></div>';
+  }
+  function renderDevices(){
+    var el=$('#mydev');if(!el)return;
+    /* 新出现的等待项：推送一次实况窗 */
+    waitItems().forEach(function(x){if(!pushed[x.id]){pushed[x.id]=1;addLog('push','推送实况窗 → Mate 70 Pro、WATCH 5 · '+x.title);}});
+    var P=pending();
+    var LI={phone:'#i-phone',watch:'#i-watch',pc:'#i-tw-project',push:'#i-bell-new'};
+    el.innerHTML='<div class="mdrow"><div class="dm-seg" id="awayseg"><button data-away="0"'+(away?'':' class="on"')+'>在电脑前</button><button data-away="1"'+(away?' class="on"':'')+'>离开电脑</button></div><span class="grow"></span><span class="dm-small dm-muted">同一华为账号 · 2 台在线</span></div>'
+      +'<div class="mdstage" id="mydev-stage"><div class="pdcol">'+phoneHTML()+'<span class="pdlab"><b>HUAWEI Mate 70 Pro</b>1260×2844 · '+(phMode==='lock'?'锁屏实况窗':(phMode==='home'?'桌面 · 应用接续':'接续的看板'))+'</span></div>'
+      +'<div class="pdcol">'+watchHTML()+'<span class="pdlab"><b>HUAWEI WATCH 5</b>466×466 圆屏</span></div></div>'
+      +'<dl class="dm-kv"><dt>实况窗</dt><dd>'+(P.length?'只推队首 1 件'+(P.length>1?'，其余 '+(P.length-1)+' 件排在队列':''):'没有在等你的事')+(Object.keys(deferred).length?' · 1 件留到电脑上定':'')+'</dd></dl>'
+      +'<div class="msec" style="padding:0">同步记录</div><div class="mdlog">'+logs.map(function(l){return '<div class="lr"><code>'+l.t+'</code><svg><use href="'+LI[l.dev]+'"/></svg><span>'+l.x+'</span></div>'}).join('')+'</div>';
+  }
+
   /* 左栏：会话 | 任务 | 团队 */
   $('#lseg').addEventListener('click',function(e){
     var b=e.target.closest('button');if(!b)return;
     $$('#lseg button').forEach(function(x){x.classList.toggle('on',x===b)});
-    var v=b.dataset.v;$('#tasks').hidden=v!=='tasks';$('#mlist').hidden=v!=='team';$('#chat-hint').hidden=v!=='chat';
-    $('#lseg-hint').textContent=v==='team'?'成员也按三档':'按状态分档';
+    var v=b.dataset.v;$('#tasks').hidden=v!=='tasks';$('#mlist').hidden=v!=='team';
   });
 
   function recount(){
@@ -449,22 +1113,26 @@
     $$('#tasks > *').forEach(function(el){if(el.classList.contains('tgroup')){g=el.dataset.g;n[g]=0}else if(g){n[g]++}});
     $$('#tasks .tgroup').forEach(function(el){$('[data-cnt]',el).textContent=n[el.dataset.g]||0});
     $('.tw-hdr .title .cnt').textContent='任务 '+$$('#tasks .task').length;
-    var w=$('#cap-wait');if(w){w.hidden=!n.wait;
-      var first=$('#tasks .tgroup[data-g="wait"]').nextElementSibling;
-      if(first&&first.classList.contains('task'))$('#cap-wait-t').textContent='等你确认 '+n.wait+' · '+$('.t1 b',first).textContent;}
   }
   /* 批准 → 从“在等你”挪到“在干”，开始跑 */
   $('#tasks').addEventListener('click',function(e){
+    var r=e.target.closest('[data-reject]');if(r){rejectTask(r.dataset.reject);return;}
     var b=e.target.closest('[data-approve]');if(!b)return;
-    var t=$('#'+b.dataset.approve);t.classList.remove('wait');
-    $('.when',t).textContent='第 1 / 6 步';
-    $('.t2',t).innerHTML=t.id==='t-fix'?'正在读取 <code>ListPage.ets</code>，准备把 <code>loadCover</code> 改成异步':'正在给 <code>LoginPage.ets</code> 的错误提示补 accessibilityText';
-    $('.t3',t).innerHTML='<div class="dm-progress indet"><i></i></div><button class="btn sm">中止</button>';
-    var runG=$('#tasks .tgroup[data-g="run"]');runG.after(t);
-    recount();
+    approveTask(b.dataset.approve,b.textContent.indexOf('保留')>=0?'keep':'');
   });
   render();
-DemoGuide.init([{"target": "#cf-apply,#ho-approve", "kind": "click", "pos": "top", "label": "点这里：定冲突 / 批准交接"}, {"target": "#stage", "kind": "change", "pos": "top", "label": "交接沿连线推进到下一角色"}, {"target": "#t-team", "kind": "change", "pos": "right", "label": "要你拍板的点汇总到「在等你」"}]);
+DemoGuide.init([
+    {target:'#q', kind:'click', pos:'bottom', label:'所有 Agent 在等你的排成一队，按挡路程度'},
+    {target:'#cf-apply,#ho-approve', kind:'click', pos:'bottom', label:'拍板：冲突两边并排一键定 / 批准交接'},
+    {target:'#gate-card,#mrg', kind:'change', pos:'bottom', label:'违规改动按规则自动改写；三台走通才合入'},
+    {target:'#mydev-stage', kind:'click', pos:'bottom', label:'离开电脑：实况窗只推队首那一件'}
+  ], {scene:{
+    at:'五个子 Agent 在并行做商品详情页，你在旁边干别的',
+    goal:'只在该拍板时拍板，真机走通再合进 main',
+    pain:'各 Agent 各弹各的，分不清先回哪个、谁撞了谁',
+    fix:'待决排成一队按挡路程度排，冲突两边并排一键定',
+    agent:'它们分工交接、过闸门、跑旅程；撞车进同一队列；你拍板'
+  }});
 })();
 </script>
 </body>

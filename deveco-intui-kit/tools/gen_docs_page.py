@@ -245,8 +245,8 @@ def build():
       '通体浅色是另一个变体「Light with Light Header」。',
       G.semantic_table()))
     parts.append(sec('s4',4,'字体与字号',
-      'UI 用 Inter，代码用 JetBrains Mono。Figma 里标 Medium 的，'
-      '<b>实现里其实是 Regular</b>（Int UI Kit 原文注明），所以只用 400 / 600 两档字重，不要引 500。',
+      'UI 用鸿蒙黑体（HarmonyOS Sans SC），代码用 JetBrains Mono；字体文件在 <code>fonts/</code>，由 <code>tokens.css</code> 引入。'
+      '字重用 400 / 500 / 600 三档，不用 700。（Int UI Kit 原文注明 Figma 里标 Medium 的实现里是 Regular；换成鸿蒙黑体后 500 用于强调。）',
       G.type_table()))
     parts.append(sec('s5',5,'尺寸与间距','高度与圆角来自 theme.json，间距来自 Int UI Kit 的 Spacing 页。',
       G.size_table()))

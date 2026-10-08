@@ -33,10 +33,16 @@ deveco-intui-kit/
 │  ├─ components.css    组件样式（标题栏、工具窗、树、标签页、编辑器、AI 面板、终端、状态栏…）
 │  ├─ icons.svg         图标雪碧图（真源文件，改图标改这里）
 │  ├─ icons.js          由 icons.svg 生成，把雪碧图注入页面，file:// 下也能用
-│  └─ app.js            交互：主题切换、面板开合、树、标签页、弹层、AI 问答脚本
+│  ├─ app.js            交互：主题切换、面板开合、树、标签页、弹层、AI 问答脚本
+│  └─ ai.css            DevEco 智能：--ai-* 色板（深 / 浅）+ 高亮、进行态、组件（.ai-*），规范见 docs/ai-system.html
+├─ icons/
+│  ├─ ai-icons.svg      智能图标雪碧图（id 前缀 ai-，真源文件）
+│  ├─ ai-icons.js       由 ai-icons.svg 生成（build.py sync-icons）
+│  └─ deveco-code-logo*.svg  DevEco Code 标识：彩色 / 单色 × 常规 / 16px 小尺寸稿
 ├─ demo/index.html      界面稿的结构（只有 HTML，样式全在 src/）
 ├─ docs/
 │  ├─ index.html        规范页（由 tools/gen_docs_page.py 生成，不要手改）
+│  ├─ ai-system.html    DevEco 智能视觉与交互规范（手写，引 tokens.css + ai.css）
 │  ├─ docs.css          规范页自己的排版样式
 │  └─ docs.js           规范页交互：目录高亮、点色块复制色值、主题切换
 ├─ tokens/

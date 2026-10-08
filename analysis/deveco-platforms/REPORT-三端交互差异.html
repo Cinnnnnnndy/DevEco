@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DevEco Studio 三端差异</title>
+<style>
+:root{
+  --bg:#f5f6f8; --paper:#ffffff; --ink:#15171a; --ink2:#4a4f57; --ink3:#7a808a; --line:#e3e5e9; --line2:#eef0f3;
+  --accent:#3574f0; --accent-bg:#edf3ff;
+  --hm:#c7000b; --hm-bg:#fdecec;          /* 鸿蒙电脑版 */
+  --ij:#3574f0; --ij-bg:#eaf1fe;          /* IntelliJ 底座 */
+  --ok:#1f8a4c; --ok-bg:#e6f5ec; --warn:#b76e00; --warn-bg:#fdf1e3; --mute-bg:#eef0f3;
+  --shadow:0 1px 2px rgba(16,24,40,.06),0 4px 16px rgba(16,24,40,.06);
+  --mono:ui-monospace,"JetBrains Mono",Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --bg:#16171a; --paper:#1e2024; --ink:#e6e8eb; --ink2:#b3b8c0; --ink3:#868b94; --line:#30333a; --line2:#272a30;
+    --accent:#6b9bfa; --accent-bg:#233150;
+    --hm:#ff6b6b; --hm-bg:#3a2224; --ij:#6b9bfa; --ij-bg:#22304a;
+    --ok:#5fc48a; --ok-bg:#1d3326; --warn:#f0a052; --warn-bg:#3a2d1e; --mute-bg:#272a30; --shadow:none;
+  }
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.7 -apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}
+a{color:var(--accent);text-decoration:none} a:hover{text-decoration:underline}
+code{font-family:var(--mono);font-size:.9em;background:var(--line2);padding:1px 5px;border-radius:4px}
+.wrap{max-width:1280px;margin:0 auto;padding:40px 32px 80px}
+.eyebrow{font-size:12px;letter-spacing:.08em;color:var(--ink3)}
+h1{font-size:30px;line-height:1.3;margin:6px 0 12px}
+.lede{color:var(--ink2);max-width:78ch;margin:0}
+.note{margin-top:14px;font-size:12.5px;color:var(--ink3);border-left:3px solid var(--line);padding:2px 0 2px 12px;max-width:90ch}
+h2{font-size:21px;margin:52px 0 6px}
+h2 small{font-size:13px;font-weight:400;color:var(--ink3);margin-left:8px}
+.sub{color:var(--ink2);margin:0 0 16px;max-width:80ch}
+nav.toc{display:flex;flex-wrap:wrap;gap:6px;margin:22px 0 0}
+nav.toc a{font-size:13px;border:1px solid var(--line);background:var(--paper);border-radius:999px;padding:3px 12px;color:var(--ink2)}
+
+/* 结论卡 */
+.keys{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:26px}
+.key{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:16px 18px;box-shadow:var(--shadow)}
+.key b{display:block;font-size:15px;margin-bottom:4px}
+.key span{color:var(--ink2);font-size:13.5px}
+
+/* 三个版本卡 */
+.eds{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.ed{background:var(--paper);border:1px solid var(--line);border-top:3px solid var(--c);border-radius:12px;padding:16px 18px;box-shadow:var(--shadow)}
+.ed.hm{--c:var(--hm)} .ed.win,.ed.mac{--c:var(--ij)}
+.ed h3{margin:0 0 2px;font-size:16px}
+.ed .base{font-size:12px;color:var(--c);font-weight:600}
+.ed dl{margin:10px 0 0;display:grid;grid-template-columns:auto 1fr;gap:4px 10px;font-size:13px}
+.ed dt{color:var(--ink3);white-space:nowrap} .ed dd{margin:0;color:var(--ink2)}
+
+/* 对照表 */
+.tw{background:var(--paper);border:1px solid var(--line);border-radius:12px;overflow:auto;box-shadow:var(--shadow)}
+table{border-collapse:collapse;width:100%;font-size:13.5px;min-width:900px}
+th,td{text-align:left;vertical-align:top;padding:10px 12px;border-bottom:1px solid var(--line2)}
+thead th{font-size:12px;color:var(--ink3);background:var(--line2);font-weight:600;position:sticky;top:0}
+thead th.hm{color:var(--hm)} thead th.ij{color:var(--ij)}
+tbody th{font-weight:600;white-space:nowrap;width:120px}
+tr:last-child td,tr:last-child th{border-bottom:none}
+td.hm{background:color-mix(in srgb,var(--hm-bg) 45%,transparent)}
+td p{margin:0 0 4px} td p:last-child{margin:0}
+.ev{display:inline-block;font-size:11px;font-weight:600;border-radius:4px;padding:0 5px;line-height:17px;margin-left:4px;vertical-align:1px;white-space:nowrap}
+.ev.o{background:var(--ok-bg);color:var(--ok)}      /* 官方口径 */
+.ev.m{background:var(--ij-bg);color:var(--ij)}      /* 媒体 / 社区 */
+.ev.i{background:var(--warn-bg);color:var(--warn)}  /* 推断 */
+.ev.q{background:var(--mute-bg);color:var(--ink3)}  /* 待确认 */
+.gap{font-size:12.5px;color:var(--ink3)}
+
+/* 社区 */
+.voices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.voice{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:14px 16px;box-shadow:var(--shadow)}
+.voice b{display:block;margin-bottom:4px}
+.voice span{color:var(--ink2);font-size:13.5px}
+
+/* 机会点 */
+.lvl{display:inline-block;font-size:11.5px;font-weight:700;border-radius:5px;padding:0 7px;line-height:19px;white-space:nowrap}
+.lvl.a{background:var(--hm);color:#fff} .lvl.b{background:var(--ij-bg);color:var(--ij)} .lvl.c{background:var(--mute-bg);color:var(--ink2)}
+.cmp{font-size:12px;font-weight:600;white-space:nowrap}
+.cmp.u{color:var(--hm)} .cmp.y{color:var(--ij)}
+td .claim{font-weight:600;color:var(--ink)}
+
+ol.todo{margin:0;padding-left:20px;color:var(--ink2)} ol.todo li{margin:4px 0}
+.src{font-size:12.5px;color:var(--ink2);columns:2;column-gap:28px;padding-left:18px}
+.src li{margin:2px 0;break-inside:avoid}
+.legend{display:flex;flex-wrap:wrap;gap:10px;font-size:12.5px;color:var(--ink2);margin:0 0 12px}
+
+@media (max-width:900px){
+  .keys,.eds,.voices{grid-template-columns:1fr}
+  .src{columns:1}
+}
+@media (max-width:560px){ .wrap{padding:24px 16px 60px} h1{font-size:24px} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="eyebrow">分析与研究 · 2026-09-24</div>
+  <h1>DevEco Studio 三端交互差异：鸿蒙电脑版 vs IntelliJ 底座（Windows / macOS）</h1>
+  <p class="lede">同一个 DevEco Studio，眼下有两套底座：Windows、macOS 上是基于 IntelliJ IDEA Community 深度定制的版本；鸿蒙电脑上是华为自研、2026 年 3 月起开放 Beta 招募的预览版。这份报告把三端在装、写、跑、调、AI、输入与多设备上的交互差异逐项摆出来，再推出鸿蒙电脑版可以突破 IntelliJ 底座的机会点。</p>
+  <p class="note">事实来源：鸿蒙开发者社区、华为官网、媒体报道与开发者博客。本环境的网络策略拦截了 developer.huawei.com、CSDN、IT之家、搜狐等原文页面，下列事实取自搜索引擎对原文的摘要，未逐字核对原文；每条都标了口径，拿到原文或截图后需要复核。鸿蒙电脑版界面截图目前没有拿到，界面层面的差异暂列为「待确认」。</p>
+
+  <nav class="toc">
+    <a href="#editions">一 · 三个版本是什么</a><a href="#diff">二 · 交互差异对照</a><a href="#voices">三 · 社区怎么说</a><a href="#ops">四 · 鸿蒙电脑版的机会点</a><a href="#todo">五 · 待确认</a><a href="#src">来源</a>
+  </nav>
+
+  <div class="keys">
+    <div class="key"><b>底座换了，交互的天花板也换了</b><span>鸿蒙电脑版不再基于 IntelliJ：基于毕方技术平台，编辑器等核心组件用 Rust 构建，盘古大模型与小艺是原生能力。IntelliJ 插件与 JVM 带来的约束，在鸿蒙电脑版上不再是前提。</span></div>
+    <div class="key"><b>最大的差异在「跑」这一步</b><span>Windows 要开 Hyper-V 跑模拟器、Mac 分 Apple 芯片与 Intel 两套包；鸿蒙电脑版「开发环境即运行环境」，所见即所得，多设备并行调试，改一次代码多台生效。</span></div>
+    <div class="key"><b>系统级交互还没进 IDE</b><span>碰一碰、键鼠穿越、手眼同行、应用接续、折叠屏悬停与手写笔，是鸿蒙电脑系统层已有的交互。现有公开材料里没看到 IDE 用上它们——这正是可以做、而 IntelliJ 底座做不了的地方。</span></div>
+  </div>
+
+  <h2 id="editions">一 · 三个版本是什么</h2>
+  <p class="sub">「IntelliJ 底座」指 Windows 与 macOS 上的 DevEco Studio；macOS 再按芯片分 ARM（Apple 芯片）与 X86（Intel）两个包。</p>
+  <div class="eds">
+    <div class="ed hm">
+      <div class="base">自研底座 · 毕方技术平台</div>
+      <h3>鸿蒙电脑版（Preview）</h3>
+      <dl>
+        <dt>状态</dt><dd>HDC 2025（2025-06-20）面向企业开发者发布预览版；2026-03 起开放 Beta 招募，完成实名认证的开发者可申请 <span class="ev m">媒体</span></dd>
+        <dt>获取</dt><dd>官网暂不直接下载，需申请；要求实名认证、签保密协议，鸿蒙电脑 HarmonyOS 6.1 及以上 <span class="ev m">媒体</span></dd>
+        <dt>内核</dt><dd>编辑器等核心组件用 Rust 构建，结合 AI 交互设计释放多核算力 <span class="ev o">官方</span></dd>
+        <dt>AI</dt><dd>融合盘古大模型、小艺等原生特性；可自动生成工程模块拓扑图、思维导图、流程图与解释文档 <span class="ev o">官方</span></dd>
+      </dl>
+    </div>
+    <div class="ed win">
+      <div class="base">IntelliJ IDEA Community 底座</div>
+      <h3>Windows 版</h3>
+      <dl>
+        <dt>状态</dt><dd>稳定版 DevEco Studio 6.1.1 Release（2026-06-30）；26.0 Beta（HarmonyOS 7，HDC 2026） <span class="ev m">媒体</span></dd>
+        <dt>系统</dt><dd>Windows 10/11 64 位，建议 16 GB 内存、100 GB 磁盘 <span class="ev m">媒体</span></dd>
+        <dt>模拟器</dt><dd>需开启 Hyper-V、虚拟机平台；x86 模拟器要 16 GB 内存、OpenGL 4.1 <span class="ev m">社区</span></dd>
+        <dt>AI</dt><dd>DevEco Code（基于 openPangu V2）、CodeGenie 面板 <span class="ev m">媒体</span></dd>
+      </dl>
+    </div>
+    <div class="ed mac">
+      <div class="base">IntelliJ IDEA Community 底座</div>
+      <h3>macOS 版（ARM / X86）</h3>
+      <dl>
+        <dt>状态</dt><dd>与 Windows 同版本节奏，分 ARM（Apple 芯片）与 X86（Intel）两个 .dmg <span class="ev m">社区</span></dd>
+        <dt>系统</dt><dd>macOS 11–15（X86）/ 12–15（ARM），8 GB 内存起 <span class="ev m">媒体</span></dd>
+        <dt>模拟器</dt><dd>要 Apple 芯片与 8 GB 内存；26.0 新增座舱模拟器适配 Mac ARM <span class="ev m">社区</span></dd>
+        <dt>AI</dt><dd>同 Windows 版 <span class="ev i">推断</span></dd>
+      </dl>
+    </div>
+  </div>
+
+  <h2 id="diff">二 · 交互差异对照<small>按开发者要做的事排</small></h2>
+  <div class="legend"><span><span class="ev o">官方</span> 华为官方口径（经搜索摘要）</span><span><span class="ev m">媒体</span><span class="ev m">社区</span> 媒体报道 / 开发者博客</span><span><span class="ev i">推断</span> 由已知事实推出</span><span><span class="ev q">待确认</span> 需要截图或实机核对</span></div>
+  <div class="tw"><table>
+    <thead><tr><th>环节</th><th class="hm">鸿蒙电脑版</th><th class="ij">Windows 版</th><th class="ij">macOS 版</th></tr></thead>
+    <tbody>
+      <tr><th>装上</th>
+        <td class="hm"><p>申请 Beta 名额 → 实名、保密协议 → 装在 HarmonyOS 6.1+ 的鸿蒙电脑上 <span class="ev m">媒体</span></p><p class="gap">门槛在「拿到资格」，不在配环境。</p></td>
+        <td><p>下载安装包（建议 ZIP）；路径只能用英文、不能有空格 <span class="ev m">社区</span></p><p>要跑模拟器得在控制面板开 Hyper-V、Windows 虚拟机监控程序平台、虚拟机平台并重启 <span class="ev m">社区</span></p></td>
+        <td><p>先分清芯片：Apple 芯片下 ARM 包、Intel 下 X86 包（.dmg） <span class="ev m">社区</span></p><p>路径同样只能用英文 <span class="ev m">社区</span></p></td></tr>
+      <tr><th>写代码</th>
+        <td class="hm"><p>编辑器核心用 Rust 构建 <span class="ev o">官方</span>；面向 ArkTS 的高效编码 <span class="ev o">官方</span></p><p>界面与 IntelliJ 组件的差异 <span class="ev q">待确认</span></p></td>
+        <td colspan="2"><p>IntelliJ 编辑器：ArkTS / JS / C/C++ 索引、补全、重构 <span class="ev m">媒体</span></p><p>26.0 Beta：代码索引效率 +70%、编译 +40%、内存 −30% <span class="ev m">媒体</span>；状态变量可视化、API 注释支持图片与代码片段 <span class="ev m">媒体</span></p></td></tr>
+      <tr><th>跑起来</th>
+        <td class="hm"><p><b>开发环境即运行环境，所见即所得</b>；支持多种设备并行调试，只需修改一次代码即可在多台设备上生效 <span class="ev o">官方</span></p><p>鸿蒙电脑本身能运行鸿蒙应用（PC/2in1 应用为自由窗口） <span class="ev m">社区</span>→ 本机直接跑、不必先起模拟器 <span class="ev i">推断</span></p></td>
+        <td><p>本地模拟器（手机、折叠屏、平板、2in1、座舱），起模拟器吃内存；2in1 模拟器建议分 4 GB 内存、30 GB 磁盘 <span class="ev m">社区</span></p><p>26.0：模拟器启动快 7 倍、热重载 <span class="ev m">媒体</span></p></td>
+        <td><p>本地模拟器（Apple 芯片）；Intel Mac 上模拟器受限 <span class="ev i">推断</span></p><p>模拟器不适合测性能与资源占用，结果只能看相对差异 <span class="ev m">社区</span></p></td></tr>
+      <tr><th>预览</th>
+        <td class="hm"><p>多设备预览器 <span class="ev o">官方</span></p></td>
+        <td colspan="2"><p>Previewer：多设备实时预览、热重载 <span class="ev m">社区</span>；可视化拖拽、卡片零码开发 <span class="ev m">社区</span></p></td></tr>
+      <tr><th>调试</th>
+        <td class="hm"><p>多设备并行调试 <span class="ev o">官方</span></p><p>系统层有碰一碰、多屏协同（手机镜像窗口可键鼠操控） <span class="ev o">官方</span>；IDE 是否用它们连真机 <span class="ev q">待确认</span></p></td>
+        <td colspan="2"><p>真机：USB / 无线（hdc），先签名（自动签名） <span class="ev m">社区</span>；26.0 新增自动重签名并上传 AGC <span class="ev m">媒体</span></p><p>分布式调试、多设备协同模拟 <span class="ev m">社区</span></p></td></tr>
+      <tr><th>AI</th>
+        <td class="hm"><p>盘古大模型 + 小艺为原生能力 <span class="ev o">官方</span></p><p>自动生成工程模块拓扑图、思维导图、流程图与解释文档，帮人读懂工程 <span class="ev o">官方</span></p></td>
+        <td colspan="2"><p>DevEco Code（覆盖代码生成、问题修复、编译构建、功能验证）、DevEco CLI，基于 openPangu V2 <span class="ev m">媒体</span></p><p>CodeGenie 面板；可在 CodeGenie 接入第三方模型 <span class="ev m">媒体</span></p></td></tr>
+      <tr><th>输入方式</th>
+        <td class="hm"><p>鸿蒙电脑系统层：键鼠穿越（手机、平板、电脑共享键鼠）、<b>手眼同行</b>（看向哪台设备光标就过去） <span class="ev o">官方</span></p><p>MateBook Fold：三指甩窗、八指召唤虚拟键盘、M-Pen 3 手写与隔空鼠标 <span class="ev m">媒体</span></p><p>IDE 对这些输入的支持 <span class="ev q">待确认</span></p></td>
+        <td><p>键鼠为主；运行 <code>Shift+F10</code>，缩放配 <code>Ctrl</code> <span class="ev m">社区</span></p></td>
+        <td><p>键鼠 / 触控板；运行 <code>Control+R</code>，缩放配 <code>Command</code> <span class="ev m">社区</span></p></td></tr>
+      <tr><th>窗口与屏幕</th>
+        <td class="hm"><p>鸿蒙自由多窗，方舟图形引擎保障焦点窗口高帧率 <span class="ev o">官方</span></p><p>MateBook Fold 18 英寸折叠屏：30°–150° 悬停、折叠双屏（上屏看、下屏操作） <span class="ev m">媒体</span></p></td>
+        <td colspan="2"><p>IntelliJ 工具窗、编辑器分屏；外接多显示器靠系统 <span class="ev i">推断</span></p></td></tr>
+      <tr><th>多设备协同</th>
+        <td class="hm"><p>碰一碰传文件与接续、应用接续（手机上的活靠近电脑继续）、多屏协同 <span class="ev o">官方</span></p><p>同一台电脑可并用卓易通（安卓）、鸿蒙应用、鸿蒙 PC 应用、Windows 虚拟机 <span class="ev m">社区</span></p></td>
+        <td colspan="2"><p>靠 USB / 无线连接真机，设备管理器里逐台连 <span class="ev m">社区</span></p></td></tr>
+      <tr><th>扩展生态</th>
+        <td class="hm"><p>插件体系与 IntelliJ 插件的兼容 <span class="ev q">待确认</span></p></td>
+        <td colspan="2"><p>沿用 IntelliJ 插件体系；社区已有 DevEco 插件（代码生成、模拟器操作、Git 分支导入导出等） <span class="ev m">社区</span></p></td></tr>
+    </tbody>
+  </table></div>
+
+  <h2 id="voices">三 · 社区怎么说</h2>
+  <p class="sub">来自鸿蒙开发者社区、博客与问答的反馈，集中在 IntelliJ 底座版本上；鸿蒙电脑版因为还在招募期，公开的一手体验很少。</p>
+  <div class="voices">
+    <div class="voice"><b>吃内存</b><span>8 GB 电脑同时开 IDE、模拟器和其他应用很吃力，建议 16 GB 以上 <span class="ev m">社区</span></span></div>
+    <div class="voice"><b>全量编译慢</b><span>代码量上来后全量编译要 3–5 分钟 <span class="ev m">社区</span>；26.0 Beta 宣称编译效率提升 40% <span class="ev m">媒体</span></span></div>
+    <div class="voice"><b>环境配置坑多</b><span>Windows 要开 Hyper-V；安装路径不能有中文、空格；Mac 要选对芯片包；汉化后界面乱码 <span class="ev m">社区</span></span></div>
+    <div class="voice"><b>资料与三方库少</b><span>中文文档和社区讨论相对安卓少，复杂问题要自己查官方文档或做实验；三方库相对少 <span class="ev m">社区</span></span></div>
+    <div class="voice"><b>社区在自己补工具</b><span>开源平台上已出现基于 DevEco 的辅助插件、模拟器操作插件、基于 OpenCode 扩展的鸿蒙 AI 助手 <span class="ev m">社区</span>——有人愿意花时间写工具，说明是真痛</span></div>
+    <div class="voice"><b>鸿蒙电脑版：门槛在资格</b><span>要实名、保密协议、HarmonyOS 6.1+ 的鸿蒙电脑 <span class="ev m">媒体</span>；公开评测稀少，体验反馈有待收集 <span class="ev q">待确认</span></span></div>
+  </div>
+
+  <h2 id="ops">四 · 鸿蒙电脑版可以突破 IntelliJ 底座的机会点</h2>
+  <p class="sub">把鸿蒙电脑系统层已有的交互，和我们 demo 里已有的 IDE 能力乘在一起。两样缺一样都做不出来，这是友商抄不走的原因。档位：主攻 · 跟上 · 搭车做。</p>
+  <div class="tw"><table>
+    <thead><tr><th>场景</th><th>点（一句主张）</th><th>现在哪里是断的</th><th>档位</th><th>对照友商</th><th>接哪个 demo</th></tr></thead>
+    <tbody>
+      <tr><th rowspan="3">把手机接进来</th>
+        <td><span class="claim">碰一碰就是连上</span>：授权、hdc 通道、装包、拉起一步到位</td><td>先选 USB / 无线，再授权、建通道、版本匹配</td><td><span class="lvl a">主攻</span></td><td><span class="cmp u">人无我有</span></td><td>20 连接状态</td></tr>
+      <tr><td><span class="claim">光标走到手机上就是在调手机</span>：键鼠穿越 / 手眼同行时 IDE 焦点跟着切设备，断点与日志跟过去</td><td>眼睛和手在两块屏之间来回找</td><td><span class="lvl b">跟上</span></td><td><span class="cmp u">人无我有</span></td><td>05 · 18</td></tr>
+      <tr><td><span class="claim">手机镜像窗口就是设备面板</span>：嵌进 IDE，叠组件树，点元素落到代码</td><td>镜像只能看，和代码没关系</td><td><span class="lvl c">搭车做</span></td><td><span class="cmp y">人有我优</span>（友商有设备镜像）</td><td>13 D2C</td></tr>
+      <tr><th rowspan="3">在大屏上跑起来看</th>
+        <td><span class="claim">不开模拟器，应用直接在这台电脑上跑</span>，原生窗口挨着代码</td><td>先起模拟器，吃内存、等启动</td><td><span class="lvl a">主攻</span></td><td><span class="cmp y">人有我优</span>（友商能在电脑上跑平板应用）</td><td>17 · 27</td></tr>
+      <tr><td><span class="claim">拖窗口宽度就是切断点</span>：断点标尺跟窗口边走，sm / md / lg 布局跳变，对应代码亮起</td><td>查一多要切好几台设备</td><td><span class="lvl a">主攻</span></td><td><span class="cmp u">人无我有</span></td><td>17 一多检查</td></tr>
+      <tr><td><span class="claim">三指一甩，把正在跑的应用甩到平板上接着跑</span>，测接续与流转</td><td>测流转要两套环境</td><td><span class="lvl b">跟上</span></td><td><span class="cmp u">人无我有</span></td><td>15 · 18</td></tr>
+      <tr><th rowspan="3">在折叠电脑上写和调</th>
+        <td><span class="claim">上屏写码，下屏看效果</span>；悬停姿态自动换布局</td><td>一块屏装不下代码和应用</td><td><span class="lvl a">主攻</span></td><td><span class="cmp u">人无我有</span></td><td>新</td></tr>
+      <tr><td><span class="claim">下屏就是调试键盘</span>：单步、变量、设备按键替掉虚拟键盘</td><td>调试时虚拟键盘没用</td><td><span class="lvl c">搭车做</span></td><td><span class="cmp u">人无我有</span></td><td>新</td></tr>
+      <tr><td><span class="claim">用笔圈出来就是提问</span>：在运行中的应用上圈一块，DevEco Code 拿到区域和组件树</td><td>用字描述「那个按钮」说不准</td><td><span class="lvl a">主攻</span></td><td><span class="cmp u">人无我有</span></td><td>13 · 05</td></tr>
+      <tr><th rowspan="4">让 AI 在系统层帮你</th>
+        <td><span class="claim">在哪儿都能叫开发助手</span>：手机收到崩溃，问一句小艺，电脑上直接打开 IDE 落到崩溃行</td><td>先把日志从手机弄出来，再开 IDE 找</td><td><span class="lvl b">跟上</span></td><td><span class="cmp u">人无我有</span></td><td>28 · 25</td></tr>
+      <tr><td><span class="claim">Agent 在等你时，在手机上批</span></td><td>离开电脑，Agent 就停住</td><td><span class="lvl b">跟上</span></td><td><span class="cmp u">人无我有</span></td><td>07 · 15</td></tr>
+      <tr><td><span class="claim">构建与 Agent 进度上实况窗</span>，21 的胶囊升到系统级</td><td>不在 IDE 里就看不到进度</td><td><span class="lvl c">搭车做</span></td><td><span class="cmp u">人无我有</span></td><td>21 胶囊</td></tr>
+      <tr><td><span class="claim">手机上的截图、日志拖进对话就是上下文</span>（华为分享）</td><td>先发到聊天软件传给自己</td><td><span class="lvl b">跟上</span></td><td><span class="cmp u">人无我有</span></td><td>05</td></tr>
+      <tr><th>多系统一起验</th>
+        <td><span class="claim">同一台电脑上对照安卓版跑</span>（卓易通），迁移时并排比</td><td>对照要两台手机</td><td><span class="lvl c">搭车做</span></td><td><span class="cmp u">人无我有</span></td><td>04 安卓转化</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2 id="todo">五 · 待确认</h2>
+  <ol class="todo">
+    <li><b>鸿蒙电脑版界面截图</b>（主窗口、工具窗、编辑器标签、AI 面板、设置、菜单、按钮与输入框，深 / 浅色）——用来确认界面与 IntelliJ 组件的差异，也是把全部 demo 换成鸿蒙电脑版组件的依据。</li>
+    <li>鸿蒙电脑版 IDE 能否调用系统能力：碰一碰、键鼠穿越 / 手眼同行、小艺与智能体框架、实况窗。</li>
+    <li>本机运行的鸿蒙 PC 应用能否像真机一样走 hvigor → hdc 调试；「多种设备并行调试」具体覆盖哪些设备。</li>
+    <li>鸿蒙电脑版的插件体系是否兼容 IntelliJ 插件；快捷键方案沿用哪套。</li>
+    <li>MateBook Fold 上开发者的真实用法：会不会在折叠屏上写代码、用哪种姿态。</li>
+    <li>原文复核：本报告的事实均来自搜索摘要，拿到原文后逐条核对。</li>
+  </ol>
+
+  <h2 id="src">来源</h2>
+  <ul class="src">
+    <li><a href="https://developer.huawei.com/consumer/cn/deveco-studio/preview/">DevEco Studio Preview 鸿蒙电脑版 · 华为开发者联盟</a></li>
+    <li><a href="https://developer.huawei.com/consumer/cn/deveco-studio/">DevEco Studio · 华为开发者联盟</a></li>
+    <li><a href="https://developer.huawei.com/consumer/cn/forum/block/deveco-studio">DevEco Studio 问答专区 · 华为开发者论坛</a></li>
+    <li><a href="https://www.ithome.com/0/891/337.htm">鸿蒙电脑版 DevEco Studio IDE 开启预览版 Beta 用户招募 · IT之家</a></li>
+    <li><a href="https://www.sohu.com/a/946348509_122362510">鸿蒙电脑版 DevEco Studio Beta 招募：AI 加持 · 搜狐</a></li>
+    <li><a href="https://www.csdn.net/article/2026-06-15/161995528">HarmonyOS 7.0 DevEco Studio 重磅发布 · CSDN</a></li>
+    <li><a href="https://www.ithome.com/0/963/548.htm">HDC 2026：HarmonyOS 7 Beta · IT之家</a></li>
+    <li><a href="https://www.ithome.com/0/963/835.htm">鸿蒙座舱模拟器登陆 DevEco Studio · IT之家</a></li>
+    <li><a href="https://consumer.huawei.com/cn/harmonyos-computer/harmonyos-5/">鸿蒙电脑 HarmonyOS 5 · 华为官网</a></li>
+    <li><a href="http://www.news.cn/tech/20250508/1c5bcee54aff4e17a4a3047e001a170a/c.html">HarmonyOS 5 重构电脑体验 · 新华网</a></li>
+    <li><a href="https://consumer.huawei.com/cn/support/content/zh-cn16049611/">鸿蒙电脑如何与手机多屏协同 · 华为官网</a></li>
+    <li><a href="https://finance.sina.cn/stock/jdts/2026-07-29/detail-iniknmif1626186.d.html?oid=800&vt=4">MateBook Fold 非凡大师探索 PC 交互新形态 · 新浪</a></li>
+    <li><a href="https://www.ithome.com/0/985/856.htm">一支笔 + 折叠大屏 MateBook Fold · IT之家</a></li>
+    <li><a href="https://post.smzdm.com/p/apq7gpo7/">鸿蒙 PC 应用兼容 · 什么值得买</a></li>
+    <li><a href="https://blog.csdn.net/weixin_29238147/article/details/158855950">模拟器创建全流程（Windows/Mac 双平台） · CSDN</a></li>
+    <li><a href="https://www.cnblogs.com/strengthen/p/18470208">DevEco Studio 模拟器常见问题 · 博客园</a></li>
+    <li><a href="https://cloud.tencent.com/developer/article/2601830">模拟器硬件需求及与真机差别 · 腾讯云开发者社区</a></li>
+    <li><a href="https://harmonyosdev.csdn.net/691573d75511483559e9f52c.html">DevEco Studio 快捷键 · HarmonyOS 开发者社区</a></li>
+    <li><a href="https://harmonyosdev.csdn.net/68ecc115a6dc56200e92251a.html">DevEco Studio 开发体验深度测评 · HarmonyOS 开发者社区</a></li>
+    <li><a href="https://zhuanlan.zhihu.com/p/1954973351790515380">鸿蒙开发工具目前如何了 · 知乎</a></li>
+    <li><a href="https://gitcode.com/LiZhuohang1243/deveco-code">deveco-code（基于 OpenCode 扩展） · AtomGit</a></li>
+    <li><a href="https://ask.csdn.net/questions/8866182">鸿蒙 Dev 汉化后界面乱码 · CSDN 问答</a></li>
+  </ul>
+</div>
+</body>
+</html>

@@ -5,12 +5,12 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='32' y2='32' gradientUnits='userSpaceOnUse'%3E%3Cstop stop-color='%232C8DDD'/%3E%3Cstop offset='1' stop-color='%233357AC'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='32' height='32' rx='7' fill='url(%23g)'/%3E%3Ctext x='16' y='22.5' font-family='Arial,Helvetica,sans-serif' font-size='13' font-weight='700' fill='white' text-anchor='middle'%3EDE%3C/text%3E%3C/svg%3E">
 <title>08 · 结论先行：过程收起来，警告永远不压</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;500&display=swap">
 <link rel="stylesheet" href="../../deveco-intui-kit/src/tokens.css">
 <link rel="stylesheet" href="../../deveco-intui-kit/src/components.css">
 <link rel="stylesheet" href="../_shared/frame.css">
 <link rel="stylesheet" href="../_shared/guide.css">
 <script src="../../deveco-intui-kit/src/icons.js"></script>
+<script src="../../deveco-intui-kit/icons/ai-icons.js"></script>
 <script src="../_shared/frame.js"></script>
 <script src="../_shared/guide.js"></script>
 <style>
@@ -18,47 +18,149 @@
   .ide > .body{grid-row:3}
   .ide > .status{grid-row:4}
   .ide[data-ide-theme]{--proj-w:clamp(400px,34vw,520px)}
-  /* 上下文占用：只留一条细进度条钉在会话顶部；明细和手动压缩收进展开区，不常驻打扰阅读 */
+  #hdr-agent .ai-status .agt{color:var(--ai-ink)}
+  /* 上下文占用：一条细条钉在会话顶部，谁占了多少用灰阶分段（不用蓝 / 紫，那是按钮和 AI 的颜色）；明细收进展开区 */
   .ctx-slim{flex:none;margin:8px 12px 0;display:flex;flex-direction:column;gap:4px}
   .ctx-slim .row{display:flex;align-items:center;gap:8px}
   .ctx-slim .row>svg.i{width:13px;height:13px;color:var(--ui-fg-info)}
   .ctx-slim .dm-ctx{flex:1;height:4px;border-radius:2px}
   .ctx-slim .dm-ctx i{transition:width .6s ease}
+  .ctx-slim .dm-ctx i.a{background:var(--ui-fg)}
+  .ctx-slim .dm-ctx i.b{background:color-mix(in srgb,var(--ui-fg) 58%,transparent)}
+  .ctx-slim .dm-ctx i.c{background:color-mix(in srgb,var(--ui-fg) 32%,transparent)}
+  .ctx-slim .dm-ctx i.d{background:color-mix(in srgb,var(--ui-fg) 16%,transparent)}
   .ctx-slim .pct{font-family:var(--font-code);font-size:11px;color:var(--ui-fg-info);min-width:30px;text-align:right}
   .ctx-slim .btn.sm svg.i{width:12px;height:12px}
-  .ctx-slim .dm-fold{margin:0}
-  .ctx-slim .dm-fold summary{height:22px;padding:0 8px;font-size:11px}
+  .ctx-slim .dm-fold{margin:0;border:0}
+  .ctx-slim .dm-fold summary{height:22px;padding:0 8px;font-size:11px;background:transparent}
+  .ctx-slim .dm-fold .fb{border-top:0;padding:2px 8px 6px}
   .ctx-slim .dm-legend{flex-wrap:wrap;gap:4px 14px}
   .ctx-slim .dm-legend i{width:8px;height:8px;border-radius:2px}
-  .ctx-slim .dm-legend b{color:var(--ui-fg);font-weight:600;font-family:var(--font-code);font-size:11px}
+  .ctx-slim .dm-legend i.a{background:var(--ui-fg)}.ctx-slim .dm-legend i.b{background:color-mix(in srgb,var(--ui-fg) 58%,transparent)}.ctx-slim .dm-legend i.c{background:color-mix(in srgb,var(--ui-fg) 32%,transparent)}.ctx-slim .dm-legend i.d{background:color-mix(in srgb,var(--ui-fg) 16%,transparent)}
+  .ctx-slim .dm-legend b{color:var(--ui-fg);font-weight:500;font-family:var(--font-code);font-size:11px}
   .btn:disabled{opacity:.5}
-  /* 结论先行的回复 */
-  .amsg .step svg.i{width:14px;height:14px}
-  .md .concl{font-size:var(--fs-para)}
-  .md .cl-h{margin:8px 0 4px;font-size:var(--fs-sm);line-height:var(--lh-sm);font-weight:600;color:var(--ui-fg-info)}
-  .chg .dm-item{min-height:24px;padding:1px 10px;font-family:var(--font-code);font-size:11px}
+  /* 结论先行的回复：ai.css 回答卡，结论一句在最前，改动清单紧跟，过程折叠 */
+  .ai-thread .ai-answer{padding:12px 12px 10px;gap:8px}
+  .ai-answer__meta .ai-ico{color:var(--ai-ink)}
+  .ai-answer__meta .agt{color:var(--ai-ink)}
+  .ai-answer code,.ai-approve code,.dm-callout code{font-family:var(--font-code);font-size:11px;background:var(--ai-surface-2);padding:1px 4px;border-radius:4px}
+  .cl-h{font-size:var(--fs-sm);line-height:var(--lh-sm);font-weight:500;color:var(--ui-fg-info)}
+  .chg{display:flex;flex-direction:column;border-radius:8px;background:var(--ai-surface-2);padding:2px 0}
+  .chg .dm-item{min-height:24px;padding:1px 10px;font-family:var(--font-code);font-size:11px;display:flex;align-items:center;gap:6px}
   .chg .dm-item svg.i{width:14px;height:14px}
+  .chg .dm-item .grow{flex:1}
   .chg .dm-item .cnt{flex:none;font-variant-numeric:tabular-nums}
   .chg .add{color:var(--ui-success)} .chg .del{color:var(--ui-error)}
-  .md .dm-fold{margin-top:8px}
-  .dm-fold .fb .pl{display:flex;gap:8px;padding:1px 0}
-  .dm-fold .fb .pl i{font-style:normal;font-family:var(--font-code);width:16px;text-align:right;color:var(--ui-fg-disabled);flex:none}
-  .dm-fold .fb .pl code,.dm-callout code{font-family:var(--font-code);font-size:11px;background:var(--ui-tag-bg);padding:1px 4px;border-radius:4px}
-  /* 永不折叠的两条 */
-  .dm-callout{align-items:flex-start}
+  .ai-answer details .pl{display:flex;gap:8px;padding:1px 4px;font-size:var(--fs-sm);line-height:1.6;color:var(--ui-fg-info)}
+  .ai-answer details .pl i{font-style:normal;font-family:var(--font-code);width:16px;text-align:right;color:var(--ui-fg-disabled);flex:none}
+  .ai-toolrow{padding:2px 0}
+  .ai-toolrow:hover{background:transparent}
+  .ai-toolrow svg.ok{width:12px;height:12px;color:var(--ui-success)}
+  .ai-toolrow .todo{width:10px;height:10px;border-radius:50%;box-shadow:inset 0 0 0 1.2px var(--ui-fg-disabled);margin:0 2px}
+  /* 永不折叠的两类：警告（状态色）与危险操作（在等你 = 琥珀审批卡） */
+  .dm-callout{align-items:flex-start;border:0}
   .dm-callout .cb{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
-  .dm-callout .cb-t{display:flex;align-items:center;gap:6px;font-weight:600}
-  .dm-callout .cb-t .dm-pill{font-weight:400;margin-left:auto}
-  .dm-callout .cb-t .dm-pill svg{width:11px;height:11px}
-  .dm-callout .acts{display:flex;gap:6px;justify-content:flex-end}
+  .dm-callout .cb-t{display:flex;align-items:center;gap:6px;font-weight:500}
   .dm-callout > .btn{flex:none;white-space:nowrap;margin-top:-1px}
   .dm-callout.ok svg.lead{color:var(--ui-success)}
-  /* 压缩发生时：在对话里插一张默认收起的系统卡，参考 Claude 的会话压缩提示，不单独占一块面板 */
-  .summ{align-self:center;max-width:440px;width:100%;animation:fadein .4s ease-out}
+  .pin{margin-left:auto;font-weight:400;font-size:11px;color:var(--ui-fg-info);white-space:nowrap}
+  .ai-approve__h .pin{font-weight:400}
+  .ai-approve.done{box-shadow:none}
+  .ai-approve.done .ai-approve__h{color:var(--ui-fg)}
+  .ai-approve.done .ai-approve__h svg{width:14px;height:14px;color:var(--ui-success)}
+  .ai-approve__act{justify-content:flex-end}
+  .flash{animation:qflash 1.4s var(--ai-ease) 1}
+  @keyframes qflash{0%,40%{box-shadow:inset 0 0 0 1.5px var(--ai-wait)}100%{box-shadow:inset 0 0 0 1.5px transparent}}
+  /* 压缩发生时：在对话里插一张默认收起的系统卡，不单独占一块面板 */
+  .summ{align-self:center;max-width:440px;width:100%;border:0;background:var(--ai-surface)}
+  .summ summary{background:transparent}
+  .summ .fb{border-top:0}
   .summ summary svg.i{width:13px;height:13px;color:var(--ui-fg-info)}
   .summ summary span{color:var(--ui-fg)}
-  @keyframes fadein{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
-  .dm-capsule b{font-weight:600}
+  .summ .pl{display:flex;gap:8px;padding:1px 0}
+  .summ .pl i{font-style:normal;font-family:var(--font-code);width:16px;text-align:right;color:var(--ui-fg-disabled);flex:none}
+  .summ code{font-family:var(--font-code);font-size:11px;background:var(--ai-surface-2);padding:1px 4px;border-radius:4px}
+  /* 输入框：ai.css 智能输入框 */
+  .ai-field.in8{margin:6px 12px 4px;flex:none}
+  .ai-field.in8 .ai-field__ctx .grow{flex:1}
+  .ai-field.in8 .ai-toggle svg{width:12px;height:12px;color:currentColor}
+  /* ===== 鸿蒙电脑版：长任务结论上实况窗（本机 + Mate 70 Pro），点开回 IDE ===== */
+  .ide[data-ide-theme]{--desk-w:clamp(360px,24vw,392px)}
+  .ide{grid-template-columns:minmax(0,1fr);transition:padding .45s cubic-bezier(.2,.8,.2,1)}
+  .ide.desk-on{padding-right:var(--desk-w);--proj-w:clamp(380px,27vw,420px);--ai-w:240px}
+  .desk{position:absolute;top:0;right:0;bottom:0;width:var(--desk-w);display:none;flex-direction:column;align-items:center;gap:10px;padding:0 0 16px;overflow:hidden;z-index:6;background:var(--ui-bg);box-shadow:inset 1px 0 0 var(--ui-border)}
+  .ide.desk-on .desk{display:flex}
+  /* 实况窗区让出右侧后 Header 变窄：胶囊保住可读宽度，右侧工具按钮先被裁 */
+  .ide.desk-on .hdr .zone.center{flex:none;min-width:280px}
+  .ide.desk-on .hdr #hdr-agent{flex:none;min-width:240px}
+  .ide.desk-on .hdr .zone.right{min-width:0;overflow:hidden;justify-content:flex-start}
+  .ide.desk-on .hdr .zone.right > *{flex:none}
+  /* 鸿蒙电脑状态栏（屏幕右上角那一段）+ 实况胶囊 */
+  .pcbar{align-self:stretch;height:30px;flex:none;display:flex;align-items:center;justify-content:flex-end;gap:10px;padding:0 12px;font-size:var(--fs-sm);color:var(--ui-fg)}
+  .pcbar svg.i{width:14px;height:14px}
+  .pcbar .tm{font-variant-numeric:tabular-nums;font-weight:500}
+  .lcap{display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 10px 0 4px;border-radius:11px;background:var(--ai-surface-2);color:var(--ui-fg);font-size:11px;font-weight:500;white-space:nowrap;cursor:pointer;border:0}
+  .lcap .lg{width:16px;height:16px;border-radius:50%;display:grid;place-items:center}
+  .lcap .lg svg{width:11px;height:11px;color:var(--ai-ink)}
+  .lcap .mb{width:34px;height:3px;border-radius:2px;background:var(--ui-progress-track);overflow:hidden}
+  .lcap .mb i{display:block;height:100%;width:var(--p,0%);background:var(--ai-ink);transition:width .3s}
+  .lcap.wait{background:var(--ai-wait-tint);color:var(--ai-wait-ink)}
+  .lcap.wait .mb{display:none}
+  /* 电脑上的实况窗卡片（从胶囊展开） */
+  .lv{width:calc(100% - 24px);flex:none;border-radius:16px;background:var(--ai-surface);box-shadow:var(--ui-shadow);padding:12px 14px;display:flex;flex-direction:column;gap:8px;cursor:pointer;position:relative}
+  .lv-h{display:flex;align-items:center;gap:8px;font-size:var(--fs-sm);line-height:var(--lh-sm);color:var(--ui-fg-info);white-space:nowrap}
+  .lv-h .ap{width:20px;height:20px;border-radius:6px;background:var(--ai-surface-2);display:grid;place-items:center;flex:none}
+  .lv-h .ap svg{width:13px;height:13px;color:var(--ai-ink)}
+  .lv-h b{color:var(--ui-fg);font-weight:500}
+  .lv-h .grow{flex:1}
+  .lv-t{font-weight:500;font-size:var(--fs-para);line-height:var(--lh-para)}
+  .lv-p{height:4px;border-radius:2px;background:var(--ui-progress-track);overflow:hidden}
+  .lv-p i{display:block;height:100%;width:var(--p,0%);background:var(--ai-ink);transition:width .3s}
+  .lv-m{display:flex;justify-content:space-between;font-size:11px;color:var(--ui-fg-info);font-variant-numeric:tabular-nums}
+  .lv-d{display:flex;align-items:flex-start;gap:6px;padding:6px 8px;border-radius:8px;background:var(--ai-wait-tint);color:var(--ui-fg);font-size:var(--fs-sm);line-height:var(--lh-sm)}
+  .lv-d .ai-wait-dot{margin-top:5px}
+  .lv-d svg{width:14px;height:14px;flex:none;margin-top:2px}
+  .lv-d.ok{background:color-mix(in srgb,var(--ui-success) 12%,transparent)}
+  .lv-d.ok svg{color:var(--ui-success)}
+  .lv-d .more{display:block;color:var(--ui-fg-info);font-size:11px}
+  .lv-f{display:flex;justify-content:flex-end}
+  .lv-f .btn{pointer-events:none}
+  .dev-cap{font-size:11px;color:var(--ui-fg-info);white-space:nowrap;display:flex;align-items:center;gap:6px}
+  .dev-cap svg.i{width:12px;height:12px}
+  .grow-v{flex:1;min-height:6px}
+  /* Mate 70 Pro：1260 × 2844，按 360 vp 逻辑宽画，缩放进来 */
+  .lph{flex:none;border-radius:34px;background:#0f1012;padding:6px;position:relative}
+  .lph .scr{position:relative;overflow:hidden;border-radius:29px}
+  .lph .in{position:absolute;left:0;top:0;width:360px;height:813px;transform-origin:0 0;color:#fff;font-family:var(--font-ui);background:#24262B}
+  .lph .sb{height:40px;display:flex;align-items:center;justify-content:space-between;padding:0 26px;font-size:13px;font-weight:600;position:relative}
+  .lph .hole{position:absolute;left:50%;top:11px;width:18px;height:18px;margin-left:-9px;border-radius:50%;background:#0f1012}
+  .lph .ri{display:flex;align-items:center;gap:6px}
+  .lph .sig{display:flex;gap:2px;align-items:flex-end}.lph .sig i{width:3px;background:#fff;border-radius:1px}
+  .lph .bat{width:22px;height:11px;border:1.5px solid #fff;border-radius:3px;padding:1px}.lph .bat i{display:block;height:100%;width:64%;background:#fff;border-radius:1px}
+  .lph .lk{display:flex;justify-content:center;margin-top:18px;opacity:.9}.lph .lk svg{width:18px;height:18px}
+  .lph .clk{text-align:center;font-size:76px;font-weight:400;line-height:1;margin-top:18px;letter-spacing:1px}
+  .lph .dt{text-align:center;font-size:15px;opacity:.85;margin-top:10px}
+  .lph .card{margin:34px 16px 0;border-radius:24px;background:#fff;color:#1A1A1A;padding:16px 18px;display:flex;flex-direction:column;gap:9px;cursor:pointer}
+  .lph .card .h{display:flex;align-items:center;gap:8px;font-size:13px;color:#5A5F6B}
+  .lph .card .h .ap{width:22px;height:22px;border-radius:7px;background:#EEEFF2;display:grid;place-items:center}
+  .lph .card .h .ap svg{width:14px;height:14px;color:#6541D6}
+  .lph .card .h b{color:#1A1A1A;font-weight:600}
+  .lph .card .h .grow{flex:1}
+  .lph .card .t{font-size:17px;font-weight:600}
+  .lph .card .s{font-size:14px;line-height:1.45;color:#1A1A1A}
+  .lph .card .p{height:6px;border-radius:3px;background:#E3E6EB;overflow:hidden}
+  .lph .card .p i{display:block;height:100%;width:var(--p,0%);background:#6541D6;transition:width .3s}
+  .lph .card .m{display:flex;justify-content:space-between;font-size:12px;color:#8A8F99}
+  .lph .card .d{display:flex;align-items:flex-start;gap:8px;padding:8px 10px;border-radius:12px;background:#FDF1DF;color:#7A4A00;font-size:13px;line-height:1.4}
+  .lph .card .d.ok{background:#E7F5EA;color:#1F7A34}
+  .lph .card .d svg{width:16px;height:16px;flex:none;margin-top:1px}
+  .lph .card .d small{display:block;font-size:12px;color:#8A8F99}
+  .lph .card .o{display:flex;align-items:center;justify-content:center;gap:6px;height:36px;border-radius:18px;background:#0A59F7;color:#fff;font-size:14px;font-weight:600}
+  .lph .card .o.dim{background:#E3E6EB;color:#5A5F6B}
+  .lph .gb{position:absolute;left:50%;bottom:9px;width:120px;height:5px;margin-left:-60px;border-radius:3px;background:#fff;opacity:.85}
+  /* IDE 里：长任务入口 */
+  .sugg{display:flex;flex-wrap:wrap;gap:6px}
+  .sugg .ai-btn svg{color:var(--ui-icon)}
 </style>
 </head>
 <body>
@@ -88,10 +190,10 @@
               <summary>占用明细</summary>
               <div class="fb">
                 <div class="dm-legend" id="ctx-legend">
-                  <span><i></i>对话 <b data-k="a">22%</b></span>
-                  <span><i style="background:var(--Purple6,#8150BE)"></i>读的文件 <b data-k="b">31%</b></span>
-                  <span><i style="background:var(--ui-warning)"></i>工具输出 <b data-k="c">15%</b></span>
-                  <span><i style="background:var(--ui-fg-info)"></i>系统提示 <b data-k="d">0%</b></span>
+                  <span><i class="a"></i>对话 <b data-k="a">22%</b></span>
+                  <span><i class="b"></i>读的文件 <b data-k="b">31%</b></span>
+                  <span><i class="c"></i>工具输出 <b data-k="c">15%</b></span>
+                  <span><i class="d"></i>系统提示 <b data-k="d">0%</b></span>
                 </div>
                 <div class="dm-small dm-muted" id="ctx-note">到 80% 会自动摘要；现在也可以手动压</div>
               </div>
@@ -103,70 +205,65 @@
 
               <div class="umsg"><span class="time">10:42</span><div class="bubble">把列表卡顿修一下，顺便看看还有没有别的性能问题</div></div>
 
-              <!-- 回复侧：结论 + 改动清单在前，过程收起 -->
-              <div class="amsg" id="ans">
-                <div class="step"><svg class="i"><use href="#i-collapseAll"/></svg><span id="ans-step">结论先行 · 过程已收起，展开可看全部推理</span></div>
-                <div class="md">
-                  <p class="concl"><b>卡顿来自封面同步解码，改成异步后掉帧 9 → 0。</b></p>
-                  <div class="cl-h">改动清单</div>
-                  <div class="dm-card chg"><div class="dm-list" id="chg-list">
-                    <div class="dm-item"><svg class="i"><use href="#i-ets"/></svg><span class="grow">ListPage.ets</span><span class="cnt"><span class="add">+6</span> <span class="del">−1</span></span></div>
-                    <div class="dm-item"><svg class="i"><use href="#i-ets"/></svg><span class="grow">ItemCard.ets</span><span class="cnt"><span class="add">+3</span> <span class="del">−0</span></span></div>
-                    <div class="dm-item"><svg class="i"><use href="#i-ets"/></svg><span class="grow">CoverPlaceholder.ets</span><span class="cnt"><span class="add">+18</span> <span class="del">−0</span></span></div>
-                  </div></div>
-                  <details class="dm-fold" id="fold">
-                    <summary>过程 · 12 步 · 读了 6 个文件</summary>
-                    <div class="fb">
-                      <div class="pl"><i>1</i><span>读 <code>ListPage.ets</code>，定位 List / ForEach 的渲染路径</span></div>
-                      <div class="pl"><i>2</i><span>读 <code>ItemCard.ets</code>，确认 cover 是同步传入的 PixelMap</span></div>
-                      <div class="pl"><i>3</i><span>读 <code>ItemSource.ets</code>，<code>rawCover()</code> 返回原始字节，不缓存</span></div>
-                      <div class="pl"><i>4</i><span>用 hiperf 抓 3 秒滑动，主线程 62% 耗在 <code>createPixelMapSync</code></span></div>
-                      <div class="pl"><i>5</i><span>排除 <code>cachedCount(0)</code>：改 4 后掉帧 9 → 7，不是主因</span></div>
-                      <div class="pl"><i>6</i><span>排除布局：<code>layoutWeight</code> 每帧 &lt; 1 ms</span></div>
-                      <div class="pl"><i>7</i><span>方案：<code>loadCover</code> 改 async，返回 <code>Promise&lt;PixelMap&gt;</code></span></div>
-                      <div class="pl"><i>8</i><span><code>ItemCard</code> 先渲染占位，拿到 PixelMap 再替换</span></div>
-                      <div class="pl"><i>9</i><span>新建 <code>CoverPlaceholder.ets</code>：灰底 + 固定尺寸，避免跳动</span></div>
-                      <div class="pl"><i>10</i><span>复测：Mate 70 Pro 滑动 3 秒，掉帧 0，主线程解码 0%</span></div>
-                      <div class="pl"><i>11</i><span>顺带扫 <code>oh-package.json5</code>，发现 <code>@ohos/imageknife</code> 还是 2.x</span></div>
-                      <div class="pl"><i>12</i><span>查 <code>LegacyCache.ets</code> 引用（3 处），可删，等确认</span></div>
-                    </div>
-                  </details>
+              <!-- 回复：结论一句 + 改动清单在前，过程收起 -->
+              <div class="ai-answer" id="ans">
+                <div class="ai-answer__meta"><svg class="i ai-ico"><use href="#ai-mark"/></svg><span><span class="agt">Agent·调优</span> · <span id="ans-step">过程已收起</span></span></div>
+                <p class="ai-answer__lead">卡顿来自封面同步解码，改成异步后掉帧 9 → 0。</p>
+                <div class="cl-h">改动清单</div>
+                <div class="chg" id="chg-list">
+                  <div class="dm-item"><svg class="i"><use href="#i-ets"/></svg><span class="grow">ListPage.ets</span><span class="cnt"><span class="add">+6</span> <span class="del">−1</span></span></div>
+                  <div class="dm-item"><svg class="i"><use href="#i-ets"/></svg><span class="grow">ItemCard.ets</span><span class="cnt"><span class="add">+3</span> <span class="del">−0</span></span></div>
+                  <div class="dm-item"><svg class="i"><use href="#i-ets"/></svg><span class="grow">CoverPlaceholder.ets</span><span class="cnt"><span class="add">+18</span> <span class="del">−0</span></span></div>
                 </div>
+                <details id="fold">
+                  <summary>过程 · 12 步 · 读了 6 个文件</summary>
+                  <div>
+                    <div class="pl"><i>1</i><span>读 <code>ListPage.ets</code>，定位 List / ForEach 的渲染路径</span></div>
+                    <div class="pl"><i>2</i><span>读 <code>ItemCard.ets</code>，确认 cover 是同步传入的 PixelMap</span></div>
+                    <div class="pl"><i>3</i><span>读 <code>ItemSource.ets</code>，<code>rawCover()</code> 返回原始字节，不缓存</span></div>
+                    <div class="pl"><i>4</i><span>用 hiperf 抓 3 秒滑动，主线程 62% 耗在 <code>createPixelMapSync</code></span></div>
+                    <div class="pl"><i>5</i><span>排除 <code>cachedCount(0)</code>：改 4 后掉帧 9 → 7，不是主因</span></div>
+                    <div class="pl"><i>6</i><span>排除布局：<code>layoutWeight</code> 每帧 &lt; 1 ms</span></div>
+                    <div class="pl"><i>7</i><span>方案：<code>loadCover</code> 改 async，返回 <code>Promise&lt;PixelMap&gt;</code></span></div>
+                    <div class="pl"><i>8</i><span><code>ItemCard</code> 先渲染占位，拿到 PixelMap 再替换</span></div>
+                    <div class="pl"><i>9</i><span>新建 <code>CoverPlaceholder.ets</code>：灰底 + 固定尺寸，避免跳动</span></div>
+                    <div class="pl"><i>10</i><span>复测：Mate 70 Pro 滑动 3 秒，掉帧 0，主线程解码 0%</span></div>
+                    <div class="pl"><i>11</i><span>顺带扫 <code>oh-package.json5</code>，发现 <code>@ohos/imageknife</code> 还是 2.x</span></div>
+                    <div class="pl"><i>12</i><span>查 <code>LegacyCache.ets</code> 引用（3 处），可删，等确认</span></div>
+                  </div>
+                </details>
               </div>
 
-              <!-- 警告：永远完整显示 -->
+              <!-- 警告：永远完整显示（状态色，不是在等你） -->
               <div class="dm-callout warn" id="co-warn">
                 <svg class="lead"><use href="#i-warn"/></svg>
                 <div class="cb">
-                  <div class="cb-t"><span id="warn-t">依赖有已知内存泄漏</span><span class="dm-pill muted"><svg><use href="#i-pin"/></svg>永不折叠</span></div>
-                  <div id="warn-b">顺手发现 <code>oh-package.json5</code> 里 <code>@ohos/imageknife</code> 还是 2.x，有已知内存泄漏。这条不会被折叠。</div>
+                  <div class="cb-t"><span id="warn-t">依赖有已知内存泄漏</span><span class="pin">永不折叠</span></div>
+                  <div id="warn-b"><code>oh-package.json5</code> 里 <code>@ohos/imageknife</code> 还是 2.x，有已知内存泄漏。</div>
                 </div>
                 <button class="btn sm" id="btn-upg">升到 3.1</button>
               </div>
 
-              <!-- 危险操作：永远完整显示，等确认 -->
-              <div class="dm-callout err" id="co-del">
-                <svg class="lead"><use href="#i-hand"/></svg>
-                <div class="cb">
-                  <div class="cb-t"><span id="del-t">危险操作，等你确认</span><span class="dm-pill muted"><svg><use href="#i-pin"/></svg>永不折叠</span></div>
-                  <div id="del-b">接下来要删除 <code>entry/src/main/ets/model/LegacyCache.ets</code>（3 处引用）。删了就不在回退清单里，所以先问你。</div>
-                  <div class="acts" id="del-acts"><button class="btn sm" id="btn-cancel">取消</button><button class="btn sm primary" id="btn-del">确认删除</button></div>
-                </div>
+              <!-- 危险操作：永远完整显示，在等你（琥珀审批卡） -->
+              <div class="ai-approve" id="co-del">
+                <div class="ai-approve__h"><span class="ai-wait-dot"></span><span id="del-t">在等你 · 危险操作</span><span class="pin">永不折叠</span></div>
+                <div class="ai-approve__cmd">rm entry/src/main/ets/model/LegacyCache.ets</div>
+                <p class="ai-approve__why" id="del-b"><b>Agent·调优</b> 要删掉它（3 处引用会一起改）。删了就不在回退清单里，所以先问你。</p>
+                <div class="ai-approve__act" id="del-acts"><button class="btn sm" id="btn-cancel">取消</button><button class="btn sm primary" id="btn-del">确认删除</button></div>
               </div>
+
+              <!-- 鸿蒙电脑版：长任务交给另一个 Agent，结束时结论上实况窗 -->
+              <div class="sugg" id="sugg"><button class="ai-btn ai-btn--fill" id="btn-long" type="button"><svg><use href="#i-clock"/></svg>交给 Agent·回归：3 台设备全量回归（约 6 分钟）</button></div>
 
             </div>
           </div>
 
-          <div class="ai-input">
-            <div class="top"><button class="ctx"><svg class="i" style="width:12px;height:12px"><use href="#i-at"/></svg>Add Context</button><span class="ctx"><svg class="i" style="width:12px;height:12px"><use href="#i-ets"/></svg>ListPage.ets</span><span class="grow"></span><button class="toggle on" id="tog-concl" title="回复先说结论，过程收起来；报错与警告不受影响"><svg class="i" style="width:12px;height:12px"><use href="#i-collapseAll"/></svg>结论先行</button></div>
-            <textarea id="ai-text" rows="2" placeholder="Type @ to add context. Type / to switch between functions." aria-label="Message"></textarea>
-            <div class="bot"><button class="mode" id="mode-btn" data-pop="mode" aria-expanded="false"><svg class="i" style="width:12px;height:12px"><use href="#i-tw-agent"/></svg><span id="mode-label">HarmonyOS Act</span><svg class="i" style="width:12px;height:12px"><use href="#i-chevD"/></svg>
-                <div class="popup" hidden style="top:auto;bottom:28px;left:0"><div class="mi"><svg class="i"><use href="#i-chat"/></svg>HarmonyOS Ask<span class="sc">Q&amp;A · explain · snippets</span></div><div class="mi"><svg class="i"><use href="#i-tw-agent"/></svg>HarmonyOS Act<span class="sc">multi-file edits · build · review</span></div></div></button>
-              <button class="mode" id="model-btn" data-pop="model" aria-expanded="false"><span id="model-label">deepseek-v4-pro</span><svg class="i" style="width:12px;height:12px"><use href="#i-chevD"/></svg>
-                <div class="popup" hidden style="top:auto;bottom:28px;left:0"><div class="mi">deepseek-v4-flash<span class="sc">fast</span></div><div class="mi">deepseek-v4-pro<span class="sc">reasoning</span></div><div class="mi">pangu-5.5</div></div></button>
-              <span class="grow"></span><span class="ring" id="counter" title="0 / 30000"></span><button class="send" id="send" title="Send|Enter"><svg><use href="#i-send-o"/></svg></button></div>
+          <div class="ai-field in8">
+            <div class="ai-field__ctx"><span class="ai-chip"><svg><use href="#i-ets"/></svg><span>ListPage.ets</span></span><span class="grow"></span><button type="button" class="ai-toggle" aria-pressed="true" id="tog-live" title="长任务结束时，把结论一句话推到鸿蒙电脑和手机的实况窗；危险操作不推"><svg class="i"><use href="#i-bell-new"/></svg>实况窗</button><button type="button" class="ai-toggle" aria-pressed="true" id="tog-concl" title="回复先说结论，过程收起来；报错与警告不受影响"><svg class="i"><use href="#i-collapseAll"/></svg>结论先行</button></div>
+            <textarea class="ai-field__ta" id="ai-text" rows="2" placeholder="说一句要做什么…" aria-label="Message"></textarea>
+            <div class="ai-field__bar"><span class="ai-dd">Agent</span><span class="ai-field__model"><svg><use href="#ai-cloud"/></svg>云端 · deepseek-v4-pro</span><span class="grow"></span><button class="ai-field__send" id="send" type="button" title="发送|Enter"><svg><use href="#ai-send"/></svg></button></div>
           </div>
-          <div class="ai-foot">The content is generated by AI and may not be entirely accurate or complete. It is for reference only | <a href="#">Terms of Use</a>&nbsp;&nbsp;<a href="#">Privacy Policy</a></div>
+          <div class="ai-foot">The content is generated by AI and may not be entirely accurate or complete.</div>
         </div></div>
       </div>
     </div>
@@ -189,6 +286,15 @@
       </div>
     </div>
   </div>
+
+  <!-- 鸿蒙电脑右上角 + 旁边的 Mate 70 Pro：实况窗 -->
+  <div class="desk" id="desk" aria-label="实况窗">
+    <div class="pcbar"><button class="lcap" id="lv-cap" type="button"><span class="lg"><svg><use href="#ai-mark"/></svg></span><span id="lv-cap-t">回归 0/42</span><span class="mb"><i id="lv-cap-p"></i></span></button><svg class="i"><use href="#i-wifi"/></svg><span>86%</span><span class="tm" id="pc-time">10:52</span></div>
+    <div class="lv" id="lv-pc" role="button" tabindex="0" aria-label="实况窗：点开回到 DevEco Studio"></div>
+    <div class="grow-v"></div>
+    <div class="lph" id="lph"><div class="scr" id="lph-scr"><div class="in" id="lph-in"></div></div></div>
+    <div class="dev-cap"><svg class="i"><use href="#i-phone"/></svg>Mate 70 Pro · 1260 × 2844 · 锁屏实况窗</div>
+  </div>
 </div>
 
 <script>
@@ -199,17 +305,18 @@
   document.getElementById('code').innerHTML=DemoFrame.code('ListPage.ets',{cur:28,hl:[28]});
   DemoFrame.init({device:'HUAWEI Mate 70 Pro',deviceIcon:'#i-phone',pos:'28:12',
     stripeLeft:[{left:'agent',icon:'#i-genie',title:'DevEco Code'},{left:'project',icon:'#i-tw-project',title:'Project|Alt+1'},{left:'structure',icon:'#i-tw-structure',title:'Structure|Alt+7'},{more:1},{gap:1},{bottom:'build',icon:'#i-tw-build',title:'Build'},{bottom:'log',icon:'#i-tw-device',title:'Log'},{bottom:'services',icon:'#i-tw-todo',title:'Services|Alt+8'},{bottom:'problems',icon:'#i-tw-problems',title:'Problems|Alt+6'},{bottom:'run',icon:'#i-tw-services',title:'Run|Alt+4'},{bottom:'terminal',icon:'#i-tw-terminal',title:'Terminal|Alt+F12'},{bottom:'debug',icon:'#i-info',title:'Debug|Alt+5'},{bottom:'vcs',icon:'#i-vcs',title:'Version Control|Alt+9'}],
-    stripeRight:[{right:'notifications',icon:'#i-tw-notifications',title:'Notifications',dot:1},{right:'project',icon:'#i-tw-project',title:'Project|Alt+1'},{right:'docs',icon:'#i-hdoc',title:'HarmonyOS Docs'},{right:'inspector',icon:'#i-pen',title:'Code Review'},{right:'web',icon:'#i-puzzle',title:'Extensions'},{right:'previewer',icon:'#i-tw-preview',title:'Previewer'},{more:1},{right:'devices',icon:'#i-phone',title:'Device Manager'}],
-    onReady:function(){
-    $('#status-slot').innerHTML='<span class="dm-capsule" id="cap-ctx" title="上下文占用 · 谁占了多少见 DevEco Code 顶部"><svg class="i" style="width:12px;height:12px"><use href="#i-gauge"/></svg>上下文 <b id="cap-pct">68%</b><span class="bar"><i id="cap-bar" style="--v:68%"></i></span></span>';
-  }});
+    stripeRight:[{right:'notifications',icon:'#i-tw-notifications',title:'Notifications',dot:1},{right:'project',icon:'#i-tw-project',title:'Project|Alt+1'},{right:'docs',icon:'#i-hdoc',title:'HarmonyOS Docs'},{right:'inspector',icon:'#i-pen',title:'Code Review'},{right:'web',icon:'#i-puzzle',title:'Extensions'},{right:'previewer',icon:'#i-tw-preview',title:'Previewer'},{more:1},{right:'devices',icon:'#i-phone',title:'Device Manager'}]});
+
+  var M='<svg class="i ai-ico"><use href="#ai-mark"/></svg>';
+  var OK='<svg class="i ai-ico ok"><use href="#i-checkS"/></svg>';
+  function ic2(id){return '<svg class="i"><use href="#'+id+'"/></svg>'}
+  function tr(st,what,end,id){return '<div class="ai-toolrow"'+(id?' data-s="'+id+'"':'')+'>'+(st==='done'?OK:st==='run'?'<span class="ai-ring"></span>':'<span class="todo"></span>')+'<span class="what">'+what+'</span><span class="end">'+(end||'')+'</span></div>';}
 
   /* 上下文占比：手动压缩 → 对话段大幅缩，读过的文件与工具输出也跟着瘦 */
   function setCtx(v){
     var total=v.a+v.b+v.c+v.d;
     ['a','b','c','d'].forEach(function(k){$('#ctx-bar i.'+k).style.setProperty('--v',v[k]+'%');$('#ctx-legend b[data-k="'+k+'"]').textContent=v[k]+'%'});
     $('#ctx-title').textContent=total+'%';
-    var p=$('#cap-pct'),b=$('#cap-bar');if(p)p.textContent=total+'%';if(b)b.style.setProperty('--v',total+'%');
   }
   $('#btn-compress').addEventListener('click',function(){
     var btn=this;if(btn.disabled)return;btn.disabled=true;btn.innerHTML='<span class="spin" style="width:10px;height:10px"></span>';
@@ -228,10 +335,11 @@
   });
 
   /* 结论先行开关：只影响过程折不折，警告与危险操作不受影响 */
+  function tog(b){var on=b.getAttribute('aria-pressed')!=='true';b.setAttribute('aria-pressed',String(on));return on;}
   $('#tog-concl').addEventListener('click',function(){
-    var on=this.classList.toggle('on');
-    $('#fold').open=!on;
-    $('#ans-step').textContent=on?'结论先行 · 过程已收起，展开可看全部推理':'完整形态 · 过程全部展开';
+    var on=tog(this);
+    $$('#ai-thread .ai-answer details').forEach(function(d){d.open=!on;});
+    $('#ans-step').textContent=on?'过程已收起':'完整形态 · 过程全部展开';
     $('#ai-scroll').scrollTop=0;
   });
 
@@ -245,23 +353,177 @@
     $('#chg-list').insertAdjacentHTML('beforeend','<div class="dm-item"><svg class="i"><use href="#i-json"/></svg><span class="grow">oh-package.json5</span><span class="cnt"><span class="add">+1</span> <span class="del">−1</span></span></div>');
   });
 
-  /* 危险操作：确认 / 取消 */
+  /* ========== 统一的「在等你」：多个 Agent 的危险操作都在 IDE 里等；胶囊、实况窗只推最挡路的一件 ========== */
+  var LV={st:'idle',n:0,total:42,t0:52,opened:false,dangerDone:null},DEL=null;
+  function queue(){
+    var q=[];
+    if(LV.st==='done'&&LV.dangerDone==null)q.push({id:'co-long',who:'Agent·回归',title:'卸载重装 Mate 70 Pro',cap:'卸载重装 Mate 70 Pro',block:3,how:'挡住回归收尾'});
+    if(DEL==null)q.push({id:'co-del',who:'Agent·调优',title:'删 LegacyCache.ets',cap:'删 LegacyCache.ets',block:2,how:'挡住它收尾'});
+    return q.sort(function(a,b){return b.block-a.block;});
+  }
+  function goWait(id){var el=$('#'+id);if(!el)return;scrollToEl(el);el.classList.remove('flash');void el.offsetWidth;el.classList.add('flash');}
+  function renderAgent(){
+    var q=queue(),top=q[0];
+    if(top){DemoFrame.agent('waiting','在等你 · '+top.cap+' <span class="act">去看</span>',{queue:q.length-1,onClick:function(){goWait(top.id);}});return;}
+    if(LV.st==='run'){DemoFrame.agent('verifying','<span class="agt">Agent·回归</span> 3 台设备 · UI 用例 '+LV.n+'/42');return;}
+    DemoFrame.agent('done',LV.st==='done'?'回归 42/42 · 列表掉帧 9 → 0':'Agent·调优 · 列表卡顿已修');
+  }
+  renderAgent();
+
+  /* 危险操作：确认 / 取消（只在 IDE 里做） */
+  function resolveCard(id,ok,title,body){
+    var co=$('#'+id);co.classList.add('done');
+    $('.ai-approve__h',co).innerHTML=(ok?ic2('i-checkS'):ic2('i-undo'))+'<span>'+title+'</span>';
+    var c=$('.ai-approve__cmd',co);if(c)c.remove();
+    $('.ai-approve__why',co).innerHTML=body;
+    var a=$('.ai-approve__act',co);if(a)a.remove();
+  }
   $('#btn-del').addEventListener('click',function(){
-    var co=$('#co-del');co.classList.remove('err');co.classList.add('ok');
-    $('use',$('svg.lead',co)).setAttribute('href','#i-check');
-    $('#del-t').textContent='已删除 LegacyCache.ets';
-    $('#del-b').innerHTML='已删除 <code>LegacyCache.ets</code>，3 处引用已改：<code>ItemSource.ets</code> <code>ListPage.ets</code> <code>EntryAbility.ets</code>。';
-    $('#del-acts').remove();
+    DEL='ok';resolveCard('co-del',true,'已删除 LegacyCache.ets','3 处引用已改：<code>ItemSource.ets</code> <code>ListPage.ets</code> <code>EntryAbility.ets</code>。');
     $('#chg-list').insertAdjacentHTML('beforeend','<div class="dm-item"><svg class="i"><use href="#i-ets"/></svg><span class="grow">LegacyCache.ets</span><span class="cnt"><span class="del">−41</span></span></div>');
+    renderAgent();refreshLive();
   });
   $('#btn-cancel').addEventListener('click',function(){
-    var co=$('#co-del');co.classList.remove('err');
-    $('use',$('svg.lead',co)).setAttribute('href','#i-undo');
-    $('#del-t').textContent='已取消';
-    $('#del-b').innerHTML='<code>LegacyCache.ets</code> 保留，3 处引用不动。';
-    $('#del-acts').remove();
+    DEL='no';resolveCard('co-del',false,'已取消','<code>LegacyCache.ets</code> 保留，3 处引用不动。');
+    renderAgent();refreshLive();
   });
-DemoGuide.init([{"target": "#btn-compress", "kind": "click", "pos": "top", "label": "点这里压缩历史"}, {"target": "#ctx-bar", "kind": "change", "pos": "top", "label": "占比条跟着变"}]);
+
+  /* =====================================================================
+     鸿蒙电脑版：长任务结论上实况窗
+     交给 Agent·回归 → 本机状态栏胶囊 + Mate 70 Pro 锁屏实况窗显示进度 →
+     结束推「一句话结论」+ 队首那一件在等你 → 点开回到 IDE；危险操作不走实况窗，只在 IDE 确认
+     ===================================================================== */
+  var SUMMARY='41/42 通过，列表掉帧 9 → 0；1 条失败是 Mate 70 Pro 上的旧数据，要卸载重装。';
+  function clock(){var m=LV.t0+Math.floor(LV.n/42*6);return '10:'+(m<10?'0':'')+m}
+  function el2(){var k=Math.round(LV.n/LV.total*372);var mm=Math.floor(k/60),ss=k%60;return mm+':'+(ss<10?'0':'')+ss}
+  function renderLive(){
+    var pc=$('#lv-pc'),pct=Math.round(LV.n/LV.total*100)+'%',run=LV.st==='run';
+    var q=queue(),top=q[0],more=q.length>1?'还有 '+(q.length-1)+' 件在 IDE 队列里':'';
+    $('#pc-time').textContent=clock();
+    /* 胶囊：进行中显示进度；有在等你的就换成琥珀，只写队首 */
+    var cap=$('#lv-cap');cap.classList.toggle('wait',!run&&!!top);
+    $('#lv-cap-t').textContent=run?'回归 '+LV.n+'/42':(top?'等你 '+q.length:(LV.dangerDone==='ok'?'42/42 通过':'回归完成'));
+    $('#lv-cap-p').style.setProperty('width',run?pct:'100%');
+    var head=run?'':(LV.dangerDone==='ok'?'42/42 通过，列表掉帧 9 → 0。':SUMMARY);
+    var wait=top?'<div class="lv-d"><span class="ai-wait-dot"></span><span>在等你 · '+top.who+' '+top.title+' · 只能回 IDE 确认<span class="more">'+more+'</span></span></div>'
+      :'<div class="lv-d ok">'+ic2('i-checkS')+'<span>'+(LV.dangerDone==='ok'?'已在 IDE 确认：卸载重装，重跑通过':'已在 IDE 取消：Mate 70 Pro 保持原样')+'</span></div>';
+    pc.innerHTML='<div class="lv-h"><span class="ap"><svg><use href="#ai-mark"/></svg></span><b>DevEco Code</b>· Agent·回归<span class="grow"></span>'+(run?'进行中':'刚刚')+'</div>'
+      +(run
+        ?'<div class="lv-t">UI 用例 '+LV.n+' / 42</div><div class="lv-p" style="--p:'+pct+'"><i></i></div><div class="lv-m"><span>Mate 70 Pro · MatePad Pro · 本机</span><span>已用 '+el2()+'</span></div>'
+        :'<div class="lv-t">'+head+'</div>'+wait
+          +'<div class="lv-f"><span class="btn sm">'+(LV.opened?'已在 DevEco Studio 打开':'打开 DevEco Studio 看完整回答')+'</span></div>');
+    /* 手机锁屏：同一件，只推队首 */
+    var card=run
+      ?'<div class="t">全量回归 · '+LV.n+' / 42</div><div class="p" style="--p:'+pct+'"><i></i></div><div class="m"><span>3 台设备</span><span>已用 '+el2()+'</span></div>'
+      :'<div class="t">'+(LV.dangerDone==='ok'?'全量回归 · 已处理完':'全量回归 · 完成')+'</div><div class="s">'+head+'</div>'
+        +(top?'<div class="d"><svg viewBox="0 0 16 16"><use href="#i-lock"/></svg><span>'+top.who+' 等你：'+top.title+'，需在电脑上确认'+(more?'<small>'+more+'</small>':'')+'</span></div>':'<div class="d ok"><svg viewBox="0 0 16 16"><use href="#i-checkS"/></svg><span>已在电脑上处理</span></div>')
+        +'<div class="o'+(LV.opened?' dim':'')+'">'+(LV.opened?'已在电脑上打开':'在电脑上查看完整回答')+'</div>';
+    $('#lph-in').innerHTML='<div class="sb"><span>中国移动</span><span class="hole"></span><span class="ri"><span class="sig"><i style="height:5px"></i><i style="height:8px"></i><i style="height:11px"></i><i style="height:13px"></i></span><span class="bat"><i></i></span></span></div>'
+      +'<div class="lk"><svg viewBox="0 0 16 16"><rect x="3.5" y="7.5" width="9" height="6" rx="1" stroke="currentColor" fill="none"/><path d="M5.5 7.5V5.5a2.5 2.5 0 0 1 5 0v2" stroke="currentColor" fill="none"/></svg></div>'
+      +'<div class="clk">'+clock()+'</div><div class="dt">9月24日 星期四</div>'
+      +'<div class="card" id="lv-ph" role="button" tabindex="0"><div class="h"><span class="ap"><svg><use href="#ai-mark"/></svg></span><b>DevEco Code</b><span class="grow"></span>'+(run?'进行中':'刚刚')+'</div>'+card+'</div>'
+      +'<i class="gb"></i>';
+  }
+  function fitPhone(){
+    var d=$('#desk'),w=Math.min(292,d.clientWidth-80),h=Math.round(w/(1260/2844));
+    var avail=d.clientHeight-($('#lv-pc').offsetHeight||0)-150;if(h>avail){h=Math.max(360,avail);w=Math.round(h*1260/2844)}
+    var sw=w-12,sh=h-12;$('#lph-scr').style.width=sw+'px';$('#lph-scr').style.height=sh+'px';
+    $('#lph-in').style.transform='scale('+(sw/360)+')';$('#lph-in').style.height=Math.round(sh/(sw/360))+'px';
+  }
+  function liveOn(){return $('#tog-live').getAttribute('aria-pressed')==='true';}
+  function showDesk(){if(!liveOn())return;$('#ide').classList.add('desk-on');renderLive();requestAnimationFrame(fitPhone)}
+  function refreshLive(){if($('#ide').classList.contains('desk-on')&&LV.st!=='idle'){renderLive();requestAnimationFrame(fitPhone)}}
+
+  function scrollToEl(el){var sc=$('#ai-scroll');sc.scrollTop=Math.max(0,el.offsetTop-12)}
+  function longAnswerHTML(){
+    return '<div class="ai-answer__meta">'+M+'<span><span class="agt">Agent·回归</span> · 过程已收起 · 实况窗只推了第一句</span></div>'
+      +'<p class="ai-answer__lead">'+SUMMARY+'</p>'
+      +'<div class="cl-h">改动清单</div>'
+      +'<div class="chg">'
+      +'<div class="dm-item"><svg class="i"><use href="#i-json"/></svg><span class="grow">perf/baseline.json5</span><span class="cnt"><span class="add">+12</span> <span class="del">−12</span></span></div>'
+      +'<div class="dm-item"><svg class="i"><use href="#i-ets"/></svg><span class="grow">ohosTest/ListPage.test.ets</span><span class="cnt"><span class="add">+8</span> <span class="del">−0</span></span></div>'
+      +'</div>'
+      +'<details'+($('#tog-concl').getAttribute('aria-pressed')==='true'?'':' open')+'><summary>过程 · 9 步 · 3 台设备</summary><div>'
+      +'<div class="pl"><i>1</i><span><code>hvigorw assembleHap --mode release</code>，38 s</span></div>'
+      +'<div class="pl"><i>2</i><span><code>hdc install</code> 到 Mate 70 Pro、MatePad Pro 13.2、本机</span></div>'
+      +'<div class="pl"><i>3</i><span>跑 <code>ohosTest</code> 42 条 UI 用例，三台并行</span></div>'
+      +'<div class="pl"><i>4</i><span>MatePad Pro、本机：42 / 42 通过</span></div>'
+      +'<div class="pl"><i>5</i><span>Mate 70 Pro：<code>ListPage.test.ets:41</code> 失败，列表为空</span></div>'
+      +'<div class="pl"><i>6</i><span>HiLog 显示 <code>RdbStore</code> 版本 3 → 读到旧表结构，是上次手动装的旧包留下的</span></div>'
+      +'<div class="pl"><i>7</i><span>hiperf 滑动 3 秒：三台掉帧均为 0，Mate 70 Pro 主线程解码 0%</span></div>'
+      +'<div class="pl"><i>8</i><span>更新 <code>perf/baseline.json5</code>：冷启动 612 → 540 ms</span></div>'
+      +'<div class="pl"><i>9</i><span>卸载重装会清数据，没做，等你确认</span></div>'
+      +'</div></details>';
+  }
+  function longDangerHTML(){
+    return '<div class="ai-approve__h"><span class="ai-wait-dot"></span><span>在等你 · 危险操作</span><span class="pin">永不折叠 · 不走实况窗</span></div>'
+      +'<div class="ai-approve__cmd">hdc uninstall com.example.list &amp;&amp; hdc install entry-default-signed.hap</div>'
+      +'<p class="ai-approve__why"><b>Agent·回归</b> 要在 Mate 70 Pro 上卸载重装，会清掉这台手机上的应用数据（登录态、本地收藏 126 条）。只在这里确认，实况窗里点不了。</p>'
+      +'<div class="ai-approve__act"><button class="btn sm" id="ld-cancel">取消</button><button class="btn sm primary" id="ld-ok">确认卸载重装</button></div>';
+  }
+  $('#btn-long').addEventListener('click',function(){
+    if(LV.st!=='idle')return;
+    LV.st='run';LV.n=0;
+    $('#sugg').hidden=true;
+    var th=$('#ai-thread'),live=liveOn();
+    th.insertAdjacentHTML('beforeend','<div class="umsg"><span class="time">10:52</span><div class="bubble">跑一遍全量回归：Mate 70 Pro、MatePad Pro、本机三台，跑完告诉我</div></div>'
+      +'<div class="ai-answer" id="long"><div class="ai-answer__meta">'+M+'<span><span class="agt">Agent·回归</span> 接手 · 长任务 · 预计 6 分钟</span></div>'
+      +'<p class="ai-answer__body">在后台跑，你可以先去忙。'+(live?'跑完把结论推到本机和 Mate 70 Pro 的实况窗；':'')+'要你拍板的不推，回这里确认。</p>'
+      +'<div id="run-steps">'+tr('run','构建 <code>hvigorw assembleHap</code>','',0)+tr('todo','安装到 3 台设备','',1)+tr('todo','跑 42 条 UI 用例','<span id="rs-n">0 / 42</span>',2)+tr('todo','对比性能基线','',3)+'</div>'
+      +'</div>');
+    scrollToEl($('#long').previousElementSibling);
+    showDesk();renderAgent();
+    function step(i,st){var r=$('#run-steps [data-s="'+i+'"]');if(!r)return;var n=$('.end',r).innerHTML;r.outerHTML=tr(st,$('.what',r).innerHTML,n,i);}
+    var k=0;
+    var timer=setInterval(function(){
+      k++;
+      if(k===3){step(0,'done');step(1,'run');}if(k===6){step(1,'done');step(2,'run');}
+      if(k>6){LV.n=Math.min(42,LV.n+3);var n=$('#rs-n');if(n)n.textContent=LV.n+' / 42';}
+      if(LV.n>=42){step(2,'done');step(3,'run');clearInterval(timer);setTimeout(function(){step(3,'done');finish()},500)}
+      if(LV.st==='run'){renderAgent();if($('#ide').classList.contains('desk-on'))renderLive();}
+    },160);
+  });
+  function finish(){
+    LV.st='done';
+    var a=$('#long');a.innerHTML=longAnswerHTML();
+    a.insertAdjacentHTML('afterend','<div class="ai-approve" id="co-long">'+longDangerHTML()+'</div>');
+    $('#ld-ok').addEventListener('click',function(){longDanger('ok')});
+    $('#ld-cancel').addEventListener('click',function(){longDanger('no')});
+    renderAgent();
+    if($('#ide').classList.contains('desk-on')){renderLive();requestAnimationFrame(fitPhone)}
+    else scrollToEl(a);
+  }
+  function longDanger(how){
+    LV.dangerDone=how;
+    resolveCard('co-long',how==='ok',how==='ok'?'已卸载重装 Mate 70 Pro':'已取消',how==='ok'?'<code>hdc uninstall</code> 后重装，重跑 <code>ListPage.test.ets:41</code>：通过。现在 42 / 42。':'Mate 70 Pro 保持原样，失败用例留着，下次回归还会报。');
+    renderAgent();refreshLive();
+  }
+  /* 在实况窗上点一下：回到 IDE，直接落在队首那件在等你的上 */
+  function openInIde(){
+    if(LV.st!=='done')return;
+    LV.opened=true;renderLive();requestAnimationFrame(fitPhone);
+    var top=queue()[0];
+    if(top)goWait(top.id);
+    else{var a=$('#long');scrollToEl(a);a.classList.remove('ai-touched');void a.offsetWidth;a.classList.add('ai-touched');}
+  }
+  $('#desk').addEventListener('click',function(e){if(e.target.closest('#lv-pc')||e.target.closest('#lv-ph')||e.target.closest('#lv-cap'))openInIde()});
+  $('#tog-live').addEventListener('click',function(){
+    var on=tog(this);
+    if(!on)$('#ide').classList.remove('desk-on');else if(LV.st!=='idle')showDesk();
+  });
+  window.addEventListener('resize',function(){if($('#ide').classList.contains('desk-on'))fitPhone()});
+  DemoGuide.init([
+    {target:'#btn-compress', kind:'click', pos:'bottom', label:'上下文快满了？点这里压缩历史'},
+    {target:'#btn-long', kind:'click', pos:'top', label:'6 分钟的回归交给另一个 Agent，不用守着'},
+    {target:'#lv-pc', kind:'change', pos:'bottom', label:'跑完只推一句结论 + 最挡路的那一件'},
+    {target:'#lv-ph', kind:'click', pos:'left', label:'手机上点一下，电脑上直接落到要你确认的那处'}
+  ], {scene:{
+    at:'你让 Agent 修列表卡顿，接着要跑 6 分钟全量回归',
+    goal:'一眼拿到结论，要你拍板的一条不漏',
+    pain:'长回答翻半天找结论；跑长任务只能守着 IDE 等',
+    fix:'结论先行、危险项常驻；长任务结论推实况窗',
+    agent:'调优、回归两个 Agent 各干各的；实况窗只推最挡路的一件；你拍板'
+  }});
 })();
 </script>
 </body>

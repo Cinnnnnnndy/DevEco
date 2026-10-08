@@ -1,0 +1,539 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>28 · 冻屏分析报告 — saveNoteSync 主线程同步保存导致 THREAD_BLOCK_6S</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230A59F7'/%3E%3Cpath d='M8 20h4l3-9 3 12 3-7h3' fill='none' stroke='white' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<style>
+/* ===== 令牌：鸿蒙开发者官网（按 developer.huawei.com 文档中心 / 开发 / DevEco Studio 页截图） ===== */
+:root{
+  --page:#F1F3F5; --paper:#FFFFFF; --fill:#F1F3F5; --fill2:#E8EBEE; --hdr-bg:#EFF1F3;
+  --ink:#000000; --ink1:#191919; --ink2:#4D4D4D; --ink3:#808080; --ink4:#A6A6A6;
+  --line:#E3E5E8; --accent:#0A59F7; --accent-hover:#0047D6; --soft:#E6EEFE; --soft2:#DCE6FB;
+  --btn:#000000; --btn-hover:#2B2B2B;
+  --yes:#237A45; --yes-soft:#E4F2E9; --part:#8F5A00; --part-soft:#FBF0DC; --no:#C4322A; --no-soft:#FBE7E5;
+  --font:'HarmonyOS Sans SC','HarmonyOS Sans','PingFang SC','Microsoft YaHei','Noto Sans CJK SC',system-ui,sans-serif;
+  --mono:'JetBrains Mono','SFMono-Regular',Consolas,'Liberation Mono',monospace;
+  --r-card:16px; --r-sm:10px;
+  --top:40px; --wrap:1440px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-padding-top:calc(var(--top) + 16px)}
+body{font-family:var(--font);color:var(--ink1);background:var(--page);font-size:14px;line-height:1.6;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
+code,.mono{font-family:var(--mono);font-size:12.5px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
+svg.i{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;flex:none}
+
+/* ===== 顶部：产品栏（白） ===== */
+.top{position:sticky;top:0;z-index:50}
+.sub{height:40px;background:var(--paper);display:flex;align-items:center;gap:20px;padding:0 56px;box-shadow:0 1px 0 var(--line)}
+.sub .prod{font-weight:700;font-size:14px;white-space:nowrap}
+@media (max-width:900px){.sub .prod{display:none}.sub{gap:8px}}
+
+
+/* ===== 头图：DevEco Studio 页式的蓝色渐变淡出 ===== */
+.hero{background:linear-gradient(180deg,#C9D9FF 0%,#E4ECFD 55%,var(--page) 100%)}
+.hero-in{max-width:var(--wrap);margin:0 auto;padding:22px 56px 18px;display:flex;align-items:flex-end;gap:24px;flex-wrap:wrap}
+.hero .l{flex:1;min-width:320px}
+.pill{display:inline-flex;align-items:center;gap:5px;height:24px;padding:0 10px;border-radius:999px;font-size:12px;background:var(--fill);color:var(--ink2);white-space:nowrap}
+.hero .pill{background:rgba(255,255,255,.72)}
+.pill.yes{background:var(--yes-soft);color:var(--yes)}
+.pill.part{background:var(--part-soft);color:var(--part)}
+.pill.no{background:var(--no-soft);color:var(--no)}
+.hero .pill.no{background:#fff;color:var(--no)}
+.pill svg.i{width:13px;height:13px}
+h1{font-size:30px;font-weight:700;line-height:1.3;color:var(--ink)}
+.subtitle{margin-top:4px;font-size:18px;font-weight:500;line-height:1.5;color:var(--ink2)}
+.meta{margin-top:10px;font-size:13px;color:var(--ink2);display:flex;flex-wrap:wrap;align-items:center;gap:6px 16px}
+.meta .pill+.pill{margin-left:-8px}
+
+/* ===== 骨架：文档中心式居中容器，左树 + 正文 ===== */
+.wrap{max-width:var(--wrap);margin:0 auto;display:flex;gap:36px;padding:8px 56px 88px}
+.side{width:196px;flex:none;position:sticky;top:calc(var(--top) + 20px);align-self:flex-start;max-height:calc(100vh - var(--top) - 40px);overflow:auto;padding-top:6px}
+.tree{border-left:1px solid #D5D8DC;display:flex;flex-direction:column;margin-bottom:24px}
+.tree a{display:flex;align-items:center;gap:8px;min-height:30px;padding:3px 0 3px 18px;margin-left:-1px;border-left:2px solid transparent;color:var(--ink2);text-decoration:none;font-size:13px}
+.tree a:hover{color:var(--ink1)}
+.tree a.on{border-left-color:var(--ink);color:var(--ink);font-weight:700}
+.tree a .n{margin-left:auto;font-size:11.5px;color:var(--ink4);font-family:var(--mono);font-weight:400}
+.main{flex:1;min-width:0}
+@media (min-width:901px){.wrap{padding-right:104px}.hero-in{padding-left:calc(56px + 196px + 36px);padding-right:104px}.hero-in .l{max-width:1040px}}
+
+
+/* ===== 两栏正文 ===== */
+.sec-t{display:flex;align-items:baseline;gap:10px;margin-bottom:12px}
+.sec-t h2{font-size:18px;font-weight:700;color:var(--ink)}
+.sec-t .sub2{font-size:13px;color:var(--ink3)}
+.card{background:var(--paper);border-radius:var(--r-card);padding:20px}
+
+/* 结论卡 */
+.verdict{padding:22px 26px}
+.vlabel{display:inline-flex;align-items:center;height:24px;padding:0 10px;border-radius:999px;background:var(--btn);color:#fff;font-size:12px;font-weight:600;margin-bottom:10px}
+.vrows{display:grid;grid-template-columns:84px minmax(0,1fr);gap:10px 16px;margin-top:16px;padding-top:16px;border-top:1px solid var(--line);font-size:14px;line-height:1.6}
+.vrows dt{color:var(--ink3);font-weight:600}
+.vrows dd{margin:0;color:var(--ink1);min-width:0;overflow-wrap:anywhere}
+.vrows dd .loc{white-space:normal}
+.vrows dd .loc{margin-right:16px}
+.vrows code{background:var(--fill);border-radius:4px;padding:0 4px}
+.vrows .pill{margin-left:8px;vertical-align:1px}
+.vrows .muted{color:var(--ink4);font-size:13px}
+.verdict h3{font-size:17px;font-weight:600;line-height:1.7;color:var(--ink)}
+.verdict h3 code{font-family:var(--mono);font-size:.9em;background:var(--fill);border-radius:4px;padding:0 4px}
+.dlab{font-size:12.5px;color:var(--ink3);font-weight:600;margin-bottom:4px}
+.vrows dt small{display:block;font-size:12px;font-weight:400;color:var(--ink4)}
+.axnote{font-size:13px;color:var(--ink2);line-height:1.6;margin-top:10px}.axnote b{font-weight:600;color:var(--ink1)}
+pre .ann{color:var(--ink4)}
+.ck-h>span{min-width:0}.ck-h .one{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ck.open .ck-h .one{display:none}
+
+/* 时间线卡 */
+.chart{background:var(--paper);border-radius:var(--r-card);padding:14px 16px 12px}
+#tl{width:100%;height:auto;display:block;overflow:visible}
+#tl text{font-family:var(--mono);font-size:11.5px;fill:var(--ink3)}
+#tl .ln{font-family:var(--font);font-size:13px;font-weight:600;fill:var(--ink1)}
+#tl .st{cursor:pointer;transition:opacity .15s}
+#tl .st:hover{opacity:.7}
+.story-t{font-size:15px;font-weight:700;color:var(--ink);margin:18px 0 8px;padding-top:16px;border-top:1px solid var(--line)}
+.story{list-style:none;display:flex;flex-direction:column;gap:8px;margin-bottom:6px}
+.story li{display:grid;grid-template-columns:132px minmax(0,1fr);gap:12px;font-size:14px;color:var(--ink2);line-height:1.6}
+.story li{border-radius:8px;padding:4px 8px;margin:0 -8px;transition:background .12s}
+.story li:not(.off){cursor:default}
+.story li.on{background:var(--soft)}
+.story li.on .t{color:var(--accent)}
+.story .t{font-family:var(--mono);font-size:12.5px;color:var(--ink1);padding-top:1px}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--ink3);margin-top:8px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+.tip{position:fixed;z-index:90;pointer-events:none;background:#191919;color:#fff;border-radius:10px;padding:8px 10px;font-size:12px;line-height:1.5;max-width:420px;opacity:0;transition:opacity .1s}
+.tip.on{opacity:1}
+.tip code{font-size:11.5px;color:#C9D7FF}
+
+/* 因果链 */
+
+/* 修复 */
+.fix{background:var(--paper);border-radius:var(--r-card);padding:18px 22px}
+.fix+.fix{margin-top:12px}
+.fix-h{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.fix-h .no{width:24px;height:24px;border-radius:50%;background:var(--ink);color:#fff;font-size:12px;font-weight:600;display:grid;place-items:center;flex:none}
+.fix.dir .fix-h .no{background:var(--part)}
+.fix-h h4{font-size:16px;font-weight:700;flex:1;min-width:200px;color:var(--ink)}
+.code{background:var(--fill);border-radius:var(--r-sm);overflow:auto;font-family:var(--mono);font-size:12.5px;line-height:20px;padding:8px 0}
+.code .r{display:grid;grid-template-columns:22px 1fr;white-space:pre;padding-right:12px}
+.code.plain .r{grid-template-columns:1fr;padding-left:16px}
+.code .r .s{color:var(--ink4);user-select:none}
+.code .r.add{background:var(--yes-soft)}.code .r.add .s{color:var(--yes)}
+.code .r.del{background:var(--no-soft)}.code .r.del .s{color:var(--no)}
+.code .r.ctx{color:var(--ink2)}.code .r.gap{color:var(--ink4)}
+
+/* 三轴 */
+.axes{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.ax{background:var(--paper);border-radius:var(--r-card);padding:14px 16px 12px;display:flex;flex-direction:column;gap:4px}
+.ax .k{font-size:12px;color:var(--ink3)}
+.ax .v{font-size:18px;font-weight:700;display:flex;align-items:center;gap:6px}
+.ax .v i{width:8px;height:8px;border-radius:50%;display:inline-block}
+.ax.yes .v{color:var(--yes)}.ax.yes .v i{background:var(--yes)}
+.ax.part .v{color:var(--part)}.ax.part .v i{background:var(--part)}
+
+/* 证据清单 */
+.checks{background:var(--paper);border-radius:var(--r-card);padding:6px}
+.ck{border-radius:12px}
+.ck+.ck{margin-top:2px}
+.ck-h{display:grid;grid-template-columns:60px 1fr 16px;gap:12px;align-items:center;width:100%;text-align:left;padding:10px 12px;border-radius:12px}
+.ck-h:hover{background:var(--fill)}
+.ck-h .tt{font-size:14px;font-weight:600;color:var(--ink1)}
+.ck-h .one{display:block;font-size:12.5px;color:var(--ink3);margin-top:1px}
+.ck-h .chev{color:var(--ink4);transition:transform .15s}
+.ck.open .ck-h .chev{transform:rotate(90deg)}
+.st-t{font-size:12px;height:24px;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;width:60px}
+.s-hit .st-t{background:var(--no-soft);color:var(--no)}
+.s-pass .st-t{background:var(--yes-soft);color:var(--yes)}
+.s-excl .st-t{background:var(--fill);color:var(--ink3)}
+.s-miss .st-t{background:var(--part-soft);color:var(--part)}
+.ck-b{display:none;padding:2px 14px 14px 84px}
+@media (max-width:900px){.ck-b{padding-left:14px}}
+.ck.open .ck-b{display:block}
+.ck-b ul{list-style:none;display:flex;flex-direction:column;gap:5px;margin-bottom:10px}
+.ck-b li{font-size:13px;color:var(--ink2);padding-left:12px;position:relative}
+.ck-b li::before{content:'';position:absolute;left:0;top:9px;width:4px;height:4px;border-radius:50%;background:var(--ink3)}
+.raw summary{font-size:12.5px;color:var(--accent);cursor:pointer;list-style:none;display:inline-flex;align-items:center;gap:4px}
+.raw summary::-webkit-details-marker{display:none}
+.copy{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:6px;color:var(--ink3);background:none;flex:none}
+.copy:hover{color:var(--ink1)}
+.copy svg.i{width:16px;height:16px}
+.copy.done{color:var(--yes)}
+.raw summary .copy{margin-left:6px}
+.raw pre{margin-top:8px;background:var(--fill);border-radius:var(--r-sm);padding:10px 12px;font-family:var(--mono);font-size:12px;line-height:1.6;white-space:pre-wrap;word-break:break-all;color:var(--ink2);position:relative}
+.frames{display:grid;grid-template-columns:auto 1fr;gap:4px 10px;font-size:12.5px;margin-bottom:10px}
+.frames .f{font-family:var(--mono);color:var(--ink3)}
+.frames .e{color:var(--ink2)}
+
+/* 排除项 & 线程 */
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.xchip{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 14px;border-radius:999px;background:var(--paper);font-size:13px;color:var(--ink2);cursor:default}
+.xchip svg{width:12px;height:12px;color:var(--ink4);stroke-width:2.2}
+
+/* 右侧悬浮工具条（同官网） */
+
+/* 代码面板 */
+
+.fade{animation:fade .35s ease}
+@keyframes fade{from{opacity:.2;transform:translateY(4px)}to{opacity:1;transform:none}}
+@media (max-width:900px){.side{display:none}.wrap{padding:8px 16px 60px}.hero-in{padding:18px 16px 14px}.sub{padding:0 16px;gap:12px}h1{font-size:24px}.subtitle{font-size:15px}.axes{grid-template-columns:1fr 1fr}.kvcard{grid-template-columns:1fr;gap:2px 0}.kvcard dd{margin-bottom:8px}.floc{margin-left:0}.tri .lv,.tri .rc{white-space:normal}.vrows{grid-template-columns:1fr;gap:2px 0}.vrows dd{margin-bottom:8px}.story li{grid-template-columns:1fr;gap:0}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+.stack{display:flex;flex-direction:column;gap:28px;max-width:1040px}
+.kvcard{display:grid;grid-template-columns:96px minmax(0,1fr);gap:10px 16px;font-size:14px;margin:0}
+.kvcard dt{color:var(--ink3)}
+.kvcard dd{margin:0;color:var(--ink1);min-width:0;overflow-wrap:anywhere}
+.tri{padding:8px 20px 12px;overflow-x:auto}
+.tri .tt2 td{font-size:13.5px;padding:10px 8px;line-height:1.6}
+.tri .lv{white-space:nowrap;color:var(--ink3)}
+.tri .rc{white-space:nowrap;font-weight:600;color:var(--ink1)}
+.lead{font-size:14px;color:var(--ink1);margin:0 0 8px}
+.fixT{font-size:15px;font-weight:600;color:var(--ink1);margin:-4px 0 12px}
+.floc{font-family:var(--mono);font-size:12.5px;color:var(--ink3);margin:-4px 0 10px 34px;overflow-wrap:anywhere}
+.fixnote{margin-top:12px;padding:14px 20px}
+.fixnote summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:6px;font-weight:600;font-size:14px}
+.fixnote summary::-webkit-details-marker{display:none}
+.fixnote summary svg{transition:transform .15s}
+.fixnote[open] summary svg{transform:rotate(90deg)}
+.fixnote p{font-size:13.5px;color:var(--ink2);line-height:1.7;margin-top:10px}
+.ck-b p{font-size:13.5px;color:var(--ink2);line-height:1.7;margin-bottom:10px}
+.ck-b .lbl{font-size:12.5px;font-weight:600;color:var(--ink1);margin:10px 0 6px}
+.ck-b .tt2{margin-bottom:10px}
+.ck-b .raw{margin-bottom:8px}
+.code .kw{color:#C4322A}.code .str{color:#237A45}.code .cm{color:var(--ink4);font-style:italic}.code .ty{color:#0A59F7}
+.foot{font-size:12.5px;color:var(--ink4);padding-top:8px}
+.sec-t .grow{flex:1}
+.loc{font-family:var(--mono);font-size:12.5px;color:var(--ink3);white-space:nowrap}
+.tt2{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:4px}
+.tt2 th{text-align:left;font-weight:600;color:var(--ink3);padding:6px 8px;border-bottom:1px solid var(--line)}
+.tt2 td{padding:6px 8px;border-bottom:1px solid var(--line);color:var(--ink2);vertical-align:top;overflow-wrap:anywhere}
+.tblw{overflow-x:auto;margin-bottom:10px}
+.tblw .tt2{margin:0}
+.tt2 td.mono{font-size:12px}
+.ck-b .chips{margin-bottom:10px}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7"/></symbol>
+  <symbol id="i-chev" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+</svg>
+
+<div class="top">
+  <div class="sub">
+    <span class="prod">DevEco Code</span>
+  </div>
+</div>
+<div id="hero"></div>
+
+<div class="wrap">
+  <aside class="side" id="side">
+    <nav class="tree">
+      <a href="#sec-verdict" data-s="sec-verdict">结论</a>
+      <a href="#sec-basic" data-s="sec-basic">故障基本信息</a>
+      <a href="#sec-strength" data-s="sec-strength">证据强度</a>
+      <a href="#sec-tri" data-s="sec-tri">三级根因定位</a>
+      <a href="#sec-timeline" data-s="sec-timeline">时间线与根本原因</a>
+      <a href="#sec-fix" data-s="sec-fix">修复建议<span class="n" id="nav-fixn">3</span></a>
+      <a href="#sec-checks" data-s="sec-checks">证据链<span class="n" id="nav-ckn">9</span></a>
+    </nav>
+  </aside>
+  <main class="main" id="main"></main>
+</div>
+<div class="tip" id="tip"></div>
+
+<script>
+/* =====================================================================
+   只用两份原始报告里已有的信息：input/v1-源码不可达-210435.html、input/v2-源码可达-220705.html
+   同一次冻屏（2026-06-05，com.example.freezetest）
+   ===================================================================== */
+const ROUND1 = [
+  ['02.637','writing note body to database'],['03.137','updating search index'],['03.637','updating attachment references'],
+  ['04.137','syncing tag associations'],['04.637','updating category membership'],['05.137','writing thumbnail metadata'],
+  ['05.637','queuing for cloud sync'],['06.137','flushing preferences']];
+const ROUND2 = [
+  ['06.715','writing note body to database'],['07.277','updating search index'],['07.778','updating attachment references'],
+  ['08.278','syncing tag associations'],['08.778','updating category membership'],['09.278','writing thumbnail metadata'],
+  ['09.778','queuing for cloud sync'],['10.282','flushing preferences']];
+
+/* 证据链：由 input/ 下两份原始报告逐节提取，原文不改（只去掉日志行尾的「← 解读」箭头，解读已在逐帧解读里） */
+const EVID = {"v1": [{"t": "故障类型与目标线程路由", "items": [{"k": "p", "t": "故障类型 THREAD_BLOCK_6S，事件 TID = PID = 19655，即主线程；按故障模式路由分析主线程。", "label": null}, {"k": "raw", "t": "Reason:THREAD_BLOCK_6S\nappfreeze: com.example.freezetest THREAD_BLOCK_6S at 20260605111510\nPid:19655\n...\nTID = 19655\n...\nFault time:2026/06/05-11:15:07\nApp main thread is not response!", "label": "原始日志"}]}, {"t": "整机状态排除（无整机异常）", "items": [{"k": "p", "t": "整机资源正常：热等级 0（温度正常）；CPU Usage Total 28.11%（User Space 22.92% / Kernel Space 5.19% / iowait 0.24%），低于 85% 阈值；可用内存 2611.1MB，高于 800MB 阈值。NOTE 中未出现 system's low memory and thermal throttling。排除整机高负载、低内存、热限频，无需提前终止，继续线程级分析。", "label": null}, {"k": "raw", "t": "Device Memory(kB): Total 4025344, Free 2065700, Available 2699504\n热等级：0，温度正常\nCPU使用率：Total: 28.11%; User Space: 22.92%; Kernel Space: 5.19%; iowait: 0.24%", "label": "原始日志"}]}, {"t": "时间差异性校验", "items": [{"k": "p", "t": "故障时间（3s 告警 Fault time 11:15:07）→ 3s 抓栈 11:15:07.142：差 0.14s（< 2s）；抓栈 → 上报 11:15:07:311：差 0.17s（< 10s）；6S 二次抓栈 11:15:10.140 → 上报 11:15:10:313：差 0.17s。均在阈值内，堆栈可信，无维测延时。", "label": null}, {"k": "raw", "t": "Fault time:2026/06/05-11:15:07\nCatche stack trace start time: 2026-06-05 11:15:07.142\nCatche stack trace start time: 2026-06-05 11:15:10.140", "label": "原始日志"}]}, {"t": "EventHandler 任务队列分析", "items": [{"k": "p", "t": "两次 dump 的 Current Running 均为同一 MMITask（触摸事件分发任务，trigger 11:15:06.639）：3s 时刻（11:15:07.127）已执行 0.5s；6s 时刻（11:15:10.128）已执行 3.5s，超过 3s 阈值，该任务阻塞了 EventHandler 队列。历史队列显示前一个 MMITask（trigger 11:15:02.632）执行了 4.0s。队列持续堆积：VIP 52→105，总任务 62→115。", "label": null}, {"k": "p", "t": "关键点：当前 MMITask 的 send time 为 11:15:03.418——第二次点击发生在第一轮保存执行期间，事件被排队，直到 11:15:06.639 第一轮任务完成后才分发。", "label": null}, {"k": "raw", "t": "EventHandler dump begin curTime: 2026-06-05 11:15:10.128\nCurrent Running: start at 2026-06-05 11:15:06.639, Event { send thread = 20842, send time = 2026-06-05 11:15:03.418, handle time = 2026-06-05 11:15:03.418, trigger time = 2026-06-05 11:15:06.639, task name = MMITask, caller = [deamon_io_waiter.cpp(HandleFileDescriptorEvent:211)] }\n历史队列中的耗时任务（执行≥1s）：\n  task name = MMITask，执行 4.0s（trigger 2026-06-05 11:15:02.631 -> complete 2026-06-05 11:15:06.639）\n队列堆积：VIP: 105，Immediate: 0，High: 0，Low: 10，Idle: 0，总任务数: 115", "label": "原始日志"}]}, {"t": "故障目标线程堆栈分析（逐帧解读）", "items": [{"k": "raw", "t": "Tid:19655, Name:mple.freezetest\nstate=R, utime=564, stime=53, priority=10, nice=-10, clk=100\n#00 pc 00000000005edb84 /system/lib64/module/arkcompiler/stub.an(BCStub_HandleJeqzImm8StwCopy+4)  ← ArkTS 字节码桩\n#01 pc 10000001ffffffff Not mapped                                              ← 解释器内部地址，不可回溯", "label": "THREAD_BLOCK_3S 堆栈（11:15:07.142 抓取）"}, {"k": "raw", "t": "Tid:19655, Name:mple.freezetest\nstate=R, utime=859, stime=56, priority=10, nice=-10, clk=100\n#00 pc 00000000005b93fd /system/lib64/module/arkcompiler/stub.an(BCStub_HandleLdobjbynameImm8Id16StwCopy+6045)  ← ArkTS 字节码桩\n#01 pc 000000006a223f3d Not mapped                                              ← 解释器内部地址，不可回溯", "label": "THREAD_BLOCK_6S 堆栈（11:15:10.140 抓取）"}, {"k": "ul", "t": ["#00（3s）stub.an(BCStub_HandleJeqzImm8StwCopy)：ArkTS 字节码解释器桩。Jeqz = Jump-if-equal-zero 条件跳转指令，对应 if/while/for 的循环条件判定，呈循环式活跃执行。", "#00（6s）stub.an(BCStub_HandleLdobjbynameImm8Id16StwCopy)：Ldobjbyname = 按名称加载对象属性（如 obj.prop），属性访问密集的活跃执行。", "#01（两次）Not mapped：字节码桩之下的返回地址无符号映射，无法回溯上层调用方；堆栈中无应用 so 帧、无 BuildID。", "state=R（两次一致）：主线程处于运行态而非睡眠等待。", "utime 564→859（clk=100，即用户态 CPU 时间 5.64s→8.59s）：两次抓栈间隔 2.998s 内主线程消耗 2.95s CPU，占用约 98%——持续满负荷解释执行字节码。"], "label": "逐帧解读"}, {"k": "p", "t": "排除结论：主线程不在 pthread_mutex（非等锁）、不在 BinderInvoker::WaitForCompletion（非 Binder 阻塞）、不在 ld-musl IO（非阻塞 IO）、不在 libffrt.so（非 FFRT）、不在 libuv.so（非 libuv）、不在 FullGC（GC 线程空闲且栈顶非 cond_wait+jsruntime 组合）、不在 DumpHeapSnapshot（非 Dump）。两次采样位于不同字节码指令、无稳定等待点、CPU 持续满载、业务日志持续步进 → 判定为繁忙。", "label": null}, {"k": "raw", "t": "11:15:02.637 I A00000/FreezeNoteDetail: onSaveClick: saving note note_00000, hasAttachment=true   ← 第 1 次点击保存\n11:15:02.637 I A00000/NoteRepository: saveNote: id=note_00000, sync=true, validate=true\n11:15:02.637 D A00000/NoteRepository: saveNoteSync: starting atomic write for note_00000\n11:15:02.637 D A00000/NoteRepository: saveNoteSync: writing note body to database...\n11:15:03.137 D A00000/NoteRepository: saveNoteSync: updating search index...\n11:15:03.637 D A00000/NoteRepository: saveNoteSync: updating attachment references...\n11:15:04.137 D A00000/NoteRepository: saveNoteSync: syncing tag associations...\n11:15:04.637 D A00000/NoteRepository: saveNoteSync: updating category membership...\n11:15:05.137 D A00000/NoteRepository: saveNoteSync: writing thumbnail metadata...\n11:15:05.637 D A00000/NoteRepository: saveNoteSync: queuing for cloud sync...\n11:15:06.137 D A00000/NoteRepository: saveNoteSync: flushing preferences...\n11:15:06.637 I A00000/NoteRepository: saveNoteSync: completed for note_00000                          ← 第 1 轮保存耗时 4.0s（MMITask#1）\n11:15:06.715 I A00000/FreezeNoteDetail: onSaveClick: saving note note_00000, hasAttachment=true   ← 第 2 次点击（11:15:03.418 发出，此刻才被分发）\n11:15:06.715 D A00000/NoteRepository: saveNoteSync: writing note body to database...\n11:15:07.277 D A00000/NoteRepository: saveNoteSync: updating search index...\n11:15:07.778 D A00000/NoteRepository: saveNoteSync: updating attachment references...\n11:15:08.278 D A00000/NoteRepository: saveNoteSync: syncing tag associations...\n11:15:08.778 D A00000/NoteRepository: saveNoteSync: updating category membership...\n11:15:09.278 D A00000/NoteRepository: saveNoteSync: writing thumbnail metadata...\n11:15:09.778 D A00000/NoteRepository: saveNoteSync: queuing for cloud sync...\n11:15:10.282 D A00000/NoteRepository: saveNoteSync: flushing preferences...                          ← 至 6S 上报时第 2 轮已执行 ≥3.5s 仍未结束", "label": "字节码执行对应的业务时间线（应用域 hilog，A00000）"}, {"k": "p", "t": "字节码桩与业务步骤对应关系：3s 抓栈（11:15:07.142）时主线程处于第 2 轮第 1 步 \"writing note body to database\"（11:15:06.715→11:15:07.277）；6s 抓栈（11:15:10.140）时处于第 7 步 \"queuing for cloud sync\"（11:15:09.778→11:15:10.282）。Jeqz（循环判定）与 Ldobjbyname（属性访问）与各步骤内的同步计算逻辑一致。", "label": null}]}, {"t": "排除 FFRT / libuv / Binder / 等锁（专项排除）", "items": [{"k": "p", "t": "主线程栈无 libffrt.so、libuv.so、pthread_mutex、BinderInvoker::WaitForCompletion、ld-musl IO 符号。日志无 IPC FULL 特征，binder catcher 区段不存在（调用 0 条）；本进程 5 个 binder 线程（OS_IPC_0~4）全部停在 ioctl 的 Binder 等待循环（空闲状态），FFRT worker、GC 线程、ace.bg 均在条件等待。非 FFRT 阻塞、非 libuv 阻塞、非 Binder 阻塞、非等锁。", "label": null}, {"k": "raw", "t": "Tid:20804, Name:OS_IPC_0_20804\nstate=S\n#00 pc 00000000000da029 /system/lib/ld-musl-x86_64.so.1(ioctl+185)\n#02 pc 0000000000076acd /system/lib64/platformsdk/libipc_single.z.so(OHOS::BinderInvoker::TransactWithDriver(bool)+269)\n#04 pc 0000000000079068 /system/lib64/platformsdk/libipc_single.z.so(OHOS::BinderInvoker::JoinThread(bool)+40)\n#05 pc 000000000006f455 /system/lib64/platformsdk/libipc_single.z.so(OHOS::IPCWorkThread::ThreadHandler(void*)+901)", "label": "原始日志"}]}, {"t": "其他线程分析", "items": [{"k": "table", "t": [["TID", "线程名", "栈顶", "状态"], ["20804/20805/20811/20843/20846", "OS_IPC_0~4（binder×5）", "ioctl（BinderInvoker::JoinThread）", "空闲等待"], ["20806", "OS_DfxWatchdog", "pthread_cond_timedwait", "空闲"], ["20818~20821", "OS_GC_Thread ×4", "pthread_cond_timedwait", "空闲（非 GC 执行期）"], ["20812/20813/20896/21071/21075~21077 等", "OS_FFRT_*", "pthread_cond_timedwait / epoll_wait", "空闲"], ["20850~20857", "ace.bg.1~8", "pthread_cond_timedwait", "空闲"], ["20842", "OS_EVENT_POLL", "epoll_wait", "空闲"]], "label": null}, {"k": "p", "t": "结论：除主线程外其余线程全部处于空闲等待状态，无持锁线程、无跨线程阻塞依赖；主线程不依赖任何其他线程即可推进，进一步佐证\"繁忙\"而非\"阻塞\"。", "label": null}]}, {"t": "符号解析结果及源码定位", "items": [{"k": "p", "t": "故障栈无应用 so 帧：栈顶为系统模块 /system/lib64/module/arkcompiler/stub.an（ArkTS 字节码解释器桩），#01 两次均为 Not mapped（无 so 路径与 BuildID），不满足符号解析触发条件（应用 so 裸偏移 + BuildID）。此外，本次分析按用户要求未检索工程源码。标注：无应用 so 帧可解析，行号定位不可用；业务函数定位由应用域 hilog（A00000/FreezeNoteDetail、A00000/NoteRepository）完成，粒度为业务函数名。", "label": null}]}, {"t": "采样栈热点函数分析", "items": [{"k": "table", "t": [["业务函数", "出现次数", "累计耗时(ms)", "说明"], ["本 faultlog 未包含采样栈区段，无热点函数统计", "—", "—", "—"]], "label": null}]}], "v2": [{"t": "故障类型与目标线程路由", "items": [{"k": "p", "t": "THREAD_BLOCK_6S（主线程卡死超时）事件，故障目标线程 TID=19655（主线程，Name: mple.freezetest）。前台页面自 11:14:58.240 起为 FreezeNoteDetailPage。", "label": null}, {"k": "raw", "t": "Device info:emulator / Module name:com.example.freezetest / Foreground:Yes / Pid:19655\nReason:THREAD_BLOCK_6S\nPage switch history:\n  11:14:58.240 /crashtest/pages/FreezeNoteDetailPage\n  11:14:51.608 /crashtest/pages/CrashTestPage\nMSG = Fault time:2026/06/05-11:15:07 / App main thread is not response!", "label": "原始日志"}]}, {"t": "整机状态排除", "items": [{"k": "p", "t": "CPU Total 28.11%（<85%）、可用内存 2611.1MB（>800MB）、热等级 0（<4），NOTE 无 low memory / thermal throttling 标记——排除整机高负载、低内存、热限频，维测信息可信。", "label": null}, {"k": "raw", "t": "热等级：0，温度正常\nCPU使用率：Total: 28.11%; User Space: 22.92%; Kernel Space: 5.19%; iowait: 0.24%; irq: 0.12%; idle: 71.53%\n可用内存：2611.1MB（高于800MB阈值，内存水位正常）", "label": "原始日志"}]}, {"t": "时间差异性校验", "items": [{"k": "p", "t": "故障时间 11:15:07 → hiview 上报 11:15:07.311（+0.31s < 10s）；故障时间 → 抓栈 11:15:07.142（+0.14s < 2s）；6S 事件抓栈 11:15:10.140 同样即时。堆栈与队列 dump 均可信。", "label": null}, {"k": "raw", "t": "start time: 2026/06/05-11:15:07:311 / TIMESTAMP: 2026/06/05-11:15:10:313\nCatche stack trace start time: 2026-06-05 11:15:07.142（3S）\nCatche stack trace start time: 2026-06-05 11:15:10.140（6S）", "label": "原始日志"}]}, {"t": "EventHandler 任务队列分析", "items": [{"k": "p", "t": "3S dump：当前执行 MMITask 已 0.5s；历史队列 MMITask 执行 4.0s（trigger 11:15:02.632 → complete 11:15:06.639）。 6S dump：当前执行 MMITask（send 11:15:03.418，trigger 11:15:06.639）已执行 3.5s > 3s，阻塞 EventHandler 队列；VIP 堆积 105，总任务 115。 两次点击的输入事件处理各耗时约 4s（与 8×500ms 忙等精确吻合）；第二次点击在主线程忙等期间入队，首次处理完成后立即接续执行——主线程自 11:15:02.632 起被连续占用约 8s，先后触发 3S/6S 检测。", "label": null}, {"k": "raw", "t": "Current Running: start at 2026-06-05 11:15:06.639, Event { send thread = 20842, send time = 2026-06-05 11:15:03.418, ... task name = MMITask, caller = [deamon_io_waiter.cpp(HandleFileDescriptorEvent:211)] }\nNo. 28 : Event { ... trigger time = 2026-06-05 11:15:02.632, completeTime time = 2026-06-05 11:15:06.639, priority = VIP, task name = MMITask, ... }\n队列堆积：VIP: 105，Immediate: 0，High: 0，Low: 10，Idle: 0，总任务数: 115", "label": "原始日志"}]}, {"t": "故障目标线程堆栈分析（逐帧解读）", "items": [{"k": "raw", "t": "#00 pc 00000000005edb84 /system/lib64/module/arkcompiler/stub.an(BCStub_HandleJeqzImm8StwCopy+4)  ← 字节码桩：条件跳转（Jeqz），对应 while 循环条件判定\n#01 pc 10000001ffffffff Not mapped  ← 解释器帧无法映射", "label": "3S 栈（Tid:19655, state=R, utime=564）"}, {"k": "raw", "t": "#00 pc 00000000005b93fd /system/lib64/module/arkcompiler/stub.an(BCStub_HandleLdobjbynameImm8Id16StwCopy+6045)  ← 字节码桩：按名加载对象属性（Ldobjbyname），对应 Date.now 属性访问\n#01 pc 000000006a223f3d Not mapped  ← 解释器帧无法映射", "label": "6S 栈（Tid:19655, state=R, utime=859）"}, {"k": "ul", "t": ["#00（两次均为 stub.an 字节码处理桩）：两次栈顶分别落在\"条件跳转\"与\"按名取属性\"两条字节码指令——正是忙等循环 while (Date.now() - start < ms) 的两个组成操作（加载 Date.now 属性 + 判定循环条件），呈循环式活跃执行，与 FreezeTestHelper.injectDelay 的实现逐字对应。", "#01 Not mapped：ArkTS 字节码解释执行，原生回溯无法展开 JS 调用链；业务调用链经任务队列时长与源码比对定位（见证据链第 8 节）。", "排除结论：主线程不在 pthread_mutex（非等锁）、不在 BinderInvoker::WaitForCompletion（非 Binder 阻塞）、不在 ld-musl open/read/write（非阻塞 IO）、不在 libffrt.so（非 FFRT）、不在 libuv.so（非 libuv）、不在 FullGC、不在 DumpHeapSnapshot。未命中任何阻塞模式；结合 state=R 与 CPU 饱和（utime 564→859，clk=100 下 3s 内 +295 tick ≈ 98% 单核），判定为繁忙态执行耗时操作。"], "label": "逐帧解读"}]}, {"t": "排除 FFRT / libuv / Binder / 等锁（专项排除）", "items": [{"k": "p", "t": "主线程栈无 libffrt.so、libuv.so、pthread_mutex、BinderInvoker::WaitForCompletion、ld-musl IO 符号；本 faultlog 无 Binder catcher 区段，无 IPC FULL 特征。", "label": null}, {"k": "raw", "t": "区段索引：- binder：无（调用 0 条，资源记录 0 条，对端进程 0 个）\n#00 pc ... /system/lib64/module/arkcompiler/stub.an(BCStub_...)（主线程栈顶为字节码桩，非任何等待原语）", "label": "原始日志"}]}, {"t": "其他线程分析", "items": [{"k": "table", "t": [["TID", "线程名", "栈顶", "状态"], ["20804 / 20805 / 20811 / 20843", "OS_IPC_*", "BinderConnector::WriteBinder（ioctl）", "空闲等待（S）"], ["20812", "OS_FFRT_5_0", "pthread_cond_timedwait（libffrt.so）", "空闲等待（S）"], ["20813", "OS_FFRT_Delay", "epoll_wait（libffrt.so）", "空闲等待（S）"], ["20818 / 20819", "OS_GC_Thread", "pthread_cond_timedwait（libark_jsruntime.so）", "空闲等待（S）"], ["20806", "OS_DfxWatchdog", "pthread_cond_timedwait（libhicollie.z.so）", "空闲等待（S）"]], "label": null}, {"k": "p", "t": "结论：两次抓栈中仅主线程 Tid 19655 处于 state=R，其余 31 个线程全部为 S 态空闲等待；无持锁线程，无跨线程阻塞依赖。", "label": null}]}, {"t": "符号解析结果及源码定位（源码可达）", "items": [{"k": "p", "t": "故障栈无应用 so 裸偏移帧（栈顶为系统 stub.an 字节码桩，JS 帧 Not mapped），llvm-addr2line 行号解析不适用；源码定位经由\"任务时长精确吻合 + 页面历史 + git 版本考古\"完成：", "label": null}, {"k": "ul", "t": ["故障日志产生于 2026-06-05 11:15:10，对应构建版本为提交 4ca0c7e（2026-06-05 10:31:50\"构造appfreeze的场景\"）；工作区当前已含未提交的修复版（git status: M FreezeNoteDetailPage.ets / M NoteRepository.ets），以下定位以故障时 4ca0c7e 版本行号为准。", "FreezeNoteDetailPage.aboutToAppear（27-36 行）加载的笔记 thumbnailPath 非空（取第一条带封面图的笔记）。", "FreezeNoteDetailPage.ets:48（4ca0c7e）hasAttachment() 返回 this.currentNote?.thumbnailPath !== undefined——对带封面图的笔记恒为 true。", "FreezeNoteDetailPage.ets:86-89 options.sync = this.hasAttachment() → true。", "NoteRepository.ets:44-48（4ca0c7e）if (options.sync) { this.saveNoteSync(note); }——同步调用，阻塞 MMITask 处理。", "NoteRepository.ets:64-102（4ca0c7e）saveNoteSync 在冻屏测试模式开启时执行 8 次 FreezeTestHelper.injectDelay(500) 共 4.0s 同步忙等——与队列中 MMITask 实测 4.0s（11:15:02.632→11:15:06.639）精确吻合。", "FreezeTestHelper.ets:26-31 injectDelay 实现 while (Date.now() - start < ms) 忙等——与两次栈顶字节码（Ldobjbyname 取 Date.now 属性 / Jeqz 循环条件判定）逐字对应。", "触发前置条件：CrashTestPage.ets:115 的冻屏测试模式开关处于开启状态（isFreezeModeEnabled 为 true 时 injectDelay 才生效）。"], "label": null}]}, {"t": "采样栈热点函数分析", "items": [{"k": "table", "t": [["业务函数", "出现次数", "累计耗时(ms)", "说明"], ["本 faultlog 未包含采样栈区段，无热点函数统计", "—", "—", "—"]], "label": null}]}]};
+const TRI = {"v1": [["层级", "根因", "匹配依据"], ["一级根因", "主线程卡死超时", "Reason:THREAD_BLOCK_6S；\"App main thread is not response!\""], ["二级根因", "主线程繁忙", "3s/6s 栈顶不一致（Jeqz 与 Ldobjbyname 两种字节码桩）；state=R；utime 564→859（两次抓栈间隔内 CPU 占用约 98%）"], ["三级根因", "执行耗时操作（多任务混合）", "无采样栈，繁忙类三级根因无法按占比（>30%）判定，默认匹配；业务日志将耗时操作定位到 saveNoteSync 同步保存流水线"]], "v2": [["层级", "根因", "匹配依据"], ["一级根因", "主线程卡死超时", "Reason: THREAD_BLOCK_6S、App main thread is not response!"], ["二级根因", "主线程繁忙", "3s/6s 栈顶不同（BCStub_HandleJeqzImm8StwCopy vs BCStub_HandleLdobjbynameImm8Id16StwCopy），state=R 且 utime 564→859 近满核，无等待原语"], ["三级根因", "执行耗时操作", "繁忙类三级根因均需采样栈占比（>30%）判定；本 faultlog 无采样栈区段，按规则默认匹配\"执行耗时操作\"；具体耗时操作经源码定位为 saveNoteSync 的 8×500ms 忙等"]]};
+const STATUS = {
+  v2:['pass','excl','pass','hit','hit','excl','excl','hit','miss'],
+  v1:['pass','excl','pass','hit','hit','excl','excl','miss','miss'],
+};
+/* 证据链收起时的一行：直接取该节第一段原文（单行截断，展开后隐藏） */
+const ONE = Object.fromEntries(Object.entries(EVID).map(([m,list])=>[m,list.map(c=>{const it=c.items.find(x=>x.k==='p')||c.items.find(x=>x.k==='ul')||c.items.find(x=>x.k==='table'); return !it?'':it.k==='p'?it.t:it.k==='ul'?it.t[0]:it.t.slice(1).map(r=>r[0]).join('；');})]));
+
+/* 故障基本信息：原报告同名表，逐字 */
+const BASIC = {
+  v2:[['故障时间','2026/06/05-11:15:10（THREAD_BLOCK_6S 定案；3S 告警于 11:15:07）'],['故障进程','19655 / com.example.freezetest'],['故障类型','APPFREEZE（THREAD_BLOCK_6S，主线程卡死超时）'],['故障原因描述','App main thread is not response!']],
+  v1:[['故障时间','2026/06/05-11:15:07（3s 告警）/ 2026/06/05-11:15:10:313（6S 上报）'],['故障进程','19655 / com.example.freezetest（前台，Foreground:Yes）'],['故障类型','APPFREEZE — THREAD_BLOCK_6S（主线程卡死超时）'],['故障原因描述','App main thread is not response!'],['故障页面','/crashtest/pages/FreezeNoteDetailPage（11:14:58.240 切入）']],
+};
+
+/* 以下文字全部逐字取自原报告（诊断结果 / 根因模块 / 责任领域 / 根本原因 / 修复建议）；只改排版：
+   根本原因按原句拆成时间线上的步骤，左侧时刻从句首挪出 */
+const V = {
+  v2: {
+    gen:'2026-09-22 22:07:05',
+    triage:'分诊结论：app_freeze；输入完整度：full；置信度：high',
+    diag:'FREEZE-02 场景——笔记详情页保存时 <code>hasAttachment()</code>（FreezeNoteDetailPage.ets:48，故障时 4ca0c7e 版本）把已有封面图误判为"本次待保存附件"，<code>options.sync</code> 恒为 true，<code>NoteRepository.saveNoteSync</code>（NoteRepository.ets:64-102）在主线程同步执行 8 次 <code>FreezeTestHelper.injectDelay(500)</code> 忙等共 4s；连续两次点击保存（第二次点击在主线程忙等期间入队，按钮禁用态因未重渲染而未生效）累计阻塞约 8s，触发 THREAD_BLOCK_3S/6S。',
+    rows:[
+      ['根因模块','改哪里','模块名称：com.example.freezetest（应用业务代码）<br><span class="loc">entry/src/main/ets/crashtest/pages/FreezeNoteDetailPage.ets:48</span>（4ca0c7e 版本，hasAttachment 误判条件）<br><span class="loc">entry/src/main/ets/crashtest/service/NoteRepository.ets:64-102</span>（4ca0c7e 版本，saveNoteSync 主线程同步忙等路径）<br><span class="loc">entry/src/main/ets/crashtest/freezetest/FreezeTestHelper.ets:26-31</span>（injectDelay 忙等实现）'],
+      ['责任领域','谁来改','应用<br><span class="muted">定界依据：</span>误判条件（hasAttachment）、同步阻塞实现（saveNoteSync / injectDelay 忙等）与触发调用链（保存按钮 onClick）全部位于应用侧代码；故障栈无系统等待原语、无 Binder 调用记录、无 IPC FULL，整机资源正常，无任何系统侧参与证据。'],
+      ['修复建议','怎么改','修正 hasAttachment 误判条件，并将附件保存路径改为逐步 await 的异步实现'],
+    ],
+    axes:[['可信度','HIGH','yes'],['线程状态','繁忙','yes'],['定位粒度','行级','yes'],['修复精度','源码差异','yes']],
+    state:'繁忙（两次抓栈 state=R、utime +295 tick/3s ≈ 98% 单核，栈顶为字节码桩循环式活跃执行，无任何等待原语）',
+    lead:'应用笔记详情页（FreezeNoteDetailPage）保存路径存在"条件误判 + 同步忙等"双重缺陷，完整触发路径：',
+    chain:[
+      ['11:14:58','用户在 CrashTestPage 开启冻屏测试模式（freezeModeEnabled = true），于 11:14:58 进入 FreezeNoteDetailPage，页面加载的笔记带封面图（thumbnailPath 非空）。',null],
+      ['11:15:02.631','用户点击"保存笔记"（MMITask #1 入队）。onSaveClick 中 hasAttachment() 按 thumbnailPath !== undefined 误判"有待保存附件"，options.sync=true，saveNote 同步调用 saveNoteSync。',[[2.631,2.631]]],
+      ['02.632 – 06.639','saveNoteSync 在主线程顺序执行 8 次 injectDelay(500) 忙等（共 4.0s），期间主线程持续执行 while (Date.now() - start < ms) 循环——两次抓栈栈顶字节码（Jeqz 循环判定 / Ldobjbyname 取 Date.now 属性）与 state=R、utime 近满核互相印证：主线程为繁忙态，非等待态。',[[2.632,6.639]]],
+      ['11:15:03.418','用户再次点击保存（MMITask #2 入队）。首次点击仍在忙等中，isSaving=true 的禁用态因主线程未返回事件循环、未重渲染而未生效。',[[3.418,6.639]]],
+      ['11:15:06.639','MMITask #1 完成（实测 4.0s = 8×500ms 精确吻合），MMITask #2 立即开始处理，再次进入 4.0s 忙等。主线程自 11:15:02.632 起被连续占用约 8s，输入/渲染任务堆积（VIP 105 个）。',[[6.639,10.313]]],
+      ['07.306 / 10.313','HiCollie 先后于 11:15:07.306（3S 告警）与 11:15:10.313（6S 定案）上报 AppFreeze。',[[7.306,7.306],[10.313,10.313]]],
+    ],
+    fixT:'修正 hasAttachment 误判条件，并将附件保存路径改为逐步 await 的异步实现',
+    fixNote:['修改 1 消除误判根因——仅本次编辑新增的附件（pendingAttachments）才需要附件保存路径，已有封面图随笔记记录持久化，不构成同步保存的理由；修改 2/3 保证即便进入附件保存路径，每一步 IO 都以 await + setTimeout 让出主线程，事件循环可继续处理输入与渲染（两次点击场景下按钮禁用态也能及时生效，第二次忙等不再发生）。当前工作区已包含上述修复（git status 显示 FreezeNoteDetailPage.ets / NoteRepository.ets 为已修改未提交状态，与产生故障日志的 4ca0c7e 版本不同），验证冻屏不再复现后提交即可。'],
+    foot:'本报告由 DevEco Code DFX 故障分析生成 · 代码块含语法高亮，修复建议含源码差异对比',
+  },
+  v1: {
+    gen:'2026-09-22 21:04:35',
+    triage:'分诊结论：app_freeze；输入完整度：full；置信度：high',
+    diag:'主线程在 Save 按钮点击回调中同步执行 <code>NoteRepository.saveNoteSync</code> 保存流水线（9 步、每步约 0.5s、单轮约 4.0s）；第一轮执行期间用户再次点击，第二轮流水线紧接执行，主线程连续约 8s 满负荷运行，EventHandler 队列阻塞（62→115 个任务），触发 THREAD_BLOCK_6S。',
+    rows:[
+      ['根因模块','改哪里','模块名称：com.example.freezetest（应用业务代码：FreezeNoteDetailPage 的 <code>onSaveClick</code> 回调 → <code>NoteRepository.saveNote</code> / <code>saveNoteSync</code> 同步保存流水线；堆栈帧为字节码桩且本次按用户要求未检索工程源码，具体源码文件与行号不可标注）'],
+      ['责任领域','谁来改','应用<br><span class="muted">定界依据：</span>阻塞主线程的执行流为应用自有 ArkTS 代码——应用域日志 A00000/FreezeNoteDetail、A00000/NoteRepository 按步推进，栈顶为 ArkTS 字节码解释器桩（解释执行的是应用页面代码）；整机资源正常（CPU 28%、可用内存 2611MB、热等级 0）；系统侧 binder/FFRT/GC 线程全部空闲，无 IPC 阻塞与锁竞争；saveNote(sync=true) 的同步执行方式由应用自身选择。'],
+      ['修复建议','怎么改','将 saveNoteSync 保存流水线移出主线程并防止重复提交（源码不可达，提供通用方向与模板）'],
+    ],
+    axes:[['可信度','HIGH','yes'],['线程状态','繁忙','yes'],['定位粒度','业务函数','part'],['修复精度','通用方向与模板','part']],
+    state:'繁忙（两次抓栈均 state=R、utime 564→859 ≈98% CPU、栈顶为不同字节码桩且应用日志按约 0.5s 步进推进；无任何等待原语）',
+    lead:'',
+    chain:[
+      ['02.631 – 06.639','用户在 FreezeNoteDetailPage 页面点击 Save 按钮触发 onSaveClick，其调用的 NoteRepository.saveNote(sync=true) 在主线程同步执行 saveNoteSync 9 步保存流水线（写库 → 搜索索引 → 附件引用 → 标签关联 → 分类归属 → 缩略图元数据 → 云同步排队 → 偏好清理），每步约 0.5s，单轮约 4.0s。',[[2.631,6.639]]],
+      ['11:15:03.418','第一轮保存执行期间（11:15:03.418）用户因界面无响应再次点击，第二个 MMITask 被排队至 11:15:06.639 分发，第二轮流水线紧接执行。',[[3.418,6.639]]],
+      ['06.639 – 10.313','主线程连续约 8s 满负荷解释执行 ArkTS 字节码（两次抓栈 state=R、CPU 占用约 98%、栈顶分别为循环判定与属性访问指令），EventHandler 队列无法处理任何后续任务（堆积 62→115，vSync 与输入均被阻塞），最终于 11:15:07 触发 THREAD_BLOCK_3S 告警、11:15:10:313 触发 THREAD_BLOCK_6S 冻屏上报。',[[6.639,10.313],[7.142,7.142],[10.313,10.313]]],
+    ],
+    fixT:'将 saveNoteSync 保存流水线移出主线程并防止重复提交（源码不可达，提供通用方向与模板）',
+    fixNote:['建议1：冻屏的直接原因是保存流水线（单轮约 4.0s 的同步计算）在主线程 MMITask 回调内执行。移入 TaskPool 后主线程事件循环（MMITask、vSyncTask 分发）保持响应，队列不再堆积。','建议2：本日志显示用户在第一轮保存执行期间（11:15:03.418）再次点击，第二轮约 4s 的流水线紧接执行，把无响应时长拉长至约 8s 并触发 6S 上报。in-flight 守卫与按钮禁用消除重复触发叠加，同时避免同一笔记的并发写。'],
+    foot:'本报告由 DevEco Code DFX 故障分析生成 · 代码块含语法高亮，修复建议含源码差异对比',
+  }
+};
+/* 修复建议：代码与说明取自原报告（原报告 diff 不带行号） */
+const FIX = {
+  v2:[
+    {t:'修改 1 — 第 45-54 行（杜绝带封面图笔记误入同步保存路径）', loc:'文件：entry/src/main/ets/crashtest/pages/FreezeNoteDetailPage.ets',
+     diff:[['c','  private hasAttachment(): boolean {'],['d','    // Check if the note has an associated media resource'],['d','    // that requires synchronized persistence handling'],['d','    return this.currentNote?.thumbnailPath !== undefined'],['d','    // BUG: This checks whether the note has ANY thumbnail (existing cover image),'],['d','    // not whether there are NEW pending attachments to save.'],['d','    // A note with an existing cover image will always return true here,'],['d','    // even when the user only edited text content.'],['d','    // Should be: return this.pendingAttachments.length > 0'],['a','    return this.pendingAttachments.length > 0'],['c','  }']]},
+    {t:'修改 2 — 第 44-48 行（sync 路径改为可等待的异步实现）', loc:'文件：entry/src/main/ets/crashtest/service/NoteRepository.ets',
+     diff:[['c','    if (options.sync) {'],['d','      // Synchronous path: used when attachments need atomic commit'],['d','      // to ensure data consistency between note record and attachment files'],['d','      this.saveNoteSync(note);'],['a','      await this.saveNoteWithAttachmentsAsync(note);'],['c','    } else {'],['c','      await this.saveNoteAsync(note);'],['c','    }']]},
+    {t:'修改 3 — 第 64-102 行（同步忙等改为逐步 await、事件循环让出主线程）', loc:'文件：entry/src/main/ets/crashtest/service/NoteRepository.ets',
+     diff:[['d','  private saveNoteSync(note: NoteModel): void {'],['a','  private async saveNoteWithAttachmentsAsync(note: NoteModel): Promise<void> {'],['c','     ...'],['c','     if (FreezeTestHelper.isFreezeModeEnabled()) {'],['c','       // Step 1: Insert/update main note record'],['d','      FreezeTestHelper.injectDelay(500);'],['a','      await this.nonBlockingDelay(500);'],['c','       // Step 2 ~ Step 8 同理，每一步：'],['d','      FreezeTestHelper.injectDelay(500);'],['a','      await this.nonBlockingDelay(500);'],['c','     }'],['c','   }'],['a',''],['a','  private nonBlockingDelay(ms: number): Promise<void> {'],['a','    return new Promise<void>((resolve) => {'],['a','      setTimeout(() => {'],['a','        resolve();'],['a','      }, ms);'],['a','    });'],['a','  }']]},
+  ],
+  v1:[
+    {t:'建议1: 将 saveNoteSync 保存流水线整体移入 TaskPool worker 线程执行，onSaveClick 内只做调度与 UI 回调', dir:true,
+     code:["import { taskpool } from '@kit.ArkTS'","","@Concurrent","function saveNotePipeline(noteId: string, payload: NoteData): SaveResult {","  // 原 saveNoteSync 的 9 步流水线整体移入 worker 线程：","  // 写库 → 搜索索引 → 附件引用 → 标签关联 → 分类归属 → 缩略图元数据 → 云同步排队 → 偏好清理","  return doSavePipeline(noteId, payload)","}","","// FreezeNoteDetailPage 的保存按钮回调：只调度，不同步执行","async onSaveClick() {","  const result = await taskpool.execute(saveNotePipeline, this.noteId, this.buildPayload())","  this.onSaveFinished(result) // 仅 UI 更新留在主线程","}"]},
+    {t:'建议2: 保存操作增加进行中（in-flight）守卫，防止重复点击叠加执行', dir:true,
+     code:["private saving = false","","async onSaveClick() {","  if (this.saving) return // 保存进行中，忽略重复点击","  this.saving = true","  this.saveButtonEnabled = false // 立即禁用按钮，给用户即时反馈","  try {","    const result = await taskpool.execute(saveNotePipeline, this.noteId, this.buildPayload())","    this.onSaveFinished(result)","  } finally {","    this.saving = false","    this.saveButtonEnabled = true","  }","}"]},
+  ]
+};
+
+/* ===================================================================== */
+const $ = s=>document.querySelector(s), $$ = s=>[...document.querySelectorAll(s)];
+const esc = s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const ic = (id,cls='')=>`<svg class="i ${cls}"><use href="#i-${id}"/></svg>`;
+let mode=location.hash==='#v1'?'v1':'v2';
+const openChecks=new Set([3]);
+
+function render(anim){
+  const d=V[mode], ev=EVID[mode], st=STATUS[mode], one=ONE[mode], fixes=FIX[mode], v2=mode==='v2';
+  $('#nav-fixn').textContent=fixes.length; $('#nav-ckn').textContent=ev.length;
+  $('#hero').innerHTML=`<div class="hero"><div class="hero-in"><div class="l">
+      <h1>冻屏分析报告</h1>
+      <p class="subtitle">saveNoteSync 主线程同步保存导致 THREAD_BLOCK_6S</p>
+      <div class="meta">
+        ${v2?`<span class="pill yes">源码可达</span>`:`<span class="pill part">源码不可达</span>`}
+        <span>应用冻屏（AppFreeze）生成时间：${d.gen}</span><span>${d.triage}</span>
+      </div>
+    </div></div></div>`;
+  $('#main').innerHTML=`<div class="stack ${anim?'fade':''}">
+    <section id="sec-verdict" class="card verdict">
+      <div class="vlabel">诊断结果</div>
+      <h3>${d.diag}</h3>
+      <dl class="vrows">${d.rows.map(r=>`<dt>${r[1]}<small>${r[0]}</small></dt><dd>${r[2]}</dd>`).join('')}</dl>
+    </section>
+
+    <section id="sec-basic">
+      <div class="sec-t"><h2>故障基本信息</h2></div>
+      <dl class="card kvcard">${BASIC[mode].map(r=>`<dt>${r[0]}</dt><dd>${esc(r[1])}</dd>`).join('')}</dl>
+    </section>
+
+    <section id="sec-strength">
+      <div class="sec-t"><h2>证据强度</h2></div>
+      <div class="axes">${d.axes.map(a=>`<div class="ax ${a[2]}"><span class="k">${a[0]}</span><span class="v"><i></i>${a[1]}</span></div>`).join('')}</div>
+      <p class="axnote"><b>线程状态：</b>${esc(d.state)}</p>
+    </section>
+
+    <section id="sec-tri">
+      <div class="sec-t"><h2>三级根因定位</h2><span class="sub2">依据故障模式库</span></div>
+      <div class="card tri"><table class="tt2"><thead><tr>${TRI[mode][0].map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${TRI[mode].slice(1).map(r=>`<tr><td class="lv">${esc(r[0])}</td><td class="rc">${esc(r[1])}</td><td>${esc(r[2])}</td></tr>`).join('')}</tbody></table></div>
+    </section>
+
+    <section id="sec-timeline">
+      <div class="sec-t"><h2>主线程时间线与根本原因</h2><span class="sub2">2026-06-05 11:15:02 – 11:15:11</span></div>
+      <div class="chart"><svg id="tl" viewBox="0 0 1000 222"></svg>
+        <div class="legend"><span><i style="background:#F3E3C6"></i>保存流水线的一步（约 500ms）</span><span><i style="background:var(--no-soft)"></i>单任务执行超过 3s</span><span><i style="background:var(--accent);border-radius:50%"></i>点击</span><span><i style="background:rgba(10,89,247,.18)"></i>点击排队等待</span></div>
+        <h3 class="story-t">根本原因</h3>
+        ${d.lead?`<p class="lead">${esc(d.lead)}</p>`:''}
+        <ol class="story" id="story">${d.chain.map(([t,x,r],i)=>`<li data-i="${i}" class="${r?'':'off'}"><span class="t">${t}</span><span>${esc(x)}</span></li>`).join('')}</ol>
+      </div>
+    </section>
+
+    <section id="sec-fix">
+      <div class="sec-t"><h2>修复建议</h2></div>
+      <p class="fixT">${esc(d.fixT)}</p>
+      ${fixes.map((f,i)=>fixCard(f,i)).join('')}
+      <details class="card fixnote"><summary>${ic('chev')}修复说明</summary>${d.fixNote.map(t=>`<p>${esc(t)}</p>`).join('')}</details>
+    </section>
+
+    <section id="sec-checks">
+      <div class="sec-t"><h2>证据链</h2></div>
+      <div class="checks" id="checks">${ev.map((c,i)=>ckRow(c,i,st[i],one[i])).join('')}</div>
+    </section>
+
+    <footer class="foot">${d.foot}</footer>
+  </div>`;
+  drawTimeline();
+  spy();
+}
+
+/* 极简 ArkTS 高亮：注释 / 字符串 / 关键字 */
+const KW=/\b(import|from|export|class|interface|struct|private|static|async|await|const|let|return|if|else|while|try|finally|new|function|void|boolean|string|number|true|false|this)\b/g;
+function hl(line){
+  const ci=line.indexOf('//');
+  let code=ci>=0?line.slice(0,ci):line, cm=ci>=0?line.slice(ci):'';
+  code=code.split(/('[^']*')/).map(seg=>seg.length>1&&seg[0]==="'"&&seg.endsWith("'")?`<span class="str">${esc(seg)}</span>`:esc(seg).replace(KW,'<span class="kw">$1</span>').replace(/(@\w+)/g,'<span class="ty">$1</span>')).join('');
+  return code+(cm?`<span class="cm">${esc(cm)}</span>`:'');
+}
+
+function fixCard(f,i){
+  const rows = f.dir
+    ? f.code.map(t=>`<div class="r ctx"><span>${hl(t)||' '}</span></div>`).join('')
+    : f.diff.map(([k,t])=>`<div class="r ${k==='a'?'add':k==='d'?'del':'ctx'}"><span class="s">${k==='a'?'+':k==='d'?'−':''}</span><span>${hl(t)||' '}</span></div>`).join('');
+  return `<div class="fix ${f.dir?'dir':''}">
+    <div class="fix-h"><span class="no">${i+1}</span><h4>${f.t}</h4>
+      <button class="copy" type="button" title="复制" aria-label="复制">${ic('copy')}</button></div>
+    ${f.loc?`<div class="floc">${f.loc}</div>`:''}
+    <div class="code ${f.dir?'plain':''}">${rows}</div>
+  </div>`;
+}
+
+function ckRow(c,i,s,one){
+  const lbl={hit:'命中',pass:'通过',excl:'已排除',miss:'缺数据'}[s];
+  const open=openChecks.has(i);
+  const body=c.items.map(it=>{
+    const L=it.label?`<div class="lbl">${esc(it.label)}</div>`:'';
+    if(it.k==='p') return L+`<p>${esc(it.t)}</p>`;
+    if(it.k==='ul') return L+`<ul>${it.t.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`;
+    if(it.k==='table') return L+`<div class="tblw"><table class="tt2"><thead><tr>${it.t[0].map(h=>`<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${it.t.slice(1).map(r=>`<tr>${r.map(x=>`<td>${esc(x)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+    if(it.k==='raw') return `<details class="raw"><summary>${ic('chev')}${esc(it.label)}<button class="copy" type="button" title="复制" aria-label="复制">${ic('copy')}</button></summary><pre><span class="txt">${it.t.split('\n').map(l=>{const m=l.match(/^(.*?)(\s+←.*)$/); return m?esc(m[1])+`<span class="ann">  ${esc(m[2].trim())}</span>`:esc(l);}).join('\n')}</span></pre></details>`;
+    return '';
+  }).join('');
+  return `<div class="ck s-${s} ${open?'open':''}" data-i="${i}">
+    <button class="ck-h" aria-expanded="${open}"><span class="st-t">${lbl}</span>
+      <span><span class="tt">${i+1}. ${esc(c.t)}</span><span class="one">${esc(one)}</span></span>${ic('chev','chev')}</button>
+    <div class="ck-b">${body}</div></div>`;
+}
+
+/* ---------- 时间线：数据全部来自原报告的应用日志、任务队列与抓栈时间 ---------- */
+const X0=80, PX=100;
+const tx=s=>X0+(parseFloat(s)-2)*PX;
+function drawTimeline(){
+  const svg=$('#tl'); if(!svg) return;
+  const Y={click:34,main:86,dog:136,queue:180}, axisY=214; let g='<g id="hl"></g>';
+  for(let s=2;s<=11;s++){const x=tx(s);g+=`<line x1="${x}" y1="10" x2="${x}" y2="${axisY-12}" stroke="rgba(0,0,0,.06)"/><text x="${x}" y="${axisY}" text-anchor="middle">:${String(s).padStart(2,'0')}</text>`;}
+  [['点击',Y.click],['主线程',Y.main],['看门狗',Y.dog],['任务队列',Y.queue]].forEach(([n,y])=>g+=`<text class="ln" x="0" y="${y+4}">${n}</text>`);
+  // 点击：第 2 次点击到被分发之间画成水平「排队」条，终点对齐第 2 轮开始
+  g+=`<rect x="${tx(3.418)}" y="${Y.click-6}" width="${tx(6.639)-tx(3.418)}" height="12" rx="6" fill="rgba(10,89,247,.10)"/>`;
+  g+=`<text x="${(tx(3.418)+tx(6.639))/2}" y="${Y.click+4}" text-anchor="middle" fill="#0A59F7">排队 3.2s</text>`;
+  g+=`<line x1="${tx(6.639)}" y1="${Y.click+6}" x2="${tx(6.639)}" y2="${Y.main-12}" stroke="#0A59F7" stroke-dasharray="3 3"/>`;
+  g+=`<line x1="${tx(2.631)}" y1="${Y.click+6}" x2="${tx(2.631)}" y2="${Y.main-12}" stroke="#0A59F7" stroke-dasharray="3 3"/>`;
+  g+=`<circle cx="${tx(2.631)}" cy="${Y.click}" r="6" fill="#0A59F7"/><text x="${tx(2.631)-10}" y="${Y.click+4}" text-anchor="end">02.631</text>`;
+  g+=`<circle cx="${tx(3.418)}" cy="${Y.click}" r="6" fill="#0A59F7"/>`;
+  g+=`<text x="${tx(3.418)}" y="${Y.click-12}" text-anchor="middle">03.418</text>`;
+  // 主线程：两轮保存，每段对应一条应用日志
+  const round=(arr,r)=>arr.map((st,i)=>{const s=parseFloat(st[0]);const e=i<arr.length-1?parseFloat(arr[i+1][0]):(r===1?6.639:10.313);
+    const over=r===2 && s>=9.639; const x=tx(s), w=Math.max(2,tx(e)-x-1.5);
+    return `<rect class="st" data-tip="11:15:${st[0]} saveNoteSync: ${st[1]}..." x="${x}" y="${Y.main-12}" width="${w}" height="24" rx="3" fill="${over?'#F6D5D2':'#F3E3C6'}"/>`}).join('');
+  g+=round(ROUND1,1)+round(ROUND2,2);
+  g+=`<rect x="${tx(10.313)}" y="${Y.main-12}" width="${tx(10.8)-tx(10.313)}" height="24" rx="3" fill="none" stroke="#C4322A" stroke-dasharray="3 3"/>`;
+  g+=`<text x="${(tx(2.632)+tx(6.639))/2}" y="${Y.main+28}" text-anchor="middle" fill="#8F5A00">第 1 轮保存 · 4.0s</text>`;
+  g+=`<text x="${(tx(6.639)+tx(10.313))/2}" y="${Y.main+28}" text-anchor="middle" fill="#8F5A00">第 2 轮保存 · 至 10.313 上报仍在执行</text>`;
+  // 看门狗：两次抓栈
+  g+=`<line x1="${tx(7.142)}" y1="${Y.dog-14}" x2="${tx(7.142)}" y2="${Y.dog+16}" stroke="#8F5A00" stroke-width="2"/><text x="${tx(7.142)+8}" y="${Y.dog-2}" fill="#8F5A00">3S 抓栈 07.142</text><text x="${tx(7.142)+8}" y="${Y.dog+12}">栈顶 Jeqz</text>`;
+  g+=`<line x1="${tx(10.14)}" y1="${Y.dog-14}" x2="${tx(10.14)}" y2="${Y.dog+16}" stroke="#C4322A" stroke-width="2"/><text x="${tx(10.14)-8}" y="${Y.dog-2}" fill="#C4322A" text-anchor="end">6S 抓栈 10.140</text><text x="${tx(10.14)-8}" y="${Y.dog+12}" text-anchor="end">栈顶 Ldobjbyname</text>`;
+  // 任务队列：只有两次采样，画两根比例柱，不连线
+  const base=Y.queue+14, hq=n=>Math.round(n/115*26);
+  [[7.127,62],[10.128,115]].forEach(([t,n])=>{const x=tx(t);
+    g+=`<rect x="${x-5}" y="${base-hq(n)}" width="10" height="${hq(n)}" rx="2" fill="#C4322A" opacity=".75"/><text x="${x+10}" y="${base-hq(n)+10}" fill="#C4322A">${n}</text>`;});
+  g+=`<text x="${tx(7.127)-12}" y="${base-2}" text-anchor="end">总任务数</text>`;
+  svg.innerHTML=g;
+}
+
+/* ---------- 时间线 ⇄ 根本原因 联动 ---------- */
+function highlight(i){
+  const hl=$('#hl'); if(!hl) return;
+  $$('#story li').forEach(li=>li.classList.toggle('on',+li.dataset.i===i));
+  const step=i==null?null:V[mode].chain[i]; const r=step&&step[2];
+  hl.innerHTML=r?r.map(([a,b])=>`<rect x="${tx(a)-4}" y="6" width="${Math.max(8,tx(b)-tx(a)+8)}" height="196" rx="4" fill="rgba(10,89,247,.10)"/>`).join(''):'';
+}
+document.addEventListener('mouseover',e=>{const li=e.target.closest('#story li'); if(li && !li.classList.contains('off')) highlight(+li.dataset.i);});
+document.addEventListener('mouseout',e=>{if(e.target.closest('#story li') && !e.relatedTarget?.closest?.('#story li')) highlight(null);});
+document.addEventListener('mousemove',e=>{
+  const svg=e.target.closest('#tl'); if(!svg) return;
+  const pt=svg.createSVGPoint(); pt.x=e.clientX; pt.y=e.clientY; const x=pt.matrixTransform(svg.getScreenCTM().inverse()).x;
+  const t=(x-X0)/PX+2; let best=null, bw=1e9;
+  V[mode].chain.forEach((c,i)=>(c[2]||[]).forEach(([a,b])=>{const pad=a===b?.12:.06; if(t>=a-pad&&t<=b+pad&&(b-a)<bw){bw=b-a;best=i;}}));
+  highlight(best);
+});
+document.addEventListener('pointerout',e=>{if(e.target.closest&&e.target.closest('#tl')&&!e.relatedTarget?.closest?.('#tl')) highlight(null);});
+
+/* ---------- 交互：切换版本、展开证据、目录高亮、时间线悬停看原日志 ---------- */
+document.addEventListener('click',e=>{
+  const cp=e.target.closest('.copy');
+  if(cp){
+    e.preventDefault(); e.stopPropagation();
+    const det=cp.closest('details'), fix=cp.closest('.fix');
+    const text = det ? (()=>{const c=det.querySelector('.txt').cloneNode(true); c.querySelectorAll('.ann').forEach(a=>a.remove()); return c.textContent;})()
+      : [...fix.querySelectorAll('.code .r')].map(r=>{const sg=r.querySelector('.s'); const t=r.lastElementChild.textContent; return (sg?(sg.textContent==='−'?'-':sg.textContent||' '):'')+t;}).join('\n');
+    const done=()=>{cp.classList.add('done'); cp.title='已复制'; cp.innerHTML=ic('check'); clearTimeout(cp._t); cp._t=setTimeout(()=>{cp.classList.remove('done'); cp.title='复制'; cp.innerHTML=ic('copy');},1600);};
+    if(navigator.clipboard&&window.isSecureContext){navigator.clipboard.writeText(text).then(done,()=>fallback(text,done));} else fallback(text,done);
+    return;
+  }
+  const h=e.target.closest('.ck-h');
+  if(h){ const row=h.closest('.ck'); row.classList.toggle('open'); const o=row.classList.contains('open');
+    o?openChecks.add(+row.dataset.i):openChecks.delete(+row.dataset.i); h.setAttribute('aria-expanded',o); }
+});
+document.addEventListener('mousemove',e=>{
+  const s=e.target.closest('#tl .st'), tip=$('#tip');
+  if(!s){ tip.classList.remove('on'); return; }
+  tip.innerHTML=`<code>${esc(s.dataset.tip)}</code>`; tip.classList.add('on');
+  tip.style.left=Math.min(innerWidth-440,e.clientX+14)+'px'; tip.style.top=(e.clientY+16)+'px';
+});
+function fallback(text,done){const ta=document.createElement('textarea');ta.value=text;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();try{document.execCommand('copy');}catch(_){}ta.remove();done();}
+function spy(){
+  const ids=$$('.side a[data-s]').map(a=>a.dataset.s); let cur=ids[0], best=-1e9;
+  if(scrollY>40) ids.forEach(id=>{const el=document.getElementById(id); if(!el) return; const t=el.getBoundingClientRect().top; if(t<innerHeight*.35 && t>best){best=t;cur=id;}});
+  $$('.side a[data-s]').forEach(a=>a.classList.toggle('on',a.dataset.s===cur));
+}
+addEventListener('scroll',spy,{passive:true});
+addEventListener('hashchange',()=>{mode=location.hash==='#v1'?'v1':'v2'; render(true); scrollTo({top:0});});
+
+render();
+</script>
+</body>
+</html>

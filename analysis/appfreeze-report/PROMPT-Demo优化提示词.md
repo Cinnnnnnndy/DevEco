@@ -1,8 +1,12 @@
 # AppFreeze 冻屏分析报告 · UI 设计优化简报（Demo 优化提示词）
 
+> **版本说明（2026-10-08）**：本提示词对应 `demos/28-appfreeze-report/v2.html`（V2，之后只迭代它）；`index.html` 为 V1（Agent 版），保留不动。
+>
+> **V2 迭代规则**：原报告内容不动，只改呈现形式，并保留时间线可视化。诊断结果、根因模块、责任领域、根本原因、修复建议、证据链（包括日志行尾的「← 解读」）都逐字取自原报告。可以做的只有三件事：合并重复、调整顺序、改排版。证据链收起时显示的那一行，直接取该节第一段原文。
+
 > 模式：**优化模式**（有现存 UI：两份低保真 HTML 报告 → 一个模板承载两种输入条件的高保真 Demo）
 > 输入：`input/v1-源码不可达-210435.html`、`input/v2-源码可达-220705.html`
-> 产出：`demos/28-appfreeze-report/index.html`——单文件、可双击打开、**CSS/JS 全部内联、零外链**；一个页面内可切换「源码可达 / 源码不可达」
+> 产出：`demos/28-appfreeze-report/v2.html`——单文件、可双击打开、**CSS/JS 全部内联、零外链**；一个页面内可切换「源码可达 / 源码不可达」
 > 问题编号 B1–B17 与可视化报告 critique 页同源，数字均为实测值（Chromium 无头，视口 1440×900）
 
 ---
@@ -268,7 +272,7 @@ Demo 做完后逐项对照两份原始报告做了一次消融：**原报告已�
 - Demo 必须：V1 状态下没有任何「应用补丁」按钮（B7）
 - Demo 必须：页面中不出现 `app_freeze` / `full` / `high` 等原始枚举（B9）
 - Demo 必须：全页只有一种时间格式（B10）
-- Demo 必须：`grep -c 'rel="stylesheet"' demos/28-appfreeze-report/index.html` 输出 0（交付门禁 1）
+- Demo 必须：`grep -c 'rel="stylesheet"' demos/28-appfreeze-report/v2.html` 输出 0（交付门禁 1）
 
 ## 明确不做
 
