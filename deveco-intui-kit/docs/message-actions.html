@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>消息操作栏 · 组件 Pattern</title>
-<meta name="description" content="DevEco Code 对话面板里每条消息下面那一排（AI 回答：复制 · 重新回答 · 时间，靠左常显；你发的：时间 · 编辑 · 复制，靠右悬停才现）的组件 pattern：叫什么、什么时候用、结构、变体、整条栏 8 个状态、单个按钮 7 个状态、时间戳规则、行为与无障碍、Do / Don't；每个状态一张实时渲染、能悬停能点的样张。">
+<meta name="description" content="DevEco Code 对话面板里每条消息下面那一排的组件 pattern。AI 回答：复制 · 重新回答 · 时间，靠左常显；你发的：时间 · 编辑 · 复制，靠右悬停才现；报错时换成带文字的「重新回答」。结构、两种变体、整条栏 6 个状态、按钮 6 个状态、时间戳规则、行为与无障碍；样张都是真组件，能悬停能点。">
 <link rel="icon" type="image/svg+xml" href="../icons/deveco-code-logo.svg">
 <link rel="stylesheet" href="../src/tokens.css">
 <link rel="stylesheet" href="../../site/launcher.css">
@@ -116,7 +116,6 @@ h3 small{font-weight:400;font-size:13px;color:var(--ui-fg-info);margin-left:8px}
 .x-tipdot{position:absolute;left:calc(50% + 26px);bottom:calc(100% + 8px);z-index:6}   /* 标号放在 tooltip 外面，不进标签 */
 .x-tip .ai-kbd{margin-left:6px;background:rgba(255,255,255,.18);color:inherit;border:0;height:16px;line-height:16px;font-size:10px}
 .x-grp{display:inline-flex;gap:2px}
-.x-purple .ai-msgbar__btn{color:var(--ai-ink)}
 
 /* 试验台 */
 .bench{display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:16px;align-items:start}
@@ -135,10 +134,6 @@ h3 small{font-weight:400;font-size:13px;color:var(--ui-fg-info);margin-left:8px}
 .tdemo .out{font-size:12.5px;line-height:20px;color:var(--pg-fg2);margin-top:10px}
 .tdemo .out b{font-weight:500;color:var(--ui-fg)}
 
-/* Do / Don't */
-.dd{display:grid;grid-template-columns:1fr;gap:16px}
-.pair2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
-.pair2 .fig{margin-top:0}
 .lims{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
 .lims ul{margin:8px 0 0;padding-left:18px;font-size:12.5px;line-height:21px;color:var(--pg-fg2)}
 .lims li b{font-weight:500;color:var(--ui-fg)}
@@ -209,7 +204,6 @@ div.fa{display:block}
 /* 内容列 < 640：表格按行堆叠，对照图上下排 */
 @container main (max-width:639px){
   .tr{grid-template-columns:1fr!important;gap:4px}.tr.th{display:none}
-  .pair2{grid-template-columns:1fr}
   .specimen .sp{flex-basis:28%}
 }
 /* 不支持容器查询的旧内核：按视口兜底 */
@@ -217,7 +211,7 @@ div.fa{display:block}
   @media (max-width:1560px){.intro{grid-template-columns:1fr}.states,.g3,.vars{grid-template-columns:1fr}}
   @media (max-width:1300px){.bench{grid-template-columns:1fr}}
   @media (max-width:1000px){.g2,.lims{grid-template-columns:1fr}.q3{grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}}
-  @media (max-width:860px){.tr{grid-template-columns:1fr!important;gap:4px}.tr.th{display:none}.pair2{grid-template-columns:1fr}}
+  @media (max-width:860px){.tr{grid-template-columns:1fr!important;gap:4px}.tr.th{display:none}}
 }
 </style>
 </head>
@@ -243,7 +237,7 @@ div.fa{display:block}
   <div class="layout">
     <aside class="sidebar" aria-label="目录">
       <div class="sd-title">目录</div>
-      <nav id="toc"><a class="cat" href="#overview"><span class="lbl">概览</span><span class="cnt">01</span></a><a class="cat" href="#anatomy"><span class="lbl">结构</span><span class="cnt">02</span></a><a class="cat" href="#variants"><span class="lbl">变体</span><span class="cnt">03</span></a><a class="cat" href="#bar-states"><span class="lbl">整条栏的状态</span><span class="cnt">04</span></a><a class="cat" href="#btn-states"><span class="lbl">按钮的状态</span><span class="cnt">05</span></a><a class="cat" href="#time"><span class="lbl">时间戳</span><span class="cnt">06</span></a><a class="cat" href="#behavior"><span class="lbl">行为与无障碍</span><span class="cnt">07</span></a><a class="cat" href="#dodont"><span class="lbl">Do / Don’t</span><span class="cnt">08</span></a><a class="cat" href="#refs"><span class="lbl">来源与局限</span><span class="cnt">09</span></a></nav>
+      <nav id="toc"><a class="cat" href="#overview"><span class="lbl">概览</span><span class="cnt">01</span></a><a class="cat" href="#anatomy"><span class="lbl">结构</span><span class="cnt">02</span></a><a class="cat" href="#variants"><span class="lbl">变体</span><span class="cnt">03</span></a><a class="cat" href="#bar-states"><span class="lbl">整条栏的状态</span><span class="cnt">04</span></a><a class="cat" href="#btn-states"><span class="lbl">按钮的状态</span><span class="cnt">05</span></a><a class="cat" href="#time"><span class="lbl">时间戳</span><span class="cnt">06</span></a><a class="cat" href="#behavior"><span class="lbl">行为与无障碍</span><span class="cnt">07</span></a><a class="cat" href="#refs"><span class="lbl">来源与局限</span><span class="cnt">08</span></a></nav>
     </aside>
 
 <main>
@@ -436,25 +430,9 @@ div.fa{display:block}
   </div>
 </section>
 
-<!-- ================= 08 Do / Don't ================= -->
-<section class="grp" id="dodont">
-  <div class="ghead"><h3>Do / Don’t</h3><span class="cnt">08</span></div>
-  <p class="note">四条最容易犯的错。</p>
-  <div class="dd">
-    <div class="card"><h4>一排挂太多东西</h4><div class="pair2"><figure data-fig="dd1-no"></figure><figure data-fig="dd1-ok"></figure></div>
-      <dl class="scn"><dt>在做</dt><dd>翻一段长对话找上次的结论</dd><dt>卡在</dt><dd>每条下面五个动作加两只拇指，正文反而找不到</dd></dl></div>
-    <div class="card"><h4>栏用智能色</h4><div class="pair2"><figure data-fig="dd2-no"></figure><figure data-fig="dd2-ok"></figure></div>
-      <dl class="scn"><dt>在做</dt><dd>扫一眼面板，看 AI 还在不在干活</dd><dt>卡在</dt><dd>按钮和生成中的星芒同一种紫色，分不清哪个是 AI 在做、哪个是你能点的</dd></dl></div>
-    <div class="card"><h4>生成中就出现栏</h4><div class="pair2"><figure data-fig="dd3-no"></figure><figure data-fig="dd3-ok"></figure></div>
-      <dl class="scn"><dt>在做</dt><dd>等 Agent 把修法写完</dd><dt>卡在</dt><dd>字还在往外蹦，下面已经有「复制」，不知道复制的是半截还是整段</dd></dl></div>
-    <div class="card"><h4>时间写到秒</h4><div class="pair2"><figure data-fig="dd4-no"></figure><figure data-fig="dd4-ok"></figure></div>
-      <dl class="scn"><dt>在做</dt><dd>找刚才那条回答</dd><dt>卡在</dt><dd>每条都是 2026-10-08 14:12:33，眼睛要逐位比</dd></dl></div>
-  </div>
-</section>
-
-<!-- ================= 09 来源与局限 ================= -->
+<!-- ================= 08 来源与局限 ================= -->
 <section class="grp" id="refs">
-  <div class="ghead"><h3>来源与局限</h3><span class="cnt">09</span></div>
+  <div class="ghead"><h3>来源与局限</h3><span class="cnt">08</span></div>
   <div class="card lims">
     <div><h4>来源</h4><ul>
       <li><a href="ai-system.html#states">DevEco 智能 · 视觉与交互</a> 第 07 章进行态：栏的出现时机由此推出</li>
@@ -594,24 +572,6 @@ div.fa{display:block}
     ['默认',BTN('copy'),'--ui-icon'],['悬停',BTN('copy',{cls:'is-hover',tip:'复制'}),'--ui-action-hover'],['按下',BTN('copy',{cls:'is-active'}),'--ui-action-pressed'],
     ['聚焦',BTN('copy',{cls:'is-focus'}),'--ui-accent 2px'],['已复制',BTN('copy',{done:'已复制'}),'--ui-success'],['禁用',BTN('retry',{disabled:true,title:'模型离线，先在底栏换一个'}),'--ui-fg-disabled']
   ].map(function(r){return '<div class="sp"><div class="sp-b">'+r[1]+'</div><b>'+r[0]+'</b><code>'+r[2]+'</code></div>'}).join('');
-  var MANY='<div class="ai-msgbar" role="toolbar">'+BTN('copy')+BTN('edit')+'<button type="button" class="ai-msgbar__btn" aria-label="退回">'+U('ai-revert')+'</button><button type="button" class="ai-msgbar__btn" aria-label="调整">'+U('ai-adjust')+'</button>'+BTN('retry')+'<button type="button" class="ai-msgbar__btn" aria-label="有用">'+U('ai-thumb-up')+'</button><button type="button" class="ai-msgbar__btn" aria-label="没用">'+U('ai-thumb-down')+'</button>'+TIME('20 分钟前')+'</div>';
-  FIG['dd1-no']={w:400,tag:'<b class="no">✕ Don’t</b>',cap:'每条下面五个动作加两只拇指。',
-    h:P({hr:'',body:ANS({meta:'本机 · 11 s',lead:'空指针来自 this.user 在 aboutToAppear 之前被读取。',noDet:true,barHtml:MANY})+ANS({meta:'本机 · 4 s',lead:'已给 user 补了默认值。',noDet:true,barHtml:MANY.replace('20 分钟前','刚刚')})})};
-  FIG['dd1-ok']={w:400,tag:'<b class="ok">✓ Do</b>',cap:'两个图标加时间，淡色。',
-    h:P({hr:'',body:ANS({meta:'本机 · 11 s',lead:'空指针来自 this.user 在 aboutToAppear 之前被读取。',noDet:true,bar:{time:'20 分钟前'}})+ANS({meta:'本机 · 4 s',lead:'已给 user 补了默认值。',noDet:true,bar:{time:'刚刚'}})})};
-  FIG['dd2-no']={w:400,tag:'<b class="no">✕ Don’t</b>',cap:'按钮染成智能色。',
-    h:P({hr:'',body:ANS({meta:'本机 · 11 s',lead:'已改成可选链并补了默认值。',noDet:true,barHtml:'<div class="ai-msgbar x-purple" role="toolbar">'+BTN('copy')+BTN('retry')+TIME('20 分钟前')+'</div>'})})};
-  FIG['dd2-ok']={w:400,tag:'<b class="ok">✓ Do</b>',cap:'按钮中性；智能色只留给 AI 正在做的事。',
-    h:P({hr:'',body:ANS({meta:'本机 · 11 s',lead:'已改成可选链并补了默认值。',noDet:true,bar:{time:'20 分钟前'}})})};
-  FIG['dd3-no']={w:400,tag:'<b class="no">✕ Don’t</b>',cap:'字还在长，栏已经在了。',
-    h:P({hr:'',body:'<div class="ai-answer ai-answer--plain"><div class="ai-answer__meta">'+U('ai-local')+'本机 · 4 s</div><p class="ai-answer__lead">空指针来自 this.user 在 aboutToAppear 之前被读取；正在把<span class="caret"></span></p>'+BAR({time:'刚刚'})+'</div>'})};
-  FIG['dd3-ok']={w:400,tag:'<b class="ok">✓ Do</b>',cap:'生成中没有栏。',
-    h:P({hr:'',body:'<div class="ai-answer ai-answer--plain"><div class="ai-answer__meta">'+U('ai-local')+'本机 · 4 s</div><p class="ai-answer__lead">空指针来自 this.user 在 aboutToAppear 之前被读取；正在把<span class="caret"></span></p></div>'})};
-  FIG['dd4-no']={w:400,tag:'<b class="no">✕ Don’t</b>',cap:'时间写到秒，每条都要逐位比。',
-    h:P({hr:'',body:ANS({meta:'本机 · 11 s',lead:'已改成可选链并补了默认值。',noDet:true,bar:{time:'2026-10-08 14:12:33'}})})};
-  FIG['dd4-ok']={w:400,tag:'<b class="ok">✓ Do</b>',cap:'相对时间；要精确时悬停。',
-    h:P({hr:'',body:ANS({meta:'本机 · 11 s',lead:'已改成可选链并补了默认值。',noDet:true,bar:{time:'20 分钟前'}})})};
-
   /* ---------- 配图挂载与缩放（与智能规范页同一套） ---------- */
   function renderFig(el){
     var id=el.getAttribute('data-fig'),d=FIG[id];if(!d)return;
