@@ -281,8 +281,8 @@ window.DEVECO_CATALOG = {
           tags: ['步数与切换次数'], note: '对照真机体检报告提出的具体需求', thumb: { type: 'image', src: 'site/thumbs/22-coldstart-report.jpg' },
         },
         {
-          title: '冻屏分析报告 V2：先给判决，再给卷宗', subtitle: 'AppFreeze Report · Verdict First',
-          desc: '原报告的内容、顺序、用词都不改，只改呈现：证据折叠成清单，根本原因配主线程时间线。',
+          title: '冻屏分析报告 V2：原文不动，只改呈现', subtitle: 'AppFreeze Report · Same Content, New Layout',
+          desc: '内容、章节顺序、用词都跟原报告一致；证据折叠成清单，根本原因配主线程时间线。',
           view: 'ready', date: '2026-10-08', href: 'demos/28-appfreeze-report/v2.html',
           links: [
             { label: '源码不可达版', href: 'demos/28-appfreeze-report/v2.html#v1' },
