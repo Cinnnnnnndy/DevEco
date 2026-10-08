@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>消息操作栏 · 组件 Pattern</title>
-<meta name="description" content="DevEco Code 对话面板里每条消息下面那一排（复制 / 固定 / 朗读 / 重新回答 / 更多 · 有用 没用 · 时间）的组件 pattern：叫什么、什么时候用、结构、变体、整条栏 8 个状态、单个按钮 7 个状态、时间戳规则、行为与无障碍、Do / Don't；每个状态一张实时渲染、能悬停能点的样张。">
+<meta name="description" content="DevEco Code 对话面板里每条消息下面那一排（复制 / 朗读 / 重新回答 · 有用 没用 · 时间）的组件 pattern：叫什么、什么时候用、结构、变体、整条栏 8 个状态、单个按钮 7 个状态、时间戳规则、行为与无障碍、Do / Don't；每个状态一张实时渲染、能悬停能点的样张。">
 <link rel="icon" type="image/svg+xml" href="../icons/deveco-code-logo.svg">
 <link rel="stylesheet" href="../src/tokens.css">
 <link rel="stylesheet" href="../../site/launcher.css">
@@ -31,7 +31,9 @@ section.grp{scroll-margin-top:20px}
 section.grp>p.note{margin-bottom:24px}
 
 /* 首屏 */
-.intro{padding:4px 0 8px;display:grid;grid-template-columns:minmax(0,1fr) 440px;gap:40px;align-items:center}
+/* 响应式一律看内容列（main）的宽度，不看视口：侧栏占掉 252px 之后才是真正可用的宽 */
+main{container-type:inline-size;container-name:main;width:100%}
+.intro{padding:4px 0 8px;display:grid;grid-template-columns:minmax(0,1fr) minmax(360px,440px);gap:40px;align-items:center}
 .intro .lede{margin:0;font-size:15px;line-height:26px;color:var(--pg-fg2);max-width:40em}
 .q3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:32px 0 0}
 .q3 div{background:var(--pg-card);border-radius:14px;padding:14px 16px}
@@ -108,7 +110,8 @@ h3 small{font-weight:400;font-size:13px;color:var(--ui-fg-info);margin-left:8px}
 .is-hover{background:var(--ui-action-hover)!important;color:var(--ui-fg)!important}
 .is-active{background:var(--ui-action-pressed)!important;color:var(--ui-fg)!important}
 .is-focus{outline:2px solid var(--ui-accent);outline-offset:1px}
-.x-hov{position:relative;display:inline-flex}
+.x-hov,.ai-msgbar__btn{position:relative}   /* tooltip 样张以按钮为锚 */
+.x-hov{display:inline-flex}
 .x-tip{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(100% + 6px);background:var(--ui-tooltip-bg);color:var(--ui-tooltip-fg);font-size:11px;line-height:16px;padding:3px 7px;border-radius:5px;white-space:nowrap;z-index:5;pointer-events:none}
 .x-tip .ai-kbd{margin-left:6px;background:rgba(255,255,255,.18);color:inherit;border:0;height:16px;line-height:16px;font-size:10px}
 .x-grp{display:inline-flex;gap:2px}
@@ -117,18 +120,14 @@ h3 small{font-weight:400;font-size:13px;color:var(--ui-fg-info);margin-left:8px}
 /* 试验台 */
 .bench{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:16px;align-items:start}
 .bench .vp{border-radius:16px;background:var(--fig-bg);padding:14px;display:flex;justify-content:center}
-.bench .vp .x-tw{width:400px;max-width:100%}
+.bench .vp .x-tw{width:420px;max-width:100%}
 .bench .log{display:flex;flex-direction:column;gap:6px;font-size:12.5px;line-height:19px}
 .bench .log .h{font-size:12px;color:var(--ui-fg-info)}
 .bench .log .row{padding:8px 12px;border-radius:10px;background:var(--pg-stage)}
 .bench .log .row b{font-weight:500}
-.x-pinned{display:flex;align-items:center;gap:6px;padding:0 10px;height:28px;font-size:11.5px;color:var(--ui-fg-info);border-bottom:1px solid var(--ui-border)}
-.x-pinned svg{width:13px;height:13px;color:var(--ui-icon)}
-.x-pinned .grow{flex:1}
-.x-pinned span.t{color:var(--ui-fg);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
 
 /* 时间戳试验 */
-.tdemo{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start}
+.tdemo{display:flex;flex-direction:column;gap:12px}
 .tdemo .opts{display:flex;flex-wrap:wrap;gap:6px}
 .tdemo .opts button{appearance:none;border:0;height:28px;padding:0 10px;border-radius:14px;background:var(--pg-stage);color:var(--ui-fg);font:inherit;font-size:12px;cursor:pointer}
 .tdemo .opts button[aria-pressed="true"]{background:var(--ui-fg);color:var(--pg-card)}
@@ -190,8 +189,31 @@ div.fa{display:block}
 .caret{display:inline-block;width:1.5px;height:13px;background:var(--ui-fg);vertical-align:-2px;margin-left:1px;animation:blink 1s steps(2) infinite}
 @keyframes blink{to{opacity:0}}
 
-@media (max-width:1100px){.intro{grid-template-columns:1fr}.g3,.states,.dd,.lims,.tdemo,.bench{grid-template-columns:1fr}.q3{grid-template-columns:1fr}}
-@media (max-width:860px){.g2{grid-template-columns:1fr}.tr{grid-template-columns:1fr!important;gap:4px}.tr.th{display:none}}
+/* 内容列 < 1040：首屏改单列，Do / Don't 单列，三列卡改两列 */
+@container main (max-width:1039px){
+  .intro{grid-template-columns:1fr;gap:24px}
+  .intro .card.hero-art{max-width:560px}
+  .dd{grid-template-columns:1fr}
+  .g3{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+/* 内容列 < 760：所有多列卡改单列；首屏三句按 170px 自动换行 */
+@container main (max-width:759px){
+  .g2,.g3,.states,.lims,.bench{grid-template-columns:1fr}
+  .q3{grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}
+  .intro .card.hero-art{max-width:none}
+}
+/* 内容列 < 640：表格按行堆叠，对照图上下排 */
+@container main (max-width:639px){
+  .tr{grid-template-columns:1fr!important;gap:4px}.tr.th{display:none}
+  .pair2{grid-template-columns:1fr}
+  .specimen .sp{flex-basis:28%}
+}
+/* 不支持容器查询的旧内核：按视口兜底 */
+@supports not (container-type:inline-size){
+  @media (max-width:1300px){.intro{grid-template-columns:1fr}.dd{grid-template-columns:1fr}.g3{grid-template-columns:repeat(2,minmax(0,1fr))}}
+  @media (max-width:1000px){.g2,.g3,.states,.lims,.bench{grid-template-columns:1fr}.q3{grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}}
+  @media (max-width:860px){.tr{grid-template-columns:1fr!important;gap:4px}.tr.th{display:none}.pair2{grid-template-columns:1fr}}
+}
 </style>
 </head>
 <body>
@@ -226,7 +248,7 @@ div.fa{display:block}
     <p class="lede">DevEco Code 对话面板里，每条消息下面那一排：几个图标按钮、一组反馈、一个时间。它很小，但每条消息都有一个——出现的时机不对，就一直在抢眼；出现了却不知道是对哪条的操作，就等于没有。这一页把它当一个 pattern 写清楚：叫什么、什么时候用、长什么样，以及每个状态下显示什么、不显示什么。样张全是真组件，鼠标放上去就是真实反应。</p>
     <div class="q3">
       <div><b>什么时候出现？</b><span>这条消息「完成」或「中断」之后才出现；生成中、在等你，整条栏不出现。</span></div>
-      <div><b>出现了有哪些？</b><span>完成的 AI 回答：复制 · 固定 · 朗读 · 重新回答 · 更多，右侧有用 / 没用 · 时间。报错或中断：只有「重新回答」和复制。你发的：编辑 · 复制 · 时间。</span></div>
+      <div><b>出现了有哪些？</b><span>完成的 AI 回答：复制 · 朗读 · 重新回答，右侧有用 / 没用 · 时间。报错或中断：只有「重新回答」和复制。你发的：编辑 · 复制 · 时间。</span></div>
       <div><b>怎么不抢眼？</b><span>默认只留时间，按钮悬停才现；最新一条常显；全部中性色，没有智能色也没有琥珀。</span></div>
     </div>
   </div>
@@ -265,10 +287,8 @@ div.fa{display:block}
   <div class="tbl acts">
     <div class="tr th"><span>动作</span><span>做什么</span><span>类型</span><span>在哪种消息</span></div>
     <div class="tr"><span class="ico"><svg><use href="#ai-copy"/></svg><b>复制</b></span><span>复制整条消息的原文（Markdown）。代码块里的复制只复制那一块，两者不冲突。</span><span>瞬时：按下变「已复制」，1.5 s 复原</span><span>AI 回答 · 你发的</span></div>
-    <div class="tr"><span class="ico"><svg><use href="#ai-pin"/></svg><b>固定</b></span><span>把这条钉到对话顶部的「已固定」区，长对话里随时回来看；再点取消。</span><span>开关</span><span>AI 回答</span></div>
     <div class="tr"><span class="ico"><svg><use href="#ai-speak"/></svg><b>朗读</b></span><span>用系统语音读这条；再点停止。与语音开发（demo 06）共用开关，没有语音能力时不出现。</span><span>开关 <span class="tagk new">提案</span></span><span>AI 回答</span></div>
     <div class="tr"><span class="ico"><svg><use href="#ai-retry"/></svg><b>重新回答</b></span><span>用同样的输入再生成一条；旧的留在上面，不覆盖。报错或中断时它是这条的主要动作：带文字、常显；平时只有图标，悬停才现。</span><span>一次性</span><span>AI 回答（改动动作行里已有「重试」时不出现）</span></div>
-    <div class="tr"><span class="ico"><svg><use href="#ai-more"/></svg><b>更多</b></span><span>折叠项：引用这条回复、导出这条、删除这条。窄面板时固定、朗读、反馈也收进来。</span><span>菜单</span><span>AI 回答</span></div>
     <div class="tr"><span class="ico"><svg><use href="#ai-thumb-up"/></svg><svg><use href="#ai-thumb-down"/></svg><b>有用 / 没用</b></span><span>点一下即记录，不弹窗、不追问；可取消，可改选。淡色放最右。</span><span>开关（互斥）</span><span>AI 回答</span></div>
     <div class="tr"><span class="ico"><svg><use href="#ai-g-pencil"/></svg><b>编辑</b></span><span>改你发的那条，从这条起重新生成；下面旧的回答折叠起来，不删。</span><span>一次性</span><span>你发的</span></div>
     <div class="tr"><span class="ico"><span class="mono" style="font-size:11px;color:var(--ui-fg-info)">20 分钟前</span></span><span>这条「完成」的时刻。相对时间，悬停看绝对时间；规则见第 06 章。</span><span>文本</span><span>AI 回答 · 你发的</span></div>
@@ -294,7 +314,7 @@ div.fa{display:block}
       <dl class="spec">
         <dt>图标</dt><dd><code>--ui-icon</code>；悬停 <code>--ui-fg</code></dd>
         <dt>悬停底</dt><dd><code>--ui-action-hover</code>；按下 <code>--ui-action-pressed</code></dd>
-        <dt>开</dt><dd>底 <code>--ai-surface-2</code> + 图标 <code>--ui-fg</code>，固定用填充字形</dd>
+        <dt>开</dt><dd>底 <code>--ai-surface-2</code> + 图标 <code>--ui-fg</code>，朗读换停止字形</dd>
         <dt>禁用</dt><dd><code>--ui-fg-disabled</code>，无底</dd>
         <dt>聚焦</dt><dd>2 px <code>--ui-accent</code> 环，外扩 1 px——蓝只在这里</dd>
         <dt>瞬时成功</dt><dd><code>--ui-success</code>（已复制）</dd>
@@ -306,10 +326,10 @@ div.fa{display:block}
 <!-- ================= 03 变体 ================= -->
 <section class="grp" id="variants">
   <div class="ghead"><h3>变体</h3><span class="cnt">03</span></div>
-  <p class="note">按消息类型和所处环境分五种。按钮集合变，结构、尺寸、颜色不变。</p>
+  <p class="note">按消息类型分四种。按钮集合变，结构、尺寸、颜色不变。窄面板不折叠：三个图标 + 反馈 + 时间最少约 200 px，比最窄的工具窗还窄。</p>
   <div class="g2">
     <div class="card"><h4>AI 回答<code> · 默认</code></h4>
-      <p>复制 · 固定 · 朗读 · 重新回答 · 更多 ⋯，右侧有用 / 没用 · 时间。</p>
+      <p>复制 · 朗读 · 重新回答，右侧有用 / 没用 · 时间。</p>
       <figure data-fig="var-ai"></figure></div>
     <div class="card"><h4>你发的消息</h4>
       <p>编辑 · 复制 · 时间，跟着气泡靠右。改过的在时间后加「已编辑」。没有反馈——不给自己打分。</p>
@@ -317,11 +337,8 @@ div.fa{display:block}
     <div class="card"><h4>改了代码的回答</h4>
       <p>上面多一行改动动作（编辑 / 退回 / 重试 / 调整，智能规范 08）。同一动作只出现一次：那一行已有「重试」，栏里去掉重新回答，其余不变。</p>
       <figure data-fig="var-applied"></figure></div>
-    <div class="card"><h4>窄面板<code> · 工具窗宽 &lt; 320 px</code></h4>
-      <p>只留复制 · 重新回答 · 更多 ⋯ 和时间；固定、朗读、有用 / 没用收进「更多」。时间不缩写。</p>
-      <figure data-fig="var-compact"></figure></div>
     <div class="card wide"><h4>多 Agent 对话</h4>
-      <p>几个 Agent 在同一条对话里各说各的：时间前面写谁，「构建 Agent · 20 分钟前」；固定、重新回答、反馈都只作用这一条，不会把另一个 Agent 的消息带上。单 Agent 对话不写谁。</p>
+      <p>几个 Agent 在同一条对话里各说各的：时间前面写谁，「构建 Agent · 20 分钟前」；重新回答、反馈都只作用这一条，不会把另一个 Agent 的消息带上。单 Agent 对话不写谁。</p>
       <figure data-fig="var-multi"></figure>
       <dl class="scn"><dt>在做</dt><dd>构建 Agent 和测试 Agent 轮流在一条对话里汇报</dd><dt>卡在</dt><dd>两条回答长得一样，想让测试那条重新回答，不确定会不会把构建也重跑</dd><dt>这样解</dt><dd class="fix">栏上写清是谁的；重新回答只重跑这一条，上一条的时间和内容都不动</dd></dl></div>
   </div>
@@ -330,11 +347,11 @@ div.fa{display:block}
 <!-- ================= 04 整条栏的状态 ================= -->
 <section class="grp" id="bar-states">
   <div class="ghead"><h3>整条栏的状态</h3><span class="cnt">04</span></div>
-  <p class="note">先看一张总表：报错时要的是「重新回答」，其他时候是复制等一排图标，时间只在完成之后才有。再往下是八个状态，每个写清「显示什么 / 不显示什么 / 怎么进入 / 怎么退出」。前四个由鼠标和键盘决定，后四个由消息本身的进行态决定（对应关系见第 07 章）。样张里能悬停的都能悬停。</p>
+  <p class="note">先看一张总表：报错时要的是「重新回答」，其他时候是复制等一排图标，时间只在完成之后才有。再往下是七个状态，每个写清「显示什么 / 不显示什么 / 怎么进入 / 怎么退出」。前四个由鼠标和键盘决定，后三个由消息本身的进行态决定（对应关系见第 07 章）。样张里能悬停的都能悬停。</p>
   <div class="tbl sum" style="margin-bottom:24px">
     <div class="tr th"><span>这条消息处在</span><span>栏上有什么</span><span>时间怎么写</span></div>
-    <div class="tr"><b>报错 / 中断</b><span>「重新回答」带文字、常显，旁边一个复制。没有固定、朗读、反馈。</span><span>失败 · 刚刚 &nbsp;/&nbsp; 已停止 · 刚刚</span></div>
-    <div class="tr"><b>已完成（其他时候）</b><span>复制 · 固定 · 朗读 · 重新回答 · 更多，右侧有用 / 没用。默认只留时间，悬停才现；最新一条常显。</span><span>刚刚 → 20 分钟前 → 09:41 → 昨天 18:05 → 10 月 1 日 14:12</span></div>
+    <div class="tr"><b>报错 / 中断</b><span>「重新回答」带文字、常显，旁边一个复制。没有朗读、反馈。</span><span>失败 · 刚刚 &nbsp;/&nbsp; 已停止 · 刚刚</span></div>
+    <div class="tr"><b>已完成（其他时候）</b><span>复制 · 朗读 · 重新回答，右侧有用 / 没用。默认只留时间，悬停才现；最新一条常显。</span><span>刚刚 → 20 分钟前 → 09:41 → 昨天 18:05 → 10 月 1 日 14:12</span></div>
     <div class="tr"><b>还没完成 / 在等你</b><span>什么都没有——整条栏不渲染。</span><span>没有时间：还没有「完成」这个时刻</span></div>
   </div>
   <div class="states" id="stateCards"></div>
@@ -353,16 +370,13 @@ div.fa{display:block}
       <div class="tr"><b>悬停</b><span><code>--ui-fg</code></span><span><code>--ui-action-hover</code></span><span>500 ms 后出 tooltip（Int UI 默认延迟）</span></div>
       <div class="tr"><b>按下</b><span><code>--ui-fg</code></span><span><code>--ui-action-pressed</code></span><span>松开即触发；没有按下动画</span></div>
       <div class="tr"><b>聚焦</b><span><code>--ui-fg</code></span><span>无</span><span>2 px <code>--ui-accent</code> 环；tooltip 立即出现</span></div>
-      <div class="tr"><b>开</b><span><code>--ui-fg</code>，固定换填充字形</span><span><code>--ai-surface-2</code></span><span><code>aria-pressed="true"</code>；tooltip 改成反动作（取消固定 / 停止朗读）</span></div>
+      <div class="tr"><b>开</b><span><code>--ui-fg</code>，朗读换停止字形</span><span><code>--ai-surface-2</code></span><span><code>aria-pressed="true"</code>；tooltip 改成反动作（停止朗读）</span></div>
       <div class="tr"><b>瞬时</b><span><code>--ui-success</code> 勾</span><span>无</span><span>按钮内出现两个字（已复制），1.5 s 后复原；不弹 toast</span></div>
-      <div class="tr"><b>禁用</b><span><code>--ui-fg-disabled</code></span><span>无</span><span>不隐藏，tooltip 写原因：模型离线 / 内容为空 / 已固定 5 条</span></div>
+      <div class="tr"><b>禁用</b><span><code>--ui-fg-disabled</code></span><span>无</span><span>不隐藏，tooltip 写原因：模型离线 / 内容为空 / 没有语音能力</span></div>
     </div>
   </div>
 
   <div class="g3" style="margin-top:16px">
-    <div class="card"><h4>固定<code> · 开关</code></h4>
-      <p>开：填充字形 + 底色；对话顶部出现「已固定」一行，点它跳回这条。再点取消。</p>
-      <figure data-fig="tg-pin"></figure></div>
     <div class="card"><h4>朗读<code> · 开关</code></h4>
       <p>开：图标换成停止，右边三根小柱在动。系统开了降低动效：小柱不动，tooltip 写「朗读中」。</p>
       <figure data-fig="tg-speak"></figure></div>
@@ -380,7 +394,7 @@ div.fa{display:block}
       <figure data-fig="tg-fbrest"></figure></div>
   </div>
 
-  <h3>试验台<small>点一点：复制、固定、朗读、有用 / 没用都是真反应</small></h3>
+  <h3>试验台<small>一段完整对话：把鼠标放到任意一条上；复制、朗读、有用 / 没用都是真反应</small></h3>
   <div class="card">
     <div class="bench">
       <div class="vp" id="benchVp"></div>
@@ -453,19 +467,18 @@ div.fa{display:block}
       <ul class="ls">
         <li><span class="ai-kbd">Tab</span> 进入栏（栏随之可见），<span class="ai-kbd">←</span> <span class="ai-kbd">→</span> 在按钮间移动，<span class="ai-kbd">Enter</span> / <span class="ai-kbd">Space</span> 触发，<span class="ai-kbd">Esc</span> 回到输入框。</li>
         <li>每个按钮有 <code>aria-label</code>；开关类加 <code>aria-pressed</code>；禁用用原生 <code>disabled</code>，tooltip 仍可读。</li>
-        <li>整条栏是一个 <code>toolbar</code> 角色，读屏念「消息操作，5 个按钮」。</li>
+        <li>整条栏是一个 <code>toolbar</code> 角色，读屏念「消息操作，3 个按钮」。</li>
       </ul></div>
     <div class="card"><h4>Tooltip 与快捷键</h4>
       <ul class="ls">
-        <li>内容：名字 + 快捷键。开关打开后名字换成反动作：固定 → 取消固定，朗读 → 停止朗读。</li>
+        <li>内容：名字 + 快捷键。开关打开后名字换成反动作：朗读 → 停止朗读。</li>
         <li>鼠标悬停 500 ms 后出现；键盘聚焦立即出现。</li>
         <li>快捷键尚未与 Windows 版核对冲突，样张里不写具体键位。</li>
       </ul></div>
     <div class="card"><h4>不弹窗、不 toast</h4>
       <ul class="ls">
-        <li>已复制、已固定、已记录反馈，都在按钮自己身上表达：图标变、两个字短暂出现，1.5 s 复原。</li>
-        <li>唯一会跳出来的是「更多」菜单，和 Int UI 的弹出菜单同形。</li>
-        <li>删除这条（在「更多」里）要二次确认——它是栏里唯一不可逆的动作。</li>
+        <li>已复制、已记录反馈，都在按钮自己身上表达：图标变、两个字短暂出现，1.5 s 复原。</li>
+        <li>栏里没有菜单，也没有不可逆的动作；删除、导出这类对话级操作在面板头。</li>
       </ul></div>
   </div>
 </section>
@@ -500,10 +513,9 @@ div.fa{display:block}
     </ul></div>
     <div><h4>已知局限</h4><ul>
       <li><b>朗读是提案：</b>依赖语音开发（demo 06）的能力，未评审；没有语音能力的环境不出现这个按钮。</li>
-      <li><b>阈值为推演值：</b>窄面板 320 px、固定上限 5 条、淡出 120 ms、瞬时反馈 1.5 s、相对时间各档，均未与产品对齐。</li>
+      <li><b>阈值为推演值：</b>淡出 120 ms、瞬时反馈 1.5 s、相对时间各档，均未与产品对齐。</li>
       <li><b>快捷键待核实：</b>复制 / 重新回答 / 编辑的键位尚未与 Windows 版负责同学核对冲突，样张里不写键位。</li>
       <li><b>真机行为未逐帧核实：</b>当前 CodeGenie 面板的消息操作与时间显示未逐帧对照，本页是目标态，不是现状记录。</li>
-      <li><b>「更多」里的项目未定：</b>引用回复、导出这条、删除这条为建议集合。</li>
     </ul></div>
   </div>
 </section>
@@ -513,7 +525,7 @@ div.fa{display:block}
 
   <footer>
     <span>组件本体在 <code>deveco-intui-kit/src/ai.css</code> 的 <code>.ai-msgbar</code>；改样式改那里，深浅两套都要看。</span>
-    <span>图标在 <code>icons/ai-icons.svg</code>（<code>ai-copy</code> / <code>ai-pin</code> / <code>ai-pin-on</code> / <code>ai-speak</code> / <code>ai-check</code> / <code>ai-more</code>），改完跑 <code>python3 build.py sync-icons</code>。</span>
+    <span>图标在 <code>icons/ai-icons.svg</code>（<code>ai-copy</code> / <code>ai-speak</code> / <code>ai-check</code>），改完跑 <code>python3 build.py sync-icons</code>。</span>
     <span>颜色与字号来自 <code>tokens.css</code>，与启动页、界面稿、智能规范同一套 token。</span>
   </footer>
 </div>
@@ -529,12 +541,12 @@ div.fa{display:block}
      ===================================================================== */
   function U(id,cls){return '<svg class="'+(cls||'ai-ico')+'"><use href="#'+id+'"/></svg>'}
   function A(n,html,pos,tag){tag=tag||'span';return '<'+tag+' class="fa '+(pos||'')+'">'+html+'<i class="fdot">'+n+'</i></'+tag+'>'}
-  var ICO={copy:'ai-copy',pin:'ai-pin',speak:'ai-speak',retry:'ai-retry',more:'ai-more',edit:'ai-g-pencil'};
-  var LBL={copy:'复制',pin:'固定',speak:'朗读',retry:'重新回答',more:'更多',edit:'编辑'};
+  var ICO={copy:'ai-copy',speak:'ai-speak',retry:'ai-retry',edit:'ai-g-pencil'};
+  var LBL={copy:'复制',speak:'朗读',retry:'重新回答',edit:'编辑'};
   function BTN(act,o){o=o||{};var on=!!o.on,icon=ICO[act];
-    if(act==='pin'&&on)icon='ai-pin-on';if(act==='speak'&&on)icon='ai-stop';
-    var label=o.label||(on?(act==='pin'?'取消固定':act==='speak'?'停止朗读':LBL[act]):LBL[act]);
-    var tog=(act==='pin'||act==='speak');
+    if(act==='speak'&&on)icon='ai-stop';
+    var label=o.label||(on&&act==='speak'?'停止朗读':LBL[act]);
+    var tog=(act==='speak');
     return '<button type="button" class="ai-msgbar__btn'+(o.cls?' '+o.cls:'')+(o.text?' ai-msgbar__btn--text':'')+'" data-act="'+act+'" aria-label="'+label+'" title="'+esc(o.title||label)+'"'+
       (tog?' aria-pressed="'+on+'"':'')+(o.disabled?' disabled':'')+(o.done?' data-done="'+o.done+'"':'')+'>'+
       (o.done?U('ai-check'):U(icon))+(o.text?'<span>'+label+'</span>':'')+(act==='speak'&&on?'<span class="ai-msgbar__eq"><i></i><i></i><i></i></span>':'')+
@@ -547,9 +559,8 @@ div.fa{display:block}
     var b=o.b||{},btns;
     if(o.kind==='user')btns=[BTN('edit',b.edit),BTN('copy',b.copy)];
     else if(o.state==='error')btns=[BTN('retry',Object.assign({text:true},b.retry||{})),BTN('copy',b.copy)];
-    else if(o.compact)btns=[BTN('copy',b.copy),BTN('retry',b.retry),BTN('more',b.more)];
-    else{btns=[BTN('copy',b.copy),BTN('pin',b.pin),BTN('speak',b.speak)];if(!o.noRetry)btns.push(BTN('retry',b.retry));btns.push(BTN('more',b.more))}
-    var fb=(o.kind==='user'||o.compact||o.state==='error'||o.noFb)?'':FB(o.fb);
+    else{btns=[BTN('copy',b.copy),BTN('speak',b.speak)];if(!o.noRetry)btns.push(BTN('retry',b.retry))}
+    var fb=(o.kind==='user'||o.state==='error'||o.noFb)?'':FB(o.fb);
     var left=o.wrapL?o.wrapL(btns.join('')):btns.join('');
     var right=(o.wrapR?o.wrapR(fb):fb)+(o.wrapT?o.wrapT(TIME(o.time||'刚刚',o)):TIME(o.time||'刚刚',o));
     return '<div class="'+cls+'"'+st+(o.id?' id="'+o.id+'"':'')+' role="toolbar" aria-label="消息操作">'+left+'<span class="grow"></span>'+right+'</div>'}
@@ -565,7 +576,6 @@ div.fa{display:block}
   function UM(t,o){o=o||{};return '<div class="ai-umsg"><p>'+t+'</p>'+(o.nobar?'':BAR(Object.assign({kind:'user'},o.bar||{})))+'</div>'}
   function P(o){o=o||{};
     return '<div class="x-tw">'+(o.nohead?'':'<div class="x-twh">'+U('ai-logo-16','x-lg')+'<b>'+(o.title||'DevEco Code')+'</b><span class="grow"></span>'+(o.hr!=null?o.hr:'<span class="x-dim">ProfilePage.ets</span>')+'</div>')+
-      (o.pinned?'<div class="x-pinned">'+U('ai-pin-on')+'已固定 1 条<span class="grow"></span><span class="t">空指针来自 this.user…</span></div>':'')+
       (o.body?'<div class="x-twb">'+o.body+'</div>':'')+(o.field?'<div class="x-twf">'+o.field+'</div>':'')+'</div>'}
   function FLD(st){
     var gen=st==='generating';
@@ -575,18 +585,26 @@ div.fa{display:block}
       '<span class="ai-field__send'+(gen?'':' is-off')+'">'+U(gen?'ai-stop':'ai-send')+'</span></div></div>'}
   var APPROVE='<div class="ai-approve"><div class="ai-approve__h"><i class="ai-wait-dot"></i>在等你确认</div><p class="ai-approve__why">要在 <b>Mate 70 Pro</b> 上安装调试包，会覆盖设备上的同名应用数据。</p><div class="ai-approve__act"><button class="ai-btn ai-btn--primary">允许</button><button class="ai-btn">不允许</button></div></div>';
   var STREAM='<div class="ai-answer"><div class="ai-answer__meta">'+U('ai-local')+'本机 · 7B · 4 s</div><p class="ai-answer__lead">空指针来自 <code>this.user</code> 在 aboutToAppear 之前被读取；正在把 <code>UserStore</code> 里的<span class="caret"></span></p></div>';
-  var Q='启动就崩，帮我看看';
+  var Q='启动就崩，帮我看看',Q2='再把 UserStore 的默认值补上',Q3='顺手把登录页的空状态也处理一下';
+  var A1={meta:'本机 · 7B · 用时 11 s',lead:LEAD,det:'看了 3 个文件，调用 2 个工具'};
+  var A2={meta:'本机 · 7B · 用时 4 s',lead:'已在 <code>UserStore.ets</code> 里给 <code>user</code> 补了默认值，启动时不再读到 undefined。',det:'看了 1 个文件'};
+  var A3={meta:'本机 · 7B · 用时 6 s',lead:'登录页加了空状态：没有账号时显示「先登录」占位和一个登录按钮，<code>LoginPage.ets</code> 已写入。',det:'看了 2 个文件，调用 1 个工具'};
+  function X(a,b){return Object.assign({},a,b)}
+  /* 一段够长的对话：三轮问答 + 输入框。前两轮静默（只剩时间），最后一轮按 o.last 给，默认是「最新一条」 */
+  function THREAD(o){o=o||{};
+    return UM(Q,{bar:{time:'33 分钟前'}})+ANS(X(A1,{bar:X({time:'32 分钟前'},o.a1||{})}))+
+      UM(Q2,{bar:{time:'21 分钟前'}})+ANS(X(A2,{bar:X({time:'20 分钟前'},o.a2||{})}))+
+      UM(Q3,{bar:{time:'1 分钟前'}})+(o.last!=null?o.last:ANS(X(A3,{bar:{latest:true,time:'刚刚',abs:'2026-10-08 14:32:05'}})))}
+  function PANEL(o){o=o||{};return P({title:o.title,hr:o.hr,body:THREAD(o),field:o.field||FLD('idle')})}
 
   var FIG={};
   /* 首屏 */
-  FIG['hero']={w:400,live:true,cap:'上一条只剩时间；最新一条按钮常显。把鼠标放到上一条回答上试试。',
-    h:P({body:UM(Q,{nobar:true})+ANS({bar:{time:'20 分钟前'}})+UM('再把 UserStore 的默认值补上',{nobar:true})+
-      ANS({meta:'本机 · 7B · 用时 4 s',lead:'已在 <code>UserStore.ets</code> 里给 <code>user</code> 补了默认值，启动时不再读到 undefined。',det:'看了 1 个文件',bar:{latest:true,time:'刚刚',abs:'2026-10-08 14:32:05'}})})};
+  FIG['hero']={w:420,live:true,cap:'三轮对话：前两轮每条只剩一行时间，最新一条按钮常显。把鼠标放到上面任意一条上试试。',h:PANEL()};
   /* 02 结构 */
   FIG['anat']={w:440,cap:'一排四样：按钮组、反馈、时间、tooltip。栏与正文左缘对齐，时间一直在。',
-    notes:['图标按钮组：左对齐，与正文左缘平齐；复制 · 固定 · 朗读 · 重新回答 · 更多','反馈：淡色，最右，点哪只哪只变深','时间戳：等宽数字，栏静默时也在','Tooltip：名字（快捷键待定），悬停 500 ms 后出现'],
+    notes:['图标按钮组：左对齐，与正文左缘平齐；复制 · 朗读 · 重新回答','反馈：淡色，最右，点哪只哪只变深','时间戳：等宽数字，栏静默时也在','Tooltip：名字（快捷键待定），悬停 500 ms 后出现'],
     h:P({body:UM(Q,{nobar:true})+ANS({barHtml:'<div class="ai-msgbar is-latest" role="toolbar" aria-label="消息操作">'+
-      A(1,'<span class="x-grp">'+BTN('copy',{cls:'is-hover',tip:'复制<i class="fdot in" style="margin-left:6px">4</i>'})+BTN('pin')+BTN('speak')+BTN('retry')+BTN('more')+'</span>','bl')+
+      A(1,'<span class="x-grp">'+BTN('copy',{cls:'is-hover',tip:'复制<i class="fdot in" style="margin-left:6px">4</i>'})+BTN('speak')+BTN('retry')+'</span>','bl')+
       '<span class="grow"></span>'+A(2,FB(),'br')+A(3,TIME('20 分钟前'),'br')+'</div>'})})};
   /* 03 变体 */
   FIG['var-ai']={w:400,cap:'AI 回答：五个按钮 + 反馈 + 时间。',
@@ -595,9 +613,7 @@ div.fa{display:block}
     h:P({body:UM('启动就崩，帮我看看 ProfilePage',{bar:{latest:true,time:'21 分钟前',edited:true,abs:'发送 2026-10-08 14:11 · 编辑 14:12'}})+ANS({bar:{time:'20 分钟前'}})})};
   FIG['var-applied']={w:440,cap:'改了代码的回答：改动动作行在上（那里已有重试），栏里不再放重新回答。',
     notes:['改动动作行：编辑 / 退回 / 重试 / 调整（智能规范 08）','栏里去掉重新回答，其余不变'],
-    h:P({body:UM(Q,{nobar:true})+ANS({applied:true,actsWrap:' ',barHtml:'<div class="ai-msgbar is-latest" role="toolbar" aria-label="消息操作">'+A(2,'<span class="x-grp">'+BTN('copy')+BTN('pin')+BTN('speak')+BTN('more')+'</span>','bl')+'<span class="grow"></span>'+FB()+TIME('20 分钟前')+'</div>'})})};
-  FIG['var-compact']={w:290,cap:'窄面板：复制 · 重新回答 · 更多 ⋯ + 时间；固定、朗读、反馈收进「更多」。',
-    h:P({hr:'<span class="x-dim">Profile…</span>',body:UM(Q,{nobar:true})+ANS({meta:'本机 · 7B · 11 s',det:'看了 3 个文件',bar:{latest:true,compact:true,time:'20 分钟前'}})})};
+    h:P({body:UM(Q,{nobar:true})+ANS({applied:true,actsWrap:' ',barHtml:'<div class="ai-msgbar is-latest" role="toolbar" aria-label="消息操作">'+A(2,'<span class="x-grp">'+BTN('copy')+BTN('speak')+'</span>','bl')+'<span class="grow"></span>'+FB()+TIME('20 分钟前')+'</div>'})})};
   FIG['var-multi']={w:460,cap:'多 Agent：时间前面写谁；每条的栏只管自己这一条。',
     h:P({title:'Agent Team',hr:'<span class="x-dim">entry</span>',body:UM('构建失败了，修一下再跑测试',{nobar:true})+
       ANS({meta:'构建 Agent · 本机 · 用时 6 s',lead:'<code>build-profile.json5</code> 少了 <code>targets</code> 里的 default，已补上，hvigor 构建通过。',det:'调用 2 个工具',bar:{time:'20 分钟前',who:'构建 Agent'}})+
@@ -605,30 +621,27 @@ div.fa{display:block}
   /* 04 整条栏的状态 */
   var ST=[
     {id:'rest',n:'静默',show:'只有时间，淡色等宽字',hide:'全部按钮、反馈',into:'鼠标离开这条消息；或这条不是最新一条',out:'悬停 / 键盘进入 → 悬停态',
-      at:'翻一段 40 条的对话找上次的结论',pain:'每条下面都挂着五个按钮，一屏二十多个图标',fix:'只留时间；鼠标到哪条，哪条的按钮才出现',
-      fig:{w:400,cap:'静默：只剩一行时间。把鼠标放上去就变成下一张。',h:P({body:UM(Q,{nobar:true})+ANS({bar:{time:'20 分钟前'}})})}},
+      at:'翻一段 40 条的对话找上次的结论',pain:'每条下面都挂着一排按钮，一屏二十多个图标',fix:'只留时间；鼠标到哪条，哪条的按钮才出现',
+      fig:{w:420,cap:'静默：前两轮每条只剩一行时间（最新一条常显，见下）。把鼠标放到任意一条上就变成下一张。',h:PANEL()}},
     {id:'hover',n:'悬停',show:'全部按钮 + 反馈 + 时间；鼠标下那个按钮有底色与 tooltip',hide:'—',into:'鼠标进入这条消息的任意位置（不只是栏）',out:'离开后 120 ms 淡出 → 静默',
       at:'想把这条修法发给同事',pain:'要先找到栏在哪、再对准那个 14 px 的图标',fix:'鼠标进入消息任意处按钮就出现；tooltip 告诉你哪个是复制',
-      fig:{w:400,cap:'悬停：鼠标在「复制」上，tooltip 写名字。',h:P({body:UM(Q,{nobar:true})+ANS({bar:{latest:true,time:'20 分钟前',b:{copy:{cls:'is-hover',tip:'复制'}}}})})}},
+      fig:{w:420,cap:'悬停：鼠标在第二轮回答的「复制」上，这一条的按钮出现，tooltip 写名字；最新一条照常常显。',h:PANEL({a2:{latest:true,b:{copy:{cls:'is-hover',tip:'复制'}}}})}},
     {id:'latest',n:'最新一条',show:'同悬停，但常显，不随鼠标淡出',hide:'—',into:'这条是对话里最后一条，且已完成',out:'来了新消息 → 这条降为静默',
       at:'刚拿到答案，想马上复制或再来一次',pain:'最常用的那条还要先把鼠标移过去「找」按钮',fix:'最新一条常显；上面的都静默',
-      fig:{w:400,cap:'最新一条常显，上一条静默。',h:P({body:ANS({bar:{time:'20 分钟前'}})+UM('再把 UserStore 的默认值补上',{nobar:true})+ANS({meta:'本机 · 7B · 用时 4 s',lead:'已在 <code>UserStore.ets</code> 里给 <code>user</code> 补了默认值。',det:'看了 1 个文件',bar:{latest:true,time:'刚刚'}})})}},
+      fig:{w:420,cap:'最新一条常显，上面的都静默。',h:PANEL()}},
     {id:'focus',n:'键盘焦点',show:'全部按钮；当前按钮 2 px 蓝色焦点环，tooltip 立即出现',hide:'—',into:'Tab 进入栏；← → 在按钮间移动',out:'Esc 回到输入框 → 静默（最新一条仍常显）',
       at:'不想离开键盘',pain:'Tab 过去看不见焦点在哪，Enter 下去不知道按了什么',fix:'焦点环只在这里用蓝；tooltip 跟着焦点走',
-      fig:{w:400,cap:'焦点在「固定」上：蓝环 + tooltip。',h:P({body:UM(Q,{nobar:true})+ANS({bar:{latest:true,time:'20 分钟前',b:{pin:{cls:'is-focus',tip:'固定'}}}})})}},
+      fig:{w:420,cap:'Tab 进到第二轮回答，焦点在「朗读」上：蓝环 + tooltip。',h:PANEL({a2:{latest:true,b:{speak:{cls:'is-focus',tip:'朗读'}}}})}},
     {id:'generating',n:'生成中',show:'什么都不显示——整条栏不渲染；停止在输入框的发送键位置',hide:'按钮、反馈、时间（还没有「完成」这个时刻）',into:'理解中 / 调用工具 / 生成中 / 在设备上验证',out:'完成 → 最新一条，时间「刚刚」',
       at:'等 Agent 把修法写完',pain:'字还在往外蹦，下面已经有「复制」「重新回答」',fix:'生成中整条栏不出现；完成那一刻按钮与「刚刚」一起出现',
-      fig:{w:400,cap:'生成中：回答还在长，下面没有栏；停止在输入框里。',h:P({body:UM(Q,{nobar:true})+STREAM,field:FLD('generating')})}},
+      fig:{w:420,cap:'生成中：第三轮回答还在长，下面没有栏；停止在输入框里。上面两轮照旧只剩时间。',h:PANEL({last:STREAM,field:FLD('generating')})}},
     {id:'waiting',n:'在等你',show:'审批卡自己的「允许 / 不允许」',hide:'整条栏',into:'审批卡出现（删文件、装包、改签名、执行 shell 之前）',out:'你批准或拒绝 → 回到原来的进行态',
       at:'Agent 要在真机上装包，停下来问你',pain:'卡片下面还挂着复制、重新回答，像是另一条可操作的回答',fix:'在等你的卡片上只有琥珀和两个按钮，别的都不出现',
-      fig:{w:400,cap:'在等你：审批卡，没有栏。',h:P({body:UM('修完直接在 Mate 70 上跑一遍',{nobar:true})+APPROVE})}},
-    {id:'error',n:'报错 / 中断',show:'「重新回答」带文字、常显，旁边一个复制；时间写「失败 · 刚刚」或「已停止 · 刚刚」',hide:'固定、朗读、反馈——半截内容不值得固定，也不该被评价',into:'模型 / 工具出错；或你按了停止',out:'重新回答 → 新的一条；这条留着',
+      fig:{w:420,cap:'在等你：第三轮停在审批卡上，卡片下面没有栏。',h:PANEL({last:APPROVE})}},
+    {id:'error',n:'报错 / 中断',show:'「重新回答」带文字、常显，旁边一个复制；时间写「失败 · 刚刚」或「已停止 · 刚刚」',hide:'朗读、反馈——半截内容不值得读出来，也不该被评价',into:'模型 / 工具出错；或你按了停止',out:'重新回答 → 新的一条；这条留着',
       at:'云端模型超时，回答停在一半',pain:'半截回答不知道能不能用、怎么再来一次；去输入框重打一遍又怕措辞不一样',fix:'状态行写白话原因；栏上「重新回答」常显、一键同样输入再来，已写的保留可退回',
-      fig:{w:400,cap:'报错：状态行说原因，栏上是带文字的「重新回答」和复制。',h:P({body:UM(Q,{nobar:true})+ANS({meta:'云端 · 40 s',cloud:true,lead:'空指针来自 <code>this.user</code> 在 aboutToAppear 之前被读取；正在把',noDet:true,
+      fig:{w:420,cap:'报错：第三轮失败，状态行说原因，栏上是带文字的「重新回答」和复制。',h:PANEL({last:ANS({meta:'云端 · 40 s',cloud:true,lead:'空指针来自 <code>this.user</code> 在 aboutToAppear 之前被读取；正在把',noDet:true,
         extra:'<span class="ai-status" data-state="error">'+U('ai-alert')+'<span class="lbl">失败：云端模型超时 · 已写的 1 处保留，<button class="act">可退回</button></span></span>',bar:{state:'error',time:'失败 · 刚刚',abs:'2026-10-08 14:32:05 · 云端模型超时'}})})}},
-    {id:'compact',n:'窄面板',show:'复制 · 重新回答 · 更多 ⋯ + 时间',hide:'固定、朗读、反馈（收进「更多」）',into:'工具窗宽 < 320 px（推演值）',out:'拉宽 → 默认',
-      at:'把 DevEco Code 挤到右边一条窄栏里，主要看代码',pain:'按钮挤成两行，或者和时间叠在一起',fix:'按钮折进「更多」，时间永远不缩写、不换行',
-      fig:{w:290,cap:'窄面板：三个按钮 + 时间。',h:P({hr:'<span class="x-dim">Profile…</span>',body:UM(Q,{nobar:true})+ANS({meta:'本机 · 7B · 11 s',det:'看了 3 个文件',bar:{latest:true,compact:true,time:'20 分钟前'}})})}}
   ];
   ST.forEach(function(s){FIG['st-'+s.id]=s.fig});
   $('#stateCards').innerHTML=ST.map(function(s){
@@ -638,10 +651,8 @@ div.fa{display:block}
   /* 05 按钮 */
   $('#specimen').innerHTML=[
     ['默认',BTN('copy'),'--ui-icon'],['悬停',BTN('copy',{cls:'is-hover',tip:'复制'}),'--ui-action-hover'],['按下',BTN('copy',{cls:'is-active'}),'--ui-action-pressed'],
-    ['聚焦',BTN('copy',{cls:'is-focus'}),'--ui-accent 2px'],['开',BTN('pin',{on:true}),'--ai-surface-2'],['瞬时',BTN('copy',{done:'已复制'}),'--ui-success'],['禁用',BTN('retry',{disabled:true,title:'模型离线，先在底栏换一个'}),'--ui-fg-disabled']
+    ['聚焦',BTN('copy',{cls:'is-focus'}),'--ui-accent 2px'],['开',BTN('speak',{on:true}),'--ai-surface-2'],['瞬时',BTN('copy',{done:'已复制'}),'--ui-success'],['禁用',BTN('retry',{disabled:true,title:'模型离线，先在底栏换一个'}),'--ui-fg-disabled']
   ].map(function(r){return '<div class="sp"><div class="sp-b">'+r[1]+'</div><b>'+r[0]+'</b><code>'+r[2]+'</code></div>'}).join('');
-  FIG['tg-pin']={w:360,live:true,cap:'已固定：填充字形 + 底色；顶部多一行「已固定」。点它取消。',
-    h:P({pinned:true,body:ANS({meta:'本机 · 7B · 11 s',det:'看了 3 个文件',bar:{latest:true,time:'20 分钟前',b:{pin:{on:true}}}})})};
   FIG['tg-speak']={w:360,live:true,cap:'朗读中：图标换成停止，三根小柱在动。右上角「降低动效」看替代。',
     h:P({body:ANS({meta:'本机 · 7B · 11 s',det:'看了 3 个文件',bar:{latest:true,time:'20 分钟前',b:{speak:{on:true}}}})})};
   FIG['tg-fb']={w:360,live:true,cap:'点了「有用」：这只变深，另一只仍淡色，可改选。',
@@ -658,7 +669,7 @@ div.fa{display:block}
   FIG['dd1-ok']={w:280,tag:'<b class="ok">✓ Do</b>',cap:'只留时间，悬停才现；最新一条常显。',
     h:P({hr:'',body:ANS({meta:'本机 · 11 s',lead:'空指针来自 this.user 在 aboutToAppear 之前被读取。',noDet:true,bar:{time:'20 分钟前'}})+ANS({meta:'本机 · 4 s',lead:'已给 user 补了默认值。',noDet:true,bar:{latest:true,time:'刚刚'}})})};
   FIG['dd2-no']={w:280,tag:'<b class="no">✕ Don’t</b>',cap:'按钮染成智能色，和来源记号混在一起。',
-    h:P({hr:'',body:ANS({meta:'本机 · 11 s',lead:'已改成可选链并补了默认值。',noDet:true,applied:true,barHtml:'<div class="ai-msgbar is-latest x-purple" role="toolbar">'+BTN('copy')+BTN('pin')+BTN('speak')+BTN('more')+'<span class="grow"></span>'+FB()+TIME('20 分钟前')+'</div>'})})};
+    h:P({hr:'',body:ANS({meta:'本机 · 11 s',lead:'已改成可选链并补了默认值。',noDet:true,applied:true,barHtml:'<div class="ai-msgbar is-latest x-purple" role="toolbar">'+BTN('copy')+BTN('speak')+'<span class="grow"></span>'+FB()+TIME('20 分钟前')+'</div>'})})};
   FIG['dd2-ok']={w:280,tag:'<b class="ok">✓ Do</b>',cap:'按钮中性；智能色只在「已写入」那一处。',
     h:P({hr:'',body:ANS({meta:'本机 · 11 s',lead:'已改成可选链并补了默认值。',noDet:true,applied:true,bar:{latest:true,time:'20 分钟前'}})})};
   FIG['dd3-no']={w:280,tag:'<b class="no">✕ Don’t</b>',cap:'字还在长，栏已经在了。',
@@ -666,9 +677,9 @@ div.fa{display:block}
   FIG['dd3-ok']={w:280,tag:'<b class="ok">✓ Do</b>',cap:'生成中没有栏；完成那一刻一起出现。',
     h:P({hr:'',body:'<div class="ai-answer"><div class="ai-answer__meta">'+U('ai-local')+'本机 · 4 s</div><p class="ai-answer__lead">空指针来自 this.user 在 aboutToAppear 之前被读取；正在把<span class="caret"></span></p></div>'})};
   FIG['dd4-no']={w:280,tag:'<b class="no">✕ Don’t</b>',cap:'时间写到秒，每条都要逐位比。',
-    h:P({hr:'',body:ANS({meta:'本机 · 11 s',lead:'已改成可选链并补了默认值。',noDet:true,bar:{latest:true,compact:true,time:'2026-10-08 14:12:33'}})})};
+    h:P({hr:'',body:ANS({meta:'本机 · 11 s',lead:'已改成可选链并补了默认值。',noDet:true,bar:{latest:true,noFb:true,time:'2026-10-08 14:12:33'}})})};
   FIG['dd4-ok']={w:280,tag:'<b class="ok">✓ Do</b>',cap:'相对时间；要精确时悬停。',
-    h:P({hr:'',body:ANS({meta:'本机 · 11 s',lead:'已改成可选链并补了默认值。',noDet:true,bar:{latest:true,compact:true,time:'20 分钟前'}})})};
+    h:P({hr:'',body:ANS({meta:'本机 · 11 s',lead:'已改成可选链并补了默认值。',noDet:true,bar:{latest:true,noFb:true,time:'20 分钟前'}})})};
 
   /* ---------- 配图挂载与缩放（与智能规范页同一套） ---------- */
   function renderFig(el){
@@ -685,15 +696,13 @@ div.fa{display:block}
 
   /* ---------- 试验台 ---------- */
   var bench=$('#benchVp');
-  bench.innerHTML=P({body:UM(Q,{bar:{time:'21 分钟前'}})+ANS({bar:{latest:true,time:'20 分钟前'}})});
+  bench.innerHTML=PANEL();
   var LOG={copy:'<b>复制</b>：整条回答的 Markdown 进了剪贴板；按钮变「已复制」，1.5 s 后复原，不弹 toast。',
     edit:'<b>编辑</b>：改你发的这条，从这条起重新生成；下面旧的回答折叠起来（这里不演）。',
-    pinOn:'<b>已固定</b>：字形填充、有底色；对话顶部出现「已固定 1 条」，点它跳回这条。',pinOff:'<b>取消固定</b>：顶部那一行收起。',
     speakOn:'<b>朗读中</b>：图标换成停止，三根小柱在动；右上角开「降低动效」看小柱不动的样子。',speakOff:'<b>停止朗读</b>。',
-    retry:'<b>重新回答</b>：用同样的输入再生成一条，旧的留在上面（这里不演）。',more:'<b>更多</b>：引用这条回复 · 导出这条 · 删除这条（删除要二次确认）。',
+    retry:'<b>重新回答</b>：用同样的输入再生成一条，旧的留在上面（这里不演）。',
     up:'<b>有用</b>：已记录，这只变深；再点取消，点另一只改选。',down:'<b>没用</b>：已记录，不追问原因。',off:'<b>取消</b>了反馈。'};
   function log(k){var el=$('#benchLog');el.insertAdjacentHTML('afterbegin','<div class="row">'+LOG[k]+'</div>');while(el.children.length>4)el.removeChild(el.lastChild)}
-  function setPinned(on){var tw=$('.x-tw',bench),ex=$('.x-pinned',tw);if(on&&!ex)$('.x-twh',tw).insertAdjacentHTML('afterend','<div class="x-pinned">'+U('ai-pin-on')+'已固定 1 条<span class="grow"></span><span class="t">空指针来自 this.user…</span></div>');if(!on&&ex)ex.remove()}
   function setIcon(b,id){var u=$('use',b);if(u)u.setAttribute('href','#'+id)}
   document.addEventListener('click',function(e){
     var scope=e.target.closest('.live, #benchVp');if(!scope)return;var inBench=scope.id==='benchVp';
@@ -704,15 +713,13 @@ div.fa{display:block}
     var act=b.dataset.act;
     if(act==='copy'){if(b.hasAttribute('data-done'))return;b.setAttribute('data-done','已复制');setIcon(b,'ai-check');
       setTimeout(function(){b.removeAttribute('data-done');setIcon(b,'ai-copy')},1500);if(inBench)log('copy');return}
-    if(act==='pin'||act==='speak'){var on=b.getAttribute('aria-pressed')!=='true';b.setAttribute('aria-pressed',String(on));
-      var lbl=on?(act==='pin'?'取消固定':'停止朗读'):LBL[act];b.setAttribute('aria-label',lbl);b.title=lbl;
-      setIcon(b,act==='pin'?(on?'ai-pin-on':'ai-pin'):(on?'ai-stop':'ai-speak'));
+    if(act==='speak'){var on=b.getAttribute('aria-pressed')!=='true';b.setAttribute('aria-pressed',String(on));
+      var lbl=on?'停止朗读':LBL[act];b.setAttribute('aria-label',lbl);b.title=lbl;
+      setIcon(b,on?'ai-stop':'ai-speak');
       var eq=$('.ai-msgbar__eq',b);if(act==='speak'){if(on&&!eq)b.insertAdjacentHTML('beforeend','<span class="ai-msgbar__eq"><i></i><i></i><i></i></span>');if(!on&&eq)eq.remove()}
-      if(act==='pin'&&(inBench||scope.closest('figure')))setPinnedIn(scope,on);
       if(inBench)log(act+(on?'On':'Off'));return}
     if(inBench&&LOG[act])log(act);
   });
-  function setPinnedIn(scope,on){var tw=$('.x-tw',scope);if(!tw)return;var ex=$('.x-pinned',tw);if(on&&!ex)$('.x-twh',tw).insertAdjacentHTML('afterend','<div class="x-pinned">'+U('ai-pin-on')+'已固定 1 条<span class="grow"></span><span class="t">空指针来自 this.user…</span></div>');if(!on&&ex)ex.remove()}
 
   /* ---------- 时间戳试验 ---------- */
   var TS=[
