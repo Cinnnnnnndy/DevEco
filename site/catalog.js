@@ -336,7 +336,7 @@ window.DEVECO_CATALOG = {
         },
         {
           title: 'DevEco 智能：视觉与交互体系', subtitle: 'DevEco Intelligence · Visual & Interaction System',
-          desc: '智能色独立于品牌蓝（紫罗兰 → 兰紫 → 玫瑰，小字用纯色、过 AA）；‹✦› 标识、28 个 AI 图标与「基础字形 + 星芒徽标」派生规则；AI 代码高亮、8 个进行态、输入框 / 回答卡 / 审批卡等组件；Agent 输入框九个场景（并入原「输入框场景与状态说明」）；专题：设计稿到代码之后，可视化修改 × AI Coding（作用范围 × 一多断点、人机冲突、设计稿漂移）。每条规则都从开发者任务出发，并配一张「在 IDE 里的样子」，共 70 张实时渲染配图。',
+          desc: '智能色独立于品牌蓝（紫罗兰 → 兰紫 → 玫瑰，小字用纯色、过 AA）；‹✦› 标识、28 个 AI 图标与「基础字形 + 星芒徽标」派生规则；AI 代码高亮、8 个进行态、输入框 / 回答卡 / 审批卡 / 消息操作栏等组件；Agent 输入框九个场景（并入原「输入框场景与状态说明」）；专题：设计稿到代码之后，可视化修改 × AI Coding（作用范围 × 一多断点、人机冲突、设计稿漂移）。每条规则都从开发者任务出发，并配一张「在 IDE 里的样子」，共 70 张实时渲染配图。',
           view: 'ready', date: '2026-09-24', href: 'deveco-intui-kit/docs/ai-system.html',
           links: [{ label: 'ai.css', href: 'deveco-intui-kit/src/ai.css' }, { label: '图标', href: 'deveco-intui-kit/icons/ai-icons.svg' }],
           tags: ['智能色', '进行态', 'D2C'], thumb: { type: 'image', src: 'site/thumbs/ai-system.jpg' },
