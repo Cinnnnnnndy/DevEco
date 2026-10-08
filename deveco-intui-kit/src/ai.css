@@ -269,7 +269,7 @@ svg.ai-ico{width:16px;height:16px;flex:none;display:block;color:currentColor}
 .ai-answer--plain{background:transparent;border-radius:0;padding:0}
 
 /* 3.3b 消息操作栏：每条消息下面那一排——复制 / 重新回答 · 时间，全部靠左，没有有用 / 没用，也没有朗读；报错 / 中断时只有带文字的「重新回答」+ 复制。
-   规范：../docs/message-actions.html。四条：每条已完成的消息下面都常显，靠「少」和「淡」不抢眼；
+   规范：../docs/message-actions.html。四条：AI 回答下常显，靠「少」和「淡」不抢眼；你发的消息悬停才现；两边镜像——AI 回答 图标 → 时间 靠左，你发的 时间 → 图标 靠右，长度不可控的时间永远在里侧，图标位置不动；
    生成中、在等你不出现，完成或中断才出现；栏上没有智能色也没有琥珀——它是你对这条消息的操作，不是 AI 在做的事；
    同一动作只出现一次（改动动作行里已有「重试」时，栏里不放重新回答）。 */
 .ai-msgbar{display:flex;align-items:center;gap:2px;min-height:26px;margin:0 -6px;font-size:11.5px;color:var(--ui-fg-info)}
@@ -293,11 +293,14 @@ svg.ai-ico{width:16px;height:16px;flex:none;display:block;color:currentColor}
 .ai-msgbar__who + .ai-msgbar__time{margin-left:4px}
 .ai-msgbar__who + .ai-msgbar__time::before{content:"· "}
 .ai-msgbar[data-state="error"] .ai-fb{display:none}
-/* 你发的消息：气泡靠右，操作栏（编辑 · 复制 · 时间）在气泡下面、与气泡右缘对齐 */
+/* 你发的消息：气泡靠右；操作栏在气泡下面，顺序 时间 · 编辑 · 复制，图标贴气泡右缘（与 AI 回答镜像）。悬停 / 键盘进入才出现，占位不抖 */
 .ai-umsg{align-self:flex-end;max-width:88%;display:flex;flex-direction:column;align-items:flex-end;gap:2px}
 .ai-umsg__bubble{border-radius:var(--ai-r) var(--ai-r) 4px var(--ai-r);background:var(--ai-surface-2);padding:8px 12px;font-size:13px;line-height:20px;color:var(--ui-fg)}
 .ai-umsg__bubble>p{margin:0}
-.ai-umsg .ai-msgbar{margin:0 12px 0 0}
+.ai-umsg .ai-msgbar{margin:0 -6px 0 0}
+.ai-umsg .ai-msgbar__time{margin:0 6px 0 0}
+.ai-umsg .ai-msgbar>*{opacity:0;transition:opacity .12s}
+.ai-umsg:is(:hover,:focus-within,.is-shown) .ai-msgbar>*{opacity:1}
 
 /* 3.4 工具调用行 */
 .ai-toolrow{display:grid;grid-template-columns:16px minmax(0,1fr) auto;align-items:center;gap:8px;min-height:28px;padding:4px 6px;
@@ -411,12 +414,14 @@ svg.ai-ico{width:16px;height:16px;flex:none;display:block;color:currentColor}
 /* 降低动效：系统设置或祖先加 .ai-reduce（规范页用它预览）。
    替代原则：动的信息改成字（步骤数、已用时），光改成静态，时长不变 */
 @media (prefers-reduced-motion:reduce){
+  .ai-umsg .ai-msgbar>*{transition:none}
   .ai-spark.is-live{animation:none;background:var(--ai-grad)}
   .ai-ring{animation:none;background:conic-gradient(var(--ai-ink) 0 75%,transparent 0)}
   .ai-wait-dot::after{animation:none;inset:-3px;opacity:.28}
   .ai-field[data-state="generating"]::before,.ai-input[data-ai-state="generating"]::after{animation:none}
   .ai-touched{animation:ai-touch-reduced var(--ai-t-touch) linear 1}
 }
+.ai-reduce .ai-umsg .ai-msgbar>*{transition:none}
 .ai-reduce .ai-spark.is-live{animation:none;background:var(--ai-grad)}
 .ai-reduce .ai-ring{animation:none;background:conic-gradient(var(--ai-ink) 0 75%,transparent 0)}
 .ai-reduce .ai-wait-dot::after{animation:none;inset:-3px;opacity:.28}
