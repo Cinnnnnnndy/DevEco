@@ -343,7 +343,7 @@ window.DEVECO_CATALOG = {
         },
         {
           title: '消息操作栏：组件 Pattern', subtitle: 'Message Action Bar · Component Pattern',
-          desc: 'DevEco Code 对话面板里每条消息下面那一排：AI 回答下 复制 · 重新回答 · 时间 靠左常显，你发的消息下 时间 · 编辑 · 复制 靠右、悬停才现，两边镜像；AI 回答不套卡片，没有有用 / 没用，也没有朗读。报错时要的是带文字的「重新回答」，时间只在完成之后才有，且永远在里侧，图标位置不动。叫什么、什么时候用、结构、四种变体、整条栏 6 个状态、按钮 6 个状态、时间戳规则、行为与无障碍、Do / Don’t；样张都是 620 px 宽的完整三轮对话，真组件，能悬停能点。',
+          desc: 'DevEco Code 对话面板里每条消息下面那一排。AI 回答：复制 · 重新回答 · 时间，靠左常显；你发的：时间 · 编辑 · 复制，靠右悬停才现；报错时换成带文字的「重新回答」。结构、两种变体、六个状态、按钮状态、时间戳规则、行为与无障碍、Do / Don’t；样张都是真组件，能悬停能点。',
           view: 'ready', date: '2026-10-08', href: 'deveco-intui-kit/docs/message-actions.html',
           links: [{ label: '单文件版', href: 'deveco-intui-kit/dist/message-actions.html' }, { label: '回答卡（智能规范 08）', href: 'deveco-intui-kit/docs/ai-system.html#components' }, { label: 'ai.css', href: 'deveco-intui-kit/src/ai.css' }],
           tags: ['组件状态', '消息操作栏', 'Pattern'], thumb: { type: 'image', src: 'site/thumbs/message-actions.jpg' },
