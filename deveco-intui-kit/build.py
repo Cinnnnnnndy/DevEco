@@ -52,11 +52,12 @@ def inline(page_path, out_path, title=None):
     def css_repl(m):
         href = m.group(1)
         if href.startswith('http'): return m.group(0)          # 字体外链保留
+        href = href.split('?')[0]                               # 去掉 ?v= 版本号再读文件
         return '<style>\n/* ← ' + href + ' */\n' + rd(os.path.normpath(os.path.join(base, href))) + '\n</style>'
     html = re.sub(r'<link rel="stylesheet" href="([^"]+)">', css_repl, html)
 
     def js_repl(m):
-        src = m.group(1)
+        src = m.group(1).split('?')[0]                          # 去掉 ?v= 版本号
         if src.endswith('ai-icons.js'):                         # 智能图标雪碧图
             return '<!-- ai-icons -->\n' + rd('icons/ai-icons.svg')
         if src.endswith('icons.js'):                            # 图标直接内联成 svg，省一层
