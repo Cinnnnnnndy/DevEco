@@ -1,0 +1,536 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Xcode 27 新特性研究</title>
+<style>
+:root{
+  --bg:#f5f6f8; --paper:#ffffff; --ink:#15171a; --ink2:#4a4f57; --ink3:#7a808a; --line:#e3e5e9; --line2:#eef0f3;
+  --accent:#3574f0; --accent-bg:#edf3ff;
+  --hm:#c7000b; --hm-bg:#fdecec;          /* 鸿蒙电脑版 */
+  --ap:#3574f0; --ap-bg:#eaf1fe;          /* Apple / 友商做法 */
+  --ok:#1f8a4c; --ok-bg:#e6f5ec; --warn:#b76e00; --warn-bg:#fdf1e3; --mute-bg:#eef0f3;
+  --shadow:0 1px 2px rgba(16,24,40,.06),0 4px 16px rgba(16,24,40,.06);
+  --mono:ui-monospace,"JetBrains Mono",Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --bg:#16171a; --paper:#1e2024; --ink:#e6e8eb; --ink2:#b3b8c0; --ink3:#868b94; --line:#30333a; --line2:#272a30;
+    --accent:#6b9bfa; --accent-bg:#233150;
+    --hm:#ff6b6b; --hm-bg:#3a2224; --ap:#6b9bfa; --ap-bg:#22304a;
+    --ok:#5fc48a; --ok-bg:#1d3326; --warn:#f0a052; --warn-bg:#3a2d1e; --mute-bg:#272a30; --shadow:none;
+  }
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:64px}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.7 -apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}
+a{color:var(--accent);text-decoration:none} a:hover{text-decoration:underline}
+code{font-family:var(--mono);font-size:.9em;background:var(--line2);padding:1px 5px;border-radius:4px;overflow-wrap:anywhere}
+.wrap{max-width:1280px;margin:0 auto;padding:40px 32px 0}
+.wrap.body{padding-top:8px;padding-bottom:80px}
+.eyebrow{font-size:12px;letter-spacing:.08em;color:var(--ink3)}
+h1{font-size:30px;line-height:1.3;margin:6px 0 12px}
+.lede{color:var(--ink2);max-width:80ch;margin:0}
+.note{margin-top:14px;font-size:12.5px;color:var(--ink3);border-left:3px solid var(--line);padding:2px 0 2px 12px;max-width:96ch}
+.note p{margin:0 0 4px} .note p:last-child{margin:0}
+h2{font-size:21px;margin:52px 0 6px}
+h2 small{font-size:13px;font-weight:400;color:var(--ink3);margin-left:8px}
+h3{font-size:16px;margin:26px 0 8px}
+.sub{color:var(--ink2);margin:0 0 16px;max-width:84ch}
+nav.toc{display:flex;flex-wrap:wrap;gap:6px;margin:18px 0 0}
+nav.toc a{font-size:13px;border:1px solid var(--line);background:var(--paper);border-radius:999px;padding:3px 12px;color:var(--ink2)}
+
+/* 页签 */
+.tabs{position:sticky;top:0;z-index:5;margin-top:26px;background:color-mix(in srgb,var(--bg) 90%,transparent);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.tabs .in{max-width:1280px;margin:0 auto;padding:0 32px;display:flex;gap:2px;overflow-x:auto;scrollbar-width:none}
+.tabs .in::-webkit-scrollbar{display:none}
+.tab{appearance:none;border:0;background:none;font:inherit;font-size:14px;color:var(--ink2);padding:12px 12px 10px;border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap;cursor:pointer}
+.tab:hover{color:var(--ink)}
+.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent);font-weight:600}
+.tab:focus-visible{outline:2px solid var(--accent);outline-offset:-2px;border-radius:6px}
+.tab .k{display:inline-block;font-size:11px;font-weight:600;color:var(--hm);background:var(--hm-bg);border-radius:4px;padding:0 5px;margin-left:6px;line-height:17px;vertical-align:1px}
+.panel[hidden]{display:none}
+.panel>h2:first-child{margin-top:28px}
+.pt{font-size:24px;line-height:1.35;margin:28px 0 8px}
+
+/* 结论卡 */
+.keys{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:20px}
+.keys.k4{grid-template-columns:repeat(4,minmax(0,1fr))}
+.key{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:16px 18px;box-shadow:var(--shadow)}
+.key b{display:block;font-size:15px;margin-bottom:4px}
+.key span,.key p{color:var(--ink2);font-size:13.5px;margin:0}
+.key .n{font-family:var(--mono);font-size:12px;color:var(--ink3);margin-bottom:6px;display:block}
+
+/* 引文 */
+.quotes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:18px 0 0}
+.q{margin:0;background:var(--paper);border:1px solid var(--line);border-left:3px solid var(--ap);border-radius:10px;padding:12px 16px;box-shadow:var(--shadow)}
+.q blockquote{margin:0;font-style:italic;color:var(--ink);font-size:13.5px}
+.q figcaption{margin-top:6px;font-size:12.5px;color:var(--ink2)}
+.ts{font-family:var(--mono);font-size:11.5px;white-space:nowrap}
+.en{font-style:italic;color:var(--ink2)}
+
+/* 速览 */
+.facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 28px;margin:18px 0 0;background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:14px 18px;box-shadow:var(--shadow)}
+.facts div{display:grid;grid-template-columns:4.5em 1fr;gap:10px;font-size:13.5px;padding:4px 0;border-bottom:1px dashed var(--line2)}
+.facts dt{color:var(--ink3);margin:0} .facts dd{margin:0;color:var(--ink2)}
+
+/* 动因四层 */
+.why{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.why>div{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:14px 18px;box-shadow:var(--shadow)}
+.why h4{margin:0 0 6px;font-size:14.5px}
+.why h4 i{font-style:normal;font-family:var(--mono);font-size:12px;color:var(--ink3);margin-right:6px}
+.why ul{margin:0;padding-left:18px;color:var(--ink2);font-size:13.5px} .why li{margin:4px 0}
+
+/* 场景流程 */
+.flows{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.flow{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:14px 18px;box-shadow:var(--shadow)}
+.flow.wide{grid-column:1/-1}
+.flow h4{margin:0 0 2px;font-size:14.5px}
+.flow .who{font-size:12.5px;color:var(--ink3);margin-bottom:8px}
+.flow ol{margin:0;padding-left:20px;color:var(--ink2);font-size:13.5px} .flow li{margin:3px 0}
+.flow .cols{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 24px}
+.flow .role{font-size:12px;font-weight:600;color:var(--ink);margin:6px 0 2px}
+.flow .end{margin:8px 0 0;font-size:13px;color:var(--ink2);border-top:1px dashed var(--line);padding-top:8px}
+
+/* 表格 */
+.tw{background:var(--paper);border:1px solid var(--line);border-radius:12px;overflow:auto;box-shadow:var(--shadow)}
+table{border-collapse:collapse;width:100%;font-size:13.5px;min-width:900px}
+th,td{text-align:left;vertical-align:top;padding:10px 12px;border-bottom:1px solid var(--line2)}
+thead th{font-size:12px;color:var(--ink3);background:var(--line2);font-weight:600}
+tbody th{font-weight:600;white-space:nowrap}
+tr:last-child td,tr:last-child th{border-bottom:none}
+td p{margin:0 0 4px} td p:last-child{margin:0}
+td .claim{font-weight:600;color:var(--ink)}
+.ev{display:inline-block;font-size:11px;font-weight:600;border-radius:4px;padding:0 5px;line-height:17px;margin-left:4px;vertical-align:1px;white-space:nowrap;font-style:normal}
+.ev.o{background:var(--ok-bg);color:var(--ok)}      /* 官方 */
+.ev.m{background:var(--ap-bg);color:var(--ap)}      /* 社区 / 媒体 */
+.ev.i{background:var(--warn-bg);color:var(--warn)}  /* 推断 */
+.ev.q{background:var(--mute-bg);color:var(--ink3)}  /* 待确认 */
+.legend{display:flex;flex-wrap:wrap;gap:10px;font-size:12.5px;color:var(--ink2);margin:0 0 12px}
+
+/* 截图 */
+.shots{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.shot{margin:0;background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:12px;box-shadow:var(--shadow);display:flex;flex-direction:column}
+.shot.wide{grid-column:1/-1}
+.shot>a{display:flex;align-items:center;justify-content:center;background:var(--line2);border-radius:8px;min-height:120px}
+.shot img{display:block;max-width:100%;height:auto;max-height:560px;width:auto}
+.shot.tall img{max-height:520px}
+.shot.wide img{max-height:760px}
+.shot figcaption{font-size:13px;color:var(--ink2);margin-top:10px}
+.shot figcaption b{color:var(--ink)}
+.shot .from{display:block;font-size:12px;color:var(--ink3);margin-top:4px}
+
+/* 设备层示意 */
+.layer{display:grid;gap:8px;background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:16px;box-shadow:var(--shadow);margin-top:12px}
+.layer .row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.layer .box{border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:13px;color:var(--ink2);background:var(--bg)}
+.layer .box b{display:block;color:var(--ink);font-size:13.5px}
+.layer .bar{border-radius:10px;padding:10px 12px;font-size:13px;text-align:center;background:var(--ap-bg);color:var(--ap);font-weight:600}
+.layer .bar span{display:block;font-weight:400;font-size:12.5px;color:var(--ink2)}
+.layer .arrow{text-align:center;color:var(--ink3);font-size:12px;line-height:1}
+.layer .cap{font-size:12.5px;color:var(--ink3);margin:2px 0 0}
+
+/* 社区 */
+.voices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.voice{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:14px 16px;box-shadow:var(--shadow)}
+.voice b{display:block;margin-bottom:4px}
+.voice span{color:var(--ink2);font-size:13.5px}
+.voice.pos{border-top:3px solid var(--ok)} .voice.neg{border-top:3px solid var(--warn)} .voice.eco{border-top:3px solid var(--ap)}
+ul.plain{margin:0;padding-left:20px;color:var(--ink2)} ul.plain li{margin:4px 0}
+
+/* 机会点 */
+.lvl{display:inline-block;font-size:11.5px;font-weight:700;border-radius:5px;padding:0 7px;line-height:19px;white-space:nowrap}
+.lvl.a{background:var(--hm);color:#fff} .lvl.b{background:var(--ap-bg);color:var(--ap)} .lvl.c{background:var(--mute-bg);color:var(--ink2)}
+.cmp{font-size:12px;font-weight:600;white-space:nowrap}
+.cmp.u{color:var(--hm)} .cmp.y{color:var(--ap)}
+.hmbox{background:color-mix(in srgb,var(--hm-bg) 55%,var(--paper));border:1px solid color-mix(in srgb,var(--hm) 25%,var(--line));border-radius:12px;padding:14px 18px;margin:0 0 12px;color:var(--ink2);font-size:13.5px}
+.hmbox b{color:var(--ink)}
+.hmbox p{margin:0 0 6px} .hmbox p:last-child{margin:0}
+
+.src{font-size:12.5px;color:var(--ink2);columns:2;column-gap:28px;padding-left:18px}
+.src li{margin:2px 0;break-inside:avoid}
+.src .grp{list-style:none;margin:10px 0 2px -18px;font-weight:600;color:var(--ink);break-after:avoid}
+.src .grp:first-child{margin-top:0}
+
+@media (max-width:900px){
+  .keys,.keys.k4,.quotes,.why,.flows,.voices,.shots,.facts,.flow .cols,.layer .row{grid-template-columns:1fr}
+  .src{columns:1}
+}
+@media (max-width:560px){
+  .wrap{padding:24px 16px 0} .wrap.body{padding:8px 16px 60px} .tabs .in{padding:0 8px}
+  h1{font-size:24px} .pt{font-size:20px}
+  .facts div{grid-template-columns:4em 1fr}
+}
+@media print{
+  .tabs{display:none} .panel[hidden]{display:block} .panel{break-before:page}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="eyebrow">分析与研究 · 2026-10-08</div>
+  <h1>Xcode 27 新特性研究：Device Hub 与另外七项更新</h1>
+  <p class="lede">Xcode 27 在 WWDC26（2026 年 6 月）发布，眼下 27.1 RC、27.2 beta 2 还在迭代。这份报告一个页签一个特性：Device Hub 最详细，另外七项（编码 Agent、工作区与主题、新建项目与原型、本地化、Organizer、Instruments、Xcode Cloud）用同一套结构写——理念、为什么苹果现在做、Apple 演示的场景、交互特点对应谁、解决了什么痛点、截图，最后一节是鸿蒙电脑版可以参照什么。</p>
+  <div class="note">
+    <p>来源以 Apple 一手材料为准：WWDC26 各 session 的逐字稿（Keynote、Platforms State of the Union、What's new in Xcode 27 与各专题 session）、Xcode 27 / 27.1 RC / 27.2 beta 2 的 release notes、Xcode 官方文档与「What's new in Xcode」页。引文保留英文原话，括号里是视频时间点，点开直接跳到那一秒。</p>
+    <p>截图全部取自 Apple 开发者文档的配图（版权归 Apple，仅作研究引用）；系统切到深色时自动换成文档自带的深色版。WWDC 视频画面拿不到：本环境的网络策略拦截了 Apple 视频与图片 CDN。第三方博客、媒体、GitHub 页面同样被拦截，相关内容来自搜索引擎摘要，标「社区」并注明未见原文。</p>
+    <p>每条事实标口径：<span class="ev o">官方</span> Apple 原话或文档 · <span class="ev m">社区</span> 第三方文章、论坛、issue · <span class="ev i">推断</span> 我们的判断 · <span class="ev q">待确认</span> 还没核实。</p>
+  </div>
+</div>
+
+<nav class="tabs" aria-label="特性页签"><div class="in" role="tablist">
+  <button type="button" class="tab" role="tab" id="t-overview" data-tab="overview" aria-controls="overview">总览</button>
+  <button type="button" class="tab" role="tab" id="t-device-hub" data-tab="device-hub" aria-controls="device-hub">Device Hub<span class="k">重点</span></button>
+  <button type="button" class="tab" role="tab" id="t-agents" data-tab="agents" aria-controls="agents">编码 Agent</button>
+  <button type="button" class="tab" role="tab" id="t-workspace" data-tab="workspace" aria-controls="workspace">工作区与主题</button>
+  <button type="button" class="tab" role="tab" id="t-new-project" data-tab="new-project" aria-controls="new-project">新建项目与原型</button>
+  <button type="button" class="tab" role="tab" id="t-localization" data-tab="localization" aria-controls="localization">本地化</button>
+  <button type="button" class="tab" role="tab" id="t-organizer" data-tab="organizer" aria-controls="organizer">Organizer</button>
+  <button type="button" class="tab" role="tab" id="t-instruments" data-tab="instruments" aria-controls="instruments">Instruments</button>
+  <button type="button" class="tab" role="tab" id="t-xcode-cloud" data-tab="xcode-cloud" aria-controls="xcode-cloud">Xcode Cloud</button>
+</div></nav>
+
+<div class="wrap body">
+
+<!-- ======================================================= 总览 -->
+<section class="panel" id="overview" role="tabpanel" aria-labelledby="t-overview">
+<!--OVERVIEW-->
+</section>
+
+<!-- ======================================================= Device Hub -->
+<section class="panel" id="device-hub" role="tabpanel" aria-labelledby="t-device-hub" hidden>
+  <h2 class="pt">Device Hub：真机和模拟器合到一处，给人用，也给脚本和 Agent 用</h2>
+  <p class="sub">随 Xcode 27 一起装、取代 Simulator.app 的独立 App。Apple 自己的一句话概括是「模拟器的方便，加上真机的保真」。这是全报告最细的一页。</p>
+  <nav class="toc">
+    <a href="#dh-idea">一 · 理念</a><a href="#dh-why">二 · 为什么现在做</a><a href="#dh-scenes">三 · 场景</a><a href="#dh-traits">四 · 交互特点 × 用户 × 痛点</a><a href="#dh-shots">五 · 截图</a><a href="#dh-anatomy">六 · 界面区域</a><a href="#dh-voices">七 · 社区反馈与已知问题</a><a href="#dh-hm">八 · 鸿蒙电脑版可参照</a><a href="#dh-src">来源</a>
+  </nav>
+
+  <div class="quotes">
+    <figure class="q"><blockquote lang="en">“Device Hub accelerates your development workflows by bringing devices and simulators together in one place, without leaving your development environment. Quickly diagnose and reproduce issues, inspect device state, and streamline testing.”</blockquote>
+      <figcaption>把设备和模拟器放到一处，不用离开开发环境；更快地诊断、复现问题，查看设备状态，简化测试。—— <a href="https://developer.apple.com/xcode/whats-new/">What's new in Xcode</a> <span class="ev o">官方</span></figcaption></figure>
+    <figure class="q"><blockquote lang="en">“All the convenience of the simulator with the fidelity of real hardware in a single place.”</blockquote>
+      <figcaption>模拟器的方便、真机的保真，放在同一个地方。—— Platforms State of the Union <a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/102/?time=2929">48:49</a> <span class="ev o">官方</span></figcaption></figure>
+  </div>
+
+  <dl class="facts">
+    <div><dt>是什么</dt><dd>随 Xcode 27 安装的独立 App，不开 Xcode 也能用；「It replaces Simulator」<a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/102/?time=2874">SOTU 47:54</a> <span class="ev o">官方</span></dd></div>
+    <div><dt>入口</dt><dd>运行到模拟器时自动弹出紧凑窗；运行目标菜单的「Manage Devices…」；Xcode › Open Developer Tool › Device Hub <span class="ev o">官方</span></dd></div>
+    <div><dt>覆盖</dt><dd>iPhone、iPad、Apple Watch、Apple TV、Apple Vision Pro 的模拟器与真机；CarPlay 要经 USB 连真机（27.2）；27.1 起有 iPhone Duo 模拟器 <span class="ev o">官方</span></dd></div>
+    <div><dt>连接</dt><dd>iOS / iPadOS / watchOS 27 起可无线配对（Pair Nearby Device…），更早的系统用线缆 <span class="ev o">官方</span></dd></div>
+    <div><dt>命令行</dt><dd><code>devicectl</code> 与 Device Hub 同一套底层技术，<code>--json-output</code> 给脚本与 CI <span class="ev o">官方</span></dd></div>
+    <div><dt>包</dt><dd><code>DeviceHub.app</code>，bundle ID <code>com.apple.dt.Devices</code>，在 <code>Xcode.app/Contents/Applications</code> 下 <span class="ev m">社区</span></dd></div>
+  </dl>
+
+  <h2 id="dh-idea">一 · 理念<small>四句话</small></h2>
+  <div class="keys k4">
+    <div class="key"><span class="n">01</span><b>一处：真机和模拟器同一个库存、同一套工具</b><p>「your home for working with both devices and simulators」<a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/260/?time=42">260 · 0:42</a>；「the same set of tools - whether you're working with a device or a simulator」<a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/260/?time=82">1:22</a> <span class="ev o">官方</span></p></div>
+    <div class="key"><span class="n">02</span><b>先轻后全：默认只给屏幕和几颗要紧的键</b><p>紧凑窗「a focused and lightweight window. Just the screen and a few essentials」<a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/260/?time=109">1:49</a>；不够用再点展开进完整窗口 <a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/260/?time=150">2:30</a> <span class="ev o">官方</span></p></div>
+    <div class="key"><span class="n">03</span><b>控件跟着设备走：外框可点，按键按形态变</b><p>「they're contextual」<a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/260/?time=122">2:02</a>：Apple TV 是播放暂停与方向，Vision Pro 是环境与相机，Watch 是侧键与表冠；点外框上的 Home、音量键就是按下 <span class="ev o">官方</span></p></div>
+    <div class="key"><span class="n">04</span><b>一个设备层，三种调用者</b><p>界面给人用；<code>devicectl</code>「based on the same underlying technology as Device Hub」<a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/260/?time=955">15:55</a>；Agent 能启动模拟器、合成触摸、截图验 UI（release notes）<span class="ev o">官方</span>——「三种调用者」是我们的归纳 <span class="ev i">推断</span></p></div>
+  </div>
+
+  <div class="layer" aria-label="一个设备层，三种调用者">
+    <div class="row">
+      <div class="box"><b>Device Hub 界面 · 人</b>紧凑窗 / 完整窗：侧栏、画布、检查器</div>
+      <div class="box"><b>devicectl · 脚本与 CI</b>列设备、装包、启动、改设置、拷文件；版本化 JSON</div>
+      <div class="box"><b>Xcode 里的 Agent · MCP 工具</b>启动模拟器、装包、点按滑动打字、截图、按表冠与遥控器</div>
+    </div>
+    <div class="arrow">▼ ▼ ▼</div>
+    <div class="bar">同一套设备服务（CoreDevice）<span>库存、配对、安装、输入、截图、诊断、数据容器</span></div>
+    <div class="arrow">▼</div>
+    <div class="row">
+      <div class="box"><b>模拟器</b>iPhone · iPad · Watch · TV · Vision Pro · iPhone Duo</div>
+      <div class="box"><b>真机 · 无线</b>同一 Wi-Fi，iOS / iPadOS / watchOS 27 起</div>
+      <div class="box"><b>真机 · 线缆</b>更早的系统、CarPlay</div>
+    </div>
+    <p class="cap">示意由我们整理：三类调用者共用一层的依据见上方「04」，CoreDevice 这一层的名字来自 devicectl 文档与挂载路径 <code>~/Library/Developer/CoreDevice/DeviceFS</code>。</p>
+  </div>
+
+  <h2 id="dh-why">二 · 为什么苹果现在做它<small>四层动因</small></h2>
+  <p class="sub">先看 Apple 自己怎么讲动机，再看技术、平台和同行。能落到原话或文档的标「官方」，我们的判断标「推断」。</p>
+  <div class="why">
+    <div><h4><i>a</i>场景与问题：设备多、组合多、两套工具</h4><ul>
+      <li>组合爆炸：要在「every device, at every appearance, at every text size」都好看，「that can be a lot to account for」<a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/260/?time=13">260 · 0:13</a> <span class="ev o">官方</span></li>
+      <li>真机和模拟器分工明确，却分在两处：真机测性能、传感器、真实环境，模拟器补旧系统和手头没有的机型——「Xcode 27 brings both together」<a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/102/?time=2856">SOTU 47:36</a> <span class="ev o">官方</span>。此前模拟器在 Simulator.app 里一台一个窗口，真机在 Xcode 的设备窗口里管 <span class="ev i">推断</span></li>
+      <li>设备多到管不过来、改配置费时：「I work with dozens of devices and simulators」<a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/260/?time=280">4:40</a>；「testing different text sizes, simulating different locations, or installing different profiles - that can still take a lot of time」<a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/260/?time=353">5:53</a> <span class="ev o">官方</span></li>
+      <li>真机上出的 bug 换个人、换台模拟器就复现不出来：session 花了 7 分钟演示「真机发现 → 模拟器复现」<a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/260/?time=488">8:08</a> <span class="ev o">官方</span></li>
+    </ul></div>
+    <div><h4><i>b</i>技术发展：Agent 要自己验，底层已经统一</h4><ul>
+      <li>Agent 写完代码要能自己看、自己点：「Agents can now boot simulators, install and launch apps, synthesize touch events, and capture screenshots to verify UI behavior」，还能转表冠、按侧键（watchOS）、用 Siri Remote 导航（tvOS）——Xcode 27 release notes <span class="ev o">官方</span>。SOTU 现场演示 Agent 在 Device Hub 里点、滑、打字，最后给测试小结和一路的截图 <a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/102/?time=3217">53:37</a> <span class="ev o">官方</span>。设备层因此必须可编程、可截图、能同时服务人和 Agent <span class="ev i">推断</span></li>
+      <li>CoreDevice 一套底层：<code>devicectl</code> 与 Device Hub 同源 <a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/260/?time=955">15:55</a> <span class="ev o">官方</span>；devicectl 开始能操作模拟器，但文件拷贝、描述文件、sysdiagnose 等在 27.1 beta 上对模拟器还会报错，CI 仍以 simctl 为主 <span class="ev m">社区 · 搜索摘要</span></li>
+      <li>「We rebuilt the experience from the ground up for the highest fidelity possible」<a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/102/?time=2902">SOTU 48:22</a>：Mac 的滚动、捏合、旋转手势在 iOS 设备上产生标准 UIKit 事件（release notes 48372360）<span class="ev o">官方</span></li>
+    </ul></div>
+    <div><h4><i>c</i>平台与硬件：iPhone 应用可以变大小，形态越来越多</h4><ul>
+      <li>iOS 27 里 iPhone 应用在 iPad 上、在 macOS 27 的 iPhone 镜像里「will be fully resizable」<a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/278/?time=410">278 · 6:50</a>；所以要有不装多台模拟器也能试各种尺寸的方式——Device Hub 与 Previews 的「enter resize mode」<a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/278/?time=524">8:44</a> <span class="ev o">官方</span></li>
+      <li>形态越来越多：Watch、TV、Vision Pro（模拟场景、FaceTime / SharePlay）、CarPlay（27.2 起经 USB）、iPhone Duo（27.1 新增模拟器运行时，预览多了「另一块显示屏」分组）<span class="ev o">官方</span>；iPhone Duo 模拟器 9 月 18 日随 27.1 beta 出现，10 月 23 日发售 <span class="ev m">媒体 · 搜索摘要</span></li>
+      <li>系统层的新连接：iOS / iPadOS / watchOS 27 支持网络配对，「without requiring a cable, and provides a more reliable experience for pairing watches」（release notes 179418483）<span class="ev o">官方</span></li>
+    </ul></div>
+    <div><h4><i>d</i>竞争与生态：同行早有，第三方先补，AI 工具都在驱动模拟器</h4><ul>
+      <li>Android Studio 早把模拟器嵌进 IDE 的 Running Devices 工具窗，真机画面也能镜像进来直接操作 <span class="ev m">社区 · Android 官方文档，搜索摘要</span>；Xcode 这次在「IDE 里直接操控设备」上补课 <span class="ev i">推断</span></li>
+      <li>第三方工具先补了位：RocketSim（截图录屏、网络、Agent 控制）、ControlRoom（改外观、状态栏、位置）；RocketSim 已改为在 Device Hub 之上加功能 <span class="ev m">社区 · 厂商文案</span>。高频需求被收进官方 <span class="ev i">推断</span></li>
+      <li>AI 编码工具都在驱动模拟器：Simulator.app 换成 DeviceHub.app 后，Claude Code 桌面版、Expo、React Native CLI、sweetpad 等都开 issue 适配 <span class="ev m">社区 · GitHub</span>——设备层已是 Agent 时代的基础设施，Apple 把它收成官方的一层 <span class="ev i">推断</span></li>
+    </ul></div>
+  </div>
+
+  <h2 id="dh-scenes">三 · 场景<small>Apple 演示的五个任务流</small></h2>
+  <div class="flows">
+    <div class="flow">
+      <h4>S1 · 写完就跑，顺手把外观查一遍</h4>
+      <div class="who">What's new in Xcode 27 <a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/258/?time=594">9:54–12:31</a> · 设计师 Jake 在做纸飞机 App</div>
+      <ol>
+        <li>运行到 iPhone 17 Pro 模拟器 → Device Hub 弹出紧凑窗，「compact and sized to fit the device」</li>
+        <li>紧凑窗里直接回主屏、截图、旋转</li>
+        <li>展开窗口、打开检查器：增强对比、调大动态字体、切深色，看完恢复默认</li>
+        <li>进尺寸调整模式试不同宽高比——因为 macOS 27 的 iPhone 镜像窗口可以拉大小</li>
+        <li>打开侧栏：模拟器和真机在一张列表里；已配对的 iPad Pro 正在跑这个 App，在 Device Hub 里直接看、直接操作</li>
+      </ol>
+    </div>
+    <div class="flow">
+      <h4>S2 · 让 Agent 替你点一遍</h4>
+      <div class="who">Platforms State of the Union <a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/102/?time=3217">53:37–54:03</a></div>
+      <ol>
+        <li>Agent 刚写完 Origami 的新功能，想把各种设置、道具组合都测一遍</li>
+        <li>「Xcode launches Origami and Device Hub and starts testing those for me」</li>
+        <li>Agent 在模拟器里点、滑、打字</li>
+        <li>结束时给一份测试小结，附上一路截下的所有截图</li>
+      </ol>
+      <p class="end">同一场里 Apple 还列了 Agent 的其他自验手段：跑测试、用 playground 单独试 API、用 Previews 看深浅色 / 方向 / 字号 / 语言 <a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/102/?time=3193">53:13</a> <span class="ev o">官方</span></p>
+    </div>
+    <div class="flow wide">
+      <h4>S3 · 真机上发现，模拟器上复现</h4>
+      <div class="who">Get the most out of Device Hub <a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/260/?time=488">8:08–15:24</a> · 健身 App 的海拔恢复建议在横屏时被截断；Hassan 发现，Matt 复现</div>
+      <div class="cols">
+        <div>
+          <div class="role">Hassan · 发现的人（三件事：配对、日志够、诊断全）</div>
+          <ol>
+            <li>无线配对 Apple Watch：侧栏「+」→ Pair Nearby Device… → 手表上选这台 Mac → 输入 Device Hub 显示的 PIN <a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/260/?time=546">9:06</a></li>
+            <li>Profiles 面板拖入 CoreLocation 日志描述文件，在 iPhone 上确认安装，再重启 <a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/260/?time=600">10:00</a></li>
+            <li>从 Xcode 运行，在 Mac 上直接操作真机画面，转到横屏，复现截断 <a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/260/?time=638">10:38</a></li>
+            <li>截图；启动 sysdiagnose；在设备上选中被截断的文字、复制，粘到 Mac 上的文件里 <a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/260/?time=659">10:59</a></li>
+            <li>下载 App 的数据容器，连同截图和诊断发给 Matt <a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/260/?time=698">11:38</a></li>
+          </ol>
+        </div>
+        <div>
+          <div class="role">Matt · 复现的人（三步：选对模拟器、对齐数据、镜像配置）</div>
+          <ol start="6">
+            <li>手头没有 iPhone 17e，就在侧栏选同型号模拟器，在 Info 面板核对型号 <a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/260/?time=765">12:45</a></li>
+            <li>Apps 面板里用 Hassan 的数据容器替换自己的，重启 App 后看到他的全部训练记录 <a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/260/?time=786">13:06</a></li>
+            <li>对着截图镜像配置：转横屏 → 检查器里把位置设成约翰内斯堡（高海拔）→ 还没出现 → 再看截图，字号很大 → 调大字号 → 复现 <a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/260/?time=821">13:41</a></li>
+          </ol>
+        </div>
+      </div>
+      <p class="end">「Only with all of these were we able to reproduce the issue.」<a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/260/?time=909">15:09</a>——横屏、特定位置、最大字号同时满足才出现。值得注意的是：配置要靠人对着截图一项项猜，Device Hub 没有「把那台设备的配置整套搬过来」的按钮 <span class="ev i">推断</span></p>
+    </div>
+    <div class="flow">
+      <h4>S4 · 多种尺寸摆在一起看</h4>
+      <div class="who">260 <a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/260/?time=330">5:30</a> · 278 <a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/278/?time=524">8:44</a></div>
+      <ol>
+        <li>侧栏里选中几台不同尺寸的 iPhone，双击 → 每台一个紧凑窗；也可以开成标签页</li>
+        <li>或者只用一台：点「Enter resize mode」，拖上下左右的把手，或在下面直接填宽高；Device Hub 会吸附到最近的有效尺寸</li>
+        <li>满意后，Apple 仍要求在 iPhone 镜像和 iPad 真机上验一遍 <a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/278/?time=549">9:09</a></li>
+      </ol>
+    </div>
+    <div class="flow">
+      <h4>S5 · 管一柜子测试机</h4>
+      <div class="who">Device Hub 文档 · 社区</div>
+      <ol>
+        <li>无线或线缆配对；侧栏按真机 / 模拟器过滤，分「Available / Unavailable」</li>
+        <li>Info 里复制 UDID 去注册设备；「Edit Visibility」选显示哪些字段</li>
+        <li>分发测试时不用 Xcode：Apps 面板直接装卸 <code>.ipa</code>，Profiles 管描述文件</li>
+        <li>Steve Troughton-Smith 用远程控制在所有设备上点开设置、开始 iOS 27 更新，不用一台台去找 <span class="ev m">社区 · 搜索摘要</span></li>
+      </ol>
+    </div>
+  </div>
+
+  <h2 id="dh-traits">四 · 交互特点 × 对应的用户 × 解决的痛点</h2>
+  <p class="sub">一行一个交互特点。「对应的用户」写最受益的人；「解决的痛点」写以前怎么做、现在怎么做。</p>
+  <div class="tw"><table>
+    <thead><tr><th style="width:150px">交互特点</th><th>怎么用（界面元素 / 操作）</th><th style="width:170px">对应的用户</th><th>解决的痛点</th></tr></thead>
+    <tbody>
+      <tr><th>紧凑窗默认</th><td>运行到模拟器自动弹出，只有屏幕、设备名与系统版本、展开键；底部主屏、截图、录屏、旋转 <span class="ev o">官方</span></td><td>每天 build &amp; run 的所有开发者</td><td>只想看一眼结果时不必面对整套工具；窗口贴合设备大小，不挤占代码区</td></tr>
+      <tr><th>完整窗三栏</th><td>点展开：左侧栏（库存）、中画布（活屏）、右检查器（设置 / 诊断 / 信息）；再点收回紧凑窗 <span class="ev o">官方</span></td><td>要排查、要改配置的开发者与测试</td><td>设备、操作、配置以前分在 Simulator 菜单、Xcode 设备窗口与设备的「设置」里，现在在同一个窗口</td></tr>
+      <tr><th>情境化设备控件</th><td>按形态换按键：TV 的播放暂停与方向，Vision Pro 的环境、相机移动，Watch 的侧键与表冠；外框上的 Home、音量、动作按钮可点 <span class="ev o">官方</span></td><td>Watch / TV / Vision Pro / CarPlay 开发者</td><td>不用记每个平台各自的模拟方式与快捷键</td></tr>
+      <tr><th>画布直接操控</th><td>点 = 轻点，按住 = 长按，拖动、触控板捏合与滚动；捕获键盘把 Mac 的按键直接送进设备；缩放、适合窗口、1:1 物理尺寸 <span class="ev o">官方</span></td><td>UI 工程师；做键盘与硬件支持的人</td><td>「driving the device from my screen can help me stay focused」<a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/260/?time=181">3:01</a>——真机在桌上够不着、注意力来回切</td></tr>
+      <tr><th>真机进画布</th><td>选中真机 → 画布上点「View Screen」，Mac 上和设备上可以同时操作；交互期间设备上的 App 用不了相机和麦克风，打电话、FaceTime 会中断交互 <span class="ev o">官方</span></td><td>需要真机保真的开发者、测试</td><td>以前要看真机就得拿起手机；现在真机与模拟器同一种操作方式</td></tr>
+      <tr><th>尺寸调整模式</th><td>画布工具栏「Enter resize mode」→ 拖四边把手或填宽高 → 吸附到最近有效尺寸，底部显示如「667 × 428」 <span class="ev o">官方</span></td><td>做自适应布局的开发者（iPhone 应用在 iPad 与 iPhone 镜像中可调整）</td><td>以前试多种尺寸要装、开多台模拟器</td></tr>
+      <tr><th>设置检查器，即时生效</th><td>外观、Liquid Glass、色彩滤镜、字号、减弱动态、增强对比、显示边框、降低透明度、VoiceOver；位置；声音与输入输出——「these changes take effect instantly」<a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/260/?time=392">6:32</a> <span class="ev o">官方</span></td><td>无障碍、本地化、UI 工程师与设计师</td><td>「no need to dig through your device's settings」——以前要进设备设置一层层找</td></tr>
+      <tr><th>诊断面板</th><td>中间页签列出设备记下的崩溃、卡顿（spins）和其他诊断，可下载；配合 sysdiagnose 与截图 <span class="ev o">官方</span></td><td>排查崩溃、卡顿的工程师；测试</td><td>「where you will start investigating if your app hangs or crashes」——日志不再散在各处</td></tr>
+      <tr><th>应用与数据容器</th><td>Apps 面板：装、卸 App（含 <code>.ipa</code>），下载、替换数据容器；Profiles：拖进描述文件安装 <span class="ev o">官方</span></td><td>跨人协作复现的工程师、测试；分发测试包的人</td><td>复现缺数据：现在能「restore to a known baseline, or capturing a snapshot for later」<a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/260/?time=711">11:51</a></td></tr>
+      <tr><th>侧栏库存</th><td>搜索；过滤（全部 / 模拟器 / 真机）与排序、分组；可用 / 不可用分区；右键：重启、关机、配对 iPhone 与 Watch 模拟器、移除、取消配对 <span class="ev o">官方</span></td><td>手里有几十台设备与模拟器的人</td><td>「it can become hard to keep track of all of them」<a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/260/?time=283">4:43</a></td></tr>
+      <tr><th>无线配对</th><td>「+」→ Pair Nearby Device… → 选设备类型 → 设备上打开对应设置 → 选中设备 → 输 PIN → 设备上点信任 <span class="ev o">官方</span></td><td>所有用真机的人，尤其 Watch</td><td>手机、平板不用插线；手表配对「more reliable」</td></tr>
+      <tr><th>多设备并排</th><td>侧栏多选 → 双击，每台一个紧凑窗；或开成标签页 <span class="ev o">官方</span></td><td>适配多尺寸的开发者、设计走查</td><td>以前逐台切换、凭记忆对比</td></tr>
+      <tr><th>截图与录屏</th><td>设备下方的截图、录屏按钮（录屏仅模拟器）；截图按设备真实分辨率存到桌面，录屏文件名带设备名和时间 <span class="ev o">官方</span></td><td>写 bug 单、做 App Store 截图、记录无障碍与多语言表现的人</td><td>截图分辨率不再受 Mac 屏幕影响</td></tr>
+      <tr><th>devicectl</th><td><code>list devices</code>、<code>device info</code>、<code>install app</code>、<code>process launch</code>、<code>copy to / from</code>、挂载点（Finder 里的「Devices」）；<code>--json-output</code> 版本化、向后兼容 <span class="ev o">官方</span></td><td>CI、测试平台与工具作者</td><td>「don't rely on or parse the Terminal output」——给脚本一个稳定的格式</td></tr>
+      <tr><th>Agent 的设备工具</th><td>Agent 启动模拟器、装包启动、合成触摸、截图；转表冠、按侧键；用 Siri Remote 导航 <span class="ev o">官方</span></td><td>用 Agent 写 App 的开发者</td><td>Agent 写完不能自己验 UI，只能等人点一遍</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2 id="dh-shots">五 · 截图<small>全部来自 Apple 文档配图，点开看原尺寸</small></h2>
+  <div class="shots">
+    <figure class="shot wide"><a href="images/device-hub/device-hub-anatomy.webp" target="_blank" rel="noopener"><picture><source media="(prefers-color-scheme: dark)" srcset="images/device-hub/device-hub-anatomy-dark.webp"><img src="images/device-hub/device-hub-anatomy.webp" width="1600" height="965" loading="lazy" alt="Device Hub 完整窗口，标注了侧栏、画布、设备控件、检查器等区域"></picture></a>
+      <figcaption><b>完整窗口的区域</b>：左侧栏（添加模拟器与设备、过滤排序、搜索、设备列表），中间画布（活屏，顶部是设备交互与画布控件，底部是设备控件），右侧检查器（这里停在 Apps 页）。<span class="from">来源：<a href="https://developer.apple.com/documentation/xcode/device-hub">Device Hub</a> 文档首页</span></figcaption></figure>
+    <figure class="shot tall"><a href="images/device-hub/running-app-in-ios-simulator.webp" target="_blank" rel="noopener"><picture><source media="(prefers-color-scheme: dark)" srcset="images/device-hub/running-app-in-ios-simulator-dark.webp"><img src="images/device-hub/running-app-in-ios-simulator.webp" width="958" height="1842" loading="lazy" alt="iPhone 17 Pro Max 模拟器的紧凑窗"></picture></a>
+      <figcaption><b>紧凑窗</b>：标题栏只有设备名、系统版本、展开和「…」；底部四个键是主屏、截图、录屏、旋转。<span class="from">来源：<a href="https://developer.apple.com/documentation/xcode/interacting-with-your-app-in-device-hub">Interacting with your app in Device Hub</a></span></figcaption></figure>
+    <figure class="shot"><a href="images/device-hub/device-hub-compact-view.webp" target="_blank" rel="noopener"><picture><source media="(prefers-color-scheme: dark)" srcset="images/device-hub/device-hub-compact-view-dark.webp"><img src="images/device-hub/device-hub-compact-view.webp" width="1600" height="1135" loading="lazy" alt="Apple Vision Pro 模拟器的紧凑窗，底部有一排相机与交互控件"></picture></a>
+      <figcaption><b>控件随设备变</b>：同样是紧凑窗，Vision Pro 底部多出交互、平移、推拉、倾斜、重置相机、捕获指针、键盘捕获、环境等按键。<span class="from">来源：<a href="https://developer.apple.com/documentation/xcode/running-your-app-on-simulated-or-physical-devices">Running your app on simulated or physical devices</a></span></figcaption></figure>
+    <figure class="shot"><a href="images/device-hub/device-hub-manage-devices.webp" target="_blank" rel="noopener"><picture><source media="(prefers-color-scheme: dark)" srcset="images/device-hub/device-hub-manage-devices-dark.webp"><img src="images/device-hub/device-hub-manage-devices.webp" width="1600" height="965" loading="lazy" alt="过滤菜单展开，选中一台 Apple TV 真机，画布显示 View Screen"></picture></a>
+      <figcaption><b>过滤与真机</b>：过滤菜单是 All Devices / Simulators / Physical Devices 和 Sort By；选中 Apple TV 真机（tvOS 26.5），画布是设备图与「View Screen」，右侧是设置检查器。<span class="from">来源：<a href="https://developer.apple.com/documentation/xcode/managing-your-simulated-and-physical-devices-in-device-hub">Managing your simulated and physical devices</a></span></figcaption></figure>
+    <figure class="shot"><a href="images/device-hub/locating-device-id-device-hub.webp" target="_blank" rel="noopener"><picture><source media="(prefers-color-scheme: dark)" srcset="images/device-hub/locating-device-id-device-hub-dark.webp"><img src="images/device-hub/locating-device-id-device-hub.webp" width="1600" height="868" loading="lazy" alt="一台 iPhone 真机的画面出现在画布中，右侧 Info 显示 ECID、序列号、UDID"></picture></a>
+      <figcaption><b>真机进画布</b>：iPhone 12 Pro Max（iOS 27）的屏幕实时显示在画布里，下方的设备控件少了录屏（录屏只支持模拟器）；Info 页列出容量、ECID、型号、序列号、UDID，「Edit Visibility」选显示哪些字段；侧栏分 Available / Unavailable。<span class="from">来源：<a href="https://developer.apple.com/documentation/xcode/locating-device-identifiers">Locating device identifiers</a></span></figcaption></figure>
+    <figure class="shot wide"><a href="images/device-hub/resize-iphone-canvas.webp" target="_blank" rel="noopener"><picture><source media="(prefers-color-scheme: dark)" srcset="images/device-hub/resize-iphone-canvas-dark.webp"><img src="images/device-hub/resize-iphone-canvas.webp" width="1600" height="1011" loading="lazy" alt="尺寸调整模式下的 iPhone 画面四边有把手，底部显示 667 × 428，右侧是完整的设置检查器"></picture></a>
+      <figcaption><b>尺寸调整模式 + 设置检查器</b>：画面四边出现把手，拖动改尺寸，底部实时显示「667 × 428」；右侧设置一屏放下外观、Liquid Glass、色彩滤镜、字号、减弱动态、增强对比、显示边框、降低透明度、VoiceOver、位置、音量与输入输出。<span class="from">来源：<a href="https://developer.apple.com/documentation/xcode/configuring-the-environment-of-a-simulated-device">Configuring the environment of a simulated device</a></span></figcaption></figure>
+    <figure class="shot"><a href="images/device-hub/device-hub-apps-inspector.webp" target="_blank" rel="noopener"><picture><source media="(prefers-color-scheme: dark)" srcset="images/device-hub/device-hub-apps-inspector-dark.webp"><img src="images/device-hub/device-hub-apps-inspector.webp" width="1600" height="869" loading="lazy" alt="Apps 面板列出设备上的 App，画面下方显示已与 Apple Watch Ultra 3 配对"></picture></a>
+      <figcaption><b>Apps 面板</b>：列出设备上的 App，「+ / −」安装卸载，底部按 Developer 过滤；画面下方「Paired with Apple Watch Ultra 3」显示 iPhone 与手表模拟器的配对关系。<span class="from">来源：<a href="https://developer.apple.com/documentation/xcode/managing-apps-on-devices">Managing apps on devices</a></span></figcaption></figure>
+    <figure class="shot"><a href="images/device-hub/capture-device-screenshot-and-video.webp" target="_blank" rel="noopener"><picture><source media="(prefers-color-scheme: dark)" srcset="images/device-hub/capture-device-screenshot-and-video-dark.webp"><img src="images/device-hub/capture-device-screenshot-and-video.webp" width="1550" height="1080" loading="lazy" alt="横屏的 iPhone 紧凑窗，设备下方是截图与录屏按钮"></picture></a>
+      <figcaption><b>截图与录屏</b>：紧凑窗跟着设备转成横屏；截图按设备真实分辨率存到桌面，录屏文件名带设备名与时间。<span class="from">来源：<a href="https://developer.apple.com/documentation/xcode/capturing-screenshots-and-videos-from-devices">Capturing screenshots and videos from devices</a></span></figcaption></figure>
+    <figure class="shot tall"><a href="images/device-hub/wirelessly-pair-device.webp" target="_blank" rel="noopener"><picture><source media="(prefers-color-scheme: dark)" srcset="images/device-hub/wirelessly-pair-device-dark.webp"><img src="images/device-hub/wirelessly-pair-device.webp" width="824" height="1254" loading="lazy" alt="无线配对面板：选设备类型，按提示在设备上打开设置，选中发现的 Apple TV"></picture></a>
+      <figcaption><b>无线配对</b>：先选设备类型（iPhone / iPad / Watch、Apple TV、Vision Pro），按提示在设备上打开设置，选中发现的设备点 Next，再输 PIN。<span class="from">来源：<a href="https://developer.apple.com/documentation/xcode/managing-your-simulated-and-physical-devices-in-device-hub">Managing your simulated and physical devices</a></span></figcaption></figure>
+    <figure class="shot"><a href="images/device-hub/add-additional-simulators.webp" target="_blank" rel="noopener"><picture><source media="(prefers-color-scheme: dark)" srcset="images/device-hub/add-additional-simulators-dark.webp"><img src="images/device-hub/add-additional-simulators.webp" width="1164" height="658" loading="lazy" alt="新建模拟器对话框：名称、系统版本、型号"></picture></a>
+      <figcaption><b>新建模拟器</b>：侧栏「+」→ 选型号，填名称、选系统版本与型号，Create；新模拟器出现在 Available 下。<span class="from">来源：<a href="https://developer.apple.com/documentation/xcode/managing-your-simulated-and-physical-devices-in-device-hub">Managing your simulated and physical devices</a></span></figcaption></figure>
+    <figure class="shot wide"><a href="images/device-hub/change-simulated-scene.webp" target="_blank" rel="noopener"><picture><source media="(prefers-color-scheme: dark)" srcset="images/device-hub/change-simulated-scene-dark.webp"><img src="images/device-hub/change-simulated-scene.webp" width="1600" height="1028" loading="lazy" alt="Vision Pro 模拟器的模拟场景选择：厨房、客厅、博物馆，各有白天和夜晚"></picture></a>
+      <figcaption><b>visionOS 模拟场景</b>：检查器里切厨房 / 客厅 / 博物馆 × 白天 / 夜晚，测不同背景与光照下的可读性、布局和空间音频。<span class="from">来源：<a href="https://developer.apple.com/documentation/xcode/interacting-with-your-visionos-app-in-device-hub">Interacting with your visionOS app in Device Hub</a></span></figcaption></figure>
+  </div>
+
+  <h2 id="dh-anatomy">六 · 界面区域拆解</h2>
+  <div class="tw"><table>
+    <thead><tr><th style="width:150px">区域</th><th style="width:170px">位置</th><th>功能描述</th></tr></thead>
+    <tbody>
+      <tr><th>窗口工具栏 · 左</th><td>侧栏顶部</td><td>「+」：新建模拟器、Pair Nearby Device…；过滤与排序（All Devices / Simulators / Physical Devices、Sort By）；侧栏开关</td></tr>
+      <tr><th>侧栏</th><td>左</td><td>搜索；Available / Unavailable 分组；每行是设备图标、名称、类型（Simulator 或真机型号）、系统版本；右键：重启、关机、配对 iPhone 与 Watch 模拟器、Remove、Unpair；多选双击开多个紧凑窗</td></tr>
+      <tr><th>画布 · 顶部</th><td>中上</td><td>设备名与系统版本；设备交互（键盘捕获、尺寸调整模式）；画布控件（缩小、适合窗口、1:1 物理尺寸、放大）；收起 / 展开；「…」（关机、重启等）</td></tr>
+      <tr><th>画布</th><td>中</td><td>带外框的活屏（View › Show / Hide Bezels）；未启动时是设备图和 Start / View Screen；配对关系提示；尺寸调整时显示宽 × 高</td></tr>
+      <tr><th>设备控件</th><td>画布底部</td><td>主屏、截图、录屏（仅模拟器）、旋转；Vision Pro 换成交互 / 平移 / 推拉 / 倾斜 / 重置相机 / 捕获指针 / 环境；TV 换成播放暂停与方向</td></tr>
+      <tr><th>检查器</th><td>右，顶部三个图标</td><td>设置（外观、无障碍、位置、声音）· 诊断报告（崩溃、卡顿、其他日志）· 信息（Info / Apps / Profiles 三页）——共五个面板</td></tr>
+      <tr><th>检查器 · 底部</th><td>右下</td><td>Apps 页：Filter 与 Developer 下拉；Info 页：Edit Visibility</td></tr>
+      <tr><th>菜单栏</th><td>macOS 顶部</td><td>Device（方向、声音、慢动画、模拟键鼠、FaceTime 场景）、Controls（Home、锁屏、Siri、录屏）、View（外框显隐）</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2 id="dh-voices">七 · 社区反馈与已知问题</h2>
+  <p class="sub">第三方页面在本环境打不开，以下来自搜索摘要，时间多在 6 月 beta 期，后续版本可能已变。</p>
+  <div class="voices">
+    <div class="voice pos"><b>「大惊喜」，日常影响比很多 API 更直接</b><span>Fatbobman 认为它把模拟器、真机管理、状态测试、动态尺寸并成一个流程；同时提醒尺寸差异不是布局容器能单独解决的，大屏小屏往往要不同的导航。转引自 Michael Tsai 2026-06-25 的汇总 <span class="ev m">社区 · 搜索摘要</span></span></div>
+    <div class="voice pos"><b>一个窗口加侧栏，比一机一窗有序</b><span>Collin Allen：不再每台模拟器一个窗口，所有设备在一个窗口里、左边一列。同一汇总 <span class="ev m">社区 · 搜索摘要</span></span></div>
+    <div class="voice pos"><b>远程控制真机好用，但 beta 期不如旧模拟器</b><span>Steve Troughton-Smith 用它在所有设备上远程点开设置、开始 iOS 27 更新；同时认为早期 beta 的易用性远不如 iOS 模拟器，但理解 Apple 想做什么 <span class="ev m">社区 · 搜索摘要</span></span></div>
+    <div class="voice neg"><b>没有像素 / 点精确缩放</b><span>Adam Overholtzer 认为缺少按像素、按点精确缩放「不可接受」 <span class="ev m">社区 · 搜索摘要</span></span></div>
+    <div class="voice neg"><b>旧模拟器的 Debug 菜单没了</b><span>Léo Natan（6 月 beta）：慢动画、模拟内存警告都不见了。后来的文档里有 Device › Slow Animations，27.2 beta 2 的 release notes 里出现了 Device › Simulate Memory Warning（暂不可用），说明在补 <span class="ev m">社区</span> <span class="ev o">官方</span></span></div>
+    <div class="voice eco"><b>工具链要改：<code>open -a Simulator</code> 失效</b><span>Expo、React Native CLI、Claude Code 桌面版的 iOS 模拟器、sweetpad、auto-mobile、rock 等都开了 issue 或 PR；常见改法是先找 Simulator.app、找不到就开 DeviceHub.app，社区用 <code>devices://device/open?id=&lt;UDID&gt;</code> 打开指定设备（未见 Apple 文档） <span class="ev m">社区 · GitHub，搜索摘要</span></span></div>
+    <div class="voice eco"><b>CI：devicectl 还替代不了 simctl</b><span>Bitrise 把统一的设备接口看作 CI 的机会，但 beta 上好几条模拟器命令报错；第三方在 27.1 beta 上测到文件拷贝、描述文件、通知、sysdiagnose 对模拟器不可用，建议 CI 仍以 simctl 为主 <span class="ev m">社区 · 搜索摘要</span></span></div>
+    <div class="voice eco"><b>第三方工具转向「在 Device Hub 之上」</b><span>RocketSim 的命令行已能找到 Device Hub 里运行的模拟器，并主打给 Device Hub 加 Agent 控制、相机模拟、网络监控 <span class="ev m">社区 · 厂商文案</span></span></div>
+  </div>
+  <h3>Release notes 里的已知问题（摘要）</h3>
+  <ul class="plain">
+    <li>Device Hub 27 不能显示物理 Apple Vision Pro 的画面、也不能向它发输入，其他功能（设置、DeviceFS 等）可用，画面可用 AirPlay 代替 <span class="ev o">官方</span></li>
+    <li>暂不支持向设备或模拟器发送双指触摸；Controls › Shake 不工作 <span class="ev o">官方</span></li>
+    <li>并行测试时，模拟器在 Device Hub 里看不到但仍在跑测试；想看 UI 测试执行要关掉并行 <span class="ev o">官方</span></li>
+    <li>下载的数据容器是以 bundle ID 命名的文件夹，不是 <code>.xcappdata</code>，要手动改结构才能给 Xcode 的 Run 动作用 <span class="ev o">官方</span></li>
+    <li>CarPlay 需 USB 连接，不支持 iOS 模拟器；iPhone Duo 上 VoiceOver 与辅助功能检查器还读不到 Device Hub 里的屏幕内容（27.2 beta 2） <span class="ev o">官方</span></li>
+  </ul>
+
+  <h2 id="dh-hm">八 · 鸿蒙电脑版可以参照什么</h2>
+  <div class="hmbox">
+    <p><b>先看一个差别</b>：Device Hub 把设备分成「模拟器 / 真机」两类。鸿蒙电脑版「开发环境即运行环境」，PC 应用本机就能跑，所以至少是三类——<b>本机窗口 · 模拟器 · 真机</b>（真机再分 USB、无线、碰一碰、远端、云端）。照搬两分法会漏掉我们最大的优势 <span class="ev i">推断</span>。</p>
+    <p><b>已经借过的</b>：demo 20 的「设备中心」已按 Xcode 27 补了五类设备一张表、一键诊断包、在云端 / 远端真机回放复现（见 README「对照友商更新」）。<b>还没借的</b>：活屏画布、紧凑窗、情境化控件、检查器里即时生效的环境设置、数据与配置一起搬的复现、一个设备层同时给界面 / 命令行 / Agent 用。</p>
+  </div>
+  <p class="legend"><span><span class="lvl a">主攻</span> 值得单独立项</span><span><span class="lvl b">跟上</span> 并进已有 demo</span><span><span class="lvl c">搭车做</span> 顺手改</span><span><span class="cmp u">人无我有</span> / <span class="cmp y">人有我优</span> 对照 Apple</span></p>
+  <div class="tw"><table>
+    <thead><tr><th>场景</th><th>点（一句主张）</th><th>借 Device Hub 的哪一处</th><th>现在哪里是断的</th><th>档位</th><th>对照</th><th>接哪个 demo</th></tr></thead>
+    <tbody>
+      <tr><th rowspan="3">把设备收拢</th>
+        <td><span class="claim">设备中心从列表长成三栏</span>：左边所有设备（本机窗口、模拟器、USB / 无线 / 碰一碰真机、远端、云端），中间活屏，右边这台的设置、诊断、应用</td><td>侧栏 + 画布 + 检查器；真机与模拟器同一套工具</td><td>demo 20 只有表格与连接诊断，看屏幕、改配置还得去别处</td><td><span class="lvl a">主攻</span></td><td><span class="cmp y">人有我优</span>（多出本机、远端、云端三类来源）</td><td>20 · 19 · 27</td></tr>
+      <tr><td><span class="claim">碰一下就连上、就能操控</span>：碰一碰完成配对，多屏协同把手机画面放进画布，键鼠穿越直接在手机上操作</td><td>Pair Nearby Device + PIN；View Screen 在 Mac 上操控真机</td><td>Apple 靠同一 Wi-Fi 加 PIN；我们系统层已有碰一碰、多屏协同、键鼠穿越，IDE 没用上</td><td><span class="lvl a">主攻</span></td><td><span class="cmp u">人无我有</span></td><td>20</td></tr>
+      <tr><td><span class="claim">一个设备层，三种调用者</span>：设备中心、hdc（版本化 JSON 输出）、Agent 的 MCP 工具（装包、点按、截图、读 HiLog）共用一层；设备被哪个 Agent 占着、谁在排队，三处看到的一样</td><td>devicectl 与 Device Hub 同源；Agent 能启动模拟器、合成触摸、截图</td><td>Agent 只能解析 hdc 的文本输出；多 Agent 抢同一台设备没有统一的占用状态</td><td><span class="lvl a">主攻</span></td><td><span class="cmp y">人有我优</span>（多 Agent 占用与排队 Apple 没讲）</td><td>23 · 07 · 20</td></tr>
+      <tr><th rowspan="3">跑起来就在眼前</th>
+        <td><span class="claim">运行默认弹紧凑窗，键跟着形态走</span>：手机是返回、主页、截图、旋转；手表是表冠；车机是旋钮；折叠屏是开合与悬停；PC 应用是断点档位。要更多再展开</td><td>紧凑窗 + 情境化设备控件</td><td>模拟器窗口和 IDE 是两套界面；PC 应用本机运行，却没有开发者控件条</td><td><span class="lvl a">主攻</span></td><td><span class="cmp y">人有我优</span></td><td>17 · 30</td></tr>
+      <tr><td><span class="claim">拖宽就是切断点</span>：尺寸调整吸附到一多断点 sm / md / lg / xl，画布下显示断点名与宽度，对应的布局代码亮起</td><td>尺寸调整模式：拖边、吸附有效尺寸、显示宽 × 高</td><td>查一多要切好几台设备；Apple 只吸附到「有效尺寸」，不懂断点</td><td><span class="lvl a">主攻</span></td><td><span class="cmp y">人有我优</span></td><td>17</td></tr>
+      <tr><td><span class="claim">几台并排，同一个动作同步</span>：侧栏多选双击各开紧凑窗；可选把点击、滚动同步到几台</td><td>多选双击开多个紧凑窗 / 标签页（Apple 不同步操作）</td><td>16 的差异并排靠 Agent 跑；手动并排对比没有入口</td><td><span class="lvl b">跟上</span></td><td><span class="cmp y">人有我优</span></td><td>16 · 17</td></tr>
+      <tr><th rowspan="3">换配置、复现问题</th>
+        <td><span class="claim">换配置不进设置</span>：检查器里一处改深浅色、字体大小、无障碍、语言地区、位置、弱网，真机与模拟器同一套，即时生效</td><td>设置面板即时生效</td><td>改字号、深色要进设备设置；弱网在 17、语言在 29，散在各处</td><td><span class="lvl b">跟上</span></td><td><span class="cmp y">人有我优</span>（多出弱网、语言）</td><td>17 · 29 · 02</td></tr>
+      <tr><td><span class="claim">真机发现、模拟器复现，配置自动对齐</span>：「现场包」= 截图 + HiLog + 应用沙箱数据 + 设备配置；在模拟器或云端实例上一键套用</td><td>下载 / 替换数据容器；Apple 的配置要人对着截图一项项猜</td><td>demo 20 有诊断包与回放，没有沙箱数据和配置镜像</td><td><span class="lvl a">主攻</span></td><td><span class="cmp y">人有我优</span>（自动对齐配置 Apple 没做）</td><td>20 · 27 · 28</td></tr>
+      <tr><td><span class="claim">截图录屏即素材</span>：按设备真实分辨率保存，文件名带设备与时间，可直接拖进 DevEco Code 对话当上下文</td><td>截图、录屏全分辨率存桌面</td><td>截完还要找文件、再拖进对话</td><td><span class="lvl c">搭车做</span></td><td><span class="cmp y">人有我优</span></td><td>05 · 25</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2 id="dh-src">来源</h2>
+  <ul class="src">
+    <li class="grp">Apple · 官方</li>
+    <li><a href="https://developer.apple.com/xcode/whats-new/">What's new in Xcode（Xcode 27）</a></li>
+    <li><a href="https://developer.apple.com/videos/play/wwdc2026/101/?time=4281">WWDC26 Keynote · 71:21</a></li>
+    <li><a href="https://developer.apple.com/videos/play/wwdc2026/102/?time=2856">WWDC26 Platforms State of the Union · 47:36 / 53:37</a></li>
+    <li><a href="https://developer.apple.com/videos/play/wwdc2026/258/?time=577">WWDC26 · What's new in Xcode 27 · 9:37 Device Hub</a></li>
+    <li><a href="https://developer.apple.com/videos/play/wwdc2026/260/">WWDC26 · Get the most out of Device Hub</a></li>
+    <li><a href="https://developer.apple.com/videos/play/wwdc2026/278/?time=520">WWDC26 · Modernize your UIKit app · 8:40</a></li>
+    <li><a href="https://developer.apple.com/documentation/xcode/device-hub">Device Hub 文档</a> 及子页：<a href="https://developer.apple.com/documentation/xcode/managing-your-simulated-and-physical-devices-in-device-hub">管理设备</a> · <a href="https://developer.apple.com/documentation/xcode/interacting-with-your-app-in-device-hub">与 App 交互</a> · <a href="https://developer.apple.com/documentation/xcode/configuring-the-environment-of-a-simulated-device">配置环境</a> · <a href="https://developer.apple.com/documentation/xcode/capturing-screenshots-and-videos-from-devices">截图录屏</a> · <a href="https://developer.apple.com/documentation/xcode/managing-apps-on-devices">管理应用</a> · <a href="https://developer.apple.com/documentation/xcode/locating-device-identifiers">设备标识</a> · <a href="https://developer.apple.com/documentation/xcode/interacting-with-devices-using-the-command-line">命令行</a> · <a href="https://developer.apple.com/documentation/xcode/interacting-with-your-visionos-app-in-device-hub">visionOS</a></li>
+    <li><a href="https://developer.apple.com/documentation/xcode-release-notes/xcode-27-release-notes">Xcode 27 Release Notes</a>（Device Hub、devicectl、Simulator、Coding Intelligence 各节）</li>
+    <li><a href="https://developer.apple.com/documentation/xcode-release-notes/xcode-27_1-release-notes">Xcode 27.1 RC Release Notes</a> · <a href="https://developer.apple.com/documentation/xcode-release-notes/xcode-27_2-release-notes">Xcode 27.2 beta 2 Release Notes</a></li>
+    <li class="grp">社区 · 搜索摘要，未见原文</li>
+    <li><a href="https://mjtsai.com/blog/2026/06/25/xcode-27s-device-hub/">Michael Tsai · Xcode 27's Device Hub（2026-06-25，9 月有更新）</a></li>
+    <li><a href="https://bitrise.io/blog/post/wwdc-2026-device-hub-and-what-it-means-for-ci-cd">Bitrise · WWDC 2026: Device Hub and what it means for CI/CD</a></li>
+    <li><a href="https://www.infoq.com/news/2026/06/xcode-27-agents-device-hub/">InfoQ · Xcode 27 Extends Agent Integration, Revamps UI, and Introduces DeviceHub</a></li>
+    <li><a href="https://github.com/kaeawc/auto-mobile/issues/8347">auto-mobile #8347 · simctl 与 devicectl 的模拟器边界</a></li>
+    <li><a href="https://github.com/expo/expo/pull/46757">expo #46757 · 支持 DeviceHub 代替 Simulator</a></li>
+    <li><a href="https://github.com/anthropics/claude-code/issues/95085">claude-code #95085 · Xcode 27 上模拟器控制超时</a></li>
+    <li><a href="https://github.com/sweetpad-dev/sweetpad/issues/337">sweetpad #337 · Simulator 改名为 DeviceHub</a></li>
+    <li><a href="https://github.com/callstackincubator/rock/issues/730">rock #730 · run:ios 打不开模拟器</a></li>
+    <li><a href="https://apps.apple.com/app/id1504940162">RocketSim · App Store 说明</a></li>
+    <li><a href="https://developer.android.com/studio/run/device">Android Studio · Run apps on a hardware device</a> · <a href="https://developer.android.com/studio/run/emulator-launch-separate-window">Launch the emulator in a separate window</a></li>
+    <li><a href="https://pasqualepillitteri.it/en/news/16941/xcode-271-iphone-duo-simulator">Xcode 27.1 Beta Arrives With the iPhone Duo Simulator</a></li>
+  </ul>
+</section>
+
+<!--TAB:agents-->
+<!--TAB:workspace-->
+<!--TAB:new-project-->
+<!--TAB:localization-->
+<!--TAB:organizer-->
+<!--TAB:instruments-->
+<!--TAB:xcode-cloud-->
+
+</div>
+
+<script>
+/* 页签：哈希即状态（#device-hub），页内锚点会先切到所在页签再滚过去；←/→ 在页签间移动 */
+(function(){
+  var tabs = [].slice.call(document.querySelectorAll('.tab'));
+  var panels = [].slice.call(document.querySelectorAll('.panel'));
+  function panelOf(id){
+    var el = id && document.getElementById(id);
+    if(!el) return null;
+    return el.classList.contains('panel') ? el : el.closest('.panel');
+  }
+  function show(id, opts){
+    opts = opts || {};
+    var target = document.getElementById(id);
+    var p = panelOf(id) || panels[0];
+    tabs.forEach(function(t){
+      var on = t.dataset.tab === p.id;
+      t.setAttribute('aria-selected', on ? 'true' : 'false');
+      t.tabIndex = on ? 0 : -1;
+      if(on && t.scrollIntoView && opts.reveal) t.scrollIntoView({block:'nearest', inline:'nearest'});
+    });
+    panels.forEach(function(x){ x.hidden = x !== p; });
+    if(opts.focusTab){ var ft = document.getElementById('t-' + p.id); if(ft) ft.focus(); }
+    if(target && target !== p){ target.scrollIntoView(); }
+    else if(opts.top){ window.scrollTo(0, Math.min(window.scrollY, document.querySelector('.tabs').offsetTop)); }
+  }
+  tabs.forEach(function(t, i){
+    t.addEventListener('click', function(){
+      history.replaceState(null, '', '#' + t.dataset.tab);
+      show(t.dataset.tab, {top:true});
+    });
+    t.addEventListener('keydown', function(e){
+      var d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
+      if(!d) return;
+      e.preventDefault();
+      var n = tabs[(i + d + tabs.length) % tabs.length];
+      history.replaceState(null, '', '#' + n.dataset.tab);
+      show(n.dataset.tab, {focusTab:true, reveal:true, top:true});
+    });
+  });
+  window.addEventListener('hashchange', function(){ show(location.hash.slice(1), {reveal:true}); });
+  show(location.hash.slice(1) || 'overview', {reveal:true});
+})();
+</script>
+</body>
+</html>
