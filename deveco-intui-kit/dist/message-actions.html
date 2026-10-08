@@ -1323,6 +1323,9 @@ div.fa{display:block}
       UM(Q2,X({bar:{time:'21 分钟前'}},o.u2||{}))+ANS(X(A2,{bar:X({time:'20 分钟前'},o.a2||{})}))+
       UM(Q3,{bar:{time:'1 分钟前'}})+(o.last!=null?o.last:ANS(X(A3,{bar:{time:'刚刚',abs:'2026-10-08 14:32:05'}})))}
   function PANEL(o){o=o||{};return P({title:o.title,hr:o.hr,body:THREAD(o),field:o.field||FLD('idle')})}
+  /* 状态卡只放和这个状态有关的那一轮：一条你发的 + 一条回答（或审批卡 / 生成中的回答） */
+  function TURN(o){o=o||{};
+    return P({body:UM(o.q||Q,X({bar:{time:'1 分钟前'}},o.u||{}))+(o.last!=null?o.last:ANS(X(A1,{bar:X({time:'刚刚',abs:'2026-10-08 14:32:05'},o.a||{})}))),field:o.field})}
 
   var FIG={};
   /* 首屏 */
@@ -1342,22 +1345,22 @@ div.fa{display:block}
   var ST=[
     {id:'default',n:'默认',show:'AI 回答下：复制 · 重新回答 · 时间',hide:'你发的消息下的栏（只占位）',into:'这条消息完成',out:'不变；报错 / 中断时换成另一套',
       at:'翻一段长对话找上次的结论',pain:'每条下面一排图标，正文反而找不到',fix:'只有两个图标和一个时间，淡色',
-      fig:{w:620,cap:'默认：每条 AI 回答下都有栏；你发的三条只占位。',h:PANEL()}},
+      fig:{w:620,cap:'默认：AI 回答下有栏；你发的那条只占位。',h:TURN()}},
     {id:'user-hover',n:'你发的 · 悬停',show:'时间 · 编辑 · 复制，靠右',hide:'—',into:'鼠标进入这条；Tab 进入；触屏轻点气泡',out:'离开 120 ms 后淡出',
       at:'想把刚才那句需求改一下重发',pain:'自己发的每条下面都挂着按钮，对话被切碎',fix:'平时不显示，悬停才现',
-      fig:{w:620,cap:'鼠标在第二条你发的消息上，它的栏出现；另外两条仍不显示。',h:PANEL({u2:{shown:true,bar:{time:'21 分钟前',edited:true,abs:'发送 2026-10-08 14:11:02 · 编辑 14:12:40'}}})}},
+      fig:{w:620,cap:'鼠标在你发的消息上，它的栏出现。',h:TURN({u:{shown:true,bar:{time:'1 分钟前',edited:true,abs:'发送 2026-10-08 14:31:02 · 编辑 14:31:40'}}})}},
     {id:'focus',n:'键盘焦点',show:'当前按钮 2 px 蓝环，tooltip 立即出现',hide:'—',into:'Tab 进入栏；← → 移动',out:'Esc 回到输入框',
       at:'不想离开键盘',pain:'Tab 过去看不见焦点在哪',fix:'蓝环只用在这里，tooltip 跟着焦点走',
-      fig:{w:620,cap:'焦点在第二条回答的「重新回答」上。',h:PANEL({a2:{b:{retry:{cls:'is-focus',tip:'重新回答'}}}})}},
+      fig:{w:620,cap:'焦点在「重新回答」上。',h:TURN({a:{b:{retry:{cls:'is-focus',tip:'重新回答'}}}})}},
     {id:'generating',n:'生成中',show:'没有栏；停止键在输入框里',hide:'按钮和时间',into:'理解中、调用工具、生成中、在设备上验证',out:'完成 → 默认，时间「刚刚」',
       at:'等 Agent 把修法写完',pain:'字还在往外蹦，下面已经有「复制」',fix:'完成那一刻按钮和「刚刚」一起出现',
-      fig:{w:620,cap:'生成中：第三条回答还在写，下面没有栏。',h:PANEL({last:STREAM,field:FLD('generating')})}},
+      fig:{w:620,cap:'生成中：回答还在写，下面没有栏；停止键在输入框里。',h:TURN({last:STREAM,field:FLD('generating')})}},
     {id:'waiting',n:'在等你',show:'审批卡自己的允许 / 不允许',hide:'整条栏',into:'删文件、装包、改签名、执行 shell 之前',out:'你批准或拒绝 → 回到原来的进行态',
       at:'Agent 要在真机上装包，停下来问你',pain:'卡片下面还挂着复制，像另一条可操作的回答',fix:'只留琥珀和两个按钮',
-      fig:{w:620,cap:'在等你：第三条停在审批卡上，下面没有栏。',h:PANEL({last:APPROVE})}},
+      fig:{w:620,cap:'在等你：停在审批卡上，下面没有栏。',h:TURN({q:'修完直接在 Mate 70 上跑一遍',last:APPROVE})}},
     {id:'error',n:'报错 / 中断',show:'「重新回答」带文字，旁边一个复制；时间写「失败 · 刚刚」或「已停止 · 刚刚」',hide:'—',into:'模型或工具出错；你按了停止',out:'重新回答 → 新的一条，这条留着',
       at:'云端模型超时，回答停在一半',pain:'不知道这半截能不能用、怎么再来一次',fix:'状态行写原因；「重新回答」带文字，一键用同样的输入再来',
-      fig:{w:620,cap:'报错：状态行写原因，栏上是带文字的「重新回答」和复制。',h:PANEL({last:ANS({meta:'云端 · 40 s',cloud:true,lead:'空指针来自 <code>this.user</code> 在 aboutToAppear 之前被读取；正在把',noDet:true,
+      fig:{w:620,cap:'报错：状态行写原因，栏上是带文字的「重新回答」和复制。',h:TURN({last:ANS({meta:'云端 · 40 s',cloud:true,lead:'空指针来自 <code>this.user</code> 在 aboutToAppear 之前被读取；正在把',noDet:true,
         extra:'<span class="ai-status" data-state="error">'+U('ai-alert')+'<span class="lbl">失败：云端模型超时 · 已写的 1 处保留，<button class="act">可退回</button></span></span>',bar:{state:'error',time:'失败 · 刚刚',abs:'2026-10-08 14:32:05 · 云端模型超时'}})})}},
   ];
   ST.forEach(function(s){FIG['st-'+s.id]=s.fig});
