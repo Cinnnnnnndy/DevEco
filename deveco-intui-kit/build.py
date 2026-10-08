@@ -3,7 +3,7 @@
 """
 deveco-intui-kit 构建脚本
 
-  python3 build.py              把 demo 与 docs 各打包成一个单文件 HTML，输出到 dist/
+  python3 build.py              把 demo、docs 与消息操作栏 pattern 页各打包成一个单文件 HTML，输出到 dist/
                                 （单文件版没有外链，适合发给别人 / 发布成 Artifact）
   python3 build.py sync-icons   src/icons.svg 改过之后，重新生成 src/icons.js
                                 （也会把 icons/ai-icons.svg 同步成 icons/ai-icons.js）
@@ -11,7 +11,7 @@ deveco-intui-kit 构建脚本
 
 日常在 demo/index.html 与 docs/index.html 上直接双击预览即可，不需要构建。
 """
-import os, re, sys, json, subprocess
+import os, re, sys, json, base64, subprocess
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 def rd(p):  return open(os.path.join(ROOT, p), encoding='utf-8').read()
@@ -57,10 +57,22 @@ def inline(page_path, out_path, title=None):
 
     def js_repl(m):
         src = m.group(1)
+        if src.endswith('ai-icons.js'):                         # 智能图标雪碧图
+            return '<!-- ai-icons -->\n' + rd('icons/ai-icons.svg')
         if src.endswith('icons.js'):                            # 图标直接内联成 svg，省一层
             return '<!-- icons -->\n' + rd('src/icons.svg')
         return '<script>\n/* ← ' + src + ' */\n' + rd(os.path.normpath(os.path.join(base, src))) + '\n</script>'
     html = re.sub(r'<script src="([^"]+)"></script>', js_repl, html)
+
+    # 单文件版不带本地字体文件：去掉 tokens.css 里的 @import，按字体栈回退（本机装了鸿蒙黑体仍会用到）
+    html = re.sub(r'@import url\("[^"]*fonts\.css"\);?', '/* 单文件版：本地字体 @import 已去掉，按 font stack 回退 */', html)
+    # 站点图标内联成 data URI，离开仓库也不缺文件
+    def icon_repl(m):
+        href = m.group(1)
+        if href.startswith('http') or href.startswith('data:'): return m.group(0)
+        svg = rd(os.path.normpath(os.path.join(base, href)))
+        return '<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,' + base64.b64encode(svg.encode('utf-8')).decode('ascii') + '">'
+    html = re.sub(r'<link rel="icon" type="image/svg\+xml" href="([^"]+)">', icon_repl, html)
 
     if title: html = re.sub(r'<title>.*?</title>', f'<title>{title}</title>', html, count=1)
     wr(out_path, html)
@@ -75,7 +87,8 @@ def main():
     sync_icons()
     inline('demo/index.html', 'dist/deveco-main-window.html')
     inline('docs/index.html', 'dist/intui-tokens-docs.html')
-    print('完成。dist/ 里的两个文件可以直接发给别人或发布成 Artifact。')
+    inline('docs/message-actions.html', 'dist/message-actions.html')
+    print('完成。dist/ 里的文件可以直接发给别人、在只能预览单个文件的地方打开，或发布成 Artifact。')
 
 if __name__ == '__main__':
     main()

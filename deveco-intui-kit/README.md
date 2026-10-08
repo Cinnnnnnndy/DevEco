@@ -85,6 +85,7 @@ python3 build.py docs
 python3 build.py
 # → dist/deveco-main-window.html
 # → dist/intui-tokens-docs.html
+# → dist/message-actions.html
 ```
 
 单文件版把 CSS / JS / 图标全部内联，没有外链（字体的 Google Fonts 链接保留），
