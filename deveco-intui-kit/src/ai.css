@@ -265,6 +265,46 @@ svg.ai-ico{width:16px;height:16px;flex:none;display:block;color:currentColor}
 .ai-fb button[aria-pressed="true"]{color:var(--ui-fg)}
 .ai-fb svg{width:14px;height:14px}
 
+/* 3.3b 消息操作栏：每条消息下面那一排——复制 / 固定 / 朗读 / 重新回答 / 更多 ⋯ · 有用 没用 · 时间；报错 / 中断时只有带文字的「重新回答」+ 复制。
+   规范：../docs/message-actions.html。四条：默认只留时间，按钮悬停才现，最新一条常显；
+   生成中、在等你不出现，完成或中断才出现；栏上没有智能色也没有琥珀——它是你对这条消息的操作，不是 AI 在做的事；
+   同一动作只出现一次（改动动作行里已有「重试」时，栏里不放重新回答）。 */
+.ai-msgbar{display:flex;align-items:center;gap:2px;min-height:26px;margin:0 -6px;font-size:11.5px;color:var(--ui-fg-info)}
+.ai-msgbar .grow{flex:1}
+.ai-msgbar__btn{appearance:none;border:0;background:none;min-width:26px;height:26px;padding:0;border-radius:6px;display:inline-flex;align-items:center;justify-content:center;gap:4px;
+  color:var(--ui-icon);font:inherit;font-size:11px;line-height:1;cursor:pointer;white-space:nowrap}
+.ai-msgbar__btn svg{width:14px;height:14px;display:block;flex:none}
+.ai-msgbar__btn:hover{background:var(--ui-action-hover);color:var(--ui-fg)}
+.ai-msgbar__btn:active{background:var(--ui-action-pressed)}
+.ai-msgbar__btn:focus-visible{outline:2px solid var(--ui-accent);outline-offset:1px}
+.ai-msgbar__btn[aria-pressed="true"]{color:var(--ui-fg);background:var(--ai-surface-2)}
+.ai-msgbar__btn[data-done]{padding:0 7px 0 5px;color:var(--ui-success)}
+.ai-msgbar__btn[data-done]::after{content:attr(data-done)}
+.ai-msgbar__btn:disabled{color:var(--ui-fg-disabled);background:none;cursor:default}
+/* 带文字的变体：报错 / 中断时的「重新回答」——这条消息此刻的主要动作，常显 */
+.ai-msgbar__btn--text{padding:0 8px 0 6px;gap:5px;font-size:12px;color:var(--ui-fg)}
+.ai-msgbar__btn--text svg{color:var(--ui-icon)}
+.ai-msgbar__btn--text:hover svg{color:var(--ui-fg)}
+.ai-msgbar__time{margin-left:6px;font-family:var(--font-code);font-size:11px;color:var(--ui-fg-info);font-variant-numeric:tabular-nums;white-space:nowrap}
+.ai-msgbar__time[data-edited]::after{content:" · 已编辑"}
+.ai-msgbar__who{margin-left:6px;white-space:nowrap}
+.ai-msgbar__who + .ai-msgbar__time{margin-left:4px}
+.ai-msgbar__who + .ai-msgbar__time::before{content:"· "}
+/* 朗读中：三根灰色小柱在动；降低动效时不动，改成字 */
+.ai-msgbar__eq{display:inline-flex;align-items:flex-end;gap:1.5px;height:10px;margin-right:1px}
+.ai-msgbar__eq i{display:block;width:2.5px;height:4px;border-radius:1px;background:currentColor;animation:ai-eq .9s ease-in-out infinite}
+.ai-msgbar__eq i:nth-child(2){animation-delay:.15s}.ai-msgbar__eq i:nth-child(3){animation-delay:.3s}
+/* 可见性：按钮与反馈默认隐藏；悬停这条消息、键盘进入、最新一条、中断失败时出现；时间一直在 */
+.ai-msgbar .ai-msgbar__btn,.ai-msgbar .ai-fb{opacity:0;transition:opacity .12s}
+:is(.ai-answer,.ai-umsg):is(:hover,:focus-within) .ai-msgbar :is(.ai-msgbar__btn,.ai-fb),
+.ai-msgbar:is(:hover,:focus-within,.is-latest,[data-state="error"]) :is(.ai-msgbar__btn,.ai-fb){opacity:1}
+.ai-msgbar[data-state="error"] .ai-fb{display:none}
+/* 你发的消息：气泡 + 自己的操作栏（编辑 · 复制 · 时间），靠右 */
+.ai-umsg{align-self:flex-end;max-width:88%;border-radius:var(--ai-r) var(--ai-r) 4px var(--ai-r);background:var(--ai-surface-2);padding:8px 12px 2px;
+  display:flex;flex-direction:column;gap:2px;font-size:13px;line-height:20px;color:var(--ui-fg)}
+.ai-umsg>p{margin:0}
+.ai-umsg .ai-msgbar{justify-content:flex-end}
+
 /* 3.4 工具调用行 */
 .ai-toolrow{display:grid;grid-template-columns:16px minmax(0,1fr) auto;align-items:center;gap:8px;min-height:28px;padding:4px 6px;
   border-radius:6px;font-size:12px;line-height:16px;color:var(--ui-fg)}
@@ -373,6 +413,7 @@ svg.ai-ico{width:16px;height:16px;flex:none;display:block;color:currentColor}
 @keyframes ai-tint-out{0%,40%{background-color:var(--ai-tint)}100%{background-color:transparent}}
 @keyframes ai-bar-out{0%,40%{opacity:1}100%{opacity:0}}
 @keyframes ai-done{0%,70%{color:var(--ui-success)}100%{color:var(--ui-icon)}}
+@keyframes ai-eq{0%,100%{height:3px}50%{height:10px}}
 
 /* 降低动效：系统设置或祖先加 .ai-reduce（规范页用它预览）。
    替代原则：动的信息改成字（步骤数、已用时），光改成静态，时长不变 */
@@ -382,10 +423,14 @@ svg.ai-ico{width:16px;height:16px;flex:none;display:block;color:currentColor}
   .ai-wait-dot::after{animation:none;inset:-3px;opacity:.28}
   .ai-field[data-state="generating"]::before,.ai-input[data-ai-state="generating"]::after{animation:none}
   .ai-touched{animation:ai-touch-reduced var(--ai-t-touch) linear 1}
+  .ai-msgbar__eq i{animation:none;height:6px}
+  .ai-msgbar .ai-msgbar__btn,.ai-msgbar .ai-fb{transition:none}
 }
 .ai-reduce .ai-spark.is-live{animation:none;background:var(--ai-grad)}
 .ai-reduce .ai-ring{animation:none;background:conic-gradient(var(--ai-ink) 0 75%,transparent 0)}
 .ai-reduce .ai-wait-dot::after{animation:none;inset:-3px;opacity:.28}
 .ai-reduce .ai-field[data-state="generating"]::before,.ai-reduce .ai-input[data-ai-state="generating"]::after{animation:none}
 .ai-reduce .ai-touched{animation:ai-touch-reduced var(--ai-t-touch) linear 1}
+.ai-reduce .ai-msgbar__eq i{animation:none;height:6px}
+.ai-reduce .ai-msgbar .ai-msgbar__btn,.ai-reduce .ai-msgbar .ai-fb{transition:none}
 @keyframes ai-touch-reduced{0%,80%{box-shadow:0 0 0 1.5px var(--ai-orchid)}100%{box-shadow:0 0 0 1.5px transparent}}

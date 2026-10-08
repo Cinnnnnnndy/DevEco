@@ -29,7 +29,7 @@
    `python3 site/tools/thumb.py <slug>` 出缩略图；然后在这里把对应条目的 view 改成 'ready'、补 href 与 thumb。
    ===================================================================== */
 window.DEVECO_CATALOG = {
-  updated: '2026-09-24',
+  updated: '2026-10-08',
   title: '鸿蒙开发工具体验',
   lede: '围绕 DevEco Studio / DevEco Code / DevEco CLI 的体验设计：29 条创新点各一个可点的界面稿 demo（其中 9 条是新一轮规划重点），全部按鸿蒙电脑版蓝本与 AI Coding / 多 Agent 场景重做；加上设计系统、分析与汇报材料。全部是本地静态文件，双击即开。',
 
@@ -340,6 +340,13 @@ window.DEVECO_CATALOG = {
           view: 'ready', date: '2026-09-24', href: 'deveco-intui-kit/docs/ai-system.html',
           links: [{ label: 'ai.css', href: 'deveco-intui-kit/src/ai.css' }, { label: '图标', href: 'deveco-intui-kit/icons/ai-icons.svg' }],
           tags: ['智能色', '进行态', 'D2C'], thumb: { type: 'image', src: 'site/thumbs/ai-system.jpg' },
+        },
+        {
+          title: '消息操作栏：组件 Pattern', subtitle: 'Message Action Bar · Component Pattern',
+          desc: 'DevEco Code 对话面板里每条消息下面那一排：复制 / 固定 / 朗读 / 重新回答 / 更多 · 有用 没用 · 时间。报错时要的是带文字常显的「重新回答」，其他时候是悬停才现的一排图标，时间只在完成之后才有。叫什么、什么时候用、结构、五种变体、整条栏 8 个状态、按钮 7 个状态、时间戳规则、行为与无障碍、Do / Don’t；样张全是真组件，能悬停能点。',
+          view: 'ready', date: '2026-10-08', href: 'deveco-intui-kit/docs/message-actions.html',
+          links: [{ label: '回答卡（智能规范 08）', href: 'deveco-intui-kit/docs/ai-system.html#components' }, { label: 'ai.css', href: 'deveco-intui-kit/src/ai.css' }],
+          tags: ['组件状态', '消息操作栏', 'Pattern'], thumb: { type: 'image', src: 'site/thumbs/message-actions.jpg' },
         },
         {
           title: 'Kit 使用说明', subtitle: 'deveco-intui-kit · README',

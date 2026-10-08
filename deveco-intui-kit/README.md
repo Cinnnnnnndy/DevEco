@@ -43,6 +43,7 @@ deveco-intui-kit/
 ├─ docs/
 │  ├─ index.html        规范页（由 tools/gen_docs_page.py 生成，不要手改）
 │  ├─ ai-system.html    DevEco 智能视觉与交互规范（手写，引 tokens.css + ai.css）
+│  ├─ message-actions.html  消息操作栏组件 pattern：每条消息下面那一排的状态、按钮态、时间戳规则（手写，引 ai.css 的 .ai-msgbar）
 │  ├─ docs.css          规范页自己的排版样式
 │  └─ docs.js           规范页交互：目录高亮、点色块复制色值、主题切换
 ├─ tokens/
