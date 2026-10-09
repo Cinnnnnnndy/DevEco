@@ -370,6 +370,13 @@ window.DEVECO_CATALOG = {
           tags: ['消融', '多 Agent'], thumb: { type: 'image', src: 'site/thumbs/ablation.jpg' },
         },
         {
+          title: 'Xcode 27 新特性研究：Device Hub 与另外七项更新', subtitle: 'Xcode 27 · Device Hub, Agents, Workspace, Localization, Instruments…',
+          desc: '一个页签一个特性：Device Hub 最详细，另有编码 Agent、工作区与主题、新建项目与原型、本地化、Organizer、Instruments、Xcode Cloud。每页同一结构、分点短句、从交互与体验看：理念、为什么现在做（场景 / 技术 / 平台 / 竞争）、Apple 演示的场景、交互 → 给谁 → 解决什么、Apple 文档截图、体验评价、鸿蒙电脑版可参照。来源是 WWDC26 逐字稿、release notes 与官方文档，第三方与推断另标。',
+          view: 'doc', date: '2026-10-08', href: 'analysis/xcode27/REPORT-Xcode27新特性研究.html',
+          links: [{ label: 'Device Hub', href: 'analysis/xcode27/REPORT-Xcode27新特性研究.html#device-hub' }, { label: '编码 Agent', href: 'analysis/xcode27/REPORT-Xcode27新特性研究.html#agents' }],
+          tags: ['Xcode 27', 'Device Hub', '友商研究', '鸿蒙电脑版', '截图'], thumb: { type: 'image', src: 'site/thumbs/xcode27.jpg?v=20261008h' },
+        },
+        {
           title: 'DevEco 生态位与体验舆情', subtitle: 'DevEco Ecosystem Position & Sentiment',
           desc: '外部事实、DevEco 家族的版本节奏、开发者原声（IDE 内 / IDE 外）、同行 2026 年把 IDE 做成了什么、从舆情到动作的三个同心圆、1100 万注册开发者里的七类人群与漏斗。',
           view: 'doc', date: '2026-09-03', href: 'deveco-ecosystem-sentiment.html',

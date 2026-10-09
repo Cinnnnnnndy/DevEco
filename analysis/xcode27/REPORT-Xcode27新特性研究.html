@@ -1,0 +1,1168 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Xcode 27 新特性研究</title>
+<style>
+:root{
+  --bg:#f5f6f8; --paper:#ffffff; --ink:#15171a; --ink2:#4a4f57; --ink3:#7a808a; --line:#e3e5e9; --line2:#eef0f3;
+  --accent:#3574f0; --accent-bg:#edf3ff;
+  --hm:#c7000b; --hm-bg:#fdecec;          /* 鸿蒙电脑版 */
+  --ap:#3574f0; --ap-bg:#eaf1fe;          /* Apple / 友商做法 */
+  --ok:#1f8a4c; --ok-bg:#e6f5ec; --warn:#b76e00; --warn-bg:#fdf1e3; --mute-bg:#eef0f3;
+  --shadow:0 1px 2px rgba(16,24,40,.06),0 4px 16px rgba(16,24,40,.06);
+  --mono:ui-monospace,"JetBrains Mono",Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --bg:#16171a; --paper:#1e2024; --ink:#e6e8eb; --ink2:#b3b8c0; --ink3:#868b94; --line:#30333a; --line2:#272a30;
+    --accent:#6b9bfa; --accent-bg:#233150;
+    --hm:#ff6b6b; --hm-bg:#3a2224; --ap:#6b9bfa; --ap-bg:#22304a;
+    --ok:#5fc48a; --ok-bg:#1d3326; --warn:#f0a052; --warn-bg:#3a2d1e; --mute-bg:#272a30; --shadow:none;
+  }
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:64px}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.7 -apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}
+a{color:var(--accent);text-decoration:none} a:hover{text-decoration:underline}
+code{font-family:var(--mono);font-size:.9em;background:var(--line2);padding:1px 5px;border-radius:4px;overflow-wrap:anywhere}
+.wrap{max-width:1280px;margin:0 auto;padding:40px 32px 0}
+.wrap.body{padding-top:8px;padding-bottom:80px}
+.eyebrow{font-size:12px;letter-spacing:.08em;color:var(--ink3)}
+h1{font-size:30px;line-height:1.3;margin:6px 0 12px}
+.lede{color:var(--ink2);max-width:80ch;margin:0}
+.note{margin-top:14px;font-size:12.5px;color:var(--ink3);border-left:3px solid var(--line);padding:2px 0 2px 12px;max-width:96ch}
+.note p{margin:0 0 4px} .note p:last-child{margin:0}
+h2{font-size:21px;margin:52px 0 6px}
+h2 small{font-size:13px;font-weight:400;color:var(--ink3);margin-left:8px}
+h3{font-size:16px;margin:26px 0 8px}
+nav.toc{display:flex;flex-wrap:wrap;gap:6px;margin:18px 0 0}
+nav.toc a{font-size:13px;border:1px solid var(--line);background:var(--paper);border-radius:999px;padding:3px 12px;color:var(--ink2)}
+
+/* 页签 */
+.tabs{position:sticky;top:0;z-index:5;margin-top:26px;background:color-mix(in srgb,var(--bg) 90%,transparent);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.tabs .in{max-width:1280px;margin:0 auto;padding:0 32px;display:flex;gap:2px;overflow-x:auto;scrollbar-width:none}
+.tabs .in::-webkit-scrollbar{display:none}
+.tab{appearance:none;border:0;background:none;font:inherit;font-size:14px;color:var(--ink2);padding:12px 12px 10px;border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap;cursor:pointer}
+.tab:hover{color:var(--ink)}
+.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent);font-weight:600}
+.tab:focus-visible{outline:2px solid var(--accent);outline-offset:-2px;border-radius:6px}
+.tab .k{display:inline-block;font-size:11px;font-weight:600;color:var(--hm);background:var(--hm-bg);border-radius:4px;padding:0 5px;margin-left:6px;line-height:17px;vertical-align:1px}
+.panel[hidden]{display:none}
+.panel>h2:first-child{margin-top:28px}
+.pt{font-size:24px;line-height:1.35;margin:28px 0 8px}
+
+.ts{font-family:var(--mono);font-size:11.5px;white-space:nowrap}
+
+/* 表格 */
+.tw{background:var(--paper);border:1px solid var(--line);border-radius:12px;overflow:auto;box-shadow:var(--shadow)}
+table{border-collapse:collapse;width:100%;font-size:13.5px;min-width:900px}
+th,td{text-align:left;vertical-align:top;padding:10px 12px;border-bottom:1px solid var(--line2)}
+thead th{font-size:12px;color:var(--ink3);background:var(--line2);font-weight:600}
+tbody th{font-weight:600;white-space:nowrap}
+tr:last-child td,tr:last-child th{border-bottom:none}
+.ev{display:inline-block;font-size:11px;font-weight:600;border-radius:4px;padding:0 5px;line-height:17px;margin-left:4px;vertical-align:1px;white-space:nowrap;font-style:normal}
+.ev.o{background:var(--ok-bg);color:var(--ok)}      /* 官方 */
+.ev.m{background:var(--ap-bg);color:var(--ap)}      /* 社区 / 媒体 */
+.ev.i{background:var(--warn-bg);color:var(--warn)}  /* 推断 */
+.legend{display:flex;flex-wrap:wrap;gap:10px;font-size:12.5px;color:var(--ink2);margin:0 0 12px}
+
+/* 截图 */
+.shots{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.shot{margin:0;background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:12px;box-shadow:var(--shadow);display:flex;flex-direction:column}
+.shot.wide{grid-column:1/-1}
+.shot>a{display:flex;align-items:center;justify-content:center;background:var(--line2);border-radius:8px;min-height:120px}
+.shot img{display:block;max-width:100%;height:auto;max-height:560px;width:auto}
+.shot.tall img{max-height:520px}
+.shot.wide img{max-height:760px}
+.shot figcaption{font-size:13px;color:var(--ink2);margin-top:10px}
+.shot figcaption b{color:var(--ink)}
+.shot .from{display:block;font-size:12px;color:var(--ink3);margin-top:4px}
+
+/* 机会点 */
+.lvl{display:inline-block;font-size:11.5px;font-weight:700;border-radius:5px;padding:0 7px;line-height:19px;white-space:nowrap}
+.lvl.a{background:var(--hm);color:#fff} .lvl.b{background:var(--ap-bg);color:var(--ap)} .lvl.c{background:var(--mute-bg);color:var(--ink2)}
+.cmp{font-size:12px;font-weight:600;white-space:nowrap}
+.cmp.u{color:var(--hm)} .cmp.y{color:var(--ap)}
+
+.src{font-size:12.5px;color:var(--ink2);columns:2;column-gap:28px;padding-left:18px}
+.src li{margin:2px 0;break-inside:avoid}
+.src .grp{list-style:none;margin:10px 0 2px -18px;font-weight:600;color:var(--ink);break-after:avoid}
+.src .grp:first-child{margin-top:0}
+
+/* v2：分点、卡片 */
+ul.pts{margin:0;padding-left:1.15em;color:var(--ink2)} ul.pts li{margin:3px 0}
+ul.pts.lead{font-size:15px;color:var(--ink2);margin:4px 0 0} ul.pts.lead li{margin:4px 0}
+ul.pts.note{font-size:12.5px;color:var(--ink3);border-left:3px solid var(--line);padding:2px 0 2px 26px;margin-top:14px;max-width:110ch}
+.cards{display:grid;gap:12px}
+.cards.c2{grid-template-columns:repeat(2,minmax(0,1fr))} .cards.c3{grid-template-columns:repeat(3,minmax(0,1fr))} .cards.c4{grid-template-columns:repeat(4,minmax(0,1fr))}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:14px 18px;box-shadow:var(--shadow);font-size:13.5px}
+.card.wide{grid-column:1/-1}
+.card>b{display:block;font-size:15px;color:var(--ink);margin-bottom:6px}
+.card .n{display:block;font-family:var(--mono);font-size:12px;color:var(--ink3);margin-bottom:4px}
+.card .src1{display:block;margin:-4px 0 6px}
+.card.good{border-top:3px solid var(--ok)} .card.bad{border-top:3px solid var(--warn)}
+ol.steps{margin:0;padding-left:1.4em;color:var(--ink2)} ol.steps li{margin:3px 0}
+.split{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 28px}
+.role{font-size:12.5px;font-weight:600;color:var(--ink);margin:2px 0 4px}
+.card .end{margin:10px 0 0;padding-top:8px;border-top:1px dashed var(--line);color:var(--ink2)}
+table.slim{min-width:560px}
+.tw+.legend{margin-top:10px}
+p.gap{font-size:12.5px;color:var(--ink3);margin:10px 0 0}
+.tw.narrow{max-width:980px}
+table.slim tbody th{white-space:normal;width:24%}
+ul.pts.hmnote{background:color-mix(in srgb,var(--hm-bg) 55%,var(--paper));border:1px solid color-mix(in srgb,var(--hm) 25%,var(--line));border-radius:12px;padding:12px 18px 12px 34px;margin:0 0 12px}
+ul.pts.hmnote b{color:var(--ink)}
+.shot figcaption ul.pts{margin-top:4px}
+.shot .from{display:inline;margin-left:6px}
+
+/* 总览：特性卡 */
+.feat{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.feat a{display:flex;flex-direction:column;background:var(--paper);border:1px solid var(--line);border-radius:12px;overflow:hidden;color:inherit;box-shadow:var(--shadow);text-decoration:none}
+.feat a:hover{border-color:var(--accent)}
+.feat picture{display:block;background:var(--line2)}
+.feat img{display:block;width:100%;height:auto;aspect-ratio:16/10;object-fit:cover;object-position:50% 35%}
+.feat b{display:block;font-size:15px;margin:10px 14px 2px;color:var(--ink)}
+.feat b .k{display:inline-block;font-size:11px;font-weight:600;color:var(--hm);background:var(--hm-bg);border-radius:4px;padding:0 5px;margin-left:4px;line-height:17px;vertical-align:1px}
+.feat span{display:block;font-size:13px;color:var(--ink2);margin:0 14px 12px}
+ol.steps.big{font-size:14.5px;padding-left:1.5em} ol.steps.big li{margin:8px 0} ol.steps.big b{color:var(--ink)}
+.tagd{display:inline-block;font-size:11.5px;color:var(--ink3);background:var(--line2);border-radius:5px;padding:0 7px;line-height:19px;margin-left:6px;white-space:nowrap}
+
+@media (max-width:900px){
+  .shots,.cards.c2,.cards.c3,.split{grid-template-columns:1fr}
+  .cards.c4,.feat{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .src{columns:1}
+}
+@media (max-width:560px){
+  .wrap{padding:24px 16px 0} .wrap.body{padding:8px 16px 60px} .tabs .in{padding:0 8px}
+  h1{font-size:24px} .pt{font-size:20px} .cards.c4{grid-template-columns:1fr} .tagd{white-space:normal}
+}
+@media print{
+  .tabs{display:none} .panel[hidden]{display:block} .panel{break-before:page}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="eyebrow">分析与研究 · 2026-10-08</div>
+  <h1>Xcode 27 新特性研究：Device Hub 与另外七项更新</h1>
+  <ul class="pts lead">
+    <li>Xcode 27 在 WWDC26（2026 年 6 月）发布，27.1、27.2 还在迭代</li>
+    <li>一个页签一个特性；Device Hub 最细，另有七项</li>
+    <li>每页同一结构：理念 → 为什么现在做 → 场景 → 交互特点 → 截图 → 体验评价 → 鸿蒙电脑版可参照</li>
+  </ul>
+  <ul class="pts note">
+    <li>来源：WWDC26 逐字稿、Xcode 27 Release Notes、Apple 官方文档；时间点可点，直接跳到视频那一秒</li>
+    <li>截图：Apple 文档配图（系统切深色时换成深色版），另有 4 张 Xcode 官网图；版权归 Apple，仅作研究引用</li>
+    <li>标注：不标的都来自 Apple；<span class="ev m">社区</span> 第三方文章，取自搜索摘要（本环境打不开原文）；<span class="ev i">推断</span> 我们的判断</li>
+  </ul>
+</div>
+
+<nav class="tabs" aria-label="特性页签"><div class="in" role="tablist">
+  <button type="button" class="tab" role="tab" id="t-overview" data-tab="overview" aria-controls="overview">总览</button>
+  <button type="button" class="tab" role="tab" id="t-device-hub" data-tab="device-hub" aria-controls="device-hub">Device Hub<span class="k">重点</span></button>
+  <button type="button" class="tab" role="tab" id="t-agents" data-tab="agents" aria-controls="agents">编码 Agent</button>
+  <button type="button" class="tab" role="tab" id="t-workspace" data-tab="workspace" aria-controls="workspace">工作区与主题</button>
+  <button type="button" class="tab" role="tab" id="t-new-project" data-tab="new-project" aria-controls="new-project">新建项目与原型</button>
+  <button type="button" class="tab" role="tab" id="t-localization" data-tab="localization" aria-controls="localization">本地化</button>
+  <button type="button" class="tab" role="tab" id="t-organizer" data-tab="organizer" aria-controls="organizer">Organizer</button>
+  <button type="button" class="tab" role="tab" id="t-instruments" data-tab="instruments" aria-controls="instruments">Instruments</button>
+  <button type="button" class="tab" role="tab" id="t-xcode-cloud" data-tab="xcode-cloud" aria-controls="xcode-cloud">Xcode Cloud</button>
+</div></nav>
+
+<div class="wrap body">
+
+<!-- ======================================================= 总览 -->
+<section class="panel" id="overview" role="tabpanel" aria-labelledby="t-overview">
+  <h2 class="pt">总览：Xcode 27 在交互上改了什么</h2>
+  <ul class="pts lead">
+    <li>一句话：Agent 进了每一处，设备收进一个窗口，结果都摆到眼前等你拍板</li>
+    <li>Apple：「Agents are woven into every layer of the Xcode experience」<a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/102/?time=2972">SOTU 49:32</a></li>
+  </ul>
+
+  <h2>八个页签</h2>
+  <div class="feat">
+    <a href="#device-hub"><picture><img src="images/device-hub/xcode-page-devicehub.webp" width="1600" height="915" alt="Device Hub 完整窗口"></picture><b>Device Hub <span class="k">重点</span></b><span>真机和模拟器一个窗口，给人用，也给 Agent 用</span></a>
+    <a href="#agents"><picture><source media="(prefers-color-scheme: dark)" srcset="images/agents/coding-assistant-write-code-dark.webp"><img src="images/agents/coding-assistant-write-code.webp" width="1600" height="990" alt="编码助手在编辑区"></picture><b>编码 Agent</b><span>对话进编辑区，产物摆一旁，人在关键点拍板</span></a>
+    <a href="#workspace"><picture><source media="(prefers-color-scheme: dark)" srcset="images/workspace/coding-assistant-generate-fix-it-dark.webp"><img src="images/workspace/coding-assistant-generate-fix-it.webp" width="1600" height="929" alt="低调的行内问题"></picture><b>工作区与主题</b><span>工具栏可定制，颜色认项目，报错先轻声</span></a>
+    <a href="#new-project"><picture><source media="(prefers-color-scheme: dark)" srcset="images/new-project/show-previews-in-canvas-dark.webp"><img src="images/new-project/show-previews-in-canvas.webp" width="1600" height="868" alt="命名预览变成画布页签"></picture><b>新建项目与原型</b><span>先开工后命名，多个方案并排挑</span></a>
+    <a href="#localization"><picture><source media="(prefers-color-scheme: dark)" srcset="images/localization/string-catalog-editor-generate-translations-button-dark.webp"><img src="images/localization/string-catalog-editor-generate-translations-button.webp" width="1600" height="868" alt="字符串目录里生成译文"></picture><b>本地化</b><span>说一句加语言，Agent 带上下文译，人只审</span></a>
+    <a href="#organizer"><picture><source media="(prefers-color-scheme: dark)" srcset="images/organizer/analyzing-the-performance-of-your-shipping-app-insights-overview-dark.webp"><img src="images/organizer/analyzing-the-performance-of-your-shipping-app-insights-overview.webp" width="1470" height="885" alt="Organizer 总览"></picture><b>Organizer</b><span>线上问题一屏看，选一条交给 Agent</span></a>
+    <a href="#instruments"><picture><source media="(prefers-color-scheme: dark)" srcset="images/instruments/run-comparison-view-dark.webp"><img src="images/instruments/run-comparison-view.webp" width="1470" height="845" alt="改前改后对比"></picture><b>Instruments</b><span>最重函数 + 改前改后对比，卡顿从猜变成证</span></a>
+    <a href="#xcode-cloud"><picture><source media="(prefers-color-scheme: dark)" srcset="images/xcode-cloud/xcode-cloud-get-started-dark.webp"><img src="images/xcode-cloud/xcode-cloud-get-started.webp" width="1600" height="990" alt="Xcode Cloud 入口"></picture><b>Xcode Cloud</b><span>三步跑起首次云端构建，发版往后放</span></a>
+  </div>
+
+  <h2>三个判断</h2>
+  <div class="cards c3">
+    <div class="card"><span class="n">01</span><b>Agent 进了每一处</b><ul class="pts"><li>编辑器、本地化、线上问题、性能、设备，都能交给 Agent</li><li>人只在关键点出手：批计划、写批注、看对比</li></ul></div>
+    <div class="card"><span class="n">02</span><b>「验」成了主角</b><ul class="pts"><li>「new tools for agents to check their work」<a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/102/?time=3193">SOTU 53:13</a></li><li>设备自验、预览变体、性能对比、云端构建，都在帮人和 Agent 验</li></ul></div>
+    <div class="card"><span class="n">03</span><b>少打扰，一眼可见</b><ul class="pts"><li>紧凑窗、淡色问题、标题下的进度</li><li>会话状态点、按影响排序的总览</li></ul></div>
+  </div>
+
+  <h2>一览<small>交互 → 给谁 → 解决什么</small></h2>
+  <div class="tw"><table class="slim">
+    <thead><tr><th>页签</th><th>交互的核心</th><th>给谁</th><th>解决什么</th></tr></thead>
+    <tbody>
+      <tr><th><a href="#device-hub">Device Hub</a></th><td>紧凑窗 → 三栏；设置即改即见；导出 / 换上 App 数据</td><td>跑 App 的人、测试</td><td>设备散、配置难、复现难</td></tr>
+      <tr><th><a href="#agents">编码 Agent</a></th><td>左对话右产物；计划可批注；会话状态点</td><td>用 Agent 的开发者</td><td>改了什么看不全、不知道谁在等我</td></tr>
+      <tr><th><a href="#workspace">工作区与主题</a></th><td>进度在标题下；按工作区设主题；预测问题淡显</td><td>所有人</td><td>被打断、认不出项目</td></tr>
+      <tr><th><a href="#new-project">新建项目与原型</a></th><td>无标题工程；单文件即预览；命名预览成页签</td><td>想试点子的人</td><td>起步门槛高、被第一个方案带偏</td></tr>
+      <tr><th><a href="#localization">本地化</a></th><td>说一句加语言；目录里一键生成；进度实时填表</td><td>做多语言的团队</td><td>工程量大、同词异义</td></tr>
+      <tr><th><a href="#organizer">Organizer</a></th><td>按影响排序；目标线；「生成建议」交给 Agent</td><td>已上架的开发者</td><td>看见了却不知道怎么修</td></tr>
+      <tr><th><a href="#instruments">Instruments</a></th><td>最重函数；同区间红绿对比；并发轨道</td><td>查卡顿的人</td><td>开销分散、修完难验</td></tr>
+      <tr><th><a href="#xcode-cloud">Xcode Cloud</a></th><td>三步首跑；默认流程；发版时才建记录</td><td>第一次用 CI 的人</td><td>配置门槛高</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2>为什么是现在</h2>
+  <div class="cards c2">
+    <div class="card"><b>Agent 成熟了</b><ul class="pts"><li>Claude、Codex、Gemini 进了 Xcode，模型自选</li><li>MCP、ACP、Skills 让 Agent 能调 Xcode 的工具</li></ul></div>
+    <div class="card"><b>写得快，验成了瓶颈</b><ul class="pts"><li>「writing more code than ever before」<a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/261/?time=82">261 1:22</a></li><li>于是有计划审批、设备自验、性能对比、云端兜底</li></ul></div>
+    <div class="card"><b>平台在变</b><ul class="pts"><li>Liquid Glass 新外观，带来新的动画掉帧</li><li>iPhone 应用可缩放、iPhone Duo、Vision Pro：尺寸和形态都变多</li></ul></div>
+    <div class="card"><b>竞争在 IDE 外</b><ul class="pts"><li>Claude Code、Codex、Cursor 在 Xcode 之外抢开发者 <span class="ev i">推断</span></li><li>Apple 的牌：「回答扎根 Swift 与 Apple 框架」<a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/102/?time=2999">SOTU 49:59</a>，加上设备与线上数据这些只有平台方才有的能力</li></ul></div>
+  </div>
+
+  <h2>鸿蒙电脑版：先做这五件</h2>
+  <ol class="steps big">
+    <li><b>设备中心三栏化 + 紧凑窗</b>：本机窗口、模拟器、真机一处管，跑起来就弹小窗，按键随形态变 <span class="tagd">Device Hub · 接 20 / 17</span></li>
+    <li><b>拖宽即切断点</b>：设备中心和预览器同一套拖边手势，吸附一多断点 <span class="tagd">Device Hub · 新建项目 · 接 17</span></li>
+    <li><b>真机发现、模拟器复现</b>：截图 + HiLog + 沙箱数据 + 设备配置打成现场包，一键套用 <span class="tagd">Device Hub · 接 20 / 27 / 28</span></li>
+    <li><b>一个设备层给人、hdc、Agent 共用</b>：Agent 在本机窗口和真机上自己点、截图验，占用状态三处一致 <span class="tagd">Device Hub · 编码 Agent · 接 23 / 07</span></li>
+    <li><b>线上问题总览 + 一键交给 Agent</b>：崩溃、冻屏、冷启动按影响排，报告右上角「交给 Agent」 <span class="tagd">Organizer · 接 22 / 28</span></li>
+  </ol>
+  <p class="gap">每个页签末尾还有各自的「鸿蒙电脑版可参照」，标了档位和要接的 demo。鸿蒙电脑能本机跑应用，碰一碰、多屏协同、键鼠穿越都是 Apple 没有的牌（推断）。</p>
+
+  <h2>方法与局限</h2>
+  <ul class="pts">
+    <li>一手材料：WWDC26 的 Keynote、State of the Union 和十余个专题 session 的逐字稿；Xcode 27 / 27.1 / 27.2 Release Notes；Apple 官方文档</li>
+    <li>截图来自 Apple 文档和 Xcode 官网；WWDC 视频画面因网络策略拿不到（Apple 视频 CDN 被拦），放行后可用 <code>tools/wwdc-frames.py</code> 按时间点批量截</li>
+    <li>第三方评价只有搜索摘要，多来自 6–9 月的 beta 期，正式版可能已变</li>
+    <li>行内批注、「等你」状态、无标题工程等界面，Apple 文档和官网暂无配图</li>
+  </ul>
+
+</section>
+
+<!-- ======================================================= Device Hub -->
+<section class="panel" id="device-hub" role="tabpanel" aria-labelledby="t-device-hub" hidden>
+  <h2 class="pt">Device Hub：真机和模拟器，一个窗口</h2>
+  <ul class="pts lead">
+    <li>取代 Simulator.app，随 Xcode 27 安装，不开 Xcode 也能用</li>
+    <li>Apple 的说法：「All the convenience of the simulator with the fidelity of real hardware in a single place.」<a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/102/?time=2929">SOTU 48:49</a></li>
+    <li>运行到模拟器时自动弹出；也可从运行目标菜单「Manage Devices…」打开</li>
+  </ul>
+  <nav class="toc">
+    <a href="#dh-idea">理念</a><a href="#dh-why">为什么现在做</a><a href="#dh-scenes">场景</a><a href="#dh-traits">交互特点</a><a href="#dh-shots">截图</a><a href="#dh-review">体验评价</a><a href="#dh-hm">鸿蒙电脑版可参照</a><a href="#dh-src">来源</a>
+  </nav>
+
+  <h2 id="dh-idea">理念</h2>
+  <div class="cards c4">
+    <div class="card"><span class="n">01</span><b>一处</b><ul class="pts"><li>真机、模拟器一个列表</li><li>同一套操作</li></ul></div>
+    <div class="card"><span class="n">02</span><b>先轻后全</b><ul class="pts"><li>默认只有屏幕和几个键</li><li>要更多再展开</li></ul></div>
+    <div class="card"><span class="n">03</span><b>控件跟着设备变</b><ul class="pts"><li>手表有表冠，电视有遥控</li><li>外框上的按键能点</li></ul></div>
+    <div class="card"><span class="n">04</span><b>人、脚本、Agent 共用</b><ul class="pts"><li>界面、命令行、Agent 调同一套设备能力 <span class="ev i">推断</span></li></ul></div>
+  </div>
+
+  <h2 id="dh-why">为什么现在做</h2>
+  <div class="cards c2">
+    <div class="card"><b>场景：组合太多，工具太散</b><ul class="pts">
+      <li>要在每台设备、每种外观、每个字号下都好看 <a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/260/?time=13">260 0:13</a></li>
+      <li>以前：模拟器一台一个窗口，增删要去 Xcode 设备窗口，切深色要进模拟器设置 <a class="ts" href="https://developer.apple.com/videos/play/wwdc2019/418/?time=984">WWDC19</a></li>
+      <li>真机上的 bug，换台模拟器就复现不出来 <a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/260/?time=488">260 8:08</a></li>
+    </ul></div>
+    <div class="card"><b>技术：Agent 要自己验</b><ul class="pts">
+      <li>Xcode 27 的 Agent 能起模拟器、点按、截图，自己检查 UI</li>
+      <li>真机和模拟器的底层已统一，界面和命令行同源 <a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/260/?time=955">260 15:55</a></li>
+      <li>重做画面与输入，追求「highest fidelity」<a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/102/?time=2902">SOTU 48:22</a></li>
+    </ul></div>
+    <div class="card"><b>平台：尺寸会变，形态变多</b><ul class="pts">
+      <li>iPhone 应用在 iPad、iPhone 镜像里可任意改大小 <a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/278/?time=410">278 6:50</a></li>
+      <li>手表、电视、Vision Pro、CarPlay，27.1 又加 iPhone Duo</li>
+      <li>iOS 27 起手机、平板能无线配对</li>
+    </ul></div>
+    <div class="card"><b>竞争：别人早有，第三方先补</b><ul class="pts">
+      <li>Android Studio 早把模拟器、真机镜像放进 IDE <span class="ev m">社区</span></li>
+      <li>RocketSim、ControlRoom 先补了截图、外观、位置 <span class="ev m">社区</span></li>
+      <li>AI 编码工具都在驱动模拟器，设备层成了基础设施 <span class="ev i">推断</span></li>
+    </ul></div>
+  </div>
+
+  <h2 id="dh-scenes">场景<small>Apple 演示的三个任务流</small></h2>
+  <div class="cards c2">
+    <div class="card"><b>S1 · 写完就跑，顺手查外观</b><span class="src1"><a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/258/?time=594">258 9:54</a></span>
+      <ol class="steps"><li>运行 → 弹出紧凑窗，贴合设备大小</li><li>回主屏、截图、旋转</li><li>展开 → 调对比度、字号、深色</li><li>拖边改尺寸（iPhone 镜像能缩放了）</li><li>侧栏点开桌上的 iPad 真机，直接操作</li></ol></div>
+    <div class="card"><b>S2 · 让 Agent 替你点一遍</b><span class="src1"><a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/102/?time=3217">SOTU 53:37</a></span>
+      <ol class="steps"><li>Agent 写完新功能</li><li>自己拉起 App 和 Device Hub</li><li>点、滑、打字，测各种组合</li><li>交回测试小结 + 一路截图</li></ol></div>
+    <div class="card wide"><b>S3 · 真机发现，模拟器复现</b><span class="src1"><a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/260/?time=488">260 8:08–15:24</a></span>
+      <div class="split">
+        <div><div class="role">发现的人</div><ol class="steps"><li>无线配对手表，输 PIN</li><li>拖入日志描述文件</li><li>在 Mac 上操作真机，转横屏，文字被截断</li><li>截图、抓 sysdiagnose、复制出错的文字</li><li>导出 App 数据，发给同事</li></ol></div>
+        <div><div class="role">复现的人</div><ol class="steps" start="6"><li>选同型号模拟器</li><li>换上同事的 App 数据</li><li>对着截图对齐：横屏 → 位置 → 字号</li><li>三项都对上才复现</li></ol></div>
+      </div>
+      <p class="end">体验上的断点：配置要人对着截图一项项猜，没有「把那台设备的配置整套搬过来」 <span class="ev i">推断</span></p>
+    </div>
+  </div>
+
+  <h2 id="dh-traits">交互特点<small>交互 → 给谁 → 解决什么</small></h2>
+  <div class="tw narrow"><table class="slim">
+    <thead><tr><th>交互</th><th>给谁</th><th>解决什么</th></tr></thead>
+    <tbody>
+      <tr><th>紧凑窗默认弹出</th><td>每天跑 App 的人</td><td>只看结果，不被工具淹没</td></tr>
+      <tr><th>一键展开三栏</th><td>要排查、改配置的人</td><td>设备、操作、配置不再分三处</td></tr>
+      <tr><th>控件随设备变</th><td>做手表、电视、Vision Pro 的人</td><td>不用记各平台的模拟方式</td></tr>
+      <tr><th>画布上直接点、拖、捏</th><td>UI 工程师</td><td>不用伸手拿真机，注意力不跑</td></tr>
+      <tr><th>真机画面进窗口</th><td>要真机保真的人</td><td>真机和模拟器一样操作</td></tr>
+      <tr><th>拖边改尺寸</th><td>做自适应布局的人</td><td>不用开好几台模拟器</td></tr>
+      <tr><th>设置即改即见</th><td>无障碍、多语言、UI</td><td>不用进设备设置里翻</td></tr>
+      <tr><th>诊断报告一页看</th><td>查崩溃、卡顿的人</td><td>日志不再散在各处</td></tr>
+      <tr><th>导出 / 换上 App 数据</th><td>跨人复现、测试</td><td>复现不再缺数据</td></tr>
+      <tr><th>多选、双击、并排</th><td>适配多尺寸的人</td><td>不用来回切、凭记忆比</td></tr>
+      <tr><th>无线配对</th><td>用真机的人</td><td>不插线，手表配对更稳</td></tr>
+      <tr><th>Agent 能操作设备</th><td>用 Agent 写 App 的人</td><td>Agent 写完能自己验</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2 id="dh-shots">截图<small>Apple 文档配图，点开看原图</small></h2>
+  <div class="shots">
+    <figure class="shot wide"><a href="images/device-hub/xcode-page-devicehub.webp" target="_blank" rel="noopener"><img src="images/device-hub/xcode-page-devicehub.webp" width="1600" height="915" loading="lazy" alt="Xcode 官网的 Device Hub 图：菜单栏写着 Device Hub，侧栏按平台分组"></a>
+      <figcaption><b>官网图：一个独立的 App</b><ul class="pts"><li>菜单栏是它自己的：File、Edit、View、Device、Controls、Window、Help</li><li>侧栏按平台分组：iOS、tvOS、watchOS、visionOS</li><li>官网标题：「Prototype on every device, all from your Mac」</li></ul><span class="from"><a href="https://developer.apple.com/xcode/">Xcode 官网</a></span></figcaption></figure>
+    <figure class="shot wide"><a href="images/device-hub/device-hub-anatomy.webp" target="_blank" rel="noopener"><picture><source media="(prefers-color-scheme: dark)" srcset="images/device-hub/device-hub-anatomy-dark.webp"><img src="images/device-hub/device-hub-anatomy.webp" width="1600" height="965" loading="lazy" alt="Device Hub 完整窗口，标注了侧栏、画布、设备控件、检查器"></picture></a>
+      <figcaption><b>完整窗口的四个区</b><ul class="pts"><li>侧栏：所有设备；搜索、过滤、右键快捷操作</li><li>画布：活屏；上方缩放、1:1、键盘捕获、改尺寸</li><li>设备控件：主屏、截图、录屏、旋转，随设备变</li><li>检查器：设置 · 诊断 · 信息（设备信息 / 应用 / 描述文件）</li></ul><span class="from"><a href="https://developer.apple.com/documentation/xcode/device-hub">Device Hub 文档</a></span></figcaption></figure>
+    <figure class="shot tall"><a href="images/device-hub/running-app-in-ios-simulator.webp" target="_blank" rel="noopener"><picture><source media="(prefers-color-scheme: dark)" srcset="images/device-hub/running-app-in-ios-simulator-dark.webp"><img src="images/device-hub/running-app-in-ios-simulator.webp" width="958" height="1842" loading="lazy" alt="iPhone 模拟器的紧凑窗"></picture></a>
+      <figcaption><b>紧凑窗</b>：只有屏幕、展开键和四个常用键 <span class="from"><a href="https://developer.apple.com/documentation/xcode/interacting-with-your-app-in-device-hub">与 App 交互</a></span></figcaption></figure>
+    <figure class="shot"><a href="images/device-hub/device-hub-compact-view.webp" target="_blank" rel="noopener"><picture><source media="(prefers-color-scheme: dark)" srcset="images/device-hub/device-hub-compact-view-dark.webp"><img src="images/device-hub/device-hub-compact-view.webp" width="1600" height="1135" loading="lazy" alt="Vision Pro 模拟器的紧凑窗，底部多出相机控件"></picture></a>
+      <figcaption><b>控件随设备变</b>：Vision Pro 多出平移、推拉、倾斜、环境等键 <span class="from"><a href="https://developer.apple.com/documentation/xcode/running-your-app-on-simulated-or-physical-devices">运行 App</a></span></figcaption></figure>
+    <figure class="shot"><a href="images/device-hub/device-hub-manage-devices.webp" target="_blank" rel="noopener"><picture><source media="(prefers-color-scheme: dark)" srcset="images/device-hub/device-hub-manage-devices-dark.webp"><img src="images/device-hub/device-hub-manage-devices.webp" width="1600" height="965" loading="lazy" alt="过滤菜单展开，选中一台 Apple TV 真机"></picture></a>
+      <figcaption><b>过滤与真机</b>：按全部 / 模拟器 / 真机过滤；真机点「View Screen」看屏幕 <span class="from"><a href="https://developer.apple.com/documentation/xcode/managing-your-simulated-and-physical-devices-in-device-hub">管理设备</a></span></figcaption></figure>
+    <figure class="shot"><a href="images/device-hub/locating-device-id-device-hub.webp" target="_blank" rel="noopener"><picture><source media="(prefers-color-scheme: dark)" srcset="images/device-hub/locating-device-id-device-hub-dark.webp"><img src="images/device-hub/locating-device-id-device-hub.webp" width="1600" height="868" loading="lazy" alt="iPhone 真机画面显示在画布中，右侧是设备信息"></picture></a>
+      <figcaption><b>真机进窗口</b>：手机画面实时显示、可直接操作；右侧是设备信息 <span class="from"><a href="https://developer.apple.com/documentation/xcode/locating-device-identifiers">设备标识</a></span></figcaption></figure>
+    <figure class="shot wide"><a href="images/device-hub/resize-iphone-canvas.webp" target="_blank" rel="noopener"><picture><source media="(prefers-color-scheme: dark)" srcset="images/device-hub/resize-iphone-canvas-dark.webp"><img src="images/device-hub/resize-iphone-canvas.webp" width="1600" height="1011" loading="lazy" alt="改尺寸模式：画面四边有把手，底部显示 667 × 428，右侧是设置"></picture></a>
+      <figcaption><b>拖边改尺寸 + 设置即改即见</b><ul class="pts"><li>四边把手，底部实时显示宽 × 高</li><li>右侧一屏放下外观、字号、对比度、VoiceOver、位置、声音</li></ul><span class="from"><a href="https://developer.apple.com/documentation/xcode/configuring-the-environment-of-a-simulated-device">配置环境</a></span></figcaption></figure>
+    <figure class="shot"><a href="images/device-hub/device-hub-apps-inspector.webp" target="_blank" rel="noopener"><picture><source media="(prefers-color-scheme: dark)" srcset="images/device-hub/device-hub-apps-inspector-dark.webp"><img src="images/device-hub/device-hub-apps-inspector.webp" width="1600" height="869" loading="lazy" alt="应用面板列出设备上的 App，画面下方显示已与手表配对"></picture></a>
+      <figcaption><b>应用面板</b>：装、卸 App，导出 / 换上 App 数据；下方提示已配对的手表 <span class="from"><a href="https://developer.apple.com/documentation/xcode/managing-apps-on-devices">管理应用</a></span></figcaption></figure>
+    <figure class="shot"><a href="images/device-hub/capture-device-screenshot-and-video.webp" target="_blank" rel="noopener"><picture><source media="(prefers-color-scheme: dark)" srcset="images/device-hub/capture-device-screenshot-and-video-dark.webp"><img src="images/device-hub/capture-device-screenshot-and-video.webp" width="1550" height="1080" loading="lazy" alt="横屏的 iPhone 紧凑窗，下方是截图与录屏键"></picture></a>
+      <figcaption><b>截图与录屏</b>：窗口随设备转横屏；截图按设备真实分辨率保存 <span class="from"><a href="https://developer.apple.com/documentation/xcode/capturing-screenshots-and-videos-from-devices">截图录屏</a></span></figcaption></figure>
+    <figure class="shot tall"><a href="images/device-hub/wirelessly-pair-device.webp" target="_blank" rel="noopener"><picture><source media="(prefers-color-scheme: dark)" srcset="images/device-hub/wirelessly-pair-device-dark.webp"><img src="images/device-hub/wirelessly-pair-device.webp" width="824" height="1254" loading="lazy" alt="无线配对面板"></picture></a>
+      <figcaption><b>无线配对</b>：选设备类型 → 设备上打开设置 → 选中 → 输 PIN <span class="from"><a href="https://developer.apple.com/documentation/xcode/managing-your-simulated-and-physical-devices-in-device-hub">管理设备</a></span></figcaption></figure>
+    <figure class="shot"><a href="images/device-hub/add-additional-simulators.webp" target="_blank" rel="noopener"><picture><source media="(prefers-color-scheme: dark)" srcset="images/device-hub/add-additional-simulators-dark.webp"><img src="images/device-hub/add-additional-simulators.webp" width="1164" height="658" loading="lazy" alt="新建模拟器对话框"></picture></a>
+      <figcaption><b>新建模拟器</b>：名称、系统版本、型号三项 <span class="from"><a href="https://developer.apple.com/documentation/xcode/managing-your-simulated-and-physical-devices-in-device-hub">管理设备</a></span></figcaption></figure>
+    <figure class="shot wide"><a href="images/device-hub/change-simulated-scene.webp" target="_blank" rel="noopener"><picture><source media="(prefers-color-scheme: dark)" srcset="images/device-hub/change-simulated-scene-dark.webp"><img src="images/device-hub/change-simulated-scene.webp" width="1600" height="1028" loading="lazy" alt="Vision Pro 模拟器的场景选择：厨房、客厅、博物馆，白天与夜晚"></picture></a>
+      <figcaption><b>Vision Pro 模拟场景</b>：厨房 / 客厅 / 博物馆 × 白天 / 夜晚，测不同环境下的可读性 <span class="from"><a href="https://developer.apple.com/documentation/xcode/interacting-with-your-visionos-app-in-device-hub">visionOS</a></span></figcaption></figure>
+  </div>
+
+  <h2 id="dh-review">体验评价</h2>
+  <div class="cards c2">
+    <div class="card good"><b>做得好</b><ul class="pts">
+      <li>默认轻：紧凑窗贴合设备，不抢代码区</li>
+      <li>一致：真机、模拟器同一套操作</li>
+      <li>即改即见：外观、字号、位置不用进设备设置</li>
+      <li>「大惊喜」，日常影响比很多新 API 更直接——Fatbobman <span class="ev m">社区</span></li>
+    </ul></div>
+    <div class="card bad"><b>不足</b><ul class="pts">
+      <li>复现要人对着截图逐项对齐配置 <span class="ev i">推断</span></li>
+      <li>早期 beta 缺慢动画、内存警告等调试项，缩放不够精确 <span class="ev m">社区</span></li>
+      <li>Vision Pro 真机看不到画面；暂不支持双指触控（已知问题）</li>
+      <li>依赖旧 Simulator.app 的工具要跟着改 <span class="ev m">社区</span></li>
+    </ul></div>
+  </div>
+
+  <h2 id="dh-hm">鸿蒙电脑版可参照</h2>
+  <ul class="pts hmnote">
+    <li><b>先看差别</b>：鸿蒙电脑能本机跑应用，设备至少分三类——本机窗口、模拟器、真机（含远端、云端） <span class="ev i">推断</span></li>
+    <li><b>已借过</b>：demo 20 的设备中心有五类设备一张表、诊断包、云端 / 远端回放</li>
+    <li><b>还没借</b>：活屏、紧凑窗、即改即见的设置、带数据的复现、共用的设备层</li>
+  </ul>
+  <div class="tw"><table class="slim">
+    <thead><tr><th>借什么</th><th>用在鸿蒙电脑版</th><th>档位</th><th>接哪个 demo</th></tr></thead>
+    <tbody>
+      <tr><th>三栏设备中心</th><td>本机窗口、模拟器、真机、远端、云端一个列表；选中即看屏、即配置</td><td><span class="lvl a">主攻</span></td><td>20 · 19 · 27</td></tr>
+      <tr><th>紧凑窗 + 情境按键</th><td>跑起来就弹小窗；手机、手表、车机、折叠屏各有按键</td><td><span class="lvl a">主攻</span></td><td>17 · 30</td></tr>
+      <tr><th>拖边改尺寸</th><td>吸附到一多断点 sm / md / lg / xl，显示断点名 <span class="cmp y">人有我优</span></td><td><span class="lvl a">主攻</span></td><td>17</td></tr>
+      <tr><th>导出 / 换上 App 数据</th><td>「现场包」= 截图 + HiLog + 沙箱数据 + 设备配置，一键在模拟器复现 <span class="cmp y">人有我优</span></td><td><span class="lvl a">主攻</span></td><td>20 · 27 · 28</td></tr>
+      <tr><th>无线配对 + 真机进窗口</th><td>碰一碰配对；多屏协同把手机画面放进窗口，键鼠穿越直接操作 <span class="cmp u">人无我有</span></td><td><span class="lvl a">主攻</span></td><td>20</td></tr>
+      <tr><th>人、脚本、Agent 共用设备层</th><td>界面、hdc、Agent 调同一层；设备被谁占着，三处看到的一样</td><td><span class="lvl a">主攻</span></td><td>23 · 07 · 20</td></tr>
+      <tr><th>设置即改即见</th><td>深浅色、字号、语言、弱网一处改，真机、模拟器通用</td><td><span class="lvl b">跟上</span></td><td>17 · 29</td></tr>
+      <tr><th>多选并排</th><td>几台并排看，点击、滚动可同步</td><td><span class="lvl b">跟上</span></td><td>16 · 17</td></tr>
+    </tbody>
+  </table></div>
+  <p class="legend"><span><span class="lvl a">主攻</span> 单独立项</span><span><span class="lvl b">跟上</span> 并进已有 demo</span><span><span class="cmp u">人无我有</span> / <span class="cmp y">人有我优</span> 对照 Apple</span></p>
+
+  <h2 id="dh-src">来源</h2>
+  <ul class="src">
+    <li class="grp">Apple</li>
+    <li><a href="https://developer.apple.com/xcode/whats-new/">What's new in Xcode</a></li>
+    <li><a href="https://developer.apple.com/videos/play/wwdc2026/101/?time=4281">WWDC26 Keynote 71:21</a> · <a href="https://developer.apple.com/videos/play/wwdc2026/102/?time=2856">State of the Union 47:36 / 53:37</a></li>
+    <li><a href="https://developer.apple.com/videos/play/wwdc2026/258/?time=577">258 What's new in Xcode 27 · 9:37</a></li>
+    <li><a href="https://developer.apple.com/videos/play/wwdc2026/260/">260 Get the most out of Device Hub</a></li>
+    <li><a href="https://developer.apple.com/videos/play/wwdc2026/278/?time=520">278 Modernize your UIKit app · 8:40</a></li>
+    <li><a href="https://developer.apple.com/videos/play/wwdc2019/418/">WWDC19 Getting the Most Out of Simulator</a>（旧做法）</li>
+    <li><a href="https://developer.apple.com/documentation/xcode/device-hub">Device Hub 文档</a>及子页</li>
+    <li><a href="https://developer.apple.com/documentation/xcode-release-notes/xcode-27-release-notes">Xcode 27</a> · <a href="https://developer.apple.com/documentation/xcode-release-notes/xcode-27_1-release-notes">27.1</a> · <a href="https://developer.apple.com/documentation/xcode-release-notes/xcode-27_2-release-notes">27.2</a> Release Notes</li>
+    <li class="grp">社区 · 搜索摘要，未见原文</li>
+    <li><a href="https://mjtsai.com/blog/2026/06/25/xcode-27s-device-hub/">Michael Tsai · Xcode 27's Device Hub</a>（汇总 Fatbobman、Troughton-Smith 等人的评价）</li>
+    <li><a href="https://bitrise.io/blog/post/wwdc-2026-device-hub-and-what-it-means-for-ci-cd">Bitrise · Device Hub 与 CI/CD</a></li>
+    <li><a href="https://www.infoq.com/news/2026/06/xcode-27-agents-device-hub/">InfoQ · Xcode 27 与 DeviceHub</a></li>
+    <li><a href="https://github.com/expo/expo/pull/46757">expo #46757</a> · <a href="https://github.com/anthropics/claude-code/issues/95085">claude-code #95085</a> · <a href="https://github.com/sweetpad-dev/sweetpad/issues/337">sweetpad #337</a>（工具适配）</li>
+    <li><a href="https://apps.apple.com/app/id1504940162">RocketSim</a> · <a href="https://developer.android.com/studio/run/device">Android Studio 真机镜像</a></li>
+  </ul>
+</section>
+
+<section class="panel" id="agents" role="tabpanel" aria-labelledby="t-agents" hidden>
+  <h2 class="pt">编码 Agent：对话住进编辑区，产出摆在一旁，人在关键点拍板</h2>
+  <ul class="pts lead">
+    <li>编码助手从侧边栏挪进编辑区，对话界面重做</li>
+    <li>Apple：「not as an isolated chat interface, but as a collaborator that sees your whole project」<a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/382/?time=131">382 2:11</a></li>
+    <li>可选 Claude Agent、Codex、Gemini；外部 Agent 也能经 MCP 调 Xcode 的工具</li>
+  </ul>
+  <nav class="toc">
+    <a href="#ag-idea">理念</a><a href="#ag-why">为什么现在做</a><a href="#ag-scenes">场景</a><a href="#ag-traits">交互特点</a><a href="#ag-shots">截图</a><a href="#ag-review">体验评价</a><a href="#ag-hm">鸿蒙电脑版可参照</a><a href="#ag-src">来源</a>
+  </nav>
+
+  <h2 id="ag-idea">理念</h2>
+  <div class="cards c3">
+    <div class="card"><span class="n">01</span><b>人定方向，Agent 做累活</b><ul class="pts"><li>「You drive the vision for your code」<a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/259/?time=38">259 0:38</a></li><li>架构、设计由人定，重复的交给 Agent</li></ul></div>
+    <div class="card"><span class="n">02</span><b>先对齐，再动手</b><ul class="pts"><li>计划是一等公民：可改、可批注、批准才写码</li><li>「Plan mode allows you to be the architect」<a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/259/?time=469">259 7:49</a></li></ul></div>
+    <div class="card"><span class="n">03</span><b>对话是工作台</b><ul class="pts"><li>左边对话，右边产物</li><li>哪里都能开新会话，多个并行</li></ul></div>
+  </div>
+
+  <h2 id="ag-why">为什么现在做</h2>
+  <div class="cards c2">
+    <div class="card"><b>场景：出码快了，计划更要紧</b><ul class="pts"><li>想法变功能太快，「ensuring you have the right plan ... becomes a more important step」<a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/259/?time=506">259 8:26</a></li><li>方向错了，返工比以前更贵 <span class="ev i">推断</span></li></ul></div>
+    <div class="card"><b>技术：Agent 有了 Xcode 自己的工具</b><ul class="pts"><li>26.3 起接入编码 Agent，27 重做交互 <a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/259/?time=29">259 0:29</a></li><li>构建、预览、模拟器、调试都开放给 Agent</li></ul></div>
+    <div class="card"><b>平台：系统帮忙看住文件</b><ul class="pts"><li>macOS 27 新机制：Agent 读写文件前，内核先问 Xcode <a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/382/?time=929">382 15:29</a></li><li>放手给 Agent，前提是有边界</li></ul></div>
+    <div class="card"><b>竞争：不自己造模型，把好用的请进来</b><ul class="pts"><li>和 Anthropic、OpenAI、Google 合作，模型自己选 <a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/382/?time=816">382 13:36</a></li><li>Android Studio 等早有 Agent 模式 <span class="ev m">社区</span>；Apple 的差异是「回答扎根 Swift 与 Apple 框架」<a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/102/?time=2999">SOTU 49:59</a></li></ul></div>
+  </div>
+
+  <h2 id="ag-scenes">场景<small>「Xcode, agents, and you」里的两段</small></h2>
+  <div class="cards c2">
+    <div class="card"><b>A · 加一个 Insights 页</b><span class="src1"><a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/259/?time=464">259 7:44</a></span>
+      <ol class="steps"><li>输入 /plan，进计划模式</li><li>中途追问先排队；Agent 给几个选项，人挑</li><li>计划是 Markdown，改完再批准</li><li>每处改动以 diff 出现在右侧</li><li>Agent 自己构建、看预览，报错自己修</li><li>人在 iPad 模拟器（Device Hub）里看效果，再让它补测试</li></ol></div>
+    <div class="card"><b>B · 打磨细节，两路并行</b><span class="src1"><a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/259/?time=902">259 15:02</a></span>
+      <ol class="steps"><li>每种图表各出一张预览，人挑一种</li><li>在 iPad 上手绘草图，当附件发给 Agent</li><li>在代码行上留两条行内批注</li><li>开本地化会话，子 Agent 并行翻译</li><li>同时开无障碍会话</li><li>随时看进度，最后人审结果</li></ol></div>
+  </div>
+
+  <h2 id="ag-traits">交互特点<small>交互 → 给谁 → 解决什么</small></h2>
+  <div class="tw narrow"><table class="slim">
+    <thead><tr><th>交互</th><th>给谁</th><th>解决什么</th></tr></thead>
+    <tbody>
+      <tr><th>对话进编辑区，可另开窗格</th><td>边看代码边指挥的人</td><td>不用切屏</td></tr>
+      <tr><th>左对话、右产物</th><td>审改动的人</td><td>diff、计划、预览、截图一处看全</td></tr>
+      <tr><th>计划可编辑，批准才动手</th><td>把关架构的人</td><td>动手前先对齐</td></tr>
+      <tr><th>草图当附件，代码行上批注</th><td>调细节的人</td><td>说不清的画出来，指不准的点出来</td></tr>
+      <tr><th>追问排队</th><td>想随时纠偏的人</td><td>不用等它做完再说</td></tr>
+      <tr><th>会话侧栏：进行中 / 等你 / 未读</th><td>并行多任务的人</td><td>一眼知道谁在等我</td></tr>
+      <tr><th>工具栏状态点，点一下跳过去</th><td>同上</td><td>不用挨个翻会话</td></tr>
+      <tr><th>按提问逐条回退</th><td>怕改坏的人</td><td>改坏了能退回</td></tr>
+      <tr><th>逐次授权 + 文件访问把关</th><td>在意安全的人</td><td>放手有边界</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2 id="ag-shots">截图</h2>
+  <div class="shots">
+    <figure class="shot wide"><a href="images/agents/coding-assistant-anatomy.webp" target="_blank" rel="noopener"><picture><source media="(prefers-color-scheme: dark)" srcset="images/agents/coding-assistant-anatomy-dark.webp"><img src="images/agents/coding-assistant-anatomy.webp" width="1600" height="928" loading="lazy" alt="编码助手三栏：会话侧栏、对话、产物"></picture></a>
+      <figcaption><b>三栏</b><ul class="pts"><li>左：会话侧栏，新建会话 / 分组 / 归档</li><li>中：对话，底部输入框可加附件</li><li>右：产物，这里是改动的 diff；工具栏中间是「新建会话」</li></ul><span class="from"><a href="https://developer.apple.com/documentation/xcode/coding-intelligence">Coding intelligence</a></span></figcaption></figure>
+    <figure class="shot wide"><a href="images/agents/xcode-page-agents.webp" target="_blank" rel="noopener"><img src="images/agents/xcode-page-agents.webp" width="1600" height="1053" loading="lazy" alt="计划模式：右侧是带架构图的计划文档，左侧对话列出批准前要注意的设计"></a>
+      <figcaption><b>计划模式（官网图）</b><ul class="pts"><li>右侧产物就是计划：一份带架构图的 Markdown</li><li>对话里先列出「批准前值得注意的两处设计」</li><li>输入框提示：用 /exit-plan 结束计划模式，才开始改代码</li></ul><span class="from"><a href="https://developer.apple.com/xcode/">Xcode 官网</a></span></figcaption></figure>
+    <figure class="shot"><a href="images/agents/coding-assistant-write-code.webp" target="_blank" rel="noopener"><picture><source media="(prefers-color-scheme: dark)" srcset="images/agents/coding-assistant-write-code-dark.webp"><img src="images/agents/coding-assistant-write-code.webp" width="1600" height="990" loading="lazy" alt="项目导航在左，对话与 diff 在编辑区"></picture></a>
+      <figcaption><b>和项目导航并存</b>：对话、diff 都在编辑区，不挡文件树 <span class="from"><a href="https://developer.apple.com/documentation/xcode/writing-code-with-intelligence-in-xcode">用智能写代码</a></span></figcaption></figure>
+    <figure class="shot"><a href="images/agents/coding-assistant-history-view.webp" target="_blank" rel="noopener"><picture><source media="(prefers-color-scheme: dark)" srcset="images/agents/coding-assistant-history-view-dark.webp"><img src="images/agents/coding-assistant-history-view.webp" width="1600" height="990" loading="lazy" alt="历史视图：按提问排列的时间线与恢复按钮"></picture></a>
+      <figcaption><b>按提问回退</b>：每次提问一格，拖到哪一格，右侧显示那时的改动，点「Restore」 <span class="from"><a href="https://developer.apple.com/documentation/xcode/writing-code-with-intelligence-in-xcode">用智能写代码</a></span></figcaption></figure>
+    <figure class="shot"><a href="images/agents/localizing-using-agents-in-progress.webp" target="_blank" rel="noopener"><picture><source media="(prefers-color-scheme: dark)" srcset="images/agents/localizing-using-agents-in-progress-dark.webp"><img src="images/agents/localizing-using-agents-in-progress.webp" width="1600" height="990" loading="lazy" alt="Agent 分批翻译，子任务逐条打勾，右侧是字符串表"></picture></a>
+      <figcaption><b>进度看得见</b>：子任务逐条打勾、正在用的工具写在条目下；侧栏行与工具栏都有进行中标记 <span class="from"><a href="https://developer.apple.com/documentation/xcode/localizing-your-app-using-agents">用 Agent 本地化</a></span></figcaption></figure>
+    <figure class="shot tall"><a href="images/agents/intelligence-settings.webp" target="_blank" rel="noopener"><picture><source media="(prefers-color-scheme: dark)" srcset="images/agents/intelligence-settings-dark.webp"><img src="images/agents/intelligence-settings.webp" width="1600" height="1678" loading="lazy" alt="设置里的 Intelligence 页：Agent 列表与 MCP 开关"></picture></a>
+      <figcaption><b>选 Agent、放外部 Agent 进来</b>：Claude Agent、Codex、Gemini 一键获取；一个开关决定外部 Agent 能否用 Xcode 工具 <span class="from"><a href="https://developer.apple.com/documentation/xcode/giving-external-agents-access-to-xcode">外部 Agent 接入</a></span></figcaption></figure>
+  </div>
+  <p class="gap">行内批注、「等你」状态这两处，Apple 文档和官网都还没有配图，只有视频里的演示。</p>
+
+  <h2 id="ag-review">体验评价</h2>
+  <div class="cards c2">
+    <div class="card good"><b>做得好</b><ul class="pts">
+      <li>产出有固定落点：都在右侧产物栏</li>
+      <li>拍板点贯穿全程：计划批准、行内批注、按提问回退</li>
+      <li>状态看得见：转圈是在做，警告是等你，点一下跳过去</li>
+    </ul></div>
+    <div class="card bad"><b>不足</b><ul class="pts">
+      <li>并行会话互不知道，改同一个文件会撞 <span class="ev m">社区</span></li>
+      <li>授权分在 Xcode 和系统设置两处 <span class="ev i">推断</span></li>
+      <li>外接的 Agent 计划只进对话、进不了产物栏，没法批注 <span class="ev m">社区</span></li>
+    </ul></div>
+  </div>
+
+  <h2 id="ag-hm">鸿蒙电脑版可参照</h2>
+  <ul class="pts hmnote">
+    <li><b>已有不少</b>：07 统一的「在等你」队列、11 可改的计划、14 按步回退、21 胶囊、31 Agent 工作台</li>
+    <li><b>差在</b>：产物的固定落点、计划上直接批注、草图当输入、Agent 用设备自验</li>
+  </ul>
+  <div class="tw"><table class="slim">
+    <thead><tr><th>借什么</th><th>用在鸿蒙电脑版</th><th>档位</th><th>接哪个 demo</th></tr></thead>
+    <tbody>
+      <tr><th>产物栏</th><td>DevEco Code 面板右侧固定放 diff、计划、预览、真机截图；点一条落到对应位置</td><td><span class="lvl b">跟上</span></td><td>31 · 08</td></tr>
+      <tr><th>计划上直接批注</th><td>在计划文档上逐段批注、批准，不靠对话来回</td><td><span class="lvl b">跟上</span></td><td>11</td></tr>
+      <tr><th>草图当输入</th><td>M-Pen 在平板或折叠屏上画，碰一碰进对话；运行中的应用上圈一块就是提问 <span class="cmp y">人有我优</span></td><td><span class="lvl a">主攻</span></td><td>13 · 30</td></tr>
+      <tr><th>Agent 用设备自验</th><td>Agent 在本机窗口、真机上自己点、截图验 UI；设备被谁占着要看得见</td><td><span class="lvl a">主攻</span></td><td>17 · 20 · 07</td></tr>
+      <tr><th>状态点 + 跳转</th><td>胶囊只推最挡路的一件，点了直接落到那处（我们已做得更细）</td><td><span class="lvl c">搭车做</span></td><td>07 · 21</td></tr>
+      <tr><th>文件访问把关</th><td>Agent 只碰授权过的工程目录；授权可单独撤回</td><td><span class="lvl b">跟上</span></td><td>23</td></tr>
+    </tbody>
+  </table></div>
+  <p class="legend"><span><span class="lvl a">主攻</span> 单独立项</span><span><span class="lvl b">跟上</span> 并进已有 demo</span><span><span class="lvl c">搭车做</span> 顺手改</span></p>
+
+  <h2 id="ag-src">来源</h2>
+  <ul class="src">
+    <li class="grp">Apple</li>
+    <li><a href="https://developer.apple.com/videos/play/wwdc2026/259/">259 Xcode, agents, and you</a></li>
+    <li><a href="https://developer.apple.com/videos/play/wwdc2026/258/?time=460">258 What's new in Xcode 27 · 7:40 编码 Agent</a></li>
+    <li><a href="https://developer.apple.com/videos/play/wwdc2026/382/">382 Inside Apple Intelligence and Xcode</a> · <a href="https://developer.apple.com/videos/play/wwdc2026/102/?time=2950">State of the Union 49:10</a></li>
+    <li><a href="https://developer.apple.com/documentation/xcode/coding-intelligence">Coding intelligence 文档</a> · <a href="https://developer.apple.com/documentation/xcode/writing-code-with-intelligence-in-xcode">用智能写代码</a> · <a href="https://developer.apple.com/documentation/xcode/extending-and-customizing-agents">扩展 Agent</a> · <a href="https://developer.apple.com/documentation/xcode/giving-external-agents-access-to-xcode">外部 Agent 接入</a></li>
+    <li><a href="https://developer.apple.com/documentation/xcode-release-notes/xcode-27-release-notes">Xcode 27 Release Notes · Coding Intelligence</a></li>
+    <li class="grp">社区 · 搜索摘要</li>
+    <li><a href="https://appcoda.com/xcode-27/">AppCoda · Xcode 27</a></li>
+    <li><a href="https://developer.android.com/studio/gemini/agent-mode">Android Studio · Agent Mode</a></li>
+    <li><a href="https://developer.apple.com/forums/thread/839562">Apple 开发者论坛 · 外接 Agent 的计划不进产物栏</a></li>
+  </ul>
+</section>
+<section class="panel" id="workspace" role="tabpanel" aria-labelledby="t-workspace" hidden>
+  <h2 class="pt">工作区与主题：工具栏按习惯摆，颜色帮你认项目，报错先轻声提示</h2>
+  <ul class="pts lead">
+    <li>「The Toolbar and Themes in Xcode have been revamped to allow for more customization.」<a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/258/?time=62">258 1:02</a></li>
+    <li>三处改动：工具栏重排且可自定义；主题由两个滑块生成，可按工作区分别设；行内问题变成淡色预测</li>
+    <li>目的都是一个：少打扰，状态一眼可见</li>
+  </ul>
+  <nav class="toc">
+    <a href="#ws-idea">理念</a><a href="#ws-why">为什么现在做</a><a href="#ws-scenes">场景</a><a href="#ws-traits">交互特点</a><a href="#ws-shots">截图</a><a href="#ws-review">体验评价</a><a href="#ws-hm">鸿蒙电脑版可参照</a><a href="#ws-src">来源</a>
+  </nav>
+
+  <h2 id="ws-idea">理念</h2>
+  <div class="cards c3">
+    <div class="card"><span class="n">01</span><b>控件归位，状态可见</b><ul class="pts"><li>历史、编辑器控件上移到工具栏</li><li>构建进度写在窗口标题下 <a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/258/?time=87">1:27</a></li></ul></div>
+    <div class="card"><span class="n">02</span><b>颜色就是项目身份</b><ul class="pts"><li>每个工作区可以有自己的主题</li><li>「identify at a glance which project is which」<a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/258/?time=301">5:01</a></li></ul></div>
+    <div class="card"><span class="n">03</span><b>提示强度 = 把握程度</b><ul class="pts"><li>敲字时的预测问题用淡底</li><li>构建后才变成正式的警告、错误</li></ul></div>
+  </div>
+
+  <h2 id="ws-why">为什么现在做</h2>
+  <div class="cards c2">
+    <div class="card"><b>场景：被打断、认不出</b><ul class="pts"><li>敲到一半就冒红色报错，打断思路 <a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/258/?time=67">258 1:07</a></li><li>几个相似项目并排开，分不清哪个是哪个</li><li>老用户多年抱怨实时报错太扎眼，只能整个关掉 <span class="ev m">社区</span></li></ul></div>
+    <div class="card"><b>技术：问题能预测，颜色能派生</b><ul class="pts"><li>Xcode 边敲边「假装构建」，提前预测问题 <a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/258/?time=337">258 5:37</a></li><li>整套配色由底色派生，才能两个滑块调完 <span class="ev i">推断</span></li></ul></div>
+    <div class="card"><b>平台：新的系统外观</b><ul class="pts"><li>工具栏换成玻璃胶囊式分组，跟 macOS 的新设计走 <span class="ev i">推断</span></li><li>Agent 入口要在工具栏中间占一个位置 <a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/258/?time=92">258 1:32</a></li></ul></div>
+    <div class="card"><b>竞争：别人早能定制</b><ul class="pts"><li>JetBrains 新 UI 可按项目设颜色；VS Code 靠 Peacock 插件 <span class="ev m">社区</span></li><li>Xcode 补齐「项目身份色」，并做成整窗着色</li></ul></div>
+  </div>
+
+  <h2 id="ws-scenes">场景</h2>
+  <div class="cards c2">
+    <div class="card"><b>A · 两个相似项目，用主题认</b><span class="src1"><a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/258/?time=153">258 2:33</a></span>
+      <ol class="steps"><li>设置里打开 Appearance，边调边预览代码</li><li>第一个滑块调文字颜色强度，第二个调背景强度</li><li>背景推满，整窗变成渐变</li><li>换一个底色，整套配色跟着变</li><li>单独改关键字颜色：锁定，可一键复位</li><li>给这个工作区单选一套主题，一眼认出项目</li></ol></div>
+    <div class="card"><b>B · 写代码时</b><span class="src1"><a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/258/?time=80">258 1:20</a></span>
+      <ol class="steps"><li>前进后退、编辑器控件都在工具栏</li><li>构建进度在标题下，分支名挪到底栏</li><li>右上一个三段开关：预览 / 辅助编辑器 / 评审改动</li><li>工具栏的项可以增删、重排</li><li>敲代码时，可能的问题以淡底提示</li><li>一构建：淡提示变成正式报错，或修好后消失</li></ol></div>
+  </div>
+
+  <h2 id="ws-traits">交互特点<small>交互 → 给谁 → 解决什么</small></h2>
+  <div class="tw narrow"><table class="slim">
+    <thead><tr><th>交互</th><th>给谁</th><th>解决什么</th></tr></thead>
+    <tbody>
+      <tr><th>状态在标题下，分支进底栏</th><td>所有人</td><td>进度不用找</td></tr>
+      <tr><th>三段开关：预览 / 辅助 / 评审</th><td>写 UI、做评审的人</td><td>一处切三种伴随视图</td></tr>
+      <tr><th>工具栏增删、重排</th><td>老手</td><td>只留自己常用的</td></tr>
+      <tr><th>两个滑块生成整套主题</th><td>想个性化的人</td><td>不用逐项配色</td></tr>
+      <tr><th>单项改色可复位</th><td>精调配色的人</td><td>改坏了能回去</td></tr>
+      <tr><th>按工作区设主题</th><td>多项目并行的人</td><td>一眼认出项目</td></tr>
+      <tr><th>预测问题淡显，构建后加深</th><td>所有写代码的人</td><td>敲字不被红色打断</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2 id="ws-shots">截图</h2>
+  <div class="shots">
+    <figure class="shot wide"><a href="images/workspace/xcode-page-hero.webp" target="_blank" rel="noopener"><img src="images/workspace/xcode-page-hero.webp" width="1600" height="1004" loading="lazy" alt="Xcode 27 的新工作区：胶囊式工具栏、钉住的预览"></a>
+      <figcaption><b>新工作区（官网图）</b>：工具栏分成几组胶囊，中间是新会话入口与运行目标；右侧画布是钉住的预览 <span class="from"><a href="https://developer.apple.com/xcode/">Xcode 官网</a></span></figcaption></figure>
+    <figure class="shot wide"><a href="images/workspace/project-main-window-anatomy.webp" target="_blank" rel="noopener"><picture><source media="(prefers-color-scheme: dark)" srcset="images/workspace/project-main-window-anatomy-dark.webp"><img src="images/workspace/project-main-window-anatomy.webp" width="1300" height="912" loading="lazy" alt="Xcode 27 主窗口：工具栏、编辑区、调试区、检查器"></picture></a>
+      <figcaption><b>新工作区</b><ul class="pts"><li>工具栏：前进后退在左，状态写在项目名下，中间是新会话入口与运行目标</li><li>分支名在编辑区底栏</li></ul><span class="from"><a href="https://developer.apple.com/documentation/xcode/creating-an-xcode-project-for-an-app">新建项目</a></span></figcaption></figure>
+    <figure class="shot wide"><a href="images/workspace/coding-assistant-generate-fix-it.webp" target="_blank" rel="noopener"><picture><source media="(prefers-color-scheme: dark)" srcset="images/workspace/coding-assistant-generate-fix-it-dark.webp"><img src="images/workspace/coding-assistant-generate-fix-it.webp" width="1600" height="929" loading="lazy" alt="行尾的浅色问题提示，点开可让 Agent 生成修复"></picture></a>
+      <figcaption><b>低调的行内问题</b><ul class="pts"><li>问题以浅色胶囊放在行尾，不再是整行红条</li><li>点开一条，可直接「Generate Fix for Issue」交给 Agent</li></ul><span class="from"><a href="https://developer.apple.com/documentation/xcode/using-coding-intelligence-in-the-source-editor">编辑器里的智能</a></span></figcaption></figure>
+    <figure class="shot tall"><a href="images/workspace/appearance-settings.webp" target="_blank" rel="noopener"><picture><source media="(prefers-color-scheme: dark)" srcset="images/workspace/appearance-settings-dark.webp"><img src="images/workspace/appearance-settings.webp" width="1600" height="1816" loading="lazy" alt="设置里的 Appearance：前景与背景强度滑块"></picture></a>
+      <figcaption><b>两个滑块调主题</b>：文字强度、背景强度，推满变渐变 <span class="from"><a href="https://developer.apple.com/documentation/xcode/customizing-your-workspace-using-themes">主题</a></span></figcaption></figure>
+    <figure class="shot tall"><a href="images/workspace/select-theme-presets.webp" target="_blank" rel="noopener"><picture><source media="(prefers-color-scheme: dark)" srcset="images/workspace/select-theme-presets-dark.webp"><img src="images/workspace/select-theme-presets.webp" width="1600" height="1816" loading="lazy" alt="主题预设弹层，含经典预设与导入"></picture></a>
+      <figcaption><b>预设与过渡</b>：九套新预设；「经典」里保留旧版主题，老用户能退回 <span class="from"><a href="https://developer.apple.com/documentation/xcode/customizing-your-workspace-using-themes">主题</a></span></figcaption></figure>
+  </div>
+  <p class="gap">自定义工具栏的界面，Apple 文档暂无配图。</p>
+
+  <h2 id="ws-review">体验评价</h2>
+  <div class="cards c2">
+    <div class="card good"><b>做得好</b><ul class="pts">
+      <li>状态不用找：进度在标题下，Agent 状态在顶栏</li>
+      <li>提示分级：预测淡、构建浓，敲字不被打断</li>
+      <li>主题即身份：整窗着色，按工作区分别设置</li>
+    </ul></div>
+    <div class="card bad"><b>不足</b><ul class="pts">
+      <li>选主题时看不到完整效果，要开着工程试 <span class="ev m">社区</span></li>
+      <li>工具栏「新会话」默认用当前 Agent，不让选 <span class="ev m">社区</span></li>
+      <li>行内问题只有总开关，强度和位置不能调 <span class="ev i">推断</span></li>
+    </ul></div>
+  </div>
+
+  <h2 id="ws-hm">鸿蒙电脑版可参照</h2>
+  <div class="tw"><table class="slim">
+    <thead><tr><th>借什么</th><th>用在鸿蒙电脑版</th><th>档位</th><th>接哪个 demo</th></tr></thead>
+    <tbody>
+      <tr><th>状态在标题下</th><td>构建、真机安装、Agent 进度写在窗口标题下；点开即详情</td><td><span class="lvl b">跟上</span></td><td>21 · 01</td></tr>
+      <tr><th>预测淡、构建浓</th><td>ArkTS 实时检查淡显；hvigor 构建后才升级为正式报错</td><td><span class="lvl b">跟上</span></td><td>05</td></tr>
+      <tr><th>按工作区设主题</th><td>多窗口并行时用颜色认工程；自由窗口、多桌面下更有用 <span class="cmp y">人有我优</span></td><td><span class="lvl c">搭车做</span></td><td>01</td></tr>
+      <tr><th>两个滑块出整套主题</th><td>主题设置给「强度」两个滑块，不逐项配色</td><td><span class="lvl c">搭车做</span></td><td>设计系统</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2 id="ws-src">来源</h2>
+  <ul class="src">
+    <li class="grp">Apple</li>
+    <li><a href="https://developer.apple.com/videos/play/wwdc2026/258/?time=60">258 What's new in Xcode 27 · 1:00 工作区、主题、行内问题</a></li>
+    <li><a href="https://developer.apple.com/videos/play/wwdc2026/8013/">8013 Xcode Tips and Tricks Group Lab</a></li>
+    <li><a href="https://developer.apple.com/documentation/xcode/customizing-your-workspace-using-themes">主题 文档</a> · <a href="https://developer.apple.com/documentation/xcode/using-coding-intelligence-in-the-source-editor">编辑器里的智能</a></li>
+    <li><a href="https://developer.apple.com/documentation/xcode-release-notes/xcode-27-release-notes">Xcode 27 Release Notes · Themes / Source Editor</a></li>
+    <li class="grp">社区 · 搜索摘要</li>
+    <li><a href="https://forums.swift.org/t/anyone-suggest-on-xcode-themes/87968">Swift Forums · 主题</a> · <a href="https://developer.apple.com/forums/thread/834577">Apple 开发者论坛 · 新会话按钮</a></li>
+    <li><a href="https://jetbrains.com/guide/tips/configuring-the-new-ui">JetBrains 新 UI</a> · <a href="https://github.com/johnpapa/vscode-peacock">VS Code Peacock</a></li>
+  </ul>
+</section>
+<section class="panel" id="new-project" role="tabpanel" aria-labelledby="t-new-project" hidden>
+  <h2 class="pt">新建项目与原型：点子一来就开工，多个方案并排看，人来拍板</h2>
+  <ul class="pts lead">
+    <li>「A brand new untitled project is created, no questions asked. Literally!」<a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/258/?time=411">258 6:51</a></li>
+    <li>单个 Swift 文件不在工程里，也能直接出预览和运行结果</li>
+    <li>做原型：让 Agent 一次出十个方案，在画布页签里点着比 <a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/227/?time=308">227 5:08</a></li>
+  </ul>
+  <nav class="toc">
+    <a href="#np-idea">理念</a><a href="#np-why">为什么现在做</a><a href="#np-scenes">场景</a><a href="#np-traits">交互特点</a><a href="#np-shots">截图</a><a href="#np-review">体验评价</a><a href="#np-hm">鸿蒙电脑版可参照</a><a href="#np-src">来源</a>
+  </nav>
+
+  <h2 id="np-idea">理念</h2>
+  <div class="cards c3">
+    <div class="card"><span class="n">01</span><b>先开工，后命名</b><ul class="pts"><li>不问名字、团队、路径</li><li>想好再存，不要就整个丢掉 <a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/258/?time=420">7:00</a></li></ul></div>
+    <div class="card"><span class="n">02</span><b>多个方案，人来挑</b><ul class="pts"><li>一次要多个，免得被第一个方案带偏 <a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/227/?time=219">227 3:39</a></li></ul></div>
+    <div class="card"><span class="n">03</span><b>Agent 干活，人拍板</b><ul class="pts"><li>「Remember, you always have final say.」<a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/227/?time=172">227 2:52</a></li></ul></div>
+  </div>
+
+  <h2 id="np-why">为什么现在做</h2>
+  <div class="cards c2">
+    <div class="card"><b>场景：点子随时冒出来</b><ul class="pts"><li>同事发来一个想法、一段代码，想马上试 <a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/258/?time=361">258 6:01</a></li><li>以前先过模板选择器、填一页选项</li></ul></div>
+    <div class="card"><b>技术：Agent 出原生代码，预览不用重建</b><ul class="pts"><li>原型就是真代码，能直接接着做 <a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/227/?time=144">227 2:24</a></li><li>预览改完就看，不用每次构建运行</li></ul></div>
+    <div class="card"><b>平台：要看各种宽度</b><ul class="pts"><li>iPhone 应用能缩放了，画布也能拖边改尺寸 <span class="ev i">推断</span></li></ul></div>
+    <div class="card"><b>竞争：AI 原型工具很多</b><ul class="pts"><li>Android Studio 新建项目可选「用 AI 创建」<span class="ev m">社区</span></li><li>Apple 把「试一下」放进 IDE 本身</li></ul></div>
+  </div>
+
+  <h2 id="np-scenes">场景</h2>
+  <div class="cards c2">
+    <div class="card"><b>A · 点子 → 无标题工程 → 交给 Agent</b><span class="src1"><a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/258/?time=379">258 6:19</a></span>
+      <ol class="steps"><li>File 菜单新建：App、命令行、包、Playground</li><li>选 App：直接得到无标题工程</li><li>随便试；想好再命名保存，或丢弃</li><li>同事发来一个 Swift 文件：开窗就有预览和结果</li><li>值得做下去：工具栏开对话，/plan 先出计划</li><li>读计划、批注、放行；改动在右侧看</li></ol></div>
+    <div class="card"><b>B · App 想法 → 多方案 → 调细节</b><span class="src1"><a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/227/?time=274">227 4:34</a></span>
+      <ol class="steps"><li>说清功能和气质，要多个方案，各带命名预览</li><li>一次得到 10 个，在画布页签间点选</li><li>告诉 Agent 哪些元素混搭，再来一轮</li><li>让 Agent 扮演用户填真实内容；自己列边界情况</li><li>补空状态、文字溢出、超长列表</li><li>让 Agent 做调参面板，凭手感调动效</li></ol></div>
+  </div>
+
+  <h2 id="np-traits">交互特点<small>交互 → 给谁 → 解决什么</small></h2>
+  <div class="tw narrow"><table class="slim">
+    <thead><tr><th>交互</th><th>给谁</th><th>解决什么</th></tr></thead>
+    <tbody>
+      <tr><th>新建下拉直列四种起点</th><td>想试点子的人</td><td>先开工，不先选模板</td></tr>
+      <tr><th>无标题工程：存或丢</th><td>试验阶段的人</td><td>没成型的想法不占名字</td></tr>
+      <tr><th>单个文件开窗即预览</th><td>收到代码片段的人</td><td>脱离工程也能跑</td></tr>
+      <tr><th>命名预览 = 画布页签</th><td>比方案的人</td><td>多个方案一键切</td></tr>
+      <tr><th>变体并排、画布拖边</th><td>查边界情况的人</td><td>深浅色、字号、宽度一屏看</td></tr>
+      <tr><th>Agent 做调参面板</th><td>调动效的人</td><td>凭手感调，反馈更快</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2 id="np-shots">截图</h2>
+  <div class="shots">
+    <figure class="shot tall"><a href="images/new-project/choosing-new-project-app.webp" target="_blank" rel="noopener"><picture><source media="(prefers-color-scheme: dark)" srcset="images/new-project/choosing-new-project-app-dark.webp"><img src="images/new-project/choosing-new-project-app.webp" width="1184" height="1488" loading="lazy" alt="欢迎窗的 New Project 下拉：App、命令行工具、包、Playground、选择模板"></picture></a>
+      <figcaption><b>新建下拉</b>：App、命令行工具、Playground 一点就开；经典模板向导退到最后一项 <span class="from"><a href="https://developer.apple.com/documentation/xcode/creating-an-xcode-project-for-an-app">新建项目</a></span></figcaption></figure>
+    <figure class="shot"><a href="images/new-project/coding-assistant-run-playground.webp" target="_blank" rel="noopener"><picture><source media="(prefers-color-scheme: dark)" srcset="images/new-project/coding-assistant-run-playground-dark.webp"><img src="images/new-project/coding-assistant-run-playground.webp" width="1600" height="1112" loading="lazy" alt="Playground 代码在左，结果在画布里"></picture></a>
+      <figcaption><b>Playground</b>：左边代码，右边画布直接出结果（值、地图） <span class="from"><a href="https://developer.apple.com/documentation/xcode/using-coding-intelligence-in-the-source-editor">编辑器里的智能</a></span></figcaption></figure>
+    <figure class="shot wide"><a href="images/new-project/show-previews-in-canvas.webp" target="_blank" rel="noopener"><picture><source media="(prefers-color-scheme: dark)" srcset="images/new-project/show-previews-in-canvas-dark.webp"><img src="images/new-project/show-previews-in-canvas.webp" width="1600" height="868" loading="lazy" alt="四个命名预览变成画布顶部的页签，下方深浅色并排"></picture></a>
+      <figcaption><b>命名预览 = 页签</b>：代码里四个 #Preview 变成画布顶部四个页签；下面深浅色并排 <span class="from"><a href="https://developer.apple.com/documentation/xcode/interacting-with-previews-in-the-canvas">画布预览</a></span></figcaption></figure>
+    <figure class="shot wide"><a href="images/new-project/resize-preview-screen.webp" target="_blank" rel="noopener"><picture><source media="(prefers-color-scheme: dark)" srcset="images/new-project/resize-preview-screen-dark.webp"><img src="images/new-project/resize-preview-screen.webp" width="1600" height="990" loading="lazy" alt="可缩放的预览画布，四边有把手，显示尺寸"></picture></a>
+      <figcaption><b>画布拖边改尺寸</b>：和 Device Hub 一样的四边把手与尺寸读数 <span class="from"><a href="https://developer.apple.com/documentation/xcode/interacting-with-previews-in-the-canvas">画布预览</a></span></figcaption></figure>
+  </div>
+  <p class="gap">无标题工程窗口、单文件独立窗口，Apple 文档暂无配图。</p>
+
+  <h2 id="np-review">体验评价</h2>
+  <div class="cards c2">
+    <div class="card good"><b>做得好</b><ul class="pts">
+      <li>起步零阻力：先开工，想好再命名</li>
+      <li>多方案一屏切换，不被第一个方案锚定</li>
+      <li>人始终拍板：计划先读后放行，可批注、可回退</li>
+    </ul></div>
+    <div class="card bad"><b>不足</b><ul class="pts">
+      <li>提示词有门槛：说得含糊，Agent 就乱猜 <a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/227/?time=194">227 3:14</a></li>
+      <li>从 Finder 双击 Swift 文件，预览可能不跑（已知问题）</li>
+      <li>菜单入口变少，老路径要重新找 <span class="ev m">社区</span></li>
+    </ul></div>
+  </div>
+
+  <h2 id="np-hm">鸿蒙电脑版可参照</h2>
+  <div class="tw"><table class="slim">
+    <thead><tr><th>借什么</th><th>用在鸿蒙电脑版</th><th>档位</th><th>接哪个 demo</th></tr></thead>
+    <tbody>
+      <tr><th>无标题工程</th><td>新建不先问名字、包名、路径；先跑起来，想好再存</td><td><span class="lvl b">跟上</span></td><td>26</td></tr>
+      <tr><th>单文件即预览</th><td>别人发来一个 .ets 文件，打开就在本机窗口预览，不用建工程 <span class="cmp y">人有我优</span></td><td><span class="lvl a">主攻</span></td><td>26 · 13</td></tr>
+      <tr><th>多方案并排</th><td>Agent 一次出几个界面方案，预览器页签切换、可混搭</td><td><span class="lvl b">跟上</span></td><td>09 · 13</td></tr>
+      <tr><th>画布拖边</th><td>预览器拖边吸附一多断点，和设备中心同一套手势</td><td><span class="lvl b">跟上</span></td><td>17</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2 id="np-src">来源</h2>
+  <ul class="src">
+    <li class="grp">Apple</li>
+    <li><a href="https://developer.apple.com/videos/play/wwdc2026/258/?time=361">258 What's new in Xcode 27 · 6:01 新建项目</a></li>
+    <li><a href="https://developer.apple.com/videos/play/wwdc2026/227/">227 Create UI prototypes using agents in Xcode</a> · <a href="https://developer.apple.com/videos/play/wwdc2026/8013/">8013 Xcode Tips and Tricks</a></li>
+    <li><a href="https://developer.apple.com/documentation/xcode/creating-an-xcode-project-for-an-app">新建项目</a> · <a href="https://developer.apple.com/documentation/xcode/interacting-with-previews-in-the-canvas">画布预览</a> · <a href="https://developer.apple.com/documentation/xcode/running-code-snippets-using-the-playground-macro">Playground</a></li>
+    <li><a href="https://developer.apple.com/documentation/xcode-release-notes/xcode-27-release-notes">Xcode 27 Release Notes · Previews / Playgrounds</a></li>
+    <li class="grp">社区 · 搜索摘要</li>
+    <li><a href="https://developer.android.com/studio/gemini/create-a-new-project-with-ai">Android Studio · 用 AI 新建项目</a> · <a href="https://mjtsai.com/blog/?p=52156">Michael Tsai · Xcode 27 Announced</a></li>
+  </ul>
+</section>
+<section class="panel" id="localization" role="tabpanel" aria-labelledby="t-localization" hidden>
+  <h2 class="pt">本地化：说一句加语言，Agent 带着上下文译完，人只审改</h2>
+  <ul class="pts lead">
+    <li>「Beginning in Xcode 27, you can now translate your strings directly in Xcode using coding agents!」<a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/213/?time=91">213 1:31</a></li>
+    <li>两个入口：对话里说一句；或在字符串目录里点「Generate Translations」</li>
+    <li>译文会标「机器翻译」，进度在对话和目录里都看得见</li>
+  </ul>
+  <nav class="toc">
+    <a href="#lo-idea">理念</a><a href="#lo-why">为什么现在做</a><a href="#lo-scenes">场景</a><a href="#lo-traits">交互特点</a><a href="#lo-shots">截图</a><a href="#lo-review">体验评价</a><a href="#lo-hm">鸿蒙电脑版可参照</a><a href="#lo-src">来源</a>
+  </nav>
+
+  <h2 id="lo-idea">理念</h2>
+  <div class="cards c3">
+    <div class="card"><span class="n">01</span><b>上下文由 Xcode 备好</b><ul class="pts"><li>「Xcode gives subagents context about each string being translated」<a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/213/?time=230">213 3:50</a></li><li>不靠人写提示词</li></ul></div>
+    <div class="card"><span class="n">02</span><b>人只做审阅</b><ul class="pts"><li>Agent 批量译，人挑着改</li><li>一句话就能整体改译法</li></ul></div>
+    <div class="card"><span class="n">03</span><b>术语只说一次</b><ul class="pts"><li>改过的译法，做新功能时自动沿用 <a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/213/?time=472">213 7:52</a></li><li>术语表、语气写进一个文件</li></ul></div>
+  </div>
+
+  <h2 id="lo-why">为什么现在做</h2>
+  <div class="cards c2">
+    <div class="card"><b>场景：工程量大，同词异义</b><ul class="pts"><li>「book」是书还是预订？没有语境就会译错 <a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/213/?time=47">213 0:47</a></li><li>抽字符串、配目录、补复数，都是体力活</li></ul></div>
+    <div class="card"><b>技术：大模型会译，缺的是语境</b><ul class="pts"><li>「they can still struggle with software localization when they don't have the right context」<a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/213/?time=36">213 0:36</a></li><li>Xcode 能把用在哪、相近词条、其他语言译法一起交给 Agent</li></ul></div>
+    <div class="card"><b>平台：市场大</b><ul class="pts"><li>App Store 覆盖 175 个地区、50 种语言（<a href="https://developer.apple.com/localization/">Apple 本地化页</a>）</li><li>每多一门语言就多一个市场</li></ul></div>
+    <div class="card"><b>竞争：顺着 Agent 的主线</b><ul class="pts"><li>本地化是 Agent 最好讲清价值的活：量大、规则明确、好验收 <span class="ev i">推断</span></li><li>Android Studio 有翻译编辑器，未见内置 Agent 翻译 <span class="ev m">社区</span></li></ul></div>
+  </div>
+
+  <h2 id="lo-scenes">场景</h2>
+  <div class="cards c2">
+    <div class="card"><b>A · 加一门语言（加拿大法语）</b><span class="src1"><a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/213/?time=139">213 2:19</a></span>
+      <ol class="steps"><li>工具栏新建会话，说「译成加拿大法语」</li><li>Xcode 先加语言、构建、收字符串，再分批并行译</li><li>「%lld items」自动拆出法语的单复数</li><li>切语言运行；嫌某个词不对，一句话让它全改</li><li>做新功能时，Agent 自动沿用改过的译法</li><li>让 Agent 渲染法语界面查截断</li></ol></div>
+    <div class="card"><b>B · 在目录里补一门语言（简体中文）</b><span class="src1"><a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/258/?time=843">258 14:03</a></span>
+      <ol class="steps"><li>新会话说「给工程配好本地化，先做西班牙语」</li><li>Agent 改成可本地化的写法，建字符串目录</li><li>目录里「+」加简体中文</li><li>选中语言，点「Generate Translations」</li><li>后台跑，目录里逐批填表</li><li>跑 App 抽查，再发 TestFlight 请母语者测</li></ol></div>
+  </div>
+
+  <h2 id="lo-traits">交互特点<small>交互 → 给谁 → 解决什么</small></h2>
+  <div class="tw narrow"><table class="slim">
+    <thead><tr><th>交互</th><th>给谁</th><th>解决什么</th></tr></thead>
+    <tbody>
+      <tr><th>一句话加语言</th><td>所有开发者</td><td>不用先手工配本地化</td></tr>
+      <tr><th>目录里一键生成译文</th><td>只补一门语言的人</td><td>不用重开对话</td></tr>
+      <tr><th>每条字符串带上下文</th><td>Agent</td><td>同词异义不乱译</td></tr>
+      <tr><th>复数按语言自动拆</th><td>审阅的人</td><td>不漏各语言的复数形式</td></tr>
+      <tr><th>对话看进度，目录实时填表</th><td>审阅的人</td><td>长任务不是黑盒</td></tr>
+      <tr><th>译文标「机器翻译」、新词标「NEW」</th><td>审阅的人</td><td>知道哪些还没人看过</td></tr>
+      <tr><th>术语表文件</th><td>要统一口径的团队</td><td>术语、语气只写一次</td></tr>
+      <tr><th>预览里切语言、叠大字号</th><td>设计师与开发者</td><td>译完马上看排版</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2 id="lo-shots">截图</h2>
+  <div class="shots">
+    <figure class="shot wide"><a href="images/agents/localizing-using-agents-in-progress.webp" target="_blank" rel="noopener"><picture><source media="(prefers-color-scheme: dark)" srcset="images/agents/localizing-using-agents-in-progress-dark.webp"><img src="images/agents/localizing-using-agents-in-progress.webp" width="1600" height="990" loading="lazy" alt="对话里分批翻译，右侧字符串表实时填入意大利语"></picture></a>
+      <figcaption><b>一句话开译</b><ul class="pts"><li>左：分批任务逐条打勾，正在用的工具（Get String Context）写在条目下</li><li>右：字符串表一行行填上意大利语</li></ul><span class="from"><a href="https://developer.apple.com/documentation/xcode/localizing-your-app-using-agents">用 Agent 本地化</a></span></figcaption></figure>
+    <figure class="shot"><a href="images/localization/string-catalog-editor-generate-translations-button.webp" target="_blank" rel="noopener"><picture><source media="(prefers-color-scheme: dark)" srcset="images/localization/string-catalog-editor-generate-translations-button-dark.webp"><img src="images/localization/string-catalog-editor-generate-translations-button.webp" width="1600" height="868" loading="lazy" alt="字符串目录：德语 0%，意大利语已完成，工具栏有生成译文按钮"></picture></a>
+      <figcaption><b>目录里一键生成</b>：语言旁是完成度（德语 0%、意大利语 ✓），新词条标「NEW」 <span class="from"><a href="https://developer.apple.com/documentation/xcode/localizing-your-app-using-agents">用 Agent 本地化</a></span></figcaption></figure>
+    <figure class="shot"><a href="images/localization/previewing-localizations-in-the-canvas.webp" target="_blank" rel="noopener"><picture><source media="(prefers-color-scheme: dark)" srcset="images/localization/previewing-localizations-in-the-canvas-dark.webp"><img src="images/localization/previewing-localizations-in-the-canvas.webp" width="1600" height="990" loading="lazy" alt="画布里的 iPhone 预览已是意大利语"></picture></a>
+      <figcaption><b>译完当场看</b>：画布里的预览直接换成意大利语 <span class="from"><a href="https://developer.apple.com/documentation/xcode/localizing-your-app-using-agents">用 Agent 本地化</a></span></figcaption></figure>
+    <figure class="shot wide"><a href="images/localization/change-device-settings.webp" target="_blank" rel="noopener"><picture><source media="(prefers-color-scheme: dark)" srcset="images/localization/change-device-settings-dark.webp"><img src="images/localization/change-device-settings.webp" width="1600" height="810" loading="lazy" alt="画布的设备设置浮层：深浅色、对比度、方向、动态字体、语言"></picture></a>
+      <figcaption><b>语言叠字号一起查</b>：预览的设置浮层可同时切深色、横屏、超大字号和语言，最容易暴露截断 <span class="from"><a href="https://developer.apple.com/documentation/xcode/interacting-with-previews-in-the-canvas">画布预览</a></span></figcaption></figure>
+  </div>
+
+  <h2 id="lo-review">体验评价</h2>
+  <div class="cards c2">
+    <div class="card good"><b>做得好</b><ul class="pts">
+      <li>入口极轻：不碰工程设置，说一句就开译</li>
+      <li>过程看得见，译文标明是机器翻译</li>
+      <li>改一次译法全局生效，以后也沿用</li>
+    </ul></div>
+    <div class="card bad"><b>不足</b><ul class="pts">
+      <li>不懂的语言没法审：「That advantage disappears」<a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/213/?time=614">213 10:14</a>，只能靠 TestFlight 请母语者</li>
+      <li>冷门语言训练数据少，质量不稳 <a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/213/?time=793">213 13:13</a></li>
+      <li>截断能查出来，怎么改还得人判断</li>
+    </ul></div>
+  </div>
+
+  <h2 id="lo-hm">鸿蒙电脑版可参照</h2>
+  <ul class="pts hmnote">
+    <li><b>已有</b>：demo 29 有说一句加语言、复数、截图上下文、RTL 与截断检查、风格指南</li>
+    <li><b>还差</b>：资源表里按语言 / 选中行直接生成、上下文摆给人看、母语者回路</li>
+  </ul>
+  <div class="tw"><table class="slim">
+    <thead><tr><th>借什么</th><th>用在鸿蒙电脑版</th><th>档位</th><th>接哪个 demo</th></tr></thead>
+    <tbody>
+      <tr><th>目录里一键生成</th><td>string.json 资源表工具栏放「生成译文」，可只译选中的行</td><td><span class="lvl b">跟上</span></td><td>29</td></tr>
+      <tr><th>上下文摆给人看</th><td>展开一行就看到：用在哪个页面、相近词条、其他语言怎么译</td><td><span class="lvl b">跟上</span></td><td>29</td></tr>
+      <tr><th>预览里语言叠字号</th><td>本机窗口一键切语言、字号、深色、断点，一屏对照 <span class="cmp y">人有我优</span></td><td><span class="lvl b">跟上</span></td><td>29 · 17</td></tr>
+      <tr><th>母语者回路</th><td>内测包里长按文字即可纠错，回流到资源表，标出谁改的</td><td><span class="lvl c">搭车做</span></td><td>29</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2 id="lo-src">来源</h2>
+  <ul class="src">
+    <li class="grp">Apple</li>
+    <li><a href="https://developer.apple.com/videos/play/wwdc2026/213/">213 Translate your app using agents in Xcode</a></li>
+    <li><a href="https://developer.apple.com/videos/play/wwdc2026/258/?time=826">258 What's new in Xcode 27 · 13:46 本地化</a></li>
+    <li><a href="https://developer.apple.com/documentation/xcode/localizing-your-app-using-agents">用 Agent 本地化 文档</a> · <a href="https://developer.apple.com/documentation/xcode/interacting-with-previews-in-the-canvas">画布预览</a></li>
+    <li><a href="https://developer.apple.com/documentation/xcode-release-notes/xcode-27-release-notes">Xcode 27 Release Notes · Localization</a> · <a href="https://developer.apple.com/localization/">Apple 本地化页</a></li>
+    <li class="grp">社区 · 搜索摘要</li>
+    <li><a href="https://developer.android.com/studio/write/translations-editor">Android Studio · Translations Editor</a></li>
+    <li><a href="https://developer.apple.com/forums/thread/833076">Apple 开发者论坛 · 语言支持取决于所选模型</a></li>
+  </ul>
+</section>
+<section class="panel" id="organizer" role="tabpanel" aria-labelledby="t-organizer" hidden>
+  <h2 class="pt">Organizer：上线后的问题汇在一屏，选一条就交给 Agent</h2>
+  <ul class="pts lead">
+    <li>「In Xcode 27, it does more than collect reports. It also helps me act on them.」<a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/258/?time=1045">258 17:25</a></li>
+    <li>从「知道有卡顿」到「卡在哪、下一步试什么」<a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/258/?time=1067">258 17:47</a></li>
+    <li>四处新：总览页、存储与动画掉帧指标、指标目标线、一键生成修复建议</li>
+  </ul>
+  <nav class="toc">
+    <a href="#or-idea">理念</a><a href="#or-why">为什么现在做</a><a href="#or-scenes">场景</a><a href="#or-traits">交互特点</a><a href="#or-shots">截图</a><a href="#or-review">体验评价</a><a href="#or-hm">鸿蒙电脑版可参照</a><a href="#or-src">来源</a>
+  </nav>
+
+  <h2 id="or-idea">理念</h2>
+  <div class="cards c3">
+    <div class="card"><span class="n">01</span><b>最该看的排最前</b><ul class="pts"><li>总览先给影响最大的问题 <a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/258/?time=1078">17:58</a></li><li>指标和诊断同一屏</li></ul></div>
+    <div class="card"><span class="n">02</span><b>数字要有参照</b><ul class="pts"><li>虚线目标：同类 App、自家历史</li><li>一眼看出好坏</li></ul></div>
+    <div class="card"><span class="n">03</span><b>看见之后，下一步就在旁边</b><ul class="pts"><li>「Open in Project…」与「Generate Recommendations…」并排</li><li>报告的上下文自动带进 Agent 会话</li></ul></div>
+  </div>
+
+  <h2 id="or-why">为什么现在做</h2>
+  <div class="cards c2">
+    <div class="card"><b>场景：线上问题难复现，单个数字没基准</b><ul class="pts"><li>「seeing the issue is one thing. Figuring out what to do about it is another.」<a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/258/?time=1055">258 17:35</a></li><li>以前指标和诊断分两页，来回跳</li></ul></div>
+    <div class="card"><b>技术：Agent 能读线上洞察</b><ul class="pts"><li>Agent 可读崩溃、卡顿、磁盘写入、能耗、启动问题（Release Notes）</li><li>读符号化日志 → 找到代码 → 复现 → 修 → 验证 <a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/102/?time=3333">SOTU 55:33</a></li></ul></div>
+    <div class="card"><b>平台：新设计带来新的卡顿</b><ul class="pts"><li>新的掉帧指标覆盖 Liquid Glass 与 SwiftUI 动画，不止滚动 <a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/258/?time=1151">258 19:11</a></li><li>新增存储指标：数据和包体越来越大</li></ul></div>
+    <div class="card"><b>竞争：别人已在做「看到即修」</b><ul class="pts"><li>Android Studio 已有线上崩溃洞察与 AI 修复建议 <span class="ev m">社区</span></li><li>Apple 的优势是数据来自系统，「anonymized and aggregated」<a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/102/?time=3311">SOTU 55:11</a></li></ul></div>
+  </div>
+
+  <h2 id="or-scenes">场景</h2>
+  <div class="cards c2">
+    <div class="card"><b>A · 从总览到交给 Agent</b><span class="src1"><a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/258/?time=1078">258 17:58</a></span>
+      <ol class="steps"><li>打开 Organizer，先落在总览：高影响的排最前</li><li>图上一个尖峰，下面的诊断直接指向代码</li><li>新存储指标：1.0 版偏大，压图后回落</li><li>新掉帧指标：1.3 版有严重卡顿，记一笔</li><li>目标线对照同类 App 与历史</li><li>点「Generate Recommendations…」，选工程，和 Agent 来回试</li></ol></div>
+    <div class="card"><b>B · 在对话里直接问</b><span class="src1"><a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/102/?time=3318">SOTU 55:18</a></span>
+      <ol class="steps"><li>对 Xcode 说「拉出最新版本的 top 崩溃」</li><li>拿到按次数排序的列表</li><li>第一条来自上周的更新，说「修掉它」</li><li>它读日志、定位、复现、修、再验证</li></ol></div>
+  </div>
+
+  <h2 id="or-traits">交互特点<small>交互 → 给谁 → 解决什么</small></h2>
+  <div class="tw narrow"><table class="slim">
+    <thead><tr><th>交互</th><th>给谁</th><th>解决什么</th></tr></thead>
+    <tbody>
+      <tr><th>总览按影响排序</th><td>已上架的开发者</td><td>不用猜先看哪页</td></tr>
+      <tr><th>指标图与诊断同屏</th><td>排优先级的人</td><td>不在两页间跳</td></tr>
+      <tr><th>虚线目标：同类 App / 自家历史</th><td>缺基准的人</td><td>数字好坏有参照</td></tr>
+      <tr><th>趋势与系统分布</th><td>判断影响面的人</td><td>问题在不在扩大</td></tr>
+      <tr><th>「打开工程」「生成建议」并排</th><td>修问题的人</td><td>从报告一步进代码或 Agent</td></tr>
+      <tr><th>上下文自动带进新会话</th><td>修问题的人</td><td>不用复制堆栈</td></tr>
+      <tr><th>铃铛订阅回归提醒</th><td>常驻开发者</td><td>不开 Organizer 也知道</td></tr>
+      <tr><th>对话里直接要数据</th><td>不想切窗口的人</td><td>Agent 直接读线上洞察</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2 id="or-shots">截图</h2>
+  <div class="shots">
+    <figure class="shot wide"><a href="images/organizer/analyzing-the-performance-of-your-shipping-app-insights-overview.webp" target="_blank" rel="noopener"><picture><source media="(prefers-color-scheme: dark)" srcset="images/organizer/analyzing-the-performance-of-your-shipping-app-insights-overview-dark.webp"><img src="images/organizer/analyzing-the-performance-of-your-shipping-app-insights-overview.webp" width="1470" height="885" loading="lazy" alt="Organizer 总览：磁盘写入的主要来源环图与掉帧柱图"></picture></a>
+      <figcaption><b>总览</b><ul class="pts"><li>磁盘写入：五个主要来源占 86%，每条带箭头直达</li><li>掉帧：按版本的柱图，虚线是基于历史的建议值</li><li>右上角铃铛：订阅回归提醒</li></ul><span class="from"><a href="https://developer.apple.com/documentation/xcode/analyzing-the-performance-of-your-shipping-app">分析上线 App 的性能</a></span></figcaption></figure>
+    <figure class="shot wide"><a href="images/organizer/analyzing-responsiveness-issues-in-your-shipping-app-1.webp" target="_blank" rel="noopener"><picture><source media="(prefers-color-scheme: dark)" srcset="images/organizer/analyzing-responsiveness-issues-in-your-shipping-app-1-dark.webp"><img src="images/organizer/analyzing-responsiveness-issues-in-your-shipping-app-1.webp" width="1470" height="885" loading="lazy" alt="卡顿列表、调用栈与右侧的两个按钮"></picture></a>
+      <figcaption><b>卡顿：一步交出去</b><ul class="pts"><li>左：按卡顿时长排序；中：调用栈</li><li>右上：「Open in Project…」「Generate Recommendations…」</li><li>右侧还有趋势（影响在变大）和系统版本分布</li></ul><span class="from"><a href="https://developer.apple.com/documentation/xcode/analyzing-responsiveness-issues-in-your-shipping-app">分析卡顿</a></span></figcaption></figure>
+    <figure class="shot"><a href="images/organizer/analyzing-the-performance-of-your-shipping-app-metric-goals.webp" target="_blank" rel="noopener"><picture><source media="(prefers-color-scheme: dark)" srcset="images/organizer/analyzing-the-performance-of-your-shipping-app-metric-goals-dark.webp"><img src="images/organizer/analyzing-the-performance-of-your-shipping-app-metric-goals.webp" width="1470" height="885" loading="lazy" alt="启动时间柱图与基于同类 App 的建议线"></picture></a>
+      <figcaption><b>指标目标线</b>：启动时间对照「同类 App」的建议值 <span class="from"><a href="https://developer.apple.com/documentation/xcode/analyzing-the-performance-of-your-shipping-app">分析上线 App 的性能</a></span></figcaption></figure>
+    <figure class="shot"><a href="images/organizer/monitoring-your-app-s-storage-metrics-1.webp" target="_blank" rel="noopener"><picture><source media="(prefers-color-scheme: dark)" srcset="images/organizer/monitoring-your-app-s-storage-metrics-1-dark.webp"><img src="images/organizer/monitoring-your-app-s-storage-metrics-1.webp" width="1470" height="886" loading="lazy" alt="存储指标：文档与数据、App 大小"></picture></a>
+      <figcaption><b>新的存储指标</b>：数据里缓存占多少、包体多大，同样带同类 App 参照 <span class="from"><a href="https://developer.apple.com/documentation/xcode/monitoring-your-app-s-storage-metrics">存储指标</a></span></figcaption></figure>
+  </div>
+  <p class="gap">点「Generate Recommendations…」之后的会话界面，Apple 文档暂无配图。</p>
+
+  <h2 id="or-review">体验评价</h2>
+  <div class="cards c2">
+    <div class="card good"><b>做得好</b><ul class="pts">
+      <li>一屏看全：尖峰、诊断、目标线在一起</li>
+      <li>一步交接：报告上下文自动进会话</li>
+      <li>两条路都通：点按钮，或直接问 Agent</li>
+    </ul></div>
+    <div class="card bad"><b>不足</b><ul class="pts">
+      <li>回归提醒门槛高：退化很大且 Xcode 开着才提醒</li>
+      <li>「生成建议」只覆盖五类诊断，指标图本身不能直接交出去 <span class="ev i">推断</span></li>
+      <li>并行会话不共享上下文，可能改到同一个文件 <span class="ev m">社区</span></li>
+    </ul></div>
+  </div>
+
+  <h2 id="or-hm">鸿蒙电脑版可参照</h2>
+  <ul class="pts hmnote">
+    <li><b>已有</b>：demo 22 冷启动报告、28 冻屏报告、05 就地问，都有「让 Agent 修 → 复测」</li>
+    <li><b>还没有</b>：线上问题的聚合总览、目标线、回归提醒</li>
+  </ul>
+  <div class="tw"><table class="slim">
+    <thead><tr><th>借什么</th><th>用在鸿蒙电脑版</th><th>档位</th><th>接哪个 demo</th></tr></thead>
+    <tbody>
+      <tr><th>按影响排序的总览</th><td>线上质量首页：崩溃、冻屏、冷启动、耗电按影响排，点进就是报告</td><td><span class="lvl a">主攻</span></td><td>22 · 28</td></tr>
+      <tr><th>两个按钮并排</th><td>每份报告右上角：「打开代码」「交给 Agent」，栈与设备信息自动带入</td><td><span class="lvl b">跟上</span></td><td>28 · 05</td></tr>
+      <tr><th>目标线</th><td>指标图加「同类应用 / 上个版本」虚线</td><td><span class="lvl c">搭车做</span></td><td>22</td></tr>
+      <tr><th>回归提醒</th><td>新版本变差，实况窗推一条，点开落到报告 <span class="cmp y">人有我优</span></td><td><span class="lvl b">跟上</span></td><td>21 · 28</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2 id="or-src">来源</h2>
+  <ul class="src">
+    <li class="grp">Apple</li>
+    <li><a href="https://developer.apple.com/videos/play/wwdc2026/258/?time=1041">258 What's new in Xcode 27 · 17:21 Organizer</a></li>
+    <li><a href="https://developer.apple.com/videos/play/wwdc2026/102/?time=3311">State of the Union · 55:11</a></li>
+    <li><a href="https://developer.apple.com/documentation/xcode/analyzing-the-performance-of-your-shipping-app">分析上线 App 的性能</a> · <a href="https://developer.apple.com/documentation/xcode/analyzing-responsiveness-issues-in-your-shipping-app">分析卡顿</a> · <a href="https://developer.apple.com/documentation/xcode/acquiring-crash-reports-and-diagnostic-logs">崩溃报告</a> · <a href="https://developer.apple.com/documentation/xcode/monitoring-your-app-s-storage-metrics">存储指标</a></li>
+    <li><a href="https://developer.apple.com/documentation/xcode-release-notes/xcode-27-release-notes">Xcode 27 Release Notes · Organizer</a></li>
+    <li class="grp">社区 · 搜索摘要</li>
+    <li><a href="https://developer.android.com/studio/preview/gemini/deploy">Android Studio · Gemini 部署与崩溃洞察</a></li>
+  </ul>
+</section>
+<section class="panel" id="instruments" role="tabpanel" aria-labelledby="t-instruments" hidden>
+  <h2 class="pt">Instruments：最重函数、改前改后对比、Swift 并发——卡顿从「猜」变成「证」</h2>
+  <ul class="pts lead">
+    <li>Apple 把它讲成一个循环：「profile, identify, fix, and verify」（<a href="https://developer.apple.com/xcode/whats-new/">What's new in Xcode</a>）</li>
+    <li>三件新东西：Top Functions（最重的函数）、Run Comparison（两次录制直接比）、Swift 并发的执行器轨道</li>
+    <li>修的那一步可以交给 Agent，验的那一步由人看对比</li>
+  </ul>
+  <nav class="toc">
+    <a href="#in-idea">理念</a><a href="#in-why">为什么现在做</a><a href="#in-scenes">场景</a><a href="#in-traits">交互特点</a><a href="#in-shots">截图</a><a href="#in-review">体验评价</a><a href="#in-hm">鸿蒙电脑版可参照</a><a href="#in-src">来源</a>
+  </nav>
+
+  <h2 id="in-idea">理念</h2>
+  <div class="cards c3">
+    <div class="card"><span class="n">01</span><b>一个闭环，不是四个工具</b><ul class="pts"><li>录 → 找 → 改 → 验，一路不出 Instruments</li></ul></div>
+    <div class="card"><span class="n">02</span><b>先问 CPU 忙还是闲</b><ul class="pts"><li>忙：看最重的函数</li><li>闲却卡：看线程在等什么</li></ul></div>
+    <div class="card"><span class="n">03</span><b>验收靠对比，不靠记忆</b><ul class="pts"><li>同一区间、两次录制、红绿一看便知 <a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/268/?time=793">268 13:13</a></li></ul></div>
+  </div>
+
+  <h2 id="in-why">为什么现在做</h2>
+  <div class="cards c2">
+    <div class="card"><b>场景：开销散在各处，火焰图看不出</b><ul class="pts"><li>被很多地方调用的函数，成本被拆散在各条路径上 <a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/268/?time=586">268 9:46</a></li><li>以前验修复要开两个窗口来回比 <a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/268/?time=795">268 13:15</a></li></ul></div>
+    <div class="card"><b>技术：Swift 并发难看清</b><ul class="pts"><li>从 SwiftUI 里起的任务会继承主线程，和界面更新抢资源 <a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/268/?time=1080">268 18:00</a></li><li>需要一条轨道看清谁占着主线程</li></ul></div>
+    <div class="card"><b>平台：系统配合</b><ul class="pts"><li>执行器轨道要 OS 27 才能完整显示（Release Notes）</li><li>Liquid Glass 动画带来新的掉帧问题（见 Organizer）</li></ul></div>
+    <div class="card"><b>竞争：Agent 改得越快，越要会验</b><ul class="pts"><li>Agent 改代码后，人要一眼看出好了没、新加了什么 <span class="ev i">推断</span></li><li>对比里，Agent 新加的函数直接标红 <a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/268/?time=909">268 15:09</a></li></ul></div>
+  </div>
+
+  <h2 id="in-scenes">场景<small>「Profile, fix, and verify」里的两段</small></h2>
+  <div class="cards c2">
+    <div class="card"><b>A · 套索选择卡顿</b><span class="src1"><a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/268/?time=204">268 3:24</a></span>
+      <ol class="steps"><li>用并发模板开录，复现卡顿</li><li>按打点区间筛，主线程 CPU 接近 100%</li><li>火焰图看不出单点 → 切到 Top Functions</li><li>榜首是运行时函数，交给编码助手改成泛型</li><li>两次录制选同一区间，点 Compare</li><li>回退置顶：是 Agent 新加的函数；倒过来看改进</li></ol></div>
+    <div class="card"><b>B · 缩略图卡顿</b><span class="src1"><a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/268/?time=992">268 16:32</a></span>
+      <ol class="steps"><li>主线程轨道被缩略图任务排满</li><li>固定主线程：CPU 满，是任务太长</li><li>原因：从 SwiftUI 起的任务继承了主线程</li><li>加一个标注，把任务挪到后台执行器</li><li>再录一次：任务移走，而且并行了</li></ol></div>
+  </div>
+
+  <h2 id="in-traits">交互特点<small>交互 → 给谁 → 解决什么</small></h2>
+  <div class="tw narrow"><table class="slim">
+    <thead><tr><th>交互</th><th>给谁</th><th>解决什么</th></tr></thead>
+    <tbody>
+      <tr><th>三种看法一键切：调用树 / 火焰图 / 最重函数</th><td>所有人</td><td>同一份数据换角度看</td></tr>
+      <tr><th>Top Functions：左榜单、右调用者</th><td>CPU 忙的卡顿</td><td>散在各处的开销收拢</td></tr>
+      <tr><th>Compare：选基线，两次录制同屏</th><td>改完要验收的人</td><td>不用两个窗口肉眼比</td></tr>
+      <tr><th>红绿着色，变差的排最前</th><td>同上</td><td>一眼看出好了没</td></tr>
+      <tr><th>点打点区间即筛选</th><td>要对齐口径的人</td><td>前后比的是同一段</td></tr>
+      <tr><th>Swift 执行器轨道</th><td>用 async 的人</td><td>看见谁占着主线程</td></tr>
+      <tr><th>对比存进文档</th><td>团队协作</td><td>结论可留存、可转给别人</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2 id="in-shots">截图</h2>
+  <div class="shots">
+    <figure class="shot wide"><a href="images/instruments/call-tree-top-functions.webp" target="_blank" rel="noopener"><picture><source media="(prefers-color-scheme: dark)" srcset="images/instruments/call-tree-top-functions-dark.webp"><img src="images/instruments/call-tree-top-functions.webp" width="1470" height="845" loading="lazy" alt="Top Functions：左侧按自身耗时排的榜单，右侧是榜首函数的调用者"></picture></a>
+      <figcaption><b>Top Functions</b><ul class="pts"><li>上：Swift 任务、Actor、执行器、卡顿、打点区间等轨道</li><li>下左：按自身耗时排的榜单；下右：榜首函数被谁调用</li></ul><span class="from"><a href="https://developer.apple.com/documentation/xcode/analyzing-cpu-profiles-with-call-tree-views">调用树视图</a></span></figcaption></figure>
+    <figure class="shot wide"><a href="images/instruments/run-comparison-view.webp" target="_blank" rel="noopener"><picture><source media="(prefers-color-scheme: dark)" srcset="images/instruments/run-comparison-view-dark.webp"><img src="images/instruments/run-comparison-view.webp" width="1470" height="845" loading="lazy" alt="Run Comparison：优化后与基线的主线程对比，全绿表示变快"></picture></a>
+      <figcaption><b>改前改后对比</b><ul class="pts"><li>左栏：录制与对比都存在同一个文档里</li><li>上方：两次录制的主线程区间（2.20 s vs 3.27 s）</li><li>下方：每个函数的差值，绿色是变快</li></ul><span class="from"><a href="https://developer.apple.com/documentation/xcode/analyzing-cpu-profiles-with-call-tree-views">调用树视图</a></span></figcaption></figure>
+    <figure class="shot wide"><a href="images/instruments/xcode-page-instruments.webp" target="_blank" rel="noopener"><img src="images/instruments/xcode-page-instruments.webp" width="1600" height="915" loading="lazy" alt="Instruments 里的 Foundation Models 轨道：请求、指令、模型推理、模型加载"></a>
+      <figcaption><b>给 App 里的 Agent 做分析（官网图）</b><ul class="pts"><li>Foundation Models 轨道分出请求、指令、模型推理、模型加载</li><li>这张图里能直接看到「No instructions」「No prompt」</li><li>同屏还有神经引擎、内存、泄漏、线程；对应 session 243</li></ul><span class="from"><a href="https://developer.apple.com/xcode/">Xcode 官网</a></span></figcaption></figure>
+    <figure class="shot"><a href="images/instruments/call-tree-view-mode-picker.webp" target="_blank" rel="noopener"><picture><source media="(prefers-color-scheme: dark)" srcset="images/instruments/call-tree-view-mode-picker-dark.webp"><img src="images/instruments/call-tree-view-mode-picker.webp" width="1600" height="324" loading="lazy" alt="详情区右上角的三态切换"></picture></a>
+      <figcaption><b>三态切换</b>：调用树、火焰图、最重函数，同一份数据 <span class="from"><a href="https://developer.apple.com/documentation/xcode/analyzing-cpu-profiles-with-call-tree-views">调用树视图</a></span></figcaption></figure>
+    <figure class="shot"><a href="images/instruments/call-tree-flame-graph.webp" target="_blank" rel="noopener"><picture><source media="(prefers-color-scheme: dark)" srcset="images/instruments/call-tree-flame-graph-dark.webp"><img src="images/instruments/call-tree-flame-graph.webp" width="1470" height="845" loading="lazy" alt="火焰图铺满详情区"></picture></a>
+      <figcaption><b>火焰图</b>：看结构好用，但开销分散时找不到单点，于是有了 Top Functions <span class="from"><a href="https://developer.apple.com/documentation/xcode/analyzing-cpu-profiles-with-call-tree-views">调用树视图</a></span></figcaption></figure>
+  </div>
+
+  <h2 id="in-review">体验评价</h2>
+  <div class="cards c2">
+    <div class="card good"><b>做得好</b><ul class="pts">
+      <li>同一份样本三种看法，切换不丢上下文</li>
+      <li>对比存进文档，可多份、可分享</li>
+      <li>修完后榜单里没有自家函数，就是验收信号 <a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/258/?time=1451">258 24:11</a></li>
+    </ul></div>
+    <div class="card bad"><b>不足</b><ul class="pts">
+      <li>前提多：要 release 构建、要埋好打点 <a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/268/?time=1572">268 26:12</a></li>
+      <li>榜首常是运行时符号，不懂原理难下手 <span class="ev i">推断</span></li>
+      <li>对比只给差值，没说差异是否显著 <span class="ev i">推断</span></li>
+    </ul></div>
+  </div>
+
+  <h2 id="in-hm">鸿蒙电脑版可参照</h2>
+  <ul class="pts hmnote">
+    <li><b>已有</b>：demo 03 有最重调用栈、改前改后各跑 N 次判显著；demo 10 有火焰图、内存、TaskPool 并发轨道</li>
+    <li><b>还差</b>：函数级红绿对比、三种看法一键切、按打点区间对齐、对比结果存档</li>
+  </ul>
+  <div class="tw"><table class="slim">
+    <thead><tr><th>借什么</th><th>用在鸿蒙电脑版</th><th>档位</th><th>接哪个 demo</th></tr></thead>
+    <tbody>
+      <tr><th>红绿对比</th><td>函数级前后对比；Agent 新加的函数标出来，变差的排最前</td><td><span class="lvl b">跟上</span></td><td>03 · 10</td></tr>
+      <tr><th>三种看法一键切</th><td>同一份 trace：调用树 / 火焰图 / 最重函数</td><td><span class="lvl c">搭车做</span></td><td>10</td></tr>
+      <tr><th>打点区间当口径</th><td>前后两次选同一段手势再比；我们已有显著性判断 <span class="cmp y">人有我优</span></td><td><span class="lvl b">跟上</span></td><td>03</td></tr>
+      <tr><th>主线程上谁在跑</th><td>ArkTS 主线程 / TaskPool / Worker 汇成一条「谁占着 UI 线程」的视图</td><td><span class="lvl b">跟上</span></td><td>10</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2 id="in-src">来源</h2>
+  <ul class="src">
+    <li class="grp">Apple</li>
+    <li><a href="https://developer.apple.com/videos/play/wwdc2026/268/">268 Profile, fix, and verify</a> · <a href="https://developer.apple.com/videos/play/wwdc2026/243/">243 Debug and profile agentic app experiences</a></li>
+    <li><a href="https://developer.apple.com/videos/play/wwdc2026/258/?time=1322">258 What's new in Xcode 27 · 22:02 Instruments</a></li>
+    <li><a href="https://developer.apple.com/documentation/xcode/analyzing-cpu-profiles-with-call-tree-views">调用树视图 文档</a> · <a href="https://developer.apple.com/xcode/whats-new/">What's new in Xcode</a></li>
+    <li><a href="https://developer.apple.com/documentation/xcode-release-notes/xcode-27-release-notes">Xcode 27 Release Notes · Instruments</a>（Top Functions 与 Run Comparison 首见于 26.4）</li>
+  </ul>
+</section>
+<section class="panel" id="xcode-cloud" role="tabpanel" aria-labelledby="t-xcode-cloud" hidden>
+  <h2 class="pt">Xcode Cloud：三步跑起第一次云端构建，发版的事往后放</h2>
+  <ul class="pts lead">
+    <li>「I'll click get started, grant access to my repository, and that's it. ... No App Store Connect setup needed.」<a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/102/?time=2801">SOTU 46:41</a></li>
+    <li>自动建好产品和默认流程，再点一下就开跑</li>
+    <li>构建最快快一倍，支持 Vision Pro 与 Metal 应用 <a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/102/?time=2811">SOTU 46:51</a></li>
+  </ul>
+  <nav class="toc">
+    <a href="#xc-idea">理念</a><a href="#xc-why">为什么现在做</a><a href="#xc-scenes">场景</a><a href="#xc-traits">交互特点</a><a href="#xc-shots">截图</a><a href="#xc-review">体验评价</a><a href="#xc-hm">鸿蒙电脑版可参照</a><a href="#xc-src">来源</a>
+  </nav>
+
+  <h2 id="xc-idea">理念</h2>
+  <div class="cards c3">
+    <div class="card"><span class="n">01</span><b>先跑起来，再调</b><ul class="pts"><li>默认流程够用，以后再改 <a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/261/?time=269">261 4:29</a></li></ul></div>
+    <div class="card"><span class="n">02</span><b>发版是第二步</b><ul class="pts"><li>要发测试版时才建 App 记录 <a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/261/?time=438">261 7:18</a></li></ul></div>
+    <div class="card"><span class="n">03</span><b>代码多了，靠云端兜底</b><ul class="pts"><li>「Xcode Cloud is your companion for quality」<a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/261/?time=105">261 1:45</a></li></ul></div>
+  </div>
+
+  <h2 id="xc-why">为什么现在做</h2>
+  <div class="cards c2">
+    <div class="card"><b>场景：本地跑测试越来越慢</b><ul class="pts"><li>每次改完都在本地跑全套测试，挤掉做功能的时间 <a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/261/?time=164">261 2:44</a></li></ul></div>
+    <div class="card"><b>技术：Agent 让代码又多又快</b><ul class="pts"><li>「a lot of developers are writing more code than ever before」<a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/261/?time=82">261 1:22</a></li><li>云端并行跑多设备、多系统版本</li></ul></div>
+    <div class="card"><b>平台：更快、更全</b><ul class="pts"><li>构建最快快一倍；支持 Vision Pro 与 Metal</li></ul></div>
+    <div class="card"><b>竞争：抢「第一次跑起来」</b><ul class="pts"><li>第三方 CI 要先写配置；Apple 把首跑压到三步 <span class="ev i">推断</span></li></ul></div>
+  </div>
+
+  <h2 id="xc-scenes">场景</h2>
+  <div class="cards c2">
+    <div class="card"><b>A · 第一次接入</b><span class="src1"><a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/261/?time=185">261 3:05</a></span>
+      <ol class="steps"><li>Report 导航器的 Cloud 页签 → Get Started…</li><li>选产品；团队按签名设置预填</li><li>授权仓库</li><li>自动建好产品和默认流程</li><li>再点一下，第一次构建开跑</li><li>加 macOS 版：新建流程，不用再授权</li></ol></div>
+    <div class="card"><b>B · 要发测试版了</b><span class="src1"><a class="ts" href="https://developer.apple.com/videos/play/wwdc2026/261/?time=402">261 6:42</a></span>
+      <ol class="steps"><li>右键产品 → Set Up Distribution…</li><li>填 App 名称、Bundle ID、SKU</li><li>重名当场提示，不离开向导就能改</li><li>后台建记录、校验、注册 ID</li><li>生成内部 TestFlight 流程，随时启动</li></ol></div>
+  </div>
+
+  <h2 id="xc-traits">交互特点<small>交互 → 给谁 → 解决什么</small></h2>
+  <div class="tw narrow"><table class="slim">
+    <thead><tr><th>交互</th><th>给谁</th><th>解决什么</th></tr></thead>
+    <tbody>
+      <tr><th>三步接入</th><td>第一次用的人</td><td>不用先配流水线</td></tr>
+      <tr><th>默认流程，可改</th><td>新手</td><td>怕第一次配错</td></tr>
+      <tr><th>Cloud 页签在 Xcode 里</th><td>所有人</td><td>云端结果和代码同一个窗口</td></tr>
+      <tr><th>加 target 不用再授权</th><td>多端工程</td><td>重复授权仓库</td></tr>
+      <tr><th>右键「设置分发」</th><td>要发测试版的人</td><td>不用先去网页建 App 记录</td></tr>
+      <tr><th>表单里就地改名</th><td>同上</td><td>重名不用退出重来</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2 id="xc-shots">截图</h2>
+  <div class="shots">
+    <figure class="shot wide"><a href="images/xcode-cloud/xcode-cloud-get-started.webp" target="_blank" rel="noopener"><picture><source media="(prefers-color-scheme: dark)" srcset="images/xcode-cloud/xcode-cloud-get-started-dark.webp"><img src="images/xcode-cloud/xcode-cloud-get-started.webp" width="1600" height="990" loading="lazy" alt="Report 导航器里 Cloud 页签的空状态，有 Get Started 按钮"></picture></a>
+      <figcaption><b>入口</b>：Report 导航器的 Cloud 页签，空状态只有一个「Get Started…」 <span class="from"><a href="https://developer.apple.com/documentation/xcode/getting-started-with-xcode-cloud">Xcode Cloud 上手</a></span></figcaption></figure>
+    <figure class="shot"><a href="images/xcode-cloud/xcode-cloud-add-your-app.webp" target="_blank" rel="noopener"><picture><source media="(prefers-color-scheme: dark)" srcset="images/xcode-cloud/xcode-cloud-add-your-app-dark.webp"><img src="images/xcode-cloud/xcode-cloud-add-your-app.webp" width="812" height="812" loading="lazy" alt="选择产品与开发团队的弹窗"></picture></a>
+      <figcaption><b>第一步：选产品</b>：团队已预填；页脚写明只做构建 / 测试的配置需要 Xcode 27 <span class="from"><a href="https://developer.apple.com/documentation/xcode/getting-started-with-xcode-cloud">Xcode Cloud 上手</a></span></figcaption></figure>
+    <figure class="shot"><a href="images/xcode-cloud/xcode-cloud-setup-complete.webp" target="_blank" rel="noopener"><picture><source media="(prefers-color-scheme: dark)" srcset="images/xcode-cloud/xcode-cloud-setup-complete-dark.webp"><img src="images/xcode-cloud/xcode-cloud-setup-complete.webp" width="1600" height="1600" loading="lazy" alt="设置完成：分支、默认流程、开始第一次构建"></picture></a>
+      <figcaption><b>最后一步：开跑</b>：分支、默认流程都填好，点「Start First Build」 <span class="from"><a href="https://developer.apple.com/documentation/xcode/getting-started-with-xcode-cloud">Xcode Cloud 上手</a></span></figcaption></figure>
+    <figure class="shot"><a href="images/xcode-cloud/xcode-cloud-create-app-record.webp" target="_blank" rel="noopener"><picture><source media="(prefers-color-scheme: dark)" srcset="images/xcode-cloud/xcode-cloud-create-app-record-dark.webp"><img src="images/xcode-cloud/xcode-cloud-create-app-record.webp" width="812" height="812" loading="lazy" alt="发版时才出现的创建 App 表单"></picture></a>
+      <figcaption><b>发版时才填</b>：团队、名称、Bundle ID、SKU、主语言 <span class="from"><a href="https://developer.apple.com/documentation/xcode/distributing-your-xcode-cloud-builds-through-testflight">经 TestFlight 分发</a></span></figcaption></figure>
+    <figure class="shot"><a href="images/xcode-cloud/xcode-cloud-build-report.webp" target="_blank" rel="noopener"><picture><source media="(prefers-color-scheme: dark)" srcset="images/xcode-cloud/xcode-cloud-build-report-dark.webp"><img src="images/xcode-cloud/xcode-cloud-build-report.webp" width="1600" height="990" loading="lazy" alt="云端构建的概览：触发条件、最后一次提交、各动作的实时状态"></picture></a>
+      <figcaption><b>结果在 Xcode 里看</b>：触发条件、最新提交、每个动作的实时状态 <span class="from"><a href="https://developer.apple.com/documentation/xcode/getting-started-with-xcode-cloud">Xcode Cloud 上手</a></span></figcaption></figure>
+  </div>
+
+  <h2 id="xc-review">体验评价</h2>
+  <div class="cards c2">
+    <div class="card good"><b>做得好</b><ul class="pts">
+      <li>三步到首跑，不用先读文档</li>
+      <li>发版后置：建 App 记录的表单到要用时才出现</li>
+      <li>结果和代码在同一个窗口</li>
+    </ul></div>
+    <div class="card bad"><b>不足</b><ul class="pts">
+      <li>是否需要付费会员，官方几处说法不一致</li>
+      <li>默认只构建，测试得自己加 <span class="ev i">推断</span></li>
+      <li>草稿 PR 每次小推送都触发构建 <span class="ev m">社区</span></li>
+    </ul></div>
+  </div>
+
+  <h2 id="xc-hm">鸿蒙电脑版可参照</h2>
+  <ul class="pts hmnote">
+    <li><b>邻近</b>：demo 27 云端模拟器有云端并行跑旅程、提交前等你批</li>
+    <li><b>还没有</b>：「授权 → 默认流程 → 首跑」这条最短接入路径</li>
+  </ul>
+  <div class="tw"><table class="slim">
+    <thead><tr><th>借什么</th><th>用在鸿蒙电脑版</th><th>档位</th><th>接哪个 demo</th></tr></thead>
+    <tbody>
+      <tr><th>三步接入</th><td>云端构建：选工程、授权仓库、开跑；默认只构建</td><td><span class="lvl b">跟上</span></td><td>27</td></tr>
+      <tr><th>发版后置</th><td>应用与签名到要发测试版时才引导创建（接 AGC）</td><td><span class="lvl b">跟上</span></td><td>02</td></tr>
+      <tr><th>结果在 IDE 里</th><td>云端构建、云端真机的结果一页看，不跳网页；状态进胶囊</td><td><span class="lvl c">搭车做</span></td><td>27 · 21</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2 id="xc-src">来源</h2>
+  <ul class="src">
+    <li class="grp">Apple</li>
+    <li><a href="https://developer.apple.com/videos/play/wwdc2026/261/">261 Build, deliver, and automate with Xcode Cloud</a></li>
+    <li><a href="https://developer.apple.com/videos/play/wwdc2026/258/?time=1537">258 What's new in Xcode 27 · 25:37 Xcode Cloud</a> · <a href="https://developer.apple.com/videos/play/wwdc2026/102/?time=2791">State of the Union 46:31</a></li>
+    <li><a href="https://developer.apple.com/documentation/xcode/getting-started-with-xcode-cloud">Xcode Cloud 上手</a> · <a href="https://developer.apple.com/documentation/xcode/distributing-your-xcode-cloud-builds-through-testflight">经 TestFlight 分发</a> · <a href="https://developer.apple.com/documentation/updates/xcode">Xcode 更新</a></li>
+    <li class="grp">社区 · 搜索摘要</li>
+    <li><a href="https://developer.apple.com/forums/thread/800920">Apple 开发者论坛 · 草稿 PR 触发构建</a></li>
+  </ul>
+</section>
+
+</div>
+
+<script>
+/* 页签：哈希即状态（#device-hub），页内锚点会先切到所在页签再滚过去；←/→ 在页签间移动 */
+(function(){
+  var tabs = [].slice.call(document.querySelectorAll('.tab'));
+  var panels = [].slice.call(document.querySelectorAll('.panel'));
+  function panelOf(id){
+    var el = id && document.getElementById(id);
+    if(!el) return null;
+    return el.classList.contains('panel') ? el : el.closest('.panel');
+  }
+  function show(id, opts){
+    opts = opts || {};
+    var target = document.getElementById(id);
+    var p = panelOf(id) || panels[0];
+    tabs.forEach(function(t){
+      var on = t.dataset.tab === p.id;
+      t.setAttribute('aria-selected', on ? 'true' : 'false');
+      t.tabIndex = on ? 0 : -1;
+      if(on && t.scrollIntoView && opts.reveal) t.scrollIntoView({block:'nearest', inline:'nearest'});
+    });
+    panels.forEach(function(x){ x.hidden = x !== p; });
+    if(opts.focusTab){ var ft = document.getElementById('t-' + p.id); if(ft) ft.focus(); }
+    if(target && target !== p){ target.scrollIntoView(); }
+    else if(opts.top){ window.scrollTo(0, Math.min(window.scrollY, document.querySelector('.tabs').offsetTop)); }
+  }
+  tabs.forEach(function(t, i){
+    t.addEventListener('click', function(){
+      history.replaceState(null, '', '#' + t.dataset.tab);
+      show(t.dataset.tab, {top:true});
+    });
+    t.addEventListener('keydown', function(e){
+      var d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
+      if(!d) return;
+      e.preventDefault();
+      var n = tabs[(i + d + tabs.length) % tabs.length];
+      history.replaceState(null, '', '#' + n.dataset.tab);
+      show(n.dataset.tab, {focusTab:true, reveal:true, top:true});
+    });
+  });
+  window.addEventListener('hashchange', function(){ show(location.hash.slice(1), {reveal:true, top:true}); });
+  show(location.hash.slice(1) || 'overview', {reveal:true});
+})();
+</script>
+</body>
+</html>
