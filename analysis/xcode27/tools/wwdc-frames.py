@@ -4,7 +4,7 @@
 从 WWDC26 session 视频按时间点截图，给 REPORT-Xcode27新特性研究.html 配图。
 
 两种用法：
-  1. 联网下载（要能访问 Apple 视频 CDN devstreaming-cdn.apple.com）
+  1. 在线截（要能访问 Apple 视频 CDN devstreaming-cdn.apple.com）：ffmpeg 直接跳到时间点，只取那几秒，不下整段
        python3 analysis/xcode27/tools/wwdc-frames.py                # 全部 session
        python3 analysis/xcode27/tools/wwdc-frames.py 260 258        # 只截这几个
      云端环境默认拦这个域名：会话标题栏的云环境菜单 → Edit → Network access，
@@ -12,11 +12,13 @@
   2. 用自己下好的视频（在本机浏览器里从 session 页面点 HD Video 下载）
        python3 analysis/xcode27/tools/wwdc-frames.py --video 260=~/Downloads/wwdc2026-260_hd.mp4
 
-  --list  只列出要截的画面，不下载
-  --sd    用标清视频（下载快，画面只有 960 宽）
+  --list      只列出要截的画面
+  --sd        用标清视频（画面只有 960 宽）
+  --download  先整段下载再截（在线跳转不稳时用；视频放临时目录，用完即删）
 
-输出：analysis/xcode27/images/wwdc/<session>-<名字>.webp（最宽 1600）。下载的视频放临时目录，用完即删。
-依赖：curl、ffmpeg、Pillow。时间点取自逐字稿里报告引用的那一句，往后挪 1–2 秒让画面跟上。
+输出：analysis/xcode27/images/wwdc/<session>-<名字>.webp（最宽 1600）。
+依赖：curl、ffmpeg、Pillow。时间点取自逐字稿，逐张看过画面后定的。
+走代理时读 HTTPS_PROXY；校验证书，CA 用 SSL_CERT_FILE（没设就用系统的）。
 """
 import os, re, subprocess, sys, tempfile
 from PIL import Image
@@ -96,17 +98,34 @@ def video_url(session, quality):
     return pick[0]
 
 
+def source(video):
+    """ffmpeg 的输入参数：本机文件直接读；网址走 HTTPS_PROXY，并校验证书。"""
+    if not video.startswith('https://'):
+        return ['-i', video]
+    opts = ['-tls_verify', '1']
+    ca = os.environ.get('SSL_CERT_FILE')
+    proxy = os.environ.get('HTTPS_PROXY') or os.environ.get('https_proxy')
+    if ca:
+        opts += ['-ca_file', ca]
+    if proxy:
+        opts += ['-http_proxy', proxy]
+    return opts + ['-i', video]
+
+
 def grab(video, session, frames):
     os.makedirs(OUT, exist_ok=True)
     with tempfile.TemporaryDirectory() as td:
         for t, name, _ in frames:
             png = os.path.join(td, name + '.png')
-            subprocess.run(['ffmpeg', '-loglevel', 'error', '-y', '-ss', str(secs(t)), '-i', video, '-frames:v', '1', png], check=True)
+            if subprocess.run(['ffmpeg', '-loglevel', 'error', '-y', '-ss', str(secs(t))] + source(video)
+                              + ['-frames:v', '1', png]).returncode or not os.path.exists(png):
+                sys.exit('截图失败：%s %s。在线截不了就加 --download，或在本机下好视频后用 --video %s=<路径>'
+                         % (session, t, session))
             im = Image.open(png).convert('RGB')
             if im.width > 1600:
                 im = im.resize((1600, round(im.height * 1600 / im.width)), Image.LANCZOS)
             dst = os.path.join(OUT, '%s-%s.webp' % (session, name))
-            im.save(dst, 'WEBP', quality=82, method=6)
+            im.save(dst, 'WEBP', quality=85, method=6)
             print('→', os.path.relpath(dst), t)
 
 
@@ -124,6 +143,10 @@ def main(argv):
             grab(os.path.expanduser(local[s]), s, FRAMES[s])
             continue
         url = video_url(s, quality)
+        if '--download' not in argv:
+            print('在线截', url)
+            grab(url, s, FRAMES[s])
+            continue
         with tempfile.TemporaryDirectory() as td:
             mp4 = os.path.join(td, '%s.mp4' % s)
             print('下载', url)
