@@ -4,10 +4,14 @@
 
 ### 🚀 打开启动页
 
-- 线上：`https://cinnnnnnndy.github.io/DevEco/`（GitHub Pages 配好、且指向 `main` 分支根目录后生效，见下面「发布」一节）
+- 线上：`https://qianjiali1202-create.github.io/DevEco/`（GitHub Pages 配好、且指向 `main` 分支根目录后生效，见下面「发布」一节）
 - 本地：拉到本地后直接双击根目录的 [`index.html`](index.html)，不需要构建、不需要服务器
 
-工作台首页左侧按分类导航，右侧一条创新点一张卡。每个 demo 都在自己独立的路径下（`demos/<编号-slug>/index.html`），线上地址配好之后就是各自独立可分享的 URL，比如 `https://cinnnnnnndy.github.io/DevEco/demos/01-layout-presets/index.html`，不用先打开启动页再点进去。
+工作台首页左侧按分类导航，右侧一条创新点一张卡。每个 demo 都在自己独立的路径下（`demos/<编号-slug>/index.html`），线上地址配好之后就是各自独立可分享的 URL，比如 `https://qianjiali1202-create.github.io/DevEco/demos/01-layout-presets/index.html`，不用先打开启动页再点进去。
+
+## 新增研究 · 钱佳丽
+
+[IDE 文件树体验研究](analysis/ide-tree-lab/index.html)已收录在启动页「分析与研究」。包含竞品对照、20 / 20 / 16 参数方案、4px 图文间距、IDE 交互效果及截图；[研究材料](analysis/ide-tree-lab/RESEARCH.md)署名钱佳丽。原仓库其他材料保留原作者归属，原启动页见 [Cinnnnnnndy / DevEco](https://cinnnnnnndy.github.io/DevEco/)。
 
 ## 里面有什么
 
@@ -115,7 +119,7 @@
 
 1. **Source** 是 `Deploy from a branch`。
 2. **Branch** 选 `main`，目录 `/`（root）。
-3. 保存后去仓库的 **Actions** 标签页看 `pages build and deployment` 有没有跑完（通常几分钟）；跑完后 Settings → Pages 页顶部会显示实际地址，正常就是 `https://cinnnnnnndy.github.io/DevEco/`。
+3. 保存后去仓库的 **Actions** 标签页看 `pages build and deployment` 有没有跑完（通常几分钟）；跑完后 Settings → Pages 页顶部会显示实际地址，正常就是 `https://qianjiali1202-create.github.io/DevEco/`。
 
 配好之后所有相对链接（demo、分析页、pptx 等）照常可用，不用改任何路径；每个 `demos/<slug>/index.html` 也会各自变成一条可以直接分享的独立网址。
 

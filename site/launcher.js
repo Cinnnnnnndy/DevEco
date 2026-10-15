@@ -57,7 +57,7 @@
   function card(it){
     var v = it.view || (it.href ? 'ready' : 'sketch'), vinfo = VIEW[v] || VIEW.doc;
     var links = (it.links||[]).map(function(l){ return '<a href="'+url(l.href)+'">'+esc(l.label)+'</a>'; }).join('');
-    var text = ((it.no||'')+' '+it.title+' '+(it.subtitle||'')+' '+it.desc+' '+(it.tags||[]).join(' ')+' '+(it.mark||'')+' '+(it.note||'')+' '+it._group.title).toLowerCase();
+    var text = ((it.no||'')+' '+it.title+' '+(it.subtitle||'')+' '+it.desc+' '+(it.tags||[]).join(' ')+' '+(it.mark||'')+' '+(it.note||'')+' '+(it.author||'')+' '+it._group.title).toLowerCase();
     if(it.key) text += ' 重点 '+String(it.key).toLowerCase();
     var chips = (it.no?'<span class="no">'+esc(it.no)+'</span>':'')
       + (it.key?'<span class="keyb" title="规划重点">重点</span>':'')
@@ -67,6 +67,7 @@
       + '<div class="body">'
       + (chips?'<div class="chips">'+chips+'</div>':'')
       + '<h4 class="title">'+(it.href?'<a href="'+url(it.href)+'">'+esc(it.title)+'</a>':esc(it.title))+'</h4>'
+      + (it.author?'<p class="research-author">研究与方案设计 · '+esc(it.author)+'</p>':'')
       + (links?'<div class="links">'+links+'</div>':'')
       + '</div></article>';
   }
@@ -140,6 +141,8 @@
     $('#empty').hidden = visibleTotal>0;
   }
   apply();
+  var initialCat = Array.from(catsEl.querySelectorAll('.cat')).find(function(b){ return b.dataset.cat === location.hash.slice(1); });
+  if(initialCat) initialCat.click();
 
   /* ---- 主题：跟随系统，点按钮后记住显式选择（与 kit 的 tokens.css 同一套 data-theme） ---- */
   var root = document.documentElement, KEY = 'deveco-launcher-theme';
