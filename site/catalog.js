@@ -363,6 +363,19 @@ window.DEVECO_CATALOG = {
       note: '对内汇报与对外协同共用的事实基础：以开发者证据推动方案，不以设计观点推动方案。',
       items: [
         {
+          title: 'IDE 文件树体验研究：间距、缩进与信息密度',
+          author: '钱佳丽', subtitle: 'Tree Lab · UX Research',
+          desc: '钱佳丽：比较 IntelliJ IDEA、Fleet、Xcode、Cursor、TRAE，提出 20px 箭头容器 / 20px 图标容器 / 16px 字号与 4px 图文间距方案。含 16 / 20 / 24px 缩进对比、Int UI Kit IDE 交互效果、截图与 CSS 导出；估算、上游参考与设计建议分开标注。',
+          view: 'ready', date: '2026-10-15', href: 'analysis/ide-tree-lab/index.html',
+          links: [
+            { label: '当前方案', href: 'analysis/ide-tree-lab/index.html#solution' },
+            { label: 'IDE 效果', href: 'analysis/ide-tree-lab/index.html#ide' },
+            { label: '研究材料', href: 'analysis/ide-tree-lab/RESEARCH.md' },
+          ],
+          tags: ['钱佳丽', 'IDE', '文件树', '缩进', '图标', '字号', 'UX'],
+          thumb: { type: 'image', src: 'analysis/ide-tree-lab/assets/ide-standard.png' },
+        },
+        {
           title: '消融记录：每个 demo 删了什么、为什么', subtitle: 'Ablation Records · What Was Cut and Why',
           desc: '终轮每个 demo 先写三种做法——没有 Agent 时怎么做、有 Agent 时操作变成什么、多个 Agent 同时在跑会遇到什么；再逐个元素问「它帮这一页任务的哪一步」，答不上就删、重复的只留一处。31 个 demo，逐条记元素、结果（删除 / 合并 / 保留）与依据。',
           view: 'doc', date: '2026-09-25', href: 'analysis/ablation/index.html',
