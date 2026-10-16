@@ -357,6 +357,20 @@ window.DEVECO_CATALOG = {
       ],
     },
     {
+      id: 'openbitfun',
+      title: 'OpenBitFun',
+      icon: 'i-cat-bitfun',
+      note: 'OpenBitFun 桌面端的界面探索：一层导航收成会话与任务，个人资源归到一页，配置与非常用入口清理掉。',
+      items: [
+        {
+          title: '一层界面：那一页不叫「首页」', subtitle: 'OpenBitFun · Information Architecture',
+          desc: '智能助理、任务看板、小应用、扩展与兼容现在各占一个导航项。一层只留会话与任务，配置进设置，小应用移出另想启动方式，个人资源归到一页——这一页不当首页，候选定义是 Agent 的「本体页」，以及生成式 UI 落在哪一层、还没定的三件事。',
+          view: 'doc', date: '2026-10-16', href: 'analysis/openbitfun-ia/index.html',
+          tags: ['OpenBitFun', '信息架构', '生成式 UI', '讨论稿'], thumb: { type: 'doc', kind: 'MD' },
+        },
+      ],
+    },
+    {
       id: 'analysis',
       title: '分析与研究',
       icon: 'i-cat-chart',
