@@ -1,0 +1,424 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>OpenBitFun Nest</title>
+<style>
+:root{
+  --bg:#fbfaf8;--panel:#ffffff;--soft:#f3f1ee;--line:#e7e3dd;--fg:#1d1d1f;--dim:#6b6966;--faint:#a39f99;
+  --body:#2b2d33;--eye:#ffffff;--ac:#3fb8a6;--ac-bg:#e5f5f2;--twig:#b98c5e;--twig2:#d4ad80;--twig3:#8f6a45;
+  --pur:#9b7be0;--pur-bg:#efe9fb;--warn:#c27a12;--shadow:0 10px 30px rgba(40,30,20,.08);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){
+  --bg:#17171a;--panel:#1f1f23;--soft:#26262b;--line:#34343a;--fg:#f1f0ee;--dim:#a8a6a2;--faint:#6f6d69;
+  --body:#3a3d46;--eye:#f6f6f6;--ac:#5fd0bf;--ac-bg:#1d3532;--twig:#c79a6a;--twig2:#9c7550;--twig3:#e0bb8e;
+  --pur:#b49cf0;--pur-bg:#2d2640;--warn:#e6a64a;--shadow:0 10px 30px rgba(0,0,0,.35)}}
+:root[data-theme=dark]{
+  --bg:#17171a;--panel:#1f1f23;--soft:#26262b;--line:#34343a;--fg:#f1f0ee;--dim:#a8a6a2;--faint:#6f6d69;
+  --body:#3a3d46;--eye:#f6f6f6;--ac:#5fd0bf;--ac-bg:#1d3532;--twig:#c79a6a;--twig2:#9c7550;--twig3:#e0bb8e;
+  --pur:#b49cf0;--pur-bg:#2d2640;--warn:#e6a64a;--shadow:0 10px 30px rgba(0,0,0,.35)}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.75 -apple-system,"PingFang SC","HarmonyOS Sans SC","Microsoft YaHei",sans-serif;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1040px;margin:0 auto;padding:0 16px}
+section{padding:72px 0}
+.eyebrow{font-size:12.5px;letter-spacing:.14em;color:var(--ac);font-weight:600;text-transform:uppercase}
+h2{font-size:30px;line-height:1.3;margin:6px 0 14px;letter-spacing:-.01em}
+.lead{color:var(--dim);max-width:640px;margin:0}
+.sub{color:var(--faint);font-size:13px}
+
+/* ---------- hero ---------- */
+.hero{padding:56px 0 24px;text-align:center}
+.hero .stage{width:min(620px,100%);margin:0 auto;aspect-ratio:620/400}
+.hero svg{width:100%;height:100%;overflow:visible}
+.hero h1{font-size:64px;line-height:1.05;margin:4px 0 0;letter-spacing:-.02em}
+.hero h1 small{font-size:26px;color:var(--faint);font-weight:500;margin-left:12px;letter-spacing:0}
+.tagline{font-size:20px;margin:18px auto 0;max-width:640px}
+.tagline b{color:var(--ac)}
+.hero .meta{margin-top:14px}
+
+.strand{fill:none;stroke-linecap:round;stroke-dasharray:var(--len);stroke-dashoffset:var(--len);animation:draw 1.3s cubic-bezier(.6,.1,.3,1) forwards}
+@keyframes draw{to{stroke-dashoffset:0}}
+.bot{animation:land 1.4s cubic-bezier(.3,1.4,.5,1) 1.1s both}
+@keyframes land{0%{transform:translate(0,-260px) rotate(-8deg);opacity:0}60%{opacity:1}100%{transform:translate(0,0) rotate(0)}}
+.bot .breathe{animation:breathe 3.6s ease-in-out 2.6s infinite;transform-box:fill-box;transform-origin:50% 100%}
+@keyframes breathe{50%{transform:scaleY(.965) scaleX(1.015)}}
+.eye{animation:blink 5s infinite 3s;transform-box:fill-box;transform-origin:center}
+@keyframes blink{0%,94%,100%{transform:scaleY(1)}96%{transform:scaleY(.1)}}
+.antenna{animation:bob 2.4s ease-in-out infinite 2.5s;transform-box:fill-box;transform-origin:50% 100%}
+@keyframes bob{50%{transform:rotate(9deg)}}
+.chip{opacity:0;animation:flyin 1s cubic-bezier(.2,.9,.3,1.2) forwards}
+@keyframes flyin{from{opacity:0;transform:translate(var(--fx),var(--fy)) scale(.6)}to{opacity:1;transform:translate(0,0) scale(1)}}
+.chip rect{fill:var(--panel);stroke:var(--line)}
+.chip text{font-size:13px;fill:var(--fg);font-weight:500}
+.chip circle{fill:var(--ac)}
+.float{animation:float 4s ease-in-out infinite}
+@keyframes float{50%{transform:translateY(-4px)}}
+
+/* ---------- loop ---------- */
+.loop{display:grid;grid-template-columns:1.2fr 1fr;gap:40px;align-items:center}
+@media (max-width:820px){.loop{grid-template-columns:1fr}}
+.loop svg{width:100%;height:auto;overflow:visible}
+.node rect{fill:var(--panel);stroke:var(--line)}
+.node text{fill:var(--fg);font-size:15px;font-weight:600}
+.node .s{fill:var(--faint);font-size:12px;font-weight:400}
+.node.nest rect{stroke:var(--ac);stroke-width:1.5}
+.path{fill:none;stroke:var(--line);stroke-width:2;stroke-dasharray:4 6}
+.steps{list-style:none;padding:0;margin:0;counter-reset:s}
+.steps li{padding:12px 16px;border-radius:12px;margin:6px 0;color:var(--dim);transition:background .4s,color .4s;counter-increment:s;display:flex;gap:12px}
+.steps li::before{content:counter(s);font-weight:700;color:var(--faint);min-width:14px}
+.steps li.on{background:var(--panel);color:var(--fg);box-shadow:var(--shadow)}
+.steps li.on::before{color:var(--ac)}
+.steps b{color:inherit}
+
+/* ---------- layers ---------- */
+.layers{display:grid;grid-template-columns:1fr 1fr;gap:36px;align-items:center;margin-top:28px}
+@media (max-width:820px){.layers{grid-template-columns:1fr}}
+.layers svg{width:100%;height:auto}
+.ly path{fill:none;stroke-linecap:round;stroke-width:12;opacity:.25;transition:opacity .5s,stroke-width .5s}
+.ly.in path{opacity:1}
+.ly.hl path{stroke-width:17}
+.legend{display:flex;flex-direction:column;gap:10px}
+.lg{border:1px solid var(--line);border-radius:14px;padding:14px 16px;background:var(--panel);opacity:.35;transform:translateX(12px);transition:opacity .5s,transform .5s,border-color .3s;cursor:default}
+.lg.in{opacity:1;transform:none}
+.lg:hover,.lg.hl{border-color:var(--ac)}
+.lg h3{margin:0;font-size:15px;display:flex;align-items:center;gap:8px}
+.lg h3 i{width:10px;height:10px;border-radius:3px;display:inline-block}
+.lg p{margin:4px 0 0;color:var(--dim);font-size:14px}
+
+/* ---------- generative demo ---------- */
+.demo{margin-top:28px;background:var(--panel);border:1px solid var(--line);border-radius:20px;box-shadow:var(--shadow);overflow:hidden}
+.demo .bar{display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--line);font-size:13px;color:var(--faint)}
+.demo .bar i{width:10px;height:10px;border-radius:50%;background:var(--line);display:inline-block}
+.demo .in{padding:22px 24px 26px}
+.say{display:flex;gap:14px;align-items:flex-start;margin-bottom:18px}
+.say .mini{flex:none;width:44px;height:44px}
+.bubble{background:var(--soft);border-radius:4px 16px 16px 16px;padding:10px 14px;min-height:46px;font-size:15px;max-width:620px;transition:opacity .35s}
+.bubble.fade{opacity:0}
+.bubble .act{display:inline-flex;gap:8px;margin-left:6px}
+.bubble .act span{font-size:12.5px;padding:2px 10px;border-radius:99px;border:1px solid var(--line);background:var(--panel);color:var(--dim)}
+.bubble .act span.p{border-color:var(--ac);color:var(--ac)}
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+@media (max-width:640px){.cards{grid-template-columns:repeat(2,1fr)}}
+.card{background:var(--soft);border-radius:14px;padding:14px 16px;position:relative;will-change:transform}
+.card .k{font-size:13px;color:var(--dim)}
+.card .v{font-size:26px;font-weight:650;margin-top:2px;letter-spacing:-.01em}
+.card .d{font-size:12.5px;color:var(--faint)}
+.card.used::after{content:"刚用过";position:absolute;top:12px;right:12px;font-size:11px;color:var(--ac);background:var(--ac-bg);padding:0 7px;border-radius:99px}
+.card.temp{background:var(--pur-bg);outline:1.5px dashed var(--pur);outline-offset:-1.5px}
+.card.temp .k{color:var(--pur)}
+.card.enter{animation:pop .5s cubic-bezier(.2,.9,.3,1.3)}
+.card.leave{animation:out .4s ease forwards}
+@keyframes pop{from{opacity:0;transform:scale(.85)}}
+@keyframes out{to{opacity:0;transform:scale(.85)}}
+.card.dim{opacity:.45}
+.rules{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:22px}
+@media (max-width:820px){.rules{grid-template-columns:1fr}}
+.rule{border-top:2px solid var(--line);padding-top:12px}
+.rule b{display:block;font-size:15px}
+.rule p{margin:4px 0 0;color:var(--dim);font-size:14px}
+.rule.gen{border-color:var(--pur)}
+.rule.fix{border-color:var(--ac)}
+
+/* ---------- entry ---------- */
+.entry{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center}
+@media (max-width:820px){.entry{grid-template-columns:1fr}}
+.app{position:relative;height:340px;border:1px solid var(--line);border-radius:16px;background:var(--panel);overflow:hidden;box-shadow:var(--shadow);display:flex}
+.app .side{width:42%;background:var(--soft);padding:14px 10px;display:flex;flex-direction:column;gap:4px;font-size:13px;position:relative}
+.app .side .s{padding:6px 10px;border-radius:8px;color:var(--dim)}
+.app .side .s.on{background:var(--panel);color:var(--fg);font-weight:600}
+.app .side .grp{font-size:11px;color:var(--faint);margin:10px 10px 2px}
+.app .side .me{position:absolute;left:10px;right:10px;bottom:12px;display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:10px;font-size:12.5px;color:var(--dim);animation:meHl 7s infinite}
+@keyframes meHl{0%,30%{background:transparent}36%,48%{background:var(--ac-bg);color:var(--ac)}56%,100%{background:transparent}}
+.app .main{flex:1;padding:18px;display:flex;flex-direction:column;justify-content:flex-end;gap:8px}
+.app .main .msg{height:10px;border-radius:5px;background:var(--soft)}
+.app .main .input{height:40px;border:1px solid var(--line);border-radius:12px;margin-top:10px;font-size:12.5px;color:var(--faint);display:flex;align-items:center;padding:0 12px}
+.app .nestp{position:absolute;inset:0 0 0 42%;background:var(--panel);border-left:1px solid var(--line);padding:18px;transform:translateX(100%);animation:slide 7s infinite cubic-bezier(.5,0,.2,1)}
+@keyframes slide{0%,42%{transform:translateX(100%)}52%,86%{transform:none}96%,100%{transform:translateX(100%)}}
+.nestp h4{margin:0 0 10px;font-size:15px;display:flex;align-items:center;gap:8px}
+.nestp .g{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.nestp .g div{background:var(--soft);border-radius:10px;height:46px}
+.cursor{position:absolute;width:18px;height:18px;left:60%;top:30%;animation:cur 7s infinite cubic-bezier(.5,0,.3,1);pointer-events:none}
+@keyframes cur{0%,8%{left:62%;top:26%}32%{left:14%;top:87%}36%{left:14%;top:87%;transform:scale(.8)}40%{transform:scale(1)}60%{left:14%;top:87%}80%,100%{left:62%;top:26%}}
+
+/* ---------- not in nest ---------- */
+.out3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:24px}
+@media (max-width:820px){.out3{grid-template-columns:1fr}}
+.o{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px}
+.o .t{font-size:13px;color:var(--faint)}
+.o b{font-size:17px;display:block;margin:2px 0 6px}
+.o p{margin:0;color:var(--dim);font-size:14px}
+.o.q{border-style:dashed}
+footer{padding:40px 0 64px;color:var(--faint);font-size:13px;border-top:1px solid var(--line)}
+footer a{color:var(--dim)}
+
+.reveal{opacity:0;transform:translateY(16px);transition:opacity .8s,transform .8s}
+.reveal.in{opacity:1;transform:none}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:0s!important;animation-delay:0s!important;animation-iteration-count:1!important;transition:none!important}
+  .strand{stroke-dashoffset:0}.chip{opacity:1}.reveal{opacity:1;transform:none}
+  .app .nestp{transform:none}.cursor{display:none}
+}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="bot" viewBox="0 0 100 100">
+      <g class="antenna"><rect x="47.5" y="6" width="5" height="16" rx="2.5" fill="var(--faint)"/><circle cx="50" cy="8" r="8" fill="var(--ac)"/></g>
+      <rect x="10" y="22" width="80" height="66" rx="24" fill="var(--body)"/>
+      <ellipse class="eye" cx="38" cy="55" rx="5.5" ry="8.5" fill="var(--eye)"/>
+      <ellipse class="eye" cx="62" cy="55" rx="5.5" ry="8.5" fill="var(--eye)"/>
+    </symbol>
+  </defs>
+</svg>
+
+<header class="hero wrap">
+  <div class="stage">
+    <svg viewBox="0 0 620 400" role="img" aria-label="小机器人落进由能力编成的巢">
+      <!-- chips flying in -->
+      <g class="chip" style="--fx:-160px;--fy:-40px;animation-delay:2.2s"><g class="float" style="animation-delay:0s">
+        <rect x="70" y="170" width="92" height="32" rx="16"/><circle cx="90" cy="186" r="4"/><text x="102" y="191">智能体 7</text></g></g>
+      <g class="chip" style="--fx:-140px;--fy:40px;animation-delay:2.45s"><g class="float" style="animation-delay:.6s">
+        <rect x="40" y="240" width="96" height="32" rx="16"/><circle cx="60" cy="256" r="4"/><text x="72" y="261">技能 23</text></g></g>
+      <g class="chip" style="--fx:160px;--fy:-40px;animation-delay:2.7s"><g class="float" style="animation-delay:1.2s">
+        <rect x="460" y="170" width="92" height="32" rx="16"/><circle cx="480" cy="186" r="4"/><text x="492" y="191">助理 2</text></g></g>
+      <g class="chip" style="--fx:140px;--fy:40px;animation-delay:2.95s"><g class="float" style="animation-delay:1.8s">
+        <rect x="486" y="240" width="96" height="32" rx="16"/><circle cx="506" cy="256" r="4"/><text x="518" y="261">工具 14</text></g></g>
+      <g class="chip" style="--fx:0;--fy:-80px;animation-delay:3.2s"><g class="float" style="animation-delay:.9s">
+        <rect x="128" y="96" width="100" height="32" rx="16"/><circle cx="148" cy="112" r="4"/><text x="160" y="117">记忆</text></g></g>
+      <g class="chip" style="--fx:0;--fy:-80px;animation-delay:3.45s"><g class="float" style="animation-delay:2.2s">
+        <rect x="392" y="96" width="100" height="32" rx="16"/><circle cx="412" cy="112" r="4"/><text x="424" y="117">设备 2</text></g></g>
+
+      <!-- back strands -->
+      <path class="strand" style="--len:420;animation-delay:.05s" stroke="var(--twig3)" stroke-width="7" d="M160 262 C220 236 400 236 460 262"/>
+      <path class="strand" style="--len:420;animation-delay:.15s" stroke="var(--twig2)" stroke-width="5" d="M168 252 C240 228 380 230 452 254"/>
+      <!-- robot -->
+      <g class="bot"><g class="breathe"><use href="#bot" x="236" y="128" width="148" height="148"/></g></g>
+      <!-- front strands: the bowl -->
+      <path class="strand" style="--len:460;animation-delay:.2s"  stroke="var(--twig)"  stroke-width="9" d="M150 262 C170 330 450 330 470 262"/>
+      <path class="strand" style="--len:460;animation-delay:.35s" stroke="var(--twig2)" stroke-width="6" d="M156 276 C200 340 420 342 466 272"/>
+      <path class="strand" style="--len:460;animation-delay:.5s"  stroke="var(--twig3)" stroke-width="6" d="M164 262 C190 318 430 322 458 258"/>
+      <path class="strand" style="--len:440;animation-delay:.65s" stroke="var(--twig)"  stroke-width="5" d="M176 298 C240 336 380 338 444 296"/>
+      <path class="strand" style="--len:420;animation-delay:.8s"  stroke="var(--twig2)" stroke-width="4" d="M146 270 C200 300 280 290 330 312 C380 330 430 300 474 268"/>
+      <path class="strand" style="--len:300;animation-delay:.95s" stroke="var(--twig3)" stroke-width="4" d="M210 318 C260 300 360 300 412 320"/>
+      <path class="strand" style="--len:120;animation-delay:1.1s" stroke="var(--twig)"  stroke-width="3" d="M150 262 L124 248"/>
+      <path class="strand" style="--len:120;animation-delay:1.15s" stroke="var(--twig)" stroke-width="3" d="M470 262 L500 250"/>
+      <path class="strand" style="--len:120;animation-delay:1.2s" stroke="var(--twig3)" stroke-width="3" d="M440 300 L476 304"/>
+    </svg>
+  </div>
+  <div class="eyebrow">OpenBitFun · 概念</div>
+  <h1>Nest<small>巢</small></h1>
+  <p class="tagline">会话是跟它说话，任务是它出去干活，<b>巢是它回来的地方。</b></p>
+  <p class="sub meta">替代原来的「首页」。巢不当入口，打开应用不会先到这里，想看它的时候才过来。</p>
+</header>
+
+<main class="wrap">
+
+  <!-- 1 loop -->
+  <section class="reveal">
+    <div class="eyebrow">01 · 三个地方</div>
+    <h2>它说话、干活、回巢</h2>
+    <p class="lead">一层只留三个地方。前两个是动作，第三个是它本身：每干完一件事，它都可能带回一样新本事，编进巢里。</p>
+    <div class="loop" style="margin-top:28px">
+      <svg viewBox="0 0 560 300" role="img" aria-label="会话、任务、巢三处之间的循环">
+        <path id="route" class="path" d="M280 238 C140 238 90 150 120 92 C150 40 410 40 440 92 C470 150 420 238 280 238 Z"/>
+        <g class="node"><rect x="50" y="60" width="140" height="64" rx="16"/><text x="72" y="90">会话</text><text class="s" x="72" y="110">跟它说话</text></g>
+        <g class="node"><rect x="370" y="60" width="140" height="64" rx="16"/><text x="392" y="90">任务</text><text class="s" x="392" y="110">它出去干活</text></g>
+        <g class="node nest"><rect x="200" y="206" width="160" height="64" rx="16"/>
+          <path d="M222 238 C230 258 262 258 270 238" stroke="var(--twig)" stroke-width="4" fill="none" stroke-linecap="round"/>
+          <text x="282" y="236">巢</text><text class="s" x="282" y="256">它回来的地方</text></g>
+        <g id="traveler">
+          <use href="#bot" x="-17" y="-17" width="34" height="34"/>
+          <rect id="twig" x="-16" y="13" width="32" height="5" rx="2.5" fill="var(--twig)" opacity="0"/>
+          <animateMotion id="mv" dur="9s" repeatCount="indefinite" rotate="0" keyPoints="0;0;.38;.38;.62;.62;1" keyTimes="0;.08;.3;.45;.66;.82;1" calcMode="linear"><mpath href="#route"/></animateMotion>
+        </g>
+      </svg>
+      <ol class="steps" id="steps">
+        <li class="on"><span>你在<b>会话</b>里说一句：「看下启动为什么慢」。</span></li>
+        <li><span>它出门，在<b>任务</b>里跑分析、读 trace、出补丁。</span></li>
+        <li><span>干完回<b>巢</b>，叼回一根新树枝：「冷启动分析」存成了技能。</span></li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- 2 layers -->
+  <section class="reveal">
+    <div class="eyebrow">02 · 巢里有什么</div>
+    <h2>一层一层编起来</h2>
+    <p class="lead">原来散在「扩展与兼容」「智能助理」和首页统计里的东西，按离它多近重新编成四层。都是这个用户的、给它用的资源；配置不在这里。</p>
+    <div class="layers" id="layers">
+      <svg viewBox="0 0 420 300" role="img" aria-label="巢的四层剖面">
+        <g class="ly" data-i="0"><path stroke="var(--twig3)" d="M130 150 C150 196 270 196 290 150"/></g>
+        <g class="ly" data-i="1"><path stroke="var(--twig)"  d="M96 150 C116 230 304 230 324 150"/></g>
+        <g class="ly" data-i="2"><path stroke="var(--twig2)" d="M62 150 C80 262 340 262 358 150"/></g>
+        <g class="ly" data-i="3"><path stroke="var(--twig3)" stroke-dasharray="2 14" d="M30 150 C44 294 376 294 390 150"/></g>
+        <use href="#bot" x="176" y="70" width="68" height="68"/>
+      </svg>
+      <div class="legend">
+        <div class="lg" data-i="0"><h3><i style="background:var(--twig3)"></i>芯 · 它自己</h3><p>形象、记忆、长期助理。助理是它的分身，住在巢里；跟助理说话时仍然走会话。</p></div>
+        <div class="lg" data-i="1"><h3><i style="background:var(--twig)"></i>枝 · 它会什么</h3><p>智能体、技能、工具与 MCP。每根树枝是一样本事，干活时带回来的就编在这一层。</p></div>
+        <div class="lg" data-i="2"><h3><i style="background:var(--twig2)"></i>羽 · 借来的本事</h3><p>生态兼容：从其他 AI 应用里认出来、能直接用的规则、技能和扩展。</p></div>
+        <div class="lg" data-i="3"><h3><i style="background:var(--twig3)"></i>环 · 它在哪儿、长了多少</h3><p>设备与模型；累计 Token、单日峰值、连续天数——巢的年轮。</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3 generative -->
+  <section class="reveal">
+    <div class="eyebrow">03 · 巢会自己变</div>
+    <h2>由它来整理的一页</h2>
+    <p class="lead">生成式 UI 落在「整理」上，而不是「造界面」：它决定先摆哪几根树枝、要跟你说什么、什么时候多出一张临时卡。资源怎么增删改，仍然是确定的控件。</p>
+    <div class="demo" aria-live="polite">
+      <div class="bar"><i></i><i></i><i></i><span style="margin-left:8px">巢</span></div>
+      <div class="in">
+        <div class="say">
+          <svg class="mini" viewBox="0 0 100 100"><use href="#bot"/></svg>
+          <div class="bubble" id="bubble">我回来了。</div>
+        </div>
+        <div class="cards" id="cards">
+          <div class="card" data-id="agents"><div class="k">智能体</div><div class="v">7</div><div class="d">内置与自定义</div></div>
+          <div class="card" data-id="assist"><div class="k">助理</div><div class="v">2</div><div class="d">有独立记忆</div></div>
+          <div class="card" data-id="skills"><div class="k">技能</div><div class="v" data-v>23</div><div class="d">专项知识</div></div>
+          <div class="card" data-id="tools"><div class="k">工具 · MCP</div><div class="v">14</div><div class="d">内置与外接</div></div>
+          <div class="card" data-id="devices"><div class="k">设备</div><div class="v">2</div><div class="d">在线 1</div></div>
+          <div class="card" data-id="usage"><div class="k">年轮</div><div class="v">611.5万</div><div class="d">累计 Token · 连续 1 天</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="rules">
+      <div class="rule gen"><b>生成：顺序</b><p>最近用到的往前排，长期没碰的往后放、变淡。</p></div>
+      <div class="rule gen"><b>生成：它说的一句话</b><p>一次只说一件和你有关的事，带一个可选动作。</p></div>
+      <div class="rule fix"><b>不生成：控件</b><p>临时卡上的按钮、资源的增删改都是固定组件，模型只决定是否出现。</p></div>
+    </div>
+  </section>
+
+  <!-- 4 entry -->
+  <section class="reveal">
+    <div class="entry">
+      <div>
+        <div class="eyebrow">04 · 怎么进巢</div>
+        <h2>不占导航，点它就到</h2>
+        <p class="lead">巢不做成一层导航项。左下角那一栏（现在是设备名加设置齿轮）换成它的形象，点一下巢从右侧推开；会话不中断，再点或按 Esc 收回去。</p>
+        <p class="sub" style="margin-top:14px">打开应用落在会话输入框上；巢只在你想看它的时候出现。</p>
+      </div>
+      <div class="app" aria-hidden="true">
+        <div class="side">
+          <div class="s">⌕ 搜索一切</div>
+          <div class="s on">会话</div>
+          <div class="s">任务</div>
+          <div class="grp">项目</div>
+          <div class="s">OpenBitFun</div>
+          <div class="s">　性能问题分析</div>
+          <div class="me"><svg width="22" height="22" viewBox="0 0 100 100"><use href="#bot"/></svg>我的巢</div>
+        </div>
+        <div class="main">
+          <div class="msg" style="width:70%"></div><div class="msg" style="width:52%;align-self:flex-end;background:var(--ac-bg)"></div><div class="msg" style="width:80%"></div>
+          <div class="input">跟它说点什么…</div>
+        </div>
+        <div class="nestp">
+          <h4><svg width="22" height="22" viewBox="0 0 100 100"><use href="#bot"/></svg>巢</h4>
+          <div class="g"><div></div><div></div><div></div><div></div><div></div><div></div></div>
+        </div>
+        <svg class="cursor" viewBox="0 0 20 20"><path d="M3 2l13 7-6 1.5L7.5 17z" fill="var(--fg)" stroke="var(--panel)" stroke-width="1.2" stroke-linejoin="round"/></svg>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5 not in nest -->
+  <section class="reveal">
+    <div class="eyebrow">05 · 不放进巢的</div>
+    <h2>巢只装它的东西</h2>
+    <p class="lead">清理一层的同时，下面这些也不搬进巢——巢一旦开始收杂物，就会退化回原来的首页。</p>
+    <div class="out3">
+      <div class="o"><div class="t">会话 · 任务</div><b>留在一层</b><p>做事的入口，侧栏常驻。长期跟踪并进任务。</p></div>
+      <div class="o"><div class="t">配置类、非常用入口</div><b>进设置</b><p>模型服务、快捷键、外观，以及 Shell、Git、洞察这类低频入口。</p></div>
+      <div class="o q"><div class="t">小应用</div><b>另想启动方式</b><p>移出一层，也不进巢。启动方式单独讨论。</p></div>
+    </div>
+  </section>
+</main>
+
+<footer class="wrap">
+  OpenBitFun · Nest 概念稿 · 2026-10-16 · 数字取自当前首页截图，仅作示意 · 讨论过程见 <a href="index.html">一层界面讨论稿</a>
+</footer>
+
+<script>
+(function(){
+  var reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // reveal on scroll
+  var io = new IntersectionObserver(function(es){
+    es.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
+  },{threshold:.15});
+  document.querySelectorAll('.reveal').forEach(function(el){ io.observe(el); });
+
+  // loop: steps follow the traveler (9s cycle)
+  var steps = document.querySelectorAll('#steps li'), twig = document.getElementById('twig');
+  var t0 = performance.now();
+  function tick(now){
+    var p = ((now - t0) / 9000) % 1;
+    var i = p < .30 ? 0 : p < .66 ? 1 : 2;
+    steps.forEach(function(li,k){ li.classList.toggle('on', k===i); });
+    twig.setAttribute('opacity', (p > .45 && p < .97) ? 1 : 0);
+    requestAnimationFrame(tick);
+  }
+  if(!reduce) requestAnimationFrame(tick); else { steps.forEach(function(li){ li.classList.add('on'); }); }
+
+  // layers: weave one by one, hover links both sides
+  var lys = document.querySelectorAll('.ly'), lgs = document.querySelectorAll('.lg');
+  new IntersectionObserver(function(es, ob){
+    if(!es[0].isIntersecting) return; ob.disconnect();
+    [0,1,2,3].forEach(function(i){ setTimeout(function(){ lys[i].classList.add('in'); lgs[i].classList.add('in'); }, reduce ? 0 : 350*i); });
+  },{threshold:.3}).observe(document.getElementById('layers'));
+  lgs.forEach(function(lg){
+    var i = +lg.dataset.i;
+    lg.addEventListener('mouseenter', function(){ lys[i].classList.add('hl'); });
+    lg.addEventListener('mouseleave', function(){ lys[i].classList.remove('hl'); });
+  });
+
+  // generative demo
+  var cards = document.getElementById('cards'), bubble = document.getElementById('bubble');
+  function byId(id){ return cards.querySelector('[data-id="'+id+'"]'); }
+  function flip(order){
+    var els = Array.from(cards.children), first = new Map();
+    els.forEach(function(el){ first.set(el, el.getBoundingClientRect()); });
+    order.forEach(function(id){ var el = byId(id); if(el) cards.appendChild(el); });
+    els.forEach(function(el){
+      var a = first.get(el), b = el.getBoundingClientRect();
+      var dx = a.left - b.left, dy = a.top - b.top;
+      if(!dx && !dy) return;
+      el.animate([{transform:'translate('+dx+'px,'+dy+'px)'},{transform:'none'}],{duration:reduce?0:600,easing:'cubic-bezier(.3,.8,.3,1)'});
+    });
+  }
+  function say(html){
+    bubble.classList.add('fade');
+    setTimeout(function(){ bubble.innerHTML = html; bubble.classList.remove('fade'); }, reduce ? 0 : 350);
+  }
+  function mark(ids, cls){ cards.querySelectorAll('.card').forEach(function(c){ c.classList.toggle(cls, ids.indexOf(c.dataset.id) >= 0); }); }
+  function temp(on){
+    var t = byId('temp');
+    if(on && !t){
+      t = document.createElement('div'); t.className = 'card temp enter'; t.dataset.id = 'temp';
+      t.innerHTML = '<div class="k">新发现 · 临时</div><div class="v" style="font-size:18px;margin-top:6px">Cursor 规则 3 条</div><div class="d">可以直接兼容</div>';
+      cards.insertBefore(t, cards.firstChild);
+    } else if(!on && t){
+      t.classList.add('leave'); setTimeout(function(){ t.remove(); flip([]); }, reduce ? 0 : 400);
+    }
+  }
+  var scenes = [
+    function(){ temp(false); mark([], 'used'); mark([], 'dim'); flip(['agents','assist','skills','tools','devices','usage']); say('我回来了。'); },
+    function(){ flip(['skills','tools','agents','assist','devices','usage']); mark(['skills','tools'], 'used'); byId('skills').querySelector('[data-v]').textContent = '24';
+      say('刚才的冷启动分析我存成了技能，下次直接叫我。<span class="act"><span class="p">看看</span><span>好</span></span>'); },
+    function(){ mark([], 'used'); temp(true); say('在你电脑上认出了 3 条 Cursor 规则，能直接用。<span class="act"><span class="p">收进巢</span><span>忽略</span></span>'); },
+    function(){ temp(false); mark(['devices'], 'dim'); flip(['skills','tools','agents','assist','usage','devices']); byId('skills').querySelector('[data-v]').textContent = '23';
+      say('MateBook 那台两周没连了，先放后面。'); },
+  ];
+  var si = 0;
+  if(!reduce){ setInterval(function(){ si = (si + 1) % scenes.length; scenes[si](); }, 4200); }
+  else { scenes[1](); }
+})();
+</script>
+</body>
+</html>

@@ -363,6 +363,12 @@ window.DEVECO_CATALOG = {
       note: 'OpenBitFun 桌面端的界面探索：一层导航收成会话与任务，个人资源归到一页，配置与非常用入口清理掉。',
       items: [
         {
+          title: 'Nest · 巢：它回来的地方', subtitle: 'OpenBitFun · Nest Concept',
+          desc: '替代原来的首页。会话是跟它说话，任务是它出去干活，巢是它回来的地方。概念稿带动画：它落进由能力编成的巢；说话、干活、回巢的循环；巢里的四层（芯、枝、羽、环）；由它来整理的生成式 UI；从左下角形象进巢；哪些东西不放进巢。',
+          view: 'doc', date: '2026-10-16', href: 'analysis/openbitfun-ia/nest.html',
+          tags: ['OpenBitFun', 'Nest', '概念', '生成式 UI', '动画'], thumb: { type: 'image', src: 'site/thumbs/openbitfun-nest.jpg' },
+        },
+        {
           title: '一层界面：那一页不叫「首页」', subtitle: 'OpenBitFun · Information Architecture',
           desc: '智能助理、任务看板、小应用、扩展与兼容现在各占一个导航项。一层只留会话与任务，配置进设置，小应用移出另想启动方式，个人资源归到一页——这一页不当首页，候选定义是 Agent 的「本体页」，以及生成式 UI 落在哪一层、还没定的三件事。',
           view: 'doc', date: '2026-10-16', href: 'analysis/openbitfun-ia/index.html',
