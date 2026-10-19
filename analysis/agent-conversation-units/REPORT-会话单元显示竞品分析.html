@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>会话单元显示竞品分析</title>
+<title>会话单元呈现竞品分析</title>
 <style>
 :root{
   --bg:#f5f6f8; --paper:#ffffff; --ink:#15171a; --ink2:#4a4f57; --ink3:#7a808a; --line:#e3e5e9; --line2:#eef0f3;
@@ -101,9 +101,9 @@ tr:last-child td,tr:last-child th{border-bottom:none}
 </head>
 <body>
 <div class="wrap">
-  <div class="eyebrow">分析与研究 · 2026-10-19</div>
-  <h1>会话基本单元怎么显示：Codex、Claude、DeepSeek、WorkBuddy、Cursor 对照</h1>
-  <p class="lede">思考、读与搜、命令、改文件、子 Agent、计划、产物、计时：每类单元在生成中、生成后长什么样，默认折不折叠，最后给 DevEco 智能体对话流的默认策略。</p>
+  <div class="eyebrow">分析与研究 · 2026-10-19 · 作者：王欣迪</div>
+  <h1>会话基本单元的呈现方式：Codex、Claude、DeepSeek、WorkBuddy、Cursor 对照</h1>
+  <p class="lede">对比五款 AI 编码 / 办公 Agent 如何呈现会话中的过程信息（思考、读取与检索、命令执行、文件修改、子 Agent、计划、产物、耗时），关注三点：生成中的过程可见性、生成后的默认折叠策略、展开入口。最后给出 DevEco 智能体对话流的默认呈现建议。</p>
   <div class="legend">
     <span><span class="ev o">官方</span> 文档 / 更新日志 / 源码 / 官方截图</span>
     <span><span class="ev m">社区</span> issue / 论坛 / 媒体</span>
@@ -114,36 +114,36 @@ tr:last-child td,tr:last-child th{border-bottom:none}
   <nav class="toc">
     <a href="#keys">结论</a><a href="#layers">三层折叠</a><a href="#matrix">总表</a>
     <a href="#codex">Codex</a><a href="#claude">Claude</a><a href="#deepseek">DeepSeek</a><a href="#workbuddy">WorkBuddy</a><a href="#cursor">Cursor</a>
-    <a href="#voices">用户反弹</a><a href="#deveco">对 DevEco 的建议</a><a href="#ablation">消融记录</a><a href="#sources">来源</a>
+    <a href="#voices">用户反馈</a><a href="#deveco">对 DevEco 的建议</a><a href="#ablation">消融记录</a><a href="#sources">来源</a>
   </nav>
 
   <h2 id="keys">结论</h2>
   <ol class="items">
-    <li><span><b>折叠发生在三层：</b>单元、步骤组、整轮。各家看着不同，主要是选了不同的层。</span></li>
-    <li><span><b>主流是生成中透明、生成后收起：</b>运行时显示「在做什么 + 计时」，结束后压成一行。</span></li>
-    <li><span><b>思考原文只有 DeepSeek 网页版摊开：</b>Codex、Claude Code 的思考不进对话流，Cursor 默认收起，WorkBuddy 用计划卡代替。</span></li>
-    <li><span><b>收太狠会被顶回来：</b>Codex 合并命令后宣布回滚，Cursor 整轮折叠至今被抱怨。</span></li>
-    <li><span><b>展开太多也会被抱怨：</b>Claude 桌面端生成中铺开思考，挤掉答案。</span></li>
-    <li><span><b>DeepSeek Harness 是最完整的参照：</b>四档密度 × 两种折叠时机，都做成了设置。</span></li>
+    <li><span><b>折叠层级：</b>过程信息可在单元、步骤组、整轮三个层级折叠，各产品的体验差异主要来自层级选择。</span></li>
+    <li><span><b>主流策略：</b>生成中保持过程可见（当前动作与耗时），生成后收敛为摘要行，由用户按需展开。</span></li>
+    <li><span><b>思考内容：</b>仅 DeepSeek 网页版默认展示推理原文；Codex、Claude Code 不将思考写入对话流，Cursor 默认折叠，WorkBuddy 以计划卡替代。</span></li>
+    <li><span><b>折叠过度：</b>降低过程的可监督性。Codex 合并成功命令后因用户反对宣布回滚；Cursor 的整轮自动折叠持续收到负面反馈。</span></li>
+    <li><span><b>展开过度：</b>挤占答案的阅读空间。Claude 桌面端在生成中完整展开思考，用户反馈难以定位答案。</span></li>
+    <li><span><b>可配置性：</b>DeepSeek Harness 将信息密度（四档）与折叠时机（两种）开放为用户设置，是目前最完整的参照。</span></li>
   </ol>
 
   <h2 id="layers">三层折叠<small>位置 · 时机</small></h2>
   <div class="tw"><table>
     <thead><tr><th>层</th><th>Codex CLI</th><th>Claude Code</th><th>DeepSeek Harness</th><th>WorkBuddy</th><th>Cursor</th></tr></thead>
     <tbody>
-      <tr><th>L1 单元<small>折正文，留身份</small></th>
+      <tr><th>L1 单元<small>收起内容，保留标识行</small></th>
         <td>命令一行 + 头尾预览；思考不留行</td>
         <td>工具一行 + 结果一行；思考只留「thought for Ns」</td>
         <td>24px 一行；点开是终端 / diff / 读文件卡</td>
         <td>动作一行 + 增删行数，▾ 展开 diff</td>
         <td>思考一行，可展开</td></tr>
-      <tr><th>L2 步骤组<small>折一段连续过程</small></th>
+      <tr><th>L2 步骤组<small>合并连续的同类操作</small></th>
         <td>读与搜合成 Explored；命令不合并</td>
         <td>无组头；同一 MCP 多次调用合成一行</td>
         <td>组头一句汇总 + 组内行</td>
         <td>计划项下挂中间步骤</td>
         <td>轮内按编辑 / 终端分组</td></tr>
-      <tr><th>L3 整轮<small>折「这轮怎么做的」</small></th>
+      <tr><th>L3 整轮<small>收起本轮全部过程</small></th>
         <td>不折；结尾一行 Worked for；全量去 Ctrl+T</td>
         <td>不折；chat / transcript 两种视图</td>
         <td><span class="fold y">折叠</span>默认完成即折成「已完成，用时」</td>
@@ -157,9 +157,9 @@ tr:last-child td,tr:last-child th{border-bottom:none}
     </tbody>
   </table></div>
   <ul class="items" style="margin-top:12px">
-    <li><span><b>完成即折：</b>结论刚出来，过程就被收走，用户还在对照。</span></li>
-    <li><span><b>下一句才折：</b>刚才几步留到用户开始下一个问题，代价是会话更长。</span></li>
-    <li><span><b>时机比位置更容易做错：</b>DeepSeek Harness 把两种都做成设置；Cursor 写死且不可关，是反对声最集中的一家。</span></li>
+    <li><span><b>完成时折叠：</b>结论出现的同时过程被收起，用户无法对照过程核对结论。</span></li>
+    <li><span><b>下一轮输入时折叠：</b>过程保留到用户发起下一轮，便于回看，但会话长度增加。</span></li>
+    <li><span><b>设计要点：</b>折叠时机对体验的影响大于折叠位置。DeepSeek Harness 将两种时机都开放为设置；Cursor 固定且不可关闭，是负面反馈最集中的设计。</span></li>
   </ul>
 
   <h2 id="matrix">总表<small>生成中 → 生成后</small></h2>
@@ -251,7 +251,7 @@ tr:last-child td,tr:last-child th{border-bottom:none}
       <li>输出留头尾：普通单元 5 行，紧凑活动视图 3 行，其余折成「… +N lines」<span class="ev o">官方</span></li>
       <li>思考只在底部状态行显示摘要标题；完成后标记 transcript_only，只进 Ctrl+T <span class="ev o">官方</span></li>
       <li>整轮结尾一行「Worked for 1m 12s」<span class="ev o">官方</span></li>
-      <li>命令执行完才出现在流里 <span class="ev m">社区</span></li>
+      <li>命令在执行完成后才写入对话流，执行前不可见 <span class="ev m">社区</span></li>
     </ul>
   </div>
 
@@ -271,7 +271,7 @@ tr:last-child td,tr:last-child th{border-bottom:none}
         </div></div>
     </div>
     <ul class="facts">
-      <li>动作默认合成一行，点开才见文件名和命令；曾出现展开为空、无法展开 <span class="ev m">社区</span></li>
+      <li>操作默认合并为一行摘要，展开后才显示文件名和命令；曾出现展开内容为空或无法展开 <span class="ev m">社区</span></li>
       <li>推理摘要一行 + 箭头，运行中被截断，展开也看不全 <span class="ev m">社区</span></li>
       <li>diff 在 Review 面板，不在对话流 <span class="ev m">社区</span></li>
     </ul>
@@ -324,7 +324,7 @@ tr:last-child td,tr:last-child th{border-bottom:none}
       <li>思考：底部「✻ Thinking…」，结束后同处变「thought for Ns」，不进对话流 <span class="ev o">官方</span></li>
       <li>思考正文默认关（showThinkingSummaries 默认 false）<span class="ev o">官方</span></li>
       <li>两种视图：defaultView 为 chat 或 transcript，Ctrl+O 切；transcript 带时间戳、模型名，并展开「Called slack 3 times」<span class="ev o">官方</span></li>
-      <li>工具调用在执行前就显示 <span class="ev m">社区</span></li>
+      <li>工具调用在执行前即显示 <span class="ev m">社区</span></li>
     </ul>
   </div>
 
@@ -348,7 +348,7 @@ tr:last-child td,tr:last-child th{border-bottom:none}
       <li>VS Code：思考是收起的区块，Ctrl+O 全部展开 / 收起 <span class="ev o">官方</span></li>
       <li>Focus view：工具调用、结果、思考全收进可展开行，最新待办仍可见 <span class="ev o">官方</span></li>
       <li>改文件弹出并排 diff 请求授权，可逐个改动接受 / 拒绝 <span class="ev o">官方</span></li>
-      <li>桌面端：生成中思考整段展开，重启后收起，设置里没有开关 <span class="ev m">社区</span></li>
+      <li>桌面端：生成中完整展开思考，重启后变为收起，且无相关设置项 <span class="ev m">社区</span></li>
       <li>桌面端转录三档：Normal / Thinking / Verbose <span class="ev m">社区</span></li>
     </ul>
   </div>
@@ -372,7 +372,7 @@ tr:last-child td,tr:last-child th{border-bottom:none}
     </div>
     <ul class="facts">
       <li>推理原文不折叠、不隐藏，排在答案之前 <span class="ev m">社区</span></li>
-      <li>关掉「深度思考」就不显示 <span class="ev m">社区</span></li>
+      <li>关闭「深度思考」后不展示推理过程 <span class="ev m">社区</span></li>
       <li>标题「已深度思考（用时 N 秒）」可点击收起；正文灰字左竖线 <span class="ev i">推断</span></li>
     </ul>
   </div>
@@ -434,7 +434,7 @@ tr:last-child td,tr:last-child th{border-bottom:none}
       <li>流式显示「已处理 X 秒」，每轮显示运行时间 <span class="ev o">官方</span></li>
       <li>产物随对话出现，联动右侧预览 <span class="ev o">官方</span></li>
       <li>回到仍在生成的会话，会补齐离开期间的思考、正文和工具内容 <span class="ev o">官方</span></li>
-      <li>没看到独立思考单元，只有任务状态「规划中」<span class="ev i">推断</span></li>
+      <li>未见独立的思考单元，推理阶段以任务状态「规划中」体现 <span class="ev i">推断</span></li>
       <li>生成中计划卡是逐步打勾还是整卡刷新 <span class="ev q">待确认</span></li>
     </ul>
   </div>
@@ -457,18 +457,18 @@ tr:last-child td,tr:last-child th{border-bottom:none}
         </div></div>
     </div>
     <ul class="facts">
-      <li>思考随消息保存，默认收起；快模型几乎一出现就收起 <span class="ev m">社区</span></li>
-      <li>3.14 起，发下一条消息后整轮收进「Worked for …」，diff 一起收；官方称有意为之 <span class="ev m">社区</span></li>
-      <li>没有关闭开关，Conversation Density 只调轮内分组 <span class="ev m">社区</span></li>
+      <li>思考随消息保存，默认折叠；使用快速模型时几乎即时收起 <span class="ev m">社区</span></li>
+      <li>3.14 起，发下一条消息后整轮收进「Worked for …」，diff 一并收起；官方说明为有意设计 <span class="ev m">社区</span></li>
+      <li>暂无关闭选项；Conversation Density 仅调整轮内分组 <span class="ev m">社区</span></li>
     </ul>
   </div>
 
-  <h2 id="voices">用户反弹</h2>
+  <h2 id="voices">用户反馈</h2>
   <ul class="items">
-    <li><span><b>Codex：</b>成功命令合并成「Ran N commands」后没法盯着跑，官方宣布回滚。</span></li>
-    <li><span><b>Cursor：</b>下一条消息一发，正在审的 diff 被收走，官方承认没有开关。</span></li>
-    <li><span><b>Claude 桌面端：</b>思考太长挤掉答案，重启后又收起，状态不一致。</span></li>
-    <li><span><b>共同点：</b>反对的不是折叠，而是不可控、不一致。</span></li>
+    <li><span><b>Codex：</b>成功命令被合并为「Ran N commands」后，用户无法实时监督执行过程，官方宣布回滚。</span></li>
+    <li><span><b>Cursor：</b>发送下一条消息后，上一轮 diff 被自动收起，打断审阅流程；官方确认暂无关闭选项。</span></li>
+    <li><span><b>Claude 桌面端：</b>思考默认展开且篇幅过长，重启后又变为收起，展示状态不一致。</span></li>
+    <li><span><b>共性：</b>用户反对的不是折叠本身，而是折叠不可控、状态不一致。</span></li>
   </ul>
 
   <h2 id="deveco">对 DevEco 智能体对话流的建议</h2>
@@ -476,23 +476,23 @@ tr:last-child td,tr:last-child th{border-bottom:none}
     <thead><tr><th>单元</th><th>生成中</th><th>生成后默认</th><th>依据</th></tr></thead>
     <tbody>
       <tr><th>思考</th><td>一行摘要 + 计时</td><td><span class="fold y">折叠</span>「已思考 N 秒」，可展开</td><td>Claude Code、DeepSeek Harness</td></tr>
-      <tr><th>读与搜</th><td>组头「正在读取 · 当前文件」</td><td><span class="fold y">折叠</span>一句汇总，展开列文件</td><td>Codex Explored、Harness 组头</td></tr>
-      <tr><th>执行命令</th><td>执行前显示命令，输出滚动，可中断</td><td><span class="fold p">部分</span>命令常显，输出留头尾；失败默认展开</td><td>Codex 回滚、退出码上色</td></tr>
+      <tr><th>读与搜</th><td>组头「正在读取 · 当前文件」</td><td><span class="fold y">折叠</span>一句汇总，展开后列出文件</td><td>Codex Explored、Harness 组头</td></tr>
+      <tr><th>执行命令</th><td>执行前展示命令，输出实时滚动，支持中断</td><td><span class="fold p">部分</span>命令行常驻，输出保留首尾；失败时默认展开</td><td>Codex 回滚案例、按退出码着色</td></tr>
       <tr><th>改文件</th><td>文件名 + 增删行数</td><td><span class="fold p">部分</span>同上，▾ 展开 diff</td><td>WorkBuddy 动作行</td></tr>
       <tr><th>子 Agent</th><td>每个一行：状态、耗时</td><td><span class="fold y">折叠</span>一行结果</td><td>Claude Code agent map</td></tr>
       <tr><th>计划</th><td>置顶，逐项打勾</td><td>任何密度下都可见</td><td>WorkBuddy 计划卡、Focus view</td></tr>
       <tr><th>产物</th><td>随对话出现</td><td>卡片 + 侧栏预览</td><td>WorkBuddy 右侧结果区</td></tr>
-      <tr><th>整轮</th><td>「处理中，用时 N 秒」</td><td>不自动折；可设为完成后或下一句时折</td><td>Harness 两种时机、Cursor 反弹</td></tr>
+      <tr><th>整轮</th><td>「处理中，用时 N 秒」</td><td>默认不折叠；可设为完成时或下一轮输入时折叠</td><td>Harness 两种时机、Cursor 负面反馈</td></tr>
     </tbody>
   </table></div>
   <ol class="items" style="margin-top:12px">
-    <li><span><b>三档密度，一处设置、全局记住：</b>简洁 / 标准 / 详细。</span></li>
-    <li><span><b>折叠时机单独做成设置：</b>默认不折整轮。</span></li>
-    <li><span><b>生成中、生成后、重开会话三种状态显示一致。</b></span></li>
-    <li><span><b>全量过程放独立时间线：</b>耗时、token、嵌套调用不进对话流。</span></li>
+    <li><span><b>信息密度分档：</b>提供简洁 / 标准 / 详细三档，全局生效并持久保存。</span></li>
+    <li><span><b>折叠时机独立配置：</b>默认不自动折叠整轮。</span></li>
+    <li><span><b>状态一致：</b>生成中、生成后、重新打开会话三种状态下展示一致。</span></li>
+    <li><span><b>过程与结论分层：</b>耗时、token、嵌套调用等完整过程放入独立的时间线视图，对话流只保留摘要。</span></li>
   </ol>
 
-  <h2 id="ablation">消融记录<small>逐个元素问「它帮读者回答哪一个问题」</small></h2>
+  <h2 id="ablation">消融记录<small>逐项判断：该元素是否帮助读者回答本页的问题</small></h2>
   <div class="tw"><table style="min-width:760px">
     <thead><tr><th>元素</th><th>结果</th><th>依据</th></tr></thead>
     <tbody>
@@ -504,15 +504,16 @@ tr:last-child td,tr:last-child th{border-bottom:none}
       <tr><th>示意图下的注释行</th><td><span class="res del">删除</span></td><td>图例已说明「重画非截图」，示意文案改回各家原语言</td></tr>
       <tr><th>总表长句</th><td><span class="res mrg">合并</span></td><td>压成短语，细节留在产品卡</td></tr>
       <tr><th>Codex App 底层协议</th><td><span class="res del">删除</span></td><td>不影响用户看到什么</td></tr>
-      <tr><th>Codex 0.149 回滚</th><td><span class="res mrg">合并</span></td><td>只留在「用户反弹」一处</td></tr>
+      <tr><th>Codex 0.149 回滚</th><td><span class="res mrg">合并</span></td><td>只留在「用户反馈」一处</td></tr>
       <tr><th>Claude Code Esc 中断、转后台、agent map</th><td><span class="res del">删除</span></td><td>与折叠无关；agent map 只留在建议依据</td></tr>
       <tr><th>Claude.ai 思考截断提示</th><td><span class="res del">删除</span></td><td>安全策略，不是显示策略</td></tr>
       <tr><th>DeepSeek 第三方折叠脚本</th><td><span class="res del">删除</span></td><td>侧证，不改结论</td></tr>
       <tr><th>Harness 社区站、中途停下</th><td><span class="res del">删除</span></td><td>与显示无关</td></tr>
       <tr><th>Harness 待确认项</th><td><span class="res mrg">替换</span></td><td>用源码事实补齐：24px 行、组头、四档密度、两种时机</td></tr>
       <tr><th>WorkBuddy 更新日志十条</th><td><span class="res mrg">合并</span></td><td>留计时、产物、补齐三条，补上计划卡与动作行</td></tr>
-      <tr><th>用户反弹三张卡</th><td><span class="res mrg">合并</span></td><td>改为三条 + 一条共同点</td></tr>
+      <tr><th>用户反馈三张卡</th><td><span class="res mrg">合并</span></td><td>改为三条 + 一条共同点</td></tr>
       <tr><th>建议表「依据」长句</th><td><span class="res mrg">合并</span></td><td>只留产品名</td></tr>
+      <tr><th>口语化表述</th><td><span class="res mrg">改写</span></td><td>统一为体验术语：过程可见性、信息密度、可监督性、状态一致性</td></tr>
       <tr><th>来源</th><td><span class="res keep">保留</span></td><td>每条事实可追溯</td></tr>
     </tbody>
   </table></div>

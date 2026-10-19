@@ -363,8 +363,9 @@ window.DEVECO_CATALOG = {
       note: '对内汇报与对外协同共用的事实基础：以开发者证据推动方案，不以设计观点推动方案。',
       items: [
         {
-          title: '会话单元显示竞品分析：思考、工具调用折不折叠', subtitle: 'Agent Conversation Units · Codex, Claude, DeepSeek, WorkBuddy, Cursor',
-          desc: '先讲折叠发生在单元 / 步骤组 / 整轮三层与折叠时机；再把一轮 Agent 回复拆成思考、读与搜、执行命令、改文件、子 Agent、计划、产物、状态计时八类单元，逐个看 Codex（CLI / App）、Claude（Claude.ai / Claude Code）、DeepSeek（网页 / Harness）、WorkBuddy、Cursor 在生成中和生成后长什么样、默认是否折叠；附各家生成中 / 生成后示意、用户反弹、DevEco 对话流默认策略与消融记录。官方、社区、推断分开标注；DeepSeek Harness、Codex 按源码复核。',
+          title: '会话单元呈现竞品分析：思考与工具调用的可见性和折叠策略',
+          author: '王欣迪', subtitle: 'Agent Conversation Units · Codex, Claude, DeepSeek, WorkBuddy, Cursor',
+          desc: '王欣迪：先讲折叠发生在单元 / 步骤组 / 整轮三层与折叠时机；再把一轮 Agent 回复拆成思考、读与搜、执行命令、改文件、子 Agent、计划、产物、状态计时八类单元，逐个看 Codex（CLI / App）、Claude（Claude.ai / Claude Code）、DeepSeek（网页 / Harness）、WorkBuddy、Cursor 在生成中和生成后长什么样、默认是否折叠；附各家生成中 / 生成后示意、用户反弹、DevEco 对话流默认策略与消融记录。官方、社区、推断分开标注；DeepSeek Harness、Codex 按源码复核。',
           view: 'doc', date: '2026-10-19', href: 'analysis/agent-conversation-units/REPORT-会话单元显示竞品分析.html',
           links: [
             { label: '三层折叠', href: 'analysis/agent-conversation-units/REPORT-会话单元显示竞品分析.html#layers' },
