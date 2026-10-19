@@ -21,6 +21,7 @@
 | `demos/<NN-slug>/index.html` | 创新点的界面稿 demo：01–21 编号与《创新方向》deck 一致，22、28 是版本需求，23–27 是新一轮规划重点，29 是对照友商更新补的 Agent 本地化，30 是折叠屏鸿蒙电脑上开发，31 是 Agent 工作台（AI Coding 下的默认视图蓝本）。整页即软件，能点 |
 | `demos/_shared/` | 所有 demo 共用的 IDE 外壳：`frame.js`（Header / 侧栏 / 状态栏 / 项目树 / 示例代码 / 面板开合 / 主题 / Tooltip / 顶栏 Agent 胶囊 / 「工作台」入口，并自动引入 `ai.css`）、`frame.css`（demo 层组件）、`guide.js`（页面标注与「这一页解决什么」场景卡）、`stage.js`（多设备台前调度）、`workspace.js/.css`（Agent 工作台外壳） |
 | `analysis/ablation/` | 终轮消融记录：每个 demo 一份（没有 / 有 / 多 Agent 三种做法 + 元素·结果·依据），`build.py` 汇成 `index.html` |
+| `analysis/agent-session-units/` | 竞品分析：Codex / Claude Code / DeepSeek Harness / WorkBuddy 的会话基本单元（思考、工具调用、计划、收尾）默认怎么显示、是否折叠、折在单元 / 步骤组 / 整轮哪一层，生成中与生成后各是什么样 |
 | `analysis/agent-workspace/` | Agent 工作台设计说明：为什么默认视图不是文件树 + 编辑器、各 demo 里 Agent 的角色与多 Agent 时怎么办 |
 | `analysis/xcode27/` | Xcode 27 新特性研究：一个页签一个特性（Device Hub 最详细），写理念、动因、场景、交互特点 × 用户 × 痛点与鸿蒙电脑版可参照的点；`images/` 是 Apple 文档配图（亮 / 暗各一张）和 4 张 Xcode 官网图；`tools/wwdc-frames.py` 按时间点从 WWDC26 视频截图（要能访问 Apple 视频服务器，或用 `--video` 指定本机下好的视频） |
 | `deveco-intui-kit/` | DevEco Studio（Windows · IntelliJ Int UI）组件库：token、组件样式、图标、主窗口界面稿、规范页。详见 [它的 README](deveco-intui-kit/README.md) |
