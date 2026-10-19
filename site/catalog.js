@@ -376,6 +376,16 @@ window.DEVECO_CATALOG = {
           thumb: { type: 'image', src: 'analysis/ide-tree-lab/assets/ide-standard.png' },
         },
         {
+          title: '会话单元显示竞品分析：思考、工具调用折不折叠', subtitle: 'Agent Conversation Units · Codex, Claude, DeepSeek, WorkBuddy, Cursor',
+          desc: '把一轮 Agent 回复拆成思考、读与搜、执行命令、改文件、子 Agent、计划、产物、状态计时八类单元，逐个看 Codex（CLI / App）、Claude（Claude.ai / Claude Code）、DeepSeek（网页 / Harness）、WorkBuddy、Cursor 在生成中和生成后长什么样、默认是否折叠；附各家生成中 / 生成后示意、用户反弹与 DevEco 对话流默认策略建议。官方、社区、推断分开标注。',
+          view: 'doc', date: '2026-10-19', href: 'analysis/agent-conversation-units/REPORT-会话单元显示竞品分析.html',
+          links: [
+            { label: '总表', href: 'analysis/agent-conversation-units/REPORT-会话单元显示竞品分析.html#matrix' },
+            { label: '对 DevEco 的建议', href: 'analysis/agent-conversation-units/REPORT-会话单元显示竞品分析.html#deveco' },
+          ],
+          tags: ['友商研究', '对话流', '思考', '工具调用', '折叠'], thumb: { type: 'image', src: 'site/thumbs/agent-conversation-units.jpg' },
+        },
+        {
           title: '消融记录：每个 demo 删了什么、为什么', subtitle: 'Ablation Records · What Was Cut and Why',
           desc: '终轮每个 demo 先写三种做法——没有 Agent 时怎么做、有 Agent 时操作变成什么、多个 Agent 同时在跑会遇到什么；再逐个元素问「它帮这一页任务的哪一步」，答不上就删、重复的只留一处。31 个 demo，逐条记元素、结果（删除 / 合并 / 保留）与依据。',
           view: 'doc', date: '2026-09-25', href: 'analysis/ablation/index.html',
