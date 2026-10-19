@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>会话基本单元怎么显示 · Agent Session Units</title>
-<meta name="description" content="Codex、Claude Code、DeepSeek Harness、WorkBuddy 四家如何显示思考与工具调用：默认折叠在哪一层、生成中与生成后各是什么样、展开入口有几个。">
+<meta name="description" content="七产品 AI 编码会话单元竞品报告：思考、工具调用、生成中与生成后的展示、默认折叠、官方界面证据和 DevEco 建议。">
 <link rel="stylesheet" href="../../deveco-intui-kit/src/tokens.css">
 <link rel="stylesheet" href="../../site/launcher.css">
 <link rel="stylesheet" href="../../deveco-intui-kit/src/ai.css">
@@ -165,6 +165,8 @@ ul.plain b,ol.steps b{color:var(--ui-fg);font-weight:600}
   .shim{animation:none;color:var(--ui-fg)}
   .m-status .ai-ring{animation:none}
 }
+
+.report-section{scroll-margin-top:20px}.report-section p,.report-section li{line-height:1.8;overflow-wrap:anywhere}.report-section h3{line-height:1.5}.report-section h4{margin-top:28px;line-height:1.6}.report-section img{display:block;width:auto;max-width:100%;height:auto;margin:20px 0 10px;border-radius:12px;border:1px solid var(--ui-border)}.report-section pre{overflow:auto;padding:20px;border-radius:12px;background:var(--ui-editor-bg);line-height:1.7}.report-section pre code{background:none;padding:0}.report-section .tw{margin:18px 0}.report-section a{overflow-wrap:anywhere}.report-section strong{font-weight:600}#archive>summary{font-size:18px;font-weight:600;cursor:pointer;line-height:1.6}#archive>p{color:var(--ui-fg-info);line-height:1.7}.archive-nav{display:flex;flex-wrap:wrap;gap:12px;margin:20px 0}.archive-nav a{font-size:12px}main{min-width:0}
 </style>
 </head>
 <body>
@@ -176,31 +178,547 @@ ul.plain b,ol.steps b{color:var(--ui-fg);font-weight:600}
     <a class="tbtn" href="../../index.html">启动页</a>
   </header>
 
-  <p class="lede">
-    把一次 Agent 会话拆成看得见的单元：<b>思考</b>、<b>工具调用</b>、<b>工具结果</b>、<b>计划</b>、<b>收尾</b>。
-    这一页只答四件事：每个单元默认长什么样、<b>是否默认折叠</b>、生成中与生成后差在哪、展开入口有几个。
-    对象是 Codex、Claude Code、DeepSeek Harness、WorkBuddy——四种形态：终端、终端、Web/桌面、桌面工作台。
-  </p>
+  <p class="lede">七产品对照：Codex、Claude Code、DeepSeek Harness、WorkBuddy、Cursor、Windsurf / Cascade、VS Code Copilot。逐项比较<b>生成中、生成后、默认折叠与展开入口</b>。2026-10-19 文档研究版，已确认事实与待实测项分别标注。 <a href="REPORT.md">阅读 Markdown 原文</a></p>
 
-  <div class="keys">
-    <div class="key">
-      <b>没有一家默认展开过程</b>
-      <span>四家都把工具调用压成一行；差别只在「一行里放什么」和「折叠发生在哪一层」。</span>
-    </div>
-    <div class="key">
-      <b>思考是「另一个视图」，不是「一个折叠块」</b>
-      <span>Codex 完成后直接不进普通流；Claude 把正文关在 transcript 里；DeepSeek 只给首行摘要。</span>
-    </div>
-    <div class="key">
-      <b>折叠的时机也是一条设计</b>
-      <span>完成即折、下一句才折、永不折只切视图——三种都能成立，混着用才会让人找不到刚才那一步。</span>
-    </div>
-  </div>
+  <div class="keys"><div class="key"><b>折叠要分三层</b><span>单次详情、连续步骤组、整轮过程分别核查。</span></div><div class="key"><b>生成中与生成后分开看</b><span>当前动作可见、完成摘要化与临时状态移除是不同策略。</span></div><div class="key"><b>证据边界明确</b><span>三张官方界面配图；未实测默认值不写成产品共识。</span></div></div>
 
   <div class="layout">
     <aside class="sidebar" aria-label="目录">
       <div class="sd-title">目录</div>
-      <nav>
+      <nav><a class="cat" href="#report-1"><span class="lbl">1. 先回答这次的问题</span></a><a class="cat" href="#report-2"><span class="lbl">2. 把会话拆成可比较的基本单元</span></a><a class="cat" href="#report-3"><span class="lbl">3. 七产品总表</span></a><a class="cat" href="#report-4"><span class="lbl">4. 逐产品：生成中、生成后与可借鉴点</span></a><a class="cat" href="#report-5"><span class="lbl">5. 同一编码场景下，用户需要的四层证据</span></a><a class="cat" href="#report-6"><span class="lbl">6. 展示策略的收益与代价</span></a><a class="cat" href="#report-7"><span class="lbl">7. DevEco 建议：先约定状态，再决定信息密度</span></a><a class="cat" href="#report-8"><span class="lbl">8. 后续实测清单与验收标准</span></a><a class="cat" href="#report-9"><span class="lbl">9. 来源与图片</span></a><a class="cat" href="#report-10"><span class="lbl">10. 与已有四产品页面的核查关系</span></a><a class="cat" href="#archive"><span class="lbl">原四产品结构分析</span></a></nav>
+    </aside>
+
+    <main><section class="grp report-section" id="report-1"><div class="ghead"><h3>1. 先回答这次的问题</h3></div><p><strong>工具与思考过程常被压缩，但“默认折叠”不是统一行为。</strong> 已核实的模式包括：工具详情收起、按视图密度隐藏、连续过程分组合并、完成后转为摘要，以及临时连接状态完成后消失。不能把它们都记成一个“是”。</p>
+<p>证据最完整的是 Claude Code 桌面视图、VS Code 的工具配置，以及 WorkBuddy 的执行与 MCP 连接过程。Cursor 有明确的三档工具密度文档。DeepSeek Harness 的官方更新说明证明其有折叠工具卡与推理展开交互，但本轮未独立验证默认值。Codex App 和历史 Windsurf 的默认开合暂不能下确定结论。</p>
+<p><strong>DevEco 的推荐方向：当前动作可见、成功详情按需展开、最终结果常驻；等待授权和失败保持可操作。</strong> 这是设计建议，不是七款产品已经一致采用的规则。</p>
+<h3>研究边界</h3>
+<ul>
+<li>本轮为公开官方文档、更新日志和官方配图研究，没有登录七款产品执行同一任务。</li>
+<li>官方配图可以证明某个画面存在，不能单独证明初始默认值或从生成中到完成的自动转换。</li>
+<li>既有分析页中的源码结论作为历史材料保留；本报告未复现其源码检查，不把其中的像素尺寸和默认设置升级为新证据。</li>
+<li>日期是资料访问日期；没有客户端版本号的结论只对所链接文档负责。</li>
+<li>未验证的动画、流式输出节奏、默认密度、滚动锚定统一写“待实测”。</li>
+</ul>
+</section><section class="grp report-section" id="report-2"><div class="ghead"><h3>2. 把会话拆成可比较的基本单元</h3></div><div class="tw"><table>
+<thead>
+<tr>
+<th>基本单元</th>
+<th>用户需要知道什么</th>
+<th>不能混淆的对象</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>思考 / 推理展示</td>
+<td>是否仍在处理；是否理解正确</td>
+<td>推理强度选择、推理摘要、可展示思考文本不是同一个功能</td>
+</tr>
+<tr>
+<td>计划 / 待办</td>
+<td>准备做什么、做到哪一步</td>
+<td>计划不是完整思考，也不是执行成功凭证</td>
+</tr>
+<tr>
+<td>工具调用</td>
+<td>对什么对象做什么操作</td>
+<td>调用参数、运行状态、调用结果应分开</td>
+</tr>
+<tr>
+<td>工具结果</td>
+<td>成功还是失败、输出是什么</td>
+<td>工具执行成功不代表任务目标已达成</td>
+</tr>
+<tr>
+<td>文件修改</td>
+<td>哪些文件、改动规模与 diff</td>
+<td>对话中的说明不等于实际 diff</td>
+</tr>
+<tr>
+<td>验证结果</td>
+<td>运行了什么、哪些通过或失败</td>
+<td>未执行、执行失败、测试不通过是三种状态</td>
+</tr>
+<tr>
+<td>授权请求</td>
+<td>哪个动作正在等我、影响范围</td>
+<td>与一般进度行分开，等待不能伪装成运行</td>
+</tr>
+<tr>
+<td>最终答复 / 产物</td>
+<td>做成了什么、如何验收、还有什么未完成</td>
+<td>不应随过程组一起被隐藏</td>
+</tr>
+</tbody></table></div>
+<p>“深度思考”在本报告指可见的推理相关单元，不推断模型内部推理过程，也不以思考正文长度评价能力。</p>
+<h3>三层折叠 + 一个生命周期问题</h3>
+<div class="tw"><table>
+<thead>
+<tr>
+<th>层级</th>
+<th>示例</th>
+<th>研究字段</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>L1 单次调用详情</td>
+<td>一行“读取文件”，点开查看内容</td>
+<td>默认开合、摘要字段、点击区域</td>
+</tr>
+<tr>
+<td>L2 连续步骤组</td>
+<td>多次读取合并为一组</td>
+<td>分组边界、标题、子步骤入口</td>
+</tr>
+<tr>
+<td>L3 整轮过程</td>
+<td>一轮任务的过程收为一个入口</td>
+<td>保留哪些结果、失败是否露出</td>
+</tr>
+<tr>
+<td>生命周期</td>
+<td>生成中显示，完成后摘要化或移除</td>
+<td>自动变化触发时机、用户手动展开是否保留</td>
+</tr>
+</tbody></table></div>
+</section><section class="grp report-section" id="report-3"><div class="ghead"><h3>3. 七产品总表</h3></div><p>“文档确认”不代表本轮实机观察；“待实测”不等于产品不支持。</p>
+<div class="tw"><table>
+<thead>
+<tr>
+<th>产品 / 客户端</th>
+<th>思考单元</th>
+<th>工具过程与展开方式</th>
+<th>生成中</th>
+<th>生成后</th>
+<th>默认折叠结论</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Codex App</td>
+<td>本轮没有足够直接 UI 证据</td>
+<td>官方协议区分命令、文件变更、MCP 等条目，不能推出实际样式</td>
+<td>协议支持开始和增量事件</td>
+<td>协议支持完成状态和最终输出</td>
+<td><strong>App 待实测</strong>；不沿用 CLI 结论 [S1]</td>
+</tr>
+<tr>
+<td>Claude Code 桌面 Code 页</td>
+<td>Thinking / Verbose 视图可显示</td>
+<td>Normal / Thinking 中工具压缩为摘要；Verbose 展示每步</td>
+<td>文档明确可以边执行边停止或补充指令</td>
+<td>视图策略适用于 transcript；未证实完成瞬间是否另有收起动画</td>
+<td><strong>Normal 中工具详情折叠</strong>；初始选中模式待实测 [S2]</td>
+</tr>
+<tr>
+<td>Claude Code 终端（同一产品的补充端）</td>
+<td>需区分普通对话与 transcript</td>
+<td>Ctrl+O 打开详情；文档列出 MCP 多次调用合并摘要</td>
+<td>具体各工具流式预览待实测</td>
+<td>可回查详细执行记录</td>
+<td><strong>部分默认合并已确认</strong>，不能推断所有工具 [S3]</td>
+</tr>
+<tr>
+<td>DeepSeek Harness Web / Desktop</td>
+<td>更新日志提及推理展开与标题吸顶</td>
+<td>官方日志明确存在可折叠工具卡</td>
+<td>准备阶段可显示命令描述、路径和生成进度</td>
+<td>收起卡内可直接访问 fetched URL</td>
+<td><strong>支持折叠已确认，初始默认值待实测</strong> [S4]</td>
+</tr>
+<tr>
+<td>WorkBuddy 桌面</td>
+<td>文档未明确独立思考单元；不能判定“没有”</td>
+<td>执行阶段说明、摘要、可展开中间步骤</td>
+<td>阶段与消耗；MCP 连接计数</td>
+<td>MCP 加载过程不保留历史；不能类推所有工具过程</td>
+<td><strong>中间步骤可展开；通用默认策略未明确</strong> [S5]</td>
+</tr>
+<tr>
+<td>Cursor Agents Window（3.4 功能）</td>
+<td>本轮未确认思考默认开合</td>
+<td>Compact / Balanced / Detailed 三档控制工具过程密度</td>
+<td>运行与结束的逐项差异待实测</td>
+<td>档位控制会话可见信息量</td>
+<td><strong>密度可配置，默认选中档未核实</strong> [S6]</td>
+</tr>
+<tr>
+<td>Windsurf / Cascade</td>
+<td>公开文档不能确认独立思考呈现</td>
+<td>现有文档确认 Todo、工具调用与 checkpoint</td>
+<td>长任务可在会话显示 Todo</td>
+<td>通过 checkpoint 回查/恢复；不证明过程折叠</td>
+<td><strong>历史 Windsurf 默认开合待核查</strong>；原 URL 已跳转 Devin Desktop [S7]</td>
+</tr>
+<tr>
+<td>VS Code Copilot Agent</td>
+<td>可用折叠 reasoning 区域；受设置影响</td>
+<td>工具详情默认折叠，分组可配置</td>
+<td>特定 persistent progress 模式下工具运行时保持可见</td>
+<td>Compact 模式在回答恢复/结束时把完成组改成可展开摘要；Verbose 保留</td>
+<td><strong>工具详情默认折叠已确认；整轮不能一概而论</strong> [S8][S9]</td>
+</tr>
+</tbody></table></div>
+</section><section class="grp report-section" id="report-4"><div class="ghead"><h3>4. 逐产品：生成中、生成后与可借鉴点</h3></div><h3>4.1 Codex：先分清 App、CLI 和事件协议</h3>
+<p>官方 App Server 文档把 reasoning、命令执行、文件变更与 MCP 调用建成不同条目，配有 started / completed 和增量事件；命令还具有退出码、耗时等字段。它说明状态可以被结构化表达，<strong>不证明 App 默认如何折叠</strong>。[S1]</p>
+<div class="tw"><table>
+<thead>
+<tr>
+<th>关注点</th>
+<th>本轮结论</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>生成中</td>
+<td>协议能表达开始、命令输出增量与推理摘要增量；实际 App 的状态行与预览待实测</td>
+</tr>
+<tr>
+<td>生成后</td>
+<td>协议区分最终条目状态；App 是否保留思考入口待实测</td>
+</tr>
+<tr>
+<td>默认折叠</td>
+<td>不将既有页对 CLI 的 transcript-only、输出预览行数、快捷键结论移植到 App</td>
+</tr>
+<tr>
+<td>展开详情</td>
+<td>输入、输出、退出状态与变更是有价值的信息层次；实际入口待补图</td>
+</tr>
+</tbody></table></div>
+<p><strong>对 DevEco 的启发（设计推论）</strong>：先定义条目状态及关联 ID，再设计折叠。这样“收起”只改变呈现，执行记录与验收证据仍能回查。缺图，见 [S1]。</p>
+<h3>4.2 Claude Code：思考可见度和工具密度是两个选择</h3>
+<p>桌面版文档列出 Normal、Thinking、Verbose 三种 transcript 视图：Normal 保留完整文本答复并将工具压为摘要；Thinking 在工具摘要之外显示思考；Verbose 展示完整工具与中间步骤。通过会话菜单或 Ctrl+O 切换。[S2]</p>
+<p>这说明“显示思考”不必同时“展开所有工具”。生成中可停止或补充指令，但文档不足以确认流式思考如何裁切，以及完成瞬间是否自动收起。终端版的 Ctrl+O 查看器还会展开部分默认合并的行，例如多次 MCP 调用摘要。[S3]</p>
+<p><strong>对 DevEco 的启发（设计推论）</strong>：提供普通查阅和诊断查阅，让开发者按任务切换信息量；不要让用户逐个点开几十条记录才能排障。缺图，见 [S2][S3]。本报告不宣称三档中的某档是所有安装环境的初始默认值。</p>
+<h3>4.3 DeepSeek Harness：折叠存在，但插件改变行为</h3>
+<p>已确认对象为官方 <code>deepseek-ai/deepseek-harness</code>，不是 DeepSeek 普通聊天网页。官方 README 说明其处于 developer preview，采用插件架构。[S10]</p>
+<p>官方发布记录提到：工具准备时显示已有参数信息；工具卡收起时可以直接打开已获取页面的链接；展开的推理标题支持吸顶。它们证明过程有渐进展示与折叠能力，但不能独立证明所有模式的初始开合或整轮收起时机。[S4]</p>
+<p>社区 <code>dsh-trace-collapse</code> 插件明确提供最终输出出现后自动收起过程，并保留最终答案。这是<strong>插件作者对其插件的说明，不是官方核心默认行为</strong>。[S11]</p>
+<p><strong>对 DevEco 的启发（设计推论）</strong>：收起状态仍可携带文件/网页的直达入口；研究记录必须同时记下插件与配置，否则两个用户看到不同界面时容易误判。缺图，见 [S4][S10][S11]。</p>
+<h3>4.4 WorkBuddy：阶段状态与结果并行，临时进度可以退出历史</h3>
+<p>官方文档说明对话内呈现阶段、摘要和可展开中间步骤；MCP 连接中展示完成计数，全部就绪后该临时进度从历史流移除。[S5]</p>
+<p><img src="images/workbuddy-exec-progress.png" alt="WorkBuddy 官方执行进度配图：状态、阶段与消耗并列"></p>
+<p>图 W1｜官方文档配图，未标客户端版本。能看到阶段说明、经过时间和写入文件状态；不能由静态图推断动效或最终折叠。它是通用任务示例，不是本轮编码任务实测。</p>
+<p><img src="images/workbuddy-mcp-loading.png" alt="WorkBuddy 官方 MCP 连接进度配图"></p>
+<p>图 W2｜连接数量是可辨识的等待反馈。完成后移除的规则来自文字文档，不是由这张图推测。图片中的蓝圈为官方配图标注，不是产品焦点样式。</p>
+<p><strong>对 DevEco 的启发（设计推论）</strong>：可以让一次性环境准备状态退出主对话，但命令执行、文件变更和测试结果应保留审计入口。文档没写独立思考单元，不能因此断言它不存在，也不能认定计划卡等同思考。</p>
+<h3>4.5 Cursor：密度成为会话层的控制项</h3>
+<p>Cursor 3.4（2026-05-13）的 Agents Window 更新提供三种工具密度：Compact 以简短结果为主，Balanced 包含重要中间过程，Detailed 提供接近完整的步骤上下文。<strong>“接近完整”不能改写成“所有工具都默认展开”</strong>。[S6]</p>
+<p>生成中的活动行、完成后的自动合并、思考单元开合仍需指定版本与档位补测。当前证据支持“可控制信息量”，不支持推断默认选中 Balanced，也不支持把 Agents Window 与所有 IDE 面板、CLI 画面等同。</p>
+<p><strong>对 DevEco 的启发（设计推论）</strong>：密度最好作用于整段过程，而非改写日志；生成后仍可切档复核。缺图，见 [S6]。</p>
+<h3>4.6 Windsurf / Cascade：计划是显式进度，折叠仍需版本证据</h3>
+<p>原 Windsurf Cascade 文档已重定向到 Devin Desktop，页面描述 Todo、工具与 checkpoint。它支持把计划和具体动作分别呈现，但不足以证明历史 Windsurf 的工具详情默认开合。[S7]</p>
+<p><strong>对 DevEco 的启发（设计推论）</strong>：计划可回答“下一步是什么”；命令与测试回答“这一步做成没有”。需要分别保留这两种证据。历史客户端的思考样式、折叠策略和当前客户端是否一致仍待实测。缺图，见 [S7]。</p>
+<h3>4.7 GitHub Copilot / VS Code：把默认与实验配置明确分开</h3>
+<p>工具文档明确工具详情默认折叠，可展开查看调用与输出，连续调用的分组方式能通过配置改变。[S8]</p>
+<p><img src="images/vscode-1.107-collapsed-tools.png" alt="VS Code 1.107 官方连续工具调用分组配图"></p>
+<p>图 V1｜2025-12 发布的 1.107 历史配图。当前图中组内两条读取记录处于可见状态，展示的是分组结构；“连续调用默认折叠”的结论来自该版本文字说明，而不是图中的当前展开状态。[S12]</p>
+<p>现行文档进一步区分 persistent progress：启用时工具运行中保持可见；Compact 会在文本回答恢复或响应结束时，将完成组转为可展开摘要；Verbose 保留详情。该功能是实验配置，Stable 与 Insiders 的默认行为及实验推送可能不同。[S9]</p>
+<p><strong>对 DevEco 的启发（设计推论）</strong>：测试自动折叠时必须记录“何时触发”和“用户选了什么模式”。单凭一张完成截图无法判断产品有没有在运行中展示详情。</p>
+</section><section class="grp report-section" id="report-5"><div class="ghead"><h3>5. 同一编码场景下，用户需要的四层证据</h3></div><p>以下是面向 DevEco 的任务旅程分析，非七产品同场景实测结果。</p>
+<div class="tw"><table>
+<thead>
+<tr>
+<th>旅程行</th>
+<th>理解代码</th>
+<th>修改代码</th>
+<th>构建 / 测试</th>
+<th>遇阻与验收</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>行为</td>
+<td>搜索符号、读取文件</td>
+<td>修改相关文件</td>
+<td>执行命令、读取结果</td>
+<td>授权、定位失败、核对交付</td>
+</tr>
+<tr>
+<td>界面触点</td>
+<td>搜索组、读取行、文件直达</td>
+<td>文件变更行、diff</td>
+<td>命令行、输出、通过/失败摘要</td>
+<td>待处理卡、错误摘要、最终答复</td>
+</tr>
+<tr>
+<td>情绪 / 摩擦</td>
+<td>无反馈时怀疑卡住；逐条刷屏难看重点</td>
+<td>不知道改了几处，担心范围扩大</td>
+<td>“完成”与“测试通过”混淆</td>
+<td>自动收起可能隐藏待办，重试状态难理解</td>
+</tr>
+<tr>
+<td>机会</td>
+<td>当前动作可见，完成读取可分组</td>
+<td>常驻改动数量与 diff 入口</td>
+<td>摘要写明执行对象与退出状态</td>
+<td>失败不藏、授权可操作、答案单独保留</td>
+</tr>
+</tbody></table></div>
+</section><section class="grp report-section" id="report-6"><div class="ghead"><h3>6. 展示策略的收益与代价</h3></div><div class="tw"><table>
+<thead>
+<tr>
+<th>策略</th>
+<th>证据产品</th>
+<th>收益（推论）</th>
+<th>代价（推论）</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>视图分档</td>
+<td>Claude Code、Cursor</td>
+<td>降低逐项展开成本，兼顾普通查阅与诊断</td>
+<td>切档入口难发现时，用户可能误以为记录丢失</td>
+</tr>
+<tr>
+<td>连续步骤分组</td>
+<td>VS Code 1.107</td>
+<td>压缩重复读取、搜索，便于跳读</td>
+<td>标题泛化会掩盖不同文件与失败项</td>
+</tr>
+<tr>
+<td>当前可见、完成摘要</td>
+<td>VS Code 特定配置</td>
+<td>同时照顾执行监控和结果阅读</td>
+<td>自动收起引起位移，可能打断正在查看的内容</td>
+</tr>
+<tr>
+<td>临时状态退出历史</td>
+<td>WorkBuddy MCP 连接</td>
+<td>避免环境准备信息长期占屏</td>
+<td>若没有诊断记录，后续很难排查连接问题</td>
+</tr>
+<tr>
+<td>插件控制整轮收起</td>
+<td>DSH 社区插件</td>
+<td>可按个人偏好组织过程</td>
+<td>环境差异增大，不能以插件行为代表核心产品</td>
+</tr>
+</tbody></table></div>
+<p>这些是可观察到的设计策略，不是完整 SWOT 或市场能力排名。本次没有足够数据对产品易用性打分。</p>
+</section><section class="grp report-section" id="report-7"><div class="ghead"><h3>7. DevEco 建议：先约定状态，再决定信息密度</h3></div><h3>7.1 建议的生成中 / 生成后规则</h3>
+<p>下表是候选交互规格，不描述 DevEco 当前实现。</p>
+<div class="tw"><table>
+<thead>
+<tr>
+<th>单元</th>
+<th>生成中</th>
+<th>生成后</th>
+<th>默认开合建议</th>
+<th>应保留的入口</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>思考摘要</td>
+<td>显示处理中状态与可用摘要；没有摘要时不虚构文本</td>
+<td>留可回查入口；正文不抢占结果区域</td>
+<td>正文收起</td>
+<td>查看可展示摘要</td>
+</tr>
+<tr>
+<td>读取 / 搜索</td>
+<td>当前动作、对象与计数可见</td>
+<td>连续成功项合并成组</td>
+<td>详情收起</td>
+<td>文件、搜索结果和每次调用</td>
+</tr>
+<tr>
+<td>命令执行</td>
+<td>命令、运行状态、最新输出可见</td>
+<td>成功显示退出码与结果；失败显示错误摘要</td>
+<td>成功日志收起，失败摘要常驻</td>
+<td>完整命令、日志、工作目录</td>
+</tr>
+<tr>
+<td>文件修改</td>
+<td>文件名、修改中状态</td>
+<td>文件数、增删规模与 diff 入口</td>
+<td>diff 按需展开</td>
+<td>查看修改与文件直达</td>
+</tr>
+<tr>
+<td>验证</td>
+<td>显示实际执行任务</td>
+<td>分开显示通过、失败、未执行</td>
+<td>摘要常驻，详情收起</td>
+<td>测试结果、构建日志</td>
+</tr>
+<tr>
+<td>授权请求</td>
+<td>明确等待用户，动作与范围完整可见</td>
+<td>决策后保留简短记录</td>
+<td>等待中展开</td>
+<td>允许、拒绝、影响详情</td>
+</tr>
+<tr>
+<td>最终答复</td>
+<td>独立于工具流逐步呈现</td>
+<td>保持可读</td>
+<td>不随过程组收起</td>
+<td>产物、变更和验证证据</td>
+</tr>
+</tbody></table></div>
+<h3>7.2 三条优先落地建议</h3>
+<ol>
+<li><strong>P0：完成态必须说清做成什么。</strong> 摘要至少包含修改对象、验证结果和未完成项。以“测试结束”替代“测试通过”会损害信任。验证：用户能否只读摘要正确判断可以提交还是仍需处理。</li>
+<li><strong>P0：失败和待授权不被成功步骤盖住。</strong> 分组标题保留失败数量与待办入口，正在查看的展开内容不因后台事件突然消失。验证：插入一次失败与一次授权，看用户能否找到阻塞动作及原因。</li>
+<li><strong>P1：密度切换与执行数据分离。</strong> 普通模式聚焦摘要，诊断模式保留详情；用户手动展开优先于自动收起。验证：切换密度后，调用顺序、日志、文件链接和错误记录均完整。</li>
+</ol>
+<h3>7.3 结构示意（DevEco 建议，非竞品截图）</h3>
+<pre><code class="language-text">生成中
+  当前：运行 hvigorw assembleHap                 [停止]
+  已读取 4 个文件                               [查看步骤]
+  已修改 2 个文件                               [查看 diff]
+  &gt; 编译模块 entry …                            [日志]
+
+生成后
+  已完成 · 修改 2 个文件 · 构建通过
+  实现了列表缓存修复；真机验证尚未执行。
+  [查看 diff] [构建结果] [展开 7 个过程步骤]
+
+遇阻
+  等待授权：执行命令 …                          [允许] [拒绝]
+  或：构建失败 · 错误摘要 …                     [日志] [查看原因]
+</code></pre>
+<p>该示意只定义层级，不规定像素、颜色或组件新增。后续应复用仓库现有 AI 单元与状态规范。</p>
+</section><section class="grp report-section" id="report-8"><div class="ghead"><h3>8. 后续实测清单与验收标准</h3></div><div class="tw"><table>
+<thead>
+<tr>
+<th>测试</th>
+<th>必须采集的画面</th>
+<th>要回答的问题</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>连续读取 5 个文件</td>
+<td>首个动作、连续调用、最终答复</td>
+<td>是否成组？组内失败会不会隐藏？</td>
+</tr>
+<tr>
+<td>修改 2 个文件并运行测试</td>
+<td>修改中、测试运行中、测试结束、答复完成</td>
+<td>哪个事件触发收起？diff 是否常驻？</td>
+</tr>
+<tr>
+<td>需要授权的命令</td>
+<td>请求出现、展开详情、决定后</td>
+<td>等待与运行是否容易区分？</td>
+</tr>
+<tr>
+<td>一次命令失败后重试</td>
+<td>第一次失败、重试中、最终结果</td>
+<td>历史失败是否保留？最终摘要是否准确？</td>
+</tr>
+<tr>
+<td>手动展开后继续输出</td>
+<td>展开前后、工具完成、下一轮发送</td>
+<td>用户展开是否被覆盖？滚动是否跳动？</td>
+</tr>
+<tr>
+<td>切换客户端/密度/插件</td>
+<td>设置截图与同任务输出</td>
+<td>默认行为变化是版本、设置还是插件造成？</td>
+</tr>
+</tbody></table></div>
+<p>每条实测需记录：客户端版本、系统、模型、密度设置、实验开关、插件、提示词、采集时间。至少采集第一工具开始、最后工具完成、最终答复结束三帧；自动收起的判断需要连续录屏。</p>
+</section><section class="grp report-section" id="report-9"><div class="ghead"><h3>9. 来源与图片</h3></div><p>以下均访问于 2026-10-19。除注明社区插件外，优先使用官方材料；旧版发布说明仅用于对应版本。</p>
+<div class="tw"><table>
+<thead>
+<tr>
+<th>ID</th>
+<th>来源</th>
+<th>支持内容</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>S1</td>
+<td><a href="https://learn.chatgpt.com/docs/app-server">Codex App Server</a></td>
+<td>条目类型、生命周期与输出字段；不是 App 排版证据</td>
+</tr>
+<tr>
+<td>S2</td>
+<td><a href="https://code.claude.com/docs/en/desktop#switch-view-modes">Claude Code Desktop：Switch view modes</a></td>
+<td>三种 transcript 视图与工具摘要</td>
+</tr>
+<tr>
+<td>S3</td>
+<td><a href="https://code.claude.com/docs/en/interactive-mode">Claude Code Interactive mode</a></td>
+<td>transcript 查看器与部分默认合并行</td>
+</tr>
+<tr>
+<td>S4</td>
+<td><a href="https://github.com/deepseek-ai/deepseek-harness/releases">DeepSeek Harness Releases</a></td>
+<td>工具准备信息、折叠卡入口、推理展开交互；跨多个预发布版本</td>
+</tr>
+<tr>
+<td>S5</td>
+<td><a href="https://www.codebuddy.cn/docs/workbuddy/Conversation">WorkBuddy 任务对话</a></td>
+<td>执行阶段、可展开步骤、MCP 进度与停止入口；W1/W2 来源</td>
+</tr>
+<tr>
+<td>S6</td>
+<td><a href="https://cursor.com/changelog/page/7">Cursor 3.4：Full-screen Tabs and Compact Chats</a></td>
+<td>2026-05-13 Agents Window 工具密度</td>
+</tr>
+<tr>
+<td>S7</td>
+<td><a href="https://docs.windsurf.com/windsurf/cascade/cascade">Cascade Overview</a> → <a href="https://docs.devin.ai/desktop/cascade/cascade">当前落地页</a></td>
+<td>Todo / 工具 / checkpoint；不可替代历史 Windsurf 默认值</td>
+</tr>
+<tr>
+<td>S8</td>
+<td><a href="https://code.visualstudio.com/docs/agents/run/tools">VS Code：Use tools with agents</a></td>
+<td>默认折叠、展开输出和分组配置</td>
+</tr>
+<tr>
+<td>S9</td>
+<td><a href="https://code.visualstudio.com/docs/chat/chat-overview">VS Code：Chat preferences</a></td>
+<td>persistent progress、Compact / Verbose、实验默认差异</td>
+</tr>
+<tr>
+<td>S10</td>
+<td><a href="https://github.com/deepseek-ai/deepseek-harness">DeepSeek Harness 官方仓库</a></td>
+<td>项目识别、Web 入口及 developer preview 边界</td>
+</tr>
+<tr>
+<td>S11</td>
+<td><a href="https://github.com/AwesomeHou/dsh-trace-collapse">dsh-trace-collapse 插件作者仓库</a></td>
+<td>社区插件的整轮收起策略，不代表官方默认</td>
+</tr>
+<tr>
+<td>S12</td>
+<td><a href="https://code.visualstudio.com/updates/v1_107">VS Code 1.107 更新</a></td>
+<td>连续调用默认折叠的历史说明；V1 配图来源</td>
+</tr>
+</tbody></table></div>
+<p>图片留存：W1 <code>images/workbuddy-exec-progress.png</code>；W2 <code>images/workbuddy-mcp-loading.png</code>；V1 <code>images/vscode-1.107-collapsed-tools.png</code>。均为官方文档真实 UI 配图，已逐张查看。图片著作权归各产品方，仅作为研究引用，不作为 DevEco 设计资产。</p>
+</section><section class="grp report-section" id="report-10"><div class="ghead"><h3>10. 与已有四产品页面的核查关系</h3></div><div class="tw"><table>
+<thead>
+<tr>
+<th>已有表述</th>
+<th>本报告处理</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Codex 思考完成后不显示</td>
+<td>既有来源为 CLI 实现；App 保留待实测，避免跨端外推</td>
+</tr>
+<tr>
+<td>WorkBuddy 没有独立思考单元</td>
+<td>改为“本轮文档未明确”；未观察到不等于不存在</td>
+</tr>
+<tr>
+<td>四家失败与等待都不折</td>
+<td>证据未覆盖全部状态，不作为行业共识；保留为 DevEco 建议</td>
+</tr>
+<tr>
+<td>DeepSeek 默认 detailed、completion / next-input</td>
+<td>既有源码研究未在本轮复现，暂不作为本轮独立验证结论</td>
+</tr>
+<tr>
+<td>四家都默认收起过程</td>
+<td>拆解到客户端、模式、层级与生命周期，不使用整体断言</td>
+</tr>
+</tbody></table></div>
+<p>本文完整覆盖研究问题与设计决策，但视觉证据尚未覆盖七产品全状态；它可以用于方案评审，不能作为七款客户端默认行为的完整实测验收报告。</p>
+</section><details class="grp" id="archive"><summary>原四产品结构分析（历史研究，展开查看）</summary><p>以下保留原页面。跨客户端与默认值的证据边界，以本页七产品报告第 10 节为准。</p><nav class="archive-nav">
         <a class="cat" href="#unit"><span class="lbl">01 先定义单元</span></a>
         <a class="cat" href="#matrix"><span class="lbl">02 四家总表</span></a>
         <a class="cat" href="#codex"><span class="lbl">03 Codex</span></a>
@@ -212,9 +730,6 @@ ul.plain b,ol.steps b{color:var(--ui-fg);font-weight:600}
         <a class="cat" href="#ours"><span class="lbl">09 对 DevEco 的取舍</span></a>
         <a class="cat" href="#src"><span class="lbl">10 来源与局限</span></a>
       </nav>
-    </aside>
-
-    <main>
 
       <!-- ══════════════ 01 ══════════════ -->
       <section class="grp" id="unit">
@@ -832,12 +1347,12 @@ ul.plain b,ol.steps b{color:var(--ui-fg);font-weight:600}
         </div>
       </section>
 
-    </main>
+    </details></main>
   </div>
 
   <footer style="margin-top:56px;color:var(--ui-fg-info);font-size:var(--fs-sm);line-height:20px">
     <p style="margin:0">
-      DevEco · 分析与研究 · 会话基本单元。四家的界面结构按源码 / 官方截图重画，非截图；版本与出处见第 10 节。
+      DevEco · 七产品会话基本单元研究 · 官方配图与结构示意已区分，证据边界见报告；原四产品页作为历史研究保留。
     </p>
   </footer>
 </div>
@@ -869,5 +1384,5 @@ ul.plain b,ol.steps b{color:var(--ui-fg);font-weight:600}
   set('standard');
 })();
 </script>
-</body>
+<script>function revealArchive(){var el=document.querySelector(location.hash ? '[id="'+decodeURIComponent(location.hash.slice(1))+'"]' : '#report-1');if(el){var d=el.closest("details");if(d){d.open=true;el.scrollIntoView();}}}window.addEventListener("hashchange",revealArchive);revealArchive();</script></body>
 </html>
