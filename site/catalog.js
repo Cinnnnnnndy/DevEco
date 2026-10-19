@@ -29,7 +29,7 @@
    `python3 site/tools/thumb.py <slug>` 出缩略图；然后在这里把对应条目的 view 改成 'ready'、补 href 与 thumb。
    ===================================================================== */
 window.DEVECO_CATALOG = {
-  updated: '2026-10-08',
+  updated: '2026-10-19',
   title: '鸿蒙开发工具体验',
   lede: '围绕 DevEco Studio / DevEco Code / DevEco CLI 的体验设计：29 条创新点各一个可点的界面稿 demo（其中 9 条是新一轮规划重点），全部按鸿蒙电脑版蓝本与 AI Coding / 多 Agent 场景重做；加上设计系统、分析与汇报材料。全部是本地静态文件，双击即开。',
 
@@ -362,6 +362,32 @@ window.DEVECO_CATALOG = {
       icon: 'i-cat-chart',
       note: '对内汇报与对外协同共用的事实基础：以开发者证据推动方案，不以设计观点推动方案。',
       items: [
+        {
+          title: '会话基本单元怎么显示：思考与工具调用，默认折到哪一层', subtitle: 'Agent Session Units · Thinking, Tool Calls, Collapse',
+          desc: 'Codex、Claude Code、DeepSeek Harness、WorkBuddy 四家把一次会话切成哪些块：思考、工具调用、工具结果、计划、收尾。逐家给「生成中 / 生成后」两帧结构示意，回答是否默认折叠、折在单元 / 步骤组 / 整轮哪一层、什么时候折、展开入口有几个。四家都不默认展开过程，但思考的处理分成三种：完成后不显示（Codex）、关在 transcript 里（Claude）、只给首行（DeepSeek）；WorkBuddy 的对话里没有独立思考单元，用计划卡承担过程。末尾是六条可抄与两条别抄，以及可点的「同一段过程三种密度」对照。',
+          view: 'doc', date: '2026-10-19', href: 'analysis/agent-session-units/index.html',
+          links: [
+            { label: '四家总表', href: 'analysis/agent-session-units/index.html#matrix' },
+            { label: '折叠发生在三层', href: 'analysis/agent-session-units/index.html#layers' },
+            { label: '落到 DevEco', href: 'analysis/agent-session-units/index.html#ours' },
+            { label: '来源与局限', href: 'analysis/agent-session-units/index.html#src' },
+          ],
+          tags: ['竞品分析', '思考', '工具调用', '默认折叠', '生成态', 'Agent', 'Codex', 'Claude Code', 'DeepSeek Harness', 'WorkBuddy'],
+          thumb: { type: 'image', src: 'site/thumbs/agent-session-units.jpg' },
+        },
+        {
+          title: '生成中状态的位置：那一行不该跟着内容跳', subtitle: 'Status Anchor · Layout Stability While Streaming',
+          desc: 'DevEco Code 生成内容时，下面那行「进行中」随内容上下跳。四种成因、四个同类产品（Codex CLI / Claude Code / Gemini CLI / Cline）的一手做法、五条改法与推荐组合，以及六条可勾的验收条件。页面内自带一块实时测量的对照：两种放法跑同一段内容，算出的位移是 114px 与 0px。',
+          view: 'doc', date: '2026-10-16', href: 'analysis/status-anchor/index.html',
+          links: [
+            { label: '为什么会跳', href: 'analysis/status-anchor/index.html#m' },
+            { label: '别的产品怎么做', href: 'analysis/status-anchor/index.html#peer' },
+            { label: '落到 DevEco Code', href: 'analysis/status-anchor/index.html#plan' },
+            { label: '验收条件', href: 'analysis/status-anchor/index.html#ac' },
+          ],
+          tags: ['生成态', '布局稳定', 'CLS', '滚动锚定', '状态机', 'DevEco Code'],
+          thumb: { type: 'image', src: 'site/thumbs/status-anchor.jpg' },
+        },
         {
           title: 'IDE 文件树体验研究：间距、缩进与信息密度',
           author: '钱佳丽', subtitle: 'Tree Lab · UX Research',

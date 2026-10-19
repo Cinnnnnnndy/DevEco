@@ -1,0 +1,657 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>生成中状态的位置 · Status Anchor</title>
+<meta name="description" content="生成内容时，下面那行「进行中」为什么会上下跳、别的产品把这一行放在哪、更好的做法与可勾的验收条件。">
+<link rel="stylesheet" href="../../deveco-intui-kit/src/tokens.css">
+<link rel="stylesheet" href="../../site/launcher.css">
+<!-- 对照区与线框里的状态行是 ai.css 的八态状态机原件（.ai-ring / --ai-ink / --ai-tint-2），
+     必须连 ai.css 一起引，否则这些变量取不到值、小环没有底样式 -->
+<link rel="stylesheet" href="../../deveco-intui-kit/src/ai.css">
+<style>
+/* 本页用 tokens.css 的语义变量、ai.css 的 AI 状态机，壳来自 launcher.css（.page / .mast / .lede / .layout / .sidebar / section.grp），
+   下面全是这一页自己的排版。 */
+.keys{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:22px 0 0}
+.key{padding:16px 18px;border-radius:16px;background:var(--ui-editor-bg)}
+.key b{display:block;font-size:var(--fs-h2);line-height:22px;margin-bottom:6px}
+.key span{color:var(--ui-fg-info);display:block}
+.key code{font-family:var(--font-code);font-size:.92em}
+
+.grp>p.lede2{color:var(--ui-fg-info);margin:-14px 0 18px;max-width:74ch}
+
+.tw{overflow-x:auto;border-radius:16px;background:var(--ui-editor-bg)}
+table{width:100%;border-collapse:collapse;font-size:var(--fs);line-height:20px;min-width:640px}
+th,td{text-align:left;vertical-align:top;padding:10px 14px}
+th{font-weight:600;color:var(--ui-fg-info);font-size:var(--fs-sm);white-space:nowrap}
+tbody tr+tr td{border-top:1px solid color-mix(in srgb,var(--ui-fg) 6%,transparent)}
+td.k{white-space:nowrap;font-weight:600}
+code{font-family:var(--font-code);font-size:.92em;background:var(--ui-code-bg);padding:1px 5px;border-radius:4px;overflow-wrap:anywhere}
+.tagk{display:inline-block;font-family:var(--font-code);font-size:11px;line-height:18px;padding:0 7px;border-radius:9px;
+  background:var(--ui-tag-bg);color:var(--ui-tag-fg);white-space:nowrap}
+.tagk.ok{color:var(--ui-success)}
+.tagk.warn{color:var(--ui-warning)}
+.tagk.no{color:var(--ui-error)}
+.tagk.own{color:var(--ai-ink)}
+
+ol.steps,ul.plain{margin:0;padding-left:20px;color:var(--ui-fg-info);line-height:22px}
+ol.steps li+li,ul.plain li+li{margin-top:6px}
+ol.steps b,ul.plain b{color:var(--ui-fg);font-weight:600}
+
+.block{padding:16px 18px;border-radius:16px;background:var(--ui-editor-bg);margin:0}
+.block+.block{margin-top:12px}
+.block h4{margin:0 0 8px;font-size:var(--fs-h2);line-height:22px}
+.block p{margin:0;color:var(--ui-fg-info)}
+.block p+p{margin-top:6px}
+.quote{margin:10px 0 0;padding:10px 14px;border-left:3px solid var(--ui-progress-track);color:var(--ui-fg-info);
+  font-size:var(--fs-sm);line-height:19px}
+.quote b{color:var(--ui-fg);font-weight:600}
+.src{font-size:var(--fs-sm);color:var(--ui-fg-info)}
+.src a{color:var(--ui-link)}
+
+/* ── 对照线框：四帧 ── */
+.frames{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:6px}
+.frame{padding:10px;border-radius:12px;background:var(--ui-editor-bg)}
+.frame h5{margin:0 0 8px;font-size:12px;line-height:16px;font-weight:600;color:var(--ui-fg-info)}
+.wire{height:150px;border-radius:8px;box-shadow:inset 0 0 0 1px var(--ui-border);background:var(--ui-bg);
+  display:flex;flex-direction:column;overflow:hidden;position:relative}
+.wire .ln{height:14px;margin:4px 8px 0;border-radius:3px;background:color-mix(in srgb,var(--ui-fg) 13%,transparent)}
+.wire .ln.s{width:52%}
+.wire .st{margin-top:auto;display:flex;align-items:center;gap:6px;padding:6px 8px;font-size:11px;line-height:16px;
+  color:var(--ai-ink);background:var(--ai-tint-2);border-top:1px solid var(--ui-border)}
+.wire .st i{width:11px;height:11px;border-radius:50%;flex:none;
+  background:conic-gradient(from 0deg,transparent 0 12%,var(--ai-violet) 40%,var(--ai-orchid) 70%,var(--ai-rose));
+  -webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 2px),#000 calc(100% - 1.6px));
+          mask:radial-gradient(farthest-side,transparent calc(100% - 2px),#000 calc(100% - 1.6px))}
+.wire .st.pin{background:var(--ai-surface-2);color:var(--ui-fg)}
+/* 基准线 = 第 1 帧时状态行的位置。四帧都画在同一条 y 上，好看清它被推下去又弹回来。 */
+.wire .fl{position:absolute;left:0;right:0;top:18px;border-top:1px dashed var(--ui-error);opacity:.8}
+.frame.bad .wire .st{margin-top:0}
+.wire .st .stop{margin-left:auto}
+.frame em{display:block;margin-top:8px;font-style:normal;font-size:var(--fs-sm);line-height:18px;color:var(--ui-fg-info)}
+.frame.bad em b{color:var(--ui-error)}
+.frame.good em b{color:var(--ui-success)}
+
+/* ── 内置实测对照 ── */
+.cmp{margin-top:16px}
+.cmp-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.cmp-col{padding:12px;border-radius:16px;background:var(--ui-editor-bg)}
+.cmp-hd{font-size:var(--fs-sm);line-height:18px;font-weight:600;margin-bottom:10px}
+.cmp-col[data-mode="flow"] .cmp-hd{color:var(--ui-error)}
+.cmp-col[data-mode="pin"] .cmp-hd{color:var(--ui-success)}
+.cmp-vp{height:152px;border-radius:8px;background:var(--ui-bg);box-shadow:inset 0 0 0 1px var(--ui-border);
+  overflow:hidden;display:flex;flex-direction:column;position:relative}
+.cmp-body{display:flex;flex-direction:column;padding:6px 8px 0}
+.cmp-vp>.cmp-body{flex:none}
+/* 右栏：内容区占满剩余高度并自己滚，状态行是它下面的固定行 —— 位置与内容长度无关 */
+.cmp-pin{flex:1;min-height:0;display:flex;flex-direction:column}
+.cmp-pin .cmp-body{flex:1;min-height:0;overflow:hidden}
+.cmp-line{font-size:11.5px;line-height:17px;color:var(--ui-fg-info);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  padding:1px 0}
+.cmp-line.done{color:var(--ui-fg)}
+.cmp-line.sum{color:var(--ui-fg-info)}
+.cmp-st{display:flex;align-items:center;gap:6px;padding:6px 9px;font-size:11.5px;line-height:18px;flex:none;
+  color:var(--ui-fg);background:var(--ai-surface-2);border-top:1px solid var(--ui-border)}
+.cmp-st .ai-ring{width:11px;height:11px}
+.cmp-st .cmp-done{width:11px;flex:none;color:var(--ui-success);font-size:11px;line-height:11px;text-align:center}
+.cmp-st .t{font-family:var(--font-code);font-size:11px;color:var(--ui-fg-info);font-variant-numeric:tabular-nums}
+.cmp-st .stop{margin-left:auto;font-size:11px;color:var(--ui-link)}
+.cmp-vp>.cmp-st{background:var(--ai-tint-2);color:var(--ai-ink);border-top:0}
+.cmp-meas{margin-top:9px;font-size:var(--fs-sm);line-height:18px;color:var(--ui-fg-info)}
+.cmp-meas b{font-family:var(--font-code);font-variant-numeric:tabular-nums;color:var(--ui-fg)}
+.cmp-col[data-mode="flow"] .cmp-meas b{color:var(--ui-error)}
+.cmp-col[data-mode="pin"] .cmp-meas b{color:var(--ui-success)}
+.cmp-bar{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:12px}
+.cmp-bar .note{margin:0;font-size:var(--fs-sm);color:var(--ui-fg-info)}
+
+.acks{margin:0;padding:0;list-style:none;display:grid;gap:8px}
+.acks li{display:grid;grid-template-columns:64px minmax(0,1fr);gap:10px;padding:11px 14px;border-radius:12px;background:var(--ui-editor-bg)}
+.acks .id{font-family:var(--font-code);font-size:11px;line-height:18px;color:var(--ui-fg-info)}
+.acks .tx{color:var(--ui-fg)}
+.acks .tx small{display:block;margin-top:3px;color:var(--ui-fg-info);font-size:var(--fs-sm)}
+.acks .tx code{white-space:nowrap}
+
+.todo{margin:0;padding-left:20px;color:var(--ui-fg-info)}
+.todo li+li{margin-top:6px}
+.todo b{color:var(--ui-fg)}
+
+@media (max-width:1240px){.keys{grid-template-columns:1fr}.frames{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:900px){
+  .cmp-grid{grid-template-columns:1fr}
+  table{min-width:0}
+  .acks li{grid-template-columns:1fr;gap:2px}
+}
+@media (prefers-reduced-motion:reduce){
+  .wire .st i,.cmp-st .ai-ring{animation:none}
+}
+</style>
+</head>
+<body>
+<div class="page">
+  <header class="mast">
+    <h1>生成中状态的位置</h1>
+    <span class="grow"></span>
+    <a class="tbtn" href="../../index.html#analysis">返回研究分类</a>
+    <a class="tbtn" href="../../index.html">启动页</a>
+  </header>
+
+  <p class="lede">
+    DevEco Code 里，Agent 生成内容时下面那行「进行中」上下跳。这一页只答三件事：<b>为什么跳</b>、<b>同类产品把这一行放在哪</b>、<b>怎么改</b>；末尾是可直接转成测试的验收条件。
+  </p>
+
+  <div class="keys">
+    <div class="key">
+      <b>跳的不是「内容在长」</b>
+      <span>规范里算位移的是<b>被推动的邻居</b>，不是变大的那个元素。</span>
+    </div>
+    <div class="key">
+      <b>状态行不该待在内容流里</b>
+      <span>待在流里，位置就由内容长度决定——生成多长，它就让多远。</span>
+    </div>
+    <div class="key">
+      <b>拆成两处，就都不跳</b>
+      <span>固定处只说「还在跑 / 怎么停」，流动处只说「做到第几步」。</span>
+    </div>
+  </div>
+
+  <div class="layout">
+    <aside class="sidebar" aria-label="目录">
+      <div class="sd-title">目录</div>
+      <nav>
+        <a class="cat" href="#m"><span class="lbl">01 它为什么会跳</span></a>
+        <a class="cat" href="#why"><span class="lbl">02 这根行为什么不能动</span></a>
+        <a class="cat" href="#peer"><span class="lbl">03 别的产品放在哪</span></a>
+        <a class="cat" href="#fix"><span class="lbl">04 改法</span></a>
+        <a class="cat" href="#plan"><span class="lbl">05 落到 DevEco Code</span></a>
+        <a class="cat" href="#ac"><span class="lbl">06 验收条件</span></a>
+        <a class="cat" href="#src"><span class="lbl">07 来源与局限</span></a>
+      </nav>
+    </aside>
+
+    <main>
+
+      <!-- ══════════════ 01 ══════════════ -->
+      <section class="grp" id="m">
+        <div class="ghead"><h3>01 它为什么会跳</h3><span class="cnt">四种机制</span></div>
+        <p class="lede2">「上下跳」至少要两条同时成立：一条让它往下走，一条让它弹回来。只修一条，问题会从「被推下去」变成「弹回来」。</p>
+
+        <div class="tw">
+          <table>
+            <thead><tr><th>机制</th><th>触发点</th><th>看到的样子</th><th>管的是</th></tr></thead>
+            <tbody>
+              <tr>
+                <td class="k">M1 被推下去</td>
+                <td>状态行的 DOM 排在生成块<b>之后</b>，内容每长一行就顶它一行</td>
+                <td>慢慢往下滑，越生成越远</td>
+                <td>「下」</td>
+              </tr>
+              <tr>
+                <td class="k">M2 弹回来</td>
+                <td>过程收成一行摘要、占位骨架被真内容替换、思考块折叠——高度回落</td>
+                <td>突然往上跳一段</td>
+                <td>「上」</td>
+              </tr>
+              <tr>
+                <td class="k">M3 后到的信息</td>
+                <td>用时、token 数这类结尾信息补在状态行<b>上方</b>那一层</td>
+                <td>已经稳定了又掉一格</td>
+                <td>「下」的第二次</td>
+              </tr>
+              <tr>
+                <td class="k">M4 滚动打架</td>
+                <td>每来一段就滚到底；用户往上翻历史时，跟随逻辑又把它拽回底部</td>
+                <td>整块来回窜，眼睛抓不住</td>
+                <td>放大 M1</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="block" style="margin-top:14px">
+          <h4>判据：位移的定义里就有答案</h4>
+          <blockquote class="quote">
+            只有当已有元素改变起点位置时才算布局位移。<b>新元素加进 DOM、或已有元素改变大小，本身都不算</b>——只要这个变化没有导致其他可见元素改变起点位置。
+            <span class="src">（web.dev《Cumulative Layout Shift》· 见第 7 节）</span>
+          </blockquote>
+          <p style="margin-top:8px">
+            所以<b>内容在长本身不是问题</b>，位置会变的那个邻居才是。把责任放在「生成内容太长」上会修错地方；要改的是<b>让状态行的位置不由内容长度决定</b>。
+          </p>
+          <p>
+            另一件容易误判的事：浏览器的滚动锚定救不了这个场景。它只补偿视口<b>上方</b>的变化，而状态行与生成内容同屏可见。
+            <span class="src">（W3C《CSS Scroll Anchoring Level 1》· 见第 7 节）</span>
+          </p>
+        </div>
+
+        <div class="block">
+          <h4>折叠本身没错，错在这一帧没人接住高度</h4>
+          <p>过程收成一行是好设计（结论先行）。要改的不是折叠，而是让收缩发生在一个不变的框里，或在收缩的同帧把滚动位置补回去。</p>
+        </div>
+      </section>
+
+      <!-- ══════════════ 02 ══════════════ -->
+      <section class="grp" id="why">
+        <div class="ghead"><h3>02 这根行为什么特别不能动</h3><span class="cnt">三条理由</span></div>
+        <p class="lede2">不是所有会动的元素都算缺陷。这一行例外：它全部的价值就是「随手一瞥」，位置一乱就没了。</p>
+
+        <div class="tw">
+          <table>
+            <thead><tr><th>理由</th><th>为什么</th></tr></thead>
+            <tbody>
+              <tr>
+                <td class="k">它是「还在跑」的唯一凭据</td>
+                <td>Agent 干活时人常在看别处，回来第一眼要找的就是它。位置一动，「回来」就从「看一眼」变成「先找一遍」。</td>
+              </tr>
+              <tr>
+                <td class="k">它承载「怎么停下来」</td>
+                <td>停止 / 打断挂在这一行上。会移动的点击目标就是会跑的靶子；点空之后人的第一反应是再点一次。</td>
+              </tr>
+              <tr>
+                <td class="k">它是给人扫的，不是读的</td>
+                <td>在跑 / 在等你 / 在验证 / 完成——扫描依赖固定位置，阅读才依赖上下文。</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="block" style="margin-top:14px">
+          <h4>产品自己的规范早就这么写了——只是没写「位置」</h4>
+          <p>仓库里的既有条文排起来看：「位置稳定」一贯如此，只在「生成态」这一条上漏了。</p>
+          <ul class="plain" style="margin-top:10px">
+            <li><b>状态胶囊本来就设计成原地换色。</b><code>.ai-status</code> 的过渡只有 <code>background / color</code>：八个状态在同一处换颜色、不换位置。
+              <span class="src">（<code>deveco-intui-kit/src/ai.css</code> · 第 2 节「进行态」）</span></li>
+            <li><b>「一个状态只留一处在动」。</b>它原本只管动效、不管位置；这次补全成<b>「一处在动 = 一个动效 + 位移为零」</b>。
+              <span class="src">（<code>ai.css</code> · 另见 <code>docs/ai-system.html</code>）</span></li>
+            <li><b>缓动也不许回弹。</b><code>--ai-ease:cubic-bezier(.2,.8,.2,1)</code> 的注释就是「只减速，不回弹」。状态行上下弹回，正是这条排除的动。</li>
+            <li><b>会变的东西先把空间占住。</b>启动页的 <code>html{scrollbar-gutter:stable}</code> 就是这个办法，注释写着不加它会「整页横向跳一下」。
+              <span class="src">（<code>site/launcher.css</code>）</span></li>
+            <li><b>同一个产品里已经有一处做对了。</b>生成中的输入框用 <code>.ai-field[data-state="generating"]</code>：固定在面板底部、<code>min-height:38px</code> 预留高度，从来不跳——它在 composer 里，不在内容流里。本页推荐的就是这个位置。
+              <span class="src">（<code>ai.css</code> · 第 3 节）</span></li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- ══════════════ 03 ══════════════ -->
+      <section class="grp" id="peer">
+        <div class="ghead"><h3>03 别的产品把这一行放在哪</h3><span class="cnt">四个同类产品</span></div>
+        <p class="lede2">
+          只列能查到出处的一手实现：Codex CLI、Claude Code、Gemini CLI 的源码 / 官方文档，加一个形态最接近的 IDE 面板 Cline。
+          <b>四个里没有一家把状态行排进内容流。</b>
+        </p>
+
+        <div class="tw">
+          <table>
+            <thead><tr><th>产品</th><th>状态行在哪</th><th>位置由谁决定</th><th>出处</th></tr></thead>
+            <tbody>
+              <tr>
+                <td class="k">Codex CLI</td>
+                <td>输入框<b>上方</b>一行，是 bottom pane 自己的 widget，不写进对话记录</td>
+                <td>面板布局</td>
+                <td>源码注释写明目的：<b>「保持一行，避免 bottom pane 的纵向布局抖动」</b>，「打断提示保持在固定的视觉位置」；另有测试专门防止附加文字挤走控件。
+                  <span class="src">（<code>codex-rs/tui/src/status_indicator_widget.rs</code>）</span></td>
+              </tr>
+              <tr>
+                <td class="k">Claude Code</td>
+                <td>footer 里自己的一行：状态行渲染在 footer 徽标<b>上方</b>，且不替换徽标</td>
+                <td>footer 布局</td>
+                <td>官方文档原句「renders in its own row above the built-in footer badges」；<code>esc to interrupt</code> 是 footer 提示。
+                  <span class="src">（Claude Code 文档 · Status line）</span></td>
+              </tr>
+              <tr>
+                <td class="k">Gemini CLI</td>
+                <td>footer 的 StatusRow，<b>固定最小高度 1 行</b></td>
+                <td>固定行高</td>
+                <td>常量 <code>STATUS_MIN_HEIGHT: 1</code>：没有状态时也渲染一个 1 行的空盒子占位；长状态用碰撞检测让位，提示条改用绝对定位测量，注释写「防止布局回路」。
+                  <span class="src">（<code>packages/cli/src/ui/components/StatusRow.tsx</code>）</span></td>
+              </tr>
+              <tr>
+                <td class="k">Cline（VS Code 面板）</td>
+                <td>思考行锁在 150 / 200px 高的内滚框里，内滚不撑外框</td>
+                <td>框高</td>
+                <td>跟随滚动由一个<b>用户意图状态位</b>控制（上滚即置位）；<b>只在折叠时补一次滚底，展开时绝不滚</b>；变高用平滑、变矮用瞬时。
+                  <span class="src">（<code>useScrollBehavior.ts</code> / <code>ThinkingRow.tsx</code>）</span></td>
+              </tr>
+              <tr>
+                <td class="k">DevEco Code（现状）</td>
+                <td>排在生成块正下方，跟着内容走</td>
+                <td><b>内容长度</b></td>
+                <td><span class="tagk no">要修的</span>四家里唯一把位置交给内容长度的一种。</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="block" style="margin-top:14px">
+          <h4>归纳成三类，以及该选哪一类</h4>
+          <p>
+            落点只有三类：<b>外壳常驻</b>（顶栏 / 终端标题 / Xcode 27 的侧栏与工具栏标记）、<b>面板固定行</b>（输入框上方那条带）、<b>内滚框</b>（内容自己滚，外壳不动）。
+            前两类靠布局定位置，第三类靠固定高度定位置——都不需要预测内容会长多高，也不需要滚动补偿。
+          </p>
+          <p>
+            对 DevEco Code：<b>面板固定行为主，外壳胶囊兜底</b>。产品自己的生成中态已经在输入框上方这么做了，沿用即可；顶栏胶囊只留「有别的 Agent 在等你」这类最挡路的一件。
+          </p>
+        </div>
+      </section>
+
+      <!-- ══════════════ 04 ══════════════ -->
+      <section class="grp" id="fix">
+        <div class="ghead"><h3>04 改法</h3><span class="cnt">A–C 必需 · D / E 配套</span></div>
+        <p class="lede2">A 治「被推」，C 治「弹回」，B 是 A 的前提；D 管滚动，E 管字宽。</p>
+
+        <div class="tw">
+          <table>
+            <thead><tr><th>改法</th><th>做什么</th><th>治哪条</th><th>代价</th><th>是否必需</th></tr></thead>
+            <tbody>
+              <tr>
+                <td class="k">A 移出内容流</td>
+                <td>状态行不排在生成块之后，改为面板固定一处的常驻行</td>
+                <td>M1 M3</td>
+                <td>状态离最新一行内容远了一点；固定行紧贴内容区下沿即可</td>
+                <td><span class="tagk no">必需</span></td>
+              </tr>
+              <tr>
+                <td class="k">B 让生成区自己滚</td>
+                <td>内容区给定高度 + 自己滚动，外壳不随内容重排</td>
+                <td>M1（前提）</td>
+                <td>要定「贴底高度」与窄屏下的回落</td>
+                <td><span class="tagk no">必需</span></td>
+              </tr>
+              <tr>
+                <td class="k">C 收缩时接住高度</td>
+                <td>折叠 / 换占位时用等高占位或滚动补偿，让视口里的锚点不动</td>
+                <td>M2</td>
+                <td>折叠必须在一帧内完成</td>
+                <td><span class="tagk no">必需</span></td>
+              </tr>
+              <tr>
+                <td class="k">D 粘底策略</td>
+                <td>只在用户本来就贴着底部时跟随；上滚就停止跟随，并给「回到最新」</td>
+                <td>M4</td>
+                <td>多一个入口按钮</td>
+                <td><span class="tagk warn">B 的配套</span></td>
+              </tr>
+              <tr>
+                <td class="k">E 预留与等宽</td>
+                <td>会变宽的数字用等宽数位；不定态进度条用固定轨道宽度</td>
+                <td>微抖</td>
+                <td>几乎为零</td>
+                <td><span class="tagk ok">已做过一半</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="block" style="margin-top:14px">
+          <h4>E 已经做过一半，别再当新问题提</h4>
+          <p>
+            状态里的数字已用 <code>font-variant-numeric:tabular-nums</code>，<code>3 / 6</code> 涨到 <code>10 / 16</code> 宽度不变。
+            残余的跳动<b>不来自字宽</b>，别去调字号和间距——那会把注意力从真正的原因上引开。<span class="src">（<code>ai.css</code> · <code>.ai-status .t</code>）</span>
+          </p>
+        </div>
+
+        <div class="block">
+          <h4>顺带排除一个反直觉的方向</h4>
+          <p>
+            「让状态行跟着最新内容走，这样离注意力近」等于主动选回现状：位置重新交给内容长度，而且生成越快跳得越频繁。
+            人真正想要的是「别让我找它」，固定位置就能满足。
+          </p>
+        </div>
+      </section>
+
+      <!-- ══════════════ 05 ══════════════ -->
+      <section class="grp" id="plan">
+        <div class="ghead"><h3>05 落到 DevEco Code</h3><span class="cnt">五条改动</span></div>
+        <p class="lede2">不改状态机的八个状态、不改颜色分工，只改「哪一行放在哪」和「收缩时怎么收」。</p>
+
+        <ol class="steps">
+          <li><b>状态行固定在面板底部那一行</b>（现有生成中态那条带，输入框上方），不放在内容末尾。它装状态机那一句（生成中 / 在等你 / 在设备上验证）+ 已用时 + 停止，用现有 <code>.ai-status</code> 原地换色，不需要新组件。</li>
+          <li><b>细粒度步骤留在内容流里。</b>「正在写第 3 / 6 步」本来就该跟着内容走——它描述的是内容本身。</li>
+          <li><b>完成时同帧替换，把高度接住。</b>过程收成一行摘要、占位换真内容都在一帧内完成；内容区用 <code>min-height</code> 预留常见高度，避免「先塌再长」的两拍。</li>
+          <li><b>粘底，而不是每次都滚到底。</b>只在用户贴底时跟随；上滚就停止并显示「回到最新」，滚回底部自动恢复。</li>
+          <li><b>保持既有分工：</b>「在等你」才允许用琥珀色抢注意力，其余进行态安静；一屏只留一处渐变、一处动效。</li>
+        </ol>
+
+        <h4 style="margin:24px 0 8px;font-size:var(--fs-h2)">四帧对照：同一段内容，两种放法</h4>
+        <div class="frames">
+          <div class="frame bad">
+            <h5>现状 · 开始</h5>
+            <div class="wire"><div class="fl"></div><div class="ln"></div><div class="ln s"></div><div class="st"><i></i>进行中 · 1 / 6<span class="stop">停止</span></div></div>
+            <em>状态行落在最后一行内容下面，正好压在基准线上。</em>
+          </div>
+          <div class="frame bad">
+            <h5>现状 · 生成到一半</h5>
+            <div class="wire"><div class="fl"></div><div class="ln"></div><div class="ln"></div><div class="ln"></div><div class="ln s"></div><div class="ln"></div><div class="st"><i></i>进行中 · 4 / 6<span class="stop">停止</span></div></div>
+            <em><b>被推下去 4 行。</b>虚线是原位置；越生成越远，可能已被滚出视野。</em>
+          </div>
+          <div class="frame bad">
+            <h5>现状 · 生成结束</h5>
+            <div class="wire"><div class="fl"></div><div class="ln s"></div><div class="st"><i></i>完成 · 6 步<span class="stop">收起</span></div></div>
+            <em><b>弹回来。</b>过程收成一行，高度回落，状态行跳回基准线——一整趟「先下后上」。</em>
+          </div>
+          <div class="frame good">
+            <h5>建议 · 全程任意一帧</h5>
+            <div class="wire"><div class="fl"></div><div class="ln"></div><div class="ln"></div><div class="ln"></div><div class="ln s"></div><div class="st pin"><i></i>生成中 · 4 / 6<span class="stop">停止</span></div></div>
+            <em>状态行<b>固定在内容区下沿</b>；内容上面长、上面收，它离基准线的距离不变。</em>
+          </div>
+        </div>
+
+        <h4 style="margin:26px 0 8px;font-size:var(--fs-h2)">自带实测：两种放法同时跑一遍</h4>
+        <p class="lede2" style="margin:0 0 4px">
+          两块跑同一段内容（6 步 → 收成一行），各自实时量状态行的位移。数字是页面自己算的，不是写死的。
+        </p>
+        <div class="cmp" id="cmp">
+          <div class="cmp-grid">
+            <div class="cmp-col" data-mode="flow">
+              <div class="cmp-hd">现状 · 状态行排在生成内容后面</div>
+              <div class="cmp-vp" id="lf-vp">
+                <div class="cmp-body" id="lf-body"></div>
+                <div class="cmp-st"><span class="ai-ring"></span><span class="lbl">生成中</span><span class="t" id="lf-t">0 / 6</span><span class="stop">停止</span></div>
+              </div>
+              <div class="cmp-meas">状态行位移 <b id="lf-m">—</b></div>
+            </div>
+            <div class="cmp-col" data-mode="pin">
+              <div class="cmp-hd">建议 · 状态行固定在面板底部</div>
+              <div class="cmp-vp" id="rn-vp">
+                <div class="cmp-pin"><div class="cmp-body" id="rn-body"></div></div>
+                <div class="cmp-st"><span class="ai-ring"></span><span class="lbl">生成中</span><span class="t" id="rn-t">0 / 6</span><span class="stop">停止</span></div>
+              </div>
+              <div class="cmp-meas">状态行位移 <b id="rn-m">—</b></div>
+            </div>
+          </div>
+          <div class="cmp-bar">
+            <button class="tbtn" type="button" id="cmp-play">重播</button>
+            <p class="note">位移 = 状态行相对内容区上沿的最大上下落差。左边是「被内容推着走」的量，右边是「由面板决定」的量。</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════════ 06 ══════════════ -->
+      <section class="grp" id="ac">
+        <div class="ghead"><h3>06 验收条件</h3><span class="cnt">六条，可勾</span></div>
+        <p class="lede2">写成能被测的句子，而不是「感觉不跳了」。AC-1 可以直接变成一条自动化断言。</p>
+
+        <ul class="acks">
+          <li>
+            <span class="id">AC-1</span>
+            <span class="tx">生成全程，状态位的 <code>getBoundingClientRect().top</code> 相对面板的位移 = 0
+              <small>逐帧采样；允许 1px 亚像素误差。第 5 节那块实测就是这条断言的最小实现。</small></span>
+          </li>
+          <li>
+            <span class="id">AC-2</span>
+            <span class="tx">生成期间用户上滚后不再自动跟随，出现「回到最新」；滚回底部后跟随自动恢复
+              <small>覆盖 M4。用「用户上滚过没有」这个状态位判断，而不是「距底部小于 N px」——Cline 用的就是前者。</small></span>
+          </li>
+          <li>
+            <span class="id">AC-3</span>
+            <span class="tx">过程折叠 / 占位替换的那一帧，视口内已知锚点的 top 位移 ≤ 1px
+              <small>覆盖 M2。折叠必须同帧完成，不许「先塌后长」的两拍。</small></span>
+          </li>
+          <li>
+            <span class="id">AC-4</span>
+            <span class="tx">停止 / 打断在生成全程可点，且它自己的 bounding rect 不变
+              <small>移动的点击目标 = 点空；同时是可达性要求。</small></span>
+          </li>
+          <li>
+            <span class="id">AC-5</span>
+            <span class="tx">开「降低动效」后 AC-1 仍成立；此时「动的信息」改为文字（步骤数 / 已用时）
+              <small>沿用状态机的既有原则：降低动效时不靠动效传进度。</small></span>
+          </li>
+          <li>
+            <span class="id">AC-6</span>
+            <span class="tx">状态行不做位置动画（不用 transition 过渡 top / transform）；状态变化只换色与图标
+              <small>与 <code>.ai-status</code> 现有的换色过渡、以及「只减速、不回弹」的缓动原则一致。</small></span>
+          </li>
+        </ul>
+      </section>
+
+      <!-- ══════════════ 07 ══════════════ -->
+      <section class="grp" id="src">
+        <div class="ghead"><h3>07 来源与局限</h3><span class="cnt">哪些可核 · 哪些待补</span></div>
+
+        <div class="tw">
+          <table>
+            <thead><tr><th>来源</th><th>用在这一页的哪一条</th></tr></thead>
+            <tbody>
+              <tr><td class="k">web.dev《Cumulative Layout Shift (CLS)》</td><td>布局位移的定义，以及「新元素与变大本身不算位移、被推动的邻居才算」这条判据。</td></tr>
+              <tr><td class="k">W3C《CSS Scroll Anchoring Level 1》(WD, 2020-11-11)</td><td>滚动锚定只补偿视口<b>上方</b>的变化——用来说明「同屏可见时锚定帮不上忙」。</td></tr>
+              <tr><td class="k"><code>openai/codex</code> · <code>codex-rs/tui/src/status_indicator_widget.rs</code></td><td>「保持一行，避免 bottom pane 纵向布局抖动」「打断提示保持在固定视觉位置」，以及防止状态文字挤走控件的测试。</td></tr>
+              <tr><td class="k">Claude Code 文档 · Status line</td><td>「状态行渲染在 footer 徽标上方自己的一行，且不替换徽标」。</td></tr>
+              <tr><td class="k"><code>google-gemini/gemini-cli</code> · <code>packages/cli/src/ui/components/StatusRow.tsx</code></td><td><code>STATUS_MIN_HEIGHT = 1</code>：无状态时也留一行空盒子；长状态的碰撞检测与绝对定位测量。</td></tr>
+              <tr><td class="k"><code>cline/cline</code> · <code>useScrollBehavior.ts</code> / <code>ThinkingRow.tsx</code></td><td>用户意图状态位控制跟随、「只在折叠时滚、展开时不滚」、思考行的固定高度内滚框。</td></tr>
+              <tr><td class="k"><code>deveco-intui-kit/src/ai.css</code></td><td>八态状态机、<code>.ai-status</code> 原地换色、「一处在动」、不回弹的缓动、<code>tabular-nums</code>、生成中态的固定位置与预留高度。</td></tr>
+              <tr><td class="k"><code>deveco-intui-kit/docs/ai-system.html</code></td><td>状态机一章：降低动效时把动的信息改成字。</td></tr>
+              <tr><td class="k"><code>site/launcher.css</code></td><td><code>scrollbar-gutter:stable</code>：给会变的东西先占住空间。</td></tr>
+              <tr><td class="k"><code>analysis/xcode27/REPORT-Xcode27新特性研究.html</code></td><td>Xcode 27 的侧栏与工具栏双标记；原报告附 Apple 文档链接与配图。</td></tr>
+              <tr><td class="k"><code>README.md</code></td><td>顶栏 Agent 胶囊约定 <code>DemoFrame.agent(...)</code>：状态放在外壳、不在对话流里。</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="block" style="margin-top:14px">
+          <h4>局限：缺一份产品内现场证据</h4>
+          <p>
+            现象发生在 <b>DevEco Code 产品里</b>，不在本仓库的界面稿里。机制（M1–M4）、判据与四个同类产品都有一手出处；但
+            <b>「这一次到底 M1 还是 M2 在主责」需要一次产品内录屏或截图</b>——尤其完成那一刻是「收成一行」还是「占位被替换」，两者对应不同的修法顺序。
+            补证据的最小做法：录一次带时间轴的生成过程，必须含「最后一段内容落完」与「过程折叠完成」前后两帧，各取一图量状态行与相邻元素的 top。
+          </p>
+        </div>
+
+        <div class="block">
+          <h4>待确认（三条）</h4>
+          <ul class="todo">
+            <li><b>收缩方式</b>：折叠、换占位，还是两者都有？决定 A / C 谁先做。</li>
+            <li><b>面板底部那条带现在有几个占用者</b>（生成中态、上下文 / 模型信息、快捷键提示）？需要一次同屏清点，避免新状态行挤走旧的又跳一次。</li>
+            <li><b>多 Agent 时这一行显示谁</b>？既有规则是「胶囊只推最挡路的一件」，是否沿用到面板固定行要定下来。</li>
+          </ul>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <footer style="margin-top:56px;color:var(--ui-fg-info);font-size:var(--fs-sm);line-height:20px">
+    <p style="margin:0">
+      DevEco · 分析与研究 · 生成中状态的位置。第 5 节两块对照的数字由页面实时测量，不是写死的。
+    </p>
+  </footer>
+</div>
+
+<script>
+/* 第 5 节的两块对照：同一段内容、两种放法，各自实时量状态行相对内容区上沿的位移。
+   左边状态行在内容流末尾（会被推）；右边状态行是面板固定行（不会被推）。 */
+(function () {
+  var STEPS = ['读 ListPage.ets', '定位 cachedCount', '写第 1 处改动', '写第 2 处改动', '跑 ArkTS 检查', '真机复核'];
+  var SUMMARY = '过程已收起 · 执行 6 步';
+
+  var lfBody = document.getElementById('lf-body');
+  var lfVp = document.getElementById('lf-vp');
+  var lfSt = lfVp.querySelector('.cmp-st');
+  var lfT = document.getElementById('lf-t');
+  var lfM = document.getElementById('lf-m');
+
+  var rnBody = document.getElementById('rn-body');
+  var rnVp = document.getElementById('rn-vp');
+  var rnSt = rnVp.querySelector('.cmp-st');
+  var rnT = document.getElementById('rn-t');
+  var rnM = document.getElementById('rn-m');
+
+  if (!lfBody || !rnBody) return;
+
+  var timers = [];
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var GAP = reduce ? 0 : 420;
+
+  function clearTimers() {
+    timers.forEach(clearTimeout);
+    timers = [];
+  }
+  function line(text, cls) {
+    var d = document.createElement('div');
+    d.className = 'cmp-line' + (cls ? ' ' + cls : '');
+    d.textContent = text;
+    return d;
+  }
+  /* 量的是状态行相对各自内容区上沿的位置；记录全程的上下落差。 */
+  function makeGauge(st, vp, out) {
+    var lo = null, hi = null;
+    return {
+      reset: function () { lo = hi = null; out.textContent = '—'; },
+      sample: function () {
+        var v = Math.round(st.getBoundingClientRect().top - vp.getBoundingClientRect().top);
+        if (lo === null || v < lo) lo = v;
+        if (hi === null || v > hi) hi = v;
+        out.textContent = (hi - lo) + ' px';
+      }
+    };
+  }
+  var gL = makeGauge(lfSt, lfVp, lfM);
+  var gR = makeGauge(rnSt, rnVp, rnM);
+
+  /* running 时是转圈 + 「生成中 · n / 6」；完成后换勾 + 「完成 · 6 步」——与状态机一致，位置一次都不动。 */
+  function setPhase(running, total, n) {
+    [lfSt, rnSt].forEach(function (st) {
+      var ic = st.firstElementChild;
+      ic.className = running ? 'ai-ring' : 'cmp-done';
+      ic.textContent = running ? '' : '✓';
+      st.querySelector('.lbl').textContent = running ? '生成中' : '完成';
+    });
+    var txt = running ? (n + ' / ' + total) : (total + ' 步');
+    lfT.textContent = txt;
+    rnT.textContent = txt;
+  }
+  function renderSummary() {
+    lfBody.replaceChildren(line(SUMMARY, 'sum'));
+    rnBody.replaceChildren(line(SUMMARY, 'sum'));
+    setPhase(false, STEPS.length, STEPS.length);
+  }
+  function run() {
+    clearTimers();
+    lfBody.replaceChildren();
+    rnBody.replaceChildren();
+    gL.reset();
+    gR.reset();
+    setPhase(true, STEPS.length, 0);
+    gL.sample();
+    gR.sample();
+    STEPS.forEach(function (text, i) {
+      timers.push(setTimeout(function () {
+        lfBody.appendChild(line(text, 'done'));
+        rnBody.appendChild(line(text, 'done'));
+        setPhase(true, STEPS.length, i + 1);
+        gL.sample();
+        gR.sample();
+      }, GAP * (i + 1)));
+    });
+    timers.push(setTimeout(function () {
+      renderSummary();
+      gL.sample();
+      gR.sample();
+    }, GAP * (STEPS.length + 1) + (reduce ? 0 : 700)));
+  }
+
+  document.getElementById('cmp-play').addEventListener('click', run);
+  run();
+})();
+</script>
+</body>
+</html>
