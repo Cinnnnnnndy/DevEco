@@ -363,17 +363,16 @@ window.DEVECO_CATALOG = {
       note: '对内汇报与对外协同共用的事实基础：以开发者证据推动方案，不以设计观点推动方案。',
       items: [
         {
-          title: '会话基本单元怎么显示：思考与工具调用，默认折到哪一层', subtitle: 'Agent Session Units · Thinking, Tool Calls, Collapse',
-          desc: 'Codex、Claude Code、DeepSeek Harness、WorkBuddy 四家把一次会话切成哪些块：思考、工具调用、工具结果、计划、收尾。逐家给「生成中 / 生成后」两帧结构示意，回答是否默认折叠、折在单元 / 步骤组 / 整轮哪一层、什么时候折、展开入口有几个。四家都不默认展开过程，但思考的处理分成三种：完成后不显示（Codex）、关在 transcript 里（Claude）、只给首行（DeepSeek）；WorkBuddy 的对话里没有独立思考单元，用计划卡承担过程。末尾是六条可抄与两条别抄，以及可点的「同一段过程三种密度」对照。',
-          view: 'doc', date: '2026-10-19', href: 'analysis/agent-session-units/index.html',
+          title: '会话单元显示竞品分析：思考、工具调用折不折叠', subtitle: 'Agent Conversation Units · Codex, Claude, DeepSeek, WorkBuddy, Cursor',
+          desc: '先讲折叠发生在单元 / 步骤组 / 整轮三层与折叠时机；再把一轮 Agent 回复拆成思考、读与搜、执行命令、改文件、子 Agent、计划、产物、状态计时八类单元，逐个看 Codex（CLI / App）、Claude（Claude.ai / Claude Code）、DeepSeek（网页 / Harness）、WorkBuddy、Cursor 在生成中和生成后长什么样、默认是否折叠；附各家生成中 / 生成后示意、用户反弹、DevEco 对话流默认策略与消融记录。官方、社区、推断分开标注；DeepSeek Harness、Codex 按源码复核。',
+          view: 'doc', date: '2026-10-19', href: 'analysis/agent-conversation-units/REPORT-会话单元显示竞品分析.html',
           links: [
-            { label: '四家总表', href: 'analysis/agent-session-units/index.html#matrix' },
-            { label: '折叠发生在三层', href: 'analysis/agent-session-units/index.html#layers' },
-            { label: '落到 DevEco', href: 'analysis/agent-session-units/index.html#ours' },
-            { label: '来源与局限', href: 'analysis/agent-session-units/index.html#src' },
+            { label: '三层折叠', href: 'analysis/agent-conversation-units/REPORT-会话单元显示竞品分析.html#layers' },
+            { label: '总表', href: 'analysis/agent-conversation-units/REPORT-会话单元显示竞品分析.html#matrix' },
+            { label: '对 DevEco 的建议', href: 'analysis/agent-conversation-units/REPORT-会话单元显示竞品分析.html#deveco' },
+            { label: '消融记录', href: 'analysis/agent-conversation-units/REPORT-会话单元显示竞品分析.html#ablation' },
           ],
-          tags: ['竞品分析', '思考', '工具调用', '默认折叠', '生成态', 'Agent', 'Codex', 'Claude Code', 'DeepSeek Harness', 'WorkBuddy'],
-          thumb: { type: 'image', src: 'site/thumbs/agent-session-units.jpg' },
+          tags: ['竞品分析', '对话流', '思考', '工具调用', '默认折叠', '生成态', 'Codex', 'Claude Code', 'DeepSeek Harness', 'WorkBuddy', 'Cursor'], thumb: { type: 'image', src: 'site/thumbs/agent-conversation-units.jpg' },
         },
         {
           title: '生成中状态的位置：那一行不该跟着内容跳', subtitle: 'Status Anchor · Layout Stability While Streaming',
@@ -400,16 +399,6 @@ window.DEVECO_CATALOG = {
           ],
           tags: ['钱佳丽', 'IDE', '文件树', '缩进', '图标', '字号', 'UX'],
           thumb: { type: 'image', src: 'analysis/ide-tree-lab/assets/ide-standard.png' },
-        },
-        {
-          title: '会话单元显示竞品分析：思考、工具调用折不折叠', subtitle: 'Agent Conversation Units · Codex, Claude, DeepSeek, WorkBuddy, Cursor',
-          desc: '把一轮 Agent 回复拆成思考、读与搜、执行命令、改文件、子 Agent、计划、产物、状态计时八类单元，逐个看 Codex（CLI / App）、Claude（Claude.ai / Claude Code）、DeepSeek（网页 / Harness）、WorkBuddy、Cursor 在生成中和生成后长什么样、默认是否折叠；附各家生成中 / 生成后示意、用户反弹与 DevEco 对话流默认策略建议。官方、社区、推断分开标注。',
-          view: 'doc', date: '2026-10-19', href: 'analysis/agent-conversation-units/REPORT-会话单元显示竞品分析.html',
-          links: [
-            { label: '总表', href: 'analysis/agent-conversation-units/REPORT-会话单元显示竞品分析.html#matrix' },
-            { label: '对 DevEco 的建议', href: 'analysis/agent-conversation-units/REPORT-会话单元显示竞品分析.html#deveco' },
-          ],
-          tags: ['友商研究', '对话流', '思考', '工具调用', '折叠'], thumb: { type: 'image', src: 'site/thumbs/agent-conversation-units.jpg' },
         },
         {
           title: '消融记录：每个 demo 删了什么、为什么', subtitle: 'Ablation Records · What Was Cut and Why',
