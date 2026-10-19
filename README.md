@@ -125,3 +125,7 @@
 配好之后所有相对链接（demo、分析页、pptx 等）照常可用，不用改任何路径；每个 `demos/<slug>/index.html` 也会各自变成一条可以直接分享的独立网址。
 
 **根目录的 `.nojekyll` 不要删。** GitHub Pages 默认会跑 Jekyll 构建，Jekyll 会把名字以下划线开头的目录整个跳过不发布——`demos/_shared/`（所有 demo 共用的 `frame.js` / `frame.css`）正好是这种目录。少了 `.nojekyll`，线上每个 demo 都会因为 `DemoFrame` 未定义而白屏（本地 `file://` 打开不受影响，只有真正发布到 Pages 才会踩到，所以容易漏测）。
+
+## AI 编码会话单元竞品分析
+
+[七产品详细报告](analysis/agent-session-units/REPORT.md)：Codex、Claude Code、DeepSeek Harness、WorkBuddy、Cursor、Windsurf / Cascade、VS Code Copilot 的思考与工具单元，比较生成中、生成后、默认折叠及证据边界，附官方界面配图与 DevEco 交互建议（2026-10-19 文档研究版）。
