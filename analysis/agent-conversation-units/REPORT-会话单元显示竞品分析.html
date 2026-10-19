@@ -1,0 +1,550 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>会话单元呈现竞品分析</title>
+<style>
+:root{
+  --bg:#f5f6f8; --paper:#ffffff; --ink:#15171a; --ink2:#4a4f57; --ink3:#7a808a; --line:#e3e5e9; --line2:#eef0f3;
+  --accent:#3574f0; --accent-bg:#edf3ff;
+  --ok:#1f8a4c; --ok-bg:#e6f5ec; --warn:#b76e00; --warn-bg:#fdf1e3; --bad:#c7000b; --bad-bg:#fdecec; --mute-bg:#eef0f3;
+  --term:#0f1115; --term-ink:#d6d9de; --term-dim:#7d838c;
+  --shadow:0 1px 2px rgba(16,24,40,.06),0 4px 16px rgba(16,24,40,.06);
+  --mono:ui-monospace,"JetBrains Mono",Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --bg:#16171a; --paper:#1e2024; --ink:#e6e8eb; --ink2:#b3b8c0; --ink3:#868b94; --line:#30333a; --line2:#272a30;
+    --accent:#6b9bfa; --accent-bg:#233150;
+    --ok:#5fc48a; --ok-bg:#1d3326; --warn:#f0a052; --warn-bg:#3a2d1e; --bad:#ff6b6b; --bad-bg:#3a2224; --mute-bg:#272a30;
+    --term:#0b0c0f; --shadow:none;
+  }
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.7 -apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}
+a{color:var(--accent);text-decoration:none} a:hover{text-decoration:underline}
+code{font-family:var(--mono);font-size:.9em;background:var(--line2);padding:1px 5px;border-radius:4px}
+.wrap{max-width:1280px;margin:0 auto;padding:40px 32px 80px}
+.eyebrow{font-size:12px;letter-spacing:.08em;color:var(--ink3)}
+h1{font-size:30px;line-height:1.3;margin:6px 0 12px}
+.lede{color:var(--ink2);max-width:80ch;margin:0}
+h2{font-size:21px;margin:48px 0 12px;scroll-margin-top:16px}
+h2 small{font-size:13px;font-weight:400;color:var(--ink3);margin-left:8px}
+h3{font-size:16px;margin:0}
+nav.toc{display:flex;flex-wrap:wrap;gap:6px;margin:20px 0 0}
+nav.toc a{font-size:13px;border:1px solid var(--line);background:var(--paper);border-radius:999px;padding:3px 12px;color:var(--ink2)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12.5px;color:var(--ink2);margin:14px 0 0}
+
+/* 逐条 */
+ol.items,ul.items{list-style:none;margin:0;padding:0;background:var(--paper);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);counter-reset:it}
+.items>li{display:flex;gap:12px;padding:10px 16px;border-bottom:1px solid var(--line2);font-size:13.5px;color:var(--ink2)}
+.items>li:last-child{border-bottom:none}
+ol.items>li::before{counter-increment:it;content:counter(it);flex:none;width:20px;height:20px;border-radius:50%;background:var(--accent-bg);color:var(--accent);font-size:11.5px;font-weight:700;display:flex;align-items:center;justify-content:center;margin-top:1px}
+ul.items>li::before{content:"";flex:none;width:6px;height:6px;border-radius:50%;background:var(--ink3);margin-top:9px}
+.items b{color:var(--ink);font-weight:600}
+
+/* 表 */
+.tw{background:var(--paper);border:1px solid var(--line);border-radius:12px;overflow:auto;box-shadow:var(--shadow)}
+table{border-collapse:collapse;width:100%;font-size:13px;min-width:1000px}
+th,td{text-align:left;vertical-align:top;padding:9px 12px;border-bottom:1px solid var(--line2)}
+thead th{font-size:12px;color:var(--ink3);background:var(--line2);font-weight:600;position:sticky;top:0}
+tbody th{font-weight:600;white-space:nowrap;width:130px}
+tbody th small{display:block;font-weight:400;color:var(--ink3);font-size:11.5px}
+tr:last-child td,tr:last-child th{border-bottom:none}
+.fold{display:inline-block;font-size:11.5px;font-weight:700;border-radius:5px;padding:0 7px;line-height:19px;white-space:nowrap;margin-right:4px}
+.fold.y{background:var(--ok-bg);color:var(--ok)} .fold.n{background:var(--bad-bg);color:var(--bad)} .fold.p{background:var(--warn-bg);color:var(--warn)} .fold.u{background:var(--mute-bg);color:var(--ink3)}
+.res{display:inline-block;font-size:11.5px;font-weight:700;border-radius:5px;padding:0 7px;line-height:19px;white-space:nowrap}
+.res.del{background:var(--bad-bg);color:var(--bad)} .res.mrg{background:var(--warn-bg);color:var(--warn)} .res.keep{background:var(--ok-bg);color:var(--ok)}
+.ev{display:inline-block;font-size:11px;font-weight:600;border-radius:4px;padding:0 5px;line-height:17px;margin-left:4px;vertical-align:1px;white-space:nowrap}
+.ev.o{background:var(--ok-bg);color:var(--ok)}
+.ev.m{background:var(--accent-bg);color:var(--accent)}
+.ev.i{background:var(--warn-bg);color:var(--warn)}
+.ev.q{background:var(--mute-bg);color:var(--ink3)}
+
+/* 产品卡 */
+.prod{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:16px 18px;box-shadow:var(--shadow);margin-bottom:14px;scroll-margin-top:16px}
+.prod-h{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 12px}
+.prod-h .surf{font-size:12.5px;color:var(--ink3)}
+.pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:10px 0 10px}
+.pane{border:1px solid var(--line);border-radius:10px;overflow:hidden;min-width:0;display:flex;flex-direction:column}
+.pane>.term,.pane>.gui{flex:1}
+.pane .cap{font-size:11.5px;font-weight:700;letter-spacing:.04em;padding:5px 10px;border-bottom:1px solid var(--line);background:var(--line2)}
+.pane .cap.live{color:var(--accent)} .pane .cap.done{color:var(--ok)}
+.term{background:var(--term);color:var(--term-ink);font:12px/1.65 var(--mono);padding:10px 12px;white-space:pre-wrap;word-break:break-word;margin:0}
+.term .d{color:var(--term-dim)} .term .g{color:#4fc27c} .term .r{color:#ff6b6b} .term .b{font-weight:700;color:#fff} .term .a{color:#d9a35b}
+.term .sh{background:linear-gradient(90deg,var(--term-dim),#fff,var(--term-dim));background-size:200% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:sh 2s linear infinite;font-weight:700}
+@keyframes sh{to{background-position:-200% 0}}
+.gui{padding:10px 12px;font-size:12.5px;background:var(--paper)}
+.gui .row{display:flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:8px;padding:4px 9px;margin:5px 0;color:var(--ink2);background:var(--bg)}
+.gui .row .chev{margin-left:auto;color:var(--ink3);font-size:11px}
+.gui .row.flat{border:none;background:none;padding:2px}
+.gui .row.in{margin-left:16px}
+.gui .think{color:var(--ink3);border-left:2px solid var(--line);padding:2px 0 2px 10px;margin:4px 0;font-size:12px}
+.gui .ans{color:var(--ink);margin:6px 2px 2px}
+.gui .muted{color:var(--ink3)}
+.gui .spin{display:inline-block;width:10px;height:10px;border:2px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:rot .9s linear infinite;flex:none}
+@keyframes rot{to{transform:rotate(360deg)}}
+.gui .ok{color:var(--ok);font-weight:700}
+@media (prefers-reduced-motion:reduce){.term .sh,.gui .spin{animation:none}}
+.prod ul.facts{list-style:none;margin:0;padding:0}
+.prod ul.facts li{font-size:13.5px;color:var(--ink2);padding:5px 0 5px 14px;border-top:1px solid var(--line2);position:relative}
+.prod ul.facts li::before{content:"";position:absolute;left:2px;top:14px;width:5px;height:5px;border-radius:50%;background:var(--ink3)}
+
+.src{font-size:12.5px;color:var(--ink2);columns:2;column-gap:28px;padding-left:18px}
+.src li{margin:2px 0;break-inside:avoid}
+
+@media (max-width:900px){ .pair{grid-template-columns:1fr} .src{columns:1} }
+@media (max-width:560px){ .wrap{padding:24px 16px 60px} h1{font-size:24px} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="eyebrow">分析与研究 · 2026-10-19 · 作者：王欣迪</div>
+  <h1>会话基本单元的呈现方式：Codex、Claude、DeepSeek、WorkBuddy、Cursor 对照</h1>
+  <p class="lede">对比五款 AI 编码 / 办公 Agent 如何呈现会话中的过程信息（思考、读取与检索、命令执行、文件修改、子 Agent、计划、产物、耗时），关注三点：生成中的过程可见性、生成后的默认折叠策略、展开入口。最后给出 DevEco 智能体对话流的默认呈现建议。</p>
+  <div class="legend">
+    <span><span class="ev o">官方</span> 文档 / 更新日志 / 源码 / 官方截图</span>
+    <span><span class="ev m">社区</span> issue / 论坛 / 媒体</span>
+    <span><span class="ev i">推断</span> 未找到文字出处</span>
+    <span><span class="ev q">待确认</span> 需实机</span>
+    <span>示意图按资料重画，不是截图</span>
+  </div>
+  <nav class="toc">
+    <a href="#keys">结论</a><a href="#layers">三层折叠</a><a href="#matrix">总表</a>
+    <a href="#codex">Codex</a><a href="#claude">Claude</a><a href="#deepseek">DeepSeek</a><a href="#workbuddy">WorkBuddy</a><a href="#cursor">Cursor</a>
+    <a href="#voices">用户反馈</a><a href="#deveco">对 DevEco 的建议</a><a href="#ablation">消融记录</a><a href="#sources">来源</a>
+  </nav>
+
+  <h2 id="keys">结论</h2>
+  <ol class="items">
+    <li><span><b>折叠层级：</b>过程信息可在单元、步骤组、整轮三个层级折叠，各产品的体验差异主要来自层级选择。</span></li>
+    <li><span><b>主流策略：</b>生成中保持过程可见（当前动作与耗时），生成后收敛为摘要行，由用户按需展开。</span></li>
+    <li><span><b>思考内容：</b>仅 DeepSeek 网页版默认展示推理原文；Codex、Claude Code 不将思考写入对话流，Cursor 默认折叠，WorkBuddy 以计划卡替代。</span></li>
+    <li><span><b>折叠过度：</b>降低过程的可监督性。Codex 合并成功命令后因用户反对宣布回滚；Cursor 的整轮自动折叠持续收到负面反馈。</span></li>
+    <li><span><b>展开过度：</b>挤占答案的阅读空间。Claude 桌面端在生成中完整展开思考，用户反馈难以定位答案。</span></li>
+    <li><span><b>可配置性：</b>DeepSeek Harness 将信息密度（四档）与折叠时机（两种）开放为用户设置，是目前最完整的参照。</span></li>
+  </ol>
+
+  <h2 id="layers">三层折叠<small>位置 · 时机</small></h2>
+  <div class="tw"><table>
+    <thead><tr><th>层</th><th>Codex CLI</th><th>Claude Code</th><th>DeepSeek Harness</th><th>WorkBuddy</th><th>Cursor</th></tr></thead>
+    <tbody>
+      <tr><th>L1 单元<small>收起内容，保留标识行</small></th>
+        <td>命令一行 + 头尾预览；思考不留行</td>
+        <td>工具一行 + 结果一行；思考只留「thought for Ns」</td>
+        <td>24px 一行；点开是终端 / diff / 读文件卡</td>
+        <td>动作一行 + 增删行数，▾ 展开 diff</td>
+        <td>思考一行，可展开</td></tr>
+      <tr><th>L2 步骤组<small>合并连续的同类操作</small></th>
+        <td>读与搜合成 Explored；命令不合并</td>
+        <td>无组头；同一 MCP 多次调用合成一行</td>
+        <td>组头一句汇总 + 组内行</td>
+        <td>计划项下挂中间步骤</td>
+        <td>轮内按编辑 / 终端分组</td></tr>
+      <tr><th>L3 整轮<small>收起本轮全部过程</small></th>
+        <td>不折；结尾一行 Worked for；全量去 Ctrl+T</td>
+        <td>不折；chat / transcript 两种视图</td>
+        <td><span class="fold y">折叠</span>默认完成即折成「已完成，用时」</td>
+        <td>不折；计划卡留原位，产物去右侧</td>
+        <td><span class="fold y">折叠</span>发下一条消息时折成 Worked for</td></tr>
+      <tr><th>折叠时机</th>
+        <td>—</td><td>—</td>
+        <td>completion（默认）/ next-input 可选</td>
+        <td>—</td>
+        <td>固定 next-input，不可关</td></tr>
+    </tbody>
+  </table></div>
+  <ul class="items" style="margin-top:12px">
+    <li><span><b>完成时折叠：</b>结论出现的同时过程被收起，用户无法对照过程核对结论。</span></li>
+    <li><span><b>下一轮输入时折叠：</b>过程保留到用户发起下一轮，便于回看，但会话长度增加。</span></li>
+    <li><span><b>设计要点：</b>折叠时机对体验的影响大于折叠位置。DeepSeek Harness 将两种时机都开放为设置；Cursor 固定且不可关闭，是负面反馈最集中的设计。</span></li>
+  </ul>
+
+  <h2 id="matrix">总表<small>生成中 → 生成后</small></h2>
+  <div class="tw"><table>
+    <thead><tr><th>产品 / 端</th><th>思考：生成中</th><th>思考：生成后</th><th>工具：生成中</th><th>工具：生成后</th><th>全量入口</th></tr></thead>
+    <tbody>
+      <tr><th>Codex CLI<small>终端</small></th>
+        <td>摘要标题顶替底部「Working」<span class="ev o">官方</span></td>
+        <td><span class="fold y">折叠</span>只进转录 <span class="ev o">官方</span></td>
+        <td>Exploring / Running + 动画 <span class="ev o">官方</span></td>
+        <td><span class="fold p">部分</span>Explored / Ran + 头尾几行 <span class="ev o">官方</span></td>
+        <td>Ctrl+T</td></tr>
+      <tr><th>Codex App<small>桌面 / IDE</small></th>
+        <td>一行摘要，被截断 <span class="ev m">社区</span></td>
+        <td><span class="fold u">不一致</span>有时整段不显示 <span class="ev m">社区</span></td>
+        <td>分组动作卡 <span class="ev m">社区</span></td>
+        <td><span class="fold y">折叠</span>Edited 3 files… 一行 <span class="ev m">社区</span></td>
+        <td>Review 面板</td></tr>
+      <tr><th>Claude.ai<small>网页 / App</small></th>
+        <td>「思考」+ 计时器 <span class="ev o">官方</span></td>
+        <td><span class="fold y">折叠</span>可展开区块，内容是摘要 <span class="ev o">官方</span></td>
+        <td>单行状态 <span class="ev i">推断</span></td>
+        <td><span class="fold y">折叠</span>可展开一行 <span class="ev i">推断</span></td>
+        <td>点开区块</td></tr>
+      <tr><th>Claude Code CLI<small>终端</small></th>
+        <td>底部「✻ Thinking…」<span class="ev o">官方</span></td>
+        <td><span class="fold y">折叠</span>只留「thought for Ns」<span class="ev o">官方</span></td>
+        <td>● Tool(args) + └ 状态 <span class="ev o">官方</span></td>
+        <td><span class="fold p">部分</span>一行结果 + 展开提示 <span class="ev o">官方</span></td>
+        <td>Ctrl+O transcript</td></tr>
+      <tr><th>Claude Code<small>VS Code / 桌面</small></th>
+        <td>桌面端整段展开 <span class="ev m">社区</span></td>
+        <td><span class="fold y">折叠</span>收起区块 <span class="ev o">官方</span></td>
+        <td>改文件弹并排 diff 授权 <span class="ev o">官方</span></td>
+        <td><span class="fold p">可选</span>Focus view 全收 <span class="ev o">官方</span></td>
+        <td>转录三档 <span class="ev m">社区</span></td></tr>
+      <tr><th>DeepSeek<small>网页 / App</small></th>
+        <td>原文实时流出 <span class="ev m">社区</span></td>
+        <td><span class="fold n">展开</span>不折叠 <span class="ev m">社区</span></td>
+        <td colspan="2"><span class="fold u">未知</span></td>
+        <td>无</td></tr>
+      <tr><th>DeepSeek Harness<small>dsh web</small></th>
+        <td>Think 行，摘要单行 <span class="ev o">官方</span></td>
+        <td><span class="fold y">折叠</span>随整轮收起 <span class="ev o">官方</span></td>
+        <td>组头「正在运行命令」+ 24px 行 <span class="ev o">官方</span></td>
+        <td><span class="fold y">折叠</span>「已完成，用时」一行 <span class="ev o">官方</span></td>
+        <td>Trajectory 页签</td></tr>
+      <tr><th>WorkBuddy<small>腾讯 · 桌面</small></th>
+        <td>「已处理 X 秒」<span class="ev o">官方</span></td>
+        <td><span class="fold u">无独立思考单元</span><span class="ev i">推断</span></td>
+        <td>计划卡打勾 + 动作一行 <span class="ev o">官方</span></td>
+        <td><span class="fold p">部分</span>动作一行，▾ 展 diff <span class="ev o">官方</span></td>
+        <td>右侧结果区</td></tr>
+      <tr><th>Cursor<small>3.x Agent</small></th>
+        <td>流式出现 <span class="ev m">社区</span></td>
+        <td><span class="fold y">折叠</span>默认收起 <span class="ev m">社区</span></td>
+        <td>diff、终端可见 <span class="ev m">社区</span></td>
+        <td><span class="fold y">折叠</span>下一条消息时整轮收起 <span class="ev m">社区</span></td>
+        <td>点开回合</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2 id="codex">Codex</h2>
+
+  <div class="prod">
+    <div class="prod-h"><h3>Codex CLI</h3><span class="surf">终端 · openai/codex 的 codex-rs/tui</span></div>
+    <div class="pair">
+      <div class="pane"><div class="cap live">生成中</div>
+<pre class="term"><span class="a">◦</span> <span class="b">Exploring</span>
+  <span class="d">└</span> Read ListPage.ets
+    Search cachedCount
+
+<span class="sh">Reading the failing test first</span> <span class="d">(12s • esc to interrupt)</span></pre></div>
+      <div class="pane"><div class="cap done">生成后</div>
+<pre class="term"><span class="d">•</span> <span class="b">Explored</span>
+  <span class="d">└</span> Read ListPage.ets
+    Search cachedCount
+<span class="g">•</span> <span class="b">Ran</span> pnpm test -- src/list
+  <span class="d">└</span> running 15 tests
+    <span class="d">… +12 lines (ctrl+t to view transcript)</span>
+    12 passed
+<span class="r">•</span> <span class="b">Ran</span> just fmt
+  <span class="d">└</span> Exited (status 127)
+<span class="d">Worked for 1m 12s</span></pre></div>
+    </div>
+    <ul class="facts">
+      <li>读、列、搜合成一组：运行中「Exploring」，结束后「• Explored」<span class="ev o">官方</span></li>
+      <li>命令 Running → Ran；圆点成功绿、失败红；失败写「Exited (status N)」，无输出补「└ (no output)」<span class="ev o">官方</span></li>
+      <li>输出留头尾：普通单元 5 行，紧凑活动视图 3 行，其余折成「… +N lines」<span class="ev o">官方</span></li>
+      <li>思考只在底部状态行显示摘要标题；完成后标记 transcript_only，只进 Ctrl+T <span class="ev o">官方</span></li>
+      <li>整轮结尾一行「Worked for 1m 12s」<span class="ev o">官方</span></li>
+      <li>命令在执行完成后才写入对话流，执行前不可见 <span class="ev m">社区</span></li>
+    </ul>
+  </div>
+
+  <div class="prod">
+    <div class="prod-h"><h3>Codex App</h3><span class="surf">桌面 · VS Code 扩展</span></div>
+    <div class="pair">
+      <div class="pane"><div class="cap live">生成中</div>
+        <div class="gui">
+          <div class="row"><span class="spin"></span>Thinking · Checking box-sizing in the global CSS, …<span class="chev">›</span></div>
+          <div class="row"><span class="spin"></span>Running npm run build</div>
+        </div></div>
+      <div class="pane"><div class="cap done">生成后</div>
+        <div class="gui">
+          <div class="row">Edited 3 files, explored 2 files, 2 searches<span class="chev">›</span></div>
+          <div class="row">Ran 2 commands<span class="chev">›</span></div>
+          <div class="ans">Fixed the build error. See the Review panel.</div>
+        </div></div>
+    </div>
+    <ul class="facts">
+      <li>操作默认合并为一行摘要，展开后才显示文件名和命令；曾出现展开内容为空或无法展开 <span class="ev m">社区</span></li>
+      <li>推理摘要一行 + 箭头，运行中被截断，展开也看不全 <span class="ev m">社区</span></li>
+      <li>diff 在 Review 面板，不在对话流 <span class="ev m">社区</span></li>
+    </ul>
+  </div>
+
+  <h2 id="claude">Claude</h2>
+
+  <div class="prod">
+    <div class="prod-h"><h3>Claude.ai</h3><span class="surf">网页 / 桌面 / 移动</span></div>
+    <div class="pair">
+      <div class="pane"><div class="cap live">生成中</div>
+        <div class="gui">
+          <div class="row"><span class="spin"></span>思考中 · 8 秒</div>
+          <div class="row"><span class="spin"></span>正在搜索网页…</div>
+        </div></div>
+      <div class="pane"><div class="cap done">生成后</div>
+        <div class="gui">
+          <div class="row">思考<span class="chev">›</span></div>
+          <div class="row">已搜索网页 · 10 个结果<span class="chev">›</span></div>
+          <div class="ans">回答正文……</div>
+        </div></div>
+    </div>
+    <ul class="facts">
+      <li>生成中：「思考」指示器 + 计时器 <span class="ev o">官方</span></li>
+      <li>生成后：答案上方可展开的「思考」区块，展开是摘要不是原文 <span class="ev o">官方</span></li>
+      <li>搜索等工具收成可展开一行 <span class="ev i">推断</span></li>
+    </ul>
+  </div>
+
+  <div class="prod">
+    <div class="prod-h"><h3>Claude Code CLI</h3><span class="surf">终端</span></div>
+    <div class="pair">
+      <div class="pane"><div class="cap live">生成中</div>
+<pre class="term"><span class="g">●</span> <span class="b">Read</span>(src/ListPage.ets)
+  <span class="d">⎿  Reading 214 lines… (ctrl+o to expand)</span>
+
+<span class="a">✻</span> <span class="sh">Thinking…</span> <span class="d">(esc to interrupt)</span></pre></div>
+      <div class="pane"><div class="cap done">生成后</div>
+<pre class="term"><span class="g">●</span> <span class="b">Read</span>(src/ListPage.ets)
+  <span class="d">⎿  Read 214 lines</span>
+<span class="g">●</span> <span class="b">Update</span>(src/ListPage.ets)
+  <span class="d">⎿  Updated 1 file</span>
+<span class="g">●</span> <span class="b">Bash</span>(pnpm test -- src/list)
+  <span class="d">⎿  12 passed (ctrl+o to expand)</span>
+<span class="g">●</span> Called slack 3 times
+<span class="a">✻</span> <span class="d">thought for 6s</span></pre></div>
+    </div>
+    <ul class="facts">
+      <li>每步「● Tool(args)」+ 一行「⎿ 结果」，长结果带「(ctrl+o to expand)」<span class="ev o">官方</span></li>
+      <li>思考：底部「✻ Thinking…」，结束后同处变「thought for Ns」，不进对话流 <span class="ev o">官方</span></li>
+      <li>思考正文默认关（showThinkingSummaries 默认 false）<span class="ev o">官方</span></li>
+      <li>两种视图：defaultView 为 chat 或 transcript，Ctrl+O 切；transcript 带时间戳、模型名，并展开「Called slack 3 times」<span class="ev o">官方</span></li>
+      <li>工具调用在执行前即显示 <span class="ev m">社区</span></li>
+    </ul>
+  </div>
+
+  <div class="prod">
+    <div class="prod-h"><h3>Claude Code · VS Code 与桌面端</h3><span class="surf">图形界面</span></div>
+    <div class="pair">
+      <div class="pane"><div class="cap live">生成中（桌面端）</div>
+        <div class="gui">
+          <div class="think">用户希望把列表改成虚拟滚动，先确认现在的渲染方式……</div>
+          <div class="row"><span class="spin"></span>Bash · npm run build</div>
+        </div></div>
+      <div class="pane"><div class="cap done">生成后（Focus view）</div>
+        <div class="gui">
+          <div class="row">Thinking<span class="chev">›</span></div>
+          <div class="row">3 tool calls<span class="chev">›</span></div>
+          <div class="row flat"><span class="ok">✓</span>To-dos 2 / 3</div>
+          <div class="ans">Switched to virtual scrolling.</div>
+        </div></div>
+    </div>
+    <ul class="facts">
+      <li>VS Code：思考是收起的区块，Ctrl+O 全部展开 / 收起 <span class="ev o">官方</span></li>
+      <li>Focus view：工具调用、结果、思考全收进可展开行，最新待办仍可见 <span class="ev o">官方</span></li>
+      <li>改文件弹出并排 diff 请求授权，可逐个改动接受 / 拒绝 <span class="ev o">官方</span></li>
+      <li>桌面端：生成中完整展开思考，重启后变为收起，且无相关设置项 <span class="ev m">社区</span></li>
+      <li>桌面端转录三档：Normal / Thinking / Verbose <span class="ev m">社区</span></li>
+    </ul>
+  </div>
+
+  <h2 id="deepseek">DeepSeek</h2>
+
+  <div class="prod">
+    <div class="prod-h"><h3>DeepSeek 网页 / App</h3><span class="surf">深度思考</span></div>
+    <div class="pair">
+      <div class="pane"><div class="cap live">生成中</div>
+        <div class="gui">
+          <div class="row flat"><span class="spin"></span>思考中…</div>
+          <div class="think">嗯，用户问的是 ArkTS 里 @State 和 @Prop 的区别。先回忆两者的数据流方向……</div>
+        </div></div>
+      <div class="pane"><div class="cap done">生成后</div>
+        <div class="gui">
+          <div class="row flat">已深度思考（用时 14 秒）<span class="chev">⌃</span></div>
+          <div class="think">嗯，用户问的是 ArkTS 里 @State 和 @Prop 的区别……（全文保留）</div>
+          <div class="ans">@State 是组件自己的状态……</div>
+        </div></div>
+    </div>
+    <ul class="facts">
+      <li>推理原文不折叠、不隐藏，排在答案之前 <span class="ev m">社区</span></li>
+      <li>关闭「深度思考」后不展示推理过程 <span class="ev m">社区</span></li>
+      <li>标题「已深度思考（用时 N 秒）」可点击收起；正文灰字左竖线 <span class="ev i">推断</span></li>
+    </ul>
+  </div>
+
+  <div class="prod">
+    <div class="prod-h"><h3>DeepSeek Harness（dsh web）</h3><span class="surf">开源 Agent 运行时 · 2026-08 开源 · 源码 deepseek-ai/deepseek-harness</span></div>
+    <div class="pair">
+      <div class="pane"><div class="cap live">生成中</div>
+        <div class="gui">
+          <div class="row flat muted"><span class="spin"></span>深度求索中，用时 12秒 ···</div>
+          <div class="row">▾ 正在运行命令 · pnpm test -- src/list</div>
+          <div class="row in">Think · 先看失败用例，再改缓存判断…<span class="chev">›</span></div>
+          <div class="row in">编辑 src/ListPage.ets +3 −1<span class="chev">›</span></div>
+        </div></div>
+      <div class="pane"><div class="cap done">生成后（默认）</div>
+        <div class="gui">
+          <div class="row">已完成，用时 1分12秒<span class="chev">⌄</span></div>
+          <div class="ans">改好了：缓存判断改成按 key 比较，测试已过。</div>
+          <div class="row flat muted">展开 → 组头「已读取文件、执行了命令并修改了文件」→ 24px 行 → 卡</div>
+        </div></div>
+    </div>
+    <ul class="facts">
+      <li>运行中整轮标题「深度求索中，用时 N秒 ···」；完成后折成「已完成，用时 N秒」<span class="ev o">官方</span></li>
+      <li>过程按类成组：进行中「正在读取文件 / 正在运行命令」，完成后拼成「已读取文件、执行了命令并修改了文件」，多了加「等」<span class="ev o">官方</span></li>
+      <li>单元行高 24px；终端输出在卡内滚动，最高 224px <span class="ev o">官方</span></li>
+      <li>四档密度 compact / standard / detailed / verbose，默认 detailed；只有 verbose 不折整轮 <span class="ev o">官方</span></li>
+      <li>折叠时机 completion（默认）或 next-input <span class="ev o">官方</span></li>
+      <li>思考行完成后留不留首行预览按密度定，compact 不留 <span class="ev o">官方</span></li>
+      <li>Trajectory 页签：模型回复、工具调用、嵌套子工具、耗时、token <span class="ev m">社区</span></li>
+    </ul>
+  </div>
+
+  <h2 id="workbuddy">WorkBuddy</h2>
+
+  <div class="prod">
+    <div class="prod-h"><h3>WorkBuddy</h3><span class="surf">腾讯 · 桌面办公 Agent</span></div>
+    <div class="pair">
+      <div class="pane"><div class="cap live">生成中</div>
+        <div class="gui">
+          <div class="row flat muted"><span class="spin"></span>已处理 23 秒</div>
+          <div class="row">◐ 任务列表 1/4</div>
+          <div class="row in">◐ 设计推箱子地图与核心逻辑</div>
+          <div class="row in">○ 实现游戏 UI 界面与渲染</div>
+          <div class="row">✎ 创建 sokoban.html +682 −0<span class="chev">▾</span></div>
+          <div class="row">&gt;_ python3 -m http.server 8765</div>
+        </div></div>
+      <div class="pane"><div class="cap done">生成后</div>
+        <div class="gui">
+          <div class="row"><span class="ok">✓</span>任务列表 4/4 已完成</div>
+          <div class="row">✎ 创建 2026-03-27.md +8 −0<span class="chev">▾</span></div>
+          <div class="row">↗ 预览 http://localhost:8765/sokoban.html</div>
+          <div class="row flat muted">右侧结果区：产物 / 全部文件 / 变更 / 预览</div>
+        </div></div>
+    </div>
+    <ul class="facts">
+      <li>计划卡在对话流最上面，逐项状态圈 / 勾，完成后不折叠 <span class="ev o">官方</span></li>
+      <li>动作一行：文件名 + 增删行数，▾ 展开 diff；命令「&gt;_」一行；预览一行链接 <span class="ev o">官方</span></li>
+      <li>文档写明「可展开查看的中间步骤」<span class="ev o">官方</span></li>
+      <li>流式显示「已处理 X 秒」，每轮显示运行时间 <span class="ev o">官方</span></li>
+      <li>产物随对话出现，联动右侧预览 <span class="ev o">官方</span></li>
+      <li>回到仍在生成的会话，会补齐离开期间的思考、正文和工具内容 <span class="ev o">官方</span></li>
+      <li>未见独立的思考单元，推理阶段以任务状态「规划中」体现 <span class="ev i">推断</span></li>
+      <li>生成中计划卡是逐步打勾还是整卡刷新 <span class="ev q">待确认</span></li>
+    </ul>
+  </div>
+
+  <h2 id="cursor">Cursor<small>补充对照</small></h2>
+
+  <div class="prod">
+    <div class="prod-h"><h3>Cursor 3.x Agent</h3><span class="surf">桌面 IDE / iOS</span></div>
+    <div class="pair">
+      <div class="pane"><div class="cap live">本轮刚结束</div>
+        <div class="gui">
+          <div class="row">Thought for 4s<span class="chev">›</span></div>
+          <div class="row">src/list.tsx +18 −6<span class="chev">diff</span></div>
+          <div class="row">Terminal · pnpm test<span class="chev">›</span></div>
+        </div></div>
+      <div class="pane"><div class="cap done">发出下一条消息后</div>
+        <div class="gui">
+          <div class="row">Worked for 3m 12s<span class="chev">›</span></div>
+          <div class="row flat"><span class="spin"></span>New turn…</div>
+        </div></div>
+    </div>
+    <ul class="facts">
+      <li>思考随消息保存，默认折叠；使用快速模型时几乎即时收起 <span class="ev m">社区</span></li>
+      <li>3.14 起，发下一条消息后整轮收进「Worked for …」，diff 一并收起；官方说明为有意设计 <span class="ev m">社区</span></li>
+      <li>暂无关闭选项；Conversation Density 仅调整轮内分组 <span class="ev m">社区</span></li>
+    </ul>
+  </div>
+
+  <h2 id="voices">用户反馈</h2>
+  <ul class="items">
+    <li><span><b>Codex：</b>成功命令被合并为「Ran N commands」后，用户无法实时监督执行过程，官方宣布回滚。</span></li>
+    <li><span><b>Cursor：</b>发送下一条消息后，上一轮 diff 被自动收起，打断审阅流程；官方确认暂无关闭选项。</span></li>
+    <li><span><b>Claude 桌面端：</b>思考默认展开且篇幅过长，重启后又变为收起，展示状态不一致。</span></li>
+    <li><span><b>共性：</b>用户反对的不是折叠本身，而是折叠不可控、状态不一致。</span></li>
+  </ul>
+
+  <h2 id="deveco">对 DevEco 智能体对话流的建议</h2>
+  <div class="tw"><table style="min-width:860px">
+    <thead><tr><th>单元</th><th>生成中</th><th>生成后默认</th><th>依据</th></tr></thead>
+    <tbody>
+      <tr><th>思考</th><td>一行摘要 + 计时</td><td><span class="fold y">折叠</span>「已思考 N 秒」，可展开</td><td>Claude Code、DeepSeek Harness</td></tr>
+      <tr><th>读与搜</th><td>组头「正在读取 · 当前文件」</td><td><span class="fold y">折叠</span>一句汇总，展开后列出文件</td><td>Codex Explored、Harness 组头</td></tr>
+      <tr><th>执行命令</th><td>执行前展示命令，输出实时滚动，支持中断</td><td><span class="fold p">部分</span>命令行常驻，输出保留首尾；失败时默认展开</td><td>Codex 回滚案例、按退出码着色</td></tr>
+      <tr><th>改文件</th><td>文件名 + 增删行数</td><td><span class="fold p">部分</span>同上，▾ 展开 diff</td><td>WorkBuddy 动作行</td></tr>
+      <tr><th>子 Agent</th><td>每个一行：状态、耗时</td><td><span class="fold y">折叠</span>一行结果</td><td>Claude Code agent map</td></tr>
+      <tr><th>计划</th><td>置顶，逐项打勾</td><td>任何密度下都可见</td><td>WorkBuddy 计划卡、Focus view</td></tr>
+      <tr><th>产物</th><td>随对话出现</td><td>卡片 + 侧栏预览</td><td>WorkBuddy 右侧结果区</td></tr>
+      <tr><th>整轮</th><td>「处理中，用时 N 秒」</td><td>默认不折叠；可设为完成时或下一轮输入时折叠</td><td>Harness 两种时机、Cursor 负面反馈</td></tr>
+    </tbody>
+  </table></div>
+  <ol class="items" style="margin-top:12px">
+    <li><span><b>信息密度分档：</b>提供简洁 / 标准 / 详细三档，全局生效并持久保存。</span></li>
+    <li><span><b>折叠时机独立配置：</b>默认不自动折叠整轮。</span></li>
+    <li><span><b>状态一致：</b>生成中、生成后、重新打开会话三种状态下展示一致。</span></li>
+    <li><span><b>过程与结论分层：</b>耗时、token、嵌套调用等完整过程放入独立的时间线视图，对话流只保留摘要。</span></li>
+  </ol>
+
+  <h2 id="ablation">消融记录<small>逐项判断：该元素是否帮助读者回答本页的问题</small></h2>
+  <div class="tw"><table style="min-width:760px">
+    <thead><tr><th>元素</th><th>结果</th><th>依据</th></tr></thead>
+    <tbody>
+      <tr><th>六张结论卡</th><td><span class="res mrg">合并</span></td><td>改成六条一句话；卡片正文与产品节重复</td></tr>
+      <tr><th>八类单元定义卡</th><td><span class="res del">删除</span></td><td>名称自解释，导语里一行列出</td></tr>
+      <tr><th>折叠光谱四栏</th><td><span class="res del">删除</span></td><td>与「三层折叠」回答同一问题，三层更能区分思考与过程组</td></tr>
+      <tr><th>三层折叠</th><td><span class="res keep">新增</span></td><td>并入原「会话基本单元」页的三层模型，源码已复核</td></tr>
+      <tr><th>导语与来源说明段</th><td><span class="res mrg">合并</span></td><td>压成一句导语 + 一行图例</td></tr>
+      <tr><th>示意图下的注释行</th><td><span class="res del">删除</span></td><td>图例已说明「重画非截图」，示意文案改回各家原语言</td></tr>
+      <tr><th>总表长句</th><td><span class="res mrg">合并</span></td><td>压成短语，细节留在产品卡</td></tr>
+      <tr><th>Codex App 底层协议</th><td><span class="res del">删除</span></td><td>不影响用户看到什么</td></tr>
+      <tr><th>Codex 0.149 回滚</th><td><span class="res mrg">合并</span></td><td>只留在「用户反馈」一处</td></tr>
+      <tr><th>Claude Code Esc 中断、转后台、agent map</th><td><span class="res del">删除</span></td><td>与折叠无关；agent map 只留在建议依据</td></tr>
+      <tr><th>Claude.ai 思考截断提示</th><td><span class="res del">删除</span></td><td>安全策略，不是显示策略</td></tr>
+      <tr><th>DeepSeek 第三方折叠脚本</th><td><span class="res del">删除</span></td><td>侧证，不改结论</td></tr>
+      <tr><th>Harness 社区站、中途停下</th><td><span class="res del">删除</span></td><td>与显示无关</td></tr>
+      <tr><th>Harness 待确认项</th><td><span class="res mrg">替换</span></td><td>用源码事实补齐：24px 行、组头、四档密度、两种时机</td></tr>
+      <tr><th>WorkBuddy 更新日志十条</th><td><span class="res mrg">合并</span></td><td>留计时、产物、补齐三条，补上计划卡与动作行</td></tr>
+      <tr><th>用户反馈三张卡</th><td><span class="res mrg">合并</span></td><td>改为三条 + 一条共同点</td></tr>
+      <tr><th>建议表「依据」长句</th><td><span class="res mrg">合并</span></td><td>只留产品名</td></tr>
+      <tr><th>口语化表述</th><td><span class="res mrg">改写</span></td><td>统一为体验术语：过程可见性、信息密度、可监督性、状态一致性</td></tr>
+      <tr><th>来源</th><td><span class="res keep">保留</span></td><td>每条事实可追溯</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2 id="sources">来源</h2>
+  <ul class="src">
+    <li><a href="https://github.com/Cinnnnnnndy/DevEco/blob/f32940c/analysis/agent-session-units/index.html">本仓库原「会话基本单元」页（已并入本页）</a>（Claude Code 2.1.107 cli.js 字符串、WorkBuddy 官方截图）</li>
+    <li><a href="https://github.com/openai/codex/blob/main/codex-rs/tui/src/exec_cell/render.rs">codex · exec_cell/render.rs</a>（Explored、Ran、5 行）</li>
+    <li><a href="https://github.com/openai/codex/blob/main/codex-rs/tui/src/exec_cell/compact.rs">codex · exec_cell/compact.rs</a>（3 行、Exited、no output）</li>
+    <li><a href="https://github.com/openai/codex/blob/main/codex-rs/tui/src/history_cell/messages.rs">codex · history_cell/messages.rs</a>（transcript_only）</li>
+    <li><a href="https://github.com/openai/codex/blob/main/codex-rs/tui/src/history_cell/separators.rs">codex · history_cell/separators.rs</a>（Worked for）</li>
+    <li><a href="https://github.com/openai/codex/blob/main/codex-rs/tui/src/status_indicator_widget.rs">codex · status_indicator_widget.rs</a>（Working 状态行）</li>
+    <li><a href="https://github.com/openai/codex/issues/39903">openai/codex#39903</a> 合并命令与回滚</li>
+    <li><a href="https://github.com/openai/codex/issues/19891">openai/codex#19891</a> App 动作摘要</li>
+    <li><a href="https://github.com/openai/codex/issues/49761">openai/codex#49761</a> App 推理摘要截断</li>
+    <li><a href="https://github.com/openai/codex/issues/10723">openai/codex#10723</a> App 推理摘要显示</li>
+    <li><a href="https://support.claude.com/en/articles/10574485">Claude 帮助中心：扩展思考</a></li>
+    <li><a href="https://code.claude.com/docs/en/interactive-mode">Claude Code 文档：Interactive mode</a></li>
+    <li><a href="https://code.claude.com/docs/en/vs-code">Claude Code 文档：VS Code 扩展</a></li>
+    <li><a href="https://github.com/anthropics/claude-code/issues/78593">anthropics/claude-code#78593</a> 桌面端思考展开</li>
+    <li><a href="https://x.com/dani_avila7/status/2099972554614005876">Daniel San：桌面端转录三档（X）</a></li>
+    <li><a href="https://sspai.com/post/106036">少数派：DeepSeek 思考过程（2026-02-04）</a></li>
+    <li><a href="https://www.ai-indeed.com/encyclopedia/25854.html">实在智能：DeepSeek 隐藏思考过程</a></li>
+    <li><a href="https://www.ai-indeed.com/encyclopedia/29928.html">实在智能：DeepSeek 深度思考按钮</a></li>
+    <li><a href="https://github.com/deepseek-ai/deepseek-harness">deepseek-ai/deepseek-harness</a>（ui-chat：chat-settings.ts、presentation-policy.ts、locale.ts；ui-tool：ToolRow.module.css，2026-10-19 复核）</li>
+    <li><a href="https://thenewstack.io/deepseek-harness-open-source-plugins/">The New Stack：Harness 开源（2026-08-13）</a></li>
+    <li><a href="https://www.datacamp.com/tutorial/deepseek-harness">DataCamp：Harness 教程</a>（Trajectory）</li>
+    <li><a href="https://www.codebuddy.cn/docs/workbuddy/Changelog">WorkBuddy 更新日志</a></li>
+    <li><a href="https://forum.cursor.com/t/work-history-auto-collapse-v-3-14/167429">Cursor 论坛：Work history auto-collapse</a></li>
+    <li><a href="https://forum.cursor.com/t/persist-agent-thinking-in-chat-history-optional-collapsible/164847">Cursor 论坛：Persist agent thinking</a></li>
+  </ul>
+</div>
+</body>
+</html>
