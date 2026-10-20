@@ -365,15 +365,15 @@ window.DEVECO_CATALOG = {
         {
           title: '输入框场景提示竞品分析：豆包、WorkBuddy 有，编码工具为什么没有',
           subtitle: 'Scene Prompts Above the Composer · Doubao, WorkBuddy, Codex, Claude Code, IDE Assistants',
-          desc: '把「场景化提示按钮 + 进入后的提示词」拆成固定场景入口、情境建议、用户沉淀的快捷方式三种形态，对照豆包、WorkBuddy、Claude.ai、Claude Code、Codex CLI、Copilot、Android Studio Gemini、Xcode 与 DevEco；从体验角度给出编码工具不放按钮的六个原因，再按学习者、迁移开发者、企业团队、独立开发者判断 DevEco 要什么：空态场景卡按工程状态生成、问题发生处放情境入口、场景沉淀为可共享的 / 命令。官方、社区、推断、待确认分开标注；Codex 按源码复核。',
+          desc: '豆包、WorkBuddy 在输入框上方放场景按钮，Codex、Claude Code 没有。把场景提示拆成固定场景入口、情境建议、用户沉淀的快捷方式三种形态，九款产品按网页、桌面、手机、IDE 插件、终端逐端对照；从体验角度给出编码工具不放按钮的六个原因；再看 DevEco 的直接竞品 Android Studio、Xcode 在新建工程、构建失败、崩溃分析、依赖升级、上架预检、大屏适配上怎么放入口，落到 DevEco：空态场景卡按工程状态生成、问题发生处放入口、场景沉淀为可共享的 / 命令。官方、社区、推断、待确认分开标注。',
           view: 'doc', date: '2026-10-20', href: 'analysis/input-scene-prompts/REPORT-输入框场景提示竞品分析.html',
           links: [
-            { label: '三种形态', href: 'analysis/input-scene-prompts/REPORT-输入框场景提示竞品分析.html#forms' },
-            { label: '总表', href: 'analysis/input-scene-prompts/REPORT-输入框场景提示竞品分析.html#matrix' },
+            { label: '按客户端总表', href: 'analysis/input-scene-prompts/REPORT-输入框场景提示竞品分析.html#matrix' },
             { label: '为什么不放', href: 'analysis/input-scene-prompts/REPORT-输入框场景提示竞品分析.html#why' },
+            { label: 'DevEco 竞品', href: 'analysis/input-scene-prompts/REPORT-输入框场景提示竞品分析.html#peers' },
             { label: '对 DevEco 的建议', href: 'analysis/input-scene-prompts/REPORT-输入框场景提示竞品分析.html#deveco' },
           ],
-          tags: ['竞品分析', '输入框', '场景提示', '提示词', '空态', '豆包', 'WorkBuddy', 'Codex', 'Claude Code', 'Copilot', 'Android Studio', 'Xcode'], thumb: { type: 'image', src: 'site/thumbs/input-scene-prompts.jpg' },
+          tags: ['竞品分析', '输入框', '场景提示', '提示词', '空态', '多端', '豆包', 'WorkBuddy', 'Codex', 'Claude Code', 'Copilot', 'Android Studio', 'Xcode'], thumb: { type: 'image', src: 'site/thumbs/input-scene-prompts.jpg' },
         },
         {
           title: '会话单元呈现竞品分析：思考与工具调用的可见性和折叠策略',
