@@ -1,0 +1,426 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>输入框场景提示竞品分析</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root{
+  --bg:#f5f6f8; --paper:#ffffff; --ink:#15171a; --ink2:#4a4f57; --ink3:#7a808a; --line:#e3e5e9; --line2:#eef0f3;
+  --accent:#3574f0; --accent-bg:#edf3ff;
+  --ok:#1f8a4c; --ok-bg:#e6f5ec; --warn:#b76e00; --warn-bg:#fdf1e3; --bad:#c7000b; --bad-bg:#fdecec; --mute-bg:#eef0f3;
+  --term:#0f1115; --term-ink:#d6d9de; --term-dim:#7d838c;
+  --shadow:0 1px 2px rgba(16,24,40,.06),0 4px 16px rgba(16,24,40,.06);
+  --mono:ui-monospace,"JetBrains Mono",Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --bg:#16171a; --paper:#1e2024; --ink:#e6e8eb; --ink2:#b3b8c0; --ink3:#868b94; --line:#30333a; --line2:#272a30;
+    --accent:#6b9bfa; --accent-bg:#233150;
+    --ok:#5fc48a; --ok-bg:#1d3326; --warn:#f0a052; --warn-bg:#3a2d1e; --bad:#ff6b6b; --bad-bg:#3a2224; --mute-bg:#272a30;
+    --term:#0b0c0f; --shadow:none;
+  }
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.7 -apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}
+a{color:var(--accent);text-decoration:none} a:hover{text-decoration:underline}
+code{font-family:var(--mono);font-size:.9em;background:var(--line2);padding:1px 5px;border-radius:4px}
+.wrap{max-width:1280px;margin:0 auto;padding:40px 32px 80px}
+.eyebrow{font-size:12px;letter-spacing:.08em;color:var(--ink3)}
+h1{font-size:30px;line-height:1.3;margin:6px 0 12px}
+.lede{color:var(--ink2);max-width:80ch;margin:0}
+h2{font-size:21px;margin:48px 0 12px;scroll-margin-top:16px}
+h2 small{font-size:13px;font-weight:400;color:var(--ink3);margin-left:8px}
+h3{font-size:16px;margin:0}
+nav.toc{display:flex;flex-wrap:wrap;gap:6px;margin:20px 0 0}
+nav.toc a{font-size:13px;border:1px solid var(--line);background:var(--paper);border-radius:999px;padding:3px 12px;color:var(--ink2)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12.5px;color:var(--ink2);margin:14px 0 0}
+
+/* 逐条 */
+ol.items,ul.items{list-style:none;margin:0;padding:0;background:var(--paper);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);counter-reset:it}
+.items>li{display:flex;gap:12px;padding:10px 16px;border-bottom:1px solid var(--line2);font-size:13.5px;color:var(--ink2)}
+.items>li:last-child{border-bottom:none}
+ol.items>li::before{counter-increment:it;content:counter(it);flex:none;width:20px;height:20px;border-radius:50%;background:var(--accent-bg);color:var(--accent);font-size:11.5px;font-weight:700;display:flex;align-items:center;justify-content:center;margin-top:1px}
+ul.items>li::before{content:"";flex:none;width:6px;height:6px;border-radius:50%;background:var(--ink3);margin-top:9px}
+.items b{color:var(--ink);font-weight:600}
+
+/* 表 */
+.tw{background:var(--paper);border:1px solid var(--line);border-radius:12px;overflow:auto;box-shadow:var(--shadow)}
+table{border-collapse:collapse;width:100%;font-size:13px;min-width:1000px}
+th,td{text-align:left;vertical-align:top;padding:9px 12px;border-bottom:1px solid var(--line2)}
+thead th{font-size:12px;color:var(--ink3);background:var(--line2);font-weight:600;position:sticky;top:0}
+tbody th{font-weight:600;white-space:nowrap;width:130px}
+tbody th small{display:block;font-weight:400;color:var(--ink3);font-size:11.5px}
+tr:last-child td,tr:last-child th{border-bottom:none}
+.fold{display:inline-block;font-size:11.5px;font-weight:700;border-radius:5px;padding:0 7px;line-height:19px;white-space:nowrap;margin-right:4px}
+.fold.y{background:var(--ok-bg);color:var(--ok)} .fold.n{background:var(--bad-bg);color:var(--bad)} .fold.p{background:var(--warn-bg);color:var(--warn)} .fold.u{background:var(--mute-bg);color:var(--ink3)}
+.res{display:inline-block;font-size:11.5px;font-weight:700;border-radius:5px;padding:0 7px;line-height:19px;white-space:nowrap}
+.res.del{background:var(--bad-bg);color:var(--bad)} .res.mrg{background:var(--warn-bg);color:var(--warn)} .res.keep{background:var(--ok-bg);color:var(--ok)}
+.ev{display:inline-block;font-size:11px;font-weight:600;border-radius:4px;padding:0 5px;line-height:17px;margin-left:4px;vertical-align:1px;white-space:nowrap}
+.ev.o{background:var(--ok-bg);color:var(--ok)}
+.ev.m{background:var(--accent-bg);color:var(--accent)}
+.ev.i{background:var(--warn-bg);color:var(--warn)}
+.ev.q{background:var(--mute-bg);color:var(--ink3)}
+
+/* 产品卡 */
+.prod{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:16px 18px;box-shadow:var(--shadow);margin-bottom:14px;scroll-margin-top:16px}
+.prod-h{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 12px}
+.prod-h .surf{font-size:12.5px;color:var(--ink3)}
+.pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:10px 0 10px}
+.pane{border:1px solid var(--line);border-radius:10px;overflow:hidden;min-width:0;display:flex;flex-direction:column}
+.pane>.term,.pane>.gui{flex:1}
+.pane .cap{font-size:11.5px;font-weight:700;letter-spacing:.04em;padding:5px 10px;border-bottom:1px solid var(--line);background:var(--line2)}
+.pane .cap.live{color:var(--accent)} .pane .cap.done{color:var(--ok)}
+.term{background:var(--term);color:var(--term-ink);font:12px/1.65 var(--mono);padding:10px 12px;white-space:pre-wrap;word-break:break-word;margin:0}
+.term .d{color:var(--term-dim)} .term .g{color:#4fc27c} .term .r{color:#ff6b6b} .term .b{font-weight:700;color:#fff} .term .a{color:#d9a35b}
+.term .sh{background:linear-gradient(90deg,var(--term-dim),#fff,var(--term-dim));background-size:200% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:sh 2s linear infinite;font-weight:700}
+@keyframes sh{to{background-position:-200% 0}}
+.gui{padding:10px 12px;font-size:12.5px;background:var(--paper)}
+.gui .row{display:flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:8px;padding:4px 9px;margin:5px 0;color:var(--ink2);background:var(--bg)}
+.gui .row .chev{margin-left:auto;color:var(--ink3);font-size:11px}
+.gui .row.flat{border:none;background:none;padding:2px}
+.gui .row.in{margin-left:16px}
+.gui .think{color:var(--ink3);border-left:2px solid var(--line);padding:2px 0 2px 10px;margin:4px 0;font-size:12px}
+.gui .ans{color:var(--ink);margin:6px 2px 2px}
+.gui .muted{color:var(--ink3)}
+.gui .spin{display:inline-block;width:10px;height:10px;border:2px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:rot .9s linear infinite;flex:none}
+@keyframes rot{to{transform:rotate(360deg)}}
+.gui .ok{color:var(--ok);font-weight:700}
+@media (prefers-reduced-motion:reduce){.term .sh,.gui .spin{animation:none}}
+.prod ul.facts{list-style:none;margin:0;padding:0}
+.prod ul.facts li{font-size:13.5px;color:var(--ink2);padding:5px 0 5px 14px;border-top:1px solid var(--line2);position:relative}
+.prod ul.facts li::before{content:"";position:absolute;left:2px;top:14px;width:5px;height:5px;border-radius:50%;background:var(--ink3)}
+
+.src{font-size:12.5px;color:var(--ink2);columns:2;column-gap:28px;padding-left:18px}
+.src li{margin:2px 0;break-inside:avoid}
+
+@media (max-width:900px){ .pair{grid-template-columns:1fr} .src{columns:1} }
+@media (max-width:560px){ .wrap{padding:24px 16px 60px} h1{font-size:24px} }
+
+/* 本页新增：输入框示意 */
+.mock{background:var(--paper);padding:12px;font-size:12.5px;flex:1}
+.mock .hint{color:var(--ink3);font-size:11.5px;margin:0 0 6px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 8px}
+.chip{border:1px solid var(--line);border-radius:999px;padding:2px 10px;background:var(--bg);color:var(--ink2);font-size:12px;white-space:nowrap}
+.chip.on{border-color:var(--accent);background:var(--accent-bg);color:var(--accent);font-weight:600}
+.chip.ghost{border-style:dashed;color:var(--ink3)}
+.box{border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:var(--bg);color:var(--ink3);min-height:46px}
+.box .tag{display:inline-block;background:var(--accent-bg);color:var(--accent);border-radius:5px;padding:0 6px;font-size:11.5px;font-weight:600;margin-right:6px}
+.box .gt{color:var(--ink3);font-style:italic}
+.box .kw{color:var(--ink);font-family:var(--mono)}
+.opts{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 0}
+.opt{border:1px solid var(--line);border-radius:6px;padding:1px 8px;font-size:11.5px;color:var(--ink2);background:var(--paper)}
+.sugg{border:1px solid var(--line2);border-radius:8px;padding:5px 9px;margin:5px 0 0;color:var(--ink2);background:var(--paper)}
+.ctx{display:flex;gap:8px;align-items:center;border:1px solid var(--bad-bg);background:var(--bad-bg);color:var(--bad);border-radius:8px;padding:5px 9px;margin:0 0 8px;font-size:12px}
+.ctx .act{margin-left:auto;background:var(--paper);color:var(--accent);border:1px solid var(--line);border-radius:6px;padding:0 8px;font-weight:600}
+.cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+.card{border:1px solid var(--line);border-radius:8px;padding:6px 9px;background:var(--paper);color:var(--ink2)}
+.card b{display:block;color:var(--ink);font-size:12.5px}
+.card small{color:var(--ink3);font-size:11px}
+
+/* 原因卡 */
+.why{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.why .w{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:14px 16px;box-shadow:var(--shadow)}
+.why .w h3{margin:0 0 4px}
+.why .w p{margin:6px 0 0;font-size:13.5px;color:var(--ink2)}
+.why .w .vs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;font-size:12.5px}
+.why .w .vs div{background:var(--line2);border-radius:8px;padding:6px 9px;color:var(--ink2)}
+.why .w .vs b{display:block;font-size:11.5px;color:var(--ink3);font-weight:600}
+.mock .muted{color:var(--ink3);font-size:11px}
+.note{background:var(--accent-bg);border-radius:10px;padding:10px 14px;font-size:13.5px;color:var(--ink2);margin:12px 0 0}
+.note b{color:var(--ink)}
+p.body{font-size:14px;color:var(--ink2);max-width:86ch;margin:0 0 12px}
+.pair.three{grid-template-columns:repeat(3,minmax(0,1fr))}
+@media (max-width:900px){ .pair.three{grid-template-columns:1fr} .why{grid-template-columns:1fr} .cards{grid-template-columns:1fr} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="eyebrow">分析与研究 · 2026-10-20 · 作者：王欣迪</div>
+  <h1>输入框上方的场景提示：豆包、WorkBuddy 有，Codex、Claude Code 为什么没有</h1>
+  <p class="lede">豆包、WorkBuddy 在输入框上方放一排场景按钮，点进去以后还会给参数和示例提示词；Codex、Claude Code 这类编码 Agent 的输入框上方是空的。本页先把「场景提示」拆成三种形态，看九款产品各用了哪种；再从体验角度解释编码工具不放按钮的原因；最后按 DevEco 的几类开发者判断要不要做、做成什么样。</p>
+  <div class="legend">
+    <span><span class="ev o">官方</span> 文档 / 更新日志 / 源码</span>
+    <span><span class="ev m">社区</span> issue / 媒体 / 第三方整理</span>
+    <span><span class="ev i">推断</span> 未找到文字出处</span>
+    <span><span class="ev q">待确认</span> 需实机</span>
+    <span>示意图按资料重画，不是截图</span>
+  </div>
+  <nav class="toc">
+    <a href="#keys">结论</a><a href="#forms">三种形态</a><a href="#matrix">总表</a><a href="#products">各产品</a>
+    <a href="#why">编码工具为什么不放</a><a href="#trend">两边在靠拢</a><a href="#users">DevEco 的用户要什么</a><a href="#deveco">对 DevEco 的建议</a><a href="#verify">待验证</a><a href="#sources">来源</a>
+  </nav>
+
+  <h2 id="keys">结论</h2>
+  <ol class="items">
+    <li><span><b>编码工具不是没有场景提示，而是换了形态。</b>豆包式的「固定场景按钮 + 场景内表单」它们确实不用；但 Claude Code 的灰色示例取自本仓库的 git 历史，Xcode 的 Coding Tools 跟着选中的代码出现，Codex 和 Android Studio 让用户把常用提示词存成编号预设或提示词库。场景提示从「厂商列给所有人看」变成了「从当前上下文生成」或「由用户自己沉淀」。</span></li>
+    <li><span><b>分界线是用户来的时候心里有没有任务，跟产品是不是编码工具关系不大。</b>同一家公司，Claude.ai 首页有 Write / Learn / Code 这类入口，Claude Code 没有。打开豆包的人常常还在想「它能帮我干什么」；打开编码 Agent 的人手里已经拿着报错、需求单或 review 意见，再放一排按钮就是多了一步。</span></li>
+    <li><span><b>豆包的场景按钮其实是模式切换。</b>写作、图像、视频、PPT 背后是不同的模型、工具和参数（比例、篇幅、模板），不先选模式，系统就不知道该给哪套参数面板。编码 Agent 只有一种能力，用什么工具由模型自己选，按钮帮不上忙，反而让用户多做一次判断。</span></li>
+    <li><span><b>两边在往一处靠：推荐跟着上下文走。</b>WorkBuddy 2026 年下半年的更新集中在「意图识别推荐技能」「对话后下一步问题推荐」「闲置能力提醒」；Claude Code 也在回答后推荐下一句。固定的一排按钮正在被看情况出现的推荐取代。</span></li>
+    <li><span><b>DevEco 不建议照搬常驻的场景按钮，但比 Codex、Claude Code 更需要场景引导。</b>鸿蒙开发里有一批低频、门槛高、步骤固定的任务：签名证书、上架预检、一多适配、Android 迁移、卡片和元服务、冻屏分析。这些任务开发者一年做不了几次，不知道 Agent 能做，也不知道该怎么描述。最大的用户群是学习者和迁移开发者，他们缺的正是「知道该问什么」。建议做成三件事：新会话的空态给几张按工程状态生成的场景卡，问题出现的地方放情境入口，场景再沉淀成可共享的 / 命令。</span></li>
+  </ol>
+
+  <h2 id="forms">先把「场景提示」拆成三种形态</h2>
+  <p class="body">讨论里说的「场景化提示按钮」和「点进去之后的提示词」，其实是同一种形态的两层。编码工具用的是另外两种。三种并排放在下面，后文都用这里的名字。</p>
+  <div class="pair three">
+    <div class="pane">
+      <div class="cap">A · 固定场景入口（豆包、WorkBuddy）</div>
+      <div class="mock">
+        <p class="hint">第一层：输入框上方一排常驻的场景</p>
+        <div class="chips"><span class="chip on">帮我写作</span><span class="chip">图像生成</span><span class="chip">AI 编程</span><span class="chip">深入研究</span><span class="chip ghost">更多</span></div>
+        <div class="box"><span class="tag">帮我写作</span><span class="gt">输入主题，例如：给团队写一封周报…</span></div>
+        <p class="hint" style="margin-top:8px">第二层：进入场景后的参数和示例</p>
+        <div class="opts"><span class="opt">文体 ▾</span><span class="opt">篇幅 ▾</span><span class="opt">语气 ▾</span></div>
+        <div class="sugg">示例：写一篇 800 字的产品发布稿</div>
+      </div>
+    </div>
+    <div class="pane">
+      <div class="cap">B · 情境建议（Claude Code、Xcode）</div>
+      <div class="mock">
+        <p class="hint">从当前工程、选区、报错、对话里生成，只在相关时出现</p>
+        <div class="ctx">✕ 构建失败：ArkTS 类型错误 3 处<span class="act">让 Agent 修复</span></div>
+        <div class="box"><span class="kw">&gt;</span> <span class="gt">Try "给 src/pages/Index.ets 补单元测试"</span></div>
+        <div class="sugg">回答后：<span class="gt">把同样的修改应用到 Detail.ets</span> <span class="muted">Tab 填入</span></div>
+      </div>
+    </div>
+    <div class="pane">
+      <div class="cap">C · 用户沉淀的快捷方式（Codex、Android Studio、Copilot）</div>
+      <div class="mock">
+        <p class="hint">用户或团队自己写，键盘召唤，可以提交进仓库</p>
+        <div class="box"><span class="kw">/</span><span class="gt">re</span></div>
+        <div class="sugg"><span class="kw">/review</span> 审查当前改动</div>
+        <div class="sugg"><span class="kw">/release-check</span> 团队的上架前检查 <span class="muted">· 项目</span></div>
+        <div class="sugg"><span class="kw">预设 3</span> 给 $SELECTION 写测试 <span class="muted">· 个人</span></div>
+      </div>
+    </div>
+  </div>
+  <ul class="items" style="margin-top:12px">
+    <li><span><b>A 解决的是「不知道它能干什么」：</b>面向所有人、列表固定、靠厂商运营，场景内再用表单把模糊需求补全。</span></li>
+    <li><span><b>B 解决的是「下一步做什么」：</b>只在有上下文时出现，内容跟着工程和对话变化，不占常驻空间。</span></li>
+    <li><span><b>C 解决的是「同样的话不想再打一遍」：</b>场景由用户自己定义，适合高频、团队内一致的流程。</span></li>
+  </ul>
+
+  <h2 id="matrix">总表 <small>九款产品在三种形态上的做法</small></h2>
+  <div class="tw"><table>
+    <thead><tr><th>产品</th><th>A 固定场景入口</th><th>A 场景内引导</th><th>B 情境建议</th><th>C 用户沉淀</th></tr></thead>
+    <tbody>
+      <tr><th>豆包<small>大众 AI 助手</small></th>
+        <td><span class="fold y">有</span>输入框附近一排技能（写作、图像、编程、研究等）<span class="ev q">待确认</span></td>
+        <td><span class="fold y">有</span>进入后输入框带场景标签，给参数选项和示例<span class="ev q">待确认</span></td>
+        <td><span class="fold p">部分</span>回答后推荐追问<span class="ev i">推断</span></td>
+        <td><span class="fold u">未见</span></td></tr>
+      <tr><th>WorkBuddy<small>腾讯 · 办公 Agent</small></th>
+        <td><span class="fold y">有</span>首页任务推荐、场景切换、技能推荐、「灵感」做同款<span class="ev o">官方</span></td>
+        <td><span class="fold y">有</span>专家链接自动带入引导语；场景切换保留已输入内容<span class="ev o">官方</span></td>
+        <td><span class="fold y">有</span>意图识别推荐 Skill / 连接器；对话后下一步问题推荐<span class="ev o">官方</span></td>
+        <td><span class="fold y">有</span>斜杠命令、企业自建专家与 Skill、自定义推荐问题<span class="ev o">官方</span></td></tr>
+      <tr><th>Claude.ai<small>Anthropic · 对话</small></th>
+        <td><span class="fold y">有</span>首页 Write / Learn / Code 等入口<span class="ev m">社区</span></td>
+        <td><span class="fold y">有</span>每类约 7 条可直接发送的提示词<span class="ev m">社区</span></td>
+        <td><span class="fold u">未查</span></td>
+        <td><span class="fold p">部分</span>Projects 指令、Skills</td></tr>
+      <tr><th>Claude Code<small>Anthropic · 编码 Agent</small></th>
+        <td><span class="fold n">无</span></td>
+        <td><span class="fold n">无</span></td>
+        <td><span class="fold y">有</span>开会话时的灰色示例取自本仓库 git 历史；回答后推荐下一句，Tab 填入<span class="ev o">官方</span></td>
+        <td><span class="fold y">有</span>自定义斜杠命令、Skills，可随仓库共享<span class="ev o">官方</span></td></tr>
+      <tr><th>Codex CLI<small>OpenAI · 编码 Agent</small></th>
+        <td><span class="fold n">无</span>占位符固定为「Ask Codex to do anything」<span class="ev o">官方</span></td>
+        <td><span class="fold n">无</span></td>
+        <td><span class="fold u">未见</span></td>
+        <td><span class="fold y">有</span>编号预设（quick dials）存提示词或斜杠命令；/review、/init<span class="ev o">官方</span></td></tr>
+      <tr><th>VS Code Copilot<small>GitHub · IDE 内</small></th>
+        <td><span class="fold u">未见</span>文档未提空态推荐</td>
+        <td><span class="fold n">无</span></td>
+        <td><span class="fold p">部分</span>自动带入或建议当前文件、选区作为上下文<span class="ev o">官方</span></td>
+        <td><span class="fold y">有</span>/ 命令、提示词文件、Skills<span class="ev o">官方</span></td></tr>
+      <tr><th>Android Studio Gemini<small>Google · IDE 内</small></th>
+        <td><span class="fold u">未见</span></td>
+        <td><span class="fold n">无</span></td>
+        <td><span class="fold p">部分</span>编辑器右键 Gemini 菜单<span class="ev o">官方</span></td>
+        <td><span class="fold y">有</span>提示词库：IDE 级私有、项目级随仓库共享，支持 $SELECTION、$CURRENT_FILE 变量<span class="ev o">官方</span></td></tr>
+      <tr><th>Xcode 26<small>Apple · IDE 内</small></th>
+        <td><span class="fold n">无</span></td>
+        <td><span class="fold n">无</span></td>
+        <td><span class="fold y">有</span>Coding Tools：对选中代码给出解释、写文档、生成预览、生成 Playground、改写等动作<span class="ev o">官方</span></td>
+        <td><span class="fold u">未见</span></td></tr>
+      <tr><th>DevEco<small>CodeGenie · DevEco Code</small></th>
+        <td><span class="fold u">未查</span>需实机确认 CodeGenie 侧栏空态<span class="ev q">待确认</span></td>
+        <td><span class="fold u">未查</span></td>
+        <td><span class="fold p">部分</span>编译报错解析、选中代码解释<span class="ev m">社区</span></td>
+        <td><span class="fold p">部分</span>DevEco Code 继承 OpenCode 的命令与 Skill 体系；Build / Plan / Goal 三种模式<span class="ev m">社区</span></td></tr>
+    </tbody>
+  </table></div>
+
+  <h2 id="products">各产品</h2>
+
+  <div class="prod" id="doubao">
+    <div class="prod-h"><h3>豆包</h3><span class="surf">网页 / App · 大众用户</span></div>
+    <ul class="facts">
+      <li>输入框附近常驻一排技能，覆盖写作、图像、视频、编程、深入研究、翻译等。点进去后输入框挂上场景标签，占位符换成这个场景的引导，出现参数选项（如文体、篇幅、图像比例、风格），再给可直接套用的示例。<span class="ev q">待确认</span>本次没有拿到可引用的官方界面说明，具体按钮名称和参数项需要实机核对。</li>
+      <li>从体验上看，这一套本质是「先选模式，再填表」：模式决定调用哪个模型和工具，表单把模糊的需求补成可执行的参数。对第一次用的人，它同时承担了功能目录的作用。</li>
+    </ul>
+  </div>
+
+  <div class="prod" id="workbuddy">
+    <div class="prod-h"><h3>WorkBuddy</h3><span class="surf">桌面端 · 办公 Agent</span></div>
+    <ul class="facts">
+      <li>首页有任务推荐和最佳实践案例（可关闭），可以切换场景，切换时保留已输入的内容；「灵感」可以一键做同款。<span class="ev o">官方</span>更新日志 5.1.1、5.3.13、5.4.1、5.7.3</li>
+      <li>场景之外还有专家、技能、连接器三套入口，专家链接会自动带入引导语。<span class="ev o">官方</span>5.4.4</li>
+      <li>下半年的更新重心明显移向「看情况推荐」：意图识别推荐内置 Skill / Plugin / Connector（5.3.3），插件推荐更主动（5.5.6），对话前的技能推荐（5.7.0），对话后的下一步问题推荐，可换一条、一键填入（5.8.0）。也出现了反向的设计：闲置能力提醒，一键关闭长期没用的技能（5.6.0）。<span class="ev o">官方</span></li>
+      <li>企业版可以自定义欢迎语和推荐问题（5.3.3），行业 Buddy 有自己的首页、专家和技能（5.5.0）。场景列表由谁来定，正在从厂商转给企业管理员。</li>
+    </ul>
+  </div>
+
+  <div class="prod" id="claudeai">
+    <div class="prod-h"><h3>Claude.ai 与 Claude Code</h3><span class="surf">同一家公司的两种产品</span></div>
+    <div class="pair">
+      <div class="pane"><div class="cap">Claude.ai 首页</div>
+        <div class="mock">
+          <div class="box"><span class="gt">How can I help you today?</span></div>
+          <div class="chips" style="margin-top:8px"><span class="chip">Write</span><span class="chip">Learn</span><span class="chip on">Code</span><span class="chip">Career chat</span><span class="chip">Claude's choice</span></div>
+          <div class="sugg">Debug my code and give me tips</div>
+          <div class="sugg">Quiz me on python code</div>
+        </div></div>
+      <div class="pane"><div class="cap">Claude Code 新会话</div>
+        <pre class="term"><span class="b">✻ Claude Code</span>
+<span class="d">~/projects/shop-app · main</span>
+
+<span class="b">&gt;</span> <span class="d">Try "add retry to src/net/client.ts"</span>
+
+<span class="a">示例取自本仓库最近改过的文件</span></pre></div>
+    </div>
+    <ul class="facts">
+      <li>Claude.ai 首页在输入框下放 Write、Learn、Code 等入口，每类大约七条可直接发出的提示词，2025 年 6 月前后上线。<span class="ev m">社区</span></li>
+      <li>Claude Code 打开会话时，输入框里有一条灰色示例命令，<b>从本项目的 git 历史里挑</b>，反映的是你最近在改的文件；回答之后会根据对话推荐下一句，Tab 或右方向键填入，开始打字就消失。<span class="ev o">官方</span>Interactive mode 文档</li>
+      <li>有用户反馈不知道灰字要按 Tab 才能接受，以为是预填内容。<span class="ev m">社区</span>anthropics/claude-code#76591。情境建议出现得越安静，越需要一个看得见的接受方式。</li>
+    </ul>
+  </div>
+
+  <div class="prod" id="codex">
+    <div class="prod-h"><h3>Codex CLI</h3><span class="surf">终端 · 编码 Agent</span></div>
+    <ul class="facts">
+      <li>输入框占位符是固定的一句「Ask Codex to do anything」，追问时换成「Ask a follow-up question」。<span class="ev o">官方</span>codex-rs/tui/src/chatwidget.rs，2026-10-20 复核</li>
+      <li>场景沉淀交给用户：编号预设（quick dials）把常用提示词或斜杠命令存进用户配置的 <code>tui.presets</code>，用快捷键调出；另有 /review、/init 等内置命令。<span class="ev o">官方</span>app/quick_dials.rs</li>
+      <li>源码测试数据里还留着「Find and fix a bug in @filename」「Summarize recent commits」这类示例句，但当前版本没有在占位符里轮播。<span class="ev o">官方</span>源码 · 用途为测试数据</li>
+    </ul>
+  </div>
+
+  <div class="prod" id="ide">
+    <div class="prod-h"><h3>IDE 内的助手：Copilot、Android Studio Gemini、Xcode</h3><span class="surf">离 DevEco Studio 形态最近</span></div>
+    <ul class="facts">
+      <li><b>VS Code Copilot：</b>输入 / 看全部命令，命令也能调用 Skill；提示词文件可复用；会自动带入或建议当前文件和选区作为上下文。<span class="ev o">官方</span></li>
+      <li><b>Android Studio Gemini：</b>提示词库分 IDE 级（自己用、跨项目）和项目级（存在 <code>.idea/project.prompts.xml</code>，随版本库共享），支持 <code>$SELECTION</code>、<code>$CURRENT_FILE</code> 变量，从编辑器右键 Gemini 菜单调用，聊天里的提示词也可以右键存进库。<span class="ev o">官方</span></li>
+      <li><b>Xcode 26：</b>Coding Tools 是跟着代码走的动作：选中代码后可以解释、生成文档、生成预览和 Playground、直接改写。<span class="ev o">官方</span>Xcode 26 Release Notes</li>
+      <li>三家的共同点：<b>场景入口长在代码旁边，不在对话框上方</b>；能沉淀的东西（提示词、命令）可以进仓库，给团队共用。</li>
+    </ul>
+  </div>
+
+  <h2 id="why">编码工具为什么不放场景按钮</h2>
+  <p class="body">下面六条是从用户体验角度给的解释。厂商没有公开说明过取舍，以下为根据产品形态和公开资料做的推断<span class="ev i">推断</span>，每条附上能观察到的现象。</p>
+  <div class="why">
+    <div class="w"><h3>1. 用户进来时已经带着任务</h3>
+      <p>大众助手面对的是「空白页问题」：用户打开了，但不知道能让它干什么，场景按钮就是功能目录。开发者打开编码 Agent，多半是因为手上有一个报错、一张需求单或一条 review 意见，要做什么已经很清楚，缺的是执行。</p>
+      <div class="vs"><div><b>豆包</b>先看能做什么，再决定做什么</div><div><b>Claude Code</b>先有任务，再打开工具</div></div></div>
+    <div class="w"><h3>2. 上下文本身就是最好的提示词</h3>
+      <p>在仓库里，当前文件、选区、报错、git 改动就能说明用户想做什么。所以编码工具把推荐做成从上下文生成的：Claude Code 的示例取自 git 历史，Xcode 的动作跟着选区，Copilot 自动带入当前文件。一排对谁都一样的按钮，信息量比这些低。</p>
+      <div class="vs"><div><b>固定按钮</b>对所有人一样</div><div><b>情境建议</b>只对这个工程、这一刻成立</div></div></div>
+    <div class="w"><h3>3. 只有一种能力，没有模式要切</h3>
+      <p>豆包的写作、图像、视频、PPT 背后是不同的模型、工具和参数面板，按钮其实是在切模式。编码 Agent 读文件、跑命令、改代码、跑测试，工具由模型自己挑，用户不需要事先声明「我要做测试」。硬加一层模式，等于让用户替模型做一次路由判断。</p>
+      <div class="vs"><div><b>场景 = 模式 + 表单</b>选错模式结果就错</div><div><b>一个输入框</b>模型自己选工具</div></div></div>
+    <div class="w"><h3>4. 编码任务是长尾</h3>
+      <p>写作和图像的需求可以归成十来类；编码任务和项目、语言、框架强相关，六个固定按钮覆盖不了，覆盖到的又往往是最简单、最不需要按钮的任务（「解释这段代码」）。按钮对新手有用，对每天用的人是噪音。侧栏宽度有限，常驻一排按钮还会挤占对话区。</p>
+      <div class="vs"><div><b>大众场景</b>十来类覆盖大多数需求</div><div><b>编码场景</b>每个项目都不一样</div></div></div>
+    <div class="w"><h3>5. 专家习惯用键盘召唤，自己定义</h3>
+      <p>开发者熟悉命令行和快捷键，愿意为高频流程写一条自定义命令。所以编码工具把「场景」做成 / 命令、Skills、预设和提示词库：由用户或团队定义，打字召唤，能放进仓库共享。场景其实一直存在，只是换成了可编辑的文字。</p>
+      <div class="vs"><div><b>厂商定义</b>点按钮</div><div><b>用户定义</b>/ 命令、预设、提示词库</div></div></div>
+    <div class="w"><h3>6. 衡量目标不同</h3>
+      <p>大众助手要靠场景按钮把用户导向新功能、提高功能渗透和留存，WorkBuddy 更新日志里大量是首页推荐、技能推荐、闲置提醒，都是这一类运营动作。编码工具看的是任务做没做成、改动有没有被接受，界面越少打扰越好。</p>
+      <div class="vs"><div><b>大众助手</b>功能发现、渗透、留存</div><div><b>编码 Agent</b>任务完成率、改动接受率</div></div></div>
+  </div>
+  <div class="note"><b>反例能说明分界线在哪：</b>同为 Anthropic，Claude.ai 有场景入口，Claude Code 没有；面向非开发者的「一句话做网页」类产品（v0、Lovable、Bolt 等）普遍在首页放模板和示例<span class="ev i">推断</span>。所以决定要不要放按钮的，是<b>用户对任务有多确定、对工具有多熟</b>，不是产品写不写代码。</div>
+
+  <h2 id="trend">两边在往一处靠</h2>
+  <ul class="items">
+    <li><span><b>大众侧在减少固定按钮、增加情境推荐：</b>WorkBuddy 从首页任务推荐，走到意图识别推荐技能（2026-07）、对话前技能推荐（2026-09）、对话后下一步推荐（2026-10），同时加了闲置能力提醒。场景从常驻列表变成「需要时才出现」。</span></li>
+    <li><span><b>编码侧在补「下一步」：</b>Claude Code 在回答后推荐下一句；Codex 把常用提示词做成编号预设。</span></li>
+    <li><span><b>场景定义权在下放：</b>WorkBuddy 企业版自定义推荐问题，Android Studio 项目级提示词库，Claude Code 和 Copilot 的 Skill、命令都能随仓库共享。由团队来定义「我们这里常做的事」，比厂商猜更准。</span></li>
+  </ul>
+
+  <h2 id="users">DevEco 的用户要什么</h2>
+  <p class="body">按《DevEco 生态位与体验舆情》§06 的人群拆分，四类和 Agent 输入框关系最大。DevEco 和 Codex、Claude Code 最大的不同在于：<b>鸿蒙有一批「平台特有、低频、门槛高、步骤固定」的任务</b>。开发者不常做，不知道 Agent 能不能做，也说不清该怎么描述。场景引导的价值主要在这些任务上，写日常业务代码时用处不大。</p>
+  <div class="tw"><table style="min-width:900px">
+    <thead><tr><th>人群</th><th>来的时候心里有没有任务</th><th>最可能卡在哪</th><th>适合的引导形态</th></tr></thead>
+    <tbody>
+      <tr><th>学习者 / 转行者<small>数百万人次 / 年</small></th><td>常常没有。跟着教程走，不知道 Agent 能做什么</td><td>不会描述需求；「缺学习资源 / 文档」是鸿蒙开发者第二大顾虑（36.4%）</td><td>A：空态场景卡 + 进入后的示例；回答后的下一步推荐</td></tr>
+      <tr><th>跨平台 / Android 迁移开发者<small>存量 App 迁移的主力</small></th><td>有，但用的是 Android / iOS 的说法</td><td>知道要做什么，不知道鸿蒙里叫什么、怎么做：权限、生命周期、一多断点、签名</td><td>A 的第二层：迁移场景里选源模块、目标形态；B：检测到 Android 工程时出现迁移入口</td></tr>
+      <tr><th>企业团队<small>承载头部应用与大部分使用时长</small></th><td>有，而且团队内高度一致</td><td>CI / 自动化、规范检查，同一套话每个人都要写一遍</td><td>C：项目级命令和 Skill，随工程提交共享；管理员可定制推荐</td></tr>
+      <tr><th>独立开发者<small>舆情最响的一群</small></th><td>有，集中在上架前后</td><td>审核被打回、证书过期、权限申请说明</td><td>B：在构建失败、签名报错、预检结果旁放「让 Agent 处理」</td></tr>
+    </tbody>
+  </table></div>
+  <p class="body" style="margin-top:12px">另一个缺口是能力本身没人知道。DevEco Code 在 OpenCode 之上加了 build_project、start_app、hdc_log、verify_ui、check_ets_files、arkts_knowledge_search 等鸿蒙工具<span class="ev m">社区</span>，用户不知道它能装机运行、读设备日志、校验界面，就不会这样提问。场景卡能顺带把这些能力讲清楚。</p>
+
+  <h2 id="deveco">对 DevEco 的建议</h2>
+  <p class="body">不照搬豆包那排常驻按钮：大多数时候用户是带着任务来的，按钮只会占地方。在三个时机给引导：<b>新会话还没输入时</b>、<b>问题刚发生时</b>、<b>一轮回答结束时</b>。</p>
+  <div class="pair">
+    <div class="pane"><div class="cap">新会话空态：按工程状态生成场景卡</div>
+      <div class="mock">
+        <p class="hint">检测到：Android 工程目录、最近一次构建失败、未配置发布签名</p>
+        <div class="cards">
+          <div class="card"><b>分析这次构建失败</b><small>3 处 ArkTS 类型错误 · 来自上次构建</small></div>
+          <div class="card"><b>把 Android 模块迁到鸿蒙</b><small>检测到 app/src/main</small></div>
+          <div class="card"><b>配置发布签名并跑上架预检</b><small>还没有 release 签名</small></div>
+          <div class="card"><b>适配平板和折叠屏</b><small>当前只有 sm 断点</small></div>
+        </div>
+        <div class="box" style="margin-top:8px"><span class="gt">描述你要做的事，@ 引用文件，/ 调用命令</span></div>
+        <p class="hint" style="margin-top:6px">开始输入或发出第一条后收起；可以关掉，关掉后不再出现</p>
+      </div></div>
+    <div class="pane"><div class="cap">进入场景：给槽位，不只给示例句</div>
+      <div class="mock">
+        <div class="box"><span class="tag">/migrate-android</span><span class="kw">把</span> <span class="opt">模块：app ▾</span> <span class="kw">迁到鸿蒙，目标</span> <span class="opt">手机 + 平板 ▾</span><br><span class="gt">补充要求（可选）：保留现有网络层…</span></div>
+        <div class="opts"><span class="opt">先出迁移计划，确认后再改</span><span class="opt">只迁 UI 层</span></div>
+        <p class="hint" style="margin-top:8px">这个场景会用到：读取 Android 工程 · build_project · start_app · verify_ui</p>
+        <div class="ctx" style="margin-top:8px">✕ 构建失败：hvigor 签名校验未通过<span class="act">让 Agent 处理</span></div>
+        <p class="hint">问题发生处的入口：构建输出、Profiler、冻屏报告、预览器旁</p>
+      </div></div>
+  </div>
+  <ol class="items" style="margin-top:12px">
+    <li><span><b>空态场景卡按工程状态生成，最多四张。</b>来源是工程类型、最近一次构建结果、签名和断点配置、日志里有没有冻屏等可检测的状态，而不是厂商写死的列表。没有可用信号时，给新手向的三张（解释这个工程、生成一个页面、跑到模拟器上）。依据：Claude Code 从 git 历史取示例，Xcode 跟着选区。</span></li>
+    <li><span><b>场景卡就是 / 命令的可视化入口。</b>点卡片等于在输入框里填好 <code>/命令</code> 和参数，用户能看到、能改，下次可以直接打字。场景和命令是同一套东西，不维护两份。依据：Codex 预设、Copilot 提示词文件。</span></li>
+    <li><span><b>进入场景后给槽位，并告诉用户会用到哪些能力。</b>迁移选模块和目标设备，一多选断点，上架预检选签名配置。槽位取代长示例句；列出会调用的鸿蒙工具，让人知道它能装机、能看日志。依据：豆包第二层的参数选项、Android Studio 的 <code>$SELECTION</code> 变量。</span></li>
+    <li><span><b>情境入口放在问题发生的地方。</b>构建失败、签名报错、冻屏报告、Profiler 卡顿帧、预览器断点溢出旁边放「让 Agent 处理」，点击后带着现场信息进对话。这比在输入框上方放「修复报错」按钮更准，开发者也不用自己复制日志。</span></li>
+    <li><span><b>回答后推荐下一步，接受方式要看得见。</b>一条，可换，旁边标出 Tab。依据：Claude Code 灰字推荐和用户不会接受的反馈（#76591）、WorkBuddy 5.8.0。</span></li>
+    <li><span><b>团队可以沉淀自己的场景。</b>项目级命令和 Skill 存在工程目录里随版本库共享，企业团队把「上架前检查」「埋点规范检查」写成一条命令，所有人的空态里都会出现。依据：Android Studio 项目级提示词库、WorkBuddy 企业自定义推荐问题。</span></li>
+    <li><span><b>会收起，可关闭。</b>空态卡在有对话后消失；用户关掉后记住选择；一个场景用过几次后改成只显示命令名。依据：WorkBuddy 首页案例的关闭按钮和闲置能力提醒。</span></li>
+  </ol>
+  <div class="note">输入框本身的九个状态见 <a href="../../deveco-intui-kit/docs/ai-system.html#input">DevEco 智能 · 视觉与交互 → 输入框</a>；本页建议的空态卡和槽位输入落地时，需要和那一章的状态机对齐。</div>
+
+  <h2 id="verify">待验证</h2>
+  <ul class="items">
+    <li><span><b>豆包、CodeGenie 的实机界面：</b>豆包技能的名称、第二层参数项，CodeGenie 侧栏空态目前有什么，都需要实机截图核对。</span></li>
+    <li><span><b>空白输入的比例：</b>在 DevEco Code 和 CodeGenie 里统计新会话第一条消息的长度和类型，以及首条消息前停留的时长。停留长、首条短的比例高，说明空态引导有需求。</span></li>
+    <li><span><b>低频任务的求助量：</b>签名证书、上架预检、迁移、一多适配在论坛和工单中的占比，用来决定首批场景卡做哪几张。</span></li>
+    <li><span><b>A / B：</b>空态场景卡对学习者和迁移开发者的首轮任务完成率是否有提升，对熟练用户的发送速度是否有影响。</span></li>
+  </ul>
+
+  <h2 id="sources">来源</h2>
+  <ul class="src">
+    <li><a href="https://www.codebuddy.cn/docs/workbuddy/Changelog">WorkBuddy 更新日志</a>（5.1.1–5.8.1，2026-06 至 2026-10）</li>
+    <li><a href="https://ai-bot.cn/workbuddy-office-prompts/">AI 工具集：WorkBuddy 办公提示词</a></li>
+    <li><a href="https://technode.com/2026/05/29/tencent-launches-workbuddy-productivity-ai-agent-for-global-users/">TechNode：WorkBuddy 全球发布（2026-05-29）</a></li>
+    <li><a href="https://code.claude.com/docs/en/interactive-mode">Claude Code 文档：Interactive mode · Prompt suggestions</a></li>
+    <li><a href="https://claudeissues.com/issue/76591-ghost-text-prompt-suggestions-need-an-inline-tab-hint-users-dont-know-how-to-acc">anthropics/claude-code#76591</a> 灰字推荐不知道按 Tab</li>
+    <li><a href="https://hackernoon.com/claudes-choice-read-claudes-new-default-prompts-in-full-for-write-learn-code-and-career-chat">HackerNoon：Claude.ai 默认提示词（2025-06-11）</a></li>
+    <li><a href="https://github.com/openai/codex/blob/main/codex-rs/tui/src/chatwidget.rs">codex · chatwidget.rs</a>（占位符，2026-10-20 复核）</li>
+    <li><a href="https://github.com/openai/codex/blob/main/codex-rs/tui/src/app/quick_dials.rs">codex · app/quick_dials.rs</a>（编号预设）</li>
+    <li><a href="https://code.visualstudio.com/docs/copilot/copilot-chat">VS Code 文档：Using Copilot Chat</a></li>
+    <li><a href="https://developer.android.com/studio/gemini/prompt-library">Android Studio 文档：Prompt Library</a></li>
+    <li><a href="https://developer.apple.com/documentation/xcode-release-notes/xcode-26-release-notes">Xcode 26 Release Notes</a>（Coding Tools）</li>
+    <li><a href="https://aicoding.csdn.net/6a681ab510ee7a33f2931950.html">CSDN：鸿蒙 AI 编程工具三种方案</a>（CodeGenie、DevEco Code 模式）</li>
+    <li><a href="../../deveco-ecosystem-sentiment.html">DevEco 生态位与体验舆情</a>（§01 工具链、§06 人群）</li>
+    <li><a href="../agent-conversation-units/REPORT-会话单元显示竞品分析.html">会话单元呈现竞品分析</a></li>
+  </ul>
+</div>
+</body>
+</html>
