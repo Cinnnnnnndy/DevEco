@@ -376,6 +376,13 @@ window.DEVECO_CATALOG = {
           tags: ['竞品分析', '多 Agent', '子 Agent', '停止', '默认折叠', '对话状态', 'Claude Code', 'Codex', 'Cursor', 'Copilot', 'Gemini CLI', 'DeepSeek Harness'], thumb: { type: 'image', src: 'site/thumbs/agent-subagent-lifecycle.jpg' },
         },
         {
+          title: '主子 Agent：展示、默认折叠与停止逻辑', subtitle: 'Multi-agent Display & Lifecycle',
+          desc: '七产品对照：主子 Agent 的展示关系、子任务详情与默认折叠、独立停止与全部停止；重点分析主 Agent 已停止但子任务仍运行时的对话状态。含 DevEco 状态矩阵、交互示意及待实测清单。',
+          view: 'doc', date: '2026-10-22', href: 'analysis/multi-agent-lifecycle/index.html',
+          links: [{ label: '七产品对照', href: 'analysis/multi-agent-lifecycle/index.html#compare' }, { label: '停止作用域', href: 'analysis/multi-agent-lifecycle/index.html#stop' }, { label: '状态矩阵', href: 'analysis/multi-agent-lifecycle/index.html#states' }],
+          tags: ['竞品分析', '主agent', '子agent', '停止', '默认折叠', '对话状态'], thumb: { type: 'doc', kind: 'MD' },
+        },
+        {
           title: '输入框场景提示竞品分析：豆包、WorkBuddy 有，编码工具为什么没有',
           subtitle: 'Scene Prompts Above the Composer · Doubao, WorkBuddy, Codex, Claude Code, IDE Assistants',
           desc: '把「场景化提示按钮 + 进入后的提示词」拆成固定场景入口、情境建议、用户沉淀的快捷方式三种形态，对照豆包、WorkBuddy、Claude.ai、Claude Code、Codex CLI、Copilot、Android Studio Gemini、Xcode 与 DevEco；从体验角度给出编码工具不放按钮的六个原因，再按学习者、迁移开发者、企业团队、独立开发者判断 DevEco 要什么：空态场景卡按工程状态生成、问题发生处放情境入口、场景沉淀为可共享的 / 命令。官方、社区、推断、待确认分开标注；Codex 按源码复核。',
