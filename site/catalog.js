@@ -363,6 +363,19 @@ window.DEVECO_CATALOG = {
       note: '对内汇报与对外协同共用的事实基础：以开发者证据推动方案，不以设计观点推动方案。',
       items: [
         {
+          title: '主 Agent 与子 Agent 竞品分析：显示、折叠与停止逻辑',
+          subtitle: 'Main Agent & Subagents · Claude Code, Codex, Cursor, VS Code Copilot, Gemini CLI, DeepSeek Harness',
+          desc: '先讲前台 / 后台两类子 Agent 如何决定「主停之后子 Agent 去留」；再逐家看主子 Agent 的显示形式、子 Agent 过程放在哪、默认是否折叠、主停止是否连带子 Agent、能否单独停止、主停子未停时对话状态怎么显示，附运行中 / 主停止后示意与用户反馈；最后给出 DevEco 的显示层级、停止作用域与对话状态表。Claude Code 按更新日志与 2.1.308 复核，Codex、Gemini CLI、VS Code Copilot、DeepSeek Harness 按源码复核；官方、社区、推断、待确认分开标注。',
+          view: 'doc', date: '2026-10-22', href: 'analysis/agent-subagent-lifecycle/REPORT-主子Agent显示与停止竞品分析.html',
+          links: [
+            { label: '前台与后台', href: 'analysis/agent-subagent-lifecycle/REPORT-主子Agent显示与停止竞品分析.html#model' },
+            { label: '总表', href: 'analysis/agent-subagent-lifecycle/REPORT-主子Agent显示与停止竞品分析.html#matrix' },
+            { label: '对 DevEco 的建议', href: 'analysis/agent-subagent-lifecycle/REPORT-主子Agent显示与停止竞品分析.html#deveco' },
+            { label: '消融记录', href: 'analysis/agent-subagent-lifecycle/REPORT-主子Agent显示与停止竞品分析.html#ablation' },
+          ],
+          tags: ['竞品分析', '多 Agent', '子 Agent', '停止', '默认折叠', '对话状态', 'Claude Code', 'Codex', 'Cursor', 'Copilot', 'Gemini CLI', 'DeepSeek Harness'], thumb: { type: 'image', src: 'site/thumbs/agent-subagent-lifecycle.jpg' },
+        },
+        {
           title: '输入框场景提示竞品分析：豆包、WorkBuddy 有，编码工具为什么没有',
           subtitle: 'Scene Prompts Above the Composer · Doubao, WorkBuddy, Codex, Claude Code, IDE Assistants',
           desc: '把「场景化提示按钮 + 进入后的提示词」拆成固定场景入口、情境建议、用户沉淀的快捷方式三种形态，对照豆包、WorkBuddy、Claude.ai、Claude Code、Codex CLI、Copilot、Android Studio Gemini、Xcode 与 DevEco；从体验角度给出编码工具不放按钮的六个原因，再按学习者、迁移开发者、企业团队、独立开发者判断 DevEco 要什么：空态场景卡按工程状态生成、问题发生处放情境入口、场景沉淀为可共享的 / 命令。官方、社区、推断、待确认分开标注；Codex 按源码复核。',
