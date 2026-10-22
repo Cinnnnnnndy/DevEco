@@ -372,15 +372,9 @@ window.DEVECO_CATALOG = {
             { label: '总表', href: 'analysis/agent-subagent-lifecycle/REPORT-主子Agent显示与停止竞品分析.html#matrix' },
             { label: '对 DevEco 的建议', href: 'analysis/agent-subagent-lifecycle/REPORT-主子Agent显示与停止竞品分析.html#deveco' },
             { label: '消融记录', href: 'analysis/agent-subagent-lifecycle/REPORT-主子Agent显示与停止竞品分析.html#ablation' },
+            { label: '早期文档研究版', href: 'analysis/multi-agent-lifecycle/index.html' },
           ],
           tags: ['竞品分析', '多 Agent', '子 Agent', '停止', '默认折叠', '对话状态', 'Claude Code', 'Codex', 'Cursor', 'Copilot', 'Gemini CLI', 'DeepSeek Harness'], thumb: { type: 'image', src: 'site/thumbs/agent-subagent-lifecycle.jpg' },
-        },
-        {
-          title: '主子 Agent：展示、默认折叠与停止逻辑', subtitle: 'Multi-agent Display & Lifecycle',
-          desc: '七产品对照：主子 Agent 的展示关系、子任务详情与默认折叠、独立停止与全部停止；重点分析主 Agent 已停止但子任务仍运行时的对话状态。含 DevEco 状态矩阵、交互示意及待实测清单。',
-          view: 'doc', date: '2026-10-22', href: 'analysis/multi-agent-lifecycle/index.html',
-          links: [{ label: '七产品对照', href: 'analysis/multi-agent-lifecycle/index.html#compare' }, { label: '停止作用域', href: 'analysis/multi-agent-lifecycle/index.html#stop' }, { label: '状态矩阵', href: 'analysis/multi-agent-lifecycle/index.html#states' }],
-          tags: ['竞品分析', '主agent', '子agent', '停止', '默认折叠', '对话状态'], thumb: { type: 'doc', kind: 'MD' },
         },
         {
           title: '输入框场景提示竞品分析：豆包、WorkBuddy 有，编码工具为什么没有',
