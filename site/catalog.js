@@ -364,9 +364,9 @@ window.DEVECO_CATALOG = {
       items: [
         {
           title: '主子 Agent：展示、默认折叠与停止逻辑', subtitle: 'Multi-agent Display & Lifecycle',
-          desc: '七产品对照：主子 Agent 的展示关系、子任务详情与默认折叠、独立停止与全部停止；重点分析主 Agent 已停止但子任务仍运行时的对话状态。含 DevEco 状态矩阵、交互示意及待实测清单。',
+          desc: '六产品对照：Claude Code、Codex、Cursor、VS Code Copilot、Gemini CLI、DeepSeek Harness。分析主子 Agent 显示、子任务内容、默认折叠、停止逻辑与对话状态；包含源码与文档证据、用户反馈和 DevEco 建议。',
           view: 'doc', date: '2026-10-22', href: 'analysis/multi-agent-lifecycle/index.html',
-          links: [{ label: '七产品对照', href: 'analysis/multi-agent-lifecycle/index.html#compare' }, { label: '停止作用域', href: 'analysis/multi-agent-lifecycle/index.html#stop' }, { label: '状态矩阵', href: 'analysis/multi-agent-lifecycle/index.html#states' }],
+          links: [{ label: '六产品对照', href: 'analysis/multi-agent-lifecycle/index.html#matrix' }, { label: '前台与后台', href: 'analysis/multi-agent-lifecycle/index.html#model' }, { label: 'DevEco 建议', href: 'analysis/multi-agent-lifecycle/index.html#deveco' }],
           tags: ['竞品分析', '主agent', '子agent', '停止', '默认折叠', '对话状态'], thumb: { type: 'doc', kind: 'MD' },
         },
         {
