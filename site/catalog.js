@@ -29,7 +29,7 @@
    `python3 site/tools/thumb.py <slug>` 出缩略图；然后在这里把对应条目的 view 改成 'ready'、补 href 与 thumb。
    ===================================================================== */
 window.DEVECO_CATALOG = {
-  updated: '2026-10-19',
+  updated: '2026-10-24',
   title: '鸿蒙开发工具体验',
   lede: '围绕 DevEco Studio / DevEco Code / DevEco CLI 的体验设计：29 条创新点各一个可点的界面稿 demo（其中 9 条是新一轮规划重点），全部按鸿蒙电脑版蓝本与 AI Coding / 多 Agent 场景重做；加上设计系统、分析与汇报材料。全部是本地静态文件，双击即开。',
 
@@ -362,6 +362,14 @@ window.DEVECO_CATALOG = {
       icon: 'i-cat-chart',
       note: '对内汇报与对外协同共用的事实基础：以开发者证据推动方案，不以设计观点推动方案。',
       items: [
+        {
+          title: 'AI 开发工具趋势分析', subtitle: 'AI Development Tools · Trends & Evidence',
+          desc: '从会话脱离窗口、能力开放、信任与审阅回退等六个趋势，串起八家头部产品和新兴工具案例；包含 DevEco 机会、四项体验指标、五条基准任务及术语说明。依据 1025 材料 P115–167 整理，逐页原文、原图及待核实项完整保留。',
+          view: 'doc', date: '2026-10-24', href: 'analysis/ai-ide-landscape/index.html',
+          links: [{ label: '六个趋势', href: 'analysis/ai-ide-landscape/index.html#trends' }, { label: '八家对照', href: 'analysis/ai-ide-landscape/index.html#matrix' }, { label: 'DevEco 机会', href: 'analysis/ai-ide-landscape/index.html#deveco' }, { label: '逐页材料', href: 'analysis/ai-ide-landscape/index.html#archive' }],
+          tags: ['趋势分析', '竞品分析', 'AI IDE', 'Agent', '会话', '审阅', '回退', 'MCP', '体验评估'],
+          thumb: { type: 'image', src: 'site/thumbs/ai-ide-landscape.jpg' },
+        },
         {
           title: '主子 Agent：展示、默认折叠与停止逻辑', subtitle: 'Multi-agent Display & Lifecycle',
           desc: '六产品对照：Claude Code、Codex、Cursor、VS Code Copilot、Gemini CLI、DeepSeek Harness。分析主子 Agent 显示、子任务内容、默认折叠、停止逻辑与对话状态；包含源码与文档证据、用户反馈和 DevEco 建议。',
