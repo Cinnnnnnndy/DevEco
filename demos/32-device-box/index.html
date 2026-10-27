@@ -384,6 +384,46 @@
   .trisw button{width:18px;height:16px;border:0;border-radius:5px;background:transparent;font:10px var(--font-code);color:var(--ui-fg-info);padding:0}
   .trisw button.on{background:rgba(var(--glow),.16);color:var(--ui-fg)}
   .stage:has(.fall){align-items:flex-start!important;justify-content:flex-start}
+  /* 从单台到多台画布的入口 */
+  .grp .grow{flex:1}
+  .grp-add{opacity:0;border:0;background:transparent;color:var(--ui-fg-info);font-size:11px;height:18px;padding:0 6px;border-radius:5px;transition:opacity .15s}
+  .grp:hover .grp-add{opacity:1}.grp-add:hover{color:var(--ui-fg);box-shadow:inset 0 0 0 1px var(--line-hi)}
+  .dev{grid-template-columns:22px minmax(0,1fr) auto 22px}
+  .dev .add{grid-row:span 2;grid-column:4;width:22px;height:22px;border:0;border-radius:6px;background:transparent;color:var(--ui-fg-info);display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .15s,background .15s}
+  .dev .add svg{width:12px;height:12px}
+  .dev:hover .add{opacity:1}
+  body.m-grid .dev .add.in{opacity:1}
+  .dev .add:hover{background:rgba(var(--glow),.14);color:var(--ui-fg)}
+  .dev .add.in{color:var(--ui-fg);background:rgba(var(--glow),.12);box-shadow:0 0 8px rgba(var(--glow),.25)}
+  .mode-cnt,#mode .cnt{font-family:var(--font-code);font-size:10.5px;opacity:.65;margin-left:3px}
+  .solo{display:flex;align-items:center;gap:44px}
+  .sugg{display:flex;flex-direction:column;gap:8px;width:236px}
+  .sugg-h{font-size:11.5px;color:var(--ui-fg-info);margin-bottom:2px}
+  .sugg-f{font-size:11px;color:var(--ui-fg-disabled);margin-top:4px;line-height:16px}
+  .ghost{display:grid;grid-template-columns:28px 1fr 18px;gap:8px;align-items:center;text-align:left;padding:9px 10px;border-radius:12px;border:1px dashed var(--line-hi);background:rgba(var(--glow),.03);color:var(--ui-fg);transition:background .2s,border-color .2s,box-shadow .2s}
+  .ghost:hover{border-style:solid;background:rgba(var(--glow),.08);box-shadow:0 0 18px rgba(var(--glow),.1)}
+  .ghost .gi{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;background:rgba(var(--glow),.08);color:var(--ui-fg-info)}
+  .ghost b{display:block;font-size:12px;font-weight:600}.ghost small{display:block;font-size:11px;color:var(--ui-fg-info);font-family:var(--font-code)}
+  .ghost .gp{color:var(--ui-fg-info)}.ghost .gp svg{width:12px;height:12px}
+  .ghost.all{grid-template-columns:28px 1fr;border-style:solid;background:rgba(var(--glow),.07)}
+  .cell-act{position:absolute;top:-2px;right:0;display:flex;gap:4px;opacity:0;transition:opacity .15s;z-index:5}
+  .fall .cell:hover .cell-act{opacity:1}
+  .cell-act button{height:20px;padding:0 7px;border-radius:6px;border:0;font-size:11px;background:var(--glass-hi);color:var(--ui-fg-info);box-shadow:inset 0 0 0 1px var(--line-hi);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
+  .cell-act button:hover{color:var(--ui-fg)}
+  .stage.drop{box-shadow:inset 0 0 0 2px rgba(var(--glow),.35),inset 0 0 60px rgba(var(--glow),.08)}
+  body.dragging .stage::after{content:'松手加进多台画布';position:absolute;left:50%;top:18px;transform:translateX(-50%);font-size:12px;padding:4px 12px;border-radius:12px;background:var(--glass-hi);box-shadow:inset 0 0 0 1px var(--line-hi);pointer-events:none}
+  @media (max-width:1180px){.sugg{display:none}}
+  .slot{display:flex;flex-direction:column;gap:6px;align-items:stretch;padding:16px;border-radius:16px;border:1px dashed var(--line-hi);background:rgba(var(--glow),.03);font-size:12px}
+  .slot b{font-weight:600}.slot span{font-size:11px;color:var(--ui-fg-info);margin-bottom:4px}
+  .slot button{display:flex;align-items:center;gap:8px;height:28px;padding:0 10px;border:0;border-radius:8px;background:rgba(var(--glow),.06);font-size:12px;text-align:left}
+  .slot button:hover{background:rgba(var(--glow),.12)}
+  .fall{perspective:1400px}
+  .fall .frame{transition:transform .25s ease-out,box-shadow .25s}
+  .fall .frame.tilt{transition:transform .08s linear}
+  /* 光晕引力：指针靠近的设备边缘泛起一圈光 */
+  .frame .halo{position:absolute;inset:-1px;border-radius:inherit;pointer-events:none;z-index:2;opacity:var(--hv,0);
+    background:radial-gradient(180px circle at var(--hx,50%) var(--hy,50%),rgba(var(--glow),.55),transparent 70%);
+    -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;padding:1.5px;transition:opacity .2s}
   @media (prefers-reduced-motion:reduce){.amb i,.frame.agent::after,.agentbar::after,.toast::after,.dot.busy{animation:none}}
 </style>
 </head>
@@ -460,7 +500,7 @@
       <div class="side-list" id="list"></div>
       <div class="side-ft srcwrap">
         <button class="btn" id="addBtn"><svg class="i"><use href="#plus"/></svg>添加设备</button>
-        <span class="grow"></span><span>⌘ 点选多台 → 画布并排</span>
+        <span class="grow"></span><span>点 ＋ 或拖进画布</span>
         <span class="src" style="left:6px;top:4px">19·20</span>
       </div>
     </aside>
@@ -548,19 +588,43 @@
   function frame(){
     dc.clearRect(0,0,W,H);
     for(var i=0;i<P.length;i++){var p=P[i];p.x+=p.vx;p.y+=p.vy;p.t+=.02;if(p.y<-5||p.x<-5||p.x>W+5)seed(p),p.y=H+5;
-      var d=Math.hypot(p.x-mx,p.y-my),boost=d<180?(1-d/180)*.6:0;
+      var d=Math.hypot(p.x-mx,p.y-my),boost=d<180?(1-d/180)*.6:0; if(d<220&&d>8){p.x+=(mx-p.x)/d*.35*(1-d/220);p.y+=(my-p.y)/d*.35*(1-d/220)}
       dc.fillStyle='rgba('+glow+','+Math.min(.9,p.a*(.7+.3*Math.sin(p.t))+boost)+')';dc.beginPath();dc.arc(p.x,p.y,p.r+boost*1.2,0,6.283);dc.fill()}
     if(++tick%12===0) agents=Array.prototype.slice.call(document.querySelectorAll('.frame.agent'));
     if(!reduce) agents.forEach(function(el){if(Math.random()<.5)edge(el)});
     fc.clearRect(0,0,W,H);
-    for(var j=B.length-1;j>=0;j--){var b=B[j];b.x+=b.vx;b.y+=b.vy;b.vx*=.96;b.vy=b.vy*.96+.015;b.life-=b.decay;if(b.life<=0){B.splice(j,1);continue}
+    for(var j=B.length-1;j>=0;j--){var b=B[j];b.x+=b.vx;b.y+=b.vy;b.vx*=.96;b.vy=b.float?b.vy*.985-.004:b.vy*.96+.015;b.life-=b.decay;if(b.life<=0){B.splice(j,1);continue}
       var col=b.c||glow;fc.fillStyle='rgba('+col+','+(b.life*.9)+')';fc.shadowColor='rgba('+col+','+b.life+')';fc.shadowBlur=6;
       fc.beginPath();fc.arc(b.x,b.y,b.r*(.5+b.life*.5),0,6.283);fc.fill()}
     fc.shadowBlur=0;
     requestAnimationFrame(frame);
   }
   requestAnimationFrame(frame);
-  window.FX={burst:burst,burstEl:burstEl};
+  /* 光随指动：按住拖动（含把设备拖进画布）时，指尖后面拖出一道光 */
+  var down=false, lastT=0;
+  document.addEventListener('pointerdown',function(){down=true});
+  document.addEventListener('pointerup',function(){down=false});
+  function trail(x,y){var now=performance.now(); if(now-lastT<16)return; lastT=now;
+    for(var i=0;i<3;i++) B.push({x:x+(Math.random()-.5)*6,y:y+(Math.random()-.5)*6,vx:(Math.random()-.5)*.3,vy:(Math.random()-.5)*.3,life:1,decay:.035,r:Math.random()*1.6+.8})}
+  document.addEventListener('pointermove',function(e){if(down&&!reduce&&e.target.closest&&e.target.closest('.stage,.scr,.side'))trail(e.clientX,e.clientY)},{passive:true});
+  document.addEventListener('dragover',function(e){if(!reduce)trail(e.clientX,e.clientY)});
+  /* 光晕引力 + 3D 空间卡片：设备跟着指针泛光、轻微转向 */
+  document.addEventListener('pointermove',function(e){
+    document.querySelectorAll('.frame').forEach(function(f){var r=f.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2,
+      dx=Math.max(r.left-e.clientX,0,e.clientX-r.right),dy=Math.max(r.top-e.clientY,0,e.clientY-r.bottom),d=Math.hypot(dx,dy),v=d<90?1-d/90:0;
+      f.style.setProperty('--hv',v.toFixed(2));f.style.setProperty('--hx',(e.clientX-r.left)+'px');f.style.setProperty('--hy',(e.clientY-r.top)+'px');
+      if(f.closest('.fall')&&!reduce){ if(v>0){f.classList.add('tilt');f.style.transform='rotateY('+((e.clientX-cx)/r.width*6*v).toFixed(2)+'deg) rotateX('+(-(e.clientY-cy)/r.height*6*v).toFixed(2)+'deg)'} else if(f.style.transform){f.classList.remove('tilt');f.style.transform=''} }
+    });
+  },{passive:true});
+  /* 光感粒子：元素化作粒子向上飘散 */
+  function dissolve(el,done){ if(!el){done&&done();return}
+    var r=el.getBoundingClientRect(), n=reduce?0:Math.min(260,Math.round(r.width*r.height/500));
+    for(var i=0;i<n;i++){var x=r.left+Math.random()*r.width,y=r.top+Math.random()*r.height;
+      B.push({x:x,y:y,vx:(Math.random()-.5)*.8+(x-(r.left+r.width/2))/r.width*.6,vy:-(Math.random()*1.4+.3),life:1,decay:.008+Math.random()*.012,r:Math.random()*1.5+.5,float:1})}
+    el.animate([{opacity:1,filter:'blur(0)',transform:'scale(1)'},{opacity:0,filter:'blur(6px)',transform:'scale(.96) translateY(-6px)'}],{duration:reduce?1:420,easing:'ease-out',fill:'forwards'});
+    setTimeout(function(){done&&done()},reduce?0:420);
+  }
+  window.FX={burst:burst,burstEl:burstEl,dissolve:dissolve};
 })();
 (function(){
 'use strict';
@@ -580,7 +644,7 @@ var D=[
   {id:'tv', grp:'远端', kind:'remote', ic:'tv', name:'智慧屏 V5', sub:'远端真机 · 深圳', st:'busy', form:'tv', bp:'xl', res:'3840×2160', inch:65, busy:'Agent·回归 在用 · 还要 6 分钟'}
 ];
 var byId={}; D.forEach(function(d){byId[d.id]=d});
-var S={tri:{xt:3},sel:'m70e', multi:['m70e','x6e','mbp','xt','w5e'], mode:'one', tab:'set', filt:'all', dark:{}, font:{}, fold:{x6e:'EXPANDED'},
+var S={tri:{xt:3},sel:'m70e', multi:[], mode:'one', tab:'set', filt:'all', dark:{}, font:{}, fold:{x6e:'EXPANDED'},
   cond:{net:'正常',loc:null,call:false}, scopeAll:false, kb:false, zoom:'fit', verdict:{}, agentRun:false, owners:{}};
 
 function toast(t){var e=$('#toast');e.textContent=t;e.classList.add('on');clearTimeout(e._t);e._t=setTimeout(function(){e.classList.remove('on')},2200)}
@@ -599,16 +663,19 @@ function renderList(){
   D.forEach(function(d){cnt[d.grp]=(cnt[d.grp]||0)+1});
   D.forEach(function(d){
     if(S.filt!=='all' && d.kind!==S.filt) return;
-    if(d.grp!==g){g=d.grp;h+='<div class="grp">'+g+' <span class="n">'+cnt[g]+'</span></div>'}
+    if(d.grp!==g){g=d.grp;h+='<div class="grp">'+g+' <span class="n">'+cnt[g]+'</span><span class="grow"></span><button class="grp-add" data-grp="'+g+'" title="整组加进画布">整组上画布</button></div>'}
     var dc=d.st==='run'?'run':d.st==='err'?'err':d.st==='busy'?'busy':'';
-    h+='<div class="dev'+(S.sel===d.id?' sel':'')+(S.mode==='grid'&&S.multi.indexOf(d.id)>=0?' multi':'')+'" data-id="'+d.id+'">'+
+    h+='<div draggable="true" class="dev'+(S.sel===d.id?' sel':'')+(S.mode==='grid'&&S.multi.indexOf(d.id)>=0?' multi':'')+'" data-id="'+d.id+'">'+
       '<span class="ic">'+ic(d.ic)+'</span><span class="nm">'+d.name+'</span>'+
       '<span class="st"><span class="dot '+dc+'"></span>'+stPill(d)+'</span>'+
+      '<button class="add'+(S.multi.indexOf(d.id)>=0?' in':'')+'" data-add="'+d.id+'" title="'+(S.multi.indexOf(d.id)>=0?'从画布移除':'加进多台画布')+'">'+(S.multi.indexOf(d.id)>=0?ic('check'):ic('plus'))+'</button>'+
       '<span class="sub">'+(d.id==='m70'&&S.connFixed?'USB · 已就绪':d.sub)+'</span></div>';
   });
   $('#list').innerHTML=h;
 }
 $('#list').addEventListener('click',function(e){
+  var ga=e.target.closest('.grp-add'); if(ga){addToCanvas(D.filter(function(x){return x.grp===ga.dataset.grp&&canShow(x)}).map(function(x){return x.id}),ga);return}
+  var ad=e.target.closest('[data-add]'); if(ad){toggleCanvas(ad.dataset.add,ad);return}
   var r=e.target.closest('.dev'); if(!r) return; var id=r.dataset.id;
   if(e.metaKey||e.ctrlKey||e.shiftKey){
     var i=S.multi.indexOf(id); if(i>=0) S.multi.splice(i,1); else S.multi.push(id);
@@ -618,6 +685,11 @@ $('#list').addEventListener('click',function(e){
   if(d.st==='err' && !S.connFixed) S.tab='conn';
   render();
 });
+$('#list').addEventListener('dragstart',function(e){var r=e.target.closest('.dev');if(!r)return;e.dataTransfer.setData('text/plain',r.dataset.id);e.dataTransfer.effectAllowed='copy';document.body.classList.add('dragging')});
+$('#list').addEventListener('dragend',function(){document.body.classList.remove('dragging')});
+$('#stage').addEventListener('dragover',function(e){e.preventDefault();this.classList.add('drop')});
+$('#stage').addEventListener('dragleave',function(){this.classList.remove('drop')});
+$('#stage').addEventListener('drop',function(e){e.preventDefault();this.classList.remove('drop');document.body.classList.remove('dragging');var id=e.dataTransfer.getData('text/plain');if(byId[id]&&S.multi.indexOf(id)<0)toggleCanvas(id);else if(byId[id]&&S.mode!=='grid')addToCanvas([id])});
 $('#list').addEventListener('dblclick',function(e){var r=e.target.closest('.dev');if(!r)return;S.sel=r.dataset.id;setCompact(true)});
 $('#list').addEventListener('contextmenu',function(e){
   var r=e.target.closest('.dev'); if(!r) return; e.preventDefault(); var d=byId[r.dataset.id];
@@ -693,6 +765,38 @@ function dims(d,scale){
 }
 var TRI={1:['1008×2232','sm'],2:['2048×2232','md'],3:['3184×2232','lg']};
 function setTri(id,n){S.tri[id]=n; var d=byId[id]; d.res=TRI[n][0]; d.bp=TRI[n][1]; toast('Mate XT 切到'+['单屏','双屏','三屏'][n-1]+' · '+d.bp); render();}
+function canShow(x){return x.st==='run'||x.borrowed}
+/* 单台旁边的「再看几种形态」：只推断点不同、当前可用的设备 */
+function suggestHTML(d){
+  var others=D.filter(function(x){return x.id!==d.id&&canShow(x)&&x.bp!==d.bp});
+  var seen={}, pick=others.filter(function(x){if(seen[x.bp])return false;seen[x.bp]=1;return true}).slice(0,3);
+  if(!pick.length) return '';
+  return '<div class="sugg"><div class="sugg-h">同一页面，换个形态看</div>'+pick.map(function(x){
+      return '<button class="ghost" data-sg="'+x.id+'"><span class="gi">'+ic(x.ic)+'</span><span><b>'+x.name+'</b><small>'+x.bp+' · '+x.res+'</small></span><span class="gp">'+ic('plus')+'</span></button>'}).join('')+
+    '<button class="ghost all" data-sg="__all"><span class="gi">'+ic('tri')+'</span><span><b>全形态一起看</b><small>'+D.filter(canShow).length+' 台在线 · 并排进画布</small></span></button>'+
+    '<div class="sugg-f">也可以 ⌘ 点侧栏多选，或把设备拖到这里</div></div>';
+}
+/* 进画布：把单台视图里的那台从原位置「飞」到画布里的格子 */
+function flipInto(ids,fromEl){
+  var before={}; $$('.frame').forEach(function(f){before[f.dataset.id]=f.getBoundingClientRect()});
+  var src=fromEl&&fromEl.getBoundingClientRect();
+  ids.forEach(function(i){if(S.multi.indexOf(i)<0)S.multi.push(i)});
+  if(S.multi.indexOf(S.sel)<0&&canShow(byId[S.sel])) S.multi.unshift(S.sel);
+  setMode('grid'); render();
+  $$('.frame').forEach(function(f){
+    var id=f.dataset.id, a=before[id]||(ids.indexOf(id)>=0&&src)||null, b=f.getBoundingClientRect(); if(!a) return;
+    var dx=a.left+a.width/2-(b.left+b.width/2), dy=a.top+a.height/2-(b.top+b.height/2), k=Math.max(.15,Math.min(a.width/b.width,2.5));
+    f.animate([{transform:'translate('+dx+'px,'+dy+'px) scale('+k+')',opacity:before[id]?1:.2},{transform:'none',opacity:1}],{duration:520,easing:'cubic-bezier(.2,.8,.2,1)'});
+    if(!before[id]) setTimeout(function(){FX.burstEl(f,14,{speed:1.6})},480);
+  });
+}
+function addToCanvas(ids,fromEl){ if(!ids.length){toast('这组没有在线的设备');return} flipInto(ids,fromEl); toast('画布上 '+S.multi.length+' 台 · 改一次一起刷'); }
+function toggleCanvas(id,fromEl){
+  var x=byId[id];
+  if(S.multi.indexOf(id)>=0){S.multi.splice(S.multi.indexOf(id),1); if(S.mode==='grid'&&S.multi.length<2){S.sel=S.multi[0]||S.sel;setMode('one')} render(); toast('已从画布移除 '+x.name); return}
+  if(!canShow(x)){S.sel=id;render();toast(x.name+' 现在不能上画布：'+(x.busy||(x.borrow?'先借用':x.st==='err'?'还没连上':'已关机')));return}
+  addToCanvas([id],fromEl);
+}
 function verdictPill(id){
   var v=S.verdict[id]; if(!v) return '';
   return v==='flag'?'<span class="pill err">缺陷 · lg 三列挤压，标题截断</span>':v==='pass'?'<span class="pill ok">通过</span>':v==='adapt'?'<span class="pill warn">适配差异 · 不用改</span>':'<span class="pill ai">验证中…</span>';
@@ -710,7 +814,7 @@ function frameHTML(d,scale,inGrid){
     own='<div class="tag-own"><b>'+d.name+'</b><span class="pill'+(o==='你'?'':' ai')+'">'+o+'</span>'+(d.kind==='remote'?'<span class="pill">远端</span>':'')+'</div>';
   }
   var vd='';
-  return '<div class="'+fcls+'" data-id="'+d.id+'" style="width:'+wh[0]+'px;height:'+wh[1]+'px">'+own+'<div class="scr">'+appHTML(d)+'<i class="shine"></i><div class="flash"></div></div>'+crease+vd+'</div>';
+  return '<div class="'+fcls+'" data-id="'+d.id+'" style="width:'+wh[0]+'px;height:'+wh[1]+'px">'+own+'<div class="scr">'+appHTML(d)+'<i class="shine"></i><div class="flash"></div></div><i class="halo"></i>'+crease+vd+'</div>';
 }
 
 /* ---------- 画布 ---------- */
@@ -734,7 +838,7 @@ function renderStage(){
       $('#bootBtn').onclick=function(){d.st='run';toast(d.name+' 启动中…');render();};
       hint='';
     } else {
-      st.innerHTML='<div style="display:flex;flex-direction:column;align-items:center;gap:10px">'+frameHTML(d,1,false)+'<div class="mono dim">'+d.res+' · '+d.bp+' · '+(S.zoom==='1:1'?'1:1 物理尺寸（'+d.inch+' 英寸）':'适应窗口')+(S.kb?' · 键盘已捕获':'')+'</div></div>';
+      st.innerHTML='<div class="solo"><div style="display:flex;flex-direction:column;align-items:center;gap:10px">'+frameHTML(d,1,false)+'<div class="mono dim">'+d.res+' · '+d.bp+' · '+(S.zoom==='1:1'?'1:1 物理尺寸（'+d.inch+' 英寸）':'适应窗口')+(S.kb?' · 键盘已捕获':'')+'</div></div>'+suggestHTML(d)+'</div>';
       hint=d.name+(d.lease?' · '+d.lease:'');
     }
   } else if(S.mode==='grid'){
@@ -745,7 +849,8 @@ function renderStage(){
     for(var c=0;c<nc;c++){cols.push('');hs.push(0)}
     ids.forEach(function(i){var x=byId[i], base=dims(x,1), tw=colW*K[x.form], sc=Math.min(tw/base[0],1.1), hh=base[1]*sc+64;
       var k=hs.indexOf(Math.min.apply(null,hs)); hs[k]+=hh+gap;
-      cols[k]+='<div class="cell">'+frameHTML(x,sc,true)+'<div class="cap"><span class="mono">'+x.res+' · '+x.bp+'</span>'+verdictPill(x.id)+(x.form==='tri'?triSw(x):'')+'</div></div>';});
+      cols[k]+='<div class="cell" data-cell="'+x.id+'"><div class="cell-act"><button data-solo="'+x.id+'">单独看</button><button data-out="'+x.id+'">移出</button></div>'+frameHTML(x,sc,true)+'<div class="cap"><span class="mono">'+x.res+' · '+x.bp+'</span>'+verdictPill(x.id)+(x.form==='tri'?triSw(x):'')+'</div></div>';});
+    if(ids.length<3){var k2=hs.indexOf(Math.min.apply(null,hs)); cols[k2]+='<div class="cell"><div class="slot" style="width:'+Math.round(colW*.8)+'px"><b>再加一台</b><span>侧栏悬停点 ＋，或把设备拖进来</span>'+D.filter(function(x){return canShow(x)&&ids.indexOf(x.id)<0}).slice(0,3).map(function(x){return '<button data-sg="'+x.id+'">'+ic(x.ic)+x.name+'</button>'}).join('')+'</div></div>'}
     st.innerHTML='<div class="fall" style="--nc:'+nc+';--gap:'+gap+'px">'+cols.map(function(h){return '<div class="col">'+h+'</div>'}).join('')+'</div>';
     st.style.alignItems='flex-start';
     hint=ids.length+' 台并排 · 改一次一起刷 · 上次 0.8 s';
@@ -756,6 +861,10 @@ function renderStage(){
   $('#cvHint').textContent=hint;
   $$('.frame .scr',st).forEach(function(s){s.addEventListener('mousedown',tap)});
   $$('.trisw button',st).forEach(function(b){b.onclick=function(){setTri(b.dataset.id,+b.dataset.tri)}});
+  $$('[data-sg]',st).forEach(function(b){b.onclick=function(){var id=b.dataset.sg; if(S.mode==='one'&&id!=='__all') S.multi=[]; addToCanvas(id==='__all'?D.filter(canShow).map(function(x){return x.id}):[S.sel,id],b)}});
+  $$('[data-solo]',st).forEach(function(b){b.onclick=function(){S.sel=b.dataset.solo;setMode('one');render()}});
+  $$('[data-out]',st).forEach(function(b){b.onclick=function(){var c=b.closest('.cell'); FX.dissolve(c.querySelector('.frame'),function(){toggleCanvas(b.dataset.out)})}});
+  if(S.mode==='grid') $$('.fall .frame',st).forEach(function(f){f.addEventListener('dblclick',function(){S.sel=f.dataset.id;setMode('one');render()}); f.addEventListener('click',function(){if(S.sel!==f.dataset.id){S.sel=f.dataset.id;renderList();renderInsp()}})});
 }
 function tap(e){
   var r=this.getBoundingClientRect(), p=document.createElement('span'); p.className='ripple';
@@ -979,7 +1088,7 @@ function runMulti(q){
       order.forEach(function(i){S.verdict[i]='run'}); render();
       setTimeout(function(){order.forEach(function(i){S.verdict[i]=i==='x6e'?'adapt':'pass'}); S.owners={}; render();
         $('#agentTxt').innerHTML='全部通过 · 热重载 0.8 s · 设备已交还给你'; $('#agentAct').innerHTML='<button class="btn" id="agentDone">完成</button>';
-        $('#agentDone').onclick=function(){$('#agentbar').classList.remove('on');S.verdict={};S.cond.net='正常';S.scopeAll=false;render()};
+        $('#agentDone').onclick=function(){FX.dissolve($('#agentbar'));$('#agentbar').classList.remove('on');S.verdict={};S.cond.net='正常';S.scopeAll=false;render()};
       },1400);
     };
   })();
@@ -996,8 +1105,8 @@ $$('.preset').forEach(function(b){b.onclick=function(){$('#askIn').value=b.datas
 $('#hotBtn').onclick=function(){$$('.frame').forEach(function(f){f.classList.add('agent')});setTimeout(function(){render();toast('已热重载 '+$$('.frame').length+' 台 · 0.8 s')},500)};
 
 /* ---------- 模式与外观 ---------- */
-function setMode(m){S.mode=m;$$('#mode button').forEach(function(b){b.classList.toggle('on',b.dataset.m===m)})}
-$('#mode').addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;setMode(b.dataset.m);if(b.dataset.m==='dist')S.tab='diag';render()});
+function setMode(m){S.mode=m;document.body.classList.toggle('m-grid',m==='grid');$$('#mode button').forEach(function(b){b.classList.toggle('on',b.dataset.m===m); if(b.dataset.m==='grid') b.innerHTML='多台画布 <span class="cnt">'+S.multi.length+'</span>'})}
+$('#mode').addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;if(b.dataset.m==='grid'&&S.mode==='one'){flipInto([]);return}setMode(b.dataset.m);if(b.dataset.m==='dist')S.tab='diag';render()});
 function setCompact(on){$('#win').classList.toggle('compact',on);document.body.classList.toggle('compact-bg',on);$('#tgCompact').classList.toggle('on',on);if(on)setMode('one');render()}
 $('#tgCompact').onclick=function(){setCompact(!$('#win').classList.contains('compact'))};
 $('#tgSide').onclick=function(){var s=$('#side');s.hidden=!s.hidden;this.classList.toggle('on',!s.hidden)};
@@ -1008,7 +1117,7 @@ $('#tgTheme').onclick=function(){var r=document.documentElement;r.dataset.theme=
 document.addEventListener('keydown',function(e){if(e.key==='Escape'){if(S.kb){S.kb=false;render();toast('已释放键盘')} if($('#win').classList.contains('compact'))setCompact(false)}});
 
 var prevV={}, prevConn=false, prevDist=false;
-function render(){renderList();renderStage();renderCtl();renderInsp();
+function render(){setMode(S.mode);renderList();renderStage();renderCtl();renderInsp();
   Object.keys(S.verdict).forEach(function(id){var v=S.verdict[id]; if(v!==prevV[id]&&(v==='pass'||v==='flag'||v==='adapt')){var f=$('.frame[data-id="'+id+'"]'); if(f) FX.burstEl(f,v==='flag'?18:26,{speed:v==='flag'?1.6:2.4,color:v==='flag'?'219,92,92':null})}});
   prevV=JSON.parse(JSON.stringify(S.verdict));
   if(S.connFixed&&!prevConn){var st=$('.steps'); if(st) FX.burstEl(st,30,{speed:2.4})} prevConn=!!S.connFixed;
