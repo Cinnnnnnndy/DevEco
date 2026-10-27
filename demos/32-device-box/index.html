@@ -970,6 +970,8 @@ var ic=function(n,c){return '<svg class="i'+(c?' '+c:'')+'"><use href="#'+n+'"/>
 var D=[
   {id:'m70e', grp:'本机模拟器', kind:'emu', tag:'模拟器', ic:'phone', name:'Mate 70 Pro', sub:'HarmonyOS 6.0 · API 20', st:'run', form:'phone', bp:'sm', res:'1260×2844', inch:6.9},
   {id:'x6e', grp:'本机模拟器', kind:'emu', tag:'模拟器', ic:'fold', name:'Mate X6', sub:'展开 · API 20', st:'run', form:'fold', bp:'md', res:'2440×2240', inch:7.93, fold:'EXPANDED'},
+  {id:'pxm', grp:'本机模拟器', kind:'emu', tag:'模拟器', ic:'fold', name:'Pura X Max', sub:'阔折叠 · 展开 · API 20', st:'run', form:'fold', bp:'md', res:'2584×1828', inch:7.7, mm:{EXPANDED:[166.5,120],FOLDED:[85,120]}},
+  {id:'xts', grp:'本机模拟器', kind:'emu', tag:'模拟器', ic:'tri', name:'Mate XTs 三折叠', sub:'三屏 · API 20', st:'run', form:'tri', bp:'lg', res:'3184×2232', inch:10.2},
   {id:'padE', grp:'本机模拟器', kind:'emu', tag:'模拟器', ic:'tablet', name:'MatePad Pro 13.2', sub:'API 20', st:'off', form:'tab', bp:'lg', res:'2880×1920', inch:13.2},
   {id:'w5e', grp:'本机模拟器', kind:'emu', tag:'模拟器', ic:'watch', name:'WATCH 5', sub:'46mm', st:'run', form:'watch', bp:'xs', res:'466×466', inch:1.5},
   {id:'m70', grp:'真机', kind:'real', ic:'phone', name:'HUAWEI Mate 70 Pro', sub:'USB · 卡在第 3 步', st:'err', form:'phone', bp:'sm', res:'1260×2844', inch:6.9, conn:'stuck'},
@@ -979,7 +981,7 @@ var D=[
   {id:'tv', grp:'远端', kind:'remote', tag:'远端真机', ic:'tv', name:'智慧屏 V5', sub:'深圳', st:'busy', form:'tv', bp:'xl', res:'3840×2160', inch:65, busy:'Agent·回归 在用 · 还要 6 分钟'}
 ];
 var byId={}; D.forEach(function(d){byId[d.id]=d});
-var S={zm:'phys',real:true,tri:{xt:3},sel:'m70e', multi:[], mode:'one', tab:'set', dark:{}, font:{}, fold:{x6e:'EXPANDED'},
+var S={zm:'phys',real:true,tri:{xt:3,xts:3},sel:'m70e', multi:[], mode:'one', tab:'set', dark:{}, font:{}, fold:{x6e:'EXPANDED',pxm:'EXPANDED'},
   cond:{net:'正常',loc:null,call:false}, scopeAll:false, kb:false, zoom:'1:1', verdict:{}, agentRun:false, owners:{}};
 
 function toast(t){var e=$('#toast');e.textContent=t;e.classList.add('on');clearTimeout(e._t);e._t=setTimeout(function(){e.classList.remove('on')},2200)}
@@ -1117,7 +1119,7 @@ function dims(d,scale){
   var w,h;
   switch(d.form){
     case 'phone': w=230;h=500;break;
-    case 'fold': w=S.fold[d.id]==='FOLDED'?230:430; h=S.fold[d.id]==='FOLDED'?500:400; break;
+    case 'fold': if(d.mm){var fm=d.mm[S.fold[d.id]==='FOLDED'?'FOLDED':'EXPANDED'];w=fm[0]*2.74;h=fm[1]*2.74;break} w=S.fold[d.id]==='FOLDED'?230:430; h=S.fold[d.id]==='FOLDED'?500:400; break;
     case 'tab': w=560;h=380;break;
     case 'watch': w=200;h=200;break;
     case 'pc': w=580;h=390;break;
@@ -1145,7 +1147,7 @@ function zmMul(){return typeof S.zm==='number'?S.zm:1}
 function mmOf(d){
   switch(d.form){
     case 'phone': return [75.3,162.9];
-    case 'fold': return S.fold[d.id]==='FOLDED'?[73.4,156.7]:[156.7,144.2];
+    case 'fold': if(d.mm) return d.mm[S.fold[d.id]==='FOLDED'?'FOLDED':'EXPANDED'].slice(); return S.fold[d.id]==='FOLDED'?[73.4,156.7]:[156.7,144.2];
     case 'tab': return [289.1,196.1];
     case 'watch': return [46.8,46.8];
     case 'pc': return [313.0,221.0];
@@ -1269,8 +1271,8 @@ function renderStage(){
        4 依次放进当前最矮的列（跨列时找相邻两列中较高者最矮的位置），并列取最左 */
     var W=Math.max(320,st.clientWidth-48), G=FALL.GAP, nc=Math.max(2,Math.min(FALL.MAXCOL,Math.floor((W+G)/(FALL.COL*zmMul()+G)))), colW=(W-G*(nc-1))/nc;
     var hs=[],cells='',LBL=26,CAP=34; for(var c=0;c<nc;c++)hs.push(0);
-    function kOf(x,base){var ar=base[0]/base[1]; if(x.form==='watch')return FALL.K.watch; if(ar>=FALL.SPAN_AR)return 1; return ar<.6?FALL.K.narrow:FALL.K.fold}
-    ids.forEach(function(i){var x=byId[i], base=dims(x,1), ar=base[0]/base[1], span=(ar>=FALL.SPAN_AR&&nc>=3)?2:1;
+    function kOf(x,base){var ar=base[0]/base[1]; if(x.form==='watch')return FALL.K.watch; if(x.form==='fold')return ar<.6?FALL.K.narrow:FALL.K.fold; if(ar>=FALL.SPAN_AR)return 1; return ar<.6?FALL.K.narrow:FALL.K.fold}
+    ids.forEach(function(i){var x=byId[i], base=dims(x,1), ar=base[0]/base[1], span=(ar>=FALL.SPAN_AR&&nc>=3&&x.form!=='fold')?2:1;
       var k=0,best=1e9; for(var c=0;c+span<=nc;c++){var h=Math.max.apply(null,hs.slice(c,c+span)); if(h<best-0.5){best=h;k=c}}
       var slotW=colW*span+G*(span-1), sc=slotW*kOf(x,base)/base[0], fh=base[1]*sc, top=best, left=k*(colW+G), hh=LBL+fh+CAP;
       for(var c2=k;c2<k+span;c2++) hs[c2]=top+hh+G;
@@ -1587,7 +1589,7 @@ $('#scaleSeg').addEventListener('click',function(e){var b=e.target.closest('butt
 
 /* ---------- 模式与外观 ---------- */
 function setMode(m){S.mode=m;document.body.classList.toggle('m-grid',m==='grid');document.body.classList.toggle('m-dist',m==='dist');var dw=$('#devWrap');if(dw)dw.hidden=m!=='grid';var dn=$('#devN');if(dn)dn.textContent=S.multi.length;$$('#mode button').forEach(function(b){b.classList.toggle('on',b.dataset.m===m); if(b.dataset.m==='grid') b.innerHTML=ic('m-grid')+(S.multi.length?'<span class="cnt">'+S.multi.length+'</span>':'')})}
-$('#mode').addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;if(b.dataset.m==='grid'&&S.mode==='one'){flipInto([]);return}setMode(b.dataset.m);if(b.dataset.m==='dist')S.tab='diag';render()});
+$('#mode').addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;if(b.dataset.m==='grid'&&S.mode==='one'){/* 画布里只有一两台时看不出真实尺寸和瀑布流的区别：第一次进来就把可用设备都放上 */flipInto(S.multi.length<=1?D.filter(canShow).map(function(x){return x.id}):[]);return}setMode(b.dataset.m);if(b.dataset.m==='dist')S.tab='diag';render()});
 /* 紧凑模式：窗口贴着设备收，四周只留最小边距；底部控制条放不下的按钮收进「更多」；左上角是设备切换 */
 function fitCompact(){
   var w=$('#win'), on=w.classList.contains('compact'), sw=$('#devSw');
