@@ -424,7 +424,106 @@
   .frame .halo{position:absolute;inset:-1px;border-radius:inherit;pointer-events:none;z-index:2;opacity:var(--hv,0);
     background:radial-gradient(180px circle at var(--hx,50%) var(--hy,50%),rgba(var(--glow),.55),transparent 70%);
     -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;padding:1.5px;transition:opacity .2s}
-  @media (prefers-reduced-motion:reduce){.amb i,.frame.agent::after,.agentbar::after,.toast::after,.dot.busy{animation:none}}
+
+  /* =====================================================================
+     10-27 第三版（参照 Xcode 27 Device Hub）：去掉背景光；描边换成填充；
+     侧栏、底部控制条、浮层用磨砂玻璃，检查器分组做成实心圆角卡
+     ===================================================================== */
+  body{--win:#2C2C2F;--cv:#2C2C2F;--inspbg:#262629;--card:#353539;--fill:rgba(255,255,255,.07);--fill-2:rgba(255,255,255,.12);--fill-3:rgba(255,255,255,.18);
+    --frost:rgba(52,52,56,.62);--frost-hi:rgba(58,58,62,.78);background:#1B1B1D}
+  :root[data-theme="light"] body{--win:#F2F2F4;--cv:#ECECEE;--inspbg:#F7F7F8;--card:#FFFFFF;--fill:rgba(0,0,0,.045);--fill-2:rgba(0,0,0,.075);--fill-3:rgba(0,0,0,.11);
+    --frost:rgba(255,255,255,.62);--frost-hi:rgba(255,255,255,.8);background:#DADADD}
+  .amb,#dust,.frame .halo{display:none!important}
+  .lit,.dev.lit,.btn.lit,.chip.lit,.ib.lit{background-image:none!important}
+  .win{background:var(--win)}
+  .tb{background:transparent;-webkit-backdrop-filter:none;backdrop-filter:none;border-bottom:0}
+  .body{padding:0 8px 8px 8px;gap:0}
+  /* 侧栏：浮起的磨砂玻璃 */
+  .side{background:var(--frost);-webkit-backdrop-filter:blur(40px) saturate(180%);backdrop-filter:blur(40px) saturate(180%);border:0;border-radius:14px;box-shadow:0 6px 24px rgba(0,0,0,.18);position:relative;z-index:2}
+  .side-ft{border-top:0}
+  /* 画布：实心中性底 */
+  .canvas{position:relative;background:var(--cv)}
+  .cv-bar{border-bottom:0}
+  .stage{padding-bottom:84px}
+  /* 检查器：实心底 + 分组卡片 */
+  .insp{background:var(--inspbg);-webkit-backdrop-filter:none;backdrop-filter:none;border:0;border-radius:14px;margin-left:8px}
+  .insp-tabs{border-bottom:0;margin:8px 10px 0;padding:3px;border-radius:10px;background:var(--fill)}
+  .insp-tabs button{height:26px}
+  .insp-tabs button.on{background:var(--fill-3)}
+  .insp-body{padding:4px 10px 18px}
+  .sec,.sec:last-child{border:0;background:var(--card);border-radius:12px;padding:10px 12px;margin-bottom:8px}
+  :root[data-theme="light"] .sec{box-shadow:0 1px 2px rgba(0,0,0,.04)}
+  .sec .row+.row{border-top:1px solid var(--fill)}
+  .rep{border-top:0}.rep+.rep{border-top:1px solid var(--fill)}
+  /* 控件：填充，不描边 */
+  .ib{background:transparent}.ib:hover{background:var(--fill)}.ib.on{background:var(--fill-2)}
+  .tb .ib{background:var(--fill);border-radius:999px;height:30px;min-width:30px;padding:0 9px}
+  .tb .ib:hover{background:var(--fill-2)}.tb .ib.on{background:var(--fill-3)}
+  .ask{border:0;background:var(--fill);border-radius:999px}
+  .ask:focus-within{box-shadow:none;background:var(--fill-2)}
+  .ask .go{border-radius:999px;box-shadow:none}
+  .preset{border:0;background:var(--fill);border-radius:999px}
+  .preset:hover{background:var(--fill-2)}
+  .seg{background:var(--fill);border-radius:9px}
+  .seg button{border-radius:7px}
+  .seg button.on{background:var(--fill-3);box-shadow:none}
+  :root[data-theme="light"] .seg button.on{background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.08)}
+  .dev{border-radius:10px;padding:7px 8px}
+  .dev:hover{background-color:var(--fill)}
+  .dev.sel,.dev.multi,.dev.sel.multi{box-shadow:none}
+  .dev.sel{background-color:var(--fill-3)}
+  .dev .ic{width:28px;height:28px;border-radius:50%;background:var(--fill-2);align-items:center;justify-self:center}
+  .dev{grid-template-columns:28px minmax(0,1fr) auto 22px}
+  .dev .add.in{box-shadow:none;background:var(--fill-2)}
+  .dot.run{box-shadow:none}
+  .pill,.pill.ai,.pill.ok,.pill.warn{box-shadow:none;background:var(--fill-2)}
+  .btn,.chip{border:0;background-color:var(--fill);border-radius:8px}
+  .btn:hover,.chip:hover{box-shadow:none;background-color:var(--fill-2)}
+  .chip.on{background-color:var(--fill-3);box-shadow:none;color:var(--ui-fg)}
+  .btn.ai,.btn.primary{box-shadow:none}
+  .btn.danger{background:color-mix(in srgb,var(--err) 16%,transparent);color:var(--err)}
+  select{border:0;background:var(--fill);border-radius:7px}
+  .callout,.callout.ai{box-shadow:none;background:var(--fill)}
+  .card{border:0;background:var(--card);-webkit-backdrop-filter:none;backdrop-filter:none}
+  .log,.hlog{border:0;background:var(--fill)}
+  :root[data-theme="light"] .log,:root[data-theme="light"] .hlog{background:var(--fill)}
+  .tl .ev{box-shadow:none;background:var(--fill-2)}
+  .tl .ev.wait{border:0;background:var(--fill)}
+  .tl .ev.miss{border:0;background:color-mix(in srgb,var(--err) 18%,transparent)}
+  .tl .lane{background:var(--fill)}
+  .step .n{border:0;background:var(--fill-2)}
+  .step.run .n{background:var(--fill-3)}
+  .ghost,.ghost.all{border:0;background:var(--fill);box-shadow:none}
+  .ghost:hover{background:var(--fill-2);box-shadow:none}
+  .ghost .gi{background:var(--fill-2)}
+  .slot{border:0;background:var(--fill)}
+  .trisw{box-shadow:none;background:var(--fill)}
+  .src.x{box-shadow:none;background:var(--fill-3)}
+  .src{box-shadow:none}
+  .app-row i,.app-row i[style]{box-shadow:none!important}
+  /* 底部控制条：浮在画布上的磨砂胶囊（同 Device Hub） */
+  .ctl{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);height:auto;border:0;padding:5px 6px;gap:2px;border-radius:999px;
+    background:var(--frost-hi);-webkit-backdrop-filter:blur(30px) saturate(180%);backdrop-filter:blur(30px) saturate(180%);box-shadow:0 8px 28px rgba(0,0,0,.28);white-space:nowrap;z-index:3}
+  .ctl .sep{width:1px;height:18px;background:var(--fill-2);margin:0 4px}
+  .ctl .ib{height:32px;min-width:32px;border-radius:999px;padding:0 10px}
+  /* 浮层：磨砂玻璃，不描边 */
+  .menu,.legend,.modal,.toast{border:0;background:var(--frost-hi);box-shadow:0 12px 36px rgba(0,0,0,.32)}
+  .agentbar{background:var(--frost);margin:0 8px 6px;border-radius:12px}
+  .agentbar::after,.toast::after{display:none}
+  .agentbar .bar i{box-shadow:none}
+  /* 设备：去掉外圈描边；Agent 在用时用一道光扫过屏幕（填充，不是描边） */
+  .frame{box-shadow:0 18px 40px rgba(0,0,0,.35)}
+  .frame.pass,.frame.agent{box-shadow:0 18px 40px rgba(0,0,0,.35)}
+  .frame.agent::after{display:none}
+  .frame.agent .scr::before{content:'';position:absolute;inset:0;z-index:5;pointer-events:none;
+    background:linear-gradient(105deg,transparent 35%,rgba(255,255,255,.55) 50%,transparent 65%);background-size:250% 100%;mix-blend-mode:soft-light;animation:scan 1.6s ease-in-out infinite}
+  .frame.agent .scr::after{content:'验证中';position:absolute;right:8px;bottom:46px;z-index:6;font-size:10px;padding:2px 8px;border-radius:999px;color:#fff;background:rgba(30,30,32,.55);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+  @keyframes scan{from{background-position:150% 0}to{background-position:-50% 0}}
+  .frame.flag{box-shadow:0 0 0 2px var(--err),0 18px 40px rgba(0,0,0,.35)}
+  .side{width:292px}
+  .toast{bottom:84px}
+  body.m-grid .dev .pill.ai{display:none}
+  @media (prefers-reduced-motion:reduce){.frame.agent .scr::before,.amb i,.frame.agent::after,.agentbar::after,.toast::after,.dot.busy{animation:none}}
 </style>
 </head>
 <body>
@@ -572,7 +671,7 @@
   },{passive:true});
 
   /* 环境光尘：慢慢上浮，靠近指针时变亮 */
-  var P=[]; for(var i=0;i<(reduce?0:90);i++) P.push(seed({}));
+  var P=[]; /* 背景光尘已按 10-27 意见关掉 */
   function seed(p){p.x=Math.random()*innerWidth;p.y=Math.random()*innerHeight;p.r=Math.random()*1.3+.3;p.vy=-(Math.random()*.12+.03);p.vx=(Math.random()-.5)*.06;p.a=Math.random()*.35+.05;p.t=Math.random()*6.28;return p}
   /* 迸发粒子 */
   var B=[];
