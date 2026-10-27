@@ -165,8 +165,14 @@ window.DEVECO_CATALOG = {
       id: 'harmony',
       title: '鸿蒙特征 / 首发',
       icon: 'i-cat-harmony',
-      note: '没有对标，因为别人没有这个题——多形态、分布式、一次开发多端部署，只有我们手里有。做错了没人提醒，每条都要自己把判断规则定下来。8 条。',
+      note: '没有对标，因为别人没有这个题——多形态、分布式、一次开发多端部署，只有我们手里有。做错了没人提醒，每条都要自己把判断规则定下来。9 条。',
       items: [
+        {
+          no: '32', title: 'Device Hub：模拟器、真机、远端设备一个窗口', subtitle: 'DevEco Device Hub · after Xcode 27',
+          desc: '参照 Xcode 27 Device Hub 的「侧栏整理 / 画布操控 / 检查器配置」，把 17–20 的模拟器特性收进一个独立窗口：多台画布与一多检查、鸿蒙特征与手势、场景一键应用到全部、远端借机、五步连接、分布式时间轴；点「特性来源」可看每处出自哪条。',
+          view: 'ready', date: '2026-10-27', href: 'demos/32-device-hub/index.html',
+          tags: ['步数与切换次数', '等待可见'], note: '收拢 17 / 18 / 19 / 20；对标 Xcode 27 Device Hub', thumb: { type: 'image', src: 'site/thumbs/32-device-hub.jpg' },
+        },
         {
           no: '15', title: '一多联动＋跨端开发：任务状态跟着人走', subtitle: 'Task State Follows You', mark: '投',
           desc: 'Agent 停在第 4 步等你批时离开工位：锁屏即变手机实况窗，在手机上就能批；回来碰一下鸿蒙电脑，真机、断点、HiLog 行和整个在等你队列（含另一个 Agent 借设备的请求）原位接上。',
