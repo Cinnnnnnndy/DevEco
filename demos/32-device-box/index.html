@@ -1147,7 +1147,11 @@ function renderStage(){
       $('#borrowBtn').onclick=function(){d.borrowed=true;d.st='run';d.sub='东莞 · 你在用';d.lease='租约 剩 30 分钟';d.borrow=false;if(S.multi.indexOf(d.id)<0)S.multi.push(d.id);toast('已借到 HiCar 车机，30 分钟后自动归还');render();};
       hint='远端设备';
     } else if(d.st==='err' && !S.connFixed){
-      st.innerHTML='<div class="card" style="max-width:420px"><b>'+d.name+' 还没连上</b><div class="callout err" style="margin-top:8px">卡在第 3 步「建立通道」：hdc 握手已等 12 秒，通常 1 秒内完成。<br>右边「连接」页能看到五步进度、交给 Agent 或自己排查。</div></div>';
+      st.innerHTML='<div class="card" style="max-width:420px"><b>'+d.name+' 还没连上</b><div class="callout err" style="margin-top:8px">卡在第 3 步「建立通道」：hdc 握手已等 12 秒，通常 1 秒内完成。</div><div class="btns"><button class="btn primary" id="fixConn">一键修复</button><button class="btn" id="wifiConn">改用 Wi‑Fi 连</button><button class="btn" id="seeConn">看五步进度</button></div><div class="dim" style="font-size:11px;margin-top:8px">一键修复：换备用端口重建通道，不断开别人的调试会话</div></div>';
+      var viaInsp=function(act){S.tab='conn';render();var b=document.querySelector('#insp [data-act="'+act+'"]');if(b)b.click()};
+      $('#fixConn').onclick=function(){viaInsp('connAgent')};
+      $('#wifiConn').onclick=function(){viaInsp('wifiPair')};
+      $('#seeConn').onclick=function(){S.tab='conn';render()};
       hint='连接未就绪';
     } else if(d.st==='off'){
       st.innerHTML='<div class="card" style="max-width:340px;text-align:center"><div class="dim">'+d.name+' 已关机</div><div class="btns" style="justify-content:center"><button class="btn primary" id="bootBtn">'+ic('power')+'启动</button></div></div>';
@@ -1258,6 +1262,7 @@ function renderCtl(){
     h+='<button class="ib'+(S.zoom==='1:1'?' on':'')+'" data-a="zoom" title="按真实物理尺寸显示">'+ic('ruler')+'1:1</button>';
   }
   c.innerHTML=h+'<span class="src x" style="left:30%;top:6px">Xcode</span>';
+  c.style.display=h?'':'none';
 }
 function ctlClick(e){
   var b=e.target.closest('[data-a]'); if(!b) return; var a=b.dataset.a, d=byId[S.sel];
