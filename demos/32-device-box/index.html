@@ -111,10 +111,10 @@
   .app .it span{color:#E8443A;font-weight:600}
   .app .nav{flex:none;height:40px;display:flex;justify-content:space-around;align-items:center;color:var(--screen-dim);font-size:10px;border-top:1px solid rgba(127,127,127,.15)}
   .app .nav .on{color:#0A59F7;font-weight:600}
-  .app.cols2 .ls{grid-template-columns:1fr 1fr}
-  .app.cols3 .ls{grid-template-columns:1fr 1fr 1fr}
+  .app.cols2 .ls,.app.cols3 .ls{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
+  .app.cols3.squeeze .ls{grid-template-columns:1fr 1fr 1fr}
   .app.cols3 .it,.app.cols2 .it{flex-direction:column;align-items:flex-start}
-  .app.cols3 .it i,.app.cols2 .it i{width:100%;height:auto;aspect-ratio:16/9}
+  .app.cols3 .it i,.app.cols2 .it i{width:100%;height:auto;aspect-ratio:4/3;max-height:110px}
   .app.squeeze .it i{aspect-ratio:4/1}
   .app.squeeze .it b{white-space:normal;word-break:break-all;line-height:12px;max-height:24px;overflow:hidden}
   .app.side .ls{grid-template-columns:110px 1fr}
@@ -638,6 +638,43 @@
   #mode button svg{width:16px;height:16px}
   #mode button .cnt{font:600 10px/14px var(--font-code);min-width:14px;padding:0 3px;border-radius:7px;background:rgba(127,127,127,.22)}
   #mode button:focus{outline:none}#mode button:focus-visible{outline:2px solid rgba(var(--glow),.5);outline-offset:-2px}
+  /* 智慧胶囊（10-27）：输入框和胶囊合成一个；展开面板用实底，内容要看得清 */
+  .smart{flex:1;max-width:560px;min-width:0;display:flex;align-items:center;gap:8px}
+  .smart .ask{max-width:none}
+  .capwrap.on{flex:1;min-width:0}
+  .capwrap.on .capsule{width:100%;max-width:none;height:32px}
+  .capwrap.on .capsule #capTxt{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;text-align:left}
+  .capwrap.wait .capsule.lg{background:var(--ui-fg)!important;color:var(--ui-bg)}
+  .capwrap.wait .capsule.lg::after{display:none}
+  .cap-pop.lg,.devpop.lg{background:var(--pop-solid,rgba(38,39,43,.94))!important;-webkit-backdrop-filter:blur(30px) saturate(150%)!important;backdrop-filter:blur(30px) saturate(150%)!important}
+  :root[data-theme="light"] .cap-pop.lg,:root[data-theme="light"] .devpop.lg{background:rgba(250,250,252,.95)!important}
+  .cap-pop{width:100%;min-width:420px}
+  .cp-ask{display:flex;flex-direction:column;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid rgba(127,127,127,.16)}
+  .cp-ask .ask{flex:none;height:32px}
+  .cp-ask .presets{display:flex!important;flex-wrap:wrap}
+  /* 紧凑模式（同 Device Hub compact）：窗口只剩设备本身和一行控制，其他全部收起 */
+  .win.compact .sugg,.win.compact #mode,.win.compact #smart,.win.compact #ttlSub,.win.compact #tgSide,.win.compact #tgInsp,.win.compact #tgTheme{display:none!important}
+  .win.compact .canvas{padding:0 0 64px!important}
+  .win.compact .canvas .ctl{margin-left:0!important;max-width:calc(100% - 20px);overflow-x:auto;scrollbar-width:none}
+  .win.compact .canvas .ctl::-webkit-scrollbar{display:none}
+  .win.compact .solo{width:100%;justify-content:center}
+  .win.compact .ttl{flex:1;min-width:0}
+  .win.compact .tb{gap:8px}
+  .win.compact .ctl button{font-size:0;gap:0}
+  .cp-ask .preset{color:var(--ui-fg);opacity:.8}
+  /* 设备右侧的物理按键 + 截屏 / 录屏 / 旋转 */
+  .devwrap{position:relative}
+  .hw{position:absolute;left:100%;top:14%;display:flex;flex-direction:column;align-items:flex-start;gap:6px}
+  .hwkey{position:relative;width:5px;height:36px;margin-left:-1px;border:0;padding:0;border-radius:0 3px 3px 0;background:#2a2b30;box-shadow:inset -1px 0 0 rgba(255,255,255,.12)}
+  .hwkey.k-pw{height:48px;margin-top:8px}
+  .hwkey.k-crown{width:7px;height:26px;border-radius:0 4px 4px 0}
+  .hwkey:hover{background:#3a3b42}
+  .hwkey span{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:11px;white-space:nowrap;color:var(--ui-fg-info);opacity:0;transition:opacity .15s;pointer-events:none}
+  .hwkey:hover span{opacity:1}
+  .hwtools{position:relative;display:flex;flex-direction:column;gap:2px;margin:18px 0 0 12px;padding:4px;border-radius:999px}
+  .hwtools .ib{width:30px;height:30px;padding:0;justify-content:center;border-radius:999px}
+  :root[data-theme="light"] .hwkey{background:#c9cad0}
+  .ttl-err{color:#E5484D;font-weight:600}
   .dev.na .ic,.dev.na .nm{opacity:.62}
 </style>
 </head>
@@ -662,7 +699,7 @@
   <symbol id="inspector" viewBox="0 0 16 16"><rect x="1.5" y="2.5" width="13" height="11" rx="2" stroke="currentColor" fill="none"/><path d="M10 2.5v11" stroke="currentColor"/></symbol>
   <symbol id="compact" viewBox="0 0 16 16"><path d="M9.5 2.5h4v4M6.5 13.5h-4v-4M13.5 2.5L9 7M2.5 13.5L7 9" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
   <symbol id="plus" viewBox="0 0 16 16"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-linecap="round"/></symbol>
-  <symbol id="spark" viewBox="0 0 16 16"><path d="M8 1.5l1.6 4.2 4.4.3-3.4 2.8 1.1 4.3L8 10.7 4.3 13.1l1.1-4.3L2 6l4.4-.3z" fill="currentColor"/></symbol>
+  <symbol id="spark" viewBox="0 0 16 16"><path d="M7 2.5c.4 2.6 1.4 3.6 4 4-2.6.4-3.6 1.4-4 4-.4-2.6-1.4-3.6-4-4 2.6-.4 3.6-1.4 4-4z" stroke="currentColor" stroke-linejoin="round" fill="none"/><path d="M12.5 10v3M11 11.5h3" stroke="currentColor" stroke-linecap="round" fill="none"/></symbol>
   <symbol id="back" viewBox="0 0 16 16"><path d="M10 3L5 8l5 5" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
   <symbol id="home" viewBox="0 0 16 16"><circle cx="8" cy="8" r="5" stroke="currentColor" fill="none"/></symbol>
   <symbol id="recent" viewBox="0 0 16 16"><rect x="3.5" y="3.5" width="9" height="9" rx="1.5" stroke="currentColor" fill="none"/></symbol>
@@ -698,6 +735,7 @@
       <button class="on" data-m="one" title="单台" aria-label="单台"><svg class="i"><use href="#m-one"/></svg></button><button data-m="grid" title="多台画布" aria-label="多台画布"><svg class="i"><use href="#m-grid"/></svg></button><button data-m="dist" title="分布式调试" aria-label="分布式调试"><svg class="i"><use href="#m-dist"/></svg></button>
       <span class="src" style="left:50%;top:0">17</span><span class="src" style="left:90%;top:0">18</span>
     </div>
+    <div class="smart" id="smart">
     <div class="capwrap" id="agentbar">
       <button class="capsule lg" id="capBtn"><span class="cdot"></span><span id="capTxt"></span><span class="cbar"><i id="agentProg"></i></span><span class="cmore" id="capMore">还有 1 件</span></button>
       <div class="cap-pop lg" id="capPop">
@@ -705,6 +743,7 @@
         <div class="cp-main"><div id="agentTxt"></div><div class="btns" id="agentAct"></div></div>
         <div class="cp-h">也在跑</div>
         <div class="cp-row"><span class="cdot run"></span><span><b>Agent·回归</b> · 智慧屏 V5<small>还要 6 分钟 · 不需要你</small></span></div>
+        <div class="cp-ask" id="cpAsk"></div>
       </div>
     </div>
     <div class="ask srcwrap"><svg class="i"><use href="#spark"/></svg><input id="askIn" placeholder="说一句，Agent 在设备上跑：「弱网下全形态过一遍」"><button class="go" id="askGo">交给 Agent</button><span class="src" style="left:6px;top:0">17</span></div>
@@ -712,8 +751,8 @@
       <button class="preset" data-ask="弱网下全形态过一遍">弱网下全形态过一遍</button>
       <button class="preset" data-ask="流转到手表没接上">流转到手表没接上</button>
     </div>
+    </div>
     <div class="grow"></div>
-    <button class="ib" id="tgSrc" title="在界面上标出每个功能来自哪条创新点"><svg class="i"><use href="#tag"/></svg>特性来源</button>
     <button class="ib" id="tgTheme" title="深色 / 浅色"><svg class="i"><use href="#moon"/></svg></button>
     <button class="ib" id="tgCompact" title="紧凑模式"><svg class="i"><use href="#compact"/></svg></button>
     <button class="ib on" id="tgInsp" title="检查器"><svg class="i"><use href="#inspector"/></svg></button>
@@ -974,7 +1013,8 @@ function appHTML(d){
   if(S.cond.net!=='正常' && applies(d.id)) cls+=' isweak';
   if(S.cond.call && applies(d.id)) cls+=' incall';
   if(S.cond.loc && applies(d.id)) cls+=' haveloc';
-  var ls=ITEMS.slice(0,n).map(function(it){return '<div class="it"><i></i><div><b>'+it[0]+'</b><span>'+it[1]+'</span></div></div>'}).join('');
+  if(/cols[23]/.test(cls)&&!/squeeze/.test(cls)) n=12;
+  var ls=ITEMS.concat(ITEMS).slice(0,n).map(function(it){return '<div class="it"><i></i><div><b>'+it[0]+'</b><span>'+it[1]+'</span></div></div>'}).join('');
   return '<div class="'+cls+'"><div class="sb"><span>9:41</span><span>'+(S.cond.net!=='正常'&&applies(d.id)?S.cond.net:'5G')+' ▮▮▮</span></div>'+
     '<div class="hd"><b>商品</b><div class="s">搜索</div></div><div class="ls">'+ls+'</div>'+
     '<div class="nav"><span class="on">首页</span><span>分类</span><span>购物车</span><span>我的</span></div>'+
@@ -1096,7 +1136,7 @@ function renderStage(){
       $('#bootBtn').onclick=function(){d.st='run';toast(d.name+' 启动中…');render();};
       hint='';
     } else {
-      st.innerHTML='<div class="solo"><div style="display:flex;flex-direction:column;align-items:center;gap:10px">'+frameHTML(d,1,false)+'<div class="mono dim">'+d.res+' · '+d.bp+' · '+(S.zoom==='1:1'?'1:1 物理尺寸（'+d.inch+' 英寸）':'适应窗口')+(S.kb?' · 键盘已捕获':'')+'</div></div>'+suggestHTML(d)+'</div>';
+      st.innerHTML='<div class="solo"><div style="display:flex;flex-direction:column;align-items:center;gap:10px"><div class="devwrap">'+frameHTML(d,1,false)+hwHTML(d)+'</div>'+'<div class="mono dim">'+d.res+' · '+d.bp+' · '+(S.zoom==='1:1'?'1:1 物理尺寸（'+d.inch+' 英寸）':'适应窗口')+(S.kb?' · 键盘已捕获':'')+'</div></div>'+suggestHTML(d)+'</div>';
       hint=d.name+(d.lease?' · '+d.lease:'');
     }
   } else if(S.mode==='grid'&&S.real){
@@ -1175,27 +1215,33 @@ function bindDist(){var b=$('#distAccept'); if(b) b.onclick=function(){agentFlow
 
 /* 底部控制条：随设备形态变化 */
 function triSw(x){var n=S.tri[x.id]||3;return '<span class="trisw">'+[1,2,3].map(function(k){return '<button data-tri="'+k+'" data-id="'+x.id+'" class="'+(k===n?'on':'')+'">'+k+'</button>'}).join('')+'</span>'}
+/* 物理按键和截屏、录屏、旋转放在设备右侧边上，跟真机按键在同一个位置；底部控制条只留导航、形态和键盘 */
+function hwHTML(d){
+  var keys=d.form==='watch'?[['crown','表冠','k-crown'],['side','侧键','k-side']]:
+    d.form==='pc'||d.form==='tv'||d.form==='car'?[['pw','电源','k-pw']]:
+    [['volup','音量 +','k-vol'],['voldn','音量 −','k-vol'],['pw','电源','k-pw']];
+  var tools=[['shot','截屏','shot'],['rec','录屏','rec']]; if(d.form==='phone'||d.form==='tab') tools.push(['rot','旋转','rotate']);
+  return '<div class="hw">'+keys.map(function(k){return '<button class="hwkey '+k[2]+'" data-a="'+k[0]+'" title="'+k[1]+'"><span>'+k[1]+'</span></button>'}).join('')+
+    '<div class="hwtools lg">'+tools.map(function(t){return '<button class="ib" data-a="'+t[0]+'" title="'+t[1]+'">'+ic(t[2])+'</button>'}).join('')+'</div></div>';
+}
 function renderCtl(){
   var d=byId[S.sel], c=$('#ctl'), h='';
   if(S.mode!=='one'||d.st==='off'||d.busy||(d.borrow&&!d.borrowed)||(d.st==='err'&&!S.connFixed)){
     h=S.mode==='grid'?'<button class="ib" data-a="shotall">'+ic('shot')+'全部截屏</button><button class="ib" data-a="recall">'+ic('rec')+'全部录屏</button><span class="sep"></span><button class="ib" data-a="reset">复原全部场景</button>':'';
   } else {
-    if(d.form==='watch') h='<button class="ib" data-a="crown" title="表冠">表冠</button><button class="ib" data-a="side">侧键</button>';
+    if(d.form==='watch') h='';
     else if(d.form==='car') h='<button class="ib" data-a="knob">旋钮</button><button class="ib" data-a="voice">语音键</button><button class="ib" data-a="home">'+ic('home')+'</button>';
     else if(d.form==='tv') h='<button class="ib" data-a="remote">遥控器</button>';
     else if(d.form==='pc') h='<button class="ib" data-a="win">自由窗口</button><button class="ib" data-a="snap">分屏</button>';
     else h='<button class="ib" data-a="back" title="返回">'+ic('back')+'</button><button class="ib" data-a="home" title="主页">'+ic('home')+'</button><button class="ib" data-a="recent" title="多任务">'+ic('recent')+'</button>';
     if(d.form==='fold') h+='<span class="sep"></span><button class="ib'+(S.fold[d.id]==='FOLDED'?' on':'')+'" data-a="f-FOLDED">折叠</button><button class="ib'+(S.fold[d.id]==='HALF'?' on':'')+'" data-a="f-HALF">悬停</button><button class="ib'+(S.fold[d.id]==='EXPANDED'?' on':'')+'" data-a="f-EXPANDED">展开</button>';
     if(d.form==='tri') h+='<span class="sep"></span>'+[1,2,3].map(function(n){return '<button class="ib'+((S.tri[d.id]||3)===n?' on':'')+'" data-a="tri'+n+'">'+['单屏','双屏','三屏'][n-1]+'</button>'}).join('');
-    h+='<span class="sep"></span><button class="ib" data-a="shot" title="截屏">'+ic('shot')+'</button><button class="ib" data-a="rec" title="录屏">'+ic('rec')+'</button>';
-    if(d.form==='phone'||d.form==='tab') h+='<button class="ib" data-a="rot" title="旋转">'+ic('rotate')+'</button>';
-    h+='<button class="ib" data-a="vol" title="音量">'+ic('vol')+'</button><button class="ib" data-a="pw" title="电源">'+ic('power')+'</button>';
-    h+='<span class="sep"></span><button class="ib'+(S.kb?' on':'')+'" data-a="kb" title="把 Mac 键盘输入直接送进设备">'+ic('kb')+'捕获键盘</button>';
+    h+=(h?'<span class="sep"></span>':'')+'<button class="ib'+(S.kb?' on':'')+'" data-a="kb" title="把 Mac 键盘输入直接送进设备">'+ic('kb')+'捕获键盘</button>';
     h+='<button class="ib'+(S.zoom==='1:1'?' on':'')+'" data-a="zoom" title="按真实物理尺寸显示">'+ic('ruler')+'1:1</button>';
   }
   c.innerHTML=h+'<span class="src x" style="left:30%;top:6px">Xcode</span>';
 }
-$('#ctl').addEventListener('click',function(e){
+function ctlClick(e){
   var b=e.target.closest('[data-a]'); if(!b) return; var a=b.dataset.a, d=byId[S.sel];
   if(/^tri\d$/.test(a)){setTri(d.id,+a.slice(3));return}
   if(a.indexOf('f-')===0){S.fold[d.id]=a.slice(2);toast('FoldStatus.'+a.slice(2));render();return}
@@ -1205,8 +1251,10 @@ $('#ctl').addEventListener('click',function(e){
   if(a==='shot'||a==='shotall'){$$('.flash').forEach(function(f){f.classList.remove('go');void f.offsetWidth;f.classList.add('go');FX.burstEl(f,22,{speed:2.6})});toast(a==='shot'?'已截屏，已拷贝到剪贴板':'已截 '+$$('.frame').length+' 张，按设备名存好');return}
   if(a==='rec'||a==='recall'){toast('录屏中…再点一次停止');return}
   if(a==='reset'){S.cond={net:'正常',loc:null,call:false};S.dark={};S.font={};render();toast('已复原所有场景');return}
-  toast({back:'返回',home:'回到桌面',recent:'多任务',crown:'旋转表冠',side:'侧键',knob:'旋钮',voice:'语音键',remote:'遥控器面板',win:'自由窗口',snap:'左右分屏',tri1:'Mate XT 切到单屏',tri2:'切到双屏',tri3:'三屏',vol:'音量 +',pw:'电源键'}[a]||a);
-});
+  toast({back:'返回',home:'回到桌面',recent:'多任务',crown:'旋转表冠',side:'侧键',knob:'旋钮',voice:'语音键',remote:'遥控器面板',win:'自由窗口',snap:'左右分屏',tri1:'Mate XT 切到单屏',tri2:'切到双屏',tri3:'三屏',volup:'音量 +',voldn:'音量 −',vol:'音量 +',pw:'电源键'}[a]||a);
+}
+$('#ctl').addEventListener('click',ctlClick);
+$('#stage').addEventListener('click',function(e){if(e.target.closest('.hw [data-a]'))ctlClick(e)});
 
 /* ---------- 检查器 ---------- */
 function sw(on,k){return '<button class="sw'+(on?' on':'')+'" data-sw="'+k+'"></button>'}
@@ -1401,6 +1449,12 @@ document.addEventListener('click',function(e){if(!e.target.closest('#devWrap'))$
 /* 智慧胶囊：Agent 的进度收成顶栏一小块，只推最需要你的那件；点开看详情和操作 */
 $('#capBtn').addEventListener('click',function(e){e.stopPropagation();$('#agentbar').classList.toggle('open')});
 var capWait=false;
+/* 胶囊和输入框是同一个东西：没在跑时它是输入框；Agent 一跑就收成胶囊，输入框挪进胶囊展开的面板底部，接着交代下一件 */
+(function(){var bar=$('#agentbar'),sm=$('#smart'),a=$('#smart .ask'),pr=$('#smart .presets');
+  new MutationObserver(function(){var on=bar.classList.contains('on');
+    if(on&&a.parentNode!==$('#cpAsk')){$('#cpAsk').appendChild(a);if(pr)$('#cpAsk').appendChild(pr);$('#askIn').placeholder='再交给 Agent 一件…'}
+    else if(!on&&a.parentNode!==sm){sm.appendChild(a);if(pr)sm.appendChild(pr);$('#askIn').placeholder='说一句，Agent 在设备上跑：「弱网下全形态过一遍」'}
+  }).observe(bar,{attributes:true,attributeFilter:['class']});})();
 function syncCap(){
   var txt=$('#agentTxt').textContent||'', name=(txt.split('：')[0]||'Agent'), wait=!!$('#agentAct .btn.ai'), done=!!$('#agentDone');
   var w=$('#agentbar'); w.classList.toggle('wait',wait); w.classList.toggle('done',done);
@@ -1426,8 +1480,7 @@ function setCompact(on){$('#win').classList.toggle('compact',on);document.body.c
 $('#tgCompact').onclick=function(){setCompact(!$('#win').classList.contains('compact'))};
 $('#tgSide').onclick=function(){var s=$('#side');s.hidden=!s.hidden;this.classList.toggle('on',!s.hidden)};
 $('#tgInsp').onclick=function(){var s=$('#insp');s.hidden=!s.hidden;this.classList.toggle('on',!s.hidden)};
-$('#tgSrc').onclick=function(){document.body.classList.toggle('show-src');this.classList.toggle('on')};
-$('#lgClose').onclick=function(){document.body.classList.remove('show-src');$('#tgSrc').classList.remove('on')};
+$('#lgClose').onclick=function(){document.body.classList.remove('show-src')};
 $('#tgTheme').onclick=function(){var r=document.documentElement;r.dataset.theme=r.dataset.theme==='dark'?'light':'dark'};
 document.addEventListener('keydown',function(e){if(e.key==='Escape'){if(S.kb){S.kb=false;render();toast('已释放键盘')} if($('#win').classList.contains('compact'))setCompact(false)}});
 
@@ -1438,7 +1491,7 @@ function render(){setMode(S.mode);$('#scaleSeg').hidden=S.mode!=='grid';$('#zoom
   prevV=JSON.parse(JSON.stringify(S.verdict));
   if(S.connFixed&&!prevConn){var st=$('.steps'); if(st) FX.burstEl(st,30,{speed:2.4})} prevConn=!!S.connFixed;
   if(S.distFixed&&!prevDist){var tl=$('.tl'); if(tl) FX.burstEl(tl,36,{speed:3})} prevDist=!!S.distFixed;
-  var on=D.filter(function(d){return d.st==='run'}).length; $('#ttlSub').textContent='DevEco · '+on+' 台在线'+(S.connFixed?'':' · 1 台连接异常');}
+  var on=D.filter(function(d){return d.st==='run'}).length; var ts=$('#ttlSub'); ts.innerHTML='DevEco · '+(S.connFixed?'':'<b class="ttl-err">1</b>/')+on; ts.title=on+' 台在线'+(S.connFixed?'':'，1 台连接异常');}
 render();
 })();
 </script>
