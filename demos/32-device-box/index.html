@@ -399,7 +399,7 @@
   .solo{display:flex;align-items:center;gap:44px}
   .sugg{display:flex;flex-direction:column;gap:8px;width:236px}
   .sugg-h{font-size:11.5px;color:var(--ui-fg-info);margin-bottom:2px}
-  .sugg-f{font-size:11px;color:var(--ui-fg-disabled);margin-top:4px;line-height:16px}
+  .sugg-f{font-size:11px;color:var(--ui-fg-info);margin-top:4px;line-height:16px}
   .ghost{display:grid;grid-template-columns:28px 1fr 18px;gap:8px;align-items:center;text-align:left;padding:9px 10px;border-radius:12px;border:1px dashed var(--line-hi);background:rgba(var(--glow),.03);color:var(--ui-fg);transition:background .2s,border-color .2s,box-shadow .2s}
   .ghost:hover{border-style:solid;background:rgba(var(--glow),.08);box-shadow:0 0 18px rgba(var(--glow),.1)}
   .ghost .gi{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;background:rgba(var(--glow),.08);color:var(--ui-fg-info)}
@@ -629,11 +629,10 @@
   .dev:hover .st{opacity:0}
   .dev .sub .ai{color:var(--ui-fg)}
   .dev.sel .tag{background:rgba(127,127,127,.24)}
-  .dev.na .sub{opacity:.85}
   .dev .nm{display:flex;align-items:center;min-width:0}
   .dev .nmt{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .dev .tag{flex:none}
-  .dev.sel .sub,.dev.sel .tag{color:var(--ui-fg);opacity:.72}
+  .dev.sel .sub,.dev.sel .tag{color:var(--ui-fg);opacity:.85}
   /* 顶栏视图切换：只用图标，悬停出名字 */
   #mode button{display:inline-flex;align-items:center;justify-content:center;gap:4px;min-width:40px;padding:0 10px}
   #mode button svg{width:16px;height:16px}
@@ -677,7 +676,26 @@
   :root[data-theme="light"] .hwkey{background:#c9cad0}
   .ttl-err{color:#E5484D;font-weight:600}
   .side-top{padding:10px 8px 2px}.side-top .btn{width:100%;justify-content:center;color:var(--ui-fg)}
-  .dev.na .ic,.dev.na .nm{opacity:.62}
+  /* 建议说法不常驻顶栏：聚焦输入框时从胶囊下面展开；Agent 在跑时放在胶囊面板里 */
+  #smart{position:relative}
+  #smart>.presets{display:none!important;position:absolute;top:38px;left:0;right:0;z-index:40;flex-direction:column;align-items:stretch;gap:2px;padding:6px;border-radius:14px;background:rgba(38,39,43,.96);box-shadow:0 12px 36px rgba(0,0,0,.32)}
+  :root[data-theme="light"] #smart>.presets{background:rgba(250,250,252,.97)}
+  #smart:focus-within>.presets{display:flex!important}
+  #smart>.presets .preset{justify-content:flex-start;text-align:left;height:30px;border-radius:9px;background:transparent;color:var(--ui-fg);font-size:12px}
+  #smart>.presets .preset:hover{background:var(--fill-2)}
+  .pre-h{font-size:11px;color:var(--ui-fg-info);padding:4px 10px 2px}
+  .cp-ask .pre-h{display:none}
+  /* 对比度（10-27）：次要文字至少 4.5:1；本 demo 里把说明文字和禁用文字提亮，不动组件库 */
+  :root,:root[data-theme="dark"],html[data-theme="dark"]{--ui-fg-info:#A4A7AE;--ui-fg-disabled:#8B8E95}
+  :root[data-theme="light"]{--ui-fg-info:#5C5F66;--ui-fg-disabled:#74777E}
+  .tag{color:var(--ui-fg)!important;background:rgba(127,127,127,.22)!important;opacity:.92}
+  .dev.na .nm{opacity:.8}.dev.na .ic{opacity:.7}.dev.na .sub{opacity:1}
+  .pill{color:var(--ui-fg);opacity:.88}
+  #mode button{color:var(--ui-fg-info)}#mode button.on{color:var(--ui-fg)}
+  #mode button .cnt{color:var(--ui-fg);background:rgba(127,127,127,.32)}
+  :root[data-theme="light"] .ib,:root[data-theme="light"] .insp-tabs button{color:#45484F}
+  :root[data-theme="light"] .ib.on,:root[data-theme="light"] .insp-tabs button.on{color:var(--ui-fg)}
+  .ttl-err{color:#FF6B6B}:root[data-theme="light"] .ttl-err{color:#C42B2B}
 </style>
 </head>
 <body>
@@ -749,6 +767,7 @@
     </div>
     <div class="ask srcwrap"><svg class="i"><use href="#spark"/></svg><input id="askIn" placeholder="说一句，Agent 在设备上跑：「弱网下全形态过一遍」"><button class="go" id="askGo">交给 Agent</button><span class="src" style="left:6px;top:0">17</span></div>
     <div class="presets">
+      <div class="pre-h">可以这样说</div>
       <button class="preset" data-ask="弱网下全形态过一遍">弱网下全形态过一遍</button>
       <button class="preset" data-ask="流转到手表没接上">流转到手表没接上</button>
     </div>
@@ -1427,7 +1446,7 @@ function ask(q){
 }
 $('#askGo').onclick=function(){ask($('#askIn').value||$('#askIn').placeholder.replace(/^.*「|」.*$/g,''))};
 $('#askIn').addEventListener('keydown',function(e){if(e.key==='Enter')$('#askGo').click()});
-$$('.preset').forEach(function(b){b.onclick=function(){$('#askIn').value=b.dataset.ask;ask(b.dataset.ask)}});
+$$('.preset').forEach(function(b){b.onmousedown=function(e){e.preventDefault()};b.onclick=function(){$('#askIn').value=b.dataset.ask;ask(b.dataset.ask)}});
 /* 画布里的「设备」浮层：代替侧栏，勾选谁上画布 */
 function renderDevPop(){
   var g=null,h='';
