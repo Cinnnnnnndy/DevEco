@@ -660,7 +660,7 @@
   .win.compact .solo{width:100%;justify-content:center}
   .win.compact .ttl{flex:1;min-width:0}
   .win.compact .tb{gap:8px}
-  .win.compact .ctl button{font-size:0;gap:0}
+  .win.compact .ctl button:has(svg){font-size:0;gap:0}
   .cp-ask .preset{color:var(--ui-fg);opacity:.8}
   /* 设备右侧的物理按键 + 截屏 / 录屏 / 旋转 */
   .devwrap{position:relative}
@@ -703,6 +703,18 @@
   .tb{position:relative}
   #smart{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(520px,38vw);max-width:none;z-index:30}
   .win.compact #smart{display:none}
+  .devsw{display:none}
+  .win.compact .ttl{display:none}
+  .win.compact .devsw{display:inline-flex;align-items:center;gap:6px;max-width:calc(100% - 60px);font-size:13px;font-weight:600;color:var(--ui-fg)}
+  .win.compact .devsw span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .win.compact .devsw .i:last-child{opacity:.7}
+  .win.compact .tb{justify-content:space-between;padding-left:10px}
+  .win.compact .tb .grow{display:none}
+  .win.compact .canvas{padding:0!important}
+  .win.compact .stage{padding:20px 20px 62px!important;overflow:hidden}
+  .win.compact .solo .mono.dim{display:none}
+  .win.compact .canvas .ctl{overflow:visible;bottom:10px}
+  .win.compact{transition:width .2s,height .2s}
   .ttl-err{color:#FF6B6B}:root[data-theme="light"] .ttl-err{color:#C42B2B}
 </style>
 </head>
@@ -723,6 +735,8 @@
   <symbol id="m-one" viewBox="0 0 16 16"><rect x="5" y="1.5" width="6" height="13" rx="1.6" stroke="currentColor" fill="none"/></symbol>
   <symbol id="m-grid" viewBox="0 0 16 16"><rect x="1.5" y="2" width="4" height="7.5" rx="1" stroke="currentColor" fill="none"/><rect x="7" y="2" width="7.5" height="5" rx="1" stroke="currentColor" fill="none"/><rect x="7" y="8.5" width="4" height="5.5" rx="1" stroke="currentColor" fill="none"/><rect x="1.5" y="11" width="4" height="3" rx="1" stroke="currentColor" fill="none"/></symbol>
   <symbol id="m-dist" viewBox="0 0 16 16"><circle cx="8" cy="3.5" r="2" stroke="currentColor" fill="none"/><circle cx="3.5" cy="12" r="2" stroke="currentColor" fill="none"/><circle cx="12.5" cy="12" r="2" stroke="currentColor" fill="none"/><path d="M7 5.3 4.6 10.2M9 5.3l2.4 4.9M5.5 12h5" stroke="currentColor" fill="none"/></symbol>
+  <symbol id="more" viewBox="0 0 16 16"><circle cx="3.5" cy="8" r="1.2" fill="currentColor"/><circle cx="8" cy="8" r="1.2" fill="currentColor"/><circle cx="12.5" cy="8" r="1.2" fill="currentColor"/></symbol>
+  <symbol id="chev" viewBox="0 0 16 16"><path d="M4.5 6.5 8 10l3.5-3.5" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
   <symbol id="sidebar" viewBox="0 0 16 16"><rect x="1.5" y="2.5" width="13" height="11" rx="2" stroke="currentColor" fill="none"/><path d="M6 2.5v11" stroke="currentColor"/></symbol>
   <symbol id="inspector" viewBox="0 0 16 16"><rect x="1.5" y="2.5" width="13" height="11" rx="2" stroke="currentColor" fill="none"/><path d="M10 2.5v11" stroke="currentColor"/></symbol>
   <symbol id="compact" viewBox="0 0 16 16"><path d="M9.5 2.5h4v4M6.5 13.5h-4v-4M13.5 2.5L9 7M2.5 13.5L7 9" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
@@ -758,6 +772,7 @@
   <div class="tb lit">
     <button class="ib on" id="tgSide" title="侧栏"><svg class="i"><use href="#sidebar"/></svg></button>
     <div class="ttl"><b>Device Box</b><span id="ttlSub">DevEco · 7 台在线</span></div>
+    <button class="ib devsw" id="devSw" title="切换设备"></button>
     <div class="seg srcwrap lg" id="mode">
       <button class="on" data-m="one" title="单台" aria-label="单台"><svg class="i"><use href="#m-one"/></svg></button><button data-m="grid" title="多台画布" aria-label="多台画布"><svg class="i"><use href="#m-grid"/></svg></button><button data-m="dist" title="分布式调试" aria-label="分布式调试"><svg class="i"><use href="#m-dist"/></svg></button>
       <span class="src" style="left:50%;top:0">17</span><span class="src" style="left:90%;top:0">18</span>
@@ -1147,7 +1162,7 @@ function soloFrame(d){
   if(S.zoom!=='1:1') return frameHTML(d,1,false);
   var m=mmOf(d).slice(0,2); if(S.rot&&(d.form==='phone'||d.form==='tab')) m=[m[1],m[0]];
   /* 画布放不下实物大小时，等比缩到刚好放下，并在说明里写出缩到多少 */
-  var st=$('#stage'), aw=Math.max(200,st.clientWidth-120), ah=Math.max(200,st.clientHeight-150);
+  var st=$('#stage'), cp=$('#win').classList.contains('compact'), aw=cp?innerWidth-140:Math.max(200,st.clientWidth-120), ah=cp?innerHeight-170:Math.max(200,st.clientHeight-150);
   var sc=Math.min(REAL.PHYS,aw/m[0],ah/m[1]); S._soloPct=sc<REAL.PHYS-.01?Math.round(sc/REAL.PHYS*100):100;
   return frameHTML(d,1,false,[m[0]*sc+14,m[1]*sc+14],(sc/VPMM).toFixed(4));
 }
@@ -1515,6 +1530,30 @@ $('#scaleSeg').addEventListener('click',function(e){var b=e.target.closest('butt
 /* ---------- 模式与外观 ---------- */
 function setMode(m){S.mode=m;document.body.classList.toggle('m-grid',m==='grid');document.body.classList.toggle('m-dist',m==='dist');var dw=$('#devWrap');if(dw)dw.hidden=m!=='grid';var dn=$('#devN');if(dn)dn.textContent=S.multi.length;$$('#mode button').forEach(function(b){b.classList.toggle('on',b.dataset.m===m); if(b.dataset.m==='grid') b.innerHTML=ic('m-grid')+(S.multi.length?'<span class="cnt">'+S.multi.length+'</span>':'')})}
 $('#mode').addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;if(b.dataset.m==='grid'&&S.mode==='one'){flipInto([]);return}setMode(b.dataset.m);if(b.dataset.m==='dist')S.tab='diag';render()});
+/* 紧凑模式：窗口贴着设备收，四周只留最小边距；底部控制条放不下的按钮收进「更多」；左上角是设备切换 */
+function fitCompact(){
+  var w=$('#win'), on=w.classList.contains('compact'), sw=$('#devSw');
+  if(!on){w.style.width=w.style.height='';return}
+  var d=byId[S.sel]; sw.innerHTML=ic(d.ic)+'<span>'+d.name+'</span>'+ic('chev');
+  var f=$('.solo .frame'), PAD=20, TB=44, CTL=58;
+  var fw=f?f.offsetWidth:260, fh=f?f.offsetHeight:300;
+  var W=Math.max(300,fw+PAD*2+16); w.style.width=W+'px';
+  var cv=$('#stage'), top=cv.getBoundingClientRect().top-w.getBoundingClientRect().top;
+  var H=Math.ceil(top+PAD+fh+CTL+4); w.style.height=Math.min(H,innerHeight-16)+'px';
+  var c=$('#ctl'); if(!c||c.style.display==='none') return;
+  var mo=c.querySelector('.more'); if(mo) mo.remove();
+  var btns=$$('.ib',c); btns.forEach(function(b){b.style.display=''});
+  var avail=W-24, hidden=[];
+  if(c.scrollWidth>avail){
+    var more=document.createElement('button'); more.className='ib more'; more.title='更多'; more.innerHTML=ic('more'); c.appendChild(more);
+    for(var i=btns.length-1;i>=0&&c.scrollWidth>avail;i--){btns[i].style.display='none';hidden.unshift(btns[i])}
+    $$('.sep',c).forEach(function(s){var n=s.nextElementSibling; while(n&&n.style.display==='none')n=n.nextElementSibling; s.style.display=(!n||n===more)?'none':''});
+    more.onclick=function(e){e.stopPropagation();var r=more.getBoundingClientRect();
+      menu(r.left,r.top-hidden.length*32-16,hidden.map(function(b,k){var t=b.textContent.trim();return [(t==='1:1'?'1:1 实物大小':t||b.title)+(b.classList.contains('on')?'  ✓':''),String(k)]}),function(k){hidden[+k].click()})};
+  }
+}
+$('#devSw').onclick=function(e){e.stopPropagation();var r=this.getBoundingClientRect();
+  menu(r.left,r.bottom+6,D.filter(canShow).map(function(x){return [x.name+(x.id===S.sel?'  ✓':''),x.id,x.ic]}),function(id){S.sel=id;render()})};
 function setCompact(on){$('#win').classList.toggle('compact',on);document.body.classList.toggle('compact-bg',on);$('#tgCompact').classList.toggle('on',on);if(on)setMode('one');render()}
 $('#tgCompact').onclick=function(){setCompact(!$('#win').classList.contains('compact'))};
 $('#tgSide').onclick=function(){var off=document.body.classList.toggle('side-off');this.classList.toggle('on',!off);setTimeout(render,0)};
@@ -1525,7 +1564,7 @@ document.addEventListener('keydown',function(e){if(e.key==='Escape'){if(S.kb){S.
 
 var prevV={}, prevConn=false, prevDist=false;
 function syncZoom(){var l=$('#zLbl');if(l)l.textContent=S._zlabel||'100%';$$('#zoomG [data-z]').forEach(function(b){b.classList.toggle('on',(b.dataset.z==='fit'&&S.zm==='fit')||(b.dataset.z==='phys'&&S.zm==='phys'))})}
-function render(){setMode(S.mode);$('#scaleSeg').hidden=S.mode!=='grid';$('#zoomG').hidden=S.mode!=='grid';$$('#scaleSeg button').forEach(function(b){b.classList.toggle('on',(b.dataset.r==='1')===S.real)});renderList();renderStage();syncZoom();renderCtl();renderInsp();
+function render(){setMode(S.mode);$('#scaleSeg').hidden=S.mode!=='grid';$('#zoomG').hidden=S.mode!=='grid';$$('#scaleSeg button').forEach(function(b){b.classList.toggle('on',(b.dataset.r==='1')===S.real)});renderList();renderStage();syncZoom();renderCtl();renderInsp();fitCompact();
   Object.keys(S.verdict).forEach(function(id){var v=S.verdict[id]; if(v!==prevV[id]&&(v==='pass'||v==='flag'||v==='adapt')){var f=$('.frame[data-id="'+id+'"]'); if(f) FX.burstEl(f,v==='flag'?18:26,{speed:v==='flag'?1.6:2.4,color:v==='flag'?'219,92,92':null})}});
   prevV=JSON.parse(JSON.stringify(S.verdict));
   if(S.connFixed&&!prevConn){var st=$('.steps'); if(st) FX.burstEl(st,30,{speed:2.4})} prevConn=!!S.connFixed;
