@@ -383,7 +383,7 @@
   .trisw{display:inline-flex;gap:1px;padding:1px;border-radius:6px;box-shadow:inset 0 0 0 1px var(--line)}
   .trisw button{width:18px;height:16px;border:0;border-radius:5px;background:transparent;font:10px var(--font-code);color:var(--ui-fg-info);padding:0}
   .trisw button.on{background:rgba(var(--glow),.16);color:var(--ui-fg)}
-  .stage:has(.fall){align-items:flex-start!important;justify-content:flex-start}
+  .stage:has(.fall),.stage:has(.fall2){align-items:flex-start!important;justify-content:flex-start}
   /* 从单台到多台画布的入口 */
   .grp .grow{flex:1}
   .grp-add{opacity:0;border:0;background:transparent;color:var(--ui-fg-info);font-size:11px;height:18px;padding:0 6px;border-radius:5px;transition:opacity .15s}
@@ -564,6 +564,14 @@
   @media (max-width:1500px){.presets{display:none}}
   #scaleSeg{width:auto;margin-right:4px}#scaleSeg[hidden]{display:none}
   #scaleSeg button{flex:none;padding:0 10px}
+  .zoomg{display:flex;align-items:center;gap:2px;padding:2px;border-radius:999px;background:var(--fill);margin-right:6px}.zoomg[hidden]{display:none}
+  .zoomg button{height:24px;min-width:24px;padding:0 8px;border:0;border-radius:999px;background:transparent;color:var(--ui-fg-info);font-size:12px}
+  .zoomg button:hover{background:var(--fill-2);color:var(--ui-fg)}.zoomg button.on{background:var(--fill-3);color:var(--ui-fg)}
+  .zoomg #zLbl{font:11px var(--font-code);min-width:40px;text-align:center;color:var(--ui-fg)}
+  .fall2{position:relative;width:100%;margin-top:6px}
+  .fall2 .cell{position:absolute;display:flex;flex-direction:column;align-items:center;padding-top:26px;transition:left .35s,top .35s}
+  .fall2 .cell:hover .cell-act{opacity:1}
+  .fall2 .cap{margin-top:8px;font-size:11px;color:var(--ui-fg-info);white-space:nowrap;display:flex;flex-wrap:wrap;justify-content:center;gap:6px 8px;align-items:center;max-width:100%}
   .lineup{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:center;gap:74px 40px;width:100%;padding:34px 0 10px}
   .lineup .cell{position:relative;display:flex;flex-direction:column;align-items:center}
   .lineup .cap{margin-top:8px;font-size:11px;color:var(--ui-fg-info);white-space:nowrap;display:flex;gap:6px;align-items:center}
@@ -678,6 +686,7 @@
         <div class="devwrap" id="devWrap"><button class="ib" id="devBtn"><svg class="i"><use href="#phone"/></svg>设备 <span class="mono" id="devN"></span></button><div class="devpop" id="devPop"></div></div>
         <span class="hint" id="cvHint"></span>
         <div class="grow"></div>
+        <div class="zoomg" id="zoomG"><button data-z="-" title="缩小 ⌘−">−</button><span id="zLbl">100%</span><button data-z="+" title="放大 ⌘+">+</button><button data-z="fit" title="适应画布 ⌘0">适应</button><button data-z="phys" title="按屏幕上的实物大小显示">1:1</button></div>
         <div class="seg" id="scaleSeg" title="多台画布的排布方式"><button data-r="1" class="on">真实尺寸</button><button data-r="0">等宽瀑布流</button></div>
         <button class="ib srcwrap" id="hotBtn" title="改一次所有设备一起刷"><svg class="i"><use href="#rotate"/></svg>热重载 · 全部<span class="src" style="left:4px;top:4px">17</span></button>
       </div>
@@ -809,7 +818,7 @@ var D=[
   {id:'tv', grp:'远端', kind:'remote', ic:'tv', name:'智慧屏 V5', sub:'远端真机 · 深圳', st:'busy', form:'tv', bp:'xl', res:'3840×2160', inch:65, busy:'Agent·回归 在用 · 还要 6 分钟'}
 ];
 var byId={}; D.forEach(function(d){byId[d.id]=d});
-var S={real:true,tri:{xt:3},sel:'m70e', multi:[], mode:'one', tab:'set', filt:'all', dark:{}, font:{}, fold:{x6e:'EXPANDED'},
+var S={zm:'fit',real:true,tri:{xt:3},sel:'m70e', multi:[], mode:'one', tab:'set', filt:'all', dark:{}, font:{}, fold:{x6e:'EXPANDED'},
   cond:{net:'正常',loc:null,call:false}, scopeAll:false, kb:false, zoom:'fit', verdict:{}, agentRun:false, owners:{}};
 
 function toast(t){var e=$('#toast');e.textContent=t;e.classList.add('on');clearTimeout(e._t);e._t=setTimeout(function(){e.classList.remove('on')},2200)}
@@ -932,6 +941,15 @@ var TRI={1:['1008×2232','sm'],2:['2048×2232','md'],3:['3184×2232','lg']};
 function setTri(id,n){S.tri[id]=n; var d=byId[id]; d.res=TRI[n][0]; d.bp=TRI[n][1]; toast('Mate XT 切到'+['单屏','双屏','三屏'][n-1]+' · '+d.bp); render();}
 /* 机身（展开态）外形尺寸，单位 mm；第三项是显示时的备注 */
 var VPMM=4.6;
+/* ===== 画布排布规则（文档见 LAYOUT.md）=====
+   排序：按断点从小到大 xs → sm → md → lg → xl；同断点按加进画布的先后。
+   缩放：S.zm = 'fit'（适应，默认；设备增减时自动重算）| 数字（手动倍率，相对适应值）| 'phys'（1:1 实物）。 */
+var BP_ORDER={xs:0,sm:1,md:2,lg:3,xl:4};
+var REAL={MIN:1.0,MAX:3.0,PHYS:96/25.4,BIG:400};   /* px/mm：适应时下限 / 上限；1:1 实物 = 3.78 px/mm；超过 400 mm 的设备按 1/5 画 */
+var FALL={COL:300,GAP:28,MAXCOL:6,SPAN_AR:1.3,K:{watch:.42,phone:.62,fold:.9,narrow:.62}};
+var ZSTEPS=[.5,.67,.8,1,1.25,1.5,2];
+function sortIds(ids){return ids.slice().sort(function(a,b){return (BP_ORDER[byId[a].bp]-BP_ORDER[byId[b].bp])||(S.multi.indexOf(a)-S.multi.indexOf(b))})}
+function zmMul(){return typeof S.zm==='number'?S.zm:1}
 function mmOf(d){
   switch(d.form){
     case 'phone': return [75.3,162.9];
@@ -941,7 +959,7 @@ function mmOf(d){
     case 'pc': return [313.0,221.0];
     case 'tri': var t=S.tri[d.id]||3; return t===3?[219.0,156.7]:t===2?[143.0,156.7]:[73.6,156.7];
     case 'car': return [290.0,110.0];
-    case 'tv': return [289.2,166.0,'实物 65 英寸，按 1/5 显示'];
+    case 'tv': return [1446/5,830/5,'实物 1446×830 mm，按 1/5 显示'];
   }
 }
 function canShow(x){return x.st==='run'||x.borrowed}
@@ -1021,31 +1039,39 @@ function renderStage(){
       hint=d.name+(d.lease?' · '+d.lease:'');
     }
   } else if(S.mode==='grid'&&S.real){
-    var ids=S.multi.filter(function(i){var x=byId[i];return x.st!=='off'||x.borrowed});
+    var ids=sortIds(S.multi.filter(function(i){var x=byId[i];return x.st!=='off'||x.borrowed}));
     /* 真实尺寸：所有设备用同一个「每毫米多少像素」，底边对齐排成一排排；比例尺取能放下的最大值 */
     var W=Math.max(320,st.clientWidth-48), Hh=Math.max(300,st.clientHeight-130), gap=40, rowExtra=74;
     function rows(sc){var x=0,h=0,rh=0,n=0;ids.forEach(function(i){var m=mmOf(byId[i]),w=m[0]*sc+14,hh=m[1]*sc+14;if(n&&x+w>W){h+=rh+rowExtra;x=0;rh=0}x+=w+gap;rh=Math.max(rh,hh);n++});return h+rh+rowExtra}
     var lo=.3,hi=4; for(var it=0;it<24;it++){var mid=(lo+hi)/2; if(rows(mid)<=Hh)lo=mid; else hi=mid}
-    var sc=lo;
+    var fit=Math.max(REAL.MIN,Math.min(REAL.MAX,lo)), sc=S.zm==='phys'?REAL.PHYS:fit*zmMul();
+    S._zlabel=S.zm==='phys'?'1:1':Math.round(sc/fit*100)+'%';
     var html=ids.map(function(i){var x=byId[i],m=mmOf(x),wh=[m[0]*sc+14,m[1]*sc+14];
       return '<div class="cell" data-cell="'+x.id+'"><div class="cell-act"><button data-solo="'+x.id+'">单独看</button><button data-out="'+x.id+'">移出</button></div>'+frameHTML(x,1,true,wh,(sc/VPMM).toFixed(4))+'<div class="cap"><span class="mono">'+(m[2]?m[2]+' · ':'')+Math.round(m[0])+'×'+Math.round(m[1])+' mm · '+x.bp+'</span>'+verdictPill(x.id)+(x.form==='tri'?triSw(x):'')+'</div></div>'}).join('');
     if(ids.length<3) html+='<div class="cell"><div class="slot" style="width:220px"><b>再加一台</b><span>侧栏悬停点 ＋，或把设备拖进来</span>'+D.filter(function(x){return canShow(x)&&ids.indexOf(x.id)<0}).slice(0,3).map(function(x){return '<button data-sg="'+x.id+'">'+ic(x.ic)+x.name+'</button>'}).join('')+'</div></div>';
     st.innerHTML='<div class="lineup">'+html+'</div>';
     st.style.alignItems='flex-start';
-    hint=ids.length+' 台 · 按真实尺寸 · 1 mm ≈ '+sc.toFixed(2)+' px';
+    hint=ids.length+' 台 · 按真实尺寸 · 1 mm ≈ '+sc.toFixed(2)+' px'+(S.zm==='phys'?' · 屏幕上的实物大小':lo<REAL.MIN&&S.zm==='fit'?' · 已到最小比例，可上下滚动':'');
   } else if(S.mode==='grid'){
-    var ids=S.multi.filter(function(i){var x=byId[i];return x.st!=='off'||x.borrowed});
-    /* 瀑布流：等宽列，每台按自己的比例占一列宽，依次落到当前最矮的那一列 */
-    var W=Math.max(320,st.clientWidth-48), nc=W>1100?4:W>760?3:2, gap=28, colW=(W-gap*(nc-1))/nc;
-    var K={phone:.56,fold:.86,watch:.5,tab:1,pc:1,tri:1,car:1,tv:1}, cols=[], hs=[];
-    for(var c=0;c<nc;c++){cols.push('');hs.push(0)}
-    ids.forEach(function(i){var x=byId[i], base=dims(x,1), tw=colW*K[x.form], sc=Math.min(tw/base[0],1.1), hh=base[1]*sc+64;
-      var k=hs.indexOf(Math.min.apply(null,hs)); hs[k]+=hh+gap;
-      cols[k]+='<div class="cell" data-cell="'+x.id+'"><div class="cell-act"><button data-solo="'+x.id+'">单独看</button><button data-out="'+x.id+'">移出</button></div>'+frameHTML(x,sc,true)+'<div class="cap"><span class="mono">'+x.res+' · '+x.bp+'</span>'+verdictPill(x.id)+(x.form==='tri'?triSw(x):'')+'</div></div>';});
-    if(ids.length<3){var k2=hs.indexOf(Math.min.apply(null,hs)); cols[k2]+='<div class="cell"><div class="slot" style="width:'+Math.round(colW*.8)+'px"><b>再加一台</b><span>侧栏悬停点 ＋，或把设备拖进来</span>'+D.filter(function(x){return canShow(x)&&ids.indexOf(x.id)<0}).slice(0,3).map(function(x){return '<button data-sg="'+x.id+'">'+ic(x.ic)+x.name+'</button>'}).join('')+'</div></div>'}
-    st.innerHTML='<div class="fall" style="--nc:'+nc+';--gap:'+gap+'px">'+cols.map(function(h){return '<div class="col">'+h+'</div>'}).join('')+'</div>';
+    var ids=sortIds(S.multi.filter(function(i){var x=byId[i];return x.st!=='off'||x.borrowed}));
+    /* 等宽瀑布流：
+       1 列宽目标 300 px × 缩放倍率，列数 = 画布宽能放下几列（2–6 列）
+       2 横屏设备（宽高比 ≥ 1.3）在 ≥3 列时跨 2 列，其余占 1 列
+       3 设备宽 = 格宽 × 形态系数（手表 0.42，手机 / 折叠合上 / 三折单屏 0.62，折叠展开 / 三折双屏 0.9，横屏 1）
+       4 依次放进当前最矮的列（跨列时找相邻两列中较高者最矮的位置），并列取最左 */
+    var W=Math.max(320,st.clientWidth-48), G=FALL.GAP, nc=Math.max(2,Math.min(FALL.MAXCOL,Math.floor((W+G)/(FALL.COL*zmMul()+G)))), colW=(W-G*(nc-1))/nc;
+    var hs=[],cells='',LBL=26,CAP=34; for(var c=0;c<nc;c++)hs.push(0);
+    function kOf(x,base){var ar=base[0]/base[1]; if(x.form==='watch')return FALL.K.watch; if(ar>=FALL.SPAN_AR)return 1; return ar<.6?FALL.K.narrow:FALL.K.fold}
+    ids.forEach(function(i){var x=byId[i], base=dims(x,1), ar=base[0]/base[1], span=(ar>=FALL.SPAN_AR&&nc>=3)?2:1;
+      var k=0,best=1e9; for(var c=0;c+span<=nc;c++){var h=Math.max.apply(null,hs.slice(c,c+span)); if(h<best-0.5){best=h;k=c}}
+      var slotW=colW*span+G*(span-1), sc=slotW*kOf(x,base)/base[0], fh=base[1]*sc, top=best, left=k*(colW+G), hh=LBL+fh+CAP;
+      for(var c2=k;c2<k+span;c2++) hs[c2]=top+hh+G;
+      cells+='<div class="cell" data-cell="'+x.id+'" style="left:'+left+'px;top:'+top+'px;width:'+slotW+'px"><div class="cell-act"><button data-solo="'+x.id+'">单独看</button><button data-out="'+x.id+'">移出</button></div>'+frameHTML(x,sc,true)+'<div class="cap"><span class="mono">'+x.res+' · '+x.bp+(span>1?' · 跨 2 列':'')+'</span>'+verdictPill(x.id)+(x.form==='tri'?triSw(x):'')+'</div></div>';});
+    if(ids.length<3){var k2=hs.indexOf(Math.min.apply(null,hs)); cells+='<div class="cell" style="left:'+(k2*(colW+G))+'px;top:'+hs[k2]+'px;width:'+colW+'px"><div class="slot" style="width:'+Math.round(colW*.8)+'px;margin-top:'+LBL+'px"><b>再加一台</b><span>点左上角「设备」，或把设备拖进来</span>'+D.filter(function(x){return canShow(x)&&ids.indexOf(x.id)<0}).slice(0,3).map(function(x){return '<button data-sg="'+x.id+'">'+ic(x.ic)+x.name+'</button>'}).join('')+'</div></div>'; hs[k2]+=200}
+    st.innerHTML='<div class="fall2" style="height:'+Math.max.apply(null,hs)+'px">'+cells+'</div>';
+    S._zlabel=Math.round(zmMul()*100)+'%';
     st.style.alignItems='flex-start';
-    hint=ids.length+' 台并排 · 改一次一起刷 · 上次 0.8 s';
+    hint=ids.length+' 台 · 等宽瀑布流 · '+nc+' 列 · 按断点从小到大';
   } else {
     st.innerHTML=distHTML(); st.style.alignItems='flex-start'; bindDist(); hint='Mate 70 Pro ⇄ WATCH 5 · 时钟偏差 3 ms 已对齐';
   }
@@ -1324,7 +1350,12 @@ function syncCap(){
 }
 new MutationObserver(syncCap).observe($('#agentTxt'),{childList:true,subtree:true,characterData:true});
 new MutationObserver(syncCap).observe($('#agentAct'),{childList:true,subtree:true});
-$('#scaleSeg').addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;S.real=b.dataset.r==='1';render()});
+function zoomBy(dir){var m=zmMul(), i=ZSTEPS.indexOf(m); if(i<0)i=3; i=Math.max(0,Math.min(ZSTEPS.length-1,i+dir)); S.zm=ZSTEPS[i]===1?'fit':ZSTEPS[i]; render()}
+$('#zoomG').addEventListener('click',function(e){var b=e.target.closest('[data-z]');if(!b)return;var z=b.dataset.z;
+  if(z==='+')zoomBy(1); else if(z==='-')zoomBy(-1); else if(z==='fit'){S.zm='fit';render()} else {if(!S.real){S.real=true} S.zm=S.zm==='phys'?'fit':'phys';render()}});
+document.addEventListener('keydown',function(e){if(S.mode!=='grid'||!(e.metaKey||e.ctrlKey))return; if(e.key==='='||e.key==='+'){e.preventDefault();zoomBy(1)} else if(e.key==='-'){e.preventDefault();zoomBy(-1)} else if(e.key==='0'){e.preventDefault();S.zm='fit';render()}});
+$('#stage').addEventListener('wheel',function(e){if(S.mode!=='grid'||!(e.ctrlKey||e.metaKey))return;e.preventDefault();clearTimeout(this._zt);var d=e.deltaY<0?1:-1;this._zt=setTimeout(function(){zoomBy(d)},40)},{passive:false});
+$('#scaleSeg').addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;S.real=b.dataset.r==='1';if(!S.real&&S.zm==='phys')S.zm='fit';render()});
 $('#hotBtn').onclick=function(){$$('.frame').forEach(function(f){f.classList.add('agent')});setTimeout(function(){render();toast('已热重载 '+$$('.frame').length+' 台 · 0.8 s')},500)};
 
 /* ---------- 模式与外观 ---------- */
@@ -1340,7 +1371,8 @@ $('#tgTheme').onclick=function(){var r=document.documentElement;r.dataset.theme=
 document.addEventListener('keydown',function(e){if(e.key==='Escape'){if(S.kb){S.kb=false;render();toast('已释放键盘')} if($('#win').classList.contains('compact'))setCompact(false)}});
 
 var prevV={}, prevConn=false, prevDist=false;
-function render(){setMode(S.mode);$('#scaleSeg').hidden=S.mode!=='grid';$$('#scaleSeg button').forEach(function(b){b.classList.toggle('on',(b.dataset.r==='1')===S.real)});renderList();renderStage();renderCtl();renderInsp();
+function syncZoom(){var l=$('#zLbl');if(l)l.textContent=S._zlabel||'100%';$$('#zoomG [data-z]').forEach(function(b){b.classList.toggle('on',(b.dataset.z==='fit'&&S.zm==='fit')||(b.dataset.z==='phys'&&S.zm==='phys'))})}
+function render(){setMode(S.mode);$('#scaleSeg').hidden=S.mode!=='grid';$('#zoomG').hidden=S.mode!=='grid';$$('#scaleSeg button').forEach(function(b){b.classList.toggle('on',(b.dataset.r==='1')===S.real)});renderList();renderStage();syncZoom();renderCtl();renderInsp();
   Object.keys(S.verdict).forEach(function(id){var v=S.verdict[id]; if(v!==prevV[id]&&(v==='pass'||v==='flag'||v==='adapt')){var f=$('.frame[data-id="'+id+'"]'); if(f) FX.burstEl(f,v==='flag'?18:26,{speed:v==='flag'?1.6:2.4,color:v==='flag'?'219,92,92':null})}});
   prevV=JSON.parse(JSON.stringify(S.verdict));
   if(S.connFixed&&!prevConn){var st=$('.steps'); if(st) FX.burstEl(st,30,{speed:2.4})} prevConn=!!S.connFixed;
