@@ -587,6 +587,38 @@
   .lineup .frame.pc::before{font-size:7px;top:2px;left:6px}
   .toast{bottom:84px}
   body.m-grid .dev .pill.ai{display:none}
+
+  /* =====================================================================
+     液态玻璃（10-27）：不是毛玻璃。模糊轻、底色几乎透明；边缘把背后的内容折射弯过去
+     （SVG 位移贴图，Chromium 内核生效，其他浏览器退回轻模糊）；边缘一圈高光，
+     左上亮、右下弱；表面还有一块高光跟着指针走（光随指动）
+     ===================================================================== */
+  .capsule.lg,.tb .seg.lg,.zoomg.lg{position:relative}
+  .lg{isolation:isolate;
+    background:linear-gradient(180deg,rgba(255,255,255,.10),rgba(255,255,255,.03))!important;
+    -webkit-backdrop-filter:blur(3px) saturate(190%) brightness(1.06)!important;backdrop-filter:blur(3px) saturate(190%) brightness(1.06)!important;
+    box-shadow:inset 1.2px 1.2px 0 rgba(255,255,255,.55),inset -1px -1px 0 rgba(255,255,255,.16),inset 0 0 14px rgba(255,255,255,.07),0 10px 30px rgba(0,0,0,.28),0 1px 3px rgba(0,0,0,.2)!important}
+  .lg-refract .lg{backdrop-filter:url(#lg-refract) blur(2px) saturate(190%) brightness(1.06)!important}
+  .lg::after{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:-1;
+    background:radial-gradient(120% 60% at 30% -10%,rgba(255,255,255,.22),transparent 55%),
+               radial-gradient(160px circle at var(--lx,30%) var(--ly,0%),rgba(255,255,255,.16),transparent 70%)}
+  :root[data-theme="light"] .lg{background:linear-gradient(180deg,rgba(255,255,255,.42),rgba(255,255,255,.18))!important;
+    box-shadow:inset 1.2px 1.2px 0 rgba(255,255,255,.95),inset -1px -1px 0 rgba(255,255,255,.5),inset 0 0 14px rgba(255,255,255,.35),0 10px 30px rgba(0,0,0,.12),0 1px 3px rgba(0,0,0,.08)!important}
+  :root[data-theme="light"] .lg::after{background:radial-gradient(120% 60% at 30% -10%,rgba(255,255,255,.7),transparent 55%),radial-gradient(160px circle at var(--lx,30%) var(--ly,0%),rgba(255,255,255,.5),transparent 70%)}
+  .side.lg::after,.cap-pop.lg::after,.devpop.lg::after{background:radial-gradient(240px circle at var(--lx,-999px) var(--ly,-999px),rgba(255,255,255,.07),transparent 70%)}
+  :root[data-theme="light"] .side.lg::after{background:radial-gradient(240px circle at var(--lx,-999px) var(--ly,-999px),rgba(255,255,255,.4),transparent 70%)}
+  .lg.press{transform:scale(.97);transition:transform .12s}
+  /* 液态玻璃底下要有东西可折射：画布和单台视图加一层淡淡的点阵底 */
+  .canvas{background-color:var(--cv);background-image:radial-gradient(rgba(255,255,255,.07) 1px,transparent 1.2px);background-size:18px 18px}
+  :root[data-theme="light"] .canvas{background-image:radial-gradient(rgba(0,0,0,.08) 1px,transparent 1.2px)}
+  /* 侧栏、检查器浮在画布上，让玻璃下面有内容 */
+  .side.lg{background:linear-gradient(180deg,rgba(255,255,255,.07),rgba(255,255,255,.02))!important}
+  /* 侧栏浮在画布上（同 macOS 26 / Device Hub），玻璃下面就有画布内容可折射 */
+  .body{position:relative}
+  .side{position:absolute!important;left:8px;top:0;bottom:8px;z-index:4}
+  body:not(.m-grid):not(.m-dist) .canvas{padding-left:300px}
+  body:not(.m-grid):not(.m-dist) .canvas .ctl{margin-left:150px}
+  .side[hidden]~.canvas{padding-left:0!important}
   @media (prefers-reduced-motion:reduce){.frame.agent .scr::before,.amb i,.frame.agent::after,.agentbar::after,.toast::after,.dot.busy{animation:none}}
 </style>
 </head>
@@ -595,6 +627,7 @@
 <canvas id="dust"></canvas>
 <canvas id="fx"></canvas>
 <svg width="0" height="0" style="position:absolute">
+  <filter id="lg-refract" x="0" y="0" width="100%" height="100%" filterUnits="objectBoundingBox" primitiveUnits="objectBoundingBox" color-interpolation-filters="sRGB"><feImage href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%22200%22%20height%3D%22200%22%20viewBox%3D%220%200%20200%20200%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22x%22%20x1%3D%220%22%20x2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23000%22/%3E%3Cstop%20offset%3D%22.18%22%20stop-color%3D%22%23800000%22/%3E%3Cstop%20offset%3D%22.82%22%20stop-color%3D%22%23800000%22/%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23f00%22/%3E%3C/linearGradient%3E%3ClinearGradient%20id%3D%22y%22%20x1%3D%220%22%20x2%3D%220%22%20y1%3D%220%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23000%22/%3E%3Cstop%20offset%3D%22.22%22%20stop-color%3D%22%23008000%22/%3E%3Cstop%20offset%3D%22.78%22%20stop-color%3D%22%23008000%22/%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%230f0%22/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect%20width%3D%22200%22%20height%3D%22200%22%20fill%3D%22url%28%23x%29%22/%3E%3Crect%20width%3D%22200%22%20height%3D%22200%22%20fill%3D%22url%28%23y%29%22%20style%3D%22mix-blend-mode%3Ascreen%22/%3E%3C/svg%3E" x="0" y="0" width="1" height="1" preserveAspectRatio="none" result="map"/><feGaussianBlur in="SourceGraphic" stdDeviation=".004" result="soft"/><feDisplacementMap in="soft" in2="map" scale=".09" xChannelSelector="R" yChannelSelector="G"/></filter>
   <symbol id="phone" viewBox="0 0 16 16"><rect x="4.5" y="1.5" width="7" height="13" rx="1.5" stroke="currentColor" fill="none"/><path d="M7 12.5h2" stroke="currentColor" stroke-linecap="round"/></symbol>
   <symbol id="fold" viewBox="0 0 16 16"><rect x="2" y="2.5" width="12" height="11" rx="1.5" stroke="currentColor" fill="none"/><path d="M8 2.5v11" stroke="currentColor" stroke-dasharray="1.5 1.5"/></symbol>
   <symbol id="tri" viewBox="0 0 16 16"><rect x="1" y="3.5" width="14" height="9" rx="1.2" stroke="currentColor" fill="none"/><path d="M5.7 3.5v9M10.3 3.5v9" stroke="currentColor" stroke-dasharray="1.2 1.2"/></symbol>
@@ -639,13 +672,13 @@
     <div class="lights"><i></i><i></i><i></i></div>
     <button class="ib on" id="tgSide" title="侧栏"><svg class="i"><use href="#sidebar"/></svg></button>
     <div class="ttl"><b>Device Box</b><span id="ttlSub">DevEco · 7 台在线</span></div>
-    <div class="seg srcwrap" id="mode">
+    <div class="seg srcwrap lg" id="mode">
       <button class="on" data-m="one">单台</button><button data-m="grid">多台画布</button><button data-m="dist">分布式调试</button>
       <span class="src" style="left:50%;top:0">17</span><span class="src" style="left:90%;top:0">18</span>
     </div>
     <div class="capwrap" id="agentbar">
-      <button class="capsule" id="capBtn"><span class="cdot"></span><span id="capTxt"></span><span class="cbar"><i id="agentProg"></i></span><span class="cmore" id="capMore">还有 1 件</span></button>
-      <div class="cap-pop" id="capPop">
+      <button class="capsule lg" id="capBtn"><span class="cdot"></span><span id="capTxt"></span><span class="cbar"><i id="agentProg"></i></span><span class="cmore" id="capMore">还有 1 件</span></button>
+      <div class="cap-pop lg" id="capPop">
         <div class="cp-h" id="cpH">在跑</div>
         <div class="cp-main"><div id="agentTxt"></div><div class="btns" id="agentAct"></div></div>
         <div class="cp-h">也在跑</div>
@@ -665,7 +698,7 @@
   </div>
   <div class="body">
     <!-- 侧栏 -->
-    <aside class="side lit" id="side">
+    <aside class="side lit lg" id="side">
       <div class="side-hd">
         <div class="seg srcwrap" id="filt">
           <button class="on" data-f="all">全部</button><button data-f="emu">模拟器</button><button data-f="real">真机</button><button data-f="remote">远端</button>
@@ -683,15 +716,15 @@
     <!-- 画布 -->
     <main class="canvas">
       <div class="cv-bar">
-        <div class="devwrap" id="devWrap"><button class="ib" id="devBtn"><svg class="i"><use href="#phone"/></svg>设备 <span class="mono" id="devN"></span></button><div class="devpop" id="devPop"></div></div>
+        <div class="devwrap" id="devWrap"><button class="ib" id="devBtn"><svg class="i"><use href="#phone"/></svg>设备 <span class="mono" id="devN"></span></button><div class="devpop lg" id="devPop"></div></div>
         <span class="hint" id="cvHint"></span>
         <div class="grow"></div>
-        <div class="zoomg" id="zoomG"><button data-z="-" title="缩小 ⌘−">−</button><span id="zLbl">100%</span><button data-z="+" title="放大 ⌘+">+</button><button data-z="fit" title="适应画布 ⌘0">适应</button><button data-z="phys" title="按屏幕上的实物大小显示">1:1</button></div>
+        <div class="zoomg lg" id="zoomG"><button data-z="-" title="缩小 ⌘−">−</button><span id="zLbl">100%</span><button data-z="+" title="放大 ⌘+">+</button><button data-z="fit" title="适应画布 ⌘0">适应</button><button data-z="phys" title="按屏幕上的实物大小显示">1:1</button></div>
         <div class="seg" id="scaleSeg" title="多台画布的排布方式"><button data-r="1" class="on">真实尺寸</button><button data-r="0">等宽瀑布流</button></div>
         <button class="ib srcwrap" id="hotBtn" title="改一次所有设备一起刷"><svg class="i"><use href="#rotate"/></svg>热重载 · 全部<span class="src" style="left:4px;top:4px">17</span></button>
       </div>
       <div class="stage" id="stage"></div>
-      <div class="ctl srcwrap" id="ctl"></div>
+      <div class="ctl srcwrap lg" id="ctl"></div>
     </main>
 
     <!-- 检查器 -->
@@ -721,7 +754,7 @@
 </div>
 
 <div class="modal-bg" id="modal"><div class="modal" id="modalBox"></div></div>
-<div class="toast" id="toast"></div>
+<div class="toast lg" id="toast"></div>
 
 <script>
 
@@ -801,6 +834,11 @@
   window.FX={burst:burst,burstEl:burstEl,dissolve:dissolve};
 })();
 (function(){
+  var ua=navigator.userAgent; if(/Chrome\/|Edg\//.test(ua)&&!/Firefox/.test(ua)) document.documentElement.classList.add('lg-refract');
+  document.addEventListener('pointermove',function(e){var g=e.target.closest&&e.target.closest('.lg');if(!g)return;var r=g.getBoundingClientRect();g.style.setProperty('--lx',(e.clientX-r.left)+'px');g.style.setProperty('--ly',(e.clientY-r.top)+'px')},{passive:true});
+  document.addEventListener('pointerdown',function(e){var g=e.target.closest&&e.target.closest('.capsule.lg,.tb .seg.lg');if(g){g.classList.add('press');setTimeout(function(){g.classList.remove('press')},140)}});
+})();
+(function(){
 'use strict';
 var $=function(s,r){return (r||document).querySelector(s)}, $$=function(s,r){return Array.prototype.slice.call((r||document).querySelectorAll(s))};
 var ic=function(n,c){return '<svg class="i'+(c?' '+c:'')+'"><use href="#'+n+'"/></svg>'};
@@ -876,7 +914,7 @@ $('#list').addEventListener('contextmenu',function(e){
   });
 });
 function menu(x,y,items,cb){
-  closeMenu(); var m=document.createElement('div'); m.className='menu'; m.id='menu';
+  closeMenu(); var m=document.createElement('div'); m.className='menu lg'; m.id='menu';
   m.innerHTML=items.map(function(it){return it[0]==='hr'?'<hr>':'<button data-k="'+it[1]+'">'+(it[2]?ic(it[2]):'')+it[0]+(it[3]?'<span class="k">'+it[3]+'</span>':'')+'</button>'}).join('');
   document.body.appendChild(m); var r=m.getBoundingClientRect();
   m.style.left=Math.min(x,innerWidth-r.width-8)+'px'; m.style.top=Math.min(y,innerHeight-r.height-8)+'px';
