@@ -385,6 +385,14 @@ window.DEVECO_CATALOG = {
           thumb: { type: 'image', src: 'site/thumbs/user-research-plan.jpg' },
         },
         {
+          title: '鸿蒙 AI 开发准备：四类用户要导入什么，鸿蒙要开放什么', subtitle: 'AI Dev Readiness · Users, Imports, Skills & Specs',
+          desc: '开发准备要交给 AI 的七类东西（规则、spec、设计稿、已有代码、知识、MCP / Skill / CLI、环境账号），按互联网头部、中型企业、小企业、个人开发者拆开要导入什么、要平台给什么；展开头部厂商工具链要的交付形式（开发、测试、鸿蒙独有能力、上架），盘点官方 Skill 仓库约 72 个 Skill 与 DevEco CLI、CodeGenie MCP；列出要对齐的公共规范和鸿蒙要自己定义的 5 个 spec。',
+          view: 'doc', date: '2026-10-29', href: 'analysis/ai-dev-readiness/REPORT-鸿蒙AI开发准备分析.html',
+          links: [{ label: '四类用户', href: 'analysis/ai-dev-readiness/REPORT-鸿蒙AI开发准备分析.html#users' }, { label: '头部厂商展开', href: 'analysis/ai-dev-readiness/REPORT-鸿蒙AI开发准备分析.html#top' }, { label: '已开放 Skill', href: 'analysis/ai-dev-readiness/REPORT-鸿蒙AI开发准备分析.html#opened' }, { label: '需要哪些 spec', href: 'analysis/ai-dev-readiness/REPORT-鸿蒙AI开发准备分析.html#spec' }],
+          tags: ['用户分析', '开发准备', 'Skill', 'MCP', 'CLI', 'AGENTS.md', 'spec', '头部厂商', '生态'],
+          thumb: { type: 'image', src: 'site/thumbs/ai-dev-readiness.jpg' },
+        },
+        {
           title: 'AI 开发工具趋势分析', subtitle: 'AI Development Tools · Trends & Evidence',
           desc: '从会话脱离窗口、能力开放、信任与审阅回退等六个趋势，串起八家头部产品和新兴工具案例；包含 DevEco 机会、四项体验指标、五条基准任务及术语说明。依据 1025 材料 P115–167 整理，逐页原文、原图及待核实项完整保留。',
           view: 'doc', date: '2026-10-24', href: 'analysis/ai-ide-landscape/index.html',

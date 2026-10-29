@@ -1,0 +1,531 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>鸿蒙 AI 开发准备</title>
+<style>
+:root{
+  --bg:#f5f6f8; --paper:#ffffff; --ink:#15171a; --ink2:#4a4f57; --ink3:#7a808a; --line:#e3e5e9; --line2:#eef0f3;
+  --accent:#3574f0; --accent-bg:#edf3ff;
+  --ok:#1f8a4c; --ok-bg:#e6f5ec; --warn:#b76e00; --warn-bg:#fdf1e3; --bad:#c7000b; --bad-bg:#fdecec; --mute-bg:#eef0f3;
+  --shadow:0 1px 2px rgba(16,24,40,.06),0 4px 16px rgba(16,24,40,.06);
+  --mono:ui-monospace,"JetBrains Mono",Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#16171a; --paper:#1e2024; --ink:#e6e8eb; --ink2:#b3b8c0; --ink3:#868b94; --line:#30333a; --line2:#272a30;
+    --accent:#6b9bfa; --accent-bg:#233150;
+    --ok:#5fc48a; --ok-bg:#1d3326; --warn:#f0a052; --warn-bg:#3a2d1e; --bad:#ff6b6b; --bad-bg:#3a2224; --mute-bg:#272a30;
+    --shadow:none;
+  }
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.7 -apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}
+a{color:var(--accent);text-decoration:none} a:hover{text-decoration:underline}
+code{font-family:var(--mono);font-size:.88em;background:var(--line2);padding:1px 5px;border-radius:4px;word-break:break-word}
+.wrap{max-width:1280px;margin:0 auto;padding:40px 32px 80px}
+.eyebrow{font-size:12px;letter-spacing:.08em;color:var(--ink3)}
+h1{font-size:30px;line-height:1.3;margin:6px 0 12px}
+.lede{color:var(--ink2);max-width:84ch;margin:0}
+h2{font-size:21px;margin:52px 0 12px;scroll-margin-top:16px}
+h2 small{font-size:13px;font-weight:400;color:var(--ink3);margin-left:8px}
+h3{font-size:16px;margin:28px 0 10px;scroll-margin-top:16px}
+p.note{color:var(--ink2);max-width:90ch;margin:8px 0 12px}
+nav.toc{display:flex;flex-wrap:wrap;gap:6px;margin:20px 0 0}
+nav.toc a{font-size:13px;border:1px solid var(--line);background:var(--paper);border-radius:999px;padding:3px 12px;color:var(--ink2)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12.5px;color:var(--ink2);margin:14px 0 0}
+
+ol.items,ul.items{list-style:none;margin:0;padding:0;background:var(--paper);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);counter-reset:it}
+.items>li{display:flex;gap:12px;padding:10px 16px;border-bottom:1px solid var(--line2);font-size:13.5px;color:var(--ink2)}
+.items>li:last-child{border-bottom:none}
+ol.items>li::before{counter-increment:it;content:counter(it);flex:none;width:20px;height:20px;border-radius:50%;background:var(--accent-bg);color:var(--accent);font-size:11.5px;font-weight:700;display:flex;align-items:center;justify-content:center;margin-top:1px}
+ul.items>li::before{content:"";flex:none;width:6px;height:6px;border-radius:50%;background:var(--ink3);margin-top:9px}
+.items b{color:var(--ink);font-weight:600}
+
+.tw{background:var(--paper);border:1px solid var(--line);border-radius:12px;overflow:auto;box-shadow:var(--shadow)}
+table{border-collapse:collapse;width:100%;font-size:13px;min-width:980px}
+th,td{text-align:left;vertical-align:top;padding:9px 12px;border-bottom:1px solid var(--line2)}
+thead th{font-size:12px;color:var(--ink3);background:var(--line2);font-weight:600;position:sticky;top:0}
+tbody th{font-weight:600;width:150px}
+tbody th small{display:block;font-weight:400;color:var(--ink3);font-size:11.5px}
+tr:last-child td,tr:last-child th{border-bottom:none}
+td b{color:var(--ink);font-weight:600}
+
+.ev{display:inline-block;font-size:11px;font-weight:600;border-radius:4px;padding:0 5px;line-height:17px;margin-left:4px;vertical-align:1px;white-space:nowrap}
+.ev.o{background:var(--ok-bg);color:var(--ok)}
+.ev.m{background:var(--accent-bg);color:var(--accent)}
+.ev.i{background:var(--warn-bg);color:var(--warn)}
+.ev.q{background:var(--mute-bg);color:var(--ink3)}
+.ev.v{background:var(--line2);color:var(--ink2)}
+
+.st{display:inline-block;font-size:11.5px;font-weight:700;border-radius:5px;padding:0 7px;line-height:19px;white-space:nowrap;margin-right:4px}
+.st.y{background:var(--ok-bg);color:var(--ok)} .st.p{background:var(--warn-bg);color:var(--warn)} .st.n{background:var(--bad-bg);color:var(--bad)} .st.u{background:var(--mute-bg);color:var(--ink3)}
+
+/* 需求强度点 */
+.lv{display:inline-flex;gap:3px;vertical-align:-1px;margin-right:6px}
+.lv i{width:8px;height:8px;border-radius:50%;background:var(--line)}
+.lv.l1 i:nth-child(-n+1),.lv.l2 i:nth-child(-n+2),.lv.l3 i:nth-child(-n+3){background:var(--accent)}
+
+.cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:14px 16px;box-shadow:var(--shadow);min-width:0}
+.card h3{margin:0 0 2px;font-size:15.5px}
+.card .sub{font-size:12px;color:var(--ink3);margin-bottom:8px}
+.card dl{margin:0;font-size:13px;color:var(--ink2)}
+.card dt{font-size:11.5px;font-weight:700;color:var(--ink3);letter-spacing:.04em;margin-top:9px}
+.card dd{margin:2px 0 0}
+.card dd b{color:var(--ink)}
+.quote{font-size:12.5px;color:var(--ink2);border-left:3px solid var(--line);padding:2px 0 2px 10px;margin:10px 0 0}
+
+.flow{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:6px 0 4px}
+.stage{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-size:12.5px;color:var(--ink2)}
+.stage .h{font-weight:700;color:var(--ink);font-size:13.5px}
+.stage.on{border-color:var(--accent);background:var(--accent-bg)}
+.stage.on .h{color:var(--accent)}
+
+.layers{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px}
+.layer{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-size:12.5px;color:var(--ink2);min-width:0}
+.layer .n{font-size:11px;color:var(--ink3);font-weight:700}
+.layer .h{font-weight:700;color:var(--ink);font-size:14px;margin:2px 0 4px}
+.layer code{font-size:11px}
+
+.skillgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.sg{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:10px 14px;font-size:12.5px;color:var(--ink2);min-width:0}
+.sg .h{display:flex;justify-content:space-between;align-items:baseline;font-weight:700;color:var(--ink);font-size:13.5px}
+.sg .h span{font-size:12px;color:var(--ink3);font-weight:600}
+.sg .stage-tag{font-size:11px;color:var(--accent);font-weight:600}
+.sg ul{margin:4px 0 0;padding-left:16px}
+.sg li{margin:1px 0}
+
+.callout{background:var(--accent-bg);border-radius:12px;padding:12px 16px;color:var(--ink);font-size:13.5px;margin:12px 0}
+.callout b{color:var(--accent)}
+.src{font-size:12.5px;color:var(--ink2)}
+.src li{margin:3px 0}
+
+@media (max-width:1000px){
+  .cards,.flow{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .layers{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .skillgrid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width:600px){
+  .wrap{padding:24px 16px 60px}
+  h1{font-size:24px}
+  .cards,.flow,.layers,.skillgrid{grid-template-columns:minmax(0,1fr)}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="eyebrow">分析与研究 · 2026-10-29 · 作者：王欣迪</div>
+  <h1>鸿蒙开发者的 AI 开发准备：四类用户要导入什么，鸿蒙要开放什么</h1>
+  <p class="lede">在「开发准备 → 编码实现 → 运行验证 → 发布上架」四段里，开发准备这一段决定 AI 后面写得准不准。本文先列出开发准备要交给 AI 的七类东西，再按互联网头部厂商、中型企业、小企业 / 创业团队、个人开发者四类用户，拆开各自已有什么、要导入什么、要平台给什么；然后展开头部厂商的工具链需要鸿蒙以什么形式提供能力（开发、测试、鸿蒙独有能力、上架四段），盘点鸿蒙生态目前已经开放的 Skill、MCP、CLI；最后列出鸿蒙进入 AI 生态需要对齐的公共规范和需要自己定义的 spec。</p>
+  <div class="legend">
+    <span><span class="ev o">官方</span> 华为官方 / 官方仓库 / 官方媒体通稿</span>
+    <span><span class="ev m">社区</span> 第三方仓库 / 媒体 / 博客</span>
+    <span><span class="ev v">访谈</span> 2026-10 的 12 份用户访谈原文</span>
+    <span><span class="ev i">推断</span> 没有找到文字出处</span>
+    <span><span class="ev q">待确认</span> 需要内部或实机核对</span>
+  </div>
+  <nav class="toc">
+    <a href="#keys">结论</a><a href="#what">准备什么</a><a href="#users">四类用户</a><a href="#matrix">导入对照表</a>
+    <a href="#top">头部厂商展开</a><a href="#opened">已开放的 Skill / MCP</a><a href="#gaps">缺口</a>
+    <a href="#spec">需要哪些 spec</a><a href="#deveco">对 DevEco 的建议</a><a href="#limits">局限</a><a href="#sources">来源</a>
+  </nav>
+
+  <h2 id="keys">结论</h2>
+  <ol class="items">
+    <li><span><b>开发准备的本质，是把「写给人看的上下文」改成「AI 读得进去的上下文」。</b>要准备的有七类：项目规则、需求与 spec、设计稿与设计系统、已有代码、知识与文档、工具能力（MCP / Skill / CLI）、环境与账号。前五类是用户自己带来的，后两类主要靠平台给。</span></li>
+    <li><span><b>四类用户的差别不在「要不要准备」，而在「谁来准备、准备在哪」。</b>个人开发者几乎什么都不带，要平台把知识和规则直接装好；小企业带一点规则和截图；中型企业带规则、分级 spec 和存量工程；头部厂商带的是一整套自研工具链，他们不进我们的 IDE，要的是能插进自己流水线的接口。</span></li>
+    <li><span><b>头部厂商要的形式是「无头、可编排、可审计」：</b>CLI 和 MCP 跑在 CI 里，Skill 按开放标准写、能导进他们自己的 Agent，上架和签名有 API。界面对他们是次要的。</span></li>
+    <li><span><b>鸿蒙在开发和测试两段已经开放了不少：</b>官方 Skill 仓库按设计、开发、SDK、测试、工具、发布、多设备、质量分了十类，约 70 个 Skill；DevEco CLI 有文档检索、Skill 安装和 MCP 服务；CodeGenie MCP 带模拟器工具组。<b>缺口集中在两头：</b>准备阶段的规则模板、设计稿接入、迁移映射，以及上架阶段的「创建应用」API。</span></li>
+    <li><span><b>鸿蒙进入 AI 生态有两个方向，要分开讲：</b>一是让外部 AI 会写鸿蒙（对齐 AGENTS.md、Agent Skills、MCP、llms.txt 这些公共规范）；二是让鸿蒙应用被 AI 调用（HMAF、意图框架、小艺 Skill / MCP、A2A、A2UI）。DevEco 主要承接第一个方向，第二个方向是开发者要接入的能力。</span></li>
+    <li><span><b>鸿蒙需要自己定义的 spec 有五个：</b>带 API 版本标注的 ArkTS 规则包、鸿蒙工程的 AGENTS.md 模板、设计稿到 ArkUI / HDS 组件的映射、Android / iOS 到鸿蒙的迁移映射、机器可读的验收与上架体检清单。它们都放在开发准备这一段，DevEco 可以做成「准备度检查」一步到位。</span></li>
+  </ol>
+
+  <h2 id="what">开发准备要交给 AI 的七类东西<small>谁来给 · 鸿蒙现状</small></h2>
+  <div class="flow">
+    <div class="stage on"><div class="h">开发准备</div>本文范围：交代清楚要做什么、按什么规矩做、用什么工具做</div>
+    <div class="stage"><div class="h">编码实现</div>AI 写代码，开发者看过程和改动边界</div>
+    <div class="stage"><div class="h">运行验证</div>编译、模拟器、真机、多设备</div>
+    <div class="stage"><div class="h">发布上架</div>签名、上传、元数据、审核</div>
+  </div>
+  <p class="note">准备阶段准备得好不好，后面三段才看得出来：访谈里左右相册说「超过五六个文件，第一次编译肯定不通过」，减法清单靠一开始写死的规则（MVVM V2、不用 router、用 HDS 组件）才把错误压下去。<span class="ev v">访谈</span></p>
+  <div class="tw"><table>
+    <thead><tr><th>准备物</th><th>具体是什么</th><th>谁来给</th><th>鸿蒙现状</th><th>访谈证据</th></tr></thead>
+    <tbody>
+      <tr><th>1 项目规则<small>Rules / AGENTS.md</small></th>
+        <td>架构约束（MVVM、状态管理 V1/V2 不混用）、组件约束（用 HDS）、禁用写法（<code>any</code>、硬编码颜色和字符串）、目录约定</td>
+        <td>用户写，平台给模板</td>
+        <td><span class="st p">部分</span>社区有规则库（如 dsh-harmonyos-devkit 的 35 个规则文件）<span class="ev m">社区</span>；官方没有鸿蒙工程的规则模板 <span class="ev i">推断</span></td>
+        <td>减法清单的规则「部分网上分享、部分自己总结」；灵犀「把遇到的问题总结成 rule」 <span class="ev v">访谈</span></td></tr>
+      <tr><th>2 需求与 spec<small>PRD / spec.md / 验收</small></th>
+        <td>需求目标、规格、设计、验收标准；按任务大小分级（小改动直接改，大需求先架构设计）</td>
+        <td>用户</td>
+        <td><span class="st p">部分</span>DevEco Code 有 Plan / Build 双 Agent 和 Goal 模式 <span class="ev o">官方</span>；没有 spec 模板和分级</td>
+        <td>WPS 基于 OpenSpec 定制两三个月，L0/L1/L2 分级；腕有引力「改 spec 很痛苦」 <span class="ev v">访谈</span></td></tr>
+      <tr><th>3 设计稿与设计系统<small>截图 / Figma / 设计 token</small></th>
+        <td>页面设计稿、风格锚点、组件库映射、颜色和字号 token</td>
+        <td>用户给稿，平台给映射</td>
+        <td><span class="st p">部分</span>官方 Skill 有 <code>hmos-design-visual-mobile</code>（按设计规范生成页面）<span class="ev o">官方</span>；DevEco Code 黑客松期间不能识图 <span class="ev v">访谈</span></td>
+        <td>5 份访谈提到截图、设计稿给不进去；「Figma MCP 不太行，还不如把截图直接粘贴」（左右相册）<span class="ev v">访谈</span></td></tr>
+      <tr><th>4 已有代码<small>存量鸿蒙 / Android / iOS / 跨平台</small></th>
+        <td>存量工程结构、模块依赖、要迁移的 Android / iOS / 小程序代码</td>
+        <td>用户</td>
+        <td><span class="st y">有</span>uni-app、Taro 转元服务，ArkUI-X 迁移四件套，状态管理 V1→V2 迁移 Skill <span class="ev o">官方</span>；Android 原生到鸿蒙没有官方迁移 Skill <span class="ev i">推断</span></td>
+        <td>WPS 80 多个子模块；童成「AI IDE 对安卓兼容差」 <span class="ev v">访谈</span></td></tr>
+      <tr><th>5 知识与文档<small>官方文档 / 私有知识库</small></th>
+        <td>ArkTS / ArkUI / Kit 文档、最佳实践、API 版本差异；企业自己的组件库和接口文档</td>
+        <td>平台给官方的，用户给私有的</td>
+        <td><span class="st y">有</span>2000 多万字官方文档转成 Agent 可调用的知识资源 <span class="ev o">官方</span>；DevEco CLI <code>docs search / read / catalog</code> 本地检索 <span class="ev m">社区</span>。网页文档仍是 AJAX 加载，Agent 直接读网址读不到 <span class="ev v">访谈</span></td>
+        <td>睛鸿「都做成 md，放 CDN」；灵犀要「每一个 Kit 都有一个自己的 mcp」，参考 Ant Design <span class="ev v">访谈</span></td></tr>
+      <tr><th>6 工具能力<small>MCP / Skill / CLI</small></th>
+        <td>让 Agent 自己构建、语法检查、起模拟器、装真机、截图、抓日志</td>
+        <td>平台</td>
+        <td><span class="st y">有</span>DevEco CLI 封装 ohpm、hvigor、hdc、emulator、hilog，提供 <code>serve mcp</code> <span class="ev m">社区</span>；CodeGenie MCP 0.2.6 带模拟器和 UI 校验工具组 <span class="ev m">社区</span></td>
+        <td>理性幻想「先把自己的能力暴露出来」「我用 Claude Code 直接调你们」 <span class="ev v">访谈</span></td></tr>
+      <tr><th>7 环境与账号<small>模型 / 证书 / 设备 / AGC</small></th>
+        <td>选模型和 Key、调试与发布证书、模拟器镜像或真机、AppGallery Connect 应用和权限</td>
+        <td>用户操作，平台降门槛</td>
+        <td><span class="st p">部分</span>AGC 有 Connect API 和 <code>hmos-connect-api-cli-skill</code> <span class="ev o">官方</span>；「创建应用」没有 API <span class="ev v">访谈</span></td>
+        <td>WPS 用 Playwright 写浏览器脚本创建应用；寻找新的大陆嫌「配证书 → 传 AGC → 网页填信息」环节多 <span class="ev v">访谈</span></td></tr>
+    </tbody>
+  </table></div>
+
+  <h2 id="users">四类用户：已有什么、要导入什么、要平台给什么</h2>
+  <p class="note">访谈样本里中厂 2 份（WPS、格力）、创业团队 4 份、个人 / 学习者 6 份，<b>没有互联网头部厂商</b>。头部厂商这一列用 HDC 2026 公开的快手、抖音案例和中厂访谈往上推，标为推断。</p>
+  <div class="callout"><b>分层依据是工程体系成熟度，不是行业属性。</b>同样是中大型企业，互联网的 WPS 和非互联网的格力在开发准备上要的东西几乎一样，都是分级 spec、规则和存量工程。真正把需求分开的，是有没有自己的 AI 基建、自研 IDE 和 Agent：有的只要接入原子能力，没有的依赖我们的工具。下面四类和汇报里的三类对应关系是：<b>成熟工程体系的大厂</b> = 互联网头部；<b>有独立团队、依赖我们工具的中大型企业</b>（互联网和非互联网都有）= 中型企业；<b>经验和资源有限的初创与个人</b> = 小企业 / 创业 + 个人开发者。小企业和个人拆开写，是因为两者在「导入什么」上差别大：前者带截图和自己的 Agent，后者几乎什么都不带。10-29 评审时领导提到的「幺五客户」该归到哪一层，还要确认。<span class="ev q">待确认</span></div>
+  <div class="cards">
+    <div class="card">
+      <h3>互联网头部厂商</h3>
+      <div class="sub">抖音、快手、腾讯视频、京东这类，有自己的 AI 基建团队、自研 IDE 和 Agent</div>
+      <dl>
+        <dt>已经有</dt><dd>自研或企业版 Agent / IDE、内部模型或模型网关、CI/CD 流水线、设备农场、自有设计系统、跨端框架（Taro、KMP 等）<span class="ev i">推断</span></dd>
+        <dt>要导入</dt><dd><b>企业规则和 spec 流程</b>、私有组件库与接口文档、存量多端代码、自己的测试用例和埋点规范</dd>
+        <dt>要平台给</dt><dd><b>能接进自己 Agent 和 CI 的原子能力</b>，最看重<b>调试和性能分析</b>；形式是无头 CLI、MCP、标准格式 Skill、SDK 与上架签名 API、可在内网部署的知识包</dd>
+        <dt>准备期最大卡点</dt><dd>鸿蒙能力不能脱离 DevEco 界面单独调用，进不了他们的 Agent 和 CI</dd>
+      </dl>
+      <div class="quote">快手构建 Agent Loop 双循环，AI 代码生成率 80%，测试用例直出采纳率 84%；抖音鸿蒙版 AI 智能测试主功能点覆盖率 100%。<span class="ev o">官方</span></div>
+    </div>
+    <div class="card">
+      <h3>中型企业</h3>
+      <div class="sub">WPS（互联网）、格力（非互联网）这类，有独立的移动端团队，但仍依赖我们的工具和外部 AI 工具</div>
+      <dl>
+        <dt>已经有</dt><dd>采购的商用 Agent（Codex、Trae 企业版）或自研（WPS Code 接 GLM）、定制过的 SDD 流程、几十个子模块的存量工程 <span class="ev v">访谈</span></dd>
+        <dt>要导入</dt><dd><b>分级 spec</b>（L0 直接改 / L1 完整流程 / L2 先架构设计）、规则文件、存量工程、BDD 自动化用例</dd>
+        <dt>要平台给</dt><dd>官方维护的<b>上架 / 批量发布 Skill</b>、安全与质量 review 规则、多端一致的验证能力</dd>
+        <dt>准备期最大卡点</dt><dd>规则和流程要自己搭，搭完还要自己维护；30 多个定制应用的创建和重签名靠脚本</dd>
+      </dl>
+      <div class="quote">「不想自己维护，应该官方给……最大的问题是创建应用这个环节没有 API。」——WPS 移动端负责人 <span class="ev v">访谈</span></div>
+    </div>
+    <div class="card">
+      <h3>小企业 / 创业团队</h3>
+      <div class="sub">2 到 10 人，产品、设计、开发经常是同一批人</div>
+      <dl>
+        <dt>已经有</dt><dd>Claude Code / Codex + 一套开源 Skill（Superpowers）、接国产模型省钱、设计靠 AI 出图或截图 <span class="ev v">访谈</span></dd>
+        <dt>要导入</dt><dd><b>截图和风格锚点</b>、HTML 原型、简单的规则（多数用自然语言说，不写成文档）</dd>
+        <dt>要平台给</dt><dd><b>能被他们的 Agent 直接调用的鸿蒙能力</b>（编译、截图、日志、真机），以及知识库</dd>
+        <dt>准备期最大卡点</dt><dd>设计稿给不进去；外部 Agent 碰不到模拟器和真机，要自己找第三方 MCP</dd>
+      </dl>
+      <div class="quote">「截图、编译、调试、各种数据都扔给他，会超出你想象的好用……开放能力就行。」——理性幻想 <span class="ev v">访谈</span></div>
+    </div>
+    <div class="card">
+      <h3>个人开发者 / 学习者</h3>
+      <div class="sub">学生、副业、跨界做应用的人，很多是第一次写鸿蒙</div>
+      <dl>
+        <dt>已经有</dt><dd>一个想法、一个模型账号（常常是便宜的国产模型）、一台电脑，几乎没有规则和 spec <span class="ev v">访谈</span></dd>
+        <dt>要导入</dt><dd>一句话需求、几张参考图；导入越少越好</dd>
+        <dt>要平台给</dt><dd><b>开箱即装好的规则、知识和 Skill</b>，一步步的路径，证书和上架的引导</dd>
+        <dt>准备期最大卡点</dt><dd>不知道要准备什么；文档版本多，从哪开始不知道；token 贵</dd>
+      </dl>
+      <div class="quote">「你们现在给的太多太全……我从哪开始看不知道。」——疯狂来电（培训讲师转述学生）<span class="ev v">访谈</span></div>
+    </div>
+  </div>
+
+  <h3 id="matrix">导入对照表：每类用户在七类准备物上的需求强度</h3>
+  <p class="note">点数表示需求强度（3 = 强需求，1 = 弱需求）；格内写的是「用户带来什么 / 要平台给什么」。头部厂商一列为推断。</p>
+  <div class="tw"><table>
+    <thead><tr><th>准备物</th><th>互联网头部 <span class="ev i">推断</span></th><th>中型企业</th><th>小企业 / 创业</th><th>个人开发者</th></tr></thead>
+    <tbody>
+      <tr><th>1 项目规则</th>
+        <td><span class="lv l3"><i></i><i></i><i></i></span>带自己的规则；要鸿蒙规则包能合并进企业规则</td>
+        <td><span class="lv l3"><i></i><i></i><i></i></span>自己写，要官方模板减少维护</td>
+        <td><span class="lv l2"><i></i><i></i><i></i></span>口头说为主；要默认规则</td>
+        <td><span class="lv l1"><i></i><i></i><i></i></span>不会写；要平台默认装好</td></tr>
+      <tr><th>2 需求与 spec</th>
+        <td><span class="lv l3"><i></i><i></i><i></i></span>自有需求系统通过 MCP 接入</td>
+        <td><span class="lv l3"><i></i><i></i><i></i></span>分级 spec + 人工审核门槛</td>
+        <td><span class="lv l1"><i></i><i></i><i></i></span>自然语言 + plan，不写 spec</td>
+        <td><span class="lv l1"><i></i><i></i><i></i></span>一句话需求，要 AI 拆步骤</td></tr>
+      <tr><th>3 设计稿</th>
+        <td><span class="lv l3"><i></i><i></i><i></i></span>自有设计系统和 token，要映射到 ArkUI</td>
+        <td><span class="lv l2"><i></i><i></i><i></i></span>Figma 打通还在 demo 阶段</td>
+        <td><span class="lv l3"><i></i><i></i><i></i></span>截图、风格锚点最常用</td>
+        <td><span class="lv l2"><i></i><i></i><i></i></span>参考图；没有 Figma 高级版</td></tr>
+      <tr><th>4 已有代码</th>
+        <td><span class="lv l3"><i></i><i></i><i></i></span>多端存量 + 跨端框架</td>
+        <td><span class="lv l3"><i></i><i></i><i></i></span>几十个子模块的存量工程</td>
+        <td><span class="lv l2"><i></i><i></i><i></i></span>Flutter / 安卓项目移植</td>
+        <td><span class="lv l1"><i></i><i></i><i></i></span>多为新项目</td></tr>
+      <tr><th>5 知识与文档</th>
+        <td><span class="lv l2"><i></i><i></i><i></i></span>要可离线、可内网部署的知识包</td>
+        <td><span class="lv l2"><i></i><i></i><i></i></span>官方知识 + 私有组件文档</td>
+        <td><span class="lv l3"><i></i><i></i><i></i></span>要 md / MCP，不要网页</td>
+        <td><span class="lv l3"><i></i><i></i><i></i></span>要准、要标版本、要有路径</td></tr>
+      <tr><th>6 工具能力</th>
+        <td><span class="lv l3"><i></i><i></i><i></i></span>无头 CLI + MCP 进 CI</td>
+        <td><span class="lv l3"><i></i><i></i><i></i></span>上架、批量发布 Skill</td>
+        <td><span class="lv l3"><i></i><i></i><i></i></span>编译、截图、真机给外部 Agent</td>
+        <td><span class="lv l2"><i></i><i></i><i></i></span>要内置好，不用配置</td></tr>
+      <tr><th>7 环境与账号</th>
+        <td><span class="lv l3"><i></i><i></i><i></i></span>企业证书、权限、审计；批量创建应用</td>
+        <td><span class="lv l3"><i></i><i></i><i></i></span>30 多个应用的重签名和上传</td>
+        <td><span class="lv l2"><i></i><i></i><i></i></span>证书和公私钥搞不清</td>
+        <td><span class="lv l3"><i></i><i></i><i></i></span>证书、AGC 每一步都要引导</td></tr>
+    </tbody>
+  </table></div>
+  <ul class="items" style="margin-top:12px">
+    <li><span><b>越往头部走，用户带来的越多，要平台给的越「底层」：</b>头部要接口，个人要成品。同一份鸿蒙规则包，对个人是默认装好，对头部是可导出、可合并。</span></li>
+    <li><span><b>设计稿和环境账号是四类人共同的痛点，</b>而且都不靠模型变强能解决，是平台要补的。</span></li>
+    <li><span><b>spec 两极分化：</b>中型企业要分级 spec，创业团队和个人不写 spec。DevEco 不应该强推一套 spec 流程，而是按任务大小分流，并允许企业导入自己的 spec 模板。</span></li>
+  </ul>
+
+  <h2 id="top">互联网头部厂商展开：他们的工具链要鸿蒙以什么形式提供能力</h2>
+  <p class="note">10-29 评审中提到，互联网客户更关注接口、SDK 和全链路服务的接入；大厂要的是接入原子能力、接入 CI，以及调试和性能分析。头部厂商的特点是<b>不换工具链</b>：他们已经有自己的 Agent、模型网关、流水线和设备农场，鸿蒙对他们来说是「多一个目标平台」。所以要回答的问题不是「怎么让他们用 DevEco」，而是「鸿蒙的每一项能力用什么形式交给他们的工具链」。</p>
+
+  <h3>能力的七种交付形式</h3>
+  <div class="layers">
+    <div class="layer"><div class="n">形式 1</div><div class="h">知识</div>AI 可读的文档：Markdown、<code>llms.txt</code>、文档检索 MCP、可离线的知识包</div>
+    <div class="layer"><div class="n">形式 2</div><div class="h">规则</div>ArkTS / ArkUI 的规则包，能合并进 <code>AGENTS.md</code> 或企业规则</div>
+    <div class="layer"><div class="n">形式 3</div><div class="h">Skill</div>按 Agent Skills 标准写的 <code>SKILL.md</code>，能导入任何 Agent</div>
+    <div class="layer"><div class="n">形式 4</div><div class="h">CLI</div>无头命令行：构建、签名、装机、截图、日志，能跑在 CI 里</div>
+    <div class="layer"><div class="n">形式 5</div><div class="h">MCP</div>把 CLI 的能力暴露给 Agent，带权限分级和调用记录</div>
+    <div class="layer"><div class="n">形式 6</div><div class="h">云端 API</div>AGC 的创建应用、上传、元数据、审核状态，云测试和设备农场</div>
+    <div class="layer"><div class="n">形式 7</div><div class="h">评测与语料</div>鸿蒙代码评测集、可训练的开源样例，给企业自研模型用</div>
+  </div>
+  <p class="note">前三种形式回答「AI 知道什么」，第四、五种回答「AI 能做什么」，第六种回答「AI 能把东西交出去」，第七种回答「企业自己的模型能不能学会鸿蒙」。黑马讲师的原话是「国外模型鸿蒙语料不够，训练 GitHub，鸿蒙代码不在 GitHub」。<span class="ev v">访谈</span></p>
+
+  <h3>按流程区分：开发、测试、调试与性能、鸿蒙独有能力、上架</h3>
+  <div class="tw"><table>
+    <thead><tr><th>环节</th><th>头部厂商要的能力</th><th>交付形式</th><th>鸿蒙已开放</th><th>缺口</th></tr></thead>
+    <tbody>
+      <tr><th>开发<small>写得准</small></th>
+        <td>ArkTS / ArkUI 知识检索；语法检查；废弃接口检查；状态管理迁移；Kit 接入（账号、支付、推送、地图、扫码、广告）；跨端迁移</td>
+        <td>知识 · 规则 · Skill · MCP</td>
+        <td><span class="st y">有</span>官方 Skill 的开发框架类 19 个、SDK 类 18 个 <span class="ev o">官方</span>；DevEco CLI 文档检索、ArkTS 语法检查 MCP <span class="ev m">社区</span></td>
+        <td>规则包没有 API 版本标注；Android 原生迁移没有官方 Skill；知识包能否内网部署未见说明 <span class="ev q">待确认</span></td></tr>
+      <tr><th>测试<small>验得了</small></th>
+        <td>无头构建；单元测试、仪器测试；UI 自动化与截图；静态检查；崩溃、卡死、泄漏分析；设备农场批量执行</td>
+        <td>CLI · MCP · Skill · 云端 API</td>
+        <td><span class="st y">有</span><code>hmos-local-test</code>、<code>hmos-instrument-test</code>、<code>deveco-studio-verify</code>（多设备验证、UI 自动化、截图）、<code>deveco-studio-codelinter</code>，质量保障类 10 个 <span class="ev o">官方</span>；CodeGenie MCP 的 <code>ui_integration_test</code> 工具组 <span class="ev m">社区</span></td>
+        <td>测试结果没有统一的机器可读格式（访谈：UI 测试平台给的 JSON「不太适合 AI 阅读」）<span class="ev v">访谈</span>；云测试和 CI 对接方式未见 AI 侧文档 <span class="ev q">待确认</span></td></tr>
+      <tr><th>调试与性能分析<small>头部最看重</small></th>
+        <td>断点调试和运行态控制交给 Agent；Profiler 采集、冷启动、帧率、内存分档；性能结论机器可读，能进 CI 做门禁</td>
+        <td>CLI · MCP · Skill</td>
+        <td><span class="st p">部分</span><code>arkui-performance-analysis</code>、<code>arkui-memory-analysis</code>、<code>hmos-memory-tier-optimizer</code>、hilog 分析 <span class="ev o">官方</span>；快手 Ark Refiner-Sendable Skill 把性能优化从两人一周缩短到半天 <span class="ev o">官方</span></td>
+        <td>调试器和 Profiler 没有对 Agent 开放的接口（对照 Xcode 27 的 MCP 已扩到调试、操作运行状态）<span class="ev i">推断</span>；性能数据进 CI 的格式未定义</td></tr>
+      <tr><th>鸿蒙独有能力<small>做得出差异</small></th>
+        <td>一多（折叠屏、平板、PC 断点）；分布式与应用接续；元服务；意图框架接入小艺；HMAF 智能体；沉浸光感等视觉能力</td>
+        <td>Skill · 规则 · 协议（HMAF / A2A / A2UI）</td>
+        <td><span class="st y">有</span>多设备类 7 个 Skill、<code>hmos-app-continuity-skill</code>、<code>hmos-ability-insight-intent-generator</code>、元服务 / ASCF 类 <span class="ev o">官方</span>；小艺开放平台提供 Agent、Skill、MCP、意图框架接入 <span class="ev m">社区</span></td>
+        <td>多设备验证仍以单台为主，「多台同时、分布式联调」没有对外工具；HMAF 接入还没有对应的开发 Skill <span class="ev i">推断</span></td></tr>
+      <tr><th>上架<small>交得出</small></th>
+        <td>批量创建应用；签名与重签名；上传测试包和正式包；元数据和截图；上架前预审；审核状态回传</td>
+        <td>云端 API · CLI · Skill</td>
+        <td><span class="st p">部分</span><code>hmos-connect-api-cli-skill</code>（通过 connect-api-cli 操作 AGC）、<code>app-metadata-audit-skill</code>（上架元数据预审）<span class="ev o">官方</span></td>
+        <td><b>创建应用没有 API</b>（WPS 用 Playwright 绕）<span class="ev v">访谈</span>；审核反馈不是机器可读的，Agent 没法自己修</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>头部厂商最在意的四个非功能要求</h3>
+  <ul class="items">
+    <li><span><b>能脱离界面运行：</b>所有能力要能在没有 DevEco 界面的 Linux 构建机上跑。DevEco CLI 当前要求本机装好 DevEco Studio 6.1.0+，支持 macOS 和 Windows <span class="ev m">社区</span>，Linux 构建机能否使用 <span class="ev q">待确认</span>。</span></li>
+    <li><span><b>版本可钉住：</b>CodeGenie MCP 的 npm 版本线里，stable 1.1.11 是精简线，没有模拟器工具组，latest 0.2.6 才有 <span class="ev m">社区</span>。版本线不一致会让企业流水线随时坏掉，要有明确的版本与能力对照。</span></li>
+    <li><span><b>权限与审计：</b>签名、上传、装正式包这类敏感操作，要能按 Agent 分别授权、留调用记录（项目 23 号「开放 MCP 与 Skill」demo 已经做了按 Agent 授权的审批卡）。</span></li>
+    <li><span><b>标准格式：</b>Skill 用 Agent Skills 标准、工具用 MCP、规则能合并进 AGENTS.md。头部厂商自研 Agent 不会为鸿蒙单独适配私有格式。</span></li>
+  </ul>
+
+  <h2 id="opened">鸿蒙生态已经开放的 Skill、MCP 与 CLI<small>截至 2026-10-29</small></h2>
+  <div class="callout"><b>口径说明：</b>官方说法是「华为已将全部鸿蒙 AI 辅助研发 Skills 分享到 OpenHarmony 社区」<span class="ev o">官方</span>。对应的 GitCode 仓库 <code>HarmonyOS_Skills/harmonyos-agent-skills</code>（MIT 许可，部分提交者是 huawei.com 邮箱）2026-10-29 页面列出约 72 个 Skill；社区移植包称 DevEco CLI 内置的 <code>devecocli skills</code> 全量是 44 个 <span class="ev m">社区</span>。两个数字口径不同，汇报时建议写「70 余个，覆盖设计到上架」，并与产品线核对 <span class="ev q">待确认</span>。</div>
+
+  <h3>官方 Skill 仓库：十类，约 72 个</h3>
+  <div class="skillgrid">
+    <div class="sg"><div class="h">开发框架<span>19</span></div><div class="stage-tag">开发</div>
+      <ul><li>ArkUI 开发、场景化开发、MVVM、性能与内存分析</li><li>ArkTS / ArkUI 知识检索</li><li>状态管理 V1→V2 迁移、废弃接口检查</li><li>意图装饰器生成、元服务 / ASCF</li><li>Taro、uni-app 转元服务；ArkUI-X 扫描、骨架、桥接、编排</li></ul></div>
+    <div class="sg"><div class="h">HarmonyOS SDK<span>18</span></div><div class="stage-tag">开发</div>
+      <ul><li>账号一键登录 / 自定义登录 / 登录按钮</li><li>Push（Token、通知、后台、VOIP）</li><li>地图（创建、POI、路径规划）、扫码（默认 / 自定义）</li><li>支付、广告、实况窗、智感旋转</li></ul></div>
+    <div class="sg"><div class="h">质量保障<span>10</span></div><div class="stage-tag">测试</div>
+      <ul><li>JS 崩溃、C++ 崩溃、冻屏分析</li><li>JS / Native / FD / 源码内存泄漏</li><li>运行时崩溃修复、API 故障分析</li><li>低端机内存分档优化</li></ul></div>
+    <div class="sg"><div class="h">工具<span>9</span></div><div class="stage-tag">开发 · 测试</div>
+      <ul><li>Hvigor 构建、CodeLinter、hilog 分析</li><li>模拟器管理、多设备验证与截图</li><li>自动修 Bug（依赖 deveco-mcp）</li><li>需求到评审全链路、三端一致流水线、模块依赖可视化</li></ul></div>
+    <div class="sg"><div class="h">多设备适配<span>7</span></div><div class="stage-tag">鸿蒙独有</div>
+      <ul><li>总入口、断点与窗口尺寸</li><li>避让区、折叠态、自然方向</li><li>硬件检测降级、触摸 / 鼠标 / 键盘 / 手写笔交互</li></ul></div>
+    <div class="sg"><div class="h">测试<span>3</span></div><div class="stage-tag">测试</div>
+      <ul><li>ArkTS 语法检查与修复</li><li>Local Test 单元测试</li><li>Instrument Test（ArkTS / C++）</li></ul></div>
+    <div class="sg"><div class="h">发布<span>2</span></div><div class="stage-tag">上架</div>
+      <ul><li>connect-api-cli 操作 AppGallery Connect</li><li>上架元数据预审</li></ul></div>
+    <div class="sg"><div class="h">设计 · 特性 · 审查<span>4</span></div><div class="stage-tag">准备 · 鸿蒙独有</div>
+      <ul><li>按设计规范生成移动端高保真页面</li><li>应用接续接入</li><li>Skill 规范审查、Skill 测试执行（给写 Skill 的人用）</li></ul></div>
+    <div class="sg"><div class="h">按流程看<span>分布</span></div><div class="stage-tag">结论</div>
+      <ul><li><b>开发准备</b>：1 个（设计）</li><li><b>编码实现</b>：约 45 个（含多设备适配）</li><li><b>运行验证</b>：约 22 个</li><li><b>发布上架</b>：2 个</li><li>另有 2 个给写 Skill 的人用</li><li>两头最薄，正是访谈里抱怨最多的两段</li></ul></div>
+  </div>
+
+  <h3>Skill 之外的开放能力</h3>
+  <div class="tw"><table>
+    <thead><tr><th>能力</th><th>是什么</th><th>给谁用</th><th>依据</th></tr></thead>
+    <tbody>
+      <tr><th>DevEco CLI<small><code>@deveco/deveco-cli</code></small></th>
+        <td>把 DevEco Studio 工具链（ohpm、hvigor、hdc、emulator、hilog）封装成一个命令；命令包括 create、build、run、device、emulator、log、docs、init、skills、serve；<code>init</code> 给 opencode、Cursor、Trae 等装 Skill 或配 MCP；<code>serve mcp</code> 提供 ArkTS 与 C/C++ 语法检查。npm 最新 1.3.10（2026-10-28 更新），MIT 许可</td>
+        <td>外部 Agent、命令行用户</td>
+        <td>HDC 2026：「面向编程 Agent 的鸿蒙开发命令行工具，支持市面主流编程 Agent」<span class="ev o">官方</span>；命令清单来自测试频道 README <span class="ev m">社区</span>；npm 版本 2026-10-29 查询</td></tr>
+      <tr><th>CodeGenie MCP<small><code>@deveco-codegenie/mcp</code></small></th>
+        <td>鸿蒙 MCP 服务；0.2.6 版 15 个工具，含模拟器镜像和实例管理、UI 集成测试工具组；stable 1.1.11 版 10 个工具，没有模拟器</td>
+        <td>外部 Agent</td>
+        <td>社区仓库实测（2026-10-16）<span class="ev m">社区</span>；npm dist-tags 2026-10-29 查询</td></tr>
+      <tr><th>DevEco Code 内置工具</th>
+        <td><code>arkts_knowledge_search</code> 知识检索、<code>build_project</code> 构建、<code>check_ets_files</code> 语法检查、<code>start_app</code> 模拟器或真机运行；基于 OpenCode，保留 Provider / MCP / Skill / Plugin</td>
+        <td>DevEco Code 用户</td>
+        <td>HDC 2026 媒体通稿 <span class="ev m">社区</span></td></tr>
+      <tr><th>官方知识资源</th>
+        <td>2000 多万字鸿蒙官方文档和资料转为 Agent 可调用的知识资源</td>
+        <td>DevEco Code、DevEco CLI</td>
+        <td>中国日报网，HDC 2026 <span class="ev o">官方</span></td></tr>
+      <tr><th>AGC Connect API</th>
+        <td>AppGallery Connect 的服务端 API，配合 connect-api-cli 和对应 Skill 做上传与发布；创建应用仍需网页手动操作</td>
+        <td>企业流水线</td>
+        <td>华为开发者文档 <span class="ev o">官方</span>；WPS 访谈 <span class="ev v">访谈</span></td></tr>
+      <tr><th>小艺开放平台 / HMAF 2.0</th>
+        <td>面向「应用进 AI」：Agent、Skill、MCP、意图框架四种接入；兼容 MCP，支持 A2A 端侧直连、A2UI 动态界面；500 多个伙伴 Skill、2000 多个鸿蒙智能体已上架；2100 多项系统能力可被小艺调用</td>
+        <td>应用开发者（接入方，不是开发工具）</td>
+        <td>HDC 2026，爱范儿、IT 之家转述 <span class="ev m">社区</span></td></tr>
+      <tr><th>社区补充</th>
+        <td>一份源文件生成 11 种以上 AI 工具配置的鸿蒙知识包；DeepSeek Harness 鸿蒙组合包（规则库 + 44 个官方 Skill + 离线 <code>arkts_check</code>）；AGC 发布 MCP（PyPI）</td>
+        <td>个人与小团队</td>
+        <td>GitHub / PyPI <span class="ev m">社区</span></td></tr>
+    </tbody>
+  </table></div>
+
+  <h2 id="gaps">缺口：准备阶段和上架阶段最薄</h2>
+  <ol class="items">
+    <li><span><b>没有鸿蒙工程的规则模板。</b>开发者都在自己写「必须 MVVM V2、不能用 router、用 HDS 组件」这类规则，社区各写一套。官方应该出一份带 API 版本标注的规则包，并能一键写进 AGENTS.md / CLAUDE.md / Cursor rules。</span></li>
+    <li><span><b>设计稿进不来。</b>只有一个「按设计规范生成页面」的 Skill，没有设计稿或截图到 HDS 组件、设计 token 到 ArkUI 资源的映射。四类用户都有这个需求。</span></li>
+    <li><span><b>Android 原生到鸿蒙的迁移没有官方 Skill。</b>跨端框架（Taro、uni-app、ArkUI-X）有，但「安卓转鸿蒙」是个人和中厂最常见的起点。</span></li>
+    <li><span><b>上架的第一步没有 API。</b>创建应用要手动，审核反馈不是机器可读的，Agent 走不完「从零到上架」。</span></li>
+    <li><span><b>版本与能力不对齐。</b>Skill 仓库约 72 个、CLI 内置 44 个、MCP 两条版本线工具数不同，企业很难判断该用哪个。需要一张能力 × 版本 × 交付形式的对照表。</span></li>
+    <li><span><b>网页文档对 Agent 不友好。</b>知识已经进了 CLI 和 DevEco Code，但官网文档仍是 AJAX 加载，外部 Agent 直接读网址读不到；对照 Ant Design 已经提供 <code>llms.txt</code> 和逐组件 Markdown <span class="ev m">社区</span>。</span></li>
+  </ol>
+
+  <h2 id="spec">鸿蒙进入 AI 生态需要哪些 spec</h2>
+  <p class="note">分两类：一类是<b>要对齐的公共规范</b>，鸿蒙不用自己发明，按标准提供就能被所有 Agent 用上；另一类是<b>要自己定义的鸿蒙 spec</b>，公共规范只规定了「装东西的盒子」，盒子里装什么得鸿蒙自己定。</p>
+
+  <h3>要对齐的公共规范</h3>
+  <div class="tw"><table>
+    <thead><tr><th>规范</th><th>是什么</th><th>现状</th><th>鸿蒙现状</th><th>建议</th></tr></thead>
+    <tbody>
+      <tr><th>MCP<small>Model Context Protocol</small></th>
+        <td>Agent 调用外部工具的协议</td>
+        <td>2025-12 随 Agentic AI Foundation（Linux 基金会）成立移交基金会 <span class="ev o">官方</span></td>
+        <td><span class="st y">已用</span>DevEco CLI、CodeGenie MCP；小艺兼容 MCP</td>
+        <td>合并成一条官方 MCP 线，按开发 / 测试 / 上架分工具组，标注版本与权限级别</td></tr>
+      <tr><th>AGENTS.md</th>
+        <td>写在仓库根目录、给编码 Agent 读的项目说明</td>
+        <td>2025-12 与 MCP、goose 一起成为 AAIF 首批项目 <span class="ev o">官方</span></td>
+        <td><span class="st n">缺</span>没有鸿蒙工程模板 <span class="ev i">推断</span></td>
+        <td>DevEco 新建工程时生成 AGENTS.md，内容来自鸿蒙规则包</td></tr>
+      <tr><th>Agent Skills<small>SKILL.md</small></th>
+        <td>可复用的技能包：说明 + 脚本 + 资料</td>
+        <td>2026-10-22 Anthropic 将标准捐给 AAIF；据报道 70 多个 Agent 平台已支持 <span class="ev m">社区</span></td>
+        <td><span class="st y">已用</span>官方 Skill 仓库按 SKILL.md 组织</td>
+        <td>参照 Xcode 27、Android Studio 的 Skill 导出，DevEco 内置 Skill 一条命令导出给外部 Agent</td></tr>
+      <tr><th>llms.txt / Markdown 文档</th>
+        <td>给 AI 读的文档索引和纯文本版本</td>
+        <td>社区约定，Ant Design 等已提供 <span class="ev m">社区</span></td>
+        <td><span class="st p">部分</span>知识在 CLI 里，网页不可直接读</td>
+        <td>官网文档提供 Markdown 版本与 <code>llms.txt</code>，每页标 API 版本和更新时间</td></tr>
+      <tr><th>Spec 驱动开发<small>OpenSpec 等</small></th>
+        <td>spec.md、design.md、验收标准的格式与流程</td>
+        <td>开源框架，无统一标准 <span class="ev i">推断</span></td>
+        <td><span class="st p">部分</span>DevEco Code 有 Plan / Build / Goal</td>
+        <td>不自建 spec 格式；支持导入企业模板，按任务大小分流</td></tr>
+      <tr><th>A2A / A2UI</th>
+        <td>Agent 之间通信；Agent 生成界面</td>
+        <td>A2A 由 Google 发起并移交 Linux 基金会；A2UI 由 Google 开源 <span class="ev m">社区</span></td>
+        <td><span class="st y">已用</span>HMAF 支持 A2A 端侧直连和 A2UI <span class="ev m">社区</span></td>
+        <td>属于「应用进 AI」方向；DevEco 要补对应的开发 Skill 和调试工具</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>要鸿蒙自己定义的 spec</h3>
+  <div class="tw"><table>
+    <thead><tr><th>spec</th><th>内容</th><th>解决谁的问题</th><th>放在哪</th></tr></thead>
+    <tbody>
+      <tr><th>1 ArkTS 规则包</th>
+        <td>致命写法、推荐写法、废弃接口；<b>每条标适用的 API 版本</b>；可按工程的 compileSdk 自动筛选</td>
+        <td>所有人。ArkTS 从 API 9 到 API 22，文档改版至少四次，模型最容易写错版本 <span class="ev v">访谈</span></td>
+        <td>DevEco 内置 + CLI 导出 + 合并进 AGENTS.md</td></tr>
+      <tr><th>2 鸿蒙工程 AGENTS.md 模板</th>
+        <td>工程结构、模块职责、构建命令、测试命令、签名方式、禁止事项、要调用的 Skill</td>
+        <td>中型企业和头部减少维护；个人默认装好</td>
+        <td>新建工程时生成；存量工程一键补</td></tr>
+      <tr><th>3 设计到 ArkUI 映射</th>
+        <td>设计 token（颜色、字号、圆角、间距）到 ArkUI 资源；常见组件到 HDS 组件；截图识别后的映射规则</td>
+        <td>四类人都有；创业团队最强</td>
+        <td>设计 Skill + 设计工具插件</td></tr>
+      <tr><th>4 迁移映射</th>
+        <td>Android / iOS 常用 API、组件、权限、生命周期到鸿蒙的对照，带可执行的扫描和报告</td>
+        <td>安卓转鸿蒙的个人和中厂；有多端存量的头部</td>
+        <td>迁移 Skill，参照现有 ArkUI-X 四件套的「扫描 → 骨架 → 桥接 → 报告」</td></tr>
+      <tr><th>5 验收与上架体检清单</th>
+        <td>多设备适配、权限声明、隐私、元数据、截图规格、审核常见拒因，写成机器可读的检查项和结果格式</td>
+        <td>所有人。审核反馈「只给 3.6 条款」，Agent 没法自己修 <span class="ev v">访谈</span></td>
+        <td>准备阶段生成清单，上架前自动跑</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>两个方向不要混讲</h3>
+  <div class="tw"><table>
+    <thead><tr><th>方向</th><th>回答的问题</th><th>主要规范</th><th>DevEco 的角色</th></tr></thead>
+    <tbody>
+      <tr><th>让外部 AI 会写鸿蒙</th><td>任何 Agent 在任何入口都能写对、验得了、交得出鸿蒙应用</td><td>MCP、AGENTS.md、Agent Skills、llms.txt、5 个鸿蒙 spec</td><td><b>主场</b>：知识、规则、工具的提供方</td></tr>
+      <tr><th>让鸿蒙应用进 AI</th><td>应用的能力能被小艺和其他 Agent 发现、调用、呈现</td><td>HMAF、意图框架、MCP、A2A、A2UI</td><td><b>辅助</b>：提供接入用的 Skill、调试和测试工具</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2 id="deveco">对 DevEco 的建议<small>从体验角度</small></h2>
+  <ol class="items">
+    <li><span><b>做一步「准备度检查」：</b>打开或新建工程时，检查七类准备物哪些齐了、哪些缺了（有没有规则、有没有 AGENTS.md、模型是否可用、证书是否配好、设备是否在线、AGC 应用是否已创建），缺的一项项补，补完才开始交给 AI。对个人是路径，对企业是体检。</span></li>
+    <li><span><b>导入按用户类型分档：</b>个人默认装好规则和 Skill；团队导入截图、Figma、HTML 原型；企业导入自己的规则、spec 模板、私有知识库，并能分发给全组。</span></li>
+    <li><span><b>所有内置能力都能导出：</b>Skill、规则、MCP 一条命令导出给 Claude Code、Codex、Cursor、Trae 和企业自研 Agent，和 Xcode 27、Android Studio 的做法对齐。</span></li>
+    <li><span><b>先补两头：</b>准备阶段补规则模板、设计稿映射、安卓迁移；上架阶段推动创建应用 API 和机器可读的审核结果。中间的开发和测试已经比较全，重点是统一版本和交付形式。</span></li>
+    <li><span><b>给头部厂商一份「能力 × 形式 × 版本」对照表：</b>每项能力写清有没有 CLI、有没有 MCP、有没有 Skill、能否在 Linux 无头运行、对应哪个版本，作为进 38+ 家头部公司的对接材料。</span></li>
+  </ol>
+
+  <h2 id="limits">局限与待确认</h2>
+  <ul class="items">
+    <li><span><b>没有头部厂商访谈。</b>头部一列来自 HDC 2026 公开案例和中厂访谈的外推，需要补 2 到 3 家头部访谈验证「不换工具链」的判断。</span></li>
+    <li><span><b>Skill 数量口径不一：</b>仓库页面约 72 个，CLI 内置 44 个（社区统计），需与产品线核对官方口径。</span></li>
+    <li><span><b>DevEco CLI 命令清单</b>来自测试频道 README（0.8.0）和社区移植包，正式版 1.3.10 的命令和 Linux 支持未实机核对。</span></li>
+    <li><span><b>华为开发者文档站</b>在本次检索环境里无法直接读取正文，AGC Connect API 的完整接口分类未逐条核对。</span></li>
+    <li><span><b>HMAF、小艺开放平台的数字</b>（500 多个伙伴 Skill、2000 多个智能体、2100 多项系统能力）来自发布会转述，未见官方原文页面。</span></li>
+  </ul>
+
+  <h2 id="sources">来源</h2>
+  <ul class="src">
+    <li>用户访谈：项目文件 <code>analysis/访谈聚类/访谈聚类分析报告.md</code>（v4）与 <code>原文逐份摘录.md</code>，12 份，2026-10</li>
+    <li><a href="https://cn.chinadaily.com.cn/a/202606/15/WS6a2fbe22a310d709c2fb8283.html">中国日报网：AI 辅助研发与开放能力全链路升级（HDC 2026，2026-06-15）</a>——DevEco Code / CLI、2000 多万字知识资源、快手和抖音案例、Skills 分享到 OpenHarmony 社区</li>
+    <li><a href="https://www.ithome.com/0/963/548.htm">IT 之家：HDC 2026 HarmonyOS 7 Beta（2026-06-12）</a>——HMAF 2.0、注册开发者 1100 万+、AI 能力日调用 36.8 亿次</li>
+    <li><a href="https://www.ifanr.com/1668931">爱范儿：HDC 2026 深度解构，鸿蒙全面向 Agent 架构演进</a>——小艺开放平台接入方式、A2A、A2UI、伙伴 Skill 与智能体数量</li>
+    <li><a href="https://www.sohu.com/a/1036438125_118417">搜狐：华为发布 DevEco Code</a>——内置工具名、Plan / Build 双 Agent、编译成功率 80% 以上</li>
+    <li><a href="https://gitcode.com/HarmonyOS_Skills/harmonyos-agent-skills">GitCode：HarmonyOS_Skills/harmonyos-agent-skills</a>——Skill 清单，2026-10-29 读取</li>
+    <li><a href="https://cdn.jsdelivr.net/npm/@deveco-test/deveco-cli@0.8.0/README.md">DevEco CLI README（测试频道 0.8.0）</a>；npm <code>@deveco/deveco-cli</code> 1.3.10、<code>@deveco-codegenie/mcp</code> dist-tags，2026-10-29 查询</li>
+    <li><a href="https://github.com/Rainbow609/agent-skills/pull/4">GitHub：接入官方 deveco-codegenie MCP 与鸿蒙 MCP 生态调研（2026-10-16 实测）</a></li>
+    <li><a href="https://github.com/ilun886/dsh-harmonyos-devkit">GitHub：dsh-harmonyos-devkit</a>、<a href="https://github.com/Fly0307/harmonyos-ai-skill">GitHub：harmonyos-ai-skill</a>、<a href="https://pypi.org/project/huawei-app-gallery-mcp/1.0.4/">PyPI：huawei-app-gallery-mcp</a>——社区补充</li>
+    <li><a href="https://developer.huawei.com/consumer/en/doc/app/agc-help-connect-api-introduction-0000002270974725">华为开发者：AppGallery Connect API 介绍</a></li>
+    <li><a href="https://linuxfoundation.org/press/linux-foundation-announces-the-formation-of-the-agentic-ai-foundation">Linux 基金会：Agentic AI Foundation 成立（2025-12）</a>——MCP、goose、AGENTS.md</li>
+    <li><a href="https://simonwillison.net/2026/Oct/22/donating-agent-skills/">Simon Willison：Anthropic 捐赠 Agent Skills（2026-10-22）</a>；<a href="https://www.buildmvpfast.com/blog/agent-skills-linux-foundation-aaif-donation-2026">Agent Skills 加入 AAIF 的影响</a></li>
+    <li><a href="https://ant.design/llms.txt">Ant Design llms.txt</a>；<a href="https://a2ui.org/">A2UI</a></li>
+    <li>项目已有报告：<a href="../ai-ide-landscape/index.html">AI 开发工具趋势分析</a>（Xcode 27、Android Studio Quail 4 的 Skill 导出）、<a href="../ablation/23-mcp-skill-open.md">23 开放 MCP 与 Skill 消融记录</a></li>
+  </ul>
+</div>
+</body>
+</html>
