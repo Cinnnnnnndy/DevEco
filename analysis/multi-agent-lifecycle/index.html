@@ -1,0 +1,750 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>主子 Agent 显示与停止竞品分析</title>
+<style>
+:root{
+  --bg:#f5f6f8; --paper:#ffffff; --ink:#15171a; --ink2:#4a4f57; --ink3:#7a808a; --line:#e3e5e9; --line2:#eef0f3;
+  --accent:#3574f0; --accent-bg:#edf3ff;
+  --ok:#1f8a4c; --ok-bg:#e6f5ec; --warn:#b76e00; --warn-bg:#fdf1e3; --bad:#c7000b; --bad-bg:#fdecec; --mute-bg:#eef0f3;
+  --term:#0f1115; --term-ink:#d6d9de; --term-dim:#7d838c;
+  --shadow:0 1px 2px rgba(16,24,40,.06),0 4px 16px rgba(16,24,40,.06);
+  --mono:ui-monospace,"JetBrains Mono",Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --bg:#16171a; --paper:#1e2024; --ink:#e6e8eb; --ink2:#b3b8c0; --ink3:#868b94; --line:#30333a; --line2:#272a30;
+    --accent:#6b9bfa; --accent-bg:#233150;
+    --ok:#5fc48a; --ok-bg:#1d3326; --warn:#f0a052; --warn-bg:#3a2d1e; --bad:#ff6b6b; --bad-bg:#3a2224; --mute-bg:#272a30;
+    --term:#0b0c0f; --shadow:none;
+  }
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.7 -apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}
+a{color:var(--accent);text-decoration:none} a:hover{text-decoration:underline}
+code{font-family:var(--mono);font-size:.9em;background:var(--line2);padding:1px 5px;border-radius:4px}
+.wrap{max-width:1280px;margin:0 auto;padding:40px 32px 80px}
+.eyebrow{font-size:12px;letter-spacing:.08em;color:var(--ink3)}
+h1{font-size:30px;line-height:1.3;margin:6px 0 12px}
+.lede{color:var(--ink2);max-width:80ch;margin:0}
+h2{font-size:21px;margin:48px 0 12px;scroll-margin-top:16px}
+h2 small{font-size:13px;font-weight:400;color:var(--ink3);margin-left:8px}
+h3{font-size:16px;margin:0}
+nav.toc{display:flex;flex-wrap:wrap;gap:6px;margin:20px 0 0}
+nav.toc a{font-size:13px;border:1px solid var(--line);background:var(--paper);border-radius:999px;padding:3px 12px;color:var(--ink2)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12.5px;color:var(--ink2);margin:14px 0 0}
+
+/* 逐条 */
+ol.items,ul.items{list-style:none;margin:0;padding:0;background:var(--paper);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);counter-reset:it}
+.items>li{display:flex;gap:12px;padding:10px 16px;border-bottom:1px solid var(--line2);font-size:13.5px;color:var(--ink2)}
+.items>li:last-child{border-bottom:none}
+ol.items>li::before{counter-increment:it;content:counter(it);flex:none;width:20px;height:20px;border-radius:50%;background:var(--accent-bg);color:var(--accent);font-size:11.5px;font-weight:700;display:flex;align-items:center;justify-content:center;margin-top:1px}
+ul.items>li::before{content:"";flex:none;width:6px;height:6px;border-radius:50%;background:var(--ink3);margin-top:9px}
+.items b{color:var(--ink);font-weight:600}
+
+/* 表 */
+.tw{background:var(--paper);border:1px solid var(--line);border-radius:12px;overflow:auto;box-shadow:var(--shadow)}
+table{border-collapse:collapse;width:100%;font-size:13px;min-width:1000px}
+th,td{text-align:left;vertical-align:top;padding:9px 12px;border-bottom:1px solid var(--line2)}
+thead th{font-size:12px;color:var(--ink3);background:var(--line2);font-weight:600;position:sticky;top:0}
+tbody th{font-weight:600;white-space:nowrap;width:130px}
+tbody th small{display:block;font-weight:400;color:var(--ink3);font-size:11.5px}
+tr:last-child td,tr:last-child th{border-bottom:none}
+.fold{display:inline-block;font-size:11.5px;font-weight:700;border-radius:5px;padding:0 7px;line-height:19px;white-space:nowrap;margin-right:4px}
+.fold.y{background:var(--ok-bg);color:var(--ok)} .fold.n{background:var(--bad-bg);color:var(--bad)} .fold.p{background:var(--warn-bg);color:var(--warn)} .fold.u{background:var(--mute-bg);color:var(--ink3)}
+.res{display:inline-block;font-size:11.5px;font-weight:700;border-radius:5px;padding:0 7px;line-height:19px;white-space:nowrap}
+.res.del{background:var(--bad-bg);color:var(--bad)} .res.mrg{background:var(--warn-bg);color:var(--warn)} .res.keep{background:var(--ok-bg);color:var(--ok)}
+.ev{display:inline-block;font-size:11px;font-weight:600;border-radius:4px;padding:0 5px;line-height:17px;margin-left:4px;vertical-align:1px;white-space:nowrap}
+.ev.o{background:var(--ok-bg);color:var(--ok)}
+.ev.m{background:var(--accent-bg);color:var(--accent)}
+.ev.i{background:var(--warn-bg);color:var(--warn)}
+.ev.q{background:var(--mute-bg);color:var(--ink3)}
+
+/* 产品卡 */
+.prod{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:16px 18px;box-shadow:var(--shadow);margin-bottom:14px;scroll-margin-top:16px}
+.prod-h{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 12px}
+.prod-h .surf{font-size:12.5px;color:var(--ink3)}
+.pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:10px 0 10px}
+.pane{border:1px solid var(--line);border-radius:10px;overflow:hidden;min-width:0;display:flex;flex-direction:column}
+.pane>.term,.pane>.gui{flex:1}
+.pane .cap{font-size:11.5px;font-weight:700;letter-spacing:.04em;padding:5px 10px;border-bottom:1px solid var(--line);background:var(--line2)}
+.pane .cap.live{color:var(--accent)} .pane .cap.done{color:var(--ok)}
+.term{background:var(--term);color:var(--term-ink);font:12px/1.65 var(--mono);padding:10px 12px;white-space:pre-wrap;word-break:break-word;margin:0}
+.term .d{color:var(--term-dim)} .term .g{color:#4fc27c} .term .r{color:#ff6b6b} .term .b{font-weight:700;color:#fff} .term .a{color:#d9a35b}
+.term .sh{background:linear-gradient(90deg,var(--term-dim),#fff,var(--term-dim));background-size:200% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:sh 2s linear infinite;font-weight:700}
+@keyframes sh{to{background-position:-200% 0}}
+.gui{padding:10px 12px;font-size:12.5px;background:var(--paper)}
+.gui .row{display:flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:8px;padding:4px 9px;margin:5px 0;color:var(--ink2);background:var(--bg)}
+.gui .row .chev{margin-left:auto;color:var(--ink3);font-size:11px}
+.gui .row.flat{border:none;background:none;padding:2px}
+.gui .row.in{margin-left:16px}
+.gui .think{color:var(--ink3);border-left:2px solid var(--line);padding:2px 0 2px 10px;margin:4px 0;font-size:12px}
+.gui .ans{color:var(--ink);margin:6px 2px 2px}
+.gui .muted{color:var(--ink3)}
+.gui .spin{display:inline-block;width:10px;height:10px;border:2px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:rot .9s linear infinite;flex:none}
+@keyframes rot{to{transform:rotate(360deg)}}
+.gui .ok{color:var(--ok);font-weight:700}
+@media (prefers-reduced-motion:reduce){.term .sh,.gui .spin{animation:none}}
+.prod ul.facts{list-style:none;margin:0;padding:0}
+.prod ul.facts li{font-size:13.5px;color:var(--ink2);padding:5px 0 5px 14px;border-top:1px solid var(--line2);position:relative}
+.prod ul.facts li::before{content:"";position:absolute;left:2px;top:14px;width:5px;height:5px;border-radius:50%;background:var(--ink3)}
+
+.src{font-size:12.5px;color:var(--ink2);columns:2;column-gap:28px;padding-left:18px}
+.src li{margin:2px 0;break-inside:avoid}
+
+@media (max-width:900px){ .pair{grid-template-columns:1fr} .src{columns:1} }
+@media (max-width:560px){ .wrap{padding:24px 16px 60px} h1{font-size:24px} }
+</style>
+<style>
+.pane .cap.stop{color:var(--warn)}
+.gui .row .pill{margin-left:auto;font-size:11px;font-weight:700;border-radius:5px;padding:0 6px;line-height:18px}
+.gui .row .pill.run{background:var(--accent-bg);color:var(--accent)}
+.gui .row .pill.ok{background:var(--ok-bg);color:var(--ok)}
+.gui .row .pill.warn{background:var(--warn-bg);color:var(--warn)}
+.gui .row .pill.bad{background:var(--bad-bg);color:var(--bad)}
+.gui .row .pill+.chev{margin-left:6px}
+.gui .bar{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:8px;padding:5px 9px;margin:8px 0 0;background:var(--accent-bg);color:var(--ink2);font-size:12px}
+.gui .bar b{color:var(--ink)}
+.gui .bar .btn{margin-left:auto;border:1px solid var(--line);border-radius:6px;padding:0 7px;background:var(--paper);font-size:11.5px;color:var(--ink2);white-space:nowrap}
+.gui .bar .btn+.btn{margin-left:4px}
+.gui .input{border:1px solid var(--line);border-radius:8px;padding:6px 9px;margin-top:8px;color:var(--ink3);font-size:12px;background:var(--paper)}
+.term .y{color:#e5c07b} .term .c{color:#6cb6ff}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="eyebrow">分析与研究 · 2026-10-28 更新 · 作者：王欣迪</div>
+  <h1>主 Agent 与子 Agent：显示、折叠与停止逻辑竞品对照</h1>
+  <p class="lede">对比 Claude Code、Codex、Cursor、VS Code Copilot、Gemini CLI、DeepSeek Harness 六款产品如何在对话里呈现子 Agent、子 Agent 的过程放在哪里、默认是否折叠，停止主 Agent 时子 Agent 的去留和对话状态，以及各家如何管理子 Agent。重点回答：主 Agent 停了、子 Agent 没停时，对话应显示什么；是否需要单独停止子 Agent。最后给出 DevEco 的建议。</p>
+  <div class="legend">
+    <span><span class="ev o">官方</span> 文档 / 更新日志 / 源码 / 官方论坛回复</span>
+    <span><span class="ev m">社区</span> issue / 论坛 / 媒体</span>
+    <span><span class="ev i">推断</span> 由源码或文档推得，未实机</span>
+    <span><span class="ev q">待确认</span> 需实机</span>
+    <span>示意图按资料重画，不是截图</span>
+  </div>
+  <nav class="toc">
+    <a href="#keys">结论</a><a href="#model">前台与后台</a><a href="#matrix">总表</a>
+    <a href="#claude">Claude Code</a><a href="#codex">Codex</a><a href="#cursor">Cursor</a><a href="#copilot">VS Code Copilot</a><a href="#gemini">Gemini CLI</a><a href="#deepseek">DeepSeek Harness</a>
+    <a href="#sessions">会话列表状态</a><a href="#manage">子 Agent 管理</a><a href="#voices">用户反馈</a><a href="#deveco">对 DevEco 的建议</a><a href="#ablation">消融记录</a><a href="#sources">来源</a>
+  </nav>
+
+  <h2 id="keys">结论</h2>
+  <ol class="items">
+    <li><span><b>停止逻辑由「前台 / 后台」决定，不由产品决定：</b>前台子 Agent 是主 Agent 的一次工具调用，主停即子停；后台子 Agent 脱离了启动它的那次调用，主停后子 Agent 继续跑。Copilot、Gemini CLI 只有前台；Claude Code、Codex、Cursor、DeepSeek Harness 都已有后台。</span></li>
+    <li><span><b>主停子未停是常态，不是边界情况：</b>Claude Code 默认把子 Agent 放后台；Cursor 主 Agent 结束不取消后台子 Agent；Codex 按 Esc 只中断当前查看的线程。</span></li>
+    <li><span><b>显示形式收敛为「对话里一行 + 独立详情」：</b>对话流里每个子 Agent 一行（名称、当前动作、状态、耗时），完整过程放在独立的子会话 / 线程 / 面板里，且大多只读。</span></li>
+    <li><span><b>默认折叠，但「待授权」例外：</b>六家都默认收起子 Agent 过程；Copilot 在子 Agent 需要确认时自动展开、确认后自动收回，是目前处理最细的一家。</span></li>
+    <li><span><b>对话状态普遍不聚合子 Agent：</b>主轮次一结束，输入框就回到空闲；后台子 Agent 的状态只在输入框下方的面板或计数里出现。Cursor 因此收到「看起来完成了其实还在跑」的反馈，官方在 3.18 改为子 Agent 跑完前父对话保持「working」。</span></li>
+    <li><span><b>会话列表是唯一能看全局的地方，但聚合做法分两派：</b>Claude Code 的 agent view、DeepSeek Harness 侧栏把运行中的子 Agent 算进会话状态；Codex 每个线程各算各的，主线程空闲就显示空闲。子 Agent 一律不单独占会话列表的行。</span></li>
+    <li><span><b>单独停止子 Agent 已是标配：</b>Claude Code、Codex、Cursor、DeepSeek Harness 都能停单个子 Agent，Claude Code、Cursor 另有「全部停止」。问题集中在停止不可见：Esc 静默杀掉后台子 Agent、停止后状态显示错、被停的子 Agent 自动复活。</span></li>
+    <li><span><b>子 Agent 管理以「文件定义 + 会话内管理」为主：</b>定义都是项目级、用户级的单文件；运行中的子 Agent 在会话内看、发消息、停止；并发和嵌套都有默认上限，只有 DeepSeek Harness 做成了设置页。</span></li>
+  </ol>
+
+  <h2 id="model">前台与后台<small>决定主停之后子 Agent 的去留</small></h2>
+  <div class="tw"><table style="min-width:860px">
+    <thead><tr><th>类型</th><th>主 Agent 怎么等</th><th>主停止时</th><th>主轮次结束后</th><th>采用的产品</th></tr></thead>
+    <tbody>
+      <tr><th>前台<small>同步调用</small></th>
+        <td>阻塞，等子 Agent 返回结果再继续</td>
+        <td><span class="fold n">一起停</span>取消信号直接传给子 Agent</td>
+        <td>不存在：子 Agent 先于主轮次结束</td>
+        <td>VS Code Copilot、Gemini CLI；Claude Code / Cursor 的前台模式；DeepSeek Harness 一次性子会话</td></tr>
+      <tr><th>后台<small>脱离调用</small></th>
+        <td>立刻返回，结果以通知或文件回到主 Agent</td>
+        <td><span class="fold p">按产品而定</span>多数不停；Claude Code 曾随 Esc 一起停</td>
+        <td>子 Agent 继续跑，主对话已空闲</td>
+        <td>Claude Code（默认）、Cursor、Codex、DeepSeek Harness 可续接子会话</td></tr>
+    </tbody>
+  </table></div>
+  <ul class="items" style="margin-top:12px">
+    <li><span><b>三件不同的事：</b>主 Agent 本轮结束、某个子 Agent 结束、整个任务完成。只有后台模式会让这三者错开，对话状态需要分别表达。</span></li>
+    <li><span><b>设计要点：</b>前台模式下「停止」没有歧义；后台模式下必须回答两件事：主停止按钮停不停子 Agent，以及停了之后用户在哪里看到还有谁在跑。</span></li>
+  </ul>
+
+  <h2 id="matrix">总表<small>显示 · 折叠 · 停止 · 状态</small></h2>
+  <div class="tw"><table>
+    <thead><tr><th>产品 / 端</th><th>主子显示形式</th><th>子 Agent 内容在哪</th><th>默认折叠</th><th>主停止 → 子 Agent</th><th>单独停止子 Agent</th><th>主停子未停时对话状态</th></tr></thead>
+    <tbody>
+      <tr><th>Claude Code<small>终端 2.1.308</small></th>
+        <td>对话里一条 Agent 工具行；输入框下方子 Agent 面板，最多 5 行 <span class="ev o">官方</span></td>
+        <td>面板选中回车或 /tasks 进转录，可直接输入续接 <span class="ev o">官方</span></td>
+        <td><span class="fold y">折叠</span>一行摘要，Ctrl+O 展开；成功即从面板移除 <span class="ev o">官方</span></td>
+        <td><span class="fold p">不一致</span>文档写 Esc 只停本轮；2.1.191 起有 Esc 停掉后台子 Agent 的报告 <span class="ev m">社区</span></td>
+        <td>面板 / tasks 选中按 x；Ctrl+X Ctrl+K 按两次停全部 <span class="ev o">官方</span></td>
+        <td>输入框可用；面板仍列运行中的行；页脚显示后台 Agent 状态 <span class="ev o">官方</span></td></tr>
+      <tr><th>Claude Code<small>VS Code 扩展</small></th>
+        <td>Agent 卡下一行状态；页脚「N agents」打开 agent map <span class="ev o">官方</span></td>
+        <td>agent map 每个子 Agent 一张卡 + 只读转录 <span class="ev o">官方</span></td>
+        <td><span class="fold y">折叠</span>2.1.304 起后台子 Agent 只显示一行，此前整段内联 <span class="ev o">官方</span></td>
+        <td><span class="fold y">不停</span>2.1.286 起 Stop / Esc 只结束本轮 <span class="ev o">官方</span></td>
+        <td>agent map 卡片 Stop agent <span class="ev o">官方</span></td>
+        <td>页脚计数胶囊显示运行数，失败变红 <span class="ev o">官方</span></td></tr>
+      <tr><th>Codex<small>CLI 源码 2026-10-22</small></th>
+        <td>对话里 Spawned / Waiting for / Finished waiting 事件行；子 Agent 是独立线程 <span class="ev o">官方</span></td>
+        <td>/subagents 选线程，Alt+← / → 切换，在子线程里看全量 <span class="ev o">官方</span></td>
+        <td><span class="fold y">折叠</span>事件行只带提示词首 160 字、结果首 240 字 <span class="ev o">官方</span></td>
+        <td><span class="fold y">不停</span>Esc 只中断当前查看的线程 <span class="ev i">推断</span></td>
+        <td>切到子线程按 Esc；或让主 Agent 调 interrupt_agent / close <span class="ev o">官方</span></td>
+        <td>主线程空闲；「Sub-agents running」列表与 /subagents 绿点 <span class="ev o">官方</span></td></tr>
+      <tr><th>Codex<small>桌面 App</small></th>
+        <td>主对话里的子 Agent 活动入口 + Active / Done 面板 <span class="ev o">官方</span></td>
+        <td>点开进子线程，看过程和交回主对话的摘要 <span class="ev o">官方</span></td>
+        <td><span class="fold u">待确认</span></td>
+        <td><span class="fold u">待确认</span></td>
+        <td>文档只写「让 Codex 停止」，未写按钮 <span class="ev o">官方</span></td>
+        <td>Active 区列出仍在跑的子 Agent <span class="ev o">官方</span></td></tr>
+      <tr><th>Cursor<small>3.x Agent</small></th>
+        <td>输入框上方「N Working」面板，每个子 Agent 一张卡 <span class="ev m">社区</span></td>
+        <td>点卡片打开子 Agent 自己的对话页签 <span class="ev m">社区</span></td>
+        <td><span class="fold y">折叠</span>卡片只显示任务名与状态 <span class="ev m">社区</span></td>
+        <td><span class="fold p">分情况</span>前台阻塞父任务；后台不随主 Agent 结束而取消 <span class="ev o">官方</span></td>
+        <td>卡片 Stop / ×，面板 Stop All <span class="ev m">社区</span></td>
+        <td>输入框上方小字「2 subagents still running」；3.18 起父对话保持 working <span class="ev o">官方</span></td></tr>
+      <tr><th>VS Code Copilot<small>Local</small></th>
+        <td>对话里一条折叠的工具调用：名称 + 当前动作 <span class="ev o">官方</span></td>
+        <td>默认每个子 Agent 在独立编辑器打开；Agents 窗口里是带锁的只读对话 <span class="ev o">官方</span></td>
+        <td><span class="fold y">折叠</span>待确认时自动展开，确认后自动收回 <span class="ev o">官方</span></td>
+        <td><span class="fold n">一起停</span>子 Agent 用主请求的取消令牌 <span class="ev o">官方</span></td>
+        <td>无单独入口 <span class="ev i">推断</span></td>
+        <td>不会出现：子 Agent 先于主轮次结束 <span class="ev i">推断</span></td></tr>
+      <tr><th>Gemini CLI<small>源码 2026-10-21</small></th>
+        <td>边框分组框「≡ Running 2 Agents…」，每个子 Agent 一行 <span class="ev o">官方</span></td>
+        <td>Ctrl+O 在原位展开活动列表，结果超 15 行折叠 <span class="ev o">官方</span></td>
+        <td><span class="fold y">折叠</span>名称 · 最近动作 <span class="ev o">官方</span></td>
+        <td><span class="fold n">一起停</span>共用中止信号，行首变 ℹ；单个时组头「Agent Cancelled」<span class="ev o">官方</span></td>
+        <td>无 <span class="ev o">官方</span></td>
+        <td>不会出现 <span class="ev i">推断</span></td></tr>
+      <tr><th>DeepSeek Harness<small>dsh web 源码</small></th>
+        <td>会话页头面包屑 + 后代数量触发器，展开成子会话树 <span class="ev o">官方</span></td>
+        <td>子会话是独立对话，可在右侧 Sidebar 分栏打开 <span class="ev o">官方</span></td>
+        <td><span class="fold y">折叠</span>树只显示状态点、token、耗时，按层展开 <span class="ev o">官方</span></td>
+        <td><span class="fold y">不停</span>后台子 Agent 脱离启动调用，主 Agent 关闭时才回收 <span class="ev o">官方</span></td>
+        <td>子会话输入框独立 Stop，只停当前轮次，不级联后代 <span class="ev o">官方</span></td>
+        <td>侧栏父会话行「1 subagent running」<span class="ev o">官方</span></td></tr>
+    </tbody>
+  </table></div>
+
+  <h2 id="claude">Claude Code</h2>
+
+  <div class="prod">
+    <div class="prod-h"><h3>Claude Code CLI</h3><span class="surf">终端 · 2.1.308 · 子 Agent 默认后台运行</span></div>
+    <div class="pair">
+      <div class="pane"><div class="cap live">主 Agent 运行中</div>
+<pre class="term"><span class="g">●</span> <span class="b">Explore</span>(查找登录入口)
+  <span class="d">⎿  Read src/auth/session.ts</span>
+     <span class="d">+11 more tool uses (ctrl+o to expand)</span>
+
+<span class="a">✻</span> <span class="sh">Thinking…</span> <span class="d">(esc to interrupt)</span>
+<span class="d">────────────────────────────────────</span>
+&gt; <span class="d">▌</span>
+<span class="d">────────────────────────────────────</span>
+  <span class="c">◐</span> 查找登录入口    <span class="d">Read · 42s</span>
+  <span class="c">◐</span> 跑长耗时验证    <span class="d">Bash · 1m 10s</span>
+  <span class="d">↑↓ select · enter view · x stop</span></pre></div>
+      <div class="pane"><div class="cap stop">主 Agent 本轮结束，子 Agent 仍在跑</div>
+<pre class="term"><span class="g">●</span> 已派出两个子 Agent，结果回来后我再汇总。
+
+<span class="d">────────────────────────────────────</span>
+&gt; <span class="d">▌ 可以继续输入</span>
+<span class="d">────────────────────────────────────</span>
+  <span class="c">◐</span> 跑长耗时验证    <span class="d">Bash · 3m 02s</span>
+  <span class="d">↑↓ select · enter view · x stop</span>
+
+<span class="d">按 Ctrl+X Ctrl+K 两次：</span>
+<span class="y">All background agents stopped</span></pre></div>
+    </div>
+    <ul class="facts">
+      <li>未配置时，主对话派出的子 Agent 默认后台运行；前台子 Agent 阻塞主对话，运行中按 Ctrl+B 可转后台 <span class="ev o">官方</span></li>
+      <li>输入框下方是子 Agent 面板：成功即移除行，页脚提示「/tasks to see subagents」30 秒；失败或被停的行保留 30 秒；最多 5 行，空闲行 30 秒后自动隐藏 <span class="ev o">官方</span></li>
+      <li>面板或 /tasks 里选中子 Agent：回车看转录、x 停止；转录里直接输入可续接，输入框提示「Message @name…」<span class="ev o">官方</span></li>
+      <li>Ctrl+X Ctrl+K 停止本会话全部后台子 Agent，3 秒内按两次确认；后台子 Agent 弹出授权时提示里会带这个快捷键 <span class="ev o">官方</span></li>
+      <li>后台子 Agent 需要授权时，授权框出现在主会话并标明是哪个子 Agent；按 Esc 只拒绝这一次调用，不停止子 Agent <span class="ev o">官方</span></li>
+      <li>文档写 Esc「停止当前回复或工具调用」，不含后台子 Agent；但 2.1.191、2.1.209 有报告 Esc 会停掉后台子 Agent，且不通知、不留失败状态 <span class="ev m">社区</span></li>
+      <li>用户手动停的子 Agent 不会自动恢复，主 Agent 再给它发消息会被拒绝；2.1.211 修复了「被停的后台 Agent 自动复活」<span class="ev o">官方</span></li>
+      <li>2.1.269 修复：后台子 Agent 还在跑时，远程 / 无头会话不再报告「waiting for your input」<span class="ev o">官方</span></li>
+    </ul>
+  </div>
+
+  <div class="prod">
+    <div class="prod-h"><h3>Claude Code · VS Code 扩展</h3><span class="surf">图形界面 · agent map</span></div>
+    <div class="pair">
+      <div class="pane"><div class="cap live">主 Agent 运行中</div>
+        <div class="gui">
+          <div class="row">Agent · 查找登录入口<span class="pill run">Running</span><span class="chev">›</span></div>
+          <div class="row flat muted">⎿ Read src/auth/session.ts</div>
+          <div class="row">Agent · 跑长耗时验证<span class="pill run">Running</span><span class="chev">›</span></div>
+          <div class="input">Stop ■</div>
+        </div></div>
+      <div class="pane"><div class="cap stop">点 Stop 之后</div>
+        <div class="gui">
+          <div class="ans">已停止本轮。</div>
+          <div class="row">Agent · 跑长耗时验证<span class="pill run">Running</span><span class="chev">›</span></div>
+          <div class="input">输入下一条消息… <span style="float:right" class="muted">◉ 1 agent</span></div>
+          <div class="row flat muted">点「1 agent」→ agent map：每个子 Agent 一张卡，Stop agent，只读转录</div>
+        </div></div>
+    </div>
+    <ul class="facts">
+      <li>2.1.286 起，Stop 和 Esc 只结束当前轮次，后台子 Agent 继续跑，可在 agent map 逐个停止 <span class="ev o">官方</span></li>
+      <li>agent map 由页脚「N agents」胶囊打开：胶囊计运行中的数量，有失败时变红；主 Agent 固定在顶部，子 Agent 按状态和结束时间排序 <span class="ev o">官方</span></li>
+      <li>2.1.304 起，后台子 Agent 在 Agent 卡下只显示一行状态，不再把每一步流进对话；全量留在 /tasks <span class="ev o">官方</span></li>
+      <li>此前扩展把子 Agent 转录整段内联、无法折叠，被关为 not planned（#77326）<span class="ev m">社区</span></li>
+    </ul>
+  </div>
+
+  <h2 id="codex">Codex</h2>
+
+  <div class="prod">
+    <div class="prod-h"><h3>Codex CLI</h3><span class="surf">终端 · openai/codex 的 codex-rs/tui · 子 Agent 是独立线程</span></div>
+    <div class="pair">
+      <div class="pane"><div class="cap live">主线程等待子 Agent</div>
+<pre class="term"><span class="d">•</span> <span class="b">Spawned</span> <span class="c">scout</span> [explorer] <span style="color:#c678dd">(gpt-5 medium)</span>
+  <span class="d">└</span> 查找登录入口与会话校验逻辑
+<span class="d">•</span> <span class="b">Spawned</span> <span class="c">verifier</span> [worker]
+  <span class="d">└</span> 跑完整测试并汇报失败用例
+<span class="d">•</span> <span class="b">Waiting for 2 agents</span>
+  <span class="d">└</span> <span class="c">scout</span> [explorer]
+    <span class="c">verifier</span> [worker]</pre></div>
+      <div class="pane"><div class="cap stop">在主线程按 Esc 之后</div>
+<pre class="term"><span class="d">■ Conversation interrupted - use /feedback if something went wrong</span>
+
+/subagents
+<span class="b">Sub-agents running</span>
+  <span class="d">•</span> <span class="c">`/root/verifier`</span>
+    <span class="d">$ pnpm test -- --runInBand</span>
+<span class="d">Alt+→ 切到 verifier 线程，再按 Esc 才停它</span></pre></div>
+    </div>
+    <ul class="facts">
+      <li>对话里只出现协作事件行：Spawned、Sent input to、Waiting for N agents、Finished waiting、Closed；完成结果写成「名称: Completed - 摘要」，提示词截 160 字、结果截 240 字 <span class="ev o">官方</span></li>
+      <li>子 Agent 状态词：Pending init / Running / Interrupted（黄）/ Completed（绿）/ Error（红）/ Shutdown <span class="ev o">官方</span></li>
+      <li>/subagents 列出各线程，运行中绿点、已关闭变暗；Alt+← / → 在主线程与子线程间切换 <span class="ev o">官方</span></li>
+      <li>Esc 发出的中断只带当前查看线程的 id，核心只中止该线程自己的任务；子线程是独立会话，未见级联 <span class="ev i">推断</span></li>
+      <li>主 Agent 可用 interrupt_agent 停子 Agent；不能停根线程，子 Agent 也不能停自己（「return your result and let the parent interrupt you」）<span class="ev o">官方</span></li>
+      <li>子 Agent 被中断不会通知父线程 <span class="ev o">官方</span></li>
+    </ul>
+  </div>
+
+  <div class="prod">
+    <div class="prod-h"><h3>Codex App</h3><span class="surf">ChatGPT 桌面 · IDE 扩展</span></div>
+    <ul class="facts">
+      <li>主对话里显示子 Agent 活动，点开进入子线程查看过程和交回主对话的摘要 <span class="ev o">官方</span></li>
+      <li>面板分 Active / Done：Active 为空时显示「No active subagents」，Done 列出摘要与耗时 <span class="ev o">官方</span></li>
+      <li>文档给出的停止方式是「直接让 Codex 转向、停止某个子 Agent，或关闭已完成的子线程」，未写按钮；agents.interrupt_message 默认在中断时给模型留一条记录 <span class="ev o">官方</span></li>
+      <li>子 Agent 继承主会话的沙箱和授权模式，授权在父会话上设置 <span class="ev o">官方</span></li>
+      <li>主停止后 Active 区如何变化 <span class="ev q">待确认</span></li>
+    </ul>
+  </div>
+
+  <h2 id="cursor">Cursor</h2>
+
+  <div class="prod">
+    <div class="prod-h"><h3>Cursor 3.x Agent</h3><span class="surf">桌面 IDE · 前台 / 后台两种子 Agent</span></div>
+    <div class="pair">
+      <div class="pane"><div class="cap live">主 Agent 运行中</div>
+        <div class="gui">
+          <div class="row"><span class="spin"></span>Waiting for subagent</div>
+          <div class="row flat muted">3 Working · <u>Stop All</u></div>
+          <div class="row in">Assess parser architecture<span class="pill run">Thinking</span><span class="chev">■ ×</span></div>
+          <div class="row in">Run integration tests<span class="pill run">Starting up</span><span class="chev">■ ×</span></div>
+          <div class="row in">Find auth entry<span class="pill ok">done</span><span class="chev">×</span></div>
+        </div></div>
+      <div class="pane"><div class="cap stop">主 Agent 已结束，后台子 Agent 未结束</div>
+        <div class="gui">
+          <div class="ans">All tasks completed. Here's the summary…</div>
+          <div class="row flat muted" style="font-size:11.5px">2 subagents still running</div>
+          <div class="input">Plan, search, build anything…</div>
+          <div class="row flat muted">3.18 起：父对话保持 working，直到子 Agent 结束</div>
+        </div></div>
+    </div>
+    <ul class="facts">
+      <li>前台子 Agent 阻塞父任务、立即返回结果；后台子 Agent 立即返回、独立运行，输出写到 ~/.cursor/subagents/，父 Agent 读文件看进度；可并行，2.5 起可嵌套一层 <span class="ev o">官方</span></li>
+      <li>子 Agent 卡片显示任务名与状态（Starting up / Thinking / done），卡片上 Stop 与 ×，面板上 Stop All；点卡片打开子 Agent 自己的对话 <span class="ev m">社区</span></li>
+      <li>主 Agent 结束不会取消后台子 Agent；在等授权的子 Agent 稍后获批仍会继续改文件。官方建议从 agents 列表停掉，并确认 3.18 起父对话在子 Agent 跑完前保持「working」<span class="ev o">官方</span></li>
+      <li>主对话里只有输入框上方一行「2 subagents still running」，用户认为太容易漏看，且不提示子 Agent 正在等授权 <span class="ev m">社区</span></li>
+      <li>状态显示错位较多：父卡片显示 Stopped 而子 Agent 仍在跑（官方称多为显示问题）；进出子 Agent 页后父对话误显示 Completed；Stop All 对卡在 Starting up 的卡片无效 <span class="ev o">官方</span></li>
+    </ul>
+  </div>
+
+  <h2 id="copilot">VS Code Copilot</h2>
+
+  <div class="prod">
+    <div class="prod-h"><h3>VS Code Copilot · Local</h3><span class="surf">Chat 视图 · Agents 窗口 · runSubagent 工具</span></div>
+    <div class="pair">
+      <div class="pane"><div class="cap live">主 Agent 运行中</div>
+        <div class="gui">
+          <div class="row"><span class="spin"></span>Review changes · Reading auth.ts<span class="chev">›</span></div>
+          <div class="row">Security review · 1 pending confirmation<span class="pill warn">待确认</span><span class="chev">⌄</span></div>
+          <div class="row in">Run <code>npm audit</code>?  Allow · Skip</div>
+          <div class="row flat muted">待确认时自动展开；确认后自动收回（用户手动展开过则不收）</div>
+        </div></div>
+      <div class="pane"><div class="cap stop">点 Stop 之后</div>
+        <div class="gui">
+          <div class="row">Review changes<span class="pill bad">Cancelled</span><span class="chev">›</span></div>
+          <div class="row">Security review<span class="pill bad">Cancelled</span><span class="chev">›</span></div>
+          <div class="row flat muted">子 Agent 与主请求共用取消令牌，一起结束</div>
+        </div></div>
+    </div>
+    <ul class="facts">
+      <li>运行中的子 Agent 是一条折叠的工具调用，显示名称与当前动作；点开看提示词、工具调用和返回结果 <span class="ev o">官方</span></li>
+      <li>默认开启富渲染：每个子 Agent 在自己的编辑器里打开；关掉 chat.subagents.useRichRendering 才内联显示 <span class="ev o">官方</span></li>
+      <li>运行指示器显示模型、耗时、当前工具；后台活动胶囊打开选择器，分「Subagents: In Progress」与「Completed」<span class="ev o">官方</span></li>
+      <li>Agents 窗口里子 Agent 是带锁的只读对话，默认不进标签栏，窗口重载后仍保留 <span class="ev o">官方</span></li>
+      <li>runSubagent 把主请求的 CancellationToken 传给子 Agent，主停止即子停止；默认不能嵌套，开启后最多 5 层 <span class="ev o">官方</span></li>
+    </ul>
+  </div>
+
+  <h2 id="gemini">Gemini CLI</h2>
+
+  <div class="prod">
+    <div class="prod-h"><h3>Gemini CLI</h3><span class="surf">终端 · google-gemini/gemini-cli · 子 Agent 是同步工具</span></div>
+    <div class="pair">
+      <div class="pane"><div class="cap live">运行中（默认收起）</div>
+<pre class="term"><span class="d">╭</span>
+<span class="d">│</span> <span class="d">≡</span> <span class="b">Running 2 Agents...</span> <span class="d">(ctrl+o to expand)</span>
+<span class="d">│</span> ! <span class="b">codebase_investigator</span> <span class="d">· grep_search session</span>
+<span class="d">│</span> ! <span class="b">generalist</span> <span class="d">· run_shell_command npm test</span></pre></div>
+      <div class="pane"><div class="cap stop">按 Esc 之后</div>
+<pre class="term"><span class="d">╭</span>
+<span class="d">│</span> <span class="d">≡</span> <span class="b">Running 2 Agents...</span> <span class="d">(ctrl+o to expand)</span>
+<span class="d">│</span> <span class="y">ℹ</span> <span class="b">codebase_investigator</span> <span class="d">· 💭 Request cancelled.</span>
+<span class="d">│</span> <span class="y">ℹ</span> <span class="b">generalist</span> <span class="d">· 💭 Request cancelled.</span>
+<span class="d">单个子 Agent 时组头为「Agent Cancelled」</span></pre></div>
+    </div>
+    <ul class="facts">
+      <li>同一轮的子 Agent 收在一个边框组里：组头「Running N Agents…」→「N Agents (x running, y completed)…」→「N Agents Completed」；单个时为 Running Agent / Agent Completed / Agent Cancelled / Agent Error <span class="ev o">官方</span></li>
+      <li>行首图标：运行中 !、完成 ✓、取消 ℹ、出错 ✗。多个子 Agent 全部被取消时组头没有对应文案，仍写「Running N Agents…」，只能靠行首图标判断 <span class="ev o">官方</span></li>
+      <li>收起时每个子 Agent 一行「名称 · 最近动作 + 参数」；Ctrl+O 在原位展开活动列表；结果超过 15 行再折叠 <span class="ev o">官方</span></li>
+      <li>子 Agent 跟随主 Agent 的中止信号，Esc 一起停；另有 max_turns 30、timeout_mins 10 的上限 <span class="ev o">官方</span></li>
+      <li>没有后台模式，也没有单独停止入口；可并行，但官方提醒并行改代码会互相覆盖 <span class="ev o">官方</span></li>
+    </ul>
+  </div>
+
+  <h2 id="deepseek">DeepSeek Harness</h2>
+
+  <div class="prod">
+    <div class="prod-h"><h3>DeepSeek Harness（dsh web）</h3><span class="surf">开源 Agent 运行时 · 源码 deepseek-ai/deepseek-harness · 子 Agent 是子会话</span></div>
+    <div class="pair">
+      <div class="pane"><div class="cap live">父会话页头</div>
+        <div class="gui">
+          <div class="row flat"><b>修复登录态丢失</b><span class="chev">子代理 3 · 运行 1 ▾</span></div>
+          <div class="row"><span class="spin"></span>verifier · 跑完整测试<span class="chev">12.4k · 1:10 ›</span></div>
+          <div class="row"><span class="ok">●</span>scout · 查找登录入口<span class="chev">8.1k · 0:42 ›</span></div>
+          <div class="row in"><span class="muted">●</span>grep-helper<span class="chev">1.2k · 0:05</span></div>
+        </div></div>
+      <div class="pane"><div class="cap stop">父会话已空闲，子会话仍在跑</div>
+        <div class="gui">
+          <div class="row flat muted">侧栏 Sessions</div>
+          <div class="row">修复登录态丢失 · 1 subagent running<span class="chev">now</span></div>
+          <div class="row flat muted">打开 verifier 子会话：</div>
+          <div class="input">（父 Agent 离线时：输入与 Send 禁用）<span style="float:right">Stop ■</span></div>
+        </div></div>
+    </div>
+    <ul class="facts">
+      <li>页头把会话标题做成谱系面包屑，后代数量触发器打开子会话树：运行中 loading、上一轮正常完成绿点、其他灰点；每行带 token 总量与耗时；按层展开，可在右侧 Sidebar 分栏打开 <span class="ev o">官方</span></li>
+      <li>普通侧栏不列子会话，父会话行写「1 subagent running」<span class="ev o">官方</span></li>
+      <li>后台子 Agent 返回 id 后就不再归启动它的工具调用管；父 Agent 关闭时才统一回收 <span class="ev o">官方</span></li>
+      <li>子会话 Stop 只中断当前轮次：不销毁子会话、不级联后代、不清空待处理消息，排队的后续消息暂停到用户再次发送 <span class="ev o">官方</span></li>
+      <li>父 Agent 离线而子会话仍在跑时，输入区和 Send 禁用，Stop 仍可用；停下后转为只读 <span class="ev o">官方</span></li>
+      <li>Stop 返回「已发出」而非「已停稳」，界面需如实显示目标可能仍是 running <span class="ev o">官方</span></li>
+    </ul>
+  </div>
+
+  <h2 id="sessions">会话列表状态<small>会话行、主 Agent、子 Agent 三者的关系</small></h2>
+  <div class="tw" style="margin-bottom:12px"><table style="min-width:760px">
+    <thead><tr><th>主对话已停止、子 Agent 仍在跑</th><th>会话列表显示</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><th>Claude Code<small>终端 agent view</small></th><td><span class="fold y">Working</span></td><td>文档写明运行中的子 Agent 算 working <span class="ev o">官方</span></td></tr>
+      <tr><th>DeepSeek Harness<small>dsh web 侧栏</small></th><td><span class="fold y">1 subagent running</span></td><td>会话行直接写子 Agent 在跑，附子任务标签 <span class="ev o">官方</span></td></tr>
+      <tr><th>Cursor<small>3.18 起</small></th><td><span class="fold y">working</span></td><td>父对话保持 working 到子 Agent 结束；此前显示完成，用户反馈「看着完成了其实还在跑」<span class="ev o">官方</span></td></tr>
+      <tr><th>Codex<small>线程状态</small></th><td><span class="fold n">Idle</span></td><td>状态按线程计算，主线程空闲即 Idle；要进 /subagents 才看到子 Agent 在跑 <span class="ev i">推断</span></td></tr>
+      <tr><th>VS Code Copilot、Gemini CLI</th><td><span class="fold u">不会出现</span></td><td>子 Agent 随主对话一起停 <span class="ev o">官方</span></td></tr>
+      <tr><th>Claude Code<small>VS Code 会话列表</small></th><td><span class="fold u">待确认</span></td><td>会话内输入框旁「N agents」圆点显示仍有子 Agent 在跑 <span class="ev o">官方</span></td></tr>
+      <tr><th>Claude Code<small>桌面客户端侧栏</small></th><td><span class="fold u">待确认</span></td><td>文档只说侧栏列出会话、可并行，没写状态标识；会话在你没看时做完任务会发系统通知 <span class="ev o">官方</span>。同一会话在终端 agent view 里显示 Working <span class="ev i">推断</span></td></tr>
+      <tr><th>Codex<small>App 侧栏</small></th><td><span class="fold n">不显示运行中</span></td><td>侧栏只列主线程，子 Agent 线程被滤掉 <span class="ev o">官方</span>；主线程状态按自身计算，Stop 后回到空闲 <span class="ev i">推断</span></td></tr>
+    </tbody>
+  </table></div>
+  <div class="tw" style="margin-bottom:12px"><table style="min-width:860px">
+    <thead><tr><th>同一时刻，进入对话后</th><th>输入框</th><th>对话流</th><th>哪里看得到子 Agent 还在跑</th></tr></thead>
+    <tbody>
+      <tr><th>Claude Code<small>终端</small></th><td>空闲，可直接发下一条 <span class="ev o">官方</span></td><td>主回复已结束</td><td>输入框下方子 Agent 面板列出运行中的行，可回车查看、x 停止 <span class="ev o">官方</span></td></tr>
+      <tr><th>Claude Code<small>VS Code</small></th><td>Stop 变回发送，可输入 <span class="ev o">官方</span></td><td>Agent 卡下一行 Running 状态 <span class="ev o">官方</span></td><td>输入框旁「N agents」胶囊，圆点表示仍有子 Agent 在跑或在等授权 <span class="ev o">官方</span></td></tr>
+      <tr><th>Claude Code<small>桌面客户端</small></th><td>Esc / Stop 只停 Claude 的回复，可直接输入 <span class="ev o">官方</span></td><td>主回复已结束；2.1.302 起桌面端子 Agent 一律在后台跑，Stop 不带走后台子 Agent <span class="ev i">推断</span></td><td>标题栏 ⋮ 菜单「Background tasks」打开任务窗格，点条目在子 Agent 窗格看输出或单独停止 <span class="ev o">官方</span></td></tr>
+      <tr><th>Codex<small>CLI</small></th><td>空闲 <span class="ev i">推断</span></td><td>「■ Conversation interrupted - use /feedback if something went wrong」<span class="ev o">官方</span></td><td>Sub-agents running 列表、/subagents 绿点 <span class="ev o">官方</span></td></tr>
+      <tr><th>Codex<small>App</small></th><td>空闲，可输入 <span class="ev i">推断</span></td><td>Stop 只中断当前线程的本轮，子线程不跟着中断 <span class="ev o">官方</span></td><td>Subagents 面板 Active 区的卡片仍显示 Working <span class="ev m">社区</span>；停子 Agent 要在对话里让 Codex 停 <span class="ev o">官方</span></td></tr>
+      <tr><th>Cursor<small>3.18 起</small></th><td>父对话保持 working <span class="ev o">官方</span></td><td>主 Agent 可能已给出完成总结 <span class="ev m">社区</span></td><td>输入框上方「2 subagents still running」与 Working 面板卡片 <span class="ev m">社区</span></td></tr>
+      <tr><th>DeepSeek Harness</th><td>父会话空闲；子会话里 Stop 可用，父离线时输入与 Send 禁用 <span class="ev o">官方</span></td><td>父会话本轮已结束</td><td>页头子代理数量触发器，运行中的行显示 loading <span class="ev o">官方</span></td></tr>
+      <tr><th>VS Code Copilot、Gemini CLI</th><td>空闲</td><td>子 Agent 行变为已取消（Gemini 行首 ℹ「Request cancelled.」）<span class="ev o">官方</span></td><td>不会出现：子 Agent 已一起停</td></tr>
+    </tbody>
+  </table></div>
+  <ul class="items">
+    <li><span><b>三层状态：</b>会话列表的一行代表一整个任务；进入会话后，对话流和输入框反映主 Agent；子任务行和详情反映各个子 Agent。三层可能不一致，问题出在会话行该取哪一层。</span></li>
+  </ul>
+  <div class="tw" style="margin-top:12px"><table>
+    <thead><tr><th>产品 / 列表</th><th>会话行状态词</th><th>子 Agent 进不进列表</th><th>主空闲、子运行时会话行</th><th>子 Agent 等授权时会话行</th><th>从列表停止</th></tr></thead>
+    <tbody>
+      <tr><th>Claude Code<small>终端 agent view</small></th>
+        <td>Working / Needs input / Idle / Completed / Failed / Stopped；按 Needs input、Working、Completed 分组 <span class="ev o">官方</span></td>
+        <td>不进；只有后台会话（含 /fork）各占一行 <span class="ev o">官方</span></td>
+        <td><span class="fold y">聚合</span>Working：运行中的子 Agent、工作流或监控都算 working <span class="ev o">官方</span></td>
+        <td>Needs input <span class="ev i">推断</span></td>
+        <td>Ctrl+X 停整个会话，再按一次删除 <span class="ev o">官方</span></td></tr>
+      <tr><th>Claude Code<small>桌面客户端侧栏</small></th>
+        <td><span class="fold u">待确认</span>文档未写状态词；会话完成且未在看时发系统通知 <span class="ev o">官方</span></td>
+        <td>不进；后台子 Agent 在标题栏 ⋮「Background tasks」窗格里 <span class="ev o">官方</span></td>
+        <td><span class="fold u">待确认</span></td>
+        <td><span class="fold u">待确认</span></td>
+        <td>无，进会话后在任务窗格停 <span class="ev o">官方</span></td></tr>
+      <tr><th>Claude Code<small>VS Code 会话列表</small></th>
+        <td>筛选 Needs input / Working / Completed，另有 Active、未读 <span class="ev o">官方</span></td>
+        <td>不进；在会话内的 agent map 里 <span class="ev o">官方</span></td>
+        <td><span class="fold u">待确认</span>输入框处「N agents」圆点显示仍有子 Agent 在跑 <span class="ev o">官方</span></td>
+        <td>agent map 圆点显示有子 Agent 在等授权 <span class="ev o">官方</span></td>
+        <td>无，进会话后在 agent map 停 <span class="ev i">推断</span></td></tr>
+      <tr><th>Codex<small>app-server 线程状态</small></th>
+        <td>Idle / Active（附 WaitingOnApproval、WaitingOnUserInput）/ SystemError / NotLoaded <span class="ev o">官方</span></td>
+        <td>不进；线程列表默认只列交互来源，子 Agent 线程被滤掉 <span class="ev o">官方</span></td>
+        <td><span class="fold n">不聚合</span>状态按线程计算，主线程显示 Idle <span class="ev i">推断</span></td>
+        <td>标记落在子线程上，主线程不变 <span class="ev i">推断</span></td>
+        <td><span class="fold u">待确认</span></td></tr>
+      <tr><th>Codex<small>App 侧栏</small></th>
+        <td>同 app-server 线程状态 <span class="ev i">推断</span></td>
+        <td>不进；子 Agent 在主线程的 Subagents 面板（Active / Done）里，可点开看子线程 <span class="ev o">官方</span></td>
+        <td><span class="fold n">不聚合</span>主线程空闲即不显示运行中 <span class="ev i">推断</span></td>
+        <td><span class="fold u">待确认</span></td>
+        <td>无，在对话里让 Codex 停子 Agent <span class="ev o">官方</span></td></tr>
+      <tr><th>Cursor<small>Agents 侧栏</small></th>
+        <td>working / 完成 <span class="ev m">社区</span></td>
+        <td>不进；子 Agent 在父对话的 Working 面板里 <span class="ev m">社区</span></td>
+        <td><span class="fold y">聚合</span>3.18 起父对话保持 working；此前显示完成 <span class="ev o">官方</span></td>
+        <td>主对话不提示 <span class="ev m">社区</span></td>
+        <td><span class="fold u">待确认</span></td></tr>
+      <tr><th>VS Code Copilot<small>Agents 窗口 / 会话列表</small></th>
+        <td>Working… / Attention needed / Failed / Completed；标题栏有进行中、未读角标 <span class="ev o">官方</span></td>
+        <td>不进；子 Agent 是会话内带锁的只读对话 <span class="ev o">官方</span></td>
+        <td>不会出现：子 Agent 在主请求内，主请求结束子 Agent 已结束 <span class="ev i">推断</span></td>
+        <td>Attention needed <span class="ev i">推断</span></td>
+        <td><span class="fold u">待确认</span></td></tr>
+      <tr><th>DeepSeek Harness<small>dsh web 侧栏</small></th>
+        <td>会话行直接写「1 subagent running」+ 子任务标签 <span class="ev o">官方</span></td>
+        <td>不进；子会话只在父会话页头的子会话树里 <span class="ev o">官方</span></td>
+        <td><span class="fold y">聚合</span>父会话行写「N subagent running」<span class="ev o">官方</span></td>
+        <td><span class="fold u">待确认</span></td>
+        <td>无，进子会话停 <span class="ev o">官方</span></td></tr>
+    </tbody>
+  </table></div>
+  <ul class="items" style="margin-top:12px">
+    <li><span><b>子 Agent 不占列表行：</b>有会话列表的五家都把子 Agent 收在父会话里。会话列表的一行代表用户交给 Agent 的一件事，不代表一个进程。</span></li>
+    <li><span><b>聚合是趋势：</b>Claude Code 明写子 Agent 在跑就算 working；Cursor 3.18 也改成了聚合；Codex 的线程状态不聚合，主线程空闲时子线程是否还在跑，要进 /subagents 才看得到。</span></li>
+    <li><span><b>优先级：</b>Claude Code 把 Needs input 分组排在 Working 之上，VS Code 的 Active 筛选同时收「需要输入、运行中、未读」。会话行要先告诉用户「要不要我」，再告诉用户「还在不在跑」。</span></li>
+  </ul>
+
+  <h2 id="manage">子 Agent 管理<small>定义 · 查看 · 发消息 · 停止 · 上限 · 权限</small></h2>
+  <div class="tw"><table style="min-width:1080px">
+    <thead><tr><th>产品</th><th>定义与可用范围</th><th>查看与切换</th><th>发消息 / 续接</th><th>停止与清理</th><th>并发与嵌套上限</th><th>权限与模型</th></tr></thead>
+    <tbody>
+      <tr><th>Claude Code<small>CLI · VS Code · 桌面</small></th>
+        <td>一个 Markdown 文件一个子 Agent；托管设置 &gt; --agents &gt; .claude/agents/ &gt; ~/.claude/agents/ &gt; 插件，同名取高优先级；改文件几秒内生效 <span class="ev o">官方</span>。/agents 现在只提示去改文件或让 Claude 建，2.1.197 及以前是带 Running / Library 页签的向导 <span class="ev o">官方</span></td>
+        <td>CLI 子 Agent 面板、/tasks 回车看转录；VS Code agent map；桌面标题栏 ⋮「Background tasks」窗格 <span class="ev o">官方</span></td>
+        <td>转录里直接输入即续接；主 Agent 用 SendMessage 按 id 或名称续接，已完成的子 Agent 在后台恢复并保留完整历史；内置 Explore、Plan 是一次性的，不能续接 <span class="ev o">官方</span></td>
+        <td>选中按 x；Ctrl+X Ctrl+K 停全部；主 Agent 可调 TaskStop。用户停的子 Agent 不自动恢复，主 Agent 再发消息会被拒。成功行立即移除，失败 / 停止行留 30 秒；转录 30 天后删除 <span class="ev o">官方</span></td>
+        <td>同时运行 20 个，超出报「Concurrent subagent limit reached」；默认可再派，最多主对话下 3 层；总数不限；均可用环境变量改 <span class="ev o">官方</span></td>
+        <td>每个子 Agent 可单独设 tools / disallowedTools、model、permissionMode、background、maxTurns、isolation: worktree <span class="ev o">官方</span></td></tr>
+      <tr><th>Codex<small>CLI · App</small></th>
+        <td>一个 TOML 文件一个子 Agent，~/.codex/agents/ 或 .codex/agents/；必填 name、description、developer_instructions；内置 default、worker、explorer，同名时自定义优先 <span class="ev o">官方</span></td>
+        <td>CLI：/subagents 选线程、Alt+← / → 切换 <span class="ev o">官方</span>；App：Active / Done 面板，点开进子线程 <span class="ev o">官方</span></td>
+        <td>主 Agent 用 send_message、followup_task 给子 Agent 派活，wait_agent 等结果，list_agents 列出 <span class="ev o">官方</span>；App 文档写「直接让 Codex 转向某个子 Agent」<span class="ev o">官方</span></td>
+        <td>CLI 切到子线程按 Esc；主 Agent 调 interrupt_agent，不能停根线程 <span class="ev o">官方</span>；App 让 Codex 停止或关闭已完成的子线程 <span class="ev o">官方</span></td>
+        <td>默认最多 6 个子线程（不含主线程），可配；默认深度 1，子 Agent 不再派子 Agent <span class="ev o">官方</span></td>
+        <td>继承父会话的沙箱与授权，Agent 文件不能改 sandbox_mode、approval_policy；模型与推理强度可单独配，或用 default_subagent_model 统一设 <span class="ev o">官方</span></td></tr>
+      <tr><th>Cursor<small>3.x</small></th>
+        <td>一个 Markdown 文件一个子 Agent，.cursor/agents/，同时读 .claude/agents/、.codex/agents/ 及用户级目录；项目级优先、.cursor 优先 <span class="ev o">官方</span>。内置 Explore、Browser；可用 /名称 直接点名 <span class="ev o">官方</span></td>
+        <td>输入框上方 Working 面板，点卡片开子 Agent 对话页签 <span class="ev m">社区</span>；卡片显示所用模型 <span class="ev o">官方</span></td>
+        <td>每次运行返回 agent ID，让主 Agent「Resume agent abc123」续接；后台子 Agent 结束后也能续接 <span class="ev o">官方</span></td>
+        <td>卡片 Stop / ×，面板 Stop All <span class="ev m">社区</span>；官方建议从 agents 列表停 <span class="ev o">官方</span>。后台输出写到 ~/.cursor/subagents/ <span class="ev o">官方</span></td>
+        <td>并行未写上限；2.5 起可嵌套，只能一层 <span class="ev o">官方</span></td>
+        <td>model（默认 inherit）、readonly、is_background <span class="ev o">官方</span></td></tr>
+      <tr><th>VS Code Copilot</th>
+        <td>自定义 Agent（.github/agents/*.agent.md）兼作子 Agent；主 Agent 的 agents 白名单决定能调哪些，[] 表示禁用；disable-model-invocation 禁止被调用 <span class="ev o">官方</span></td>
+        <td>对话里折叠的工具调用；Agents 窗口里带锁的只读对话；输入框上方后台活动胶囊 <span class="ev o">官方</span></td>
+        <td>无：每次调用无状态，主 Agent 不能给同一个子 Agent 发后续消息，只能重新调用 <span class="ev o">官方</span></td>
+        <td>无单独入口，随主请求一起停 <span class="ev i">推断</span></td>
+        <td>默认不能嵌套；开启 chat.subagents.allowInvocationsFromSubagents 后最多 5 层；并行未写上限 <span class="ev o">官方</span></td>
+        <td>主 Agent 的 tools 要包含 agent 工具集才能派子 Agent <span class="ev o">官方</span></td></tr>
+      <tr><th>Gemini CLI</th>
+        <td>一个 Markdown 文件一个子 Agent，.gemini/agents/ 或 ~/.gemini/agents/；kind 可为 remote（A2A）。内置 codebase_investigator、cli_help、generalist（默认开），browser_agent（默认关）<span class="ev o">官方</span></td>
+        <td>/agents 交互式启用、停用、改配置；@名称 跳过主 Agent 直接派给子 Agent <span class="ev o">官方</span></td>
+        <td>无：子 Agent 是同步工具，一次性 <span class="ev i">推断</span></td>
+        <td>无单独入口，随主 Agent Esc 一起停；max_turns 30、timeout_mins 10 到点自动结束 <span class="ev o">官方</span></td>
+        <td>子 Agent 不能调用其他子 Agent <span class="ev o">官方</span></td>
+        <td>tools 白名单（默认继承全部）、model、temperature、独立 mcpServers <span class="ev o">官方</span></td></tr>
+      <tr><th>DeepSeek Harness</th>
+        <td>插件配置挂委派工具，后端可选进程内 spawn / fork，或外部 Codex、Claude Code、ACP；agentPreset、allowedAgentPresets 限定子 Agent 用哪些 preset <span class="ev o">官方</span></td>
+        <td>页头子会话树、右侧 Sidebar 分栏 <span class="ev o">官方</span>；主 Agent 用 list_agents 列直接子级或全部后代，状态为 running / inactive <span class="ev o">官方</span></td>
+        <td>send_message 只在直接父子之间：子 Agent 在跑时在下一步边界插入，空闲时启动新一轮续接；外部后端不接受后续消息 <span class="ev o">官方</span></td>
+        <td>子会话 Stop 或 interrupt_agent 只停当前轮，保留收件箱和后代，返回「已接受」不等停稳；外部后端停了就不能再续 <span class="ev o">官方</span></td>
+        <td>插件页「子智能体」设置：最大递归深度（默认 1，0 禁止）与并行上限（统计同一主 Agent 下各层存活子 Agent）<span class="ev o">官方</span></td>
+        <td>同一设置页可开放「Agent 自选模型」，只能从白名单路由里选 <span class="ev o">官方</span></td></tr>
+    </tbody>
+  </table></div>
+  <ul class="items" style="margin-top:12px">
+    <li><span><b>定义方式已收敛：</b>五家都是「一个文件一个子 Agent，分项目级、用户级两层」，Markdown 或 TOML 头部写名称、描述、工具、模型。Cursor 直接读 .claude/agents/ 和 .codex/agents/，同一份定义可跨产品用。</span></li>
+    <li><span><b>管理入口分两派：</b>Claude Code、Cursor、Codex CLI、DeepSeek Harness 让用户直接在子 Agent 行或子会话上查看、停止；Codex App 只能「让 Codex 去停」，Copilot、Gemini CLI 没有入口，子 Agent 随主 Agent 一起结束。</span></li>
+    <li><span><b>能不能续接是分水岭：</b>Claude Code、Codex、Cursor、DeepSeek Harness 的子 Agent 有 id、可续接，所以才需要列表、停止状态和「被停后拒收」的规则；Copilot、Gemini CLI 一次性调用，不需要管理。</span></li>
+    <li><span><b>上限都有默认值：</b>并发 Claude Code 20、Codex 6；嵌套 Claude Code 3 层、Codex 1、Cursor 1、Copilot 0（可开到 5）、Gemini 0。只有 DeepSeek Harness 把深度和并发做进图形设置页，其他家靠配置文件或环境变量。</span></li>
+    <li><span><b>权限默认继承：</b>Codex 明确规定子 Agent 文件不能放宽沙箱和授权；Claude Code 允许每个子 Agent 单独设 permissionMode。</span></li>
+  </ul>
+
+  <h2 id="voices">用户反馈</h2>
+  <ul class="items">
+    <li><span><b>Claude Code：</b>Esc 本想插话，却静默停掉了全部后台子 Agent，且不再可恢复；一次会话三次 Esc 丢了五个子 Agent。VS Code 扩展已改为 Stop 只停本轮。</span></li>
+    <li><span><b>Claude Code：</b>中断后子 Agent 已死，主 Agent 仍以为它们在跑并持续等待，用户靠看转录文件的修改时间才发现。</span></li>
+    <li><span><b>Cursor：</b>父 Agent 报告完成，后台子 Agent 还在跑、还在等授权；用户要的不是禁止后台，而是主停时把「还有谁在跑」放到显眼处。</span></li>
+    <li><span><b>Cursor：</b>Stopped、Completed、Starting up 等状态与子 Agent 真实状态不符；Stop All 点了无效，只能重开对话。</span></li>
+    <li><span><b>共性：</b>用户接受主停子不停，不接受的是停止不可见：不知道停没停、停了谁、还剩谁。</span></li>
+  </ul>
+
+  <h2 id="deveco">对 DevEco 的建议</h2>
+
+  <h3 style="margin:16px 0 8px">1. 显示形式与默认折叠</h3>
+  <div class="tw"><table style="min-width:860px">
+    <thead><tr><th>层</th><th>显示</th><th>默认</th><th>依据</th></tr></thead>
+    <tbody>
+      <tr><th>对话流里的子任务行</th><td>每个子 Agent 一行：名称 / 角色、当前动作、状态词、耗时；多个时合成一组，组头写「运行 N · 完成 M」</td><td><span class="fold y">折叠</span>只显示这一行</td><td>Gemini CLI 组头、Codex 事件行</td></tr>
+      <tr><th>待授权 / 失败</th><td>在子任务行内展开，标明是哪个子 Agent 在请求</td><td><span class="fold n">展开</span>处理完自动收回；用户手动展开过则保持</td><td>VS Code Copilot、Claude Code 授权框</td></tr>
+      <tr><th>输入框旁的运行条</th><td>「子任务运行中 · N」，可展开列表；每行可查看、可停止</td><td>有运行中的子 Agent 就常驻</td><td>Claude Code 子 Agent 面板、Cursor 运行提示</td></tr>
+      <tr><th>子任务详情</th><td>在侧栏或分栏打开独立会话：任务提示、过程时间线、改动、结果；可从详情返回父对话</td><td>按需打开</td><td>Copilot 富渲染、Codex 子线程、Harness Sidebar</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3 style="margin:24px 0 8px">2. 停止作用域</h3>
+  <div class="tw"><table style="min-width:860px">
+    <thead><tr><th>入口</th><th>停什么</th><th>停之后</th><th>依据</th></tr></thead>
+    <tbody>
+      <tr><th>主停止按钮 / Esc</th><td>主 Agent 当前轮次 + 前台子 Agent；后台子 Agent 不停</td><td>若仍有后台子 Agent，运行条变为「主 Agent 已停止 · 2 个子任务仍在运行」，并给出「全部停止」</td><td>Claude Code VS Code 2.1.286；Claude Code 终端的反面案例</td></tr>
+      <tr><th>全部停止</th><td>主 Agent + 全部后代 + 未启动的委派</td><td>显示「停止中」直到每个子 Agent 回执；超时列出仍在跑的</td><td>Ctrl+X Ctrl+K、Cursor Stop All 失效案例</td></tr>
+      <tr><th>停止此子任务</th><td>该子 Agent 当前轮次及其后代</td><td>同级继续；主 Agent 收到「已被用户停止」，不得自动重启</td><td>Claude Code x、Harness Stop（Harness 不级联后代）、2.1.211 复活修复</td></tr>
+    </tbody>
+  </table></div>
+  <ul class="items" style="margin-top:12px">
+    <li><span><b>需要单独停止子 Agent：</b>需要。用户常常只想砍掉跑偏的一支、保留其他成果；四家已有的产品都提供了。但它不能是唯一途径，必须同时有一次停完的「全部停止」。</span></li>
+    <li><span><b>Esc 不应静默结束后台工作：</b>Esc 是高频插话键。若决定 Esc 也停后台子 Agent，必须在对话里写明「已停止 2 个后台子任务」。</span></li>
+    <li><span><b>停止不等于撤销：</b>被停子 Agent 已做的改动保留，供审阅或回退。</span></li>
+  </ul>
+
+  <h3 style="margin:24px 0 8px">3. 对话状态</h3>
+  <div class="tw"><table style="min-width:860px">
+    <thead><tr><th>主 Agent</th><th>子 Agent</th><th>对话显示</th><th>输入框</th></tr></thead>
+    <tbody>
+      <tr><th>运行中</th><td>任意</td><td>运行中 · 主 Agent 当前动作</td><td>可排队 / 插话</td></tr>
+      <tr><th>等待子 Agent</th><td>有运行中</td><td>等待子任务 · N</td><td>可排队 / 插话</td></tr>
+      <tr><th>已停止 / 本轮结束</th><td>有运行中</td><td>子任务运行中 · N（副文案：主 Agent 已停止）</td><td>可用；发送的新消息交给主 Agent</td></tr>
+      <tr><th>任意</th><td>有待授权</td><td>待处理 · N，标明来自哪个子任务</td><td>可用</td></tr>
+      <tr><th>已停止</th><td>停止已发出、未回执</td><td>停止中 · N</td><td>可用</td></tr>
+      <tr><th>已停止</th><td>全部已停</td><td>已停止，保留已有结果</td><td>可用</td></tr>
+      <tr><th>本轮结束</th><td>全部结束，未汇总</td><td>结果待汇总</td><td>可用</td></tr>
+      <tr><th>本轮结束</th><td>全部结束</td><td>已完成</td><td>可用</td></tr>
+    </tbody>
+  </table></div>
+  <ol class="items" style="margin-top:12px">
+    <li><span><b>对话状态取主与子的合成值：</b>只要有子 Agent 在跑，对话就不能显示「已完成」或「已停止」。Cursor 3.18 的修正就是这一条。</span></li>
+    <li><span><b>状态以子 Agent 自己的回执为准：</b>Cursor 的错位都来自父对话缓存了子 Agent 状态；子 Agent 详情页与对话流应读同一个来源。</span></li>
+  </ol>
+
+  <h3 style="margin:24px 0 8px">4. 会话列表状态</h3>
+  <p class="lede" style="margin:0 0 10px">会话行取主 Agent 与全部后代的合成状态，按「需要你 &gt; 运行中 &gt; 失败 &gt; 完成 &gt; 空闲」取最高的一项；副文案说明状态来自谁。</p>
+  <div class="tw"><table style="min-width:860px">
+    <thead><tr><th>主 Agent</th><th>子 Agent</th><th>会话行状态</th><th>副文案示例</th><th>依据</th></tr></thead>
+    <tbody>
+      <tr><th>任意</th><td>任一在等授权 / 提问</td><td><span class="fold p">需要你</span></td><td>verifier 等你授权运行 npm test</td><td>Claude Code Needs input 置顶</td></tr>
+      <tr><th>运行中</th><td>任意</td><td><span class="fold y">运行中</span></td><td>主 Agent 当前动作</td><td>各家一致</td></tr>
+      <tr><th>空闲 / 已停止</th><td>有运行中</td><td><span class="fold y">运行中</span></td><td>主 Agent 已停止 · 2 个子任务在跑</td><td>Claude Code working、Harness、Cursor 3.18</td></tr>
+      <tr><th>任意</th><td>停止已发出、未回执</td><td><span class="fold u">停止中</span></td><td>等待 1 个子任务停下</td><td>Claude Code 2.1.259、Harness 弱回执</td></tr>
+      <tr><th>本轮结束</th><td>有失败、目标未达成</td><td><span class="fold n">失败</span></td><td>2 / 3 个子任务完成，scout 出错</td><td>VS Code Failed、Claude Code Failed</td></tr>
+      <tr><th>本轮结束</th><td>全部结束</td><td><span class="fold y">已完成</span>未读时加圆点</td><td>结果一句话</td><td>VS Code 未读角标</td></tr>
+      <tr><th>已停止</th><td>全部已停</td><td><span class="fold u">已停止</span></td><td>已停止，保留 3 处改动</td><td>Claude Code Stopped</td></tr>
+    </tbody>
+  </table></div>
+  <ol class="items" style="margin-top:12px">
+    <li><span><b>子 Agent 不单独占行：</b>子 Agent 的状态折进父会话行；需要单独看时，从会话行展开或进入会话。</span></li>
+    <li><span><b>从会话行停止 = 全部停止：</b>在列表上停一个会话，就停掉主 Agent 和全部后代，与对话里的「全部停止」同一语义。</span></li>
+    <li><span><b>列表与会话内一致：</b>会话行、输入框旁运行条、子任务行读同一份状态，避免 Cursor 那样父显示 Stopped、子还在跑。</span></li>
+  </ol>
+
+  <h3 style="margin:24px 0 8px">5. 子 Agent 管理</h3>
+  <div class="tw"><table style="min-width:760px">
+    <thead><tr><th>环节</th><th>建议</th><th>依据</th></tr></thead>
+    <tbody>
+      <tr><th>定义</th><td>项目级、用户级两层，一个文件一个子 Agent；可读取 .claude/agents/ 等已有目录</td><td>五家一致；Cursor 跨产品兼容</td></tr>
+      <tr><th>运行中</th><td>会话内子任务面板统一提供查看、发消息、停止、全部停止</td><td>Claude Code 面板、Cursor 卡片</td></tr>
+      <tr><th>续接</th><td>子 Agent 有 id 可续接；用户手动停的不自动恢复，主 Agent 续接时提示用户</td><td>Claude Code 被停后拒收</td></tr>
+      <tr><th>上限</th><td>并发和嵌套给默认值，并在设置页可改；达到上限时在对话里说明原因</td><td>Claude Code 20 / 3 层，Codex 6 / 1 层，Harness 设置页</td></tr>
+      <tr><th>权限</th><td>默认继承主会话，子 Agent 只能收紧、不能放宽</td><td>Codex 禁止子 Agent 改沙箱和授权</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2 id="ablation">消融记录<small>逐项判断：该元素是否帮助读者回答本页的问题</small></h2>
+  <div class="tw"><table style="min-width:760px">
+    <thead><tr><th>元素</th><th>结果</th><th>依据</th></tr></thead>
+    <tbody>
+      <tr><th>前台 / 后台对照表</th><td><span class="res keep">新增</span></td><td>主停后子 Agent 去留由它决定，先讲清才能读懂总表</td></tr>
+      <tr><th>本机文档研究版的七产品表</th><td><span class="res mrg">替换</span></td><td>其中「待实测」项用源码与更新日志补齐，保留其停止作用域与状态矩阵思路</td></tr>
+      <tr><th>WorkBuddy</th><td><span class="res del">删除</span></td><td>未找到内部子 Agent 的公开资料，多人协作不等于子 Agent</td></tr>
+      <tr><th>Windsurf</th><td><span class="res del">删除</span></td><td>Cascade 文档已转向 Devin Desktop，未见子 Agent 机制；并行靠多个独立会话</td></tr>
+      <tr><th>Claude Code agent teams、/btw 分叉</th><td><span class="res del">删除</span></td><td>队友与分叉是独立会话，不是子 Agent</td></tr>
+      <tr><th>Codex /fork、/side</th><td><span class="res del">删除</span></td><td>同上；/side 明确禁止触碰子 Agent</td></tr>
+      <tr><th>Cursor 云端子 Agent、工作树隔离</th><td><span class="res del">删除</span></td><td>与显示和停止无关</td></tr>
+      <tr><th>Harness 鉴权细节</th><td><span class="res del">删除</span></td><td>只保留对用户可见的结果：父离线时 Stop 仍可用</td></tr>
+      <tr><th>会话列表状态一节</th><td><span class="res keep">新增</span></td><td>回答「会话列表状态与主、子 Agent 状态的关系」；Gemini CLI 没有会话列表，不列</td></tr>
+      <tr><th>Cursor 状态错位多条</th><td><span class="res mrg">合并</span></td><td>合成一条事实 + 一条用户反馈</td></tr>
+      <tr><th>建议里的「为什么」长段</th><td><span class="res mrg">合并</span></td><td>压进表格「依据」列，只写产品名</td></tr>
+      <tr><th>子 Agent 管理一节</th><td><span class="res keep">新增</span></td><td>回答「各家怎么管理子 Agent」：定义、查看、发消息、停止、上限、权限六项</td></tr>
+      <tr><th>Claude Code agent teams、Cursor 云端子 Agent 的管理</th><td><span class="res del">删除</span></td><td>队友与云端任务是独立会话，不是子 Agent</td></tr>
+      <tr><th>来源</th><td><span class="res keep">保留</span></td><td>每条事实可追溯</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2 id="sources">来源</h2>
+  <ul class="src">
+    <li><a href="https://code.claude.com/docs/en/sub-agents">Claude Code 文档：Subagents</a>（前台 / 后台、子 Agent 面板、x 停止、续接）</li>
+    <li><a href="https://code.claude.com/docs/en/interactive-mode">Claude Code 文档：Interactive mode</a>（Esc、Ctrl+B、Ctrl+X Ctrl+K）</li>
+    <li><a href="https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md">Claude Code CHANGELOG</a>（2.1.181、2.1.211、2.1.269、2.1.275、2.1.286、2.1.292、2.1.302、2.1.304）</li>
+    <li>Claude Code 2.1.308 linux-x64 二进制字符串（Done (、/tasks to see subagents、background agents were stopped by the user）</li>
+    <li><a href="https://github.com/anthropics/claude-code/issues/71294">anthropics/claude-code#71294</a> Esc 停掉后台子 Agent</li>
+    <li><a href="https://github.com/anthropics/claude-code/issues/76807">anthropics/claude-code#76807</a> Esc 后不可恢复</li>
+    <li><a href="https://github.com/anthropics/claude-code/issues/78151">anthropics/claude-code#78151</a> 中断后无通知</li>
+    <li><a href="https://github.com/anthropics/claude-code/issues/77326">anthropics/claude-code#77326</a> VS Code 整段内联</li>
+    <li><a href="https://github.com/openai/codex/blob/main/codex-rs/tui/src/multi_agents.rs">codex · tui/multi_agents.rs</a>（事件行、状态词、Alt+← / →）</li>
+    <li><a href="https://github.com/openai/codex/blob/main/codex-rs/tui/src/app/agent_status_feed.rs">codex · app/agent_status_feed.rs</a>（Sub-agents running）</li>
+    <li><a href="https://github.com/openai/codex/blob/main/codex-rs/tui/src/app/thread_routing.rs">codex · app/thread_routing.rs</a>（中断只带当前线程）</li>
+    <li><a href="https://github.com/openai/codex/blob/main/codex-rs/core/src/agent/control/interrupt.rs">codex · agent/control/interrupt.rs</a>（不能停根、不能停自己）</li>
+    <li><a href="https://learn.chatgpt.com/docs/agent-configuration/subagents">Codex 文档：Subagents</a>（Active / Done、停止方式、授权继承）</li>
+    <li><a href="https://code.claude.com/docs/en/agent-view">Claude Code 文档：Agent view</a>（会话状态、分组、running subagent counts as working）</li>
+    <li><a href="https://code.claude.com/docs/en/vs-code">Claude Code 文档：VS Code</a>（会话列表筛选、agent map 圆点）</li>
+    <li><a href="https://github.com/openai/codex/blob/main/codex-rs/app-server-protocol/src/protocol/v2/thread.rs">codex · app-server-protocol v2/thread.rs</a>（ThreadStatus、线程列表默认来源）</li>
+    <li><a href="https://geminicli.com/docs/core/subagents/">Gemini CLI 文档：Subagents</a>（定义文件、内置 Agent、/agents、不可嵌套）</li>
+    <li><a href="https://github.com/openai/codex/blob/main/codex-rs/core/src/config/mod.rs">codex · core/config/mod.rs</a>（默认 6 个子线程、深度 1）</li>
+    <li><a href="https://github.com/openai/codex/tree/main/codex-rs/core/src/tools/handlers/multi_agents_v2">codex · multi_agents_v2</a>（spawn_agent、send_message、followup_task、wait_agent、interrupt_agent、list_agents）</li>
+    <li><a href="https://github.com/deepseek-ai/deepseek-harness/tree/main/packages/subagent">deepseek-harness · packages/subagent</a>（委派工具、send_message / interrupt_agent / list_agents、子智能体设置页）</li>
+    <li><a href="https://code.claude.com/docs/en/desktop">Claude Code 文档：Desktop</a>（侧栏会话、Background tasks 任务窗格、Esc 停止回复、完成通知）</li>
+    <li><a href="https://github.com/openai/codex/blob/main/codex-rs/app-server/src/request_processors/turn_processor.rs">codex · app-server turn_processor.rs</a>（turn/interrupt 只中断指定线程的本轮）</li>
+    <li><a href="https://aident.ai/blog/fix-codex-subagents-stuck-working-after-restart">Codex 子 Agent 卡在 Working</a>（App Subagents 面板卡片状态，社区）</li>
+    <li><a href="https://github.com/microsoft/vscode/blob/main/src/vs/workbench/contrib/chat/browser/agentSessions/agentSessionsViewer.ts">vscode · agentSessionsViewer.ts</a>（会话状态文案）</li>
+    <li><a href="https://cursor.com/docs/context/subagents">Cursor 文档：Subagents</a></li>
+    <li><a href="https://forum.cursor.com/t/parent-agent-reports-task-complete-while-subagents-still-have-pending-actions/169891">Cursor 论坛：父 Agent 完成而子 Agent 未完成</a>（官方回复，3.18）</li>
+    <li><a href="https://forum.cursor.com/t/subagent-panel-stuck-on-starting-up-stop-all-does-nothing/166041">Cursor 论坛：Stop All 无效</a></li>
+    <li><a href="https://forum.cursor.com/t/subagent-is-stuck-immediately-in-stopped-state/167546">Cursor 论坛：Stopped 显示问题</a>（官方回复）</li>
+    <li><a href="https://forum.cursor.com/t/subagents-false-complete/159818">Cursor 论坛：误显示 Completed</a>（官方回复）</li>
+    <li><a href="https://code.visualstudio.com/docs/agents/run/subagents">VS Code 文档：Subagents</a></li>
+    <li><a href="https://github.com/microsoft/vscode/blob/main/src/vs/workbench/contrib/chat/common/tools/builtinTools/runSubagentTool.ts">vscode · runSubagentTool.ts</a>（取消令牌）</li>
+    <li><a href="https://github.com/microsoft/vscode/blob/main/src/vs/workbench/contrib/chat/browser/widget/chatContentParts/chatSubagentContentPart.ts">vscode · chatSubagentContentPart.ts</a>（待确认自动展开）</li>
+    <li><a href="https://github.com/google-gemini/gemini-cli/blob/main/packages/cli/src/ui/components/messages/SubagentGroupDisplay.tsx">gemini-cli · SubagentGroupDisplay.tsx</a></li>
+    <li><a href="https://geminicli.com/docs/core/subagents/">Gemini CLI 文档：Subagents</a></li>
+    <li><a href="https://github.com/deepseek-ai/deepseek-harness">deepseek-ai/deepseek-harness</a>（ui-subagent README、continuable-subagent-interrupt、background-subagent-tasks 设计记录、sidebar-subagent-activity 快照，2026-10-22 复核）</li>
+    <li>本机 analysis/multi-agent-lifecycle（七产品文档研究版，2026-10-22）</li>
+  </ul>
+</div>
+</body>
+</html>
