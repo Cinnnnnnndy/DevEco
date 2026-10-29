@@ -2,10 +2,14 @@
    启动页目录数据 —— 新增 demo / 分析 / 材料，只改这个文件。
 
    顶层是「分类」（也是左侧导航栏的分组），每个分类下是一组条目（卡片）。
-   前三个分类就是《鸿蒙开发工具 · 创新方向》deck 里的三个方向，21 条创新点一条一张卡。
+   分类再归进 sections 里的「大类」：创新方向 / 版本 / 分析与研究 / 设计与材料，
+   左侧导航按大类分段，点大类标题看它下面的全部分类（#analysis 等旧链接照样能用）。
+   创新方向下的分类就是《鸿蒙开发工具 · 创新方向》deck 里的方向，创新点一条一张卡。
 
    分类 group 字段：
-     id / title / icon（index.html 里 <symbol id="i-cat-*">）/ note（分类说明）/ items
+     id / section（所属大类 id）/ title / icon（index.html 里 <symbol id="i-cat-*">）/ note（分类说明）/ items
+   新分析报告：竞品对照放「竞品与趋势」，讲开发者 / 生态 / 用户研究放「开发者与生态」，
+   单个体验问题的专题研究放「体验专题」；都加在该分类 items 的最前面。
 
    卡片 item 字段：
      no       创新点编号 "01"–"21"（deck 里的编号，可省略）
@@ -42,10 +46,19 @@ window.DEVECO_CATALOG = {
     { date: '2027-06-30', label: '2027-06 · 发布 8.0 · HDC 2027' },
   ],
 
+  /* 左侧导航的大类：分类按 section 归进来；点大类标题看这一类下的全部分组 */
+  sections: [
+    { id: 'directions', title: '创新方向' },
+    { id: 'release',    title: '版本' },
+    { id: 'analysis',   title: '分析与研究' },
+    { id: 'support',    title: '设计与材料' },
+  ],
+
   groups: [
     /* ================= 方向一 ================= */
     {
       id: 'basics',
+      section: 'directions',
       title: '基础易用性',
       icon: 'i-cat-basics',
       note: '把第一次上手、日常排查、发版前检查这几段路铺平——这一类不靠 AI，靠把界面和流程理顺。4 条。',
@@ -80,6 +93,7 @@ window.DEVECO_CATALOG = {
     /* ================= 方向二 ================= */
     {
       id: 'ai',
+      section: 'directions',
       title: 'AI 辅助开发',
       icon: 'i-cat-ai',
       note: '这一类竞争最挤。七家都在解「让 AI 干得更多」，没人解「人对这一串过程能不能看清楚、挑着退回去」——十二条里的空位集中在这儿。',
@@ -163,6 +177,7 @@ window.DEVECO_CATALOG = {
     /* ================= 方向三 ================= */
     {
       id: 'harmony',
+      section: 'directions',
       title: '鸿蒙特征 / 首发',
       icon: 'i-cat-harmony',
       note: '没有对标，因为别人没有这个题——多形态、分布式、一次开发多端部署，只有我们手里有。做错了没人提醒，每条都要自己把判断规则定下来。9 条。',
@@ -227,6 +242,7 @@ window.DEVECO_CATALOG = {
     /* ================= 规划重点 · 新方向 ================= */
     {
       id: 'open',
+      section: 'directions',
       title: '开放生态',
       icon: 'i-cat-open',
       note: '规划重点里新增的一类。38+ 家头部公司有自己的 IDE 和 Agent，不会换工具——那就把门开出去：编译、签名、真机、上架这段通用 Agent 做不到的能力，做成 MCP、Skill 与插件，用在别人的工具里。2 条。',
@@ -247,6 +263,7 @@ window.DEVECO_CATALOG = {
     },
     {
       id: 'lite',
+      section: 'directions',
       title: '轻量与云端',
       icon: 'i-cat-cloud',
       note: '规划重点里新增的一类。IDE 大、不够轻量，模拟器吃内存——把「想验证一下」的门槛降下来：手机上说一句就调、浏览器里打开就跑、模拟器放到云端多开。3 条。',
@@ -275,6 +292,7 @@ window.DEVECO_CATALOG = {
     /* ================= 版本需求 ================= */
     {
       id: 'requirements',
+      section: 'release',
       title: '版本需求',
       icon: 'i-cat-version',
       note: '不是创新方向 deck 里的假设点，是对着已有真机报告 / 已知问题提出的具体版本需求，直接对应一次迭代能排的活。',
@@ -305,6 +323,7 @@ window.DEVECO_CATALOG = {
     /* ================= 版本走查 ================= */
     {
       id: 'walkthrough',
+      section: 'release',
       title: '版本走查',
       icon: 'i-cat-check',
       note: '按版本对已上线 / 待发布的界面做体验走查：先按用户任务流把页面串起来，再逐页、逐步记问题，给出严重度与改法。',
@@ -319,54 +338,13 @@ window.DEVECO_CATALOG = {
       ],
     },
 
-    /* ================= 支撑 ================= */
+    /* ================= 分析与研究：按主题分三组 ================= */
     {
-      id: 'system',
-      title: '设计系统与规范',
-      icon: 'i-cat-chip',
-      note: '所有 demo 背后的同一套 token 与组件，色值逐 key 取自 DevEco Studio 6.0.2 安装包的主题文件。',
-      items: [
-        {
-          title: 'DevEco Studio Windows 主窗口', subtitle: 'DevEco Studio · Windows Main Window',
-          desc: '基于 IntelliJ Int UI 的整页界面稿，也是 21 个 demo 共用的 IDE 外壳：Header、工具窗、编辑器、CodeGenie 面板、构建 / 终端、状态栏。三主题可切，树、标签页、弹层、AI 问答都能点。',
-          view: 'ready', date: '2026-09-09', href: 'deveco-intui-kit/demo/index.html',
-          links: [{ label: '单文件版', href: 'deveco-intui-kit/dist/deveco-main-window.html' }, { label: 'demo 共享骨架', href: 'demos/_shared/frame.js' }],
-          tags: ['Int UI', 'IntelliJ 243', '三主题'], thumb: { type: 'image', src: 'site/thumbs/studio.jpg' },
-        },
-        {
-          title: 'Int UI 组件库与 Token 规范页', subtitle: 'Int UI Components & Design Tokens',
-          desc: '调色板、语义 token、字号阶梯、尺寸与间距、组件画廊、编辑器语法色、CSS 变量清单，以及每个 token 的来源与已知局限。',
-          view: 'ready', date: '2026-09-09', href: 'deveco-intui-kit/docs/index.html',
-          links: [{ label: '单文件版', href: 'deveco-intui-kit/dist/intui-tokens-docs.html' }, { label: 'tokens.json', href: 'deveco-intui-kit/tokens/tokens.json' }, { label: '来源对照', href: 'deveco-intui-kit/tokens/SOURCES.md' }],
-          tags: ['token', '组件画廊'], thumb: { type: 'image', src: 'site/thumbs/int-ui-docs.jpg' },
-        },
-        {
-          title: 'DevEco 智能：视觉与交互体系', subtitle: 'DevEco Intelligence · Visual & Interaction System',
-          desc: '智能色独立于品牌蓝（紫罗兰 → 兰紫 → 玫瑰，小字用纯色、过 AA）；‹✦› 标识、28 个 AI 图标与「基础字形 + 星芒徽标」派生规则；AI 代码高亮、8 个进行态、输入框 / 回答卡 / 审批卡 / 消息操作栏等组件；Agent 输入框九个场景（并入原「输入框场景与状态说明」）；专题：设计稿到代码之后，可视化修改 × AI Coding（作用范围 × 一多断点、人机冲突、设计稿漂移）。每条规则都从开发者任务出发，并配一张「在 IDE 里的样子」，共 70 张实时渲染配图。',
-          view: 'ready', date: '2026-09-24', href: 'deveco-intui-kit/docs/ai-system.html',
-          links: [{ label: 'ai.css', href: 'deveco-intui-kit/src/ai.css' }, { label: '图标', href: 'deveco-intui-kit/icons/ai-icons.svg' }],
-          tags: ['智能色', '进行态', 'D2C'], thumb: { type: 'image', src: 'site/thumbs/ai-system.jpg' },
-        },
-        {
-          title: '消息操作栏：组件 Pattern', subtitle: 'Message Action Bar · Component Pattern',
-          desc: 'DevEco Code 对话面板里每条消息下面那一排。AI 回答：复制 · 重新回答 · 时间，靠左常显；你发的：时间 · 编辑 · 复制，靠右悬停才现；报错时栏不变，时间前写「失败」。结构、两种消息的六个状态、按钮状态、时间戳规则；样张都是真组件，能悬停能点。',
-          view: 'ready', date: '2026-10-08', href: 'deveco-intui-kit/docs/message-actions.html',
-          links: [{ label: '单文件版', href: 'deveco-intui-kit/dist/message-actions.html' }, { label: '回答卡（智能规范 08）', href: 'deveco-intui-kit/docs/ai-system.html#components' }, { label: 'ai.css', href: 'deveco-intui-kit/src/ai.css' }],
-          tags: ['组件状态', '消息操作栏', 'Pattern'], thumb: { type: 'image', src: 'site/thumbs/message-actions.jpg?v=20261008f' },
-        },
-        {
-          title: 'Kit 使用说明', subtitle: 'deveco-intui-kit · README',
-          desc: '目录结构、怎么改配色 / 组件 / 图标、怎么打包成单文件、数据从哪来、还有哪些没取到。',
-          view: 'doc', date: '2026-09-09', href: 'deveco-intui-kit/README.md',
-          tags: ['README'], thumb: { type: 'doc', kind: 'README' },
-        },
-      ],
-    },
-    {
-      id: 'analysis',
-      title: '分析与研究',
+      id: 'competitors',
+      section: 'analysis',
+      title: '竞品与趋势',
       icon: 'i-cat-chart',
-      note: '对内汇报与对外协同共用的事实基础：以开发者证据推动方案，不以设计观点推动方案。',
+      note: '同类产品怎么做、行业往哪走：对照 Claude Code、Codex、Cursor、Xcode 等，落到 DevEco 的建议。',
       items: [
         {
           title: 'AI 成果验收与验证竞品分析：准出标准、无人值守时段的成果、看不见的结果', subtitle: 'Acceptance & Verification of AI Work · Claude Code, Codex, Cursor, Devin, Copilot, Jules, Kiro, Xcode 27',
@@ -375,22 +353,6 @@ window.DEVECO_CATALOG = {
           links: [{ label: '总表', href: 'analysis/ai-acceptance-verification/REPORT-AI成果验收与验证竞品分析.html#matrix' }, { label: '准出标准', href: 'analysis/ai-acceptance-verification/REPORT-AI成果验收与验证竞品分析.html#q1' }, { label: '无人值守', href: 'analysis/ai-acceptance-verification/REPORT-AI成果验收与验证竞品分析.html#q2' }, { label: '不可视结果', href: 'analysis/ai-acceptance-verification/REPORT-AI成果验收与验证竞品分析.html#q3' }, { label: '代码质量追问', href: 'analysis/ai-acceptance-verification/REPORT-AI成果验收与验证竞品分析.html#q4' }, { label: '27X 启示', href: 'analysis/ai-acceptance-verification/REPORT-AI成果验收与验证竞品分析.html#deveco' }],
           tags: ['竞品分析', '验收', '准出标准', '验证', '后台任务', '证据', '代码质量', '冗余', 'Claude Code', 'Codex', 'Cursor', 'Devin', 'Copilot', 'Jules', 'Kiro', 'Xcode'],
           thumb: { type: 'image', src: 'site/thumbs/ai-acceptance-verification.jpg' },
-        },
-        {
-          title: '鸿蒙开发者用户研究计划：半年访谈 50 人', subtitle: 'HarmonyOS Developer Research Plan · Nov 2026 – Apr 2027',
-          desc: '先做初步分析：鸿蒙生态开发和通用开发、苹果开发在九个维度上的区别，三个判断与八条待验证假设（含 10-29 评审追问的 iOS/安卓对比、客户类型差异、代码质量），以及按三类伙伴给客户的交互件（能力包 / 接入件 / 一站式路径 + 交流件）。再给研究计划：研究目标与问题、50 人分层样本（补上大厂 14 人）与横向配额、八种方法、招募渠道与筛选问卷、26 周时间线和 12-11 快报 / 02-26 中期 / 04-30 终报三个节点；之后做成常态，立项按月下单招募，含预算估算和重点客户面对面交流。',
-          view: 'doc', date: '2026-10-29', href: 'analysis/user-research-plan/REPORT-鸿蒙开发者用户研究计划.html',
-          links: [{ label: '三种开发的区别', href: 'analysis/user-research-plan/REPORT-鸿蒙开发者用户研究计划.html#diff' }, { label: '交互件', href: 'analysis/user-research-plan/REPORT-鸿蒙开发者用户研究计划.html#deliver' }, { label: '分层样本', href: 'analysis/user-research-plan/REPORT-鸿蒙开发者用户研究计划.html#sample' }, { label: '时间线', href: 'analysis/user-research-plan/REPORT-鸿蒙开发者用户研究计划.html#timeline' }],
-          tags: ['用户研究', '访谈计划', '鸿蒙 vs 苹果', '大厂样本', '招募', '时间线'],
-          thumb: { type: 'image', src: 'site/thumbs/user-research-plan.jpg' },
-        },
-        {
-          title: '鸿蒙 AI 开发准备：四类用户要导入什么，鸿蒙要开放什么', subtitle: 'AI Dev Readiness · Users, Imports, Skills & Specs',
-          desc: '开发准备要交给 AI 的七类东西（规则、spec、设计稿、已有代码、知识、MCP / Skill / CLI、环境账号），按互联网头部、中型企业、小企业、个人开发者拆开要导入什么、要平台给什么；展开头部厂商工具链要的交付形式（开发、测试、鸿蒙独有能力、上架），盘点官方 Skill 仓库约 72 个 Skill 与 DevEco CLI、CodeGenie MCP；列出要对齐的公共规范和鸿蒙要自己定义的 5 个 spec。',
-          view: 'doc', date: '2026-10-29', href: 'analysis/ai-dev-readiness/REPORT-鸿蒙AI开发准备分析.html',
-          links: [{ label: '四类用户', href: 'analysis/ai-dev-readiness/REPORT-鸿蒙AI开发准备分析.html#users' }, { label: '头部厂商展开', href: 'analysis/ai-dev-readiness/REPORT-鸿蒙AI开发准备分析.html#top' }, { label: '已开放 Skill', href: 'analysis/ai-dev-readiness/REPORT-鸿蒙AI开发准备分析.html#opened' }, { label: '需要哪些 spec', href: 'analysis/ai-dev-readiness/REPORT-鸿蒙AI开发准备分析.html#spec' }],
-          tags: ['用户分析', '开发准备', 'Skill', 'MCP', 'CLI', 'AGENTS.md', 'spec', '头部厂商', '生态'],
-          thumb: { type: 'image', src: 'site/thumbs/ai-dev-readiness.jpg' },
         },
         {
           title: 'AI 开发工具趋势分析', subtitle: 'AI Development Tools · Trends & Evidence',
@@ -434,6 +396,59 @@ window.DEVECO_CATALOG = {
           tags: ['竞品分析', '对话流', '思考', '工具调用', '默认折叠', '生成态', 'Codex', 'Claude Code', 'DeepSeek Harness', 'WorkBuddy', 'Cursor'], thumb: { type: 'image', src: 'site/thumbs/agent-conversation-units.jpg' },
         },
         {
+          title: 'Xcode 27 新特性研究：Device Hub 与另外七项更新', subtitle: 'Xcode 27 · Device Hub, Agents, Workspace, Localization, Instruments…',
+          desc: '一个页签一个特性：Device Hub 最详细，另有编码 Agent、工作区与主题、新建项目与原型、本地化、Organizer、Instruments、Xcode Cloud。每页同一结构、分点短句、从交互与体验看：理念、为什么现在做（场景 / 技术 / 平台 / 竞争）、Apple 演示的场景、交互 → 给谁 → 解决什么、Apple 文档截图、体验评价、鸿蒙电脑版可参照。来源是 WWDC26 逐字稿、release notes 与官方文档，第三方与推断另标。',
+          view: 'doc', date: '2026-10-08', href: 'analysis/xcode27/REPORT-Xcode27新特性研究.html',
+          links: [{ label: 'Device Hub', href: 'analysis/xcode27/REPORT-Xcode27新特性研究.html#device-hub' }, { label: '编码 Agent', href: 'analysis/xcode27/REPORT-Xcode27新特性研究.html#agents' }],
+          tags: ['Xcode 27', 'Device Hub', '友商研究', '鸿蒙电脑版', '截图'], thumb: { type: 'image', src: 'site/thumbs/xcode27.jpg?v=20261008h' },
+        },
+      ],
+    },
+    {
+      id: 'developers',
+      section: 'analysis',
+      title: '开发者与生态',
+      icon: 'i-cat-people',
+      note: '鸿蒙开发者是谁、要什么：用户研究、AI 开发准备、生态位与舆情、三端差异。',
+      items: [
+        {
+          title: '鸿蒙开发者用户研究计划：半年访谈 50 人', subtitle: 'HarmonyOS Developer Research Plan · Nov 2026 – Apr 2027',
+          desc: '先做初步分析：鸿蒙生态开发和通用开发、苹果开发在九个维度上的区别，三个判断与八条待验证假设（含 10-29 评审追问的 iOS/安卓对比、客户类型差异、代码质量），以及按三类伙伴给客户的交互件（能力包 / 接入件 / 一站式路径 + 交流件）。再给研究计划：研究目标与问题、50 人分层样本（补上大厂 14 人）与横向配额、八种方法、招募渠道与筛选问卷、26 周时间线和 12-11 快报 / 02-26 中期 / 04-30 终报三个节点；之后做成常态，立项按月下单招募，含预算估算和重点客户面对面交流。',
+          view: 'doc', date: '2026-10-29', href: 'analysis/user-research-plan/REPORT-鸿蒙开发者用户研究计划.html',
+          links: [{ label: '三种开发的区别', href: 'analysis/user-research-plan/REPORT-鸿蒙开发者用户研究计划.html#diff' }, { label: '交互件', href: 'analysis/user-research-plan/REPORT-鸿蒙开发者用户研究计划.html#deliver' }, { label: '分层样本', href: 'analysis/user-research-plan/REPORT-鸿蒙开发者用户研究计划.html#sample' }, { label: '时间线', href: 'analysis/user-research-plan/REPORT-鸿蒙开发者用户研究计划.html#timeline' }],
+          tags: ['用户研究', '访谈计划', '鸿蒙 vs 苹果', '大厂样本', '招募', '时间线'],
+          thumb: { type: 'image', src: 'site/thumbs/user-research-plan.jpg' },
+        },
+        {
+          title: '鸿蒙 AI 开发准备：四类用户要导入什么，鸿蒙要开放什么', subtitle: 'AI Dev Readiness · Users, Imports, Skills & Specs',
+          desc: '开发准备要交给 AI 的七类东西（规则、spec、设计稿、已有代码、知识、MCP / Skill / CLI、环境账号），按互联网头部、中型企业、小企业、个人开发者拆开要导入什么、要平台给什么；展开头部厂商工具链要的交付形式（开发、测试、鸿蒙独有能力、上架），盘点官方 Skill 仓库约 72 个 Skill 与 DevEco CLI、CodeGenie MCP；列出要对齐的公共规范和鸿蒙要自己定义的 5 个 spec。',
+          view: 'doc', date: '2026-10-29', href: 'analysis/ai-dev-readiness/REPORT-鸿蒙AI开发准备分析.html',
+          links: [{ label: '四类用户', href: 'analysis/ai-dev-readiness/REPORT-鸿蒙AI开发准备分析.html#users' }, { label: '头部厂商展开', href: 'analysis/ai-dev-readiness/REPORT-鸿蒙AI开发准备分析.html#top' }, { label: '已开放 Skill', href: 'analysis/ai-dev-readiness/REPORT-鸿蒙AI开发准备分析.html#opened' }, { label: '需要哪些 spec', href: 'analysis/ai-dev-readiness/REPORT-鸿蒙AI开发准备分析.html#spec' }],
+          tags: ['用户分析', '开发准备', 'Skill', 'MCP', 'CLI', 'AGENTS.md', 'spec', '头部厂商', '生态'],
+          thumb: { type: 'image', src: 'site/thumbs/ai-dev-readiness.jpg' },
+        },
+        {
+          title: 'DevEco 生态位与体验舆情', subtitle: 'DevEco Ecosystem Position & Sentiment',
+          desc: '外部事实、DevEco 家族的版本节奏、开发者原声（IDE 内 / IDE 外）、同行 2026 年把 IDE 做成了什么、从舆情到动作的三个同心圆、1100 万注册开发者里的七类人群与漏斗。',
+          view: 'doc', date: '2026-09-03', href: 'deveco-ecosystem-sentiment.html',
+          tags: ['舆情', '开发者原声', '同行对照'], thumb: { type: 'image', src: 'site/thumbs/sentiment.jpg' },
+        },
+        {
+          title: 'DevEco Studio 三端交互差异：鸿蒙电脑版 vs Windows / macOS', subtitle: 'HarmonyOS PC Edition vs IntelliJ-based Editions',
+          desc: '自研底座的鸿蒙电脑版（毕方平台、Rust 编辑器、盘古与小艺原生）和 IntelliJ 底座的 Windows / macOS 版，在装、写、跑、调、AI、输入与多设备上逐项对照，附社区反馈；再把碰一碰、键鼠穿越、自由窗口、折叠屏与手写笔推成 14 个突破 IntelliJ 底座的机会点，每条标档位与人无我有 / 人有我优。',
+          view: 'doc', date: '2026-09-24', href: 'analysis/deveco-platforms/REPORT-三端交互差异.html',
+          tags: ['鸿蒙电脑', '三端对照', '机会点', '社区反馈'], thumb: { type: 'image', src: 'site/thumbs/deveco-platforms.jpg' },
+        },
+      ],
+    },
+    {
+      id: 'ux-topics',
+      section: 'analysis',
+      title: '体验专题',
+      icon: 'i-cat-lens',
+      note: '具体体验问题的专题研究与设计记录：生成态布局、文件树、demo 消融、冻屏报告。',
+      items: [
+        {
           title: '生成中状态的位置：那一行不该跟着内容跳', subtitle: 'Status Anchor · Layout Stability While Streaming',
           desc: 'DevEco Code 生成内容时，下面那行「进行中」随内容上下跳。四种成因、四个同类产品（Codex CLI / Claude Code / Gemini CLI / Cline）的一手做法、五条改法与推荐组合，以及六条可勾的验收条件。页面内自带一块实时测量的对照：两种放法跑同一段内容，算出的位移是 114px 与 0px。',
           view: 'doc', date: '2026-10-16', href: 'analysis/status-anchor/index.html',
@@ -467,25 +482,6 @@ window.DEVECO_CATALOG = {
           tags: ['消融', '多 Agent'], thumb: { type: 'image', src: 'site/thumbs/ablation.jpg' },
         },
         {
-          title: 'Xcode 27 新特性研究：Device Hub 与另外七项更新', subtitle: 'Xcode 27 · Device Hub, Agents, Workspace, Localization, Instruments…',
-          desc: '一个页签一个特性：Device Hub 最详细，另有编码 Agent、工作区与主题、新建项目与原型、本地化、Organizer、Instruments、Xcode Cloud。每页同一结构、分点短句、从交互与体验看：理念、为什么现在做（场景 / 技术 / 平台 / 竞争）、Apple 演示的场景、交互 → 给谁 → 解决什么、Apple 文档截图、体验评价、鸿蒙电脑版可参照。来源是 WWDC26 逐字稿、release notes 与官方文档，第三方与推断另标。',
-          view: 'doc', date: '2026-10-08', href: 'analysis/xcode27/REPORT-Xcode27新特性研究.html',
-          links: [{ label: 'Device Hub', href: 'analysis/xcode27/REPORT-Xcode27新特性研究.html#device-hub' }, { label: '编码 Agent', href: 'analysis/xcode27/REPORT-Xcode27新特性研究.html#agents' }],
-          tags: ['Xcode 27', 'Device Hub', '友商研究', '鸿蒙电脑版', '截图'], thumb: { type: 'image', src: 'site/thumbs/xcode27.jpg?v=20261008h' },
-        },
-        {
-          title: 'DevEco 生态位与体验舆情', subtitle: 'DevEco Ecosystem Position & Sentiment',
-          desc: '外部事实、DevEco 家族的版本节奏、开发者原声（IDE 内 / IDE 外）、同行 2026 年把 IDE 做成了什么、从舆情到动作的三个同心圆、1100 万注册开发者里的七类人群与漏斗。',
-          view: 'doc', date: '2026-09-03', href: 'deveco-ecosystem-sentiment.html',
-          tags: ['舆情', '开发者原声', '同行对照'], thumb: { type: 'image', src: 'site/thumbs/sentiment.jpg' },
-        },
-        {
-          title: 'DevEco Studio 三端交互差异：鸿蒙电脑版 vs Windows / macOS', subtitle: 'HarmonyOS PC Edition vs IntelliJ-based Editions',
-          desc: '自研底座的鸿蒙电脑版（毕方平台、Rust 编辑器、盘古与小艺原生）和 IntelliJ 底座的 Windows / macOS 版，在装、写、跑、调、AI、输入与多设备上逐项对照，附社区反馈；再把碰一碰、键鼠穿越、自由窗口、折叠屏与手写笔推成 14 个突破 IntelliJ 底座的机会点，每条标档位与人无我有 / 人有我优。',
-          view: 'doc', date: '2026-09-24', href: 'analysis/deveco-platforms/REPORT-三端交互差异.html',
-          tags: ['鸿蒙电脑', '三端对照', '机会点', '社区反馈'], thumb: { type: 'image', src: 'site/thumbs/deveco-platforms.jpg' },
-        },
-        {
           title: '冻屏分析报告：两版低保真的需求分析', subtitle: 'AppFreeze Report · Phase 1 Analysis',
           desc: '两份原始报告的需求分析：16 页报告 + Demo 优化提示词。',
           view: 'doc', date: '2026-09-23', href: 'analysis/appfreeze-report/REPORT-分析报告.html',
@@ -494,8 +490,53 @@ window.DEVECO_CATALOG = {
         },
       ],
     },
+    /* ================= 支撑 ================= */
+    {
+      id: 'system',
+      section: 'support',
+      title: '设计系统与规范',
+      icon: 'i-cat-chip',
+      note: '所有 demo 背后的同一套 token 与组件，色值逐 key 取自 DevEco Studio 6.0.2 安装包的主题文件。',
+      items: [
+        {
+          title: 'DevEco Studio Windows 主窗口', subtitle: 'DevEco Studio · Windows Main Window',
+          desc: '基于 IntelliJ Int UI 的整页界面稿，也是 21 个 demo 共用的 IDE 外壳：Header、工具窗、编辑器、CodeGenie 面板、构建 / 终端、状态栏。三主题可切，树、标签页、弹层、AI 问答都能点。',
+          view: 'ready', date: '2026-09-09', href: 'deveco-intui-kit/demo/index.html',
+          links: [{ label: '单文件版', href: 'deveco-intui-kit/dist/deveco-main-window.html' }, { label: 'demo 共享骨架', href: 'demos/_shared/frame.js' }],
+          tags: ['Int UI', 'IntelliJ 243', '三主题'], thumb: { type: 'image', src: 'site/thumbs/studio.jpg' },
+        },
+        {
+          title: 'Int UI 组件库与 Token 规范页', subtitle: 'Int UI Components & Design Tokens',
+          desc: '调色板、语义 token、字号阶梯、尺寸与间距、组件画廊、编辑器语法色、CSS 变量清单，以及每个 token 的来源与已知局限。',
+          view: 'ready', date: '2026-09-09', href: 'deveco-intui-kit/docs/index.html',
+          links: [{ label: '单文件版', href: 'deveco-intui-kit/dist/intui-tokens-docs.html' }, { label: 'tokens.json', href: 'deveco-intui-kit/tokens/tokens.json' }, { label: '来源对照', href: 'deveco-intui-kit/tokens/SOURCES.md' }],
+          tags: ['token', '组件画廊'], thumb: { type: 'image', src: 'site/thumbs/int-ui-docs.jpg' },
+        },
+        {
+          title: 'DevEco 智能：视觉与交互体系', subtitle: 'DevEco Intelligence · Visual & Interaction System',
+          desc: '智能色独立于品牌蓝（紫罗兰 → 兰紫 → 玫瑰，小字用纯色、过 AA）；‹✦› 标识、28 个 AI 图标与「基础字形 + 星芒徽标」派生规则；AI 代码高亮、8 个进行态、输入框 / 回答卡 / 审批卡 / 消息操作栏等组件；Agent 输入框九个场景（并入原「输入框场景与状态说明」）；专题：设计稿到代码之后，可视化修改 × AI Coding（作用范围 × 一多断点、人机冲突、设计稿漂移）。每条规则都从开发者任务出发，并配一张「在 IDE 里的样子」，共 70 张实时渲染配图。',
+          view: 'ready', date: '2026-09-24', href: 'deveco-intui-kit/docs/ai-system.html',
+          links: [{ label: 'ai.css', href: 'deveco-intui-kit/src/ai.css' }, { label: '图标', href: 'deveco-intui-kit/icons/ai-icons.svg' }],
+          tags: ['智能色', '进行态', 'D2C'], thumb: { type: 'image', src: 'site/thumbs/ai-system.jpg' },
+        },
+        {
+          title: '消息操作栏：组件 Pattern', subtitle: 'Message Action Bar · Component Pattern',
+          desc: 'DevEco Code 对话面板里每条消息下面那一排。AI 回答：复制 · 重新回答 · 时间，靠左常显；你发的：时间 · 编辑 · 复制，靠右悬停才现；报错时栏不变，时间前写「失败」。结构、两种消息的六个状态、按钮状态、时间戳规则；样张都是真组件，能悬停能点。',
+          view: 'ready', date: '2026-10-08', href: 'deveco-intui-kit/docs/message-actions.html',
+          links: [{ label: '单文件版', href: 'deveco-intui-kit/dist/message-actions.html' }, { label: '回答卡（智能规范 08）', href: 'deveco-intui-kit/docs/ai-system.html#components' }, { label: 'ai.css', href: 'deveco-intui-kit/src/ai.css' }],
+          tags: ['组件状态', '消息操作栏', 'Pattern'], thumb: { type: 'image', src: 'site/thumbs/message-actions.jpg?v=20261008f' },
+        },
+        {
+          title: 'Kit 使用说明', subtitle: 'deveco-intui-kit · README',
+          desc: '目录结构、怎么改配色 / 组件 / 图标、怎么打包成单文件、数据从哪来、还有哪些没取到。',
+          view: 'doc', date: '2026-09-09', href: 'deveco-intui-kit/README.md',
+          tags: ['README'], thumb: { type: 'doc', kind: 'README' },
+        },
+      ],
+    },
     {
       id: 'materials',
+      section: 'support',
       title: '汇报材料与结构',
       icon: 'i-cat-book',
       note: '21 条创新点的出处是《创新方向》deck；总体材料的骨架与框架版胶片也在这里。',
