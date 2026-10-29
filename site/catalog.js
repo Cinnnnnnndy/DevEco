@@ -370,10 +370,10 @@ window.DEVECO_CATALOG = {
       items: [
         {
           title: 'AI 成果验收与验证竞品分析：准出标准、无人值守时段的成果、看不见的结果', subtitle: 'Acceptance & Verification of AI Work · Claude Code, Codex, Cursor, Devin, Copilot, Jules, Kiro, Xcode 27',
-          desc: '回应 10-29 汇报后领导的三个问题：用户在 AI 协作中如何形成准出标准、减少检查成本；非工作时段 AI 产出的成果如何检验；后端逻辑、脚本、配置等不可视结果如何管控、理解和验证。对照九款产品，归出「先写标准 / 沉淀进仓库 / 自动关卡 / 只看证据和例外」「隔离 / 护栏 / 证据包 / 可回看」「跑出证据 / 变成可观察 / 讲给人听 / 管住边界」三组做法，指出设备与平台这一段的空位，落到 27X 的验收卡、带设备的证据、夜间云端多设备与按鸿蒙业务含义分级。',
+          desc: '回应 10-29 汇报后领导的三个问题：用户在 AI 协作中如何形成准出标准、减少检查成本；非工作时段 AI 产出的成果如何检验；后端逻辑、脚本、配置等不可视结果如何管控、理解和验证；以及评审追问的 AI 代码冗余、规则检查与二次编辑，只看应用结果够不够。对照九款产品，归出「先写标准 / 沉淀进仓库 / 自动关卡 / 只看证据和例外」「隔离 / 护栏 / 证据包 / 可回看」「跑出证据 / 变成可观察 / 讲给人听 / 管住边界」三组做法，指出设备与平台这一段的空位，落到 27X 的验收卡、带设备的证据、夜间云端多设备与按鸿蒙业务含义分级。',
           view: 'doc', date: '2026-10-29', href: 'analysis/ai-acceptance-verification/REPORT-AI成果验收与验证竞品分析.html',
-          links: [{ label: '总表', href: 'analysis/ai-acceptance-verification/REPORT-AI成果验收与验证竞品分析.html#matrix' }, { label: '准出标准', href: 'analysis/ai-acceptance-verification/REPORT-AI成果验收与验证竞品分析.html#q1' }, { label: '无人值守', href: 'analysis/ai-acceptance-verification/REPORT-AI成果验收与验证竞品分析.html#q2' }, { label: '不可视结果', href: 'analysis/ai-acceptance-verification/REPORT-AI成果验收与验证竞品分析.html#q3' }, { label: '27X 启示', href: 'analysis/ai-acceptance-verification/REPORT-AI成果验收与验证竞品分析.html#deveco' }],
-          tags: ['竞品分析', '验收', '准出标准', '验证', '后台任务', '证据', 'Claude Code', 'Codex', 'Cursor', 'Devin', 'Copilot', 'Jules', 'Kiro', 'Xcode'],
+          links: [{ label: '总表', href: 'analysis/ai-acceptance-verification/REPORT-AI成果验收与验证竞品分析.html#matrix' }, { label: '准出标准', href: 'analysis/ai-acceptance-verification/REPORT-AI成果验收与验证竞品分析.html#q1' }, { label: '无人值守', href: 'analysis/ai-acceptance-verification/REPORT-AI成果验收与验证竞品分析.html#q2' }, { label: '不可视结果', href: 'analysis/ai-acceptance-verification/REPORT-AI成果验收与验证竞品分析.html#q3' }, { label: '代码质量追问', href: 'analysis/ai-acceptance-verification/REPORT-AI成果验收与验证竞品分析.html#q4' }, { label: '27X 启示', href: 'analysis/ai-acceptance-verification/REPORT-AI成果验收与验证竞品分析.html#deveco' }],
+          tags: ['竞品分析', '验收', '准出标准', '验证', '后台任务', '证据', '代码质量', '冗余', 'Claude Code', 'Codex', 'Cursor', 'Devin', 'Copilot', 'Jules', 'Kiro', 'Xcode'],
           thumb: { type: 'image', src: 'site/thumbs/ai-acceptance-verification.jpg' },
         },
         {
