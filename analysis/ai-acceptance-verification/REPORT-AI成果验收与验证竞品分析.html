@@ -1,0 +1,432 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>AI 成果验收与验证</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root{
+  --bg:#f5f6f8; --paper:#ffffff; --ink:#15171a; --ink2:#4a4f57; --ink3:#7a808a; --line:#e3e5e9; --line2:#eef0f3;
+  --accent:#3574f0; --accent-bg:#edf3ff;
+  --ok:#1f8a4c; --ok-bg:#e6f5ec; --warn:#b76e00; --warn-bg:#fdf1e3; --bad:#c7000b; --bad-bg:#fdecec; --mute-bg:#eef0f3;
+  --term:#0f1115; --term-ink:#d6d9de; --term-dim:#7d838c;
+  --shadow:0 1px 2px rgba(16,24,40,.06),0 4px 16px rgba(16,24,40,.06);
+  --mono:ui-monospace,"JetBrains Mono",Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --bg:#16171a; --paper:#1e2024; --ink:#e6e8eb; --ink2:#b3b8c0; --ink3:#868b94; --line:#30333a; --line2:#272a30;
+    --accent:#6b9bfa; --accent-bg:#233150;
+    --ok:#5fc48a; --ok-bg:#1d3326; --warn:#f0a052; --warn-bg:#3a2d1e; --bad:#ff6b6b; --bad-bg:#3a2224; --mute-bg:#272a30;
+    --term:#0b0c0f; --shadow:none;
+  }
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.7 -apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}
+a{color:var(--accent);text-decoration:none} a:hover{text-decoration:underline}
+code{font-family:var(--mono);font-size:.9em;background:var(--line2);padding:1px 5px;border-radius:4px}
+.wrap{max-width:1280px;margin:0 auto;padding:40px 32px 80px}
+.eyebrow{font-size:12px;letter-spacing:.08em;color:var(--ink3)}
+h1{font-size:30px;line-height:1.3;margin:6px 0 12px}
+.lede{color:var(--ink2);max-width:80ch;margin:0}
+h2{font-size:21px;margin:48px 0 12px;scroll-margin-top:16px}
+h2 small{font-size:13px;font-weight:400;color:var(--ink3);margin-left:8px}
+h3{font-size:16px;margin:0}
+nav.toc{display:flex;flex-wrap:wrap;gap:6px;margin:20px 0 0}
+nav.toc a{font-size:13px;border:1px solid var(--line);background:var(--paper);border-radius:999px;padding:3px 12px;color:var(--ink2)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12.5px;color:var(--ink2);margin:14px 0 0}
+
+/* 逐条 */
+ol.items,ul.items{list-style:none;margin:0;padding:0;background:var(--paper);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);counter-reset:it}
+.items>li{display:flex;gap:12px;padding:10px 16px;border-bottom:1px solid var(--line2);font-size:13.5px;color:var(--ink2)}
+.items>li:last-child{border-bottom:none}
+ol.items>li::before{counter-increment:it;content:counter(it);flex:none;width:20px;height:20px;border-radius:50%;background:var(--accent-bg);color:var(--accent);font-size:11.5px;font-weight:700;display:flex;align-items:center;justify-content:center;margin-top:1px}
+ul.items>li::before{content:"";flex:none;width:6px;height:6px;border-radius:50%;background:var(--ink3);margin-top:9px}
+.items b{color:var(--ink);font-weight:600}
+
+/* 表 */
+.tw{background:var(--paper);border:1px solid var(--line);border-radius:12px;overflow:auto;box-shadow:var(--shadow)}
+table{border-collapse:collapse;width:100%;font-size:13px;min-width:1000px}
+th,td{text-align:left;vertical-align:top;padding:9px 12px;border-bottom:1px solid var(--line2)}
+thead th{font-size:12px;color:var(--ink3);background:var(--line2);font-weight:600;position:sticky;top:0}
+tbody th{font-weight:600;white-space:nowrap;width:130px}
+tbody th small{display:block;font-weight:400;color:var(--ink3);font-size:11.5px}
+tr:last-child td,tr:last-child th{border-bottom:none}
+.fold{display:inline-block;font-size:11.5px;font-weight:700;border-radius:5px;padding:0 7px;line-height:19px;white-space:nowrap;margin-right:4px}
+.fold.y{background:var(--ok-bg);color:var(--ok)} .fold.n{background:var(--bad-bg);color:var(--bad)} .fold.p{background:var(--warn-bg);color:var(--warn)} .fold.u{background:var(--mute-bg);color:var(--ink3)}
+.res{display:inline-block;font-size:11.5px;font-weight:700;border-radius:5px;padding:0 7px;line-height:19px;white-space:nowrap}
+.res.del{background:var(--bad-bg);color:var(--bad)} .res.mrg{background:var(--warn-bg);color:var(--warn)} .res.keep{background:var(--ok-bg);color:var(--ok)}
+.ev{display:inline-block;font-size:11px;font-weight:600;border-radius:4px;padding:0 5px;line-height:17px;margin-left:4px;vertical-align:1px;white-space:nowrap}
+.ev.o{background:var(--ok-bg);color:var(--ok)}
+.ev.m{background:var(--accent-bg);color:var(--accent)}
+.ev.i{background:var(--warn-bg);color:var(--warn)}
+.ev.q{background:var(--mute-bg);color:var(--ink3)}
+
+/* 产品卡 */
+.prod{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:16px 18px;box-shadow:var(--shadow);margin-bottom:14px;scroll-margin-top:16px}
+.prod-h{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 12px}
+.prod-h .surf{font-size:12.5px;color:var(--ink3)}
+.pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:10px 0 10px}
+.pane{border:1px solid var(--line);border-radius:10px;overflow:hidden;min-width:0;display:flex;flex-direction:column}
+.pane>.term,.pane>.gui{flex:1}
+.pane .cap{font-size:11.5px;font-weight:700;letter-spacing:.04em;padding:5px 10px;border-bottom:1px solid var(--line);background:var(--line2)}
+.pane .cap.live{color:var(--accent)} .pane .cap.done{color:var(--ok)}
+.term{background:var(--term);color:var(--term-ink);font:12px/1.65 var(--mono);padding:10px 12px;white-space:pre-wrap;word-break:break-word;margin:0}
+.term .d{color:var(--term-dim)} .term .g{color:#4fc27c} .term .r{color:#ff6b6b} .term .b{font-weight:700;color:#fff} .term .a{color:#d9a35b}
+.term .sh{background:linear-gradient(90deg,var(--term-dim),#fff,var(--term-dim));background-size:200% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:sh 2s linear infinite;font-weight:700}
+@keyframes sh{to{background-position:-200% 0}}
+.gui{padding:10px 12px;font-size:12.5px;background:var(--paper)}
+.gui .row{display:flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:8px;padding:4px 9px;margin:5px 0;color:var(--ink2);background:var(--bg)}
+.gui .row .chev{margin-left:auto;color:var(--ink3);font-size:11px}
+.gui .row.flat{border:none;background:none;padding:2px}
+.gui .row.in{margin-left:16px}
+.gui .think{color:var(--ink3);border-left:2px solid var(--line);padding:2px 0 2px 10px;margin:4px 0;font-size:12px}
+.gui .ans{color:var(--ink);margin:6px 2px 2px}
+.gui .muted{color:var(--ink3)}
+.gui .spin{display:inline-block;width:10px;height:10px;border:2px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:rot .9s linear infinite;flex:none}
+@keyframes rot{to{transform:rotate(360deg)}}
+.gui .ok{color:var(--ok);font-weight:700}
+@media (prefers-reduced-motion:reduce){.term .sh,.gui .spin{animation:none}}
+.prod ul.facts{list-style:none;margin:0;padding:0}
+.prod ul.facts li{font-size:13.5px;color:var(--ink2);padding:5px 0 5px 14px;border-top:1px solid var(--line2);position:relative}
+.prod ul.facts li::before{content:"";position:absolute;left:2px;top:14px;width:5px;height:5px;border-radius:50%;background:var(--ink3)}
+
+.src{font-size:12.5px;color:var(--ink2);columns:2;column-gap:28px;padding-left:18px}
+.src li{margin:2px 0;break-inside:avoid}
+
+@media (max-width:900px){ .pair{grid-template-columns:1fr} .src{columns:1} }
+@media (max-width:560px){ .wrap{padding:24px 16px 60px} h1{font-size:24px} }
+
+/* 本页新增：输入框示意 */
+.mock{background:var(--paper);padding:12px;font-size:12.5px;flex:1}
+.mock .hint{color:var(--ink3);font-size:11.5px;margin:0 0 6px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 8px}
+.chip{border:1px solid var(--line);border-radius:999px;padding:2px 10px;background:var(--bg);color:var(--ink2);font-size:12px;white-space:nowrap}
+.chip.on{border-color:var(--accent);background:var(--accent-bg);color:var(--accent);font-weight:600}
+.chip.ghost{border-style:dashed;color:var(--ink3)}
+.box{border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:var(--bg);color:var(--ink3);min-height:46px}
+.box .tag{display:inline-block;background:var(--accent-bg);color:var(--accent);border-radius:5px;padding:0 6px;font-size:11.5px;font-weight:600;margin-right:6px}
+.box .gt{color:var(--ink3);font-style:italic}
+.box .kw{color:var(--ink);font-family:var(--mono)}
+.opts{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 0}
+.opt{border:1px solid var(--line);border-radius:6px;padding:1px 8px;font-size:11.5px;color:var(--ink2);background:var(--paper)}
+.sugg{border:1px solid var(--line2);border-radius:8px;padding:5px 9px;margin:5px 0 0;color:var(--ink2);background:var(--paper)}
+.ctx{display:flex;gap:8px;align-items:center;border:1px solid var(--bad-bg);background:var(--bad-bg);color:var(--bad);border-radius:8px;padding:5px 9px;margin:0 0 8px;font-size:12px}
+.ctx .act{margin-left:auto;background:var(--paper);color:var(--accent);border:1px solid var(--line);border-radius:6px;padding:0 8px;font-weight:600}
+.cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+.card{border:1px solid var(--line);border-radius:8px;padding:6px 9px;background:var(--paper);color:var(--ink2)}
+.card b{display:block;color:var(--ink);font-size:12.5px}
+.card small{color:var(--ink3);font-size:11px}
+
+/* 原因卡 */
+.why{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.why .w{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:14px 16px;box-shadow:var(--shadow)}
+.why .w h3{margin:0 0 4px}
+.why .w p{margin:6px 0 0;font-size:13.5px;color:var(--ink2)}
+.why .w .vs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;font-size:12.5px}
+.why .w .vs div{background:var(--line2);border-radius:8px;padding:6px 9px;color:var(--ink2)}
+.why .w .vs b{display:block;font-size:11.5px;color:var(--ink3);font-weight:600}
+.mock .muted{color:var(--ink3);font-size:11px}
+.note{background:var(--accent-bg);border-radius:10px;padding:10px 14px;font-size:13.5px;color:var(--ink2);margin:12px 0 0}
+.note b{color:var(--ink)}
+p.body{font-size:14px;color:var(--ink2);max-width:86ch;margin:0 0 12px}
+.pair.three{grid-template-columns:repeat(3,minmax(0,1fr))}
+@media (max-width:900px){ .pair.three{grid-template-columns:1fr} .why{grid-template-columns:1fr} .cards{grid-template-columns:1fr} }
+
+/* 本页新增 */
+.q3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.q3 .w{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:14px 16px;box-shadow:var(--shadow)}
+.q3 .w .k{font-size:11.5px;font-weight:700;color:var(--accent);letter-spacing:.04em}
+.q3 .w h3{margin:4px 0 6px}
+.q3 .w p{margin:6px 0 0;font-size:13.5px;color:var(--ink2)}
+.q3 .w p.sh{font-size:12.5px;color:var(--ink3);border-top:1px solid var(--line2);padding-top:6px;margin-top:8px}
+.why{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.why .w{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:14px 16px;box-shadow:var(--shadow)}
+.why .w h3{margin:0 0 4px}
+.why .w p{margin:6px 0 0;font-size:13.5px;color:var(--ink2)}
+.why .w .who{font-size:12.5px;color:var(--ink3);margin-top:8px;border-top:1px solid var(--line2);padding-top:6px}
+.note{background:var(--accent-bg);border-radius:10px;padding:10px 14px;font-size:13.5px;color:var(--ink2);margin:12px 0 0}
+.note b{color:var(--ink)}
+p.body{font-size:14px;color:var(--ink2);max-width:86ch;margin:0 0 12px}
+.mock{background:var(--paper);padding:12px;font-size:12.5px;flex:1}
+.mock .hint{color:var(--ink3);font-size:11.5px;margin:0 0 6px}
+.ck{display:flex;gap:8px;align-items:flex-start;border:1px solid var(--line2);border-radius:8px;padding:5px 9px;margin:5px 0;background:var(--bg);color:var(--ink2)}
+.ck .st{flex:none;font-weight:700;font-size:11.5px;border-radius:5px;padding:0 6px;line-height:19px}
+.ck .st.ok{background:var(--ok-bg);color:var(--ok)} .ck .st.me{background:var(--warn-bg);color:var(--warn)} .ck .st.no{background:var(--bad-bg);color:var(--bad)} .ck .st.sk{background:var(--mute-bg);color:var(--ink3)}
+.ck .ev2{margin-left:auto;color:var(--accent);font-size:11.5px;white-space:nowrap}
+.ck small{display:block;color:var(--ink3);font-size:11px}
+.gap td.y{color:var(--ok);font-weight:600} .gap td.n{color:var(--ink3)}
+@media (max-width:900px){ .q3,.why{grid-template-columns:1fr} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="eyebrow">分析与研究 · 2026-10-29 · 作者：王欣迪</div>
+  <h1>AI 干完的活，怎么验：准出标准、无人值守时段的成果、看不见的结果</h1>
+  <p class="lede">10-29 四层汇报后领导追问的三个问题：用户在 AI 协作中如何形成准出标准、减少检查成本；AI 在非工作时段产出的成果如何检验；后端逻辑、脚本、配置这类不是界面的结果，怎么管控、理解和验证。本页对照 Claude Code、Codex、Cursor、Devin、GitHub Copilot、Jules、Kiro、Xcode 27，加上 Antigravity 作补充，看每家在这三件事上做了什么、共同的做法是什么、还空着什么，最后落到 DevEco 27X 的「验得了」怎么做。</p>
+  <div class="legend">
+    <span><span class="ev o">官方</span> 官方博客 / 文档 / 更新日志 / WWDC 场次</span>
+    <span><span class="ev m">社区</span> 媒体 / 第三方整理</span>
+    <span><span class="ev i">推断</span> 未找到文字出处</span>
+    <span><span class="ev q">待确认</span> 需实机</span>
+    <span>示意图按资料重画，不是截图</span>
+  </div>
+  <nav class="toc">
+    <a href="#keys">结论</a><a href="#frame">三个问题的本质</a><a href="#matrix">总表</a><a href="#q1">问题一 · 准出标准</a><a href="#q2">问题二 · 无人值守的成果</a><a href="#q3">问题三 · 看不见的结果</a><a href="#products">各产品</a><a href="#gap">还空着什么</a><a href="#deveco">对 DevEco 27X 的启示</a><a href="#verify">待验证</a><a href="#sources">来源</a>
+  </nav>
+
+  <h2 id="keys">结论</h2>
+  <ol class="items">
+    <li><span><b>行业的答案是把「检查代码」换成「检查证据」。</b>2025 年大家还在让人读 diff；2026 年各家都在让 Agent 自己先跑、先审、先录：Copilot 开 PR 前先自审并跑代码扫描、密钥扫描、依赖漏洞检查<span class="ev o">官方</span>，Cursor 云端 Agent 交付时附视频、截图、日志<span class="ev o">官方</span>，Devin 在 CI 变绿后自动录一段带标注的操作视频<span class="ev o">官方</span>。人的检查成本降下来，靠的是人只看证据和例外。</span></li>
+    <li><span><b>准出标准有两个来源：这次任务写的，和仓库里沉淀的。</b>这次任务的标准靠「先写再做」：Kiro 把需求写成 EARS 句式的验收条件，再生成属性测试逐条验<span class="ev o">官方</span>；Claude Code、Xcode 27 用计划模式让人先改计划再动手<span class="ev o">官方</span>。长期的标准写进仓库：AGENTS.md / CLAUDE.md 里的测试命令、Copilot 的自定义 Agent、Devin 的 Skill，第一次人教，以后 Agent 自己照着验。<b>减少检查成本的关键在第二种</b>：Kiro 自主 Agent 会把 PR 评审意见记下来用到以后的任务<span class="ev o">官方</span>，Devin 测完会提 PR 改自己的测试 Skill<span class="ev o">官方</span>。</span></li>
+    <li><span><b>非工作时段的成果，各家用同一套四件事管：隔离、证据包、只报例外、事后可查。</b>Codex 定时任务默认跑在独立 worktree、结果进「Scheduled」收件箱、有发现才标未读<span class="ev o">官方</span>；Claude Code Routines、Cursor Automations、Kiro 自主 Agent 都在云端沙箱里跑、产出草稿 PR<span class="ev o">官方</span>。共同点是：夜里的活不直接落到主干，早上看到的是一份打包好的证据，不是一堆日志。</span></li>
+    <li><span><b>看不见的结果，做法是把它翻译成看得见的东西。</b>四条路：让它跑起来出证据（Codex 引用终端日志和测试输出<span class="ev o">官方</span>）；把不可见变成可观察（Cursor Debug Mode 插日志点、让你复现、再删掉<span class="ev o">官方</span>，Cursor Agent 为一个后端漏洞专门写演示页去复现<span class="ev o">官方</span>）；讲给人听（Devin Review 按逻辑重排 diff，Antigravity 交付 Walkthrough 文档，Jules 出音频摘要）；管住边界（权限、网络、密钥按任务配置，敏感文件改动必须人审）。</span></li>
+    <li><span><b>空位在「设备与平台」这一段。</b>各家的证据止于浏览器和单元测试：Devin、Cursor 录的是网页，Xcode 27 能在模拟器里点、能把流程转成 UI 测试，但仍是一次一台<span class="ev o">官方</span>。没有一家把多设备、分布式、上架合规当成准出关卡，也没有一家把「夜里跑完的结果」做成多设备对比。这正是 27X「验得了」可以领先的地方：<b>准出标准里写进鸿蒙特有的关卡（ArkTS 检查、一多、上架体检），证据里放多设备截图和录屏，夜里在云端模拟器跑，早上只看异常。</b></span></li>
+  </ol>
+
+  <h2 id="frame">三个问题，各自在问什么</h2>
+  <p class="body">三个问题看起来是三件事，其实是同一条链上的三个点：标准定得清楚，才能在没人看的时候自动验；验出来的东西要人看得懂，才算验过。</p>
+  <div class="q3">
+    <div class="w">
+      <div class="k">问题一</div>
+      <h3>准出标准：「做完」由谁说了算</h3>
+      <p>AI 说「完成了」不等于完成。难点不在写标准，而在<b>标准从哪来</b>：用户每次手写太累，不写又只能逐行看 diff。所以真正要回答的是：标准怎么从一次任务里长出来，又怎么沉淀下来下次不用再写。</p>
+      <p class="sh">衡量：每个任务人要看几处、花几分钟；第二次同类任务要不要再说一遍。</p>
+    </div>
+    <div class="w">
+      <div class="k">问题二</div>
+      <h3>无人值守时段：没人盯的时候出的活</h3>
+      <p>夜里、开会时、后台跑的任务，过程没人看，只剩结果。风险有两个：<b>改坏了没人拦</b>，以及<b>早上一堆结果没法一件件看</b>。所以要回答：在哪里跑才不会伤到现有工作，交回来的是什么形态，哪些要人看、哪些不用。</p>
+      <p class="sh">衡量：一晚上的结果早上几分钟看完；有没有未经审批落到主干的改动。</p>
+    </div>
+    <div class="w">
+      <div class="k">问题三</div>
+      <h3>看不见的结果：没有界面可点</h3>
+      <p>界面改了能截图，后端逻辑、脚本、配置、数据迁移、权限声明改了，人没有东西可看。难点是<b>看懂</b>和<b>敢放行</b>：既要把结果翻译成人能判断的形式，又要给高风险的改动划边界。</p>
+      <p class="sh">衡量：不读代码能否判断对错；敏感改动有没有被单独拦下来。</p>
+    </div>
+  </div>
+
+  <h2 id="matrix">总表 <small>每格只写这家最有代表性的做法</small></h2>
+  <div class="tw"><table>
+    <thead><tr><th>产品</th><th>问题一 · 准出标准怎么来、检查成本怎么降</th><th>问题二 · 无人值守时段的成果怎么验</th><th>问题三 · 看不见的结果怎么管、怎么懂、怎么验</th></tr></thead>
+    <tbody>
+      <tr><th>Kiro<small>AWS · IDE + 自主 Agent</small></th>
+        <td><b>最完整的「先写标准」。</b>需求、设计、任务三份文件逐份批准；验收条件用 EARS 句式（WHEN…THE SYSTEM SHALL…），写之前先查矛盾和遗漏；再把需求转成属性测试，在大量随机输入上验<span class="ev o">官方</span></td>
+        <td>自主 Agent 每个任务独立沙箱，跑全量测试，另有一个验证 Agent 把关；交付 PR 附实现决策说明；一个任务可跨 15 个仓库出 15 个测过的 PR；评审意见会记住用到以后<span class="ev o">官方</span></td>
+        <td>属性测试把「逻辑对不对」变成可跑的检查；建议把需求编号写进测试名，评审时从测试反查需求<span class="ev m">社区</span>；每个任务单独配网络、密钥、权限<span class="ev o">官方</span></td></tr>
+      <tr><th>Claude Code<small>Anthropic · CLI / IDE / Web</small></th>
+        <td>计划模式先对齐；CLAUDE.md 写测试命令和规范；<b>Stop hook</b> 可在 Agent 宣布完成前强制跑测试，不过就打回<span class="ev o">官方</span>；Code Review（2026-03 预览）多个 Agent 并行审 PR，先自证再报、按严重度排，内部误报率 &lt;1%<span class="ev o">官方</span></td>
+        <td><b>Routines</b>（2026-04）：定时、API、GitHub 事件触发，在 Anthropic 云端跑，产出草稿 PR 或发团队频道<span class="ev o">官方</span>；云端会话可在手机上看、接着改</td>
+        <td>hooks 拦截对指定文件和命令的操作、权限规则分级放行<span class="ev o">官方</span>；/security-review 专审安全；可切「解释型」输出风格，边做边讲为什么<span class="ev o">官方</span></td></tr>
+      <tr><th>Codex<small>OpenAI · CLI / App / Cloud</small></th>
+        <td>AGENTS.md 告诉它怎么跑测试；云端任务交付时<b>引用终端日志和测试输出</b>作为证据，每一步可追<span class="ev o">官方</span>；GitHub 上 @codex review 按 P0/P1 分级提问题<span class="ev m">社区</span></td>
+        <td>App 定时任务：可选跑在独立 worktree，不碰你没写完的代码；结果进「Scheduled」视图当收件箱，有发现的标未读<span class="ev o">官方</span>；建议先手动跑几次、看头几次结果再放手<span class="ev o">官方</span></td>
+        <td>证据是日志引用而不是结论；沙箱默认断网、按审批模式分级<span class="ev o">官方</span>；定时任务「用你的默认沙箱设置无人值守运行」，护栏要事先配好<span class="ev o">官方</span></td></tr>
+      <tr><th>Cursor<small>Anysphere · IDE + 云端 Agent</small></th>
+        <td>Bugbot 审 PR 并可自动修<span class="ev o">官方</span>；云端 Agent「验证到通过才交」，不交第一版<span class="ev o">官方</span></td>
+        <td>云端 Agent 各自一台虚拟机，能装、能跑、能点；交付 PR 附<b>视频、截图、日志</b>，并可远程接管那台桌面直接试，不用拉分支<span class="ev o">官方</span>；Automations 按事件常驻触发<span class="ev m">社区</span></td>
+        <td><b>Debug Mode</b>：提多个假设 → 插日志点 → 让你按步骤复现 → 读运行时数据定位 → 小改 → 复现确认 → 删掉日志点<span class="ev o">官方</span>；为后端漏洞专门写演示页复现、录视频<span class="ev o">官方</span></td></tr>
+      <tr><th>Devin<small>Cognition · 云端 Agent</small></th>
+        <td>Skill / Playbook 沉淀团队验收方式；测完会主动提 PR 改自己的测试 Skill，下次测得更准<span class="ev o">官方</span></td>
+        <td>CI 变绿、评审意见处理完之后，自动起应用、在浏览器里跑一条核心流程并<b>录屏</b>；先发测试计划再跑；视频带标注、关键处放慢、空闲压缩，在网页或 Slack 里直接看<span class="ev o">官方</span></td>
+        <td>官方明说录屏只是「简单的冒烟检查」，覆盖面要靠测试套件和 CI<span class="ev o">官方</span>；Devin Review 把大 diff 按逻辑分组讲解<span class="ev m">社区</span>；DeepWiki 讲代码库</td></tr>
+      <tr><th>GitHub Copilot<small>coding agent / cloud agent</small></th>
+        <td><b>开 PR 前先自审</b>：用 Copilot code review 审自己并改完才请你看；代码扫描、密钥扫描、依赖漏洞检查跑在流程里（2026-02）<span class="ev o">官方</span>；自定义 Agent 放 .github/agents/，如「先测基准、再改、再量差」<span class="ev o">官方</span></td>
+        <td>异步产出草稿 PR；会话日志可边跑边看，能看到扫描和自审步骤<span class="ev o">官方</span>；发起人不能自己批准 Copilot 的 PR，Actions 需人放行<span class="ev o">官方</span></td>
+        <td>默认防火墙限制出网；只能推 copilot/ 分支<span class="ev o">官方</span>；结果以「量化对比」交付（基准前后）而不是一句「优化好了」</td></tr>
+      <tr><th>Jules<small>Google · 异步 Agent</small></th>
+        <td>先出计划等你批；<b>Critic</b> 在生成时对每处改动做对抗式评审，发现问题退回重写，例子是「对已知用例正确、对没见过的输入出错」<span class="ev o">官方</span></td>
+        <td>天生异步：交 PR，附推理过程和 diff；人批准前不做永久改动<span class="ev o">官方</span></td>
+        <td>Critic 按「你的意图」判断而不是按固定规则（区别于 linter）<span class="ev o">官方</span>；可生成提交的音频摘要<span class="ev m">社区</span></td></tr>
+      <tr><th>Xcode 27<small>Apple · WWDC26</small></th>
+        <td>/plan 计划模式可逐行改后批准；Xcode 负责人 Ken Orr 推荐「先让 Agent 写规格，再写代码，再写验证规格的测试」<span class="ev o">官方</span>；无内置验收条件功能</td>
+        <td>无专门后台模式；侧栏列并行对话并标出「要你输入」的；实验室里讲过跑一小时以上的长任务<span class="ev m">社区</span>；Xcode Cloud 作回归关卡</td>
+        <td>构建错误直接回给 Agent；<b>预览渲染作为产物</b>放右侧，和 diff 一起审后再接受；能在模拟器里点、滑、输入，读无障碍树和截图，把走通的流程转成可重复的 UI 测试<span class="ev o">官方</span>；一次一台<span class="ev q">待确认</span></td></tr>
+      <tr><th>Antigravity<small>Google · 补充</small></th>
+        <td>任务清单、实现计划作为产物先给你看<span class="ev o">官方</span></td>
+        <td>管理视图同时看多个 Agent；产出<b>Walkthrough 文档</b>、截图、浏览器录屏替代原始日志<span class="ev o">官方</span></td>
+        <td>可在产物上像 Google Docs 一样批注，Agent 边做边吸收，不用重来<span class="ev o">官方</span></td></tr>
+    </tbody>
+  </table></div>
+
+  <h2 id="q1">问题一 · 准出标准怎么形成，检查成本怎么降</h2>
+  <p class="body">把九家的做法归一下，是四种机制。前两种决定「标准是什么」，后两种决定「人要看多少」。</p>
+  <div class="why">
+    <div class="w"><h3>① 先写标准再动手</h3>
+      <p>做之前把「怎样算做完」写下来，并且写成能被机器验的形式。Kiro 最彻底：EARS 句式每条都有条件和可观察的结果，然后转成属性测试；Claude Code、Xcode、Jules、Antigravity 用计划当轻量版标准。</p>
+      <p><b>代价：</b>小任务也走全套会很重。Kiro 后来加了不经审批的 Quick Plan<span class="ev m">社区</span>，说明「按任务大小分级」是必须的。</p>
+      <div class="who">Kiro · Claude Code · Xcode 27 · Jules · Antigravity</div></div>
+    <div class="w"><h3>② 标准沉淀进仓库，下次不用再说</h3>
+      <p>测试命令、规范、团队怎么验，写进 AGENTS.md / CLAUDE.md / 自定义 Agent / Skill。更进一步是<b>自己长</b>：Kiro 自主 Agent 把评审意见记成以后的规则，Devin 测完提 PR 改测试 Skill。</p>
+      <p><b>这是降检查成本最根本的一条：</b>同一类问题人只指出一次。</p>
+      <div class="who">Codex · Claude Code · Copilot · Devin · Kiro</div></div>
+    <div class="w"><h3>③ 自动关卡：Agent 自己先过一遍</h3>
+      <p>人看之前，先让机器拦一道：Claude Code 的 Stop hook 不过测试不让说完成；Copilot 先自审、再跑三种安全扫描；Jules 的 Critic、Kiro 的验证 Agent 都是「另一个 AI 来挑刺」。</p>
+      <p><b>要点：</b>审的那个和写的那个分开，审出来的先自证再报，否则噪音会把人淹没（Claude Code Review 先验证再报，误报 &lt;1%）。</p>
+      <div class="who">Claude Code · Copilot · Jules · Kiro · Cursor Bugbot</div></div>
+    <div class="w"><h3>④ 只给人看证据和例外</h3>
+      <p>交回来的不是 diff，而是证据包：测试输出、日志引用、视频、截图、基准前后对比；问题按严重度排，没问题的不打扰。</p>
+      <p><b>注意：</b>Devin 官方自己说录屏只覆盖一条核心流程，是「冒烟检查」，不能替代测试。证据要和标准一一对上，不然只是「看起来做了」。</p>
+      <div class="who">Codex · Cursor · Devin · Copilot · Antigravity</div></div>
+  </div>
+  <div class="note"><b>一句话：</b>准出标准不是用户每次填的表，而是「任务里写的几条 + 仓库里攒下的规则 + 平台自带的关卡」三层叠出来的；人只确认第一层，第二层靠纠正一次就记住，第三层工具默认就有。</div>
+
+  <h2 id="q2">问题二 · 非工作时段的成果怎么检验</h2>
+  <p class="body">2026 年各家都上了「你不在也在跑」的能力：Codex 定时任务、Claude Code Routines（2026-04）、Cursor Automations、Kiro 自主 Agent（2025-12）、Copilot、Jules、Devin 本来就是异步的。检验方式高度一致，可以归成四件事：</p>
+  <ol class="items">
+    <li><span><b>隔离：夜里的活不落到主干。</b>独立 worktree（Codex）、云端沙箱或虚拟机（Claude Code、Cursor、Kiro、Devin）、只能推专用分支（Copilot 只推 copilot/ 分支，且发起人不能自批）。最坏情况也只是「扔掉一个分支」。</span></li>
+    <li><span><b>护栏事先配好：</b>因为没人能当场批准，网络、密钥、能执行的命令必须事先按任务配置。Codex 文档明写定时任务「用你的默认沙箱设置无人值守运行」；Kiro 每个任务单配网络和密钥。</span></li>
+    <li><span><b>交回证据包，只报例外：</b>Codex 结果进收件箱、有发现才标未读；Devin 在 CI 变绿后才录屏；Cursor 附视频并允许接管那台机器亲手试。早上看到的是「哪几件要你看」，不是「昨晚做了什么」。</span></li>
+    <li><span><b>过程可回看：</b>Copilot 会话日志、Devin 会话回放、Antigravity 的 Walkthrough。平时不看，出问题时能还原 Agent 当时为什么这样做。</span></li>
+  </ol>
+  <div class="pair" style="margin-top:14px">
+    <div class="pane">
+      <div class="cap">今天的典型形态（按 Codex / Cursor / Devin 资料重画）</div>
+      <div class="mock">
+        <p class="hint">早上打开：一列 PR / 一列会话</p>
+        <div class="ck"><span class="st ok">PR</span><span>修复登录超时重试<small>测试 42/42 通过 · 附 1 段录屏</small></span><span class="ev2">看视频</span></div>
+        <div class="ck"><span class="st me">未读</span><span>依赖巡检：发现 2 个高危漏洞<small>已开草稿 PR</small></span><span class="ev2">看日志</span></div>
+        <div class="ck"><span class="st sk">无发现</span><span>每日 flaky 测试排查</span></div>
+        <p class="hint" style="margin-top:8px">证据是网页录屏和测试日志；看不到真机、多设备</p>
+      </div>
+    </div>
+    <div class="pane">
+      <div class="cap live">DevEco 可以多做一步（推断，见下文建议）</div>
+      <div class="mock">
+        <p class="hint">早上打开：按「要不要你看」排，证据带设备</p>
+        <div class="ck"><span class="st me">要你看</span><span>折叠屏展开态列表错位<small>手机 ✓ · 平板 ✓ · 折叠展开 ✗ · 改前改后截图</small></span><span class="ev2">并排看</span></div>
+        <div class="ck"><span class="st me">要你看</span><span>新增权限 ohos.permission.LOCATION<small>上架体检提示：用途说明缺失</small></span><span class="ev2">看原因</span></div>
+        <div class="ck"><span class="st ok">可合入</span><span>3 处 ArkTS 告警修复<small>编译 ✓ · ArkTS 检查 ✓ · 单测 ✓ · 冷启动 −40ms</small></span><span class="ev2">一键合入</span></div>
+        <p class="hint" style="margin-top:8px">夜里在云端模拟器多开跑，真机只在白天排队复测</p>
+      </div>
+    </div>
+  </div>
+
+  <h2 id="q3">问题三 · 不可视结果的管控、理解与验证</h2>
+  <p class="body">后端逻辑、脚本、配置、数据、权限声明，这些改动没有界面可截。各家的共同思路是：<b>不要求人读懂代码，而是把结果换成人能判断的东西</b>。归成四条路，从「验」到「懂」到「管」：</p>
+  <div class="why">
+    <div class="w"><h3>① 跑起来，用运行证据说话</h3>
+      <p>Codex 交付时引用具体的终端日志和测试输出，你点到哪一步看哪一步；Copilot 的自定义 Agent 先量基准、改完再量，交的是数字差；Kiro 用属性测试在大量生成输入上验逻辑，比几条手写用例覆盖得多。</p>
+      <div class="who">适合：算法、接口、性能、数据处理</div></div>
+    <div class="w"><h3>② 把不可见变成可观察</h3>
+      <p>Cursor Debug Mode 是代表：Agent 不猜，先插日志点，让你按它给的步骤复现，读运行时数据定位，修完再复现一次，最后把日志点删干净。Cursor 云端 Agent 还会为一个后端漏洞专门写演示页、跑攻击流程、录视频。Xcode 把预览渲染当成产物。</p>
+      <div class="who">适合：偶现问题、状态逻辑、安全问题</div></div>
+    <div class="w"><h3>③ 讲给人听</h3>
+      <p>Devin Review 把大 diff 按逻辑重排讲解；Antigravity 交 Walkthrough 文档，并能在上面批注让 Agent 改；Claude Code 有解释型输出风格；Jules 能出音频摘要。关键是<b>讲「改变了什么行为」</b>，而不是复述改了哪几行。</p>
+      <div class="who">适合：配置、脚本、架构调整、跨模块改动</div></div>
+    <div class="w"><h3>④ 管住边界：哪些改动必须人看</h3>
+      <p>Claude Code hooks 和权限规则能指定「改这些文件、跑这些命令要先问」；Copilot 在流程里跑密钥扫描和依赖漏洞检查；Kiro 每个任务单配网络和密钥；Codex 按审批模式分级。看不见的结果不一定都要人懂，但<b>高风险的那类必须单独拦</b>。</p>
+      <div class="who">适合：权限、签名、密钥、依赖、数据迁移</div></div>
+  </div>
+  <div class="note"><b>缺口：</b>四条路里，①②已经比较成熟，③多数产品还停在「总结一段话」，④是按文件路径和命令配的，<b>没有一家按「改动的业务含义」分级</b>，比如「新增了一项敏感权限」「改了签名配置」「改了数据库表结构」。这类判断需要平台知识，通用工具做不深。</div>
+
+  <h2 id="products">各产品要点</h2>
+  <div class="prod" id="p-kiro"><div class="prod-h"><h3>Kiro</h3><span class="surf">规格驱动 · 自主 Agent（2025-12 预览）</span></div>
+    <ul class="facts">
+      <li>每个功能三份文件：requirements.md / design.md / tasks.md，前一份批准了才写下一份<span class="ev m">社区</span>；验收条件用 EARS：「WHEN [条件] THE SYSTEM SHALL [行为]」，天然可测<span class="ev o">官方</span></li>
+      <li>需求分析在写代码前查矛盾、歧义和遗漏<span class="ev o">官方</span>；有 Bugfix Spec（根因、修复设计、需保持的行为）和不经审批的 Quick Plan<span class="ev m">社区</span></li>
+      <li>自主 Agent：每任务独立沙箱、最多 10 个并行、另有验证 Agent；PR 解释实现决策；评审意见会保留并用到以后的任务<span class="ev o">官方</span></li>
+    </ul></div>
+  <div class="prod" id="p-cc"><div class="prod-h"><h3>Claude Code</h3><span class="surf">CLI / IDE / Web / Routines / Code Review</span></div>
+    <ul class="facts">
+      <li>Stop hook：Agent 宣布完成时触发，可强制跑测试，不过就让它继续，社区里常用来防「假完成」<span class="ev o">官方</span><span class="ev m">社区</span></li>
+      <li>Code Review（2026-03 预览，Team / Enterprise）：PR 打开时多 Agent 并行找问题，<b>先验证再报</b>、按严重度排，不自动批准；内部数据：有实质评审意见的 PR 从 16% 升到 54%，被判错的 &lt;1%，平均约 20 分钟<span class="ev o">官方</span></li>
+      <li>Routines（2026-04）：保存的任务 = 提示词 + 仓库 + 工具，定时 / API / GitHub 事件触发，在云端跑，不需要你开着电脑<span class="ev o">官方</span></li>
+    </ul></div>
+  <div class="prod" id="p-codex"><div class="prod-h"><h3>Codex</h3><span class="surf">CLI / App / Cloud</span></div>
+    <ul class="facts">
+      <li>云端任务以终端日志和测试输出的引用作为可核查证据<span class="ev o">官方</span>；AGENTS.md 写明怎么测，测不过它会说</li>
+      <li>App 定时任务：Git 仓库里可选本地或独立 worktree，「worktree 让定时任务的改动和你没做完的本地工作分开」；「Scheduled 视图就是你的收件箱」，有发现的标未读<span class="ev o">官方</span></li>
+      <li>官方建议先在普通对话里手动跑、看头几次定时结果再调整，等于是「先人验几次，再放手」<span class="ev o">官方</span></li>
+    </ul></div>
+  <div class="prod" id="p-cursor"><div class="prod-h"><h3>Cursor</h3><span class="surf">IDE · 云端 Agent · Bugbot · Debug Mode</span></div>
+    <ul class="facts">
+      <li>云端 Agent（2026-02-24 博客）：各自一台虚拟机，能构建、运行并测试自己的改动，产出视频、截图、日志，「迭代到验证通过，而不是交第一版」；可远程接管桌面亲手试<span class="ev o">官方</span></li>
+      <li>例子：临时绕过功能开关做本地测试、推之前还原；为漏洞写演示页并录视频；花 45 分钟走查文档站并总结测过的功能<span class="ev o">官方</span></li>
+      <li>Debug Mode：多假设 → 插日志点（发往本地调试服务）→ 让你复现 → 小改 → 复现确认 → 移除全部插桩<span class="ev o">官方</span></li>
+    </ul></div>
+  <div class="prod" id="p-devin"><div class="prod-h"><h3>Devin</h3><span class="surf">云端 Agent · 测试与录屏</span></div>
+    <ul class="facts">
+      <li>PR 建好后建议测试，可设为预先批准自动测；顺序：读 PR 与代码 → 发测试计划 → 全屏录制并在关键时刻加标注<span class="ev o">官方</span></li>
+      <li>录屏在 CI 变绿、评审意见处理完之后才做；视频关键处放慢、跟随点击缩放、压缩空闲时间<span class="ev o">官方</span></li>
+      <li>官方定位为「简单的冒烟检查」，全面覆盖仍靠测试套件和 CI；测完可能提 PR 更新测试 Skill<span class="ev o">官方</span></li>
+    </ul></div>
+  <div class="prod" id="p-copilot"><div class="prod-h"><h3>GitHub Copilot</h3><span class="surf">coding agent / cloud agent</span></div>
+    <ul class="facts">
+      <li>2026-02：开 PR 前用 Copilot code review 自审并改，改完才请你评审；代码扫描、密钥扫描、依赖漏洞检查在流程内跑（这几项原本属于收费的 Advanced Security）<span class="ev o">官方</span>；2026-04 验证工具提速 20%<span class="ev o">官方</span></li>
+      <li>会话日志里能看到扫描与自审步骤；自定义 Agent 放 .github/agents/ 并可在组织内共享<span class="ev o">官方</span></li>
+      <li>风险控制：防火墙、只推 copilot/ 分支、发起人不能批准、Actions 要人放行<span class="ev o">官方</span></li>
+    </ul></div>
+  <div class="prod" id="p-jules"><div class="prod-h"><h3>Jules</h3><span class="surf">Google · 异步编码 Agent</span></div>
+    <ul class="facts">
+      <li>Critic（2025-08）：生成时对所有改动做对抗式评审，问题退回重写；按用户语境和意图判断，不是固定规则；计划把 Critic 做成能用代码解释器和搜索的完整 Agent<span class="ev o">官方</span></li>
+      <li>人批准前不做永久改动；PR 附推理与 diff<span class="ev o">官方</span></li>
+    </ul></div>
+  <div class="prod" id="p-xcode"><div class="prod-h"><h3>Xcode 27</h3><span class="surf">WWDC26 · Agentic Coding · Device Hub</span></div>
+    <ul class="facts">
+      <li>构建错误直接回给 Agent；预览在当前运行目标上渲染成产物；演示里写了 12 个测试并全部跑过<span class="ev o">官方</span></li>
+      <li>右侧产物面板：diff、新文件、渲染的预览放一起审后再接受；/plan 可逐行改计划<span class="ev o">官方</span></li>
+      <li>实验室（非官方转述）：Agent 在模拟器里点、滑、输入，读无障碍树和截图，把走通的流程转成可重复 UI 测试；可跑一小时以上<span class="ev m">社区</span></li>
+      <li>没有专门的后台 Agent 模式、没有内置验收条件；Device Hub 能统一管模拟器与真机，但没看到多台同时验证<span class="ev q">待确认</span>（另见 <a href="../xcode27/REPORT-Xcode27新特性研究.html">Xcode 27 新特性研究</a>）</li>
+    </ul></div>
+
+  <h2 id="gap">还空着什么</h2>
+  <div class="tw gap"><table style="min-width:760px">
+    <thead><tr><th>能力</th><th>做到的</th><th>没做到 / 空位</th></tr></thead>
+    <tbody>
+      <tr><th>验收条件结构化</th><td class="y">Kiro（EARS + 属性测试）</td><td>其余只有计划，计划里的条件不会自动变成检查项、也不会回填「哪条已验」</td></tr>
+      <tr><th>标准自己长</th><td class="y">Kiro 记评审意见、Devin 改测试 Skill</td><td>多数靠人手写规则文件；纠正一次就记住的还很少</td></tr>
+      <tr><th>证据类型</th><td class="y">测试日志、网页录屏、截图、基准对比</td><td><b>真机、多设备、分布式</b>证据没有；Xcode 能点模拟器但一次一台</td></tr>
+      <tr><th>平台合规关卡</th><td class="y">Copilot 安全扫描三件套</td><td><b>上架规则、权限用途、隐私声明</b>没有一家放进准出</td></tr>
+      <tr><th>无人值守结果的排序</th><td class="y">Codex 有发现才标未读</td><td>只分「有 / 没有」，不按「要不要你决定」排</td></tr>
+      <tr><th>不可视改动分级</th><td class="y">按文件路径、命令配权限</td><td>不按业务含义分级（新增敏感权限、改签名、改表结构）</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2 id="deveco">对 DevEco 27X 的启示</h2>
+  <p class="body">27X 的「验得了」原本讲的是能力（多设备、分布式、上架体检）。这三个问题提醒我们：<b>能力之外，还要把「怎么算验过」做成产品</b>。按看得见 / 验得了 / 退得回 / 接得进四个特征落：</p>
+  <ol class="items">
+    <li><span><b>验收卡：把准出标准做成任务的一部分（回答问题一）。</b>每个任务开始时，Agent 从需求和工程状态生成一张验收卡，分三层：<b>任务条件</b>（这次要满足的几条，用户可改，借鉴 Kiro EARS 但不要求用户写格式）、<b>工程规则</b>（团队沉淀的，纠正一次就记进去，借鉴 Kiro / Devin）、<b>鸿蒙关卡</b>（编译、ArkTS 检查、一多布局、上架体检、权限用途，平台默认带，这是别家没有的）。完成时每条标「已验 / 要你看 / 跳过」并附证据。小改动只走鸿蒙关卡，不走全套。<span class="ev i">推断</span> 承接 <a href="../../demos/31-agent-workspace/index.html">31 Agent 工作台</a> 的证据页签、<a href="../../demos/02-scene-check/index.html">02 场景化体检</a>。</span></li>
+    <li><span><b>证据带设备：检查成本降在「不用自己上真机」（回答问题一）。</b>别家证据止于网页录屏，DevEco 的证据应该是多设备并排截图和录屏、改前改后性能数字。人看的是「折叠展开态 ✗」这样的结论和对应画面，不是 diff。承接 <a href="../../demos/16-multi-device-verify/index.html">16 真机多设备</a>、<a href="../../demos/17-multi-device-canvas/index.html">17 模拟器多端</a>。</span></li>
+    <li><span><b>夜间跑在云端模拟器，早上看「要你看」清单（回答问题二）。</b>照行业共识做四件事：隔离（独立工作区 / 分支，不碰本地未提交改动）、护栏事先配（网络、签名证书、密钥按任务配，夜间任务不允许改签名和发布）、证据包、过程可回看。DevEco 多一步：<b>按「要不要你决定」排，而不是按「有没有结果」</b>；夜里在 <a href="../../demos/27-cloud-emulator/index.html">27 云端模拟器</a>多开跑，需要真机的白天排队复测，结果推到 <a href="../../demos/25-phone-client-debug/index.html">25 手机客户端</a>可直接看。</span></li>
+    <li><span><b>不可视结果：按鸿蒙业务含义分级管（回答问题三）。</b>把改动翻译成「行为变化」：新增 / 删除了哪项权限、module.json5 改了什么能力、签名与 bundle 配置有没有动、数据结构是否兼容旧版本。高风险类（权限、签名、隐私、数据迁移）默认必须人看，并给一句人话说明影响；其余自动放行。这是通用工具做不深、DevEco 有平台知识能做的。<span class="ev i">推断</span></span></li>
+    <li><span><b>不可视结果：借 Debug Mode 的思路做 HiLog 插桩验证（回答问题三）。</b>逻辑类问题让 Agent 插 HiLog 点、在设备上复现、读运行时数据定位、修完复测、自动清理插桩；性能和冻屏类直接出可读报告（已有 <a href="../../demos/28-appfreeze-report/v2.html">28 冻屏分析报告</a>作样板）。</span></li>
+    <li><span><b>把验证开放给外部 Agent（接得进）。</b>Claude Code、Codex、Cursor 都在让 Agent 自己验，但它们不懂鸿蒙。把编译、ArkTS 检查、多设备截图、上架体检开成 MCP / Skill，让外部 Agent 跑完 DevEco 的关卡再交付，验收标准就跟着 DevEco 走。承接 <a href="../../demos/23-mcp-skill-open/index.html">23 开放 MCP 与 Skill</a>。</span></li>
+    <li><span><b>退得回是放心放手的前提。</b>夜间和后台任务要能整任务丢弃、按步骤回退（<a href="../../demos/14-ai-timeline/index.html">14 AI 协作时间轴</a>）；用户敢让 AI 夜里干活，前提是「最坏也只是扔掉」。</span></li>
+  </ol>
+  <div class="note"><b>建议给领导的一句话：</b>「行业已经从让人看代码转到让人看证据；DevEco 的不同在于证据带设备、关卡带鸿蒙规则——准出标准由任务条件、团队规则、鸿蒙关卡三层叠出来，夜里在云端多设备跑，早上只看需要你决定的那几件。」<br><b>可配的效果指标</b>（口径待和产品线对齐）：每任务人工检查处数与时长、夜间任务早上处理时长、上架体检一次通过率、真机前暴露的问题占比、高风险改动漏审数。</div>
+
+  <h2 id="verify">待验证</h2>
+  <ul class="items">
+    <li><span>Xcode 27 Device Hub 是否支持多台同时让 Agent 验证；后台长任务的官方说法（目前只有实验室转述）<span class="ev q">待确认</span></span></li>
+    <li><span>Kiro 属性测试用的库、hooks 的触发事件；Cursor Automations 的正式能力边界<span class="ev q">待确认</span></span></li>
+    <li><span>Devin Review 的分组讲解、Jules 音频摘要的当前状态（本次只找到二手资料）<span class="ev m">社区</span></span></li>
+    <li><span>本页没有实机复测，各家数据（如 Claude Code Review 误报 &lt;1%）均为厂商口径</span></li>
+    <li><span>DevEco 建议里的验收卡、按业务含义分级、夜间清单尚无用户访谈直接支撑，可在下一轮访谈里问「AI 做完你怎么确认」</span></li>
+  </ul>
+
+  <h2 id="sources">来源</h2>
+  <ul class="src">
+    <li><a href="https://kiro.dev/blog/introducing-kiro-autonomous-agent/">Kiro：Introducing Kiro autonomous agent</a>（2025-12-02）</li>
+    <li><a href="https://developertoolkit.ai/en/comparison/kiro/">Developer Toolkit：Kiro spec files, property-based tests</a>（2026-09/10 核对）</li>
+    <li><a href="https://tessl.io/blog/anthropic-adds-routines-to-claude-code-for-scheduled-agent-tasks/">Tessl：Claude Code Routines</a>（2026-04-16）</li>
+    <li><a href="https://infoq.com/news/2026/04/claude-code-review">InfoQ：Claude Code Review</a>（2026-04-17）</li>
+    <li><a href="https://code.claude.com/docs/en/hooks">Claude Code 文档：Hooks</a></li>
+    <li><a href="https://learn.chatgpt.com/docs/automations?surface=app">OpenAI：Codex scheduled tasks / Automations</a></li>
+    <li><a href="https://openai.com/index/introducing-codex/">OpenAI：Introducing Codex</a>（2025-05，日志与测试输出引用）</li>
+    <li><a href="https://cursor.com/blog/agent-computer-use">Cursor：Agent computer use / cloud agents</a>（2026-02-24）</li>
+    <li><a href="https://cursor.com/docs/agent/debug-mode">Cursor 文档：Debug Mode</a></li>
+    <li><a href="https://docs.devin.ai/ja/work-with-devin/testing-and-recordings">Devin 文档：Testing and recordings</a></li>
+    <li><a href="https://github.blog/2026/02/whats-new-with-github-copilot-coding-agent/">GitHub Blog：What's new with Copilot coding agent</a>（2026-02-26）</li>
+    <li><a href="https://github.blog/changelog/2026-04-10-copilot-cloud-agents-validation-tools-are-now-20-faster">GitHub Changelog：validation tools 20% faster</a>（2026-04-10）</li>
+    <li><a href="https://docs.github.com/en/copilot/concepts/agents/cloud-agent/risks-and-mitigations">GitHub 文档：cloud agent risks and mitigations</a></li>
+    <li><a href="https://www.itpro.com/software/development/google-jules-coding-agent-code-quality-update">ITPro：Jules critic</a>（2025-08-21）</li>
+    <li><a href="https://blakecrosley.com/blog/xcode-27-coding-agents">Blake Crosley：Xcode 27 coding agents</a>（WWDC26 场次 259/261/399/8121 整理）</li>
+    <li><a href="https://engineering.01cloud.com/2025/11/agents-in-the-drivers-seat-a-deep-dive-into-google-antigravitys-capabilities/">01cloud：Google Antigravity Artifacts</a></li>
+    <li><a href="../xcode27/REPORT-Xcode27新特性研究.html">Xcode 27 新特性研究</a> · <a href="../ai-ide-landscape/index.html">AI 开发工具趋势分析</a></li>
+  </ul>
+</div>
+</body>
+</html>
