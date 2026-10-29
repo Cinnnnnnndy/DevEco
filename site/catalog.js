@@ -29,7 +29,7 @@
    `python3 site/tools/thumb.py <slug>` 出缩略图；然后在这里把对应条目的 view 改成 'ready'、补 href 与 thumb。
    ===================================================================== */
 window.DEVECO_CATALOG = {
-  updated: '2026-10-24',
+  updated: '2026-10-29',
   title: '鸿蒙开发工具体验',
   lede: '围绕 DevEco Studio / DevEco Code / DevEco CLI 的体验设计：29 条创新点各一个可点的界面稿 demo（其中 9 条是新一轮规划重点），全部按鸿蒙电脑版蓝本与 AI Coding / 多 Agent 场景重做；加上设计系统、分析与汇报材料。全部是本地静态文件，双击即开。',
 
@@ -368,6 +368,14 @@ window.DEVECO_CATALOG = {
       icon: 'i-cat-chart',
       note: '对内汇报与对外协同共用的事实基础：以开发者证据推动方案，不以设计观点推动方案。',
       items: [
+        {
+          title: '鸿蒙开发者用户研究计划：半年访谈 50 人', subtitle: 'HarmonyOS Developer Research Plan · Nov 2026 – Apr 2027',
+          desc: '先做初步分析：鸿蒙生态开发和通用开发、苹果开发在九个维度上的区别，三个判断与六条待验证假设，以及按三类伙伴给客户的交互件（能力包 / 接入件 / 一站式路径 + 交流件）。再给研究计划：研究目标与问题、50 人分层样本（补上大厂 14 人）与横向配额、八种方法、招募渠道与筛选问卷、26 周时间线和 12-11 快报 / 02-26 中期 / 04-30 终报三个节点。',
+          view: 'doc', date: '2026-10-29', href: 'analysis/user-research-plan/REPORT-鸿蒙开发者用户研究计划.html',
+          links: [{ label: '三种开发的区别', href: 'analysis/user-research-plan/REPORT-鸿蒙开发者用户研究计划.html#diff' }, { label: '交互件', href: 'analysis/user-research-plan/REPORT-鸿蒙开发者用户研究计划.html#deliver' }, { label: '分层样本', href: 'analysis/user-research-plan/REPORT-鸿蒙开发者用户研究计划.html#sample' }, { label: '时间线', href: 'analysis/user-research-plan/REPORT-鸿蒙开发者用户研究计划.html#timeline' }],
+          tags: ['用户研究', '访谈计划', '鸿蒙 vs 苹果', '大厂样本', '招募', '时间线'],
+          thumb: { type: 'image', src: 'site/thumbs/user-research-plan.jpg' },
+        },
         {
           title: 'AI 开发工具趋势分析', subtitle: 'AI Development Tools · Trends & Evidence',
           desc: '从会话脱离窗口、能力开放、信任与审阅回退等六个趋势，串起八家头部产品和新兴工具案例；包含 DevEco 机会、四项体验指标、五条基准任务及术语说明。依据 1025 材料 P115–167 整理，逐页原文、原图及待核实项完整保留。',
