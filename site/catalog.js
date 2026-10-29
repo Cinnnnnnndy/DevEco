@@ -370,7 +370,7 @@ window.DEVECO_CATALOG = {
       items: [
         {
           title: '鸿蒙开发者用户研究计划：半年访谈 50 人', subtitle: 'HarmonyOS Developer Research Plan · Nov 2026 – Apr 2027',
-          desc: '先做初步分析：鸿蒙生态开发和通用开发、苹果开发在九个维度上的区别，三个判断与六条待验证假设，以及按三类伙伴给客户的交互件（能力包 / 接入件 / 一站式路径 + 交流件）。再给研究计划：研究目标与问题、50 人分层样本（补上大厂 14 人）与横向配额、八种方法、招募渠道与筛选问卷、26 周时间线和 12-11 快报 / 02-26 中期 / 04-30 终报三个节点。',
+          desc: '先做初步分析：鸿蒙生态开发和通用开发、苹果开发在九个维度上的区别，三个判断与八条待验证假设（含 10-29 评审追问的 iOS/安卓对比、客户类型差异、代码质量），以及按三类伙伴给客户的交互件（能力包 / 接入件 / 一站式路径 + 交流件）。再给研究计划：研究目标与问题、50 人分层样本（补上大厂 14 人）与横向配额、八种方法、招募渠道与筛选问卷、26 周时间线和 12-11 快报 / 02-26 中期 / 04-30 终报三个节点；之后做成常态，立项按月下单招募，含预算估算和重点客户面对面交流。',
           view: 'doc', date: '2026-10-29', href: 'analysis/user-research-plan/REPORT-鸿蒙开发者用户研究计划.html',
           links: [{ label: '三种开发的区别', href: 'analysis/user-research-plan/REPORT-鸿蒙开发者用户研究计划.html#diff' }, { label: '交互件', href: 'analysis/user-research-plan/REPORT-鸿蒙开发者用户研究计划.html#deliver' }, { label: '分层样本', href: 'analysis/user-research-plan/REPORT-鸿蒙开发者用户研究计划.html#sample' }, { label: '时间线', href: 'analysis/user-research-plan/REPORT-鸿蒙开发者用户研究计划.html#timeline' }],
           tags: ['用户研究', '访谈计划', '鸿蒙 vs 苹果', '大厂样本', '招募', '时间线'],
