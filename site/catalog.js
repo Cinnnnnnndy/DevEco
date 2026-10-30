@@ -449,6 +449,16 @@ window.DEVECO_CATALOG = {
       note: '具体体验问题的专题研究与设计记录：生成态布局、文件树、demo 消融、冻屏报告。',
       items: [
         {
+          title: '27X 整体体验规划：既有专题与新增机会点', subtitle: 'Overall Experience Planning · 26X → 27X',
+          desc: '统一策略总览、规划全景与四条主线八个专题；将 8 个后续机会点合并到既有专题与 3 个新增专题建议，关联现有 Demo，保留七张原始材料。',
+          view: 'doc', date: '2026-10-30', href: 'analysis/overall-planning/index.html',
+          key: '整体规划与后续机会点',
+          links: [{label:'策略总览',href:'analysis/overall-planning/index.html#strategy'},{label:'八个专题',href:'analysis/overall-planning/index.html#topics'},{label:'跨专题补充',href:'analysis/overall-planning/index.html#new'}],
+          tags: ['整体规划', '27X', '机会点', '专题', '托付得放心', '验得了', '接得进'],
+          thumb: {type:'doc',kind:'HTML'},
+        },
+
+        {
           title: '生成中状态的位置：那一行不该跟着内容跳', subtitle: 'Status Anchor · Layout Stability While Streaming',
           desc: 'DevEco Code 生成内容时，下面那行「进行中」随内容上下跳。四种成因、四个同类产品（Codex CLI / Claude Code / Gemini CLI / Cline）的一手做法、五条改法与推荐组合，以及六条可勾的验收条件。页面内自带一块实时测量的对照：两种放法跑同一段内容，算出的位移是 114px 与 0px。',
           view: 'doc', date: '2026-10-16', href: 'analysis/status-anchor/index.html',
