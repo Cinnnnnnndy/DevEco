@@ -503,10 +503,10 @@ window.DEVECO_CATALOG = {
     /* ================= 支撑 ================= */
     {
       id: 'collaboration', section: 'support', title: '设计协作流程', icon: 'i-cat-check',
-      note: '按需求类型分流，从 OCT 登记到设计归档与研发交付。',
+      note: '先评估设计投入，按需求类型协作，从 OCT 登记到研发实现后的交互与视觉联合走查。',
       items: [{
         title: '设计需求协作流程', subtitle: 'Design Collaboration Workflow',
-        desc: '大颗粒度新增需求先竞品分析，再低保真集体评审与高保真串讲；小需求和历史改动按 Win / 鸿蒙版本及原负责人延续，统一归档并更新 OCT。',
+        desc: '先评估是否需要设计稿：无需设计稿的给予交互与视觉建议；需出稿的大需求走完整协作，小需求按版本与原负责人延续。统一归档交付后，交互与视觉共同走查实现效果。',
         view: 'doc', date: '2026-10-31', href: 'design/workflow/index.html',
         tags: ['协作流程', '需求', 'OCT', '评审', '归档', 'Win', '鸿蒙', 'Pattern'],
         thumb: { type: 'doc', kind: 'HTML' },
