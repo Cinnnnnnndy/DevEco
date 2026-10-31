@@ -506,7 +506,7 @@ window.DEVECO_CATALOG = {
       note: '先评估设计投入，按需求类型协作，从 OCT 登记到研发实现后的交互与视觉联合走查。',
       items: [{
         title: '设计需求协作流程', subtitle: 'Design Collaboration Workflow',
-        desc: '先评估是否需要设计稿：无需设计稿的给予交互与视觉建议；需出稿的大需求走完整协作，小需求按版本与原负责人延续。统一归档交付后，交互与视觉共同走查实现效果。',
+        desc: '先评估设计投入：大颗粒度新增需求及涉及较强交互或视觉变化的历史改动走完整协作；其余历史改动按版本与原负责人延续。无需设计稿的给予交互与视觉建议，实现后统一联合走查。',
         view: 'doc', date: '2026-10-31', href: 'design/workflow/index.html',
         tags: ['协作流程', '需求', 'OCT', '评审', '归档', 'Win', '鸿蒙', 'Pattern'],
         thumb: { type: 'doc', kind: 'HTML' },
