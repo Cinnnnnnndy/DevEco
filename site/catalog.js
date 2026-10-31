@@ -33,7 +33,7 @@
    `python3 site/tools/thumb.py <slug>` 出缩略图；然后在这里把对应条目的 view 改成 'ready'、补 href 与 thumb。
    ===================================================================== */
 window.DEVECO_CATALOG = {
-  updated: '2026-10-29',
+  updated: '2026-10-31',
   title: '鸿蒙开发工具体验',
   lede: '围绕 DevEco Studio / DevEco Code / DevEco CLI 的体验设计：29 条创新点各一个可点的界面稿 demo（其中 9 条是新一轮规划重点），全部按鸿蒙电脑版蓝本与 AI Coding / 多 Agent 场景重做；加上设计系统、分析与汇报材料。全部是本地静态文件，双击即开。',
 
@@ -502,6 +502,18 @@ window.DEVECO_CATALOG = {
     },
     /* ================= 支撑 ================= */
     {
+      id: 'collaboration', section: 'support', title: '设计协作流程', icon: 'i-cat-check',
+      note: '按需求类型分流，从 OCT 登记到设计归档与研发交付。',
+      items: [{
+        title: '设计需求协作流程', subtitle: 'Design Collaboration Workflow',
+        desc: '大颗粒度新增需求先竞品分析，再低保真集体评审与高保真串讲；小需求和历史改动按 Win / 鸿蒙版本及原负责人延续，统一归档并更新 OCT。',
+        view: 'doc', date: '2026-10-31', href: 'design/workflow/index.html',
+        tags: ['协作流程', '需求', 'OCT', '评审', '归档', 'Win', '鸿蒙', 'Pattern'],
+        thumb: { type: 'doc', kind: 'HTML' },
+      }],
+    },
+
+    {
       id: 'system',
       section: 'support',
       title: '设计系统与规范',
@@ -561,3 +573,4 @@ window.DEVECO_CATALOG = {
     },
   ],
 };
+
