@@ -466,10 +466,10 @@ window.DEVECO_CATALOG = {
         },
         {
           title: '27X 整体体验规划：既有专题与新增机会点', subtitle: 'Overall Experience Planning · 26X → 27X',
-          desc: '统一策略总览、规划全景与四条主线八个专题；将 8 个后续机会点合并到既有专题与 3 个新增专题建议，关联现有 Demo，保留七张原始材料。',
-          view: 'doc', date: '2026-10-30', href: 'analysis/overall-planning/index.html',
+          desc: '统一策略总览、规划全景与四条主线八个专题；重点纳入 11-02 产品讨论：插件化、多语言工程、鸿蒙多设备、多端协作与调优；合并既有机会点与 4 个新增专题建议，关联现有 Demo，保留七张原始材料。',
+          view: 'doc', date: '2026-11-03', href: 'analysis/overall-planning/index.html',
           key: '整体规划与后续机会点',
-          links: [{label:'策略总览',href:'analysis/overall-planning/index.html#strategy'},{label:'八个专题',href:'analysis/overall-planning/index.html#topics'},{label:'跨专题补充',href:'analysis/overall-planning/index.html#new'}],
+          links: [{label:'产品讨论重点',href:'analysis/overall-planning/index.html#product-focus'},{label:'策略总览',href:'analysis/overall-planning/index.html#strategy'},{label:'八个专题',href:'analysis/overall-planning/index.html#topics'},{label:'跨专题补充',href:'analysis/overall-planning/index.html#new'}],
           tags: ['整体规划', '27X', '机会点', '专题', '托付得放心', '验得了', '接得进'],
           thumb: {type:'doc',kind:'HTML'},
         },
