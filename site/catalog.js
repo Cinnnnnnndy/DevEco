@@ -185,7 +185,8 @@ window.DEVECO_CATALOG = {
         {
           no: '32', title: 'Device Box：模拟器、真机、远端设备一个窗口', subtitle: 'DevEco Device Box · HarmonyOS 7 visual',
           desc: '参照 Xcode 27 Device Hub 的「侧栏整理 / 画布操控 / 检查器配置」，把 17–20 的模拟器特性收进一个独立窗口，视觉用鸿蒙 7 的沉浸光感与粒子：多台画布与一多检查、鸿蒙特征与手势、场景一键应用到全部、远端借机、五步连接、分布式时间轴；点「特性来源」可看每处出自哪条。',
-          view: 'ready', date: '2026-10-27', href: 'demos/32-device-box/index.html',
+          view: 'ready', date: '2026-11-03', href: 'demos/32-device-box/index.html',
+          links: [{label:'交互专利候选点分析',href:'analysis/device-canvas-interaction/index.html'}],
           tags: ['步数与切换次数', '等待可见'], note: '收拢 17 / 18 / 19 / 20；对标 Xcode 27 Device Hub', thumb: { type: 'image', src: 'site/thumbs/32-device-box.jpg' },
         },
         {
@@ -456,6 +457,13 @@ window.DEVECO_CATALOG = {
       icon: 'i-cat-lens',
       note: '具体体验问题的专题研究与设计记录：生成态布局、文件树、demo 消融、冻屏报告。',
       items: [
+        {
+          title: '多设备画布：交互专利候选点与创新机制', subtitle: 'Device Canvas · Interaction Patent Study',
+          desc: '围绕增删连续性、层级缩放、聚焦往返、1:1实物校准与窄屏渐进显示逐点分析；每点配操作流程与前后状态简图，明确布局规则、公开资料、实现边界与验证方法。',
+          view: 'doc', date: '2026-11-03', href: 'analysis/device-canvas-interaction/index.html',
+          links: [{label:'体验 Demo',href:'demos/32-device-box/index.html'}],
+          tags: ['交互专利', '创新点', '多设备', '画布', '流程图'], thumb: {type:'doc',kind:'HTML'},
+        },
         {
           title: '27X 整体体验规划：既有专题与新增机会点', subtitle: 'Overall Experience Planning · 26X → 27X',
           desc: '统一策略总览、规划全景与四条主线八个专题；将 8 个后续机会点合并到既有专题与 3 个新增专题建议，关联现有 Demo，保留七张原始材料。',
