@@ -33,7 +33,7 @@
    `python3 site/tools/thumb.py <slug>` 出缩略图；然后在这里把对应条目的 view 改成 'ready'、补 href 与 thumb。
    ===================================================================== */
 window.DEVECO_CATALOG = {
-  updated: '2026-11-02',
+  updated: '2026-11-04',
   title: '鸿蒙开发工具体验',
   lede: '围绕 DevEco Studio / DevEco Code / DevEco CLI 的体验设计：29 条创新点各一个可点的界面稿 demo（其中 9 条是新一轮规划重点），全部按鸿蒙电脑版蓝本与 AI Coding / 多 Agent 场景重做；加上设计系统、分析与汇报材料。全部是本地静态文件，双击即开。',
 
@@ -346,6 +346,14 @@ window.DEVECO_CATALOG = {
       icon: 'i-cat-chart',
       note: '同类产品怎么做、行业往哪走：对照 Claude Code、Codex、Cursor、Xcode 等，落到 DevEco 的建议。',
       items: [
+        {
+          title: '触屏与触控笔：Agent / IDE 的输入变化', subtitle: 'Touch & Pen × Agents / IDEs · Keyboard / Mouse Baseline',
+          desc: '以键鼠为对照，区分手指命中、多触点、主动笔笔迹与手掌取消、悬停与笔键的实际变化；点选委派、审阅和设备接管归回通用基线。对照 Codex、Claude Code、Cursor、Android Studio、Xcode 与 DevEco Studio，含 27 项来源、12 幅界面图、6 张示意，收敛为鸿蒙版 DevEco Studio 设计机会与验证方案；Fold 单列为形态因素。',
+          view: 'doc', date: '2026-11-03', href: 'analysis/touch-agent-ide/index.html',
+          links: [{ label: '手指 / 笔与键鼠对照', href: 'analysis/touch-agent-ide/index.html#platform' }, { label: '六款工具', href: 'analysis/touch-agent-ide/index.html#matrix' }, { label: '鸿蒙版设计机会', href: 'analysis/touch-agent-ide/index.html#deveco' }, { label: '截图与示意图', href: 'analysis/touch-agent-ide/materials/evidence.html' }],
+          tags: ['竞品分析', '触屏', '触控笔', '主动笔', 'M-Pen 3', 'MacBook', '鸿蒙电脑', 'MateBook Fold', 'Agent', 'Codex', 'Claude Code', 'Cursor', 'Android Studio', 'Xcode', 'DevEco Studio', '设计机会'],
+          thumb: { type: 'image', src: 'site/thumbs/touch-agent-ide.jpg' },
+        },
         {
           title: 'AI 成果验收与验证竞品分析：准出标准、无人值守时段的成果、看不见的结果', subtitle: 'Acceptance & Verification of AI Work · Claude Code, Codex, Cursor, Devin, Copilot, Jules, Kiro, Xcode 27',
           desc: '回应 10-29 汇报后领导的三个问题：用户在 AI 协作中如何形成准出标准、减少检查成本；非工作时段 AI 产出的成果如何检验；后端逻辑、脚本、配置等不可视结果如何管控、理解和验证；以及评审追问的 AI 代码冗余、规则检查与二次编辑，只看应用结果够不够。对照九款产品，归出「先写标准 / 沉淀进仓库 / 自动关卡 / 只看证据和例外」「隔离 / 护栏 / 证据包 / 可回看」「跑出证据 / 变成可观察 / 讲给人听 / 管住边界」三组做法，指出设备与平台这一段的空位，落到 27X 的验收卡、带设备的证据、夜间云端多设备与按鸿蒙业务含义分级。',
