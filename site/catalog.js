@@ -422,7 +422,7 @@ window.DEVECO_CATALOG = {
       items: [
         {
           title: '鸿蒙开发者用户研究计划：立项方案', subtitle: 'HarmonyOS Developer Research Plan · Nov 2026 – Apr 2027',
-          desc: '面向鸿蒙生态发展与 AI 驱动的开发方式转变，拟对互联网头部厂商、非互联网中大型企业、初创团队及个人开发者开展分层访谈，比较鸿蒙与安卓、iOS 的开发体验，梳理不同工程体系下开发、测试、验证及上架的真实流程，重点探索头部厂商所需的通用与鸿蒙特有能力及其接入形式、各类客户进入 AI 开发所需准备和导入的内容与生态 Spec 要求，以及 AI 任务控制、代码质量和二次编辑问题，为 DevEco 体验优化、能力开放与后续产品规划明确重点场景和需求优先级。包含领导建议对应表、三个研究专题、访谈提纲、50 人分层样本、招募、半年排期及预期产出。',
+          desc: '面向鸿蒙生态发展与 AI 驱动的开发方式转变，拟对互联网头部厂商、非互联网中大型企业、初创团队及个人开发者开展分层访谈，比较鸿蒙与安卓、iOS 的开发体验，梳理不同工程体系下开发、测试、验证及上架的真实流程，重点探索头部厂商所需的通用与鸿蒙特有能力及其接入形式、各类客户进入 AI 开发所需准备和导入的内容与生态 Spec 要求，以及 AI 任务控制、代码质量和二次编辑问题，为 DevEco 体验优化、能力开放与后续产品规划明确重点场景和需求优先级。包含会议输入对应表、三个研究专题、访谈提纲、50 人分层样本、招募、半年排期及预期产出。',
           view: 'doc', date: '2026-11-04', href: 'analysis/user-research-plan/REPORT-鸿蒙开发者用户研究计划.html',
           links: [{ label: '研究问题', href: 'analysis/user-research-plan/REPORT-鸿蒙开发者用户研究计划.html#diff' }, { label: '预期产出', href: 'analysis/user-research-plan/REPORT-鸿蒙开发者用户研究计划.html#deliver' }, { label: '分层样本', href: 'analysis/user-research-plan/REPORT-鸿蒙开发者用户研究计划.html#sample' }, { label: '时间线', href: 'analysis/user-research-plan/REPORT-鸿蒙开发者用户研究计划.html#timeline' }],
           tags: ['用户研究', '访谈计划', '立项方案', '大厂样本', '招募', '时间线'],
