@@ -421,11 +421,11 @@ window.DEVECO_CATALOG = {
       note: '鸿蒙开发者是谁、要什么：用户研究、AI 开发准备、生态位与舆情、三端差异。',
       items: [
         {
-          title: '鸿蒙开发者用户研究计划：半年访谈 50 人', subtitle: 'HarmonyOS Developer Research Plan · Nov 2026 – Apr 2027',
-          desc: '先做初步分析：鸿蒙生态开发和通用开发、苹果开发在九个维度上的区别，三个判断与八条待验证假设（含 10-29 评审追问的 iOS/安卓对比、客户类型差异、代码质量），以及按三类伙伴给客户的交互件（能力包 / 接入件 / 一站式路径 + 交流件）。再给研究计划：研究目标与问题、50 人分层样本（补上大厂 14 人）与横向配额、八种方法、招募渠道与筛选问卷、26 周时间线和 12-11 快报 / 02-26 中期 / 04-30 终报三个节点；之后做成常态，立项按月下单招募，含预算估算和重点客户面对面交流。',
-          view: 'doc', date: '2026-10-29', href: 'analysis/user-research-plan/REPORT-鸿蒙开发者用户研究计划.html',
-          links: [{ label: '三种开发的区别', href: 'analysis/user-research-plan/REPORT-鸿蒙开发者用户研究计划.html#diff' }, { label: '交互件', href: 'analysis/user-research-plan/REPORT-鸿蒙开发者用户研究计划.html#deliver' }, { label: '分层样本', href: 'analysis/user-research-plan/REPORT-鸿蒙开发者用户研究计划.html#sample' }, { label: '时间线', href: 'analysis/user-research-plan/REPORT-鸿蒙开发者用户研究计划.html#timeline' }],
-          tags: ['用户研究', '访谈计划', '鸿蒙 vs 苹果', '大厂样本', '招募', '时间线'],
+          title: '鸿蒙开发者用户研究计划：立项方案', subtitle: 'HarmonyOS Developer Research Plan · Nov 2026 – Apr 2027',
+          desc: '面向鸿蒙生态发展与 AI 驱动的开发方式转变，拟对互联网头部厂商、非互联网中大型企业、初创团队及个人开发者开展分层访谈，比较鸿蒙与安卓、iOS 的开发体验，梳理不同工程体系下开发、测试、验证及上架的真实流程，重点探索头部厂商所需的通用与鸿蒙特有能力及其接入形式、各类客户进入 AI 开发所需准备和导入的内容与生态 Spec 要求，以及 AI 任务控制、代码质量和二次编辑问题，为 DevEco 体验优化、能力开放与后续产品规划明确重点场景和需求优先级。包含领导建议对应表、三个研究专题、访谈提纲、50 人分层样本、招募、半年排期及预期产出。',
+          view: 'doc', date: '2026-11-04', href: 'analysis/user-research-plan/REPORT-鸿蒙开发者用户研究计划.html',
+          links: [{ label: '研究问题', href: 'analysis/user-research-plan/REPORT-鸿蒙开发者用户研究计划.html#diff' }, { label: '预期产出', href: 'analysis/user-research-plan/REPORT-鸿蒙开发者用户研究计划.html#deliver' }, { label: '分层样本', href: 'analysis/user-research-plan/REPORT-鸿蒙开发者用户研究计划.html#sample' }, { label: '时间线', href: 'analysis/user-research-plan/REPORT-鸿蒙开发者用户研究计划.html#timeline' }],
+          tags: ['用户研究', '访谈计划', '立项方案', '大厂样本', '招募', '时间线'],
           thumb: { type: 'image', src: 'site/thumbs/user-research-plan.jpg' },
         },
         {
