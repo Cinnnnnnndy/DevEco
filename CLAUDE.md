@@ -1,5 +1,9 @@
 # DevEco
 
+## AI 开发工具趋势分析：综合结论随研究更新
+
+修改 `analysis/ai-ide-landscape/` 时，遵循 [.cursor/rules/ai-ide-landscape.mdc](.cursor/rules/ai-ide-landscape.mdc)：每次新增或修正案例，都同步检查“对 DevEco 的启示”的建议、依据和验证指标；合并重复、修正过时结论，保留原材料历史记录。完成后推送并确认 Pages 部署。
+
 ## 提交身份（本仓库所有分支一律生效）
 
 每一条 commit 都以仓库主人的身份提交，而不是 Claude：
