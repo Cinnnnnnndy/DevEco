@@ -84,11 +84,24 @@
   .tm-badge{font-family:var(--font-code);font-size:11px;color:var(--ui-fg-info);flex:none}
   .tm-hover{position:fixed;z-index:71;width:250px;max-width:calc(100vw - 16px);padding:8px 10px;border-radius:var(--arc);
     background:var(--ui-popup-bg);box-shadow:var(--ui-shadow);
-    font-size:var(--fs-sm);line-height:var(--lh-sm);pointer-events:none}
+    font-size:var(--fs-sm);line-height:var(--lh-sm)}
   .tm-hover[hidden]{display:none}
   .tm-hover .hd{display:flex;align-items:center;gap:6px;font-weight:500;margin-bottom:3px}
   .tm-hover .hd i{width:6px;height:6px;border-radius:50%;background:var(--ai-ink);flex:none}
   .tm-hover .sub{color:var(--ui-fg-info);margin-top:2px}
+  /* 悬停满 500ms：弹框动画展开成详情卡（文件改动行 + 可操作按钮）；按钮可停留点击 */
+  .tm-hover{pointer-events:none;transition:width .22s cubic-bezier(.3,.8,.3,1)}
+  .tm-hover.rich{pointer-events:auto;width:290px}
+  .tm-hover .rd{overflow:hidden;max-height:0;opacity:0;transition:max-height .24s cubic-bezier(.3,.8,.3,1),opacity .18s ease,margin-top .24s}
+  .tm-hover.rich .rd{max-height:170px;opacity:1;margin-top:7px}
+  .tm-hover .rf{display:flex;flex-wrap:wrap;gap:4px 8px;font-family:var(--font-code);font-size:11px;color:var(--ui-fg-info)}
+  .tm-hover .rf span{white-space:nowrap}
+  .tm-hover .rf i{font-style:normal;font-weight:500;margin-left:3px}
+  .tm-hover .rf i.add{color:var(--ui-success)}.tm-hover .rf i.del{color:var(--ui-error)}
+  .tm-hover .racts{display:flex;gap:6px;margin-top:8px}
+  .tm-hover .racts .btn{height:24px}
+  .tm-hover .racts .btn svg.i{width:12px;height:12px}
+  @media (prefers-reduced-motion:reduce){.tm-hover,.tm-hover .rd{transition:none}}
   .tm-panel{display:none;position:fixed;z-index:70;top:14%;left:calc(var(--stripe-w) + var(--proj-w) + 14px);
     width:min(380px,calc(100vw - var(--stripe-w) - var(--proj-w) - 32px));max-height:72vh;flex-direction:column;
     border-radius:var(--arc);background:var(--ui-popup-bg);box-shadow:var(--ui-shadow);overflow:hidden}
@@ -488,31 +501,68 @@
   function curStep(){
     return $('.dm-vstep.run',vtl)||$$('.dm-vstep.done',vtl).slice(-1)[0]||$$('.dm-vstep',vtl)[0];
   }
-  /* 悬停迷你时间轴：不展开整卡，只弹悬停/选中那步的详情；宽度固定，内容变化不引起位置跳动 */
-  function showTmHover(step){
-    var pop=$('#tm-hover');if(!pop||tmPanel.classList.contains('open'))return;
-    /* 撤回记录圆点（undo-note）也要能悬停，所以不排除 undo-note */
-    var s=(step?$('.dm-vstep[data-step="'+step+'"]',vtl):null)||curStep();if(!s)return;
+  /* 悬停迷你时间轴：先弹轻量摘要；悬停满 500ms 动画展开成详情卡，卡片可停留、按钮可直接操作 */
+  var tmHoverT=null,tmHoverStep=null;
+  function hoverHTML(s,rich){
     var isNote=s.classList.contains('undo-note');
     var state=isNote?'撤回记录':s.classList.contains('run')?'进行中':s.classList.contains('reverted')?'已撤回':s.classList.contains('done')?'已完成':'待执行';
     var title=(s.querySelector('.body-t .grow')||{}).textContent||'';
     var time=(s.querySelector('.body-t .t')||{}).textContent||'';
     var plan=(s.querySelector('.plan')||{}).textContent||'';
-    pop.innerHTML='<div class="hd"><i></i>'+state+(isNote?'':' · 第 '+s.dataset.step+' / '+$$('.dm-vstep',vtl).length+' 步')+'</div>'
+    var h='<div class="hd"><i></i>'+state+(isNote?'':' · 第 '+s.dataset.step+' / '+$$('.dm-vstep',vtl).length+' 步')+'</div>'
       +'<div>'+esc(title.trim())+'</div><div class="sub">'+esc(time.trim())+(plan.trim()?' · '+esc(plan.trim()):'')+'</div>';
-    pop.hidden=false;
-    /* 锚定在悬停的圆点正上方（没有具体点则整枚胶囊） */
+    if(!rich)return h;
+    var fs=$$('.files span',s);
+    var fr=fs.length?'<div class="rf">'+fs.map(function(x){return '<span>'+esc(x.textContent.trim())+'</span>'}).join('')+'</div>':'';
+    /* 复用卡片里同一套按钮文案，加 data-ha 标记走弹框内的点击分支 */
+    var ar=actsFor(s).replace(/class="btn sm"/g,'class="btn sm" data-ha="1"');
+    if(ar.indexOf('<button')<0)ar='';
+    return h+'<div class="rd">'+fr+ar+'</div>';
+  }
+  function positionTmHover(pop,step){
+    /* 锚定在悬停的圆点旁（横排贴上方，竖排弹右侧）；以左边缘为锚，展开宽度变化也不跳 */
     var el=(step?$('.tm-mini i[data-step="'+step+'"]'):null)||tmFab;
     var r=el.getBoundingClientRect(),hr=pop.getBoundingClientRect();
-    var top=r.top-hr.height-10;
-    /* 横排时贴圆点上方；竖排时弹到圆点右侧，别盖住圆点本身 */
-    if(tmFab.classList.contains('vert'))
-      pop.style.left=Math.min(r.right+10,window.innerWidth-hr.width-8)+'px';
-    else
-      pop.style.left=Math.max(8,Math.min(r.left+r.width/2-hr.width/2,window.innerWidth-hr.width-8))+'px';
-    pop.style.top=(top<4?r.bottom+10:Math.min(top+r.height/3,window.innerHeight-hr.height-8))+'px';
+    var left=(tmFab.classList.contains('vert')||r.top<hr.height+12)?r.right+10:r.left-6;
+    var top=r.top-6;
+    if(left+hr.width>window.innerWidth-8)left=Math.max(8,r.left-hr.width-10);
+    pop.style.left=Math.round(left)+'px';
+    pop.style.top=Math.round(Math.max(8,Math.min(top,window.innerHeight-hr.height-8)))+'px';
   }
-  function hideTmHover(){var pop=$('#tm-hover');if(pop)pop.hidden=true}
+  function showTmHover(step){
+    var pop=$('#tm-hover');if(!pop||tmPanel.classList.contains('open'))return;
+    /* 撤回记录圆点（undo-note）也要能悬停，所以不排除 undo-note */
+    var s=(step?$('.dm-vstep[data-step="'+step+'"]',vtl):null)||curStep();if(!s)return;
+    clearTimeout(tmHoverT);
+    if(tmHoverStep!==step){pop.classList.remove('rich');pop.innerHTML=hoverHTML(s,false);pop.hidden=false;positionTmHover(pop,step)}
+    tmHoverStep=step;
+    tmHoverT=setTimeout(function(){
+      pop.innerHTML=hoverHTML(s,true);
+      pop.classList.add('rich');
+      positionTmHover(pop,step);
+    },500);
+  }
+  /* 指针移进弹框本体：保持展开，方便点里面的按钮 */
+  function bindTmHoverPop(){
+    var pop=$('#tm-hover');if(!pop)return;
+    pop.addEventListener('pointerenter',function(){clearTimeout(tmHoverT)});
+    pop.addEventListener('pointerleave',function(e){
+      var rt=e.relatedTarget;
+      /* 回到圆点上：按当前步重新开始计时；离开到别处：收起 */
+      if(rt&&rt.closest&&rt.closest('.tm-mini i[data-step]'))showTmHover(+rt.dataset.step);
+      else hideTmHover();
+    });
+    pop.addEventListener('click',function(e){
+      var b=e.target.closest('[data-ha]');if(!b)return;
+      var s=$('.dm-vstep[data-step="'+tmHoverStep+'"]',vtl);if(!s)return;
+      var a=b.dataset.act;
+      if(a==='undo')requestUndo(s,'one');else if(a==='before')requestUndo(s,'before');else if(a==='redo')redo(s);else if(a==='stop')stop(s);
+      else if(a==='merge')resolveAsk(true);else if(a==='cancel')resolveAsk(false);
+      else if(a==='diff'){var ln=+s.dataset.ln;if(ln)flash(ln,'flash')}
+      hideTmHover();
+    });
+  }
+  function hideTmHover(){var pop=$('#tm-hover');if(pop){pop.hidden=true;pop.classList.remove('rich')}clearTimeout(tmHoverT);tmHoverStep=null}
   /* 选中某一步 → 底部出现操作行 */
   function actsFor(st){
     var ro=st.dataset.ro==='1';
@@ -615,9 +665,8 @@
   $('#tm-mini').addEventListener('mouseover',miniOver);
   $('#tm-mini').addEventListener('pointerover',miniOver);
   $('#tm-mini').addEventListener('mouseleave',hideTmHover);
-  tmFab.addEventListener('mouseover',function(e){if(!e.target.closest||!e.target.closest('.tm-mini i[data-step]'))showTmHover()});
-  tmFab.addEventListener('pointerover',function(e){if(!e.target.closest||!e.target.closest('.tm-mini i[data-step]'))showTmHover()});
-  tmFab.addEventListener('mouseleave',hideTmHover);
+  /* 胶囊空白处不弹摘要——hover 停留展开内容只属于圆点 */
+  tmFab.addEventListener('mouseleave',function(e){if(!e.relatedTarget||!e.relatedTarget.closest||!e.relatedTarget.closest('#tm-hover'))hideTmHover()});
   tmFab.addEventListener('focus',showTmHover);
   tmFab.addEventListener('blur',hideTmHover);
   var tmClose=$('#tm-close');if(tmClose)tmClose.addEventListener('click',function(){setTM(false)});
@@ -630,6 +679,7 @@
   }
   try{if(localStorage.getItem('tm-vert')==='1'){tmFab.classList.add('vert');tmPanel.classList.add('vert')}}catch(_){}
   tmFab.addEventListener('contextmenu',function(e){e.preventDefault();toggleVert()});
+  bindTmHoverPop();
   setTM(false);
 
 
