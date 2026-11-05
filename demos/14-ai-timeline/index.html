@@ -69,13 +69,20 @@
   .tm-fab svg.i{width:13px;height:13px;color:var(--ui-fg-info);flex:none}
   .tm-fab:hover{filter:brightness(1.08)}
   .tm-fab.on{background:var(--ui-tag-bg)}
+  /* 竖向时间轴：整枚胶囊竖起来，点从上到下读 */
+  .tm-fab.vert{flex-direction:column;height:auto;padding:9px 0 8px;gap:8px}
   .tm-mini{display:flex;align-items:center;gap:3px}
-  .tm-mini i{width:5px;height:5px;border-radius:50%;background:var(--ui-component-border);flex:none}
+  .tm-fab.vert .tm-mini{flex-direction:column}
+  .tm-mini i{width:5px;height:5px;border-radius:50%;background:var(--ui-component-border);flex:none;position:relative;cursor:pointer;transition:transform .12s ease}
+  /* 点可以直接悬停/点击：扩大命中面积但视觉不变 */
+  .tm-mini i::after{content:"";position:absolute;margin:-4.5px;width:14px;height:14px;border-radius:50%}
+  .tm-mini i:hover{transform:scale(1.5)}
+  .tm-mini i.cur{box-shadow:0 0 0 2px var(--ui-accent)}
   .tm-mini i.done{background:var(--ui-success)}
   .tm-mini i.run{background:var(--ai-ink)}
   .tm-mini i.reverted{background:var(--ui-error)}
   .tm-badge{font-family:var(--font-code);font-size:11px;color:var(--ui-fg-info);flex:none}
-  .tm-hover{position:fixed;z-index:71;max-width:260px;padding:8px 10px;border-radius:var(--arc);
+  .tm-hover{position:fixed;z-index:71;width:250px;max-width:calc(100vw - 16px);padding:8px 10px;border-radius:var(--arc);
     background:var(--ui-popup-bg);box-shadow:var(--ui-shadow);
     font-size:var(--fs-sm);line-height:var(--lh-sm);pointer-events:none}
   .tm-hover[hidden]{display:none}
@@ -86,6 +93,8 @@
     width:min(380px,calc(100vw - var(--stripe-w) - var(--proj-w) - 32px));max-height:72vh;flex-direction:column;
     border-radius:var(--arc);background:var(--ui-popup-bg);box-shadow:var(--ui-shadow);overflow:hidden}
   .tm-panel.open{display:flex}
+  /* 竖向迷你轴时，展开卡收成紧凑宽度，跟竖轴对齐 */
+  .tm-panel.vert{width:min(300px,calc(100vw - var(--stripe-w) - var(--proj-w) - 32px))}
   .tm-panel-hd{display:flex;align-items:center;gap:6px;height:var(--tw-hdr-h);padding:0 6px 0 12px;flex:none;font-weight:500}
   .tm-panel-hd .grow{flex:1}
   .tm-panel-hd .cnt{font-family:var(--font-code);font-size:11px;font-weight:400;color:var(--ui-fg-info)}
@@ -466,32 +475,42 @@
   /* 收起态的迷你时间轴：圆点连成的进度条，一眼看出做到第几步、有没有撤回 —— 不是纯图标 */
   function renderMini(){
     var steps=$$('.dm-vstep',vtl),mini=$('#tm-mini'),badge=$('#tm-badge');
-    if(mini)mini.innerHTML=steps.map(function(s){
-      var cls=s.classList.contains('reverted')?'reverted':s.classList.contains('run')?'run':s.classList.contains('done')?'done':'';
-      return '<i class="'+cls+'"></i>';
-    }).join('');
     var running=steps.filter(function(s){return s.classList.contains('run')});
     var cur=running.length?+running[0].dataset.step:steps.filter(function(s){return s.classList.contains('done')}).length;
+    /* 固定高度、每个点都渲染，状态只变颜色，撤回后也不会因高度变化引起跳动 */
+    if(mini)mini.innerHTML=steps.map(function(s){
+      var cls=s.classList.contains('reverted')?'reverted':s.classList.contains('run')?'run':s.classList.contains('done')?'done':'';
+      var k=+s.dataset.step;
+      return '<i class="'+cls+(k===cur?' cur':'')+'" data-step="'+k+'" role="button" tabindex="-1" aria-label="第 '+k+' 步"></i>';
+    }).join('');
     if(badge)badge.textContent=cur+'/'+steps.length;
   }
   function curStep(){
     return $('.dm-vstep.run',vtl)||$$('.dm-vstep.done',vtl).slice(-1)[0]||$$('.dm-vstep',vtl)[0];
   }
-  /* 悬停迷你时间轴：不展开整卡，只弹当前这步的详情 */
-  function showTmHover(){
+  /* 悬停迷你时间轴：不展开整卡，只弹悬停/选中那步的详情；宽度固定，内容变化不引起位置跳动 */
+  function showTmHover(step){
     var pop=$('#tm-hover');if(!pop||tmPanel.classList.contains('open'))return;
-    var s=curStep();if(!s)return;
-    var state=s.classList.contains('run')?'进行中':s.classList.contains('reverted')?'已撤回':s.classList.contains('done')?'已完成':'待执行';
+    /* 撤回记录圆点（undo-note）也要能悬停，所以不排除 undo-note */
+    var s=(step?$('.dm-vstep[data-step="'+step+'"]',vtl):null)||curStep();if(!s)return;
+    var isNote=s.classList.contains('undo-note');
+    var state=isNote?'撤回记录':s.classList.contains('run')?'进行中':s.classList.contains('reverted')?'已撤回':s.classList.contains('done')?'已完成':'待执行';
     var title=(s.querySelector('.body-t .grow')||{}).textContent||'';
     var time=(s.querySelector('.body-t .t')||{}).textContent||'';
     var plan=(s.querySelector('.plan')||{}).textContent||'';
-    pop.innerHTML='<div class="hd"><i></i>'+state+' · 第 '+s.dataset.step+' / '+$$('.dm-vstep',vtl).length+' 步</div>'
+    pop.innerHTML='<div class="hd"><i></i>'+state+(isNote?'':' · 第 '+s.dataset.step+' / '+$$('.dm-vstep',vtl).length+' 步')+'</div>'
       +'<div>'+esc(title.trim())+'</div><div class="sub">'+esc(time.trim())+(plan.trim()?' · '+esc(plan.trim()):'')+'</div>';
     pop.hidden=false;
-    var r=tmFab.getBoundingClientRect(),hr=pop.getBoundingClientRect();
+    /* 锚定在悬停的圆点正上方（没有具体点则整枚胶囊） */
+    var el=(step?$('.tm-mini i[data-step="'+step+'"]'):null)||tmFab;
+    var r=el.getBoundingClientRect(),hr=pop.getBoundingClientRect();
     var top=r.top-hr.height-10;
-    pop.style.left=Math.max(8,Math.min(r.left+r.width/2-hr.width/2,window.innerWidth-hr.width-8))+'px';
-    pop.style.top=(top<4?r.bottom+10:top)+'px';
+    /* 横排时贴圆点上方；竖排时弹到圆点右侧，别盖住圆点本身 */
+    if(tmFab.classList.contains('vert'))
+      pop.style.left=Math.min(r.right+10,window.innerWidth-hr.width-8)+'px';
+    else
+      pop.style.left=Math.max(8,Math.min(r.left+r.width/2-hr.width/2,window.innerWidth-hr.width-8))+'px';
+    pop.style.top=(top<4?r.bottom+10:Math.min(top+r.height/3,window.innerHeight-hr.height-8))+'px';
   }
   function hideTmHover(){var pop=$('#tm-hover');if(pop)pop.hidden=true}
   /* 选中某一步 → 底部出现操作行 */
@@ -584,13 +603,33 @@
     tmPanel.classList.toggle('open',open);
     if(open)hideTmHover();
   }
-  tmFab.addEventListener('click',function(){setTM(!tmPanel.classList.contains('open'))});
-  tmFab.addEventListener('mouseenter',showTmHover);
+  /* 每个圆点：悬停直接看那一步的详情，点击打开时间轴并选中那一步，不用先进卡片 */
+  tmFab.addEventListener('click',function(e){
+    var d=e.target.closest('.tm-mini i[data-step]');
+    if(d){if(tmPanel.classList.contains('open'))select($('.dm-vstep[data-step="'+d.dataset.step+'"]',vtl));else openAt(+d.dataset.step);return}
+    setTM(!tmPanel.classList.contains('open'));
+  });
+  /* hover 状态集中在这一个 mouseover 监听里：从一颗点移到下一颗只会重新弹新内容，不会 hide→show 闪烁；
+     mouseover 与 pointerover 都监听，兼容脚本注入的测试事件 */
+  function miniOver(e){var d=e.target.closest&&e.target.closest('i[data-step]');if(d)showTmHover(+d.dataset.step)}
+  $('#tm-mini').addEventListener('mouseover',miniOver);
+  $('#tm-mini').addEventListener('pointerover',miniOver);
+  $('#tm-mini').addEventListener('mouseleave',hideTmHover);
+  tmFab.addEventListener('mouseover',function(e){if(!e.target.closest||!e.target.closest('.tm-mini i[data-step]'))showTmHover()});
+  tmFab.addEventListener('pointerover',function(e){if(!e.target.closest||!e.target.closest('.tm-mini i[data-step]'))showTmHover()});
   tmFab.addEventListener('mouseleave',hideTmHover);
   tmFab.addEventListener('focus',showTmHover);
   tmFab.addEventListener('blur',hideTmHover);
   var tmClose=$('#tm-close');if(tmClose)tmClose.addEventListener('click',function(){setTM(false)});
   var segTl=$('#seg-timeline-btn');if(segTl)segTl.addEventListener('click',function(){setTM(true)});
+  /* 右键/长按胶囊 = 切换横竖排 */
+  function toggleVert(){
+    var v=tmFab.classList.toggle('vert');
+    tmPanel.classList.toggle('vert',v);
+    try{localStorage.setItem('tm-vert',v?'1':'0')}catch(_){}
+  }
+  try{if(localStorage.getItem('tm-vert')==='1'){tmFab.classList.add('vert');tmPanel.classList.add('vert')}}catch(_){}
+  tmFab.addEventListener('contextmenu',function(e){e.preventDefault();toggleVert()});
   setTM(false);
 
 
