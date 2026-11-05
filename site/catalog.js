@@ -364,15 +364,15 @@ window.DEVECO_CATALOG = {
       items: [
         {
           title: '会话基本单元怎么显示：思考与工具调用，默认折到哪一层', subtitle: 'Agent Session Units · Thinking, Tool Calls, Collapse',
-          desc: 'Codex、Claude Code、DeepSeek Harness、WorkBuddy 四家把一次会话切成哪些块：思考、工具调用、工具结果、计划、收尾。逐家给「生成中 / 生成后」两帧结构示意，回答是否默认折叠、折在单元 / 步骤组 / 整轮哪一层、什么时候折、展开入口有几个。四家都不默认展开过程，但思考的处理分成三种：完成后不显示（Codex）、关在 transcript 里（Claude）、只给首行（DeepSeek）；WorkBuddy 的对话里没有独立思考单元，用计划卡承担过程。末尾是六条可抄与两条别抄，以及可点的「同一段过程三种密度」对照。',
+          desc: '七产品会话单元报告：Codex、Claude Code、DeepSeek Harness、WorkBuddy、Cursor、Windsurf / Cascade、VS Code Copilot。对比思考与工具调用在生成中和生成后的呈现，分别说明单次详情、连续步骤组、整轮过程的折叠规则；附三张官方界面配图、来源、待实测项与 DevEco 建议。原四产品结构分析保留在页底。',
           view: 'doc', date: '2026-10-19', href: 'analysis/agent-session-units/index.html',
           links: [
-            { label: '四家总表', href: 'analysis/agent-session-units/index.html#matrix' },
-            { label: '折叠发生在三层', href: 'analysis/agent-session-units/index.html#layers' },
-            { label: '落到 DevEco', href: 'analysis/agent-session-units/index.html#ours' },
-            { label: '来源与局限', href: 'analysis/agent-session-units/index.html#src' },
+            { label: '七产品总表', href: 'analysis/agent-session-units/index.html#report-3' },
+            { label: '折叠发生在三层', href: 'analysis/agent-session-units/index.html#report-2' },
+            { label: '落到 DevEco', href: 'analysis/agent-session-units/index.html#report-7' },
+            { label: '来源与局限', href: 'analysis/agent-session-units/index.html#report-9' },
           ],
-          tags: ['竞品分析', '思考', '工具调用', '默认折叠', '生成态', 'Agent', 'Codex', 'Claude Code', 'DeepSeek Harness', 'WorkBuddy'],
+          tags: ['竞品分析', '思考', '工具调用', '默认折叠', '生成态', 'Agent', 'Codex', 'Claude Code', 'DeepSeek Harness', 'WorkBuddy', 'Cursor', 'Windsurf', 'Copilot'],
           thumb: { type: 'image', src: 'site/thumbs/agent-session-units.jpg' },
         },
         {
