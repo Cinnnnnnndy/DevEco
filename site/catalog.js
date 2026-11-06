@@ -447,8 +447,8 @@ window.DEVECO_CATALOG = {
       note: '鸿蒙开发者是谁、要什么：用户研究、AI 开发准备、生态位与舆情、三端差异。',
       items: [
         {
-          title: '鸿蒙开发者用户研究与竞品趋势分析计划', subtitle: 'HarmonyOS Developer Research Plan · Nov 2026 – Apr 2027',
-          desc: '面向已上线初期产品的半年研究计划：结合六月用户原声、十月规划与竞品趋势，提出六项研究假设；以探索访谈、两轮形成性评测和阶段性综合评估输入2027规划。按三类画像覆盖30–40位独立参与者，配套20题外部招募问卷、先锋与熟练用户核验、筛选台账，以及基于用户旅程、5W2H、Think/Feel/Do的完整访谈与任务评测提纲。',
+          title: '鸿蒙开发者用户研究与竞品趋势分析计划', subtitle: 'HarmonyOS Developer Research Plan · Rolling Research',
+          desc: '面向已上线初期产品的滚动研究计划：结合六月用户原声、十月规划与竞品趋势，提出六项研究假设；按两位交互各30%的投入，以探索访谈、形成性评测和阶段性综合评估逐轮输入2027规划，不绑定固定结束月份。按三类画像覆盖30–40位独立参与者，配套20题外部招募问卷、先锋与熟练用户核验、筛选台账，以及基于用户旅程、5W2H、Think/Feel/Do的完整访谈与任务评测提纲。',
           view: 'doc', date: '2026-11-06', href: 'analysis/user-research-plan/REPORT-鸿蒙开发者用户研究计划.html',
           links: [{ label: '访谈与评测提纲', href: 'analysis/user-research-plan/interview-guide.html' }, { label: '外部招募问卷', href: 'analysis/user-research-plan/recruitment-questionnaire.html' }, { label: '筛选分类', href: 'analysis/user-research-plan/recruitment-screening-guide.html' }, { label: '竞品趋势计划', href: 'analysis/user-research-plan/REPORT-鸿蒙开发者用户研究计划.html#competition' }, { label: '研究问题', href: 'analysis/user-research-plan/REPORT-鸿蒙开发者用户研究计划.html#diff' }, { label: '预期产出', href: 'analysis/user-research-plan/REPORT-鸿蒙开发者用户研究计划.html#deliver' }, { label: '分层样本', href: 'analysis/user-research-plan/REPORT-鸿蒙开发者用户研究计划.html#sample' }, { label: '时间线', href: 'analysis/user-research-plan/REPORT-鸿蒙开发者用户研究计划.html#timeline' }],
           tags: ['竞品趋势', '用户研究', '分阶段研究', '立项方案', '大厂样本', '招募', '时间线'],
