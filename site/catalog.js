@@ -448,10 +448,10 @@ window.DEVECO_CATALOG = {
       items: [
         {
           title: '鸿蒙开发者用户研究与竞品趋势分析计划', subtitle: 'HarmonyOS Developer Research Plan · Nov 2026 – Apr 2027',
-          desc: '用户访谈与竞品趋势分析并行的立项计划：覆盖分客户开发流程、头部厂商能力接入、AI 开发准备与 Spec、任务控制及质量验收；以 1028 版规划材料与启动页专题为依据，规划目标表达、任务协作、成果验收、平台开放及多端形态五类竞品分析，配套头部互联网及同类大型研发团队、中厂、小团队与个人三类画像及30–40人招募区间、角色与 AI 使用交叉分层、17 题外部招募问卷（按行业、项目经验、团队人数与 AI / DevEco Code 使用及 Studio 模块筛选）、筛选分类规则及空白台账，统一月度跟踪、半年排期与阶段交付。',
-          view: 'doc', date: '2026-11-05', href: 'analysis/user-research-plan/REPORT-鸿蒙开发者用户研究计划.html',
-          links: [{ label: '外部招募问卷', href: 'analysis/user-research-plan/recruitment-questionnaire.html' }, { label: '筛选分类', href: 'analysis/user-research-plan/recruitment-screening-guide.html' }, { label: '竞品趋势计划', href: 'analysis/user-research-plan/REPORT-鸿蒙开发者用户研究计划.html#competition' }, { label: '研究问题', href: 'analysis/user-research-plan/REPORT-鸿蒙开发者用户研究计划.html#diff' }, { label: '预期产出', href: 'analysis/user-research-plan/REPORT-鸿蒙开发者用户研究计划.html#deliver' }, { label: '分层样本', href: 'analysis/user-research-plan/REPORT-鸿蒙开发者用户研究计划.html#sample' }, { label: '时间线', href: 'analysis/user-research-plan/REPORT-鸿蒙开发者用户研究计划.html#timeline' }],
-          tags: ['竞品趋势', '用户研究', '访谈计划', '立项方案', '大厂样本', '招募', '时间线'],
+          desc: '面向已上线初期产品的半年研究计划：结合六月用户原声、十月规划与竞品趋势，提出六项研究假设；以探索访谈、两轮形成性评测和阶段性综合评估输入2027规划。按三类画像覆盖30–40位独立参与者，配套20题外部招募问卷、先锋与熟练用户核验、筛选台账，以及基于用户旅程、5W2H、Think/Feel/Do的完整访谈与任务评测提纲。',
+          view: 'doc', date: '2026-11-06', href: 'analysis/user-research-plan/REPORT-鸿蒙开发者用户研究计划.html',
+          links: [{ label: '访谈与评测提纲', href: 'analysis/user-research-plan/interview-guide.html' }, { label: '外部招募问卷', href: 'analysis/user-research-plan/recruitment-questionnaire.html' }, { label: '筛选分类', href: 'analysis/user-research-plan/recruitment-screening-guide.html' }, { label: '竞品趋势计划', href: 'analysis/user-research-plan/REPORT-鸿蒙开发者用户研究计划.html#competition' }, { label: '研究问题', href: 'analysis/user-research-plan/REPORT-鸿蒙开发者用户研究计划.html#diff' }, { label: '预期产出', href: 'analysis/user-research-plan/REPORT-鸿蒙开发者用户研究计划.html#deliver' }, { label: '分层样本', href: 'analysis/user-research-plan/REPORT-鸿蒙开发者用户研究计划.html#sample' }, { label: '时间线', href: 'analysis/user-research-plan/REPORT-鸿蒙开发者用户研究计划.html#timeline' }],
+          tags: ['竞品趋势', '用户研究', '分阶段研究', '立项方案', '大厂样本', '招募', '时间线'],
           thumb: { type: 'image', src: 'site/thumbs/user-research-plan.jpg' },
         },
         {
