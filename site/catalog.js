@@ -448,7 +448,7 @@ window.DEVECO_CATALOG = {
       items: [
         {
           title: '鸿蒙开发者用户研究与竞品趋势分析计划', subtitle: 'HarmonyOS Developer Research Plan · Rolling Research',
-          desc: '面向不同规模团队访谈鸿蒙开发者，研究鸿蒙与通用开发的差异、给 AI 的输入，以及让 AI 产出符合需求的 Spec 与协作规范。结合前期访谈和竞品对照，配套13题外部问卷、筛选规则、分阶段提纲及四轮时间线。',
+          desc: '面向不同规模团队访谈鸿蒙开发者，研究鸿蒙与通用开发的差异、给 AI 的输入，以及让 AI 产出符合需求的 Spec 与协作规范。结合前期访谈和竞品对照，配套14题外部问卷、筛选规则、分阶段提纲及四轮时间线。',
           view: 'doc', date: '2026-11-06', href: 'analysis/user-research-plan/REPORT-鸿蒙开发者用户研究计划.html',
           links: [{ label: '分阶段访谈提纲', href: 'analysis/user-research-plan/interview-guide.html' }, { label: '外部招募问卷', href: 'analysis/user-research-plan/recruitment-questionnaire.html' }, { label: '筛选分类', href: 'analysis/user-research-plan/recruitment-screening-guide.html' }, { label: '竞品趋势计划', href: 'analysis/user-research-plan/REPORT-鸿蒙开发者用户研究计划.html#competition' }, { label: '目标与问题', href: 'analysis/user-research-plan/REPORT-鸿蒙开发者用户研究计划.html#goals' }, { label: '预期产出', href: 'analysis/user-research-plan/REPORT-鸿蒙开发者用户研究计划.html#deliver' }, { label: '分层样本', href: 'analysis/user-research-plan/REPORT-鸿蒙开发者用户研究计划.html#sample' }, { label: '时间线', href: 'analysis/user-research-plan/REPORT-鸿蒙开发者用户研究计划.html#timeline' }],
           tags: ['竞品趋势', '用户研究', '分阶段研究', '立项方案', '大厂样本', '招募', '时间线'],
