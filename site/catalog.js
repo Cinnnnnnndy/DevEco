@@ -33,7 +33,7 @@
    `python3 site/tools/thumb.py <slug>` 出缩略图；然后在这里把对应条目的 view 改成 'ready'、补 href 与 thumb。
    ===================================================================== */
 window.DEVECO_CATALOG = {
-  updated: '2026-11-05',
+  updated: '2026-11-16',
   title: '鸿蒙开发工具体验',
   lede: '围绕 DevEco Studio / DevEco Code / DevEco CLI 的体验设计：29 条创新点各一个可点的界面稿 demo（其中 9 条是新一轮规划重点），全部按鸿蒙电脑版蓝本与 AI Coding / 多 Agent 场景重做；加上设计系统、分析与汇报材料。全部是本地静态文件，双击即开。',
 
@@ -562,6 +562,67 @@ window.DEVECO_CATALOG = {
       icon: 'i-cat-chip',
       note: '所有 demo 背后的同一套 token 与组件，色值逐 key 取自 DevEco Studio 6.0.2 安装包的主题文件。',
       items: [
+        {
+          title: '按 Pixso 稿还原的 DevEco 组件文档', subtitle: 'DevEco Components · Pixso Previews',
+          desc: '从 Pixso 容器预览还原的组件文档。每页有可切换 PC / Mac 与鸿蒙、浅色与深色的实时示例、用法和 API。颜色以预览印出值为准，缺的不补。',
+          view: 'ready', date: '2026-11-16', href: 'design-system/docs/index.html',
+          links: [
+            { label: 'FileWindow 示例', href: 'design-system/examples/file-window.html' },
+            { label: 'Studio 示例', href: 'design-system/examples/studio-tool-window.html' },
+            { label: 'SKILL.md', href: 'design-system/SKILL.md' },
+            { label: '总预览', href: 'design-system/preview/index.html' },
+          ],
+          tags: ['Pixso', '组件文档', 'PC / Mac', '鸿蒙'],
+          thumb: { type: 'image', src: 'site/thumbs/ds-pixso-docs.jpg' },
+        },
+        {
+          title: '组件与 Pixso 帧对照', subtitle: 'Components Beside Pixso Frames',
+          desc: '按 SKILL 工作流用本库真实组件重搭界面，并排在 Pixso 预览帧旁边。只改对不上的颜色、间距、圆角和状态。',
+          view: 'ready', date: '2026-11-16', href: 'design-system/compare/index.html',
+          links: [
+            { label: '文件窗口', href: 'design-system/compare/file-window.html' },
+            { label: '菜单', href: 'design-system/compare/menu.html' },
+            { label: '文件树', href: 'design-system/compare/tree.html' },
+            { label: '页签', href: 'design-system/compare/tabs.html' },
+            { label: '提示', href: 'design-system/compare/tooltip.html' },
+            { label: '工具菜单', href: 'design-system/compare/tool-menu.html' },
+          ],
+          tags: ['对照', 'Pixso'],
+          thumb: { type: 'image', src: 'site/thumbs/ds-pixso-compare.jpg' },
+        },
+        {
+          title: 'FileWindow：鸿蒙电脑文件窗口', subtitle: 'FileWindow Example',
+          desc: '工作流 C 的整页示例：窗口、工具栏、导航、搜索和状态栏拼成的文件窗口。删除确认需要对话框色，这一页不画对话框。',
+          view: 'ready', date: '2026-11-16', href: 'design-system/examples/file-window.html',
+          links: [
+            { label: 'Studio 示例', href: 'design-system/examples/studio-tool-window.html' },
+            { label: '组件文档', href: 'design-system/docs/index.html' },
+          ],
+          tags: ['FileWindow', 'PC / Mac'],
+          thumb: { type: 'image', src: 'site/thumbs/ds-file-window.jpg' },
+        },
+        {
+          title: 'StudioToolWindow：工具条与工具菜单', subtitle: 'StudioToolWindow Example',
+          desc: '工作流 C 的整页示例：工具条加工具菜单。编辑器语法色没有印出，中间留空，不填一套假的代码配色。',
+          view: 'ready', date: '2026-11-16', href: 'design-system/examples/studio-tool-window.html',
+          links: [
+            { label: 'FileWindow 示例', href: 'design-system/examples/file-window.html' },
+            { label: '组件文档', href: 'design-system/docs/index.html' },
+          ],
+          tags: ['Studio', '鸿蒙'],
+          thumb: { type: 'image', src: 'site/thumbs/ds-studio-tool.jpg' },
+        },
+        {
+          title: '设计系统总预览', subtitle: 'Token and Specimen Overview',
+          desc: '印出的 token 和两套系统的实时样张。总览页，组件的用法和 API 在组件文档里。',
+          view: 'ready', date: '2026-11-16', href: 'design-system/preview/index.html',
+          links: [
+            { label: '组件文档', href: 'design-system/docs/index.html' },
+            { label: '对照', href: 'design-system/compare/index.html' },
+          ],
+          tags: ['总预览', 'token'],
+          thumb: { type: 'image', src: 'site/thumbs/ds-pixso-preview.jpg' },
+        },
         {
           title: 'DevEco Studio Windows 主窗口', subtitle: 'DevEco Studio · Windows Main Window',
           desc: '基于 IntelliJ Int UI 的整页界面稿，也是 21 个 demo 共用的 IDE 外壳：Header、工具窗、编辑器、CodeGenie 面板、构建 / 终端、状态栏。三主题可切，树、标签页、弹层、AI 问答都能点。',
