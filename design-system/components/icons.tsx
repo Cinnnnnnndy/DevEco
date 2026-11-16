@@ -46,7 +46,27 @@ export function IconFile(props: IconProps) {
 export function IconChevron(props: IconProps) {
   return (
     <Svg {...props}>
-      <path d="M6 3.5 10.5 8 6 12.5" {...stroke} />
+      <title>采样</title>
+      <path d="M5.2 3.8 11 8 5.2 12.2Z" fill="currentColor" />
+    </Svg>
+  );
+}
+
+export function IconCommit(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <title>采样</title>
+      <path d="M2.5 8h5" {...stroke} />
+      <circle cx="10.2" cy="8" r="2.1" {...stroke} />
+    </Svg>
+  );
+}
+
+export function IconBookmark(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <title>采样</title>
+      <path d="M4.5 2.5h7v11L8 11.2 4.5 13.5Z" {...stroke} />
     </Svg>
   );
 }
