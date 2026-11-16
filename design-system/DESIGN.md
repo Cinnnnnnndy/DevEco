@@ -2,7 +2,7 @@
 
 视觉来源是本次 Pixso 预览，不是 `deveco-intui-kit`，也不是 1025 汇报稿。下面凡是写「推断」的，都还没和 Pixso 变量对过。
 
-预览：`design-system/preview/index.html`。
+总览（一页含 token、组件文档、Pixso 对照、FileWindow、StudioToolWindow）：`design-system/preview/index.html`。`docs/`、`compare/`、`examples/` 仍是深链。启动页只留一张卡片指向这一页。
 
 ## 两套系统（工作假设，未最终确认）
 
@@ -30,7 +30,7 @@
 | 名称 | 预览写法 | CSS |
 | --- | --- | --- |
 | `ohos_id_text_size_body1` | 16vp | `--ohos-id-text-size-body1` |
-| `ohos_id_color_text_primary` | `#E5000000` | `rgb(0 0 0 / 90%)`，按 AARRGGBB |
+| `ohos_id_color_text_primary` | `#E5000000` | `rgb(0 0 0 / 90%)`。AARRGGBB 已确认 |
 | `corner_radius_level4` | 8vp | `--corner-radius-level4` |
 | `defaultShadowS_PC` | x0, y0, 16vp, `#33000000` | `0 0 16px rgb(0 0 0 / 20%)`，用在普通菜单 |
 | 未具名阴影 | x0, y10, 16vp, `#000000` 20% | `--shadow-unspecified-y10`，暂用于提示等浮层 |
@@ -43,17 +43,46 @@
 
 规范页用 vp，Code 设置页用 px。预览按 1vp = 1px。
 
-### 名称见过、色值没有逐级印出
+### 官方色阶、阴影和字体（名称已确认，精确色板仍在提取）
 
-`gray-0` … `gray-100` 只确认了名称。foundation 里的色值是从文件管理、备忘录、工具菜单取样的推断阶梯。
+官方灰阶是 **Light Gray 1–14** 与 **Dark Gray 1–14**，不是 `gray-0` … `gray-100`。`gray-0` … `gray-100` 只是预览里见过的临时名称。foundation 里的十六进制仍是从文件管理、备忘录、工具菜单取样的阶梯，临时保留。不要用臆造的 Gray 1–14 色值替换它们。
+
+NewUI 里已经读到的角色：
+
+| 官方名 | 角色 |
+| --- | --- |
+| Light Gray 1 | 主要文字 |
+| Light Gray 6 | 描边 |
+| Light Gray 7 | 次要文字 |
+| Light Gray 8 | 禁用文字与占位 |
+| Light Gray 11 | 非活动选区 |
+| Light Gray 12 | 填充 |
+| Light Gray 13 | 次级背景 / 工具窗口 |
+| Light Gray 14 | 白 = 主背景 |
+| Dark Gray 1 | 主要 = 主编辑器背景 |
+| Dark Gray 2 | 次级背景、工具窗口、对话框、工具提示 |
+| Dark Gray 3 | 线条与分隔、树悬停 |
+| Dark Gray 7 | 次要文字与图标 |
+| Dark Gray 8 | 较浅背景上的文字 |
+| Dark Gray 9 | 当前行号 |
+| Dark Gray 12 | 主要文字 |
+| Dark Gray 14 | 白 |
+
+PC 深色：NewUI 含完整的 Dark Gray 1–14。色阶存在。精确色块仍待从源文件提取，所以 `data-theme="dark"` 上现在的十六进制仍是取样，不是官方 Gray 色值。
+
+官方阴影名：`defaultShadowXS`、`defaultShadowS`、`defaultShadowM`、`defaultShadowL`、`FloatShadowS`、`FloatShadowM`。已印出并在用的只有 `defaultShadowS_PC`。其余不写公式。
+
+源文件里出现、且 AARRGGBB 解释已确认：`#E5000000` → `rgb(0 0 0 / 90%)`，`#E5FFFFFF` → `rgb(255 255 255 / 90%)`，`#33000000` → `rgb(0 0 0 / 20%)`。`#E5FFFFFF` 只记录解释，不新造角色变量。
+
+源文件里的字体样式名：`Font/Body_L/Medium`、`Font/Body_M/Medium`、`Font/Body_M/Regular`、`Light/font_primary`、`font_emphasize`、`font_on_primary`、`font_secondary`、`font_tertiary`。已确认字号只有 `ohos_id_text_size_body1` = 16vp。其余字号不补。
+
+字体家族是 HarmonyOS Sans SC，来自 Pixso 源文件。`--font-ui` 为 `"HarmonyOS Sans SC 2025", "HarmonyOS Sans SC 2024", "HarmonyOS Sans SC", "HarmonyOS Sans", "HarmonyHeiTi", "PingFang SC", sans-serif`。PingFang SC 只作回退。禁止 Helvetica，也禁止 Inter。
+
+字体和 token 的源文件（版式和目视仍以 Pixso 预览为准）：`👉🔥【2.0】基础范式🔥👈.pix`、`IDE_v1.1.0_PC端组件库.pix`、`【NewUI】鸿蒙IDE-当代.pix`、`icon.pix`、`【TUI】DevEco Code 基础UI规范.pix`。
 
 `ohos_id_color_dialog_bg` 有三个色值，没有读出，变量保持 `unset`。
 
 `Elevation 55` 和 `Elevation 70` 只见到名称，没有和 `defaultShadowS_PC` 的换算，所以没有阴影公式。
-
-字体家族没有印出。禁止使用 1025 汇报稿的 Helvetica。当前是系统 UI 字体栈。
-
-PC 深色：文件树条目里有「搜索视觉样式 dark」这个名字，暗色色板没有读出。`data-theme="dark"` 在 PC 上整组都是推断。
 
 ### 从预览取样、角色是推断
 
@@ -183,10 +212,10 @@ Studio 工具菜单：图标 + 文案 + 快捷键，选中为石板蓝。不要�
 
 - 对话框，以及 `ohos_id_color_dialog_bg` 的三个色值
 - Elevation 55 / 70
-- `gray-*` 的逐级印出色值，`component_regular` 的材质配方
-- `padding_level1`、`Body_L`、`font_primary` 的印出数值
-- UI 字体家族；vp 与 px 在 Code 设置页是否 1:1
-- PC 深色搜索的实际色板
+- Light / Dark Gray 1–14 的精确色块。`gray-*` 取样阶梯是临时的，`component_regular` 的材质配方也未见
+- `padding_level1`、`Body_L` 以外的字号、`font_primary` 的印出数值
+- vp 与 px 在 Code 设置页是否 1:1
+- PC 深色的精确色块（Dark Gray 1–14 的色阶已经在 NewUI，数值还在提取）
 - 未具名 y10 阴影属于哪一个组件
 - 主色按钮、危险按钮、开关、表单校验
 - Logo 矢量与锁版色值
@@ -206,7 +235,7 @@ PC / Mac 只读 `deveco-intui-kit/`，不改它。和 Pixso 冲突的地方保�
 - `AiStatus`、`tokens/ai.css`：智能色、星芒、状态胶囊。Pixso 没有这套色。
 - `MessageBar`：消息下的复制 / 重新回答 / 时间。成功绿来自 kit。
 
-编辑器语法色仍是 kit 里的推断，没有当成已确认。字体仍是近似。
+编辑器语法色仍是 kit 里的推断，没有当成已确认。界面字体用 HarmonyOS Sans SC，PingFang SC 只作回退。
 
 ## 并排对照
 
@@ -214,7 +243,8 @@ PC / Mac 只读 `deveco-intui-kit/`，不改它。和 Pixso 冲突的地方保�
 
 | 页 | 路径 |
 | --- | --- |
-| 索引 | `design-system/compare/index.html` |
+| 总览里的对照 | `design-system/preview/index.html#compare` |
+| 索引（深链） | `design-system/compare/index.html` |
 | 文件窗口 | `design-system/compare/file-window.html` |
 | 菜单 | `design-system/compare/menu.html` |
 | 树 | `design-system/compare/tree.html` |
@@ -224,7 +254,7 @@ PC / Mac 只读 `deveco-intui-kit/`，不改它。和 Pixso 冲突的地方保�
 
 ## 对照结论
 
-对照轮次：先按帧量窗口、菜单、树、页签和工具菜单，改了确认对不上的地方，再在浏览器里核对计算样式。对话框、主色按钮、开关、Logo、TUI、图标字体、字体家族、vp/px、Elevation、`#E5000000` / `#33000000` 的解释没有补色。
+对照轮次：先按帧量窗口、菜单、树、页签和工具菜单，改了确认对不上的地方，再在浏览器里核对计算样式。对话框、主色按钮、开关、Logo、TUI、图标字体、vp/px、Elevation 没有补色。字体家族已确认为 HarmonyOS Sans SC。`#E5000000`、`#E5FFFFFF`、`#33000000` 按 AARRGGBB 的解释已经确认。
 
 | 组件 | 结论 |
 | --- | --- |
@@ -246,12 +276,18 @@ PC / Mac 只读 `deveco-intui-kit/`，不改它。和 Pixso 冲突的地方保�
 | ToolStripe | 匹配深色条和线框图标。当前项用菜单同款石板蓝。 |
 | FileWindow / StudioToolWindow | 只组合以上零件。对话框和编辑器语法色留了缺口卡。 |
 
+## 已确认
+
+- 字体家族：HarmonyOS Sans SC。PingFang SC 只作回退。禁止 Helvetica 与 Inter。
+- `#E5000000`、`#E5FFFFFF`、`#33000000` 按 AARRGGBB。分别是 `rgb(0 0 0 / 90%)`、`rgb(255 255 255 / 90%)`、`rgb(0 0 0 / 20%)`。
+- `ohos_id_text_size_body1` = 16vp。
+- PC 深色：NewUI 有完整 Dark Gray 1–14。精确色块仍待提取。
+
 ## 待确认
 
 1. 文件夹映射：鸿蒙 NewUI 是否应全部算 Studio，而不是 Code。
 2. 基础范式 2.0 的划界：文件树算 Code 还是 Studio。
 3. vp 与 px。
-4. 字体家族。
-5. dialog-bg 三个色值。
-6. Elevation 55 / 70 与 `defaultShadowS_PC` 是否是同一套高度，只是命名不同。
-7. `#E5000000` / `#33000000` 是否一律按 AARRGGBB 解释。
+4. dialog-bg 三个色值。
+5. Elevation 55 / 70 与 `defaultShadowS_PC` 是否是同一套高度，只是命名不同。
+6. Light / Dark Gray 1–14 的精确色块，以及除 `defaultShadowS_PC` 以外的官方阴影公式。

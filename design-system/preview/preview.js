@@ -10,6 +10,7 @@
   });
 
   document.querySelectorAll(".de-chip-row").forEach(function (row) {
+    if (row.closest(".compare-block")) return;
     row.addEventListener("click", function (event) {
       var chip = event.target.closest(".de-chip");
       if (!chip || !row.contains(chip)) return;
@@ -20,6 +21,7 @@
   });
 
   document.querySelectorAll("[data-menu-button]").forEach(function (button) {
+    if (button.closest(".compare-block")) return;
     var panel = document.getElementById(button.getAttribute("aria-controls"));
     button.addEventListener("click", function () {
       var open = button.getAttribute("aria-expanded") === "true";
@@ -29,6 +31,7 @@
   });
 
   document.querySelectorAll("[data-tabs]").forEach(function (list) {
+    if (list.closest(".compare-block")) return;
     list.addEventListener("click", function (event) {
       var tab = event.target.closest('[role="tab"]');
       if (!tab || !list.contains(tab)) return;
@@ -41,6 +44,7 @@
   });
 
   document.querySelectorAll(".de-nav").forEach(function (nav) {
+    if (nav.closest(".compare-block")) return;
     nav.addEventListener("click", function (event) {
       var item = event.target.closest(".de-nav__item");
       if (!item || !nav.contains(item)) return;
