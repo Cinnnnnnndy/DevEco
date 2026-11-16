@@ -30,7 +30,7 @@ PC / Mac 可以把 `deveco-intui-kit/` 当输入：token、组件、图标、可
 - 鸿蒙稿里的 IntelliJ / Int UI 只作视觉参考。公共名字用 ToolMenu、ToolStripe。
 - 侧栏当前项可以是浅蓝。文件树和浅色菜单的当前项是中性灰。不要混用。
 - 收进来的 kit 零件要带 `data-de-source="intui-kit"`，或在文档里写明来源。浅色高对比是 `data-theme="light-contrast"`。
-- 对照预览时，用本库组件重搭，和帧并排放，见 `compare/`。只改对不上的地方。
+- 对照时先按工作流 A、C 用本库拼出设计稿页，再拿组件库去对那些稿页和 Pixso 预览。只改对不上的地方。稿页在 `compare/`。
 - 最终回复按文末清单写。
 
 ## MUST NOT
