@@ -4,14 +4,19 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>DevEco 设计系统（Pixso）</title>
-  <link rel="stylesheet" href="../tokens/index.css?v=4">
-  <link rel="stylesheet" href="gallery.css?v=4">
-  <link rel="stylesheet" href="../compare/compare.css?v=4">
-  <link rel="stylesheet" href="../docs/docs.css?v=4">
-  <link rel="stylesheet" href="overview.css?v=4">
+  <link rel="stylesheet" href="../tokens/index.css?v=5">
+  <link rel="stylesheet" href="../chrome.css?v=5">
+  <link rel="stylesheet" href="gallery.css?v=5">
+  <link rel="stylesheet" href="../compare/compare.css?v=5">
+  <link rel="stylesheet" href="../docs/docs.css?v=5">
+  <link rel="stylesheet" href="overview.css?v=5">
 </head>
 <body>
   <nav class="ov-nav" aria-label="页内">
+    <a class="brand" href="index.html">DevEco</a>
+    <a href="../docs/index.html">组件文档</a>
+    <a href="../compare/index.html">对照索引</a>
+    <span class="nav-label">本页</span>
     <a href="#tokens">印出的 token</a>
     <a href="#official-names">官方名称</a>
     <a href="#specimens">样张</a>
@@ -960,7 +965,7 @@ import { IconButton } from &quot;../pc-mac/icon-button&quot;;
   <section id="compare" class="compare-block">
     <h1>预览对照</h1>
     <p class="note">按 SKILL 工作流 C，用本库组件重搭预览里的界面，并排在 Pixso 帧旁边。只改对不上的颜色、间距、圆角、阴影和状态。等确认的缺口不补色。</p>
-    <p class="nav"><a href="#compare-file-window">文件窗口</a> · <a href="#compare-menu">菜单</a> · <a href="#compare-tree">树</a> · <a href="#compare-tabs">页签</a> · <a href="#compare-tooltip">提示</a> · <a href="#compare-tool-menu">工具菜单</a></p>
+    <p class="nav"><a href="#compare-file-window">文件窗口</a><a href="#compare-menu">菜单</a><a href="#compare-tree">树</a><a href="#compare-tabs">页签</a><a href="#compare-tooltip">提示</a><a href="#compare-tool-menu">工具菜单</a></p>
     <p class="note">单独打开：<a href="../compare/index.html">compare/index.html</a></p>
 
     <h1 id="compare-file-window">文件窗口</h1>
@@ -1130,7 +1135,7 @@ import { IconButton } from &quot;../pc-mac/icon-button&quot;;
   </section>
 
 
-  <section id="file-window" class="content" data-demo style="max-width:1100px;margin:0 auto">
+  <section id="file-window" class="content content--wide" data-demo>
     <p class="kicker"><a href="../docs/index.html">组件索引</a> · 工作流 C</p>
     <h1>FileWindow</h1>
     <p class="desc">按 SKILL 工作流 C 用已有窗口零件拼的一页，不新造按钮或颜色。场景是查看「最近」里的文件。删除确认需要对话框，dialog-bg 还没读出，所以只保留菜单项，不画对话框。</p>
@@ -1206,7 +1211,7 @@ import { IconButton } from &quot;../pc-mac/icon-button&quot;;
   
     <p class="note">单独打开：<a href="../examples/file-window.html">examples/file-window.html</a></p>
   </section>
-  <section id="studio-tool-window" class="content" data-demo style="max-width:1100px;margin:0 auto">
+  <section id="studio-tool-window" class="content content--wide" data-demo>
     <p class="kicker"><a href="../docs/index.html">组件索引</a> · 工作流 C</p>
     <h1>StudioToolWindow</h1>
     <p class="desc">Studio 工具条加工具菜单。编辑器画布的语法色没有印出，中间留空，并标成缺口，不填一套假的代码配色。</p>
@@ -1265,14 +1270,34 @@ import { IconButton } from &quot;../pc-mac/icon-button&quot;;
     (function () {
       var nav = document.querySelector(".ov-nav");
       if (!nav) return;
+      var links = Array.prototype.filter.call(nav.querySelectorAll("a"), function (item) {
+        return (item.getAttribute("href") || "").charAt(0) === "#";
+      });
+      function setCurrent(id) {
+        links.forEach(function (item) {
+          if (item.getAttribute("href") === "#" + id) item.setAttribute("aria-current", "true");
+          else item.removeAttribute("aria-current");
+        });
+      }
       nav.addEventListener("click", function (event) {
         var link = event.target.closest("a");
         if (!link || !nav.contains(link)) return;
-        nav.querySelectorAll("a").forEach(function (item) {
-          if (item === link) item.setAttribute("aria-current", "true");
-          else item.removeAttribute("aria-current");
-        });
+        var href = link.getAttribute("href") || "";
+        if (href.charAt(0) === "#") setCurrent(href.slice(1));
       });
+      var sections = links.map(function (item) {
+        return document.getElementById(item.getAttribute("href").slice(1));
+      }).filter(Boolean);
+      function update() {
+        var marker = 96;
+        var current = sections[0] || null;
+        sections.forEach(function (section) {
+          if (section.getBoundingClientRect().top <= marker) current = section;
+        });
+        if (current) setCurrent(current.id);
+      }
+      update();
+      window.addEventListener("scroll", update, { passive: true });
     })();
   </script>
 </body>
