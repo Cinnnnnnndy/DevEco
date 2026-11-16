@@ -26,10 +26,10 @@ export function WindowControls() {
   return (
     <div className="de-window__controls" aria-hidden="true">
       <button type="button" tabIndex={-1}>
-        <IconMinus />
+        <IconSquare />
       </button>
       <button type="button" tabIndex={-1}>
-        <IconSquare />
+        <IconMinus />
       </button>
       <button type="button" tabIndex={-1}>
         <IconClose />
