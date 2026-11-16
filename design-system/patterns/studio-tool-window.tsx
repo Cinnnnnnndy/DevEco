@@ -1,6 +1,6 @@
-import { IconBug, IconFile, IconHammer, IconPlay, IconSearch, IconTerminal } from "../components/icons";
+import { IconBookmark, IconBug, IconCommit, IconFile, IconHammer, IconPlay, IconSearch, IconTerminal } from "../components/icons";
 import { IconButton } from "../components/pc-mac/icon-button";
-import { ToolMenu, ToolMenuItem, ToolMenuSeparator } from "../components/harmony/tool-menu";
+import { ToolMenu, ToolMenuItem } from "../components/harmony/tool-menu";
 import { ToolStripe } from "../components/harmony/tool-stripe";
 
 /** Studio 工具条 + 工具菜单。条目来自预览里的菜单，名字按稿保留。 */
@@ -16,10 +16,10 @@ export function StudioToolWindow() {
       </ToolStripe>
       <div className="de-pad">
         <ToolMenu>
-          <ToolMenuItem icon={<IconFile />} shortcut="⌘0" current>
+          <ToolMenuItem icon={<IconCommit />} shortcut="⌘0" current>
             提交
           </ToolMenuItem>
-          <ToolMenuItem icon={<IconFile />} shortcut="⌘2">
+          <ToolMenuItem icon={<IconBookmark />} shortcut="⌘2">
             Bookmarks
           </ToolMenuItem>
           <ToolMenuItem icon={<IconSearch />} shortcut="⌘3">
@@ -31,9 +31,8 @@ export function StudioToolWindow() {
           <ToolMenuItem icon={<IconBug />} shortcut="⌘5">
             调试
           </ToolMenuItem>
-          <ToolMenuSeparator />
-          <ToolMenuItem>快速开始</ToolMenuItem>
-          <ToolMenuItem>TODO</ToolMenuItem>
+          <ToolMenuItem icon={<IconSearch />}>API Change Assistant</ToolMenuItem>
+          <ToolMenuItem icon={<IconFile />}>API参考</ToolMenuItem>
         </ToolMenu>
       </div>
     </div>

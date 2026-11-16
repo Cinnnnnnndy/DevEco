@@ -43,7 +43,7 @@
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  height: 40px;
+  height: 32px; /* tabs.jpg 标题带 y6–38 = 32px；file-window.jpg 标题带按同一比例折算 */
   padding: 0 var(--space-3) 0 var(--space-4);
   background: var(--surface-titlebar);
   flex: none;
@@ -172,8 +172,8 @@
 .de-toolbar {
   display: flex;
   align-items: center;
-  gap: 2px;
-  min-height: 40px;
+  gap: 4px;
+  min-height: 36px;
   padding: 4px var(--space-2);
   background: var(--surface-toolbar);
   border-bottom: 1px solid var(--line);
@@ -235,30 +235,43 @@
 .de-field { display: flex; flex-direction: column; gap: 6px; }
 .de-field__label { font-size: 13px; color: var(--text-secondary); }
 
-/* —— 菜单 —— */
+/* —— 菜单 ——
+   notes-menu.jpg 按 1x 量（圆角约 8px = corner_radius_level4）：
+   卡片 295×226，当前项高 48、左右内缩 6、行距 8、字到高亮左缘约 15。
+   阴影用印出的 defaultShadowS_PC，不跟 --shadow-float 走。 */
 .de-menu {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
   margin: 0;
-  padding: var(--padding-level1);
+  padding: 6px;
   list-style: none;
-  min-width: 180px;
-  background: var(--component-regular);
+  width: 295px;
+  max-width: 100%;
+  height: auto;
+  flex: none;
+  align-self: start;
+  justify-self: start;
+  background: var(--surface-menu); /* 帧内卡片是白，不是 component_regular 的 gray-10 */
   color: var(--text-primary);
   border-radius: var(--corner-radius-level4);
   box-shadow:
     inset 0 0 0 var(--stroke-width) var(--stroke-inner),
     0 0 0 var(--stroke-width) var(--stroke-outer),
-    var(--shadow-float);
+    var(--default-shadow-s-pc);
 }
 
 .de-menu__item,
 .de-menu button.de-menu__item {
+  box-sizing: border-box;
   display: flex;
   align-items: center;
-  gap: var(--space-2);
+  gap: 8px;
   width: 100%;
-  min-height: 40px; /* 从预览图推断：备忘录菜单项高于 32，待用 Pixso 变量核对 */
+  min-height: 48px;
   margin: 0;
-  padding: 6px var(--space-2);
+  padding: 0 16px;
   border: 0;
   border-radius: var(--corner-radius-level4);
   background: transparent;
@@ -266,11 +279,12 @@
   font: inherit;
   font-size: var(--type-body-l);
   font-weight: var(--font-weight-medium);
+  line-height: 22px;
   text-align: left;
   cursor: pointer;
 }
 
-.de-menu__item + .de-menu__item { margin-top: var(--padding-level1); }
+.de-menu__item + .de-menu__item { margin-top: 0; }
 
 .de-menu__item:hover,
 .de-menu__item[aria-current="true"],
@@ -281,17 +295,35 @@
 }
 
 .de-menu button.de-menu__item:disabled {
-  color: var(--text-tertiary);
+  color: #d0d0d0; /* notes-menu.jpg「锁定图文布局」最深墨约 208。比 text-tertiary 的 40% 黑更淡 */
   background: transparent;
+  opacity: 1;
   cursor: not-allowed;
 }
 
+.de-menu__icon,
+.de-tool-menu .de-icon {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: inherit;
+}
+.de-menu__icon svg,
+.de-tool-menu .de-icon svg { width: 16px; height: 16px; display: block; }
+
 .de-menu__label { flex: 1; min-width: 0; }
 .de-menu__shortcut {
-  font-family: var(--font-mono);
+  margin-left: auto;
+  flex: none;
+  font-family: var(--font-ui), "Noto Sans Symbols 2", "Segoe UI Symbol", sans-serif;
   font-size: 12px;
   font-weight: 400;
+  line-height: 16px;
   color: var(--text-tertiary);
+  white-space: nowrap;
 }
 .de-menu__item[aria-current="true"] .de-menu__shortcut { color: inherit; opacity: 0.75; }
 
@@ -322,18 +354,23 @@
   display: inline-flex;
 }
 
+.de-tooltip.is-open { flex-direction: column; align-items: flex-start; gap: 8px; }
+.de-tooltip.is-open::after { position: static; transform: none; opacity: 1; margin: 0; }
+
 .de-tooltip::after {
   content: attr(data-tooltip);
   position: absolute;
   left: 50%;
   top: calc(100% + 6px);
   transform: translateX(-50%);
+  width: max-content;
+  max-width: 240px;
   padding: 6px 10px;
   background: var(--surface-menu);
   color: var(--text-primary);
   font-size: 12px;
   font-weight: 400;
-  line-height: 1.3;
+  line-height: 16px;
   white-space: nowrap;
   border-radius: var(--corner-radius-level4);
   box-shadow:
@@ -351,25 +388,32 @@
 /* —— 页签 —— */
 .de-tabs {
   display: flex;
-  align-items: flex-end;
+  align-items: stretch;
   gap: 0;
+  width: 100%;
+  max-width: 100%;
+  flex: none;
+  align-self: stretch;
   background: var(--surface-tabstrip);
-  border-bottom: 1px solid var(--line);
-  min-height: 36px;
-  padding: 4px var(--space-2) 0;
+  border-bottom: 0;
+  min-height: 32px;
+  height: 32px;
+  padding: 0 4px;
 }
 
 .de-tab {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  height: 36px;
-  padding: 0 var(--space-2) 0 var(--space-3);
-  border-bottom: 2px solid transparent;
+  height: 32px;
+  padding: 0 8px 0 12px;
+  border-bottom: 0;
   background: transparent;
   color: var(--text-secondary);
   font-size: 13px;
+  line-height: 20px;
   max-width: 220px;
+  border-radius: 4px 4px 0 0;
 }
 
 .de-tab__main {
@@ -386,8 +430,7 @@
 .de-tab[data-selected="true"] {
   color: var(--text-primary);
   background: var(--surface-window);
-  border-bottom-color: transparent;
-  border-radius: 6px 6px 0 0; /* 从预览图推断，待用 Pixso 变量核对 */
+  border-radius: 4px 4px 0 0;
 }
 
 .de-tab__close {
@@ -403,23 +446,41 @@
 
 .de-tab__close:hover { background: var(--surface-hover); color: var(--text-primary); }
 
-/* —— 树 —— */
-.de-tree { margin: 0; padding: var(--space-1); list-style: none; }
+/* —— 树 ——
+   tree.jpg 的汉字墨高约 28px，备忘录 1x 帧约 18px，比例 1.56。
+   选中条高约 78px → 50px；层级缩进约 61px → 40px；条左缘到三角约 45px → 28px。
+   Search 条取样 #EEEEEE，文件条取样 #E6E6E6。 */
+.de-tree {
+  margin: 0;
+  padding: 4px 0;
+  list-style: none;
+  width: max-content;
+  max-width: 100%;
+  height: auto;
+  flex: none;
+  align-self: start;
+  justify-self: start;
+}
 .de-tree__node { margin: 0; }
 .de-tree__row {
   display: flex;
   align-items: center;
-  gap: 6px;
-  min-height: var(--size-row);
-  padding: 0 var(--space-2);
-  border-radius: var(--radius-control);
+  gap: 8px;
+  min-height: 50px;
+  padding: 0 16px 0 28px;
+  border-radius: var(--corner-radius-level4);
   cursor: pointer;
   list-style: none;
   color: var(--text-primary);
-  font-size: 13px;
+  font-size: var(--type-body-l);
+  line-height: 22px;
 }
 .de-tree__row::-webkit-details-marker { display: none; }
 .de-tree__row:hover { background: var(--surface-tree-hover); }
+.de-tree__row[data-selected="soft"] {
+  background: #eeeeee; /* tree.jpg「Search」条取样 238 */
+  color: var(--text-primary);
+}
 .de-tree__row[aria-current="true"],
 .de-tree__node[open] > .de-tree__row[data-selected="true"],
 .de-tree__row[data-selected="true"] {
@@ -427,16 +488,49 @@
   color: var(--text-primary);
 }
 .de-tree__chevron {
-  width: 14px;
+  width: 16px;
+  height: 16px;
   flex: none;
-  color: var(--text-tertiary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  font-size: 0;
   transition: transform var(--motion-fast) var(--ease-standard);
 }
-.de-tree__node[open] > .de-tree__row .de-tree__chevron { transform: rotate(90deg); }
+.de-tree__chevron:not(:has(svg))::before {
+  content: "";
+  border-style: solid;
+  border-width: 4px 0 4px 6px;
+  border-color: transparent transparent transparent currentColor;
+}
+.de-tree__node[open] > .de-tree__row > .de-tree__chevron { transform: rotate(90deg); }
 .de-tree__chevron--leaf { visibility: hidden; }
-.de-tree__name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.de-tree__count { color: var(--text-tertiary); font-size: 12px; }
-.de-tree__children { margin: 0; padding: 0 0 0 16px; list-style: none; }
+.de-tree__row:not(:has(.de-icon)) .de-tree__name::before {
+  content: "";
+  width: 16px;
+  height: 16px;
+  flex: none;
+  background: currentColor;
+  mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path fill='black' d='M1.6 4.2h4l1.3 1.5H14.4v7.4H1.6z'/></svg>") center / contain no-repeat;
+  -webkit-mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path fill='black' d='M1.6 4.2h4l1.3 1.5H14.4v7.4H1.6z'/></svg>") center / contain no-repeat;
+}
+.de-tree__row:has(.de-tree__chevron--leaf):not(:has(.de-icon)) .de-tree__name::before {
+  mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path fill='black' d='M4 1.8h5.2L13 5.5V14H4z'/><path fill='black' d='M9 1.8V5.5H13z'/></svg>");
+  -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path fill='black' d='M4 1.8h5.2L13 5.5V14H4z'/><path fill='black' d='M9 1.8V5.5H13z'/></svg>");
+}
+.de-tree__name {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.de-tree__count { color: inherit; font-size: inherit; margin-left: 4px; }
+.de-tree__children { margin: 0; padding: 0 0 0 40px; list-style: none; }
 .de-tree__more {
   margin-left: auto;
   color: var(--text-tertiary);
@@ -518,7 +612,7 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--space-3);
-  height: 28px;
+  height: 24px;
   padding: 0 var(--space-3);
   border-top: 1px solid var(--line);
   background: var(--surface-window);
@@ -529,29 +623,46 @@
 
 /* —— 鸿蒙工具菜单与图标条 —— */
 .de-tool-menu {
-  width: 280px;
-  background: var(--sample-menu-dark);
-  color: var(--sample-menu-text);
-  border-radius: var(--radius-window);
+  box-sizing: border-box;
+  width: 400px; /* tool-menu.jpg 菜单约 x18–415 */
+  max-width: 100%;
+  background: #2c2c30;
+  color: #dcdce0;
+  border-radius: 8px;
   box-shadow:
     inset 0 0 0 var(--stroke-width) rgb(255 255 255 / 8%),
     0 0 0 var(--stroke-width) rgb(0 0 0 / 40%),
     var(--default-shadow-s-pc);
-  padding: 6px;
-  --text-primary: var(--sample-menu-text);
-  --text-tertiary: rgb(220 220 224 / 48%);
-  --surface-selected: var(--sample-menu-selected);
-  --surface-menu-current: var(--sample-menu-selected);
-  --text-on-selected: var(--sample-menu-text);
-  --text-on-menu-current: var(--sample-menu-text);
-  --icon: var(--sample-menu-text);
+  padding: 10px;
+  gap: 2px;
+  --text-primary: #dcdce0;
+  --text-tertiary: #b4b4ba;
+  --surface-selected: #2e436e;
+  --surface-menu-current: #2e436e;
+  --text-on-selected: #f4f5f7;
+  --text-on-menu-current: #f4f5f7;
+  --icon: #dcdce0;
 }
 
 .de-tool-menu .de-menu__item,
 .de-tool-menu button.de-menu__item {
-  font-size: 13px; /* 从预览图推断：工具菜单比普通菜单的 Body_L 小，待用 Pixso 变量核对 */
+  font-size: 13px; /* 汉字墨高约 15px，小于备忘录 Body_L 的 18px */
   font-weight: 400;
-  min-height: 32px;
+  line-height: 18px;
+  min-height: 30px; /* 选中条 y14–43 */
+  padding: 0 8px;
+  gap: 8px;
+  border-radius: 4px; /* 选中条圆角约 4px，小于普通菜单的 8vp */
+  color: #dcdce0;
+}
+
+.de-tool-menu .de-menu__shortcut {
+  color: #c8c8ce;
+  opacity: 1;
+}
+.de-tool-menu .de-menu__item[aria-current="true"] .de-menu__shortcut {
+  color: #f4f5f7;
+  opacity: 1;
 }
 
 .de-stripe {
