@@ -9,12 +9,13 @@
 
 ## 打开就看
 
-- 组件索引，每组件一页（实时示例、用法、API、对照）：[docs/index.html](docs/index.html)
+一页总览（token、组件文档、Pixso 对照、FileWindow、StudioToolWindow）：[preview/index.html](preview/index.html)。静态 HTML，不用构建。启动页只有这一张卡片。
+
+深链仍可用：
+
+- 组件索引：[docs/index.html](docs/index.html)
 - 和 Pixso 帧并排：[compare/index.html](compare/index.html)
 - 整页示例：[examples/file-window.html](examples/file-window.html)、[examples/studio-tool-window.html](examples/studio-tool-window.html)
-- 总预览：[preview/index.html](preview/index.html)
-
-这些都是静态 HTML，不用构建。没有接进仓库启动页。
 
 ## 交给人和 AI
 
