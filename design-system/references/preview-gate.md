@@ -34,6 +34,10 @@
 | 编辑器语法色 | 没有印出的色板 |
 | y10 阴影的归属 | 标注没写组件名 |
 
+## 可以收、但要标明来源
+
+intui-kit 里有、Pixso 没有的：浅色高对比（`data-theme="light-contrast"`）、智能状态（AiStatus）、消息操作栏（MessageBar）。收的时候写「来自 intui-kit」。它们不覆盖 Pixso 的菜单灰、树灰和侧栏浅蓝。
+
 ## 可以继续的
 
 用已有 Button、Menu、Tree、SearchField、NavList、Chip、Tabs、WindowFrame、ToolMenu、ToolStripe 拼页面。缺的那一块用 `.de-gap` 留白。

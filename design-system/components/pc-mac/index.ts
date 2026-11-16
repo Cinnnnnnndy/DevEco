@@ -26,3 +26,7 @@ export { WindowBody, WindowControls, WindowFrame } from "./window-frame";
 export type { WindowFrameProps } from "./window-frame";
 export { StatusBar } from "./status-bar";
 export type { StatusBarProps } from "./status-bar";
+export { AiStatus } from "./ai-status";
+export type { AiStatusProps, AiStatusState } from "./ai-status";
+export { MessageBar, MessageBarButton, UserMessage } from "./message-bar";
+export type { MessageBarButtonProps, MessageBarProps, UserMessageProps } from "./message-bar";

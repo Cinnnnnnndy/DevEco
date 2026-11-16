@@ -196,6 +196,32 @@ Studio 工具菜单：图标 + 文案 + 快捷键，选中为石板蓝。不要�
 - 输入框的禁用、只读、错误；选择器的完整状态矩阵
 - 设计工具属性面板里的树节点变体（Chevron、Hint、Checkbox）没有单独的渲染帧
 
+## intui-kit 输入
+
+PC / Mac 只读 `deveco-intui-kit/`，不改它。和 Pixso 冲突的地方保持预览：菜单当前项灰、树选中灰、侧栏浅蓝、工具栏浅灰、页签白底。kit 的列表选中蓝 `#D4E2FF` 和主蓝 `#3574F0` 不覆盖这些。
+
+收进来、并标明来自 intui-kit 的：
+
+- `data-theme="light-contrast"`：浅色高对比。侧栏选中用 kit 的 Blue11 `#D4E2FF`。树和菜单仍是 Pixso 的灰。
+- `AiStatus`、`tokens/ai.css`：智能色、星芒、状态胶囊。Pixso 没有这套色。
+- `MessageBar`：消息下的复制 / 重新回答 / 时间。成功绿来自 kit。
+
+编辑器语法色仍是 kit 里的推断，没有当成已确认。字体仍是近似。
+
+## 并排对照
+
+用本库组件重搭，放在 Pixso 帧旁边。两轮：第一轮发现树被深色底衬得像暗色主题，菜单外沿也被衬黑，改成浅底后再看；第二轮树的灰选中和菜单的「打印」灰条与帧一致。图标字体仍缺，文件窗口右侧没有补一排未命名图标。
+
+| 页 | 路径 |
+| --- | --- |
+| 索引 | `design-system/compare/index.html` |
+| 文件窗口 | `design-system/compare/file-window.html` |
+| 菜单 | `design-system/compare/menu.html` |
+| 树 | `design-system/compare/tree.html` |
+| 页签 | `design-system/compare/tabs.html` |
+| 提示 | `design-system/compare/tooltip.html` |
+| 工具菜单 | `design-system/compare/tool-menu.html` |
+
 ## 对照结论
 
 对照轮次：先按帧量窗口、菜单、树、页签和工具菜单，改了确认对不上的地方，再在浏览器里核对计算样式。对话框、主色按钮、开关、Logo、TUI、图标字体、字体家族、vp/px、Elevation、`#E5000000` / `#33000000` 的解释没有补色。

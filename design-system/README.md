@@ -10,6 +10,7 @@
 ## 打开就看
 
 - 组件索引，每组件一页（实时示例、用法、API、对照）：[docs/index.html](docs/index.html)
+- 和 Pixso 帧并排：[compare/index.html](compare/index.html)
 - 整页示例：[examples/file-window.html](examples/file-window.html)、[examples/studio-tool-window.html](examples/studio-tool-window.html)
 - 总预览：[preview/index.html](preview/index.html)
 
