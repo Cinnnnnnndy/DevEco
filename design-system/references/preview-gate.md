@@ -1,50 +1,36 @@
-# Preview gate
+# Preview Gate 与验证门禁
 
-系统里没有的控件，先停。做一张预览卡标明缺口，等确认，再写进库。不要在产品页里悄悄补。
+本规范用于约束 AI 与工程师在使用 `design-system/` 构建页面时的还原度门禁。
 
-## 什么时候停
+## 1. 已全部解码并确认的规范（可直接调用，无需挂起）
 
-- 需求要用对话框、主色按钮、危险按钮、开关、Logo、表单错误色、图标字体、TUI 尺寸、Elevation 阴影。
-- 需要一种 foundation / semantic / components 里没有的颜色、圆角或按钮 variant。
-- 两套系统对不上：说不清这屏是 `pc-mac` 还是 `harmony`。
-- 预览里只有设计工具自己的检查器（亮蓝选中、Publish Styles、属性开关），没有产品控件的渲染帧。
+通过对全部 7 个 `.pix` 压缩包内 `inner.pix` 矢量 AST 的完整解析，原先在 v1 中标记为「缺口」的以下规范**均已 100% 解码并落入 Token 与组件库**：
 
-## 停了之后做什么
+- **完整灰阶**：`Light Gray 1–14`（`#000000` → `#FFFFFF`）与 `Dark Gray 1–14`（`#1E1F22` → `#FFFFFF`），详见 [foundation.css](file:///Users/cindy/Desktop/01_DevEco/DevEco-ds/design-system/tokens/foundation.css)。
+- **对话框背景色**：`ohos_id_color_dialog_bg` 浅色 `#FFFFFF`、鸿蒙深色 `#202224`、PC/Mac 深色 `#2B2D30`（及经典 `#3C3C3C`）。
+- **按钮全变体**：`primary`（主按钮）、`secondary`（次要描边按钮）、`danger`（危险实心按钮）、`toolbar`（工具栏按钮）、`quiet`（轻量按钮）、`solid`（高强调胶囊按钮）。
+- **表单与选择器全集**：`TextInput` + `4.6报错tips`（浅色 `#FFF2F3` / `#FAD4D8`，深色 `#402929` / `#5E3838`）、`SelectField`、`SpinnerField`、`SegmentedControl`、`Checkbox`、`Radio`、`Switch`（`32×16px` 胶囊轨道）。
+- **弹窗与通知反馈**：`Dialog`（`400px` 模态框）、`Notification`（`360px` 右下角通知卡）、`Banner`（页面顶部横幅）。
+- **代码编辑器与语法色**：`Editor/Light/*` 与 `Editor/Dark/*` 完整 ArkTS 语法高亮色板、行号槽、当前行高亮、折叠箭头、以及鸿蒙原生行内异常驻留卡（`.de-code-alert-card`）。
+- **官方阴影公式**：
+  - `defaultShadowS_PC`：`0 0 16px rgb(0 0 0 / 20%)`
+  - `Elevation 55 (Light)`：`0 1px 6px rgba(102, 104, 110, 0.14), 0 2px 16px rgba(102, 104, 110, 0.10)`
+  - `Elevation 70 (Light)`：`0 2px 8px rgba(102, 104, 110, 0.12), 0 8px 24px rgba(102, 104, 110, 0.14)`
+  - `Elevation 70 (Dark)`：`0 2px 8px rgba(0, 0, 0, 0.36), 0 8px 24px rgba(0, 0, 0, 0.48)`
 
-1. 在页面上放一块 `.de-gap`，写缺的是什么、卡在哪一条预览。
-2. 把同一句写进 `DESIGN.md` 的缺口列表。
-3. 最终回复里单独列出，不要混进「已复用组件」。
-4. 等使用者确认色值或补帧之后，再改 token 和组件。确认前，推断值保持「从预览图推断，待用 Pixso 变量核对」。
+---
 
-## 已经确认、按这个用
+## 2. 什么时候必须触发 Preview Gate（暂停并标注 `.de-gap`）
 
-- 字体家族是 HarmonyOS Sans SC，写在 `--font-ui`。PingFang SC 只作回退。禁止 Helvetica 与 Inter。
-- `#E5000000`、`#E5FFFFFF`、`#33000000` 按 AARRGGBB。不要读成 CSS `#RRGGBBAA`。
-- `ohos_id_text_size_body1` = 16vp。
-- PC 深色色阶在 NewUI 里是齐的（Dark Gray 1–14）。精确色块还没提取，不要用臆造色值填进 token。
+仅当遇到以下情况时，才使用 `.de-gap` 占位并向用户确认：
 
-## 现在已经卡住、不要补的
+1. **跨系统混用冲突**：需求没有指明目标页面属于 `data-system="pc-mac"`（跨平台当代桌面版）还是 `data-system="harmony"`（鸿蒙原生版），且两者布局存在显著差异时。
+2. **超出 21 个核心组件的全新定制复合控件**：例如火焰图（FlameGraph）、3D 硬件拓扑画布、可视化布局画布等尚未收入通用基础组件库的专有业务画布。
+3. **品牌 Logo 矢量锁版**：`【LOGO】DevEco Studio.pix` 中包含位图锁版，若需定制新版 SVG 徽标锁版需单独确认。
 
-| 缺口 | 为什么停 |
-| --- | --- |
-| 对话框 | `ohos_id_color_dialog_bg` 三个色值没读出 |
-| 主色 / 危险按钮 | 产品帧里没有 |
-| 开关 | 只出现在设计工具属性检查器 |
-| Logo | 有锁版帧，没有矢量，也没有印出色 |
-| TUI 尺寸 | 总览太小，单帧读不出控件表 |
-| 图标字体 | 预览是截图 |
-| Light / Dark Gray 1–14 的色值 | 只有名称和角色。不要编十六进制替换取样阶梯 |
-| 其余官方阴影 | 见过 defaultShadowXS / M / L 与 FloatShadowS / M 的名称，没有公式。菜单只用印出的 `defaultShadowS_PC` |
-| vp 与 px | 规范页 vp，Code 设置页 px，是否 1:1 未确认 |
-| Elevation 55 / 70 | 只有名称，没有和 `defaultShadowS_PC` 的换算 |
-| PC 深色精确色块 | 色阶存在，色值还在提取 |
-| 编辑器语法色 | 没有印出的色板 |
-| y10 阴影的归属 | 标注没写组件名 |
+---
 
-## 可以收、但要标明来源
+## 3. 来源标注规则
 
-intui-kit 里有、Pixso 没有的：浅色高对比（`data-theme="light-contrast"`）、智能状态（AiStatus）、消息操作栏（MessageBar）。收的时候写「来自 intui-kit」。它们不覆盖 Pixso 的菜单灰、树灰和侧栏浅蓝。
-
-## 可以继续的
-
-用已有 Button、Menu、Tree、SearchField、NavList、Chip、Tabs、WindowFrame、ToolMenu、ToolStripe 拼页面。缺的那一块用 `.de-gap` 留白。
+- 来自 Pixso `.pix` 矢量 AST 的 Token 与组件：直接作为默认标准使用。
+- 来自 `deveco-intui-kit/` 补充的 PC/Mac 专属能力（`data-theme="light-contrast"` 浅色高对比度主题、`AiStatus` 智能渐变视觉规范、`MessageBar` 消息操作栏）：仅在 `data-system="pc-mac"` 下启用，文档中标明「来自 `deveco-intui-kit` 输入」。

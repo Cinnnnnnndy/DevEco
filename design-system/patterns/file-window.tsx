@@ -1,71 +1,109 @@
 import type { ReactNode } from "react";
-import { Chip } from "../components/pc-mac/chip";
+import { IconBug, IconFolder, IconHammer, IconPlay, IconSearch } from "../components/icons";
 import { IconButton } from "../components/pc-mac/icon-button";
-import { IconFolder, IconHome, IconMore, IconPlus, IconPreview } from "../components/icons";
-import { NavItem, NavLabel, NavList } from "../components/pc-mac/nav-list";
-import { SearchField } from "../components/pc-mac/search-field";
+import { CodeEditor, CodeLine, LspPill } from "../components/pc-mac/code-editor";
 import { StatusBar } from "../components/pc-mac/status-bar";
-import { Toolbar, ToolbarSeparator, ToolbarSpacer } from "../components/pc-mac/toolbar";
-import { Button } from "../components/pc-mac/button";
-import { Tooltip } from "../components/pc-mac/tooltip";
+import { Tab, Tabs } from "../components/pc-mac/tabs";
+import { ToolStripe } from "../components/harmony/tool-stripe";
+import { Tree, TreeItem } from "../components/pc-mac/tree";
 import { WindowBody, WindowFrame } from "../components/pc-mac/window-frame";
 
 export type FileWindowProps = {
   title?: string;
+  theme?: "dark" | "light";
   children?: ReactNode;
 };
 
-/** 鸿蒙电脑文件管理窗口。外壳是 pattern，页内不要再造工具栏按钮。 */
-
-export function FileWindow({ title = "主页", children }: FileWindowProps) {
+/**
+ * 鸿蒙原生端 IDE 主工作台 (对应 👉🔥【2.0】基础范式🔥👈.pix 与 鸿蒙IDE_v1.1.0_PC端组件库.pix 2.布局组件)
+ * 保留 FileWindow 导出名以兼容既有路由与调用方，同时导出 HarmonyIdeWindow。
+ */
+export function FileWindow({ title = "Healthy_life — EntryAbility.ets", theme = "dark", children }: FileWindowProps) {
   return (
-    <WindowFrame title={title} data-system="pc-mac" data-theme="light">
-      <Toolbar label="文件管理">
-        <Button icon={<IconPlus />}>新建</Button>
-        <ToolbarSeparator />
-        <Button>
-          查看
-        </Button>
-        <IconButton label="更多" icon={<IconMore />} />
-        <ToolbarSpacer />
-        <Tooltip content="显示或隐藏预览窗格。">
-          <Button icon={<IconPreview />}>预览</Button>
-        </Tooltip>
-      </Toolbar>
-      <div className="de-toolbar">
-        <span className="de-crumb">
-          <IconHome /> <strong>主页</strong>
-        </span>
-        <ToolbarSpacer />
-        <SearchField />
-      </div>
+    <WindowFrame title={title} data-system="harmony" data-theme={theme}>
       <WindowBody>
-        <NavList>
-          <NavItem icon={<IconHome />} current>
-            主页
-          </NavItem>
-          <NavLabel>快速访问</NavLabel>
-          <NavItem icon={<IconFolder />}>桌面</NavItem>
-          <NavItem icon={<IconFolder />}>文档</NavItem>
-          <NavItem icon={<IconFolder />}>下载</NavItem>
-        </NavList>
-        <div className="de-main">
-          <div className="de-pad">
-            <div className="de-section-label">快速访问</div>
-            <div className="de-chip-row">
-              <Chip pressed>全部</Chip>
-              <Chip>图片</Chip>
-              <Chip>视频</Chip>
-              <Chip>文档</Chip>
-              <Chip>音频</Chip>
-            </div>
+        <ToolStripe>
+          <IconButton label="Project" icon={<IconFolder />} pressed />
+          <IconButton label="Search" icon={<IconSearch />} />
+          <IconButton label="Build" icon={<IconHammer />} />
+          <IconButton label="Run" icon={<IconPlay />} />
+          <IconButton label="Debug" icon={<IconBug />} />
+        </ToolStripe>
+        <aside className="de-nav" aria-label="Project">
+          <div className="de-toolbar" style={{ padding: "0 8px", minHeight: 36, background: "transparent" }}>
+            <span className="de-toolbar__title">Project</span>
           </div>
-          <div className="de-grow">{children ?? <div className="de-empty">在打开或创建某些文件后，将会在此处显示最近文件</div>}</div>
+          <Tree>
+            <TreeItem label="MyApplication" defaultOpen>
+              <TreeItem label="cloudbuild" defaultOpen>
+                <TreeItem label="003级文本" defaultOpen>
+                  <TreeItem label="004级文本" />
+                  <TreeItem label="build.yml" />
+                  <TreeItem label="build_config.json" />
+                </TreeItem>
+              </TreeItem>
+              <TreeItem label="AppScope" defaultOpen>
+                <TreeItem label="resources" defaultOpen>
+                  <TreeItem label="string.json" />
+                </TreeItem>
+              </TreeItem>
+              <TreeItem label="module1" defaultOpen>
+                <TreeItem label="EntryAbility.ets" selected />
+                <TreeItem label="BadgeCardComponent.cpp" />
+              </TreeItem>
+            </Tree>
+          </Tree>
+        </aside>
+        <div className="de-main">
+          <Tabs>
+            <Tab selected onClose={() => {}}>
+              EntryAbility.ets
+            </Tab>
+            <Tab onClose={() => {}}>BadgeCardComponent.cpp</Tab>
+            <Tab onClose={() => {}}>index.ets</Tab>
+          </Tabs>
+          {children ?? (
+            <CodeEditor alertBadge={<span>✓ 0 告警</span>}>
+              <CodeLine lineNumber={1}>
+                <span className="kw">import</span> UIAbility <span className="kw">from</span>{" "}
+                <span className="str">&apos;@ohos.app.ability.UIAbility&apos;</span>;
+              </CodeLine>
+              <CodeLine lineNumber={2} current>
+                <span className="kw">export default class</span> <span className="fn">EntryAbility</span>{" "}
+                <span className="kw">extends</span> UIAbility &#123;
+              </CodeLine>
+              <CodeLine lineNumber={3}>
+                {"  "}
+                <span className="kw">private static</span> <span className="ct">TAG</span>: string ={" "}
+                <span className="str">&apos;EntryAbility&apos;</span>;
+              </CodeLine>
+              <CodeLine lineNumber={4}>
+                {"  "}
+                <span className="kw">async</span> <span className="fn">onCreate</span>(want: Want) &#123;
+              </CodeLine>
+              <CodeLine lineNumber={5}>
+                {"    "}Logger.<span className="fn">info</span>(
+                <span className="str">&apos;RdbHelper createTable dayInfo success&apos;</span>);
+              </CodeLine>
+              <CodeLine lineNumber={6}>{"  }"}</CodeLine>
+              <CodeLine lineNumber={7}>&#125;</CodeLine>
+            </CodeEditor>
+          )}
           <StatusBar>
-            <span>共 0 个文件</span>
+            <span className="de-crumb">
+              Healthy_life › entry › src › main › ets › <strong>EntryAbility.ets</strong>
+            </span>
+            <span className="de-statusbar__group">
+              <LspPill count={2}>LSP Service</LspPill>
+              <span>134/2,275</span>
+              <span>UTF-8</span>
+              <span>ArkTS</span>
+            </span>
           </StatusBar>
         </div>
       </WindowBody>
     </WindowFrame>
   );
 }
+
+export const HarmonyIdeWindow = FileWindow;

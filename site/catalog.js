@@ -563,17 +563,17 @@ window.DEVECO_CATALOG = {
       note: '所有 demo 背后的同一套 token 与组件，色值逐 key 取自 DevEco Studio 6.0.2 安装包的主题文件。',
       items: [
         {
-          title: 'DevEco 设计系统（Pixso）', subtitle: 'Tokens, Components, Compare, FileWindow, StudioToolWindow',
-          desc: '一页看完：印出的 token 与样张、全部组件文档（可切换系统与主题的实时示例、用法、API）、Pixso 帧对照、FileWindow 和 StudioToolWindow。',
-          view: 'ready', date: '2026-11-16', href: 'design-system/preview/index.html',
+          title: 'DevEco 设计系统（Pixso）', subtitle: 'HarmonyOS NEXT HDesign 2.0 & PC/Mac NewUI · 21 Components & IDE Patterns',
+          desc: '直接从 7 份本地 Pixso 矢量源码（inner.pix 133,622 节点）提取的双系统设计体系：含完整 Light/Dark Gray 1–14、ohos_id_*、Elevation 55/70 与语法色 Token、21 个核心组件文档（支持双系统五主题实时切换）、6 组 Pixso 原稿帧 1:1 对照、鸿蒙原生 IDE 整窗（HarmonyIdeWindow）与 PC/Mac 当代工具窗口（StudioToolWindow）。',
+          view: 'ready', date: '2026-11-17', href: 'design-system/preview/index.html',
           links: [
             { label: '组件文档深链', href: 'design-system/docs/index.html' },
             { label: '对照深链', href: 'design-system/compare/index.html' },
-            { label: 'FileWindow', href: 'design-system/examples/file-window.html' },
+            { label: 'HarmonyIdeWindow', href: 'design-system/examples/file-window.html' },
             { label: 'StudioToolWindow', href: 'design-system/examples/studio-tool-window.html' },
             { label: 'SKILL.md', href: 'design-system/SKILL.md' },
           ],
-          tags: ['Pixso', 'token', '组件文档', '对照'],
+          tags: ['Pixso', 'HDesign 2.0', 'NewUI', '21 组件', '对照'],
           thumb: { type: 'image', src: 'site/thumbs/ds-pixso-preview.jpg' },
         },
         {

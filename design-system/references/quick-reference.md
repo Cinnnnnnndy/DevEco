@@ -1,49 +1,50 @@
-# 速查
+# 速查表（Quick Reference）
 
-主题写在祖先节点上，不包 Provider。
+主题与系统直接声明在祖先容器的 HTML 属性上，无需额外包裹 JS Provider：
 
 ```html
-<div data-system="pc-mac" data-theme="light">
-<div data-system="harmony" data-theme="dark">
+<!-- PC / Mac 当代桌面端（支持 light | dark | light-contrast） -->
+<div data-system="pc-mac" data-theme="dark">...</div>
+
+<!-- 鸿蒙原生端 HarmonyOS NEXT HDesign 2.0（支持 light | dark） -->
+<div data-system="harmony" data-theme="dark">...</div>
 ```
 
-样式入口：`tokens/index.css`（foundation → semantic → components）。
+样式唯一入口：`design-system/tokens/index.css`（自动按顺序引入 `foundation.css` → `semantic.css` → `components.css`）。
 
-## 该用哪个外壳
+---
 
-| 页面 | 外壳 | 不要用 |
+## 1. 整窗骨架选择
+
+| 目标场景 | 推荐 Pattern / 外壳 | 禁止事项 |
 | --- | --- | --- |
-| 鸿蒙电脑文件、备忘录、文本编辑 | `patterns/file-window.tsx` 或同样的 `.de-window` | 另一套 IDE 外框、渐变底、播放条 |
-| Studio 工具菜单、图标条 | `patterns/studio-tool-window.tsx` | IntelliJ / Int UI 这个名字、设计工具的亮蓝菜单 |
+| **鸿蒙原生 IDE 整窗**（DevEco Code / DevEco Studio NEXT） | `patterns/file-window.tsx`（`HarmonyIdeWindow` / `FileWindow`）或 [examples/file-window.html](file:///Users/cindy/Desktop/01_DevEco/DevEco-ds/design-system/examples/file-window.html) | 禁止使用操作系统的文件管理器/备忘录外壳；禁止混用 PC/Mac 的 40px 侧边图标条 |
+| **PC / Mac 当代 IDE 工具窗口**（IntelliJ NewUI 风格） | `patterns/studio-tool-window.tsx`（`StudioToolWindow`）或 [examples/studio-tool-window.html](file:///Users/cindy/Desktop/01_DevEco/DevEco-ds/design-system/examples/studio-tool-window.html) | 禁止使用 Pixso 设计工具自身的属性检查器颜色 |
 
-## Class
+---
 
-| 零件 | class |
-| --- | --- |
-| 工具栏按钮 | `.de-button.de-button--toolbar` |
-| 实心 Search | `.de-button.de-button--solid` |
-| 图标按钮 | `.de-icon-button` |
-| 搜索 | `.de-search` |
-| 菜单 | `.de-menu` / 当前项 `aria-current="true"` |
-| Studio 菜单 | `.de-menu.de-tool-menu` |
-| 树选中 | `.de-tree__row[data-selected="true"]` |
-| 侧栏当前 | `.de-nav__item[aria-current="page"]` |
-| 胶囊 | `.de-chip[aria-pressed="true"]` |
-| 页签 | `.de-tab[data-selected="true"]` |
-| 缺口 | `.de-gap` |
+## 2. 21 个核心组件 CSS Class 速查
 
-## 印出、可以当已确认的
-
-- 字体：`--font-ui` = HarmonyOS Sans SC 2025 / 2024 / SC / HarmonyOS Sans / HarmonyHeiTi，PingFang SC 只作回退。禁止 Helvetica 与 Inter。
-- 正文 16vp：`--ohos-id-text-size-body1`（`ohos_id_text_size_body1`）
-- 正文色 `#E5000000`：AARRGGBB 已确认，`rgb(0 0 0 / 90%)`
-- 同文件里的 `#E5FFFFFF`、`#33000000` 也按 AARRGGBB：`rgb(255 255 255 / 90%)`、`rgb(0 0 0 / 20%)`
-- 圆角 8vp：`--corner-radius-level4`，用于菜单底板
-- 菜单阴影：`defaultShadowS_PC` = `0 0 16px rgb(0 0 0 / 20%)`
-- 双描边：内白 20%；外黑浅色 10%、深色 40%
-
-官方灰阶叫 Light Gray 1–14、Dark Gray 1–14。名称和角色见 `DESIGN.md` 与 `foundation.css` 注释。精确色块还在提取。`gray-0` … `gray-100` 是临时取样，不要编 Gray 1–14 的十六进制去替换。
-
-官方阴影名还有 `defaultShadowXS`、`defaultShadowS`、`defaultShadowM`、`defaultShadowL`、`FloatShadowS`、`FloatShadowM`。除已经印出的 `defaultShadowS_PC` 外，不要写公式。
-
-其余表面色是取样，注释里带「从预览图推断，待用 Pixso 变量核对」。PC 深色色阶在 NewUI 里存在，当前 CSS 色值仍是取样。
+| 组件 | 核心 Class | 常用状态属性 / 修饰符 |
+| --- | --- | --- |
+| **WindowFrame** | `.de-window`, `.de-window__body`, `.de-sidebar`, `.de-main` | `data-system="harmony" \| "pc-mac"` |
+| **Titlebar** | `.de-titlebar`, `.de-titlebar__group`, `.de-titlebar__title`, `.de-window-controls` | `harmony` 下高 `56px`；`pc-mac` 下高 `38px` |
+| **Toolbar & Run Widget** | `.de-toolbar`, `.de-toolbar__divider` | 内含 `.de-select`、`.de-icon-button` |
+| **Button** | `.de-button` | `--primary` / `--secondary` / `--danger` / `--toolbar` / `--quiet` / `--solid`；尺寸 `--sm` (24px) / `--lg` (32px) |
+| **IconButton** | `.de-icon-button` | `--lg` (`32×32px`, 圆角 `6px`)；激活态 `[aria-pressed="true"]` |
+| **SearchField** | `.de-search`, `.de-search__input`, `.de-search__count`, `.de-search__toggles` | 错误态 `[data-invalid="true"]` |
+| **TextInput & ErrorTip** | `.de-input-wrap`, `.de-input`, `.de-error-tip` | 错误态 `.de-input[data-invalid="true"]` + 下方挂载 `.de-error-tip`（`4.6报错tips`） |
+| **Select & Segmented & Spinner** | `.de-select`, `.de-segmented`, `.de-spinner` | `.de-segmented__item[aria-selected="true"]` |
+| **Checkbox / Radio / Switch** | `.de-check`, `.de-checkbox`, `.de-radio`, `.de-switch` | `[data-checked="true"]`、`[data-indeterminate="true"]`、`[aria-checked="true"]` |
+| **Tabs** | `.de-tabs`, `.de-tab`, `.de-tab__button`, `.de-tab__dot`, `.de-tab__close` | `.de-tab[data-selected="true"]`、`[data-dirty="true"]` |
+| **Tree** | `.de-tree`, `.de-tree__row`, `.de-tree__chev`, `.de-tree__badge` | `.de-tree__row[data-selected="true"]`；紧凑模式 `.de-tree--compact` (`24px` 行高) |
+| **NavList** | `.de-nav`, `.de-nav__item`, `.de-nav__heading` | `.de-nav__item[aria-current="page"]` |
+| **Menu** | `.de-menu`, `.de-menu__item`, `.de-menu__sep`, `.de-menu__shortcut` | `.de-menu__item[aria-current="true"]`、`--danger` |
+| **ToolMenu & ToolStripe** | `.de-menu.de-tool-menu`, `.de-stripe`, `.de-stripe__group`, `.de-stripe__sep` | `.de-stripe .de-icon-button[aria-pressed="true"]` |
+| **Dialog** | `.de-dialog`, `.de-dialog__header`, `.de-dialog__body`, `.de-dialog__footer` | 底部按钮组右对齐，间距 `12px` |
+| **Notification & Banner** | `.de-notification`, `.de-banner` | `.de-banner--warning`、`.de-banner--error` |
+| **Tooltip & GotIt** | `.de-tooltip`, `.de-code-alert-card` | 代码行内异常卡 `.de-code-alert-card` |
+| **Chip & Tag** | `.de-chip-row`, `.de-chip`, `.de-tag` | `.de-chip[aria-pressed="true"]`；`.de-tag--brand` / `--success` / `--warning` / `--danger` |
+| **CodeEditor** | `.de-code-editor`, `.de-code-line`, `.de-code-gutter`, `.de-code-content` | 语法高亮 `.syn-kw` / `.syn-fn` / `.syn-ty` / `.syn-st` / `.syn-nu` / `.syn-cm` / `.syn-an` |
+| **StatusBar & LSP Pill** | `.de-statusbar`, `.de-statusbar__group`, `.de-lsp-pill`, `.de-lsp-pill__dot` | 底部状态栏高 `24px`，右侧放置 `.de-lsp-pill` |
+| **AI & MessageBar** | `.de-ai-badge`, `.de-msg-bar` | 仅在 `pc-mac` 下复刻 `deveco-intui-kit` 智能规范 |

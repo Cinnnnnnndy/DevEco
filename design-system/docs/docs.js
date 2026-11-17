@@ -42,7 +42,49 @@
           list.querySelectorAll('[role="tab"]').forEach(function (item) {
             var on = item === tab;
             item.setAttribute("aria-selected", on ? "true" : "false");
-            item.parentElement.setAttribute("data-selected", on ? "true" : "false");
+            if (item.parentElement && item.parentElement.classList.contains("de-tab")) {
+              item.parentElement.setAttribute("data-selected", on ? "true" : "false");
+            }
+          });
+        }
+      }
+      var seg = event.target.closest(".de-segmented__item");
+      if (seg && stage.contains(seg)) {
+        var segWrap = seg.closest(".de-segmented");
+        if (segWrap) {
+          segWrap.querySelectorAll(".de-segmented__item").forEach(function (item) {
+            item.setAttribute("aria-selected", item === seg ? "true" : "false");
+          });
+        }
+      }
+      var treeRow = event.target.closest(".de-tree__row");
+      if (treeRow && stage.contains(treeRow)) {
+        var tree = treeRow.closest(".de-tree");
+        if (tree) {
+          tree.querySelectorAll(".de-tree__row").forEach(function (item) {
+            if (item === treeRow) item.setAttribute("data-selected", "true");
+            else item.removeAttribute("data-selected");
+          });
+        }
+      }
+      var sw = event.target.closest(".de-switch");
+      if (sw && stage.contains(sw) && !sw.disabled) {
+        var checked = sw.getAttribute("aria-checked") === "true";
+        sw.setAttribute("aria-checked", checked ? "false" : "true");
+      }
+      var check = event.target.closest(".de-check");
+      if (check && stage.contains(check)) {
+        var box = check.querySelector(".de-checkbox");
+        if (box) {
+          var isChecked = box.getAttribute("data-checked") === "true";
+          box.setAttribute("data-checked", isChecked ? "false" : "true");
+          box.removeAttribute("data-indeterminate");
+          box.textContent = isChecked ? "" : "✓";
+        }
+        var radio = check.querySelector(".de-radio");
+        if (radio && check.parentElement) {
+          check.parentElement.querySelectorAll(".de-radio").forEach(function (r) {
+            r.setAttribute("data-checked", r === radio ? "true" : "false");
           });
         }
       }

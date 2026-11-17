@@ -1,35 +1,23 @@
-# DevEco 设计系统
+# DevEco 设计系统（Pixso 矢量 AST 全量对齐版）
 
-可直接引用的前端组件库。视觉对齐这次 Pixso 预览，不把 `deveco-intui-kit/` 或草稿 PR #15 当来源。
+直接从本地 Pixso 设计稿（`zstd` + `pixso-kw` 矢量节点树，共 13.3 万个节点、5,135 个共享样式）提取构建的双平台前端组件库与 Token 系统。
 
-两套系统还是工作假设，写在 [DESIGN.md](DESIGN.md)：
+## 两套设计系统
 
-- **PC / Mac**：鸿蒙电脑窗口（文件管理、备忘录、文本编辑器）和 Code 形态的文件树、搜索
-- **鸿蒙端**：Studio 工具菜单和图标条。稿里的 Controls IntelliJ / Int UI 只作视觉参考，公共组件名用 DevEco 语义
+- **鸿蒙原生端 (`data-system="harmony"`)**：来自 `IDE_v1.1.0_PC端组件库.pix`（内部名 `鸿蒙IDE_v1.1.0_PC端组件库.pix`）、`👉🔥【2.0】基础范式🔥👈.pix`、`DevEco Code -AI IDE.pix`（内部名 `DevEco Studio NEXT-AI IDE.pix`）与 `【TUI】DevEco Code 基础UI规范.pix`。采用 HDesign 2.0 规范（16vp 字阶、#0A59F7/#317AF7 主色、34vp 按钮、28vp 输入/树/页签/菜单、16vp 弹窗圆角、Elevation 55/70 阴影与 54.37px 毛玻璃）。
+- **PC / Mac 当代桌面端 (`data-system="pc-mac"`)**：来自 `deveco studio 当代设计稿/当代设计规范/【NewUI】鸿蒙IDE-当代.pix`、`icon.pix`、`DevEco Studio（当代）chat.pix`，并只读吸收 `deveco-intui-kit/`（浅色高对比、AI 智能视觉规范、消息操作栏）。采用 IntelliJ NewUI 体系（13px 字阶、官方 Light/Dark Gray 1–14、#3574F0 主色、28px 按钮/输入框、24px 树行、40px 底部蓝条页签）。
 
-## 打开就看
+## 快速打开
 
-一页总览（token、组件文档、Pixso 对照、FileWindow、StudioToolWindow）：[preview/index.html](preview/index.html)。静态 HTML，不用构建。启动页只有这一张卡片。
+- **一页总览**：[preview/index.html](preview/index.html)（含两套系统 Token 表、Official Gray 1–14 与代码语法色、双系统实时工作台、21 个组件文档、Pixso 对照、整窗示例）
+- **组件文档索引**：[docs/index.html](docs/index.html)（21 个独立组件页）
+- **Pixso 设计稿并排对照**：[compare/index.html](compare/index.html)
+- **整窗示例**：[examples/file-window.html](examples/file-window.html)（HarmonyIdeWindow）、[examples/studio-tool-window.html](examples/studio-tool-window.html)（StudioToolWindow）
 
-深链仍可用：
-
-- 组件索引：[docs/index.html](docs/index.html)
-- 和 Pixso 帧并排：[compare/index.html](compare/index.html)
-- 整页示例：[examples/file-window.html](examples/file-window.html)、[examples/studio-tool-window.html](examples/studio-tool-window.html)
-
-## 交给人和 AI
-
-- 规则与工作流：[SKILL.md](SKILL.md)
-- 怎么把整包交出去：[references/handoff.md](references/handoff.md)
-- 缺控件时怎么停：[references/preview-gate.md](references/preview-gate.md)
-- 速查：[references/quick-reference.md](references/quick-reference.md)
-- 索引：[llms.txt](llms.txt)
-
-## 接入
+## 接入方式
 
 ```html
 <link rel="stylesheet" href="design-system/tokens/index.css">
-<div data-system="pc-mac" data-theme="light"></div>
+<div data-system="harmony" data-theme="dark">...</div>
+<div data-system="pc-mac" data-theme="dark">...</div>
 ```
-
-React 19 组件在 `components/`。复制进业务仓库即可，peer 依赖只有 `react`。换主题只改变量，不包一层 Provider。

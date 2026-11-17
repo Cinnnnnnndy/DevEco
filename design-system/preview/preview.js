@@ -9,49 +9,66 @@
     });
   });
 
-  document.querySelectorAll(".de-chip-row").forEach(function (row) {
-    if (row.closest(".compare-block")) return;
-    row.addEventListener("click", function (event) {
-      var chip = event.target.closest(".de-chip");
-      if (!chip || !row.contains(chip)) return;
-      row.querySelectorAll(".de-chip").forEach(function (item) {
-        item.setAttribute("aria-pressed", item === chip ? "true" : "false");
-      });
-    });
-  });
+  document.addEventListener("click", function (event) {
+    if (event.target.closest(".compare-block")) return;
 
-  document.querySelectorAll("[data-menu-button]").forEach(function (button) {
-    if (button.closest(".compare-block")) return;
-    var panel = document.getElementById(button.getAttribute("aria-controls"));
-    button.addEventListener("click", function () {
-      var open = button.getAttribute("aria-expanded") === "true";
-      button.setAttribute("aria-expanded", open ? "false" : "true");
-      if (panel) panel.hidden = open;
-    });
-  });
+    var chip = event.target.closest(".de-chip");
+    if (chip) {
+      var row = chip.closest(".de-chip-row");
+      if (row) {
+        row.querySelectorAll(".de-chip").forEach(function (item) {
+          item.setAttribute("aria-pressed", item === chip ? "true" : "false");
+        });
+      }
+    }
 
-  document.querySelectorAll("[data-tabs]").forEach(function (list) {
-    if (list.closest(".compare-block")) return;
-    list.addEventListener("click", function (event) {
-      var tab = event.target.closest('[role="tab"]');
-      if (!tab || !list.contains(tab)) return;
-      list.querySelectorAll('[role="tab"]').forEach(function (item) {
-        var selected = item === tab;
-        item.setAttribute("aria-selected", selected ? "true" : "false");
-        item.parentElement.setAttribute("data-selected", selected ? "true" : "false");
-      });
-    });
-  });
+    var tab = event.target.closest('[role="tab"]');
+    if (tab) {
+      var list = tab.closest('[role="tablist"]');
+      if (list) {
+        list.querySelectorAll('[role="tab"]').forEach(function (item) {
+          var selected = item === tab;
+          item.setAttribute("aria-selected", selected ? "true" : "false");
+          if (item.parentElement && item.parentElement.classList.contains("de-tab")) {
+            item.parentElement.setAttribute("data-selected", selected ? "true" : "false");
+          }
+        });
+      }
+    }
 
-  document.querySelectorAll(".de-nav").forEach(function (nav) {
-    if (nav.closest(".compare-block")) return;
-    nav.addEventListener("click", function (event) {
-      var item = event.target.closest(".de-nav__item");
-      if (!item || !nav.contains(item)) return;
-      nav.querySelectorAll(".de-nav__item").forEach(function (other) {
-        if (other === item) other.setAttribute("aria-current", "page");
+    var seg = event.target.closest(".de-segmented__item");
+    if (seg) {
+      var segWrap = seg.closest(".de-segmented");
+      if (segWrap) {
+        segWrap.querySelectorAll(".de-segmented__item").forEach(function (item) {
+          item.setAttribute("aria-selected", item === seg ? "true" : "false");
+        });
+      }
+    }
+
+    var treeRow = event.target.closest(".de-tree__row");
+    if (treeRow) {
+      var tree = treeRow.closest(".de-tree");
+      if (tree) {
+        tree.querySelectorAll(".de-tree__row").forEach(function (item) {
+          if (item === treeRow) item.setAttribute("data-selected", "true");
+          else item.removeAttribute("data-selected");
+        });
+      }
+    }
+
+    var sw = event.target.closest(".de-switch");
+    if (sw && !sw.disabled) {
+      var checked = sw.getAttribute("aria-checked") === "true";
+      sw.setAttribute("aria-checked", checked ? "false" : "true");
+    }
+
+    var nav = event.target.closest(".de-nav__item");
+    if (nav && nav.parentElement) {
+      nav.parentElement.querySelectorAll(".de-nav__item").forEach(function (other) {
+        if (other === nav) other.setAttribute("aria-current", "page");
         else other.removeAttribute("aria-current");
       });
-    });
+    }
   });
 })();
