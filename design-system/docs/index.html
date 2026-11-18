@@ -1,63 +1,932 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-CN">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>组件索引 · DevEco</title>
-  <link rel="stylesheet" href="../tokens/index.css?v=6">
-  <link rel="stylesheet" href="../chrome.css?v=6">
-  <link rel="stylesheet" href="docs.css?v=6">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DevEco 设计系统 · Pixso 矢量 AST 双系统规范与组件库</title>
+<meta name="description" content="从 7 份本地 Pixso 源文件（inner.pix 133,622 矢量节点）提取构建的 DevEco 双设计系统：鸿蒙原生端（HarmonyOS NEXT HDesign 2.0）与 PC/Mac 当代桌面端（IntelliJ NewUI），含 Token、双系统实时工作台、21 个组件文档、6 组原稿对照与 2 套整窗 Pattern。">
+<link rel="icon" type="image/svg+xml" href="../../deveco-intui-kit/icons/deveco-code-logo.svg">
+<link rel="stylesheet" href="../../deveco-intui-kit/src/tokens.css?v=20261118">
+<link rel="stylesheet" href="../../site/launcher.css?v=20261118">
+<link rel="stylesheet" href="../tokens/index.css?v=20261118">
+<style>
+/* ---------- 框架：对齐仓库内其他规范卡片（复用 site/launcher.css 的 .page / .mast / .tbtn / .layout / .sidebar / .cat / section.grp / .card）。
+   页面自身支持浅色 / 深色切换；样张画布（[data-system]）内的组件样式 100% 来自 ../tokens/index.css。 ---------- */
+:root{
+  --pg-bg:var(--ui-bg);
+  --pg-card:var(--ui-editor-bg);
+  --pg-stage:#EBEDF2;
+  --pg-sep:rgba(0,0,0,.06);
+  --pg-fg2:#5A5D6B;
+  --pg-shadow:none;
+}
+:root[data-theme="dark"]{
+  --pg-stage:#14161A;
+  --pg-sep:rgba(255,255,255,.07);
+  --pg-fg2:#A1A3AB;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --pg-stage:#14161A;
+    --pg-sep:rgba(255,255,255,.07);
+    --pg-fg2:#A1A3AB;
+  }
+}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+body{overflow-x:hidden}
+code,.mono{font-family:var(--font-code);font-size:.92em}
+button{font-family:inherit}
+a.tbtn:hover,a.cat:hover{text-decoration:none}
+.tbtn[aria-pressed="true"]{background:var(--ui-fg);color:var(--ui-editor-bg);border-color:var(--ui-fg)}
+.mast h1 small{font-size:13px;font-weight:400;color:var(--ui-fg-info);margin-left:10px;letter-spacing:0}
+
+/* 保护 [data-system] 内部链接与字体不被外层文档覆盖 */
+[data-system] a,[data-system] a:hover{text-decoration:none}
+
+/* 左侧目录固定滚动 */
+.sidebar{
+  position:sticky;
+  top:20px;
+  flex:0 0 232px;
+  width:232px;
+  max-height:calc(100vh - 40px);
+  overflow-y:auto;
+  padding-right:4px;
+  scrollbar-width:thin;
+}
+.sidebar nav a.cat{text-decoration:none;height:30px;font-size:12.5px}
+.sidebar nav a.cat.sub-item{padding-left:18px;height:27px;font-size:12px;color:var(--pg-fg2)}
+.sidebar nav a.cat.sub-item.on{color:var(--ui-editor-bg)}
+
+main{container-type:inline-size;container-name:main;width:100%;min-width:0}
+section.grp{scroll-margin-top:20px}
+section.grp>p.note{margin-bottom:22px}
+
+/* 首屏 Intro */
+.intro{padding:4px 0 8px;display:grid;grid-template-columns:minmax(0,1fr) minmax(420px,540px);gap:32px;align-items:stretch}
+.intro .lede{margin:0;font-size:15px;line-height:26px;color:var(--pg-fg2);max-width:44em}
+.q3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:24px 0 0}
+.q3 div{background:var(--pg-card);border-radius:16px;padding:14px 16px}
+.q3 b{display:block;font-weight:600;font-size:14px;color:var(--ui-fg)}
+.q3 span{display:block;font-size:12.5px;line-height:20px;color:var(--pg-fg2);margin-top:4px}
+
+/* 通用 Islands 卡片（与 ai-system / message-actions 同款） */
+.card{padding:22px 24px;min-width:0;cursor:auto;overflow:visible;border-radius:24px;background:var(--pg-card)}
+.card:hover{transform:none;box-shadow:none}
+.card h4{margin:0 0 6px;font-size:16px;line-height:22px;font-weight:600;color:var(--ui-fg)}
+.card h4 small{font-weight:400;font-size:12.5px;color:var(--ui-fg-info);margin-left:8px}
+.card p{margin:0;font-size:13px;line-height:21px;color:var(--pg-fg2)}
+.stage{background:var(--pg-stage);border-radius:16px;padding:20px;min-width:0;overflow-x:auto}
+
+.g2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.g3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.g4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.wide{grid-column:1 / -1}
+
+/* 填充行表格（不画生硬格线，圆角行卡片） */
+.tbl{display:flex;flex-direction:column;gap:6px}
+.tr{display:grid;grid-template-columns:190px minmax(0,1.2fr) minmax(0,1.2fr) minmax(0,1fr);gap:16px;padding:14px 18px;border-radius:14px;background:var(--pg-card);font-size:13px;line-height:21px;align-items:center}
+.tr.th{background:transparent;padding-top:0;padding-bottom:4px;color:var(--ui-fg-info);font-size:12px;font-weight:500}
+.tr b{font-weight:600;color:var(--ui-fg)}
+.tr code{font-size:11.5px;background:var(--pg-stage);padding:2px 6px;border-radius:5px}
+
+/* 色板卡片 (.swc) 与 14 级色阶条 (.ramp) */
+.sw-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.swc{border-radius:16px;background:var(--pg-card);padding:12px;min-width:0;display:flex;flex-direction:column;gap:6px}
+.swc-bar{display:grid;grid-template-columns:1fr 1fr;gap:6px;height:44px}
+.swc-bar i{display:block;height:100%;border-radius:8px;box-shadow:inset 0 0 0 1px rgba(128,128,128,.18);position:relative}
+.swc-bar i span{position:absolute;bottom:4px;left:6px;font:500 10px/14px var(--font-code);padding:0 4px;border-radius:3px;background:rgba(0,0,0,.45);color:#fff}
+.swc b{display:block;font-weight:600;font-size:13px;line-height:18px;color:var(--ui-fg)}
+.swc code{display:block;font-size:11px;color:var(--ui-fg-info);line-height:16px}
+.swc em{display:block;font-style:normal;font-size:11.5px;color:var(--pg-fg2);line-height:17px}
+
+.ramp{margin-top:14px}
+.ramp:first-child{margin-top:0}
+.ramp-h{font-size:12px;color:var(--ui-fg-info);margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
+.ramp-h b{color:var(--ui-fg);font-weight:600;font-size:13px}
+.ramp-g{display:grid;grid-template-columns:repeat(14,minmax(0,1fr));gap:4px}
+.sw{border:0;padding:0;background:transparent;cursor:pointer;text-align:left;font:inherit;min-width:0}
+.sw-c{display:block;height:34px;border-radius:6px;background:var(--c);box-shadow:inset 0 0 0 1px rgba(128,128,128,.22)}
+.sw:hover .sw-c{outline:2px solid var(--ui-accent);outline-offset:1px}
+.sw-n{display:block;font-size:10.5px;line-height:14px;margin-top:4px;color:var(--ui-fg);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sw-h{display:block;font-family:var(--font-code);font-size:9.5px;line-height:13px;color:var(--ui-fg-info);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* #specimens 双系统实时工作台卡片 */
+.spec-card{display:flex;flex-direction:column;gap:16px}
+.spec-card + .spec-card{margin-top:20px}
+.spec-top{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.spec-top .badge-row{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.sys-badge{display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 10px;border-radius:99px;font:600 11px/22px var(--font-code);background:color-mix(in srgb,var(--ui-accent) 14%,transparent);color:var(--ui-accent)}
+.spec-controls{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.pill-btn{appearance:none;border:1px solid var(--pg-sep);height:28px;padding:0 11px;border-radius:99px;background:var(--pg-stage);color:var(--pg-fg2);font:500 12px/26px var(--font-ui);cursor:pointer;white-space:nowrap;transition:background .15s,color .15s}
+.pill-btn:hover{color:var(--ui-fg)}
+.pill-btn[aria-pressed="true"]{background:var(--ui-fg);color:var(--ui-editor-bg);border-color:var(--ui-fg)}
+.pill-sep{width:1px;height:14px;background:var(--pg-sep);margin:0 2px}
+
+.workbench-stage{
+  border-radius:18px;
+  padding:22px;
+  background:
+    radial-gradient(circle at 18% 12%, rgba(49, 122, 247, 0.16), transparent 45%),
+    var(--pg-stage);
+  display:flex;
+  flex-direction:column;
+  gap:16px;
+}
+.workbench-Ribbon{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  padding:14px 16px;
+  border-radius:12px;
+  background:var(--surface-window);
+  box-shadow:inset 0 0 0 1px var(--line);
+}
+
+/* 组件文档卡片网格 (#components) */
+.comp-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.comp-card{display:flex;flex-direction:column;gap:12px}
+.comp-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.comp-no{display:block;font:500 11px/16px var(--font-code);color:var(--ui-fg-info);margin-bottom:2px}
+.comp-desc{font-size:13px;line-height:20px;color:var(--pg-fg2)}
+.comp-desc code{background:var(--pg-stage);padding:1px 5px;border-radius:4px;font-size:11.5px}
+. demo-pills{display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+.demo-pills{display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+.demo-pills .pill-btn{height:24px;padding:0 9px;font-size:11px;line-height:22px}
+.comp-stage{padding:18px;border-radius:14px;background:var(--pg-stage);min-height:110px;display:flex;align-items:center;justify-content:flex-start}
+.comp-meta-grid{display:flex;flex-direction:column;gap:10px;margin-top:2px}
+.codebox{border-radius:12px;background:#16181d;color:#e1e4ea;padding:10px 14px;font:11.5px/18px var(--font-code);white-space:pre;overflow-x:auto;margin:0}
+.codebox .file{display:block;color:#868a91;font-size:10.5px;margin-bottom:4px;font-family:var(--font-ui)}
+.comp-spec-wrap{overflow-x:auto;border-radius:12px;background:var(--pg-stage)}
+.comp-spec-table{width:100%;border-collapse:collapse;font-size:12px;line-height:17px}
+.comp-spec-table th,.comp-spec-table td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--pg-sep);vertical-align:top}
+.comp-spec-table tr:last-child td{border-bottom:0}
+.comp-spec-table th{color:var(--ui-fg-info);font-weight:500;white-space:nowrap}
+.comp-spec-table td code{font-size:11px;color:var(--ui-fg)}
+
+/* 对照卡片 (#compare) */
+.cmp-list{display:flex;flex-direction:column;gap:16px}
+.cmp-card{display:flex;flex-direction:column;gap:14px}
+.cmp-pair{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px;align-items:start}
+.cmp-fig{margin:0;background:var(--pg-stage);border-radius:16px;padding:12px;min-width:0}
+.cmp-fig img{width:100%;height:auto;display:block;border-radius:10px}
+.cmp-fig figcaption{font-size:12px;line-height:18px;color:var(--pg-fg2);padding:8px 4px 2px}
+.cmp-live{background:var(--pg-stage);border-radius:16px;padding:16px;min-width:0;overflow-x:auto}
+
+/* 复制提示气泡 */
+.toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(10px);opacity:0;
+  background:var(--ui-fg);color:var(--ui-editor-bg);font-size:12px;
+  padding:7px 14px;border-radius:99px;pointer-events:none;
+  transition:opacity .16s,transform .16s;z-index:99}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+
+@container main (max-width:920px){
+  .intro{grid-template-columns:1fr}
+  .comp-grid,.cmp-pair{grid-template-columns:1fr}
+  .sw-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .ramp-g{grid-template-columns:repeat(7,minmax(0,1fr))}
+}
+@media (max-width:900px){
+  .sidebar{position:static;width:100%;max-height:none}
+  .q3,.sw-grid{grid-template-columns:1fr}
+  .tr{grid-template-columns:1fr;gap:4px}
+  .tr.th{display:none}
+}
+</style>
 </head>
 <body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <symbol id="i-home" viewBox="0 0 16 16"><path d="M9.5 3.5 5 8l4.5 4.5" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 16 16"><path d="M13.5 9.5A5.5 5.5 0 0 1 6.5 2.5a5.5 5.5 0 1 0 7 7Z" stroke="currentColor" stroke-linejoin="round" fill="none"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 16 16"><circle cx="8" cy="8" r="3" stroke="currentColor" fill="none"/><path d="M8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2M3.4 3.4l1.4 1.4M11.2 11.2l1.4 1.4M3.4 12.6l1.4-1.4M11.2 4.8l1.4-1.4" stroke="currentColor" stroke-linecap="round"/></svg>
+  <symbol id="i-layers" viewBox="0 0 16 16"><path d="M8 2 1.8 5.2 8 8.4l6.2-3.2L8 2ZM1.8 8l6.2 3.2L14.2 8M1.8 10.8 8 14l6.2-3.2" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
+</defs></svg>
+
+<div class="page" id="top">
+  <header class="mast">
+    <h1>DevEco 设计系统<small>Pixso 矢量 AST · 鸿蒙原生 HDesign 2.0 &amp; PC/Mac NewUI</small></h1>
+    <span class="grow"></span>
+    <a class="tbtn" href="../../index.html" title="回到启动页"><svg><use href="#i-home"/></svg><span>启动页</span></a>
+    <a class="tbtn" href="../SKILL.md" title="查看 AI 调用规范 SKILL.md"><svg><use href="#i-layers"/></svg><span>SKILL.md</span></a>
+    <button type="button" class="tbtn" id="theme-btn" title="切换页面深色 / 浅色外观"><svg><use href="#i-moon"/></svg><span id="theme-label">深色</span></button>
+  </header>
+
   <div class="layout">
-    <nav class="sidenav"><a class="brand" href="#top" aria-current="page">DevEco 组件</a>
-<a href="../preview/index.html">总预览</a>
-<a href="../compare/file-window.html">对照</a>
-<a href="../SKILL.md">SKILL.md</a>
-<h2>组件文档 (21)</h2>
-<a href="#component-button">Button</a>
-<a href="#component-icon-button">IconButton</a>
-<a href="#component-search-field">SearchField</a>
-<a href="#component-text-input">TextInput</a>
-<a href="#component-selection">Selection</a>
-<a href="#component-dialog">Dialog</a>
-<a href="#component-menu">Menu</a>
-<a href="#component-tooltip">Tooltip</a>
-<a href="#component-tabs">Tabs</a>
-<a href="#component-code-editor">CodeEditor</a>
-<a href="#component-tree">Tree</a>
-<a href="#component-toolbar">Toolbar</a>
-<a href="#component-nav-list">NavList</a>
-<a href="#component-chip">Chip</a>
-<a href="#component-tag">Tag</a>
-<a href="#component-window-frame">WindowFrame</a>
-<a href="#component-status-bar">StatusBar</a>
-<a href="#component-ai-status">AiStatus</a>
-<a href="#component-message-bar">MessageBar</a>
-<a href="#component-tool-menu">ToolMenu</a>
-<a href="#component-tool-stripe">ToolStripe</a>
-<h2>整窗示例</h2>
-<a href="#file-window">HarmonyIdeWindow</a>
-<a href="#studio-tool-window">StudioToolWindow</a>
-</nav>
-    <main class="content content--wide" id="top">
-      <p class="kicker">DevEco 设计系统</p>
-      <h1>组件文档（21）</h1>
-      <p class="desc">全部 21 个组件与 2 套整窗示例直接在本页展示，点击左侧导航直接定位，无需跳转页面。</p>
-      <article class="content" id="component-button" data-demo>
-      <p class="kicker">组件文档 · button</p>
-      <h1>Button</h1>
-      <p class="desc">支持主按钮（Primary）、次按钮（Secondary）、告警按钮（Danger/Alarm）、工具栏按钮（Toolbar）与安静按钮（Quiet）。鸿蒙原生端高 34vp、圆角 8vp（次按钮为 10% 叠加底配品牌蓝字 #0A59F7/#5291FF，告警按钮为 10% 叠加底配红字 #E84026/#D94838）；PC/Mac 端高 28px（紧凑 24px）、圆角 4px。</p>
-      <h2>示例</h2>
-      <div class="demo-bar">
-        <button type="button" data-set-system="harmony">鸿蒙原生 (HDesign 2.0)</button>
-        <button type="button" data-set-system="pc-mac">PC / Mac (NewUI)</button>
-        <button type="button" data-set-theme="dark">深色</button>
-        <button type="button" data-set-theme="light">浅色</button>
-        <button type="button" data-set-theme="light-contrast">浅色高对比</button>
+    <aside class="sidebar" aria-label="目录">
+      <div class="sd-title">目录</div>
+      <nav id="toc">
+        <a class="cat on" href="#systems"><span class="lbl">两套系统归属</span><span class="cnt">01</span></a>
+        <a class="cat" href="#tokens"><span class="lbl">鸿蒙 HDesign 2.0 Token</span><span class="cnt">02</span></a>
+        <a class="cat" href="#official-names"><span class="lbl">PC/Mac NewUI 色阶</span><span class="cnt">03</span></a>
+        <a class="cat" href="#specimens"><span class="lbl">双系统实时工作台</span><span class="cnt">04</span></a>
+        <a class="cat" href="#compare"><span class="lbl">Pixso 设计稿对照</span><span class="cnt">05</span></a>
+        <a class="cat sub-item" href="#compare-file-window"><span class="lbl">鸿蒙 IDE 窗口</span></a>
+        <a class="cat sub-item" href="#compare-menu"><span class="lbl">菜单与弹层</span></a>
+        <a class="cat sub-item" href="#compare-tree"><span class="lbl">Project 项目树</span></a>
+        <a class="cat sub-item" href="#compare-tabs"><span class="lbl">编辑器页签与代码</span></a>
+        <a class="cat sub-item" href="#compare-tooltip"><span class="lbl">Dialog 与表单</span></a>
+        <a class="cat sub-item" href="#compare-tool-menu"><span class="lbl">Studio 工具菜单</span></a>
+        <a class="cat" href="#components"><span class="lbl">组件文档 (21)</span><span class="cnt">06</span></a>
+        <a class="cat sub-item" href="#component-button"><span class="lbl">Button</span></a>
+        <a class="cat sub-item" href="#component-icon-button"><span class="lbl">IconButton</span></a>
+        <a class="cat sub-item" href="#component-search-field"><span class="lbl">SearchField</span></a>
+        <a class="cat sub-item" href="#component-text-input"><span class="lbl">TextInput & ErrorTip</span></a>
+        <a class="cat sub-item" href="#component-selection"><span class="lbl">Selection</span></a>
+        <a class="cat sub-item" href="#component-dialog"><span class="lbl">Dialog & Notification</span></a>
+        <a class="cat sub-item" href="#component-menu"><span class="lbl">Menu</span></a>
+        <a class="cat sub-item" href="#component-tooltip"><span class="lbl">Tooltip</span></a>
+        <a class="cat sub-item" href="#component-tabs"><span class="lbl">Tabs</span></a>
+        <a class="cat sub-item" href="#component-code-editor"><span class="lbl">CodeEditor</span></a>
+        <a class="cat sub-item" href="#component-tree"><span class="lbl">Tree</span></a>
+        <a class="cat sub-item" href="#component-toolbar"><span class="lbl">Toolbar</span></a>
+        <a class="cat sub-item" href="#component-nav-list"><span class="lbl">NavList</span></a>
+        <a class="cat sub-item" href="#component-chip"><span class="lbl">Chip</span></a>
+        <a class="cat sub-item" href="#component-tag"><span class="lbl">Tag</span></a>
+        <a class="cat sub-item" href="#component-window-frame"><span class="lbl">WindowFrame</span></a>
+        <a class="cat sub-item" href="#component-status-bar"><span class="lbl">StatusBar & LspPill</span></a>
+        <a class="cat sub-item" href="#component-ai-status"><span class="lbl">AiStatus</span></a>
+        <a class="cat sub-item" href="#component-message-bar"><span class="lbl">MessageBar</span></a>
+        <a class="cat sub-item" href="#component-tool-menu"><span class="lbl">ToolMenu</span></a>
+        <a class="cat sub-item" href="#component-tool-stripe"><span class="lbl">ToolStripe</span></a>
+        <a class="cat" href="#file-window"><span class="lbl">HarmonyIdeWindow</span><span class="cnt">07</span></a>
+        <a class="cat" href="#studio-tool-window"><span class="lbl">StudioToolWindow</span><span class="cnt">08</span></a>
+      </nav>
+    </aside>
+
+    <main>
+      <!-- ================= 首屏 Intro ================= -->
+      <div class="intro">
+        <div>
+          <p class="lede">直接从本地 7 份 Pixso 源文件（<code>zstd</code> + <code>pixso-kw</code> 二进制矢量 AST，共 <b>133,622</b> 个节点、<b>5,135</b> 个共享样式）全量提取构建。一页涵盖双系统 Token、可交互工作台样张、21 个核心组件文档、6 组原稿并排对照与 2 套整窗 Pattern，点击左侧目录页内直达。</p>
+          <div class="meta">
+            <span>HarmonyOS NEXT HDesign 2.0</span>
+            <span>PC / Mac IntelliJ NewUI</span>
+            <span>133,622 矢量节点已核实</span>
+            <span>21 组件 · 5 主题</span>
+            <span>WCAG 2.1 AA 已验</span>
+          </div>
+          <div class="q3">
+            <div>
+              <b>鸿蒙原生端 (<code>harmony</code>)</b>
+              <span>来自 <code>鸿蒙IDE_v1.1.0_PC端组件库.pix</code> 与 <code>基础范式2.0.pix</code>：正文 16vp，主色 <code>#0A59F7</code> / <code>#317AF7</code>，34vp 按钮 (r=8vp)，28vp 页签/树行，毛玻璃侧栏。</span>
+            </div>
+            <div>
+              <b>PC/Mac 当代端 (<code>pc-mac</code>)</b>
+              <span>来自 <code>【NewUI】鸿蒙IDE-当代.pix</code> + <code>icon.pix</code> + 只读吸收 <code>deveco-intui-kit</code>：正文 13px，<code>Gray 1–14</code> 官方色阶，28px 按钮，40px 底条页签。</span>
+            </div>
+            <div>
+              <b>零缺口 · 页内直显</b>
+              <span>旧版未解出的 <code>Gray 1–14</code>、<code>ohos_id_color_dialog_bg</code>、<code>Elevation 55/70</code> 与语法色已全部解码入库；组件文档与对照同页呈现。</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="display:flex;flex-direction:column;justify-content:space-between;gap:14px">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+            <div>
+              <span class="sys-badge">LIVE SPECIMEN</span>
+              <h4 style="margin-top:6px">双系统一键切换预览<small>真实 DOM 组件渲染</small></h4>
+            </div>
+          </div>
+          <div class="stage" data-system="harmony" data-theme="dark" id="hero-mini-stage" style="padding:16px">
+            <div class="de-window" style="min-height:210px">
+              <header class="de-titlebar">
+                <span class="de-titlebar__mark">A</span>
+                <button type="button" class="de-titlebar__pill">Healthy_life ▾</button>
+                <button type="button" class="de-titlebar__pill">⑂ Master ▾</button>
+                <span class="de-titlebar__spacer"></span>
+                <button type="button" class="de-titlebar__pill">💻 MyPC ▾</button>
+              </header>
+              <div class="de-window__body">
+                <aside class="de-nav" style="width:148px">
+                  <ul class="de-tree">
+                    <li>
+                      <details class="de-tree__node" open>
+                        <summary class="de-tree__row"><span class="de-tree__chevron">›</span><span class="de-tree__name">entry › ets</span></summary>
+                        <ul class="de-tree__children">
+                          <li><div class="de-tree__row" data-selected="true"><span class="de-tree__badge">A</span><span class="de-tree__name">EntryAbility.ets</span></div></li>
+                          <li><div class="de-tree__row"><span class="de-tree__badge" data-ext="cpp">C</span><span class="de-tree__name">BadgeCard.cpp</span></div></li>
+                        </ul>
+                      </details>
+                    </li>
+                  </ul>
+                </aside>
+                <div class="de-main">
+                  <div class="de-tabs" role="tablist">
+                    <div class="de-tab" data-selected="true"><button type="button" role="tab" class="de-tab__main" aria-selected="true"><span class="de-tree__badge">A</span> EntryAbility.ets</button></div>
+                    <div class="de-tab"><button type="button" role="tab" class="de-tab__main" aria-selected="false"><span class="de-tree__badge" data-ext="cpp">C</span> BadgeCardComponent.cpp</button></div>
+                  </div>
+                  <div class="de-code-editor" style="padding:6px 0">
+                    <div class="de-code-line"><span class="de-code-gutter">1</span><span class="de-code-content"><span class="kw">export default class</span> <span class="fn">EntryAbility</span> &#123;</span></div>
+                    <div class="de-code-line" data-current="true"><span class="de-code-gutter">2</span><span class="de-code-content">  Logger.<span class="fn">info</span>(<span class="str">'HarmonyOS NEXT Ready'</span>);</span></div>
+                    <div class="de-code-line"><span class="de-code-gutter">3</span><span class="de-code-content">&#125;</span></div>
+                  </div>
+                  <footer class="de-statusbar">
+                    <span class="de-crumb">ets › <strong>EntryAbility.ets</strong></span>
+                    <span class="de-lsp-pill"><span class="de-lsp-pill__dot">2</span> LSP Service</span>
+                  </footer>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;font-size:12px;color:var(--pg-fg2)">
+            <span>点击下方 <a href="#specimens">04 双系统实时工作台</a> 体验完整交互</span>
+            <code>data-system="harmony" | "pc-mac"</code>
+          </div>
+        </div>
       </div>
-      <div data-live="" class="stage" data-system="harmony" data-theme="dark">
-        <div class="de-row">
+
+      <!-- ================= 01 两套系统归属 ================= -->
+      <section class="grp" id="systems" style="margin-top:44px">
+        <div class="ghead"><h3>两套设计系统归属</h3><span class="cnt">01 · SYSTEMS</span></div>
+        <p class="note">通过解码每个 <code>.pix</code> 压缩包内 <code>inner.pix</code> 的头部原始文件名与图层树，确权两套设计系统的真实来源与适用边界。</p>
+        <div class="tbl">
+          <div class="tr th">
+            <span>系统与属性</span>
+            <span>Pixso 矢量源码文件（内部原名与节点规模）</span>
+            <span>核心视觉特征与尺寸体系</span>
+            <span>只读输入与边界约束</span>
+          </div>
+          <div class="tr">
+            <div>
+              <b>鸿蒙原生端</b>
+              <div style="margin-top:4px"><code>data-system="harmony"</code></div>
+            </div>
+            <div>
+              <code>IDE_v1.1.0_PC端组件库.pix</code>（原名 <code>鸿蒙IDE_v1.1.0_PC端组件库.pix</code> · 15,141 节点）<br>
+              <code>👉🔥【2.0】基础范式🔥👈.pix</code>（81,752 节点 · 3,123 样式）<br>
+              <code>DevEco Code -AI IDE.pix</code>（原名 <code>DevEco Studio NEXT-AI IDE.pix</code>）
+            </div>
+            <div>
+              HDesign 2.0 PC 规范：正文 <code>16vp</code>，主色 <code>#0A59F7</code> / <code>#317AF7</code>，主按钮高 <code>34vp</code> <code>r=8vp</code>，次按钮 <code>10%</code> 叠加底配蓝字，输入框/树行/胶囊页签高 <code>28vp</code>，弹窗 <code>r=16vp</code> + <code>Elevation 55</code>
+            </div>
+            <div>
+              纯血鸿蒙原生 IDE 视图（DevEco Studio NEXT / DevEco Code 鸿蒙电脑版），侧栏采用 <code>blur(54.37px)</code> 毛玻璃与内外双描边
+            </div>
+          </div>
+          <div class="tr">
+            <div>
+              <b>PC / Mac 当代桌面端</b>
+              <div style="margin-top:4px"><code>data-system="pc-mac"</code></div>
+            </div>
+            <div>
+              <code>deveco studio 当代设计稿/当代设计规范/【NewUI】鸿蒙IDE-当代.pix</code>（20,210 节点 · 39 个组件画布）<br>
+              <code>icon.pix</code>（32,013 节点）· <code>DevEco Studio（当代）chat.pix</code>
+            </div>
+            <div>
+              IntelliJ NewUI 体系：正文 <code>13px</code>，官方色阶 <code>Light/Dark Gray 1–14</code>，主色 <code>#3574F0</code>，按钮/输入框高 <code>28px</code> (<code>r=4px</code>)，树行高 <code>24px</code>，页签高 <code>40px</code> 带底部 <code>3px</code> 蓝条
+            </div>
+            <div>
+              只读吸收 <code>deveco-intui-kit/</code> 的浅色高对比度主题 (<code>light-contrast</code>)、AI 智能渐变规范与消息操作栏；绝不修改 <code>deveco-intui-kit/</code>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= 02 鸿蒙 HDesign 2.0 Token ================= -->
+      <section class="grp" id="tokens">
+        <div class="ghead"><h3>鸿蒙原生端 Token</h3><span class="cnt">02 · HDESIGN 2.0 TOKENS</span></div>
+        <p class="note">全部提取自 <code>鸿蒙IDE_v1.1.0_PC端组件库.pix</code> 与 <code>基础范式2.0.pix</code> 的共享样式表，包含浅色与深色成对表面色、语义状态色、双描边与海拔阴影。</p>
+        <div class="sw-grid">
+          <div class="swc">
+            <div class="swc-bar">
+              <i style="background:#F1F3F5"><span>Light #F1F3F5</span></i>
+              <i style="background:#202224"><span>Dark #202224</span></i>
+            </div>
+            <b>4.0 面板背景 · 非代码区</b>
+            <code>--surface-window / --surface-titlebar</code>
+            <em>IDE 顶栏、工具窗口、状态栏与非代码区底色</em>
+          </div>
+          <div class="swc">
+            <div class="swc-bar">
+              <i style="background:#FFFFFF"><span>Light #FFFFFF</span></i>
+              <i style="background:#131416"><span>Dark #131416</span></i>
+            </div>
+            <b>1.6 面板 · 代码编辑区</b>
+            <code>--surface-editor / --hm-code-dark</code>
+            <em>主代码编辑器画布底色（TUI 终端为 #1A1B1D）</em>
+          </div>
+          <div class="swc">
+            <div class="swc-bar">
+              <i style="background:#F0F2F4"><span>Light #F0F2F4</span></i>
+              <i style="background:#2B2E30"><span>Dark #2B2E30</span></i>
+            </div>
+            <b>弹窗与菜单底板 · Dialog</b>
+            <code>ohos_id_color_dialog_bg</code>
+            <em>6.1.1 dialog 底版模板 (#FFFFFF / #202224 / #2B2E30)</em>
+          </div>
+          <div class="swc">
+            <div class="swc-bar">
+              <i style="background:#0A59F7"><span>Light #0A59F7</span></i>
+              <i style="background:#317AF7"><span>Dark #317AF7</span></i>
+            </div>
+            <b>1.2 主按钮与品牌强调</b>
+            <code>--surface-primary / --hm-brand-*</code>
+            <em>选中态叠加 40% 透明度（菜单当前项、树选中、胶囊）</em>
+          </div>
+          <div class="swc">
+            <div class="swc-bar">
+              <i style="background:rgba(0,0,0,0.08)"><span>Light 5%~15% 黑</span></i>
+              <i style="background:#2e3133"><span>Dark 5%~15% 白</span></i>
+            </div>
+            <b>HDesign 叠灰阶控件表面</b>
+            <code>--surface-field / --surface-secondary</code>
+            <em>输入框默认 5% 叠底，次按钮/活跃页签 10% 叠底，悬停 15%</em>
+          </div>
+          <div class="swc">
+            <div class="swc-bar">
+              <i style="background:#FBE0DC"><span style="background:#E84026">字 #E84026</span></i>
+              <i style="background:#4E3231"><span style="background:#D94838">字 #D94838</span></i>
+            </div>
+            <b>2.0 / 4.6 告警与报错 Tips</b>
+            <code>--color-error / --surface-danger-subtle</code>
+            <em>用于 3-告警按钮、输入框红框 (#CF3922) 与 4.6 报错气泡</em>
+          </div>
+          <div class="swc">
+            <div class="swc-bar">
+              <i style="background:#F4E2C8"><span style="background:#DB8400">字 #DB8400</span></i>
+              <i style="background:#4F4132"><span style="background:#E08C3A">字 #E08C3A</span></i>
+            </div>
+            <b>2.0 / 6.6 警告与同步横幅</b>
+            <code>--color-warning / --surface-banner-warn</code>
+            <em>用于编译 Warning 徽标、代码波浪线与横幅提示</em>
+          </div>
+          <div class="swc">
+            <div class="swc-bar">
+              <i style="background:#D3E7D1"><span style="background:#37992E">字 #37992E</span></i>
+              <i style="background:#354637"><span style="background:#5BA854">字 #5BA854</span></i>
+            </div>
+            <b>2.0 成功状态与运行指示</b>
+            <code>--color-success / --surface-banner-success</code>
+            <em>用于顶栏运行/调试按钮、LSP 就绪绿点与构建成功通知</em>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= 03 PC/Mac NewUI 色阶与语法色 ================= -->
+      <section class="grp" id="official-names">
+        <div class="ghead"><h3>PC / Mac NewUI 色阶与语法色</h3><span class="cnt">03 · NEWUI PALETTE &amp; SYNTAX</span></div>
+        <p class="note">从 <code>【NewUI】鸿蒙IDE-当代.pix</code> 与 <code>【TUI】DevEco Code 基础UI规范.pix</code> 的共享样式表中解出的官方 14 级灰阶与编辑器真实语法高亮色板。点击任意色块即可复制 HEX。</p>
+        <div class="card">
+          <div class="ramp"><div class="ramp-h"><b>Dark Gray 1–14（深色模式）</b><span>Gray1 最深 (#1E1F22 编辑器底)，Gray12 (#DFE1E5) 正文 · 点击复制 HEX</span></div><div class="ramp-g"><button type="button" class="sw" data-hex="#1E1F22" style="--c:#1E1F22" title="Gray1 #1E1F22 · 主编辑器底"><span class="sw-c"></span><span class="sw-n">Gray1</span><span class="sw-h">#1E1F22</span></button><button type="button" class="sw" data-hex="#2B2D30" style="--c:#2B2D30" title="Gray2 #2B2D30 · 工具窗/弹窗/顶栏"><span class="sw-c"></span><span class="sw-n">Gray2</span><span class="sw-h">#2B2D30</span></button><button type="button" class="sw" data-hex="#383A42" style="--c:#383A42" title="Gray3 #383A42 · 悬停/Tag/Tooltip"><span class="sw-c"></span><span class="sw-n">Gray3</span><span class="sw-h">#383A42</span></button><button type="button" class="sw" data-hex="#43454A" style="--c:#43454A" title="Gray4 #43454A · 弹层描边/失焦选区"><span class="sw-c"></span><span class="sw-n">Gray4</span><span class="sw-h">#43454A</span></button><button type="button" class="sw" data-hex="#4E5157" style="--c:#4E5157" title="Gray5 #4E5157 · 输入框/按钮描边"><span class="sw-c"></span><span class="sw-n">Gray5</span><span class="sw-h">#4E5157</span></button><button type="button" class="sw" data-hex="#5A5D63" style="--c:#5A5D63" title="Gray6 #5A5D63 · 禁用文字"><span class="sw-c"></span><span class="sw-n">Gray6</span><span class="sw-h">#5A5D63</span></button><button type="button" class="sw" data-hex="#6F737A" style="--c:#6F737A" title="Gray7 #6F737A · 说明文字"><span class="sw-c"></span><span class="sw-n">Gray7</span><span class="sw-h">#6F737A</span></button><button type="button" class="sw" data-hex="#868A91" style="--c:#868A91" title="Gray8 #868A91 · 三级文字/快捷键"><span class="sw-c"></span><span class="sw-n">Gray8</span><span class="sw-h">#868A91</span></button><button type="button" class="sw" data-hex="#9DA0A8" style="--c:#9DA0A8" title="Gray9 #9DA0A8 · 二级文字/行号"><span class="sw-c"></span><span class="sw-n">Gray9</span><span class="sw-h">#9DA0A8</span></button><button type="button" class="sw" data-hex="#B4B8BF" style="--c:#B4B8BF" title="Gray10 #B4B8BF · 次级高亮"><span class="sw-c"></span><span class="sw-n">Gray10</span><span class="sw-h">#B4B8BF</span></button><button type="button" class="sw" data-hex="#CED0D6" style="--c:#CED0D6" title="Gray11 #CED0D6 · 默认图标"><span class="sw-c"></span><span class="sw-n">Gray11</span><span class="sw-h">#CED0D6</span></button><button type="button" class="sw" data-hex="#DFE1E5" style="--c:#DFE1E5" title="Gray12 #DFE1E5 · 正文主色"><span class="sw-c"></span><span class="sw-n">Gray12</span><span class="sw-h">#DFE1E5</span></button><button type="button" class="sw" data-hex="#F0F1F2" style="--c:#F0F1F2" title="Gray13 #F0F1F2 · Tooltip文字"><span class="sw-c"></span><span class="sw-n">Gray13</span><span class="sw-h">#F0F1F2</span></button><button type="button" class="sw" data-hex="#FFFFFF" style="--c:#FFFFFF" title="Gray14 #FFFFFF · 纯白强调"><span class="sw-c"></span><span class="sw-n">Gray14</span><span class="sw-h">#FFFFFF</span></button></div></div>
+          <div class="ramp"><div class="ramp-h"><b>Light Gray 1–14（浅色模式）</b><span>Gray1 纯黑 (#000000 正文)，Gray13 (#F7F8FA) 面板底，Gray14 纯白 · 点击复制 HEX</span></div><div class="ramp-g"><button type="button" class="sw" data-hex="#000000" style="--c:#000000" title="Gray1 #000000 · 正文主色"><span class="sw-c"></span><span class="sw-n">Gray1</span><span class="sw-h">#000000</span></button><button type="button" class="sw" data-hex="#27282E" style="--c:#27282E" title="Gray2 #27282E · 深色顶栏/Tooltip"><span class="sw-c"></span><span class="sw-n">Gray2</span><span class="sw-h">#27282E</span></button><button type="button" class="sw" data-hex="#383A42" style="--c:#383A42" title="Gray3 #383A42 · 深色强调"><span class="sw-c"></span><span class="sw-n">Gray3</span><span class="sw-h">#383A42</span></button><button type="button" class="sw" data-hex="#494B57" style="--c:#494B57" title="Gray4 #494B57 · 重度文字"><span class="sw-c"></span><span class="sw-n">Gray4</span><span class="sw-h">#494B57</span></button><button type="button" class="sw" data-hex="#5A5D6B" style="--c:#5A5D6B" title="Gray5 #5A5D6B · 二级文字"><span class="sw-c"></span><span class="sw-n">Gray5</span><span class="sw-h">#5A5D6B</span></button><button type="button" class="sw" data-hex="#6C707E" style="--c:#6C707E" title="Gray6 #6C707E · 默认图标/三级字"><span class="sw-c"></span><span class="sw-n">Gray6</span><span class="sw-h">#6C707E</span></button><button type="button" class="sw" data-hex="#818594" style="--c:#818594" title="Gray7 #818594 · 说明文字"><span class="sw-c"></span><span class="sw-n">Gray7</span><span class="sw-h">#818594</span></button><button type="button" class="sw" data-hex="#A8ADBD" style="--c:#A8ADBD" title="Gray8 #A8ADBD · 禁用/占位符"><span class="sw-c"></span><span class="sw-n">Gray8</span><span class="sw-h">#A8ADBD</span></button><button type="button" class="sw" data-hex="#C9CCD6" style="--c:#C9CCD6" title="Gray9 #C9CCD6 · 按钮/输入框描边"><span class="sw-c"></span><span class="sw-n">Gray9</span><span class="sw-h">#C9CCD6</span></button><button type="button" class="sw" data-hex="#D3D5DB" style="--c:#D3D5DB" title="Gray10 #D3D5DB · 容器分隔描边"><span class="sw-c"></span><span class="sw-n">Gray10</span><span class="sw-h">#D3D5DB</span></button><button type="button" class="sw" data-hex="#DFE1E5" style="--c:#DFE1E5" title="Gray11 #DFE1E5 · 失焦选区/轨道"><span class="sw-c"></span><span class="sw-n">Gray11</span><span class="sw-h">#DFE1E5</span></button><button type="button" class="sw" data-hex="#EBECF0" style="--c:#EBECF0" title="Gray12 #EBECF0 · 悬停填充/分割线"><span class="sw-c"></span><span class="sw-n">Gray12</span><span class="sw-h">#EBECF0</span></button><button type="button" class="sw" data-hex="#F7F8FA" style="--c:#F7F8FA" title="Gray13 #F7F8FA · 工具窗口/侧栏底"><span class="sw-c"></span><span class="sw-n">Gray13</span><span class="sw-h">#F7F8FA</span></button><button type="button" class="sw" data-hex="#FFFFFF" style="--c:#FFFFFF" title="Gray14 #FFFFFF · 编辑器/弹窗白底"><span class="sw-c"></span><span class="sw-n">Gray14</span><span class="sw-h">#FFFFFF</span></button></div></div>
+        </div>
+
+        <div class="tbl" style="margin-top:16px">
+          <div class="tr th">
+            <span>代码语法 Token (<code>Editor/*</code>)</span>
+            <span>浅色精确值 (Light)</span>
+            <span>PC/Mac 深色精确值 (NewUI Dark)</span>
+            <span>鸿蒙 2.0 深色精确值 (Harmony Dark)</span>
+          </div>
+          <div class="tr">
+            <b>Default text（默认代码）</b>
+            <span><i class="swatch" style="background:#080808"></i><code>#080808</code></span>
+            <span><i class="swatch" style="background:#BDC0C9"></i><code>#BDC0C9</code></span>
+            <span><i class="swatch" style="background:#D1D1D1"></i><code>#D1D1D1</code></span>
+          </div>
+          <div class="tr">
+            <b>Keyword（关键字 <code>export / class</code>）</b>
+            <span><i class="swatch" style="background:#0033B3"></i><code>#0033B3</code></span>
+            <span><i class="swatch" style="background:#D69A6B"></i><code>#D69A6B</code></span>
+            <span><i class="swatch" style="background:#67AFFF"></i><code>#67AFFF</code></span>
+          </div>
+          <div class="tr">
+            <b>Method（函数声明 <code>onCreate</code>）</b>
+            <span><i class="swatch" style="background:#00627A"></i><code>#00627A</code></span>
+            <span><i class="swatch" style="background:#70AEFF"></i><code>#70AEFF</code></span>
+            <span><i class="swatch" style="background:#40C793"></i><code>#40C793</code></span>
+          </div>
+          <div class="tr">
+            <b>Constant / Field（成员常量 <code>TAG</code>）</b>
+            <span><i class="swatch" style="background:#871094"></i><code>#871094</code></span>
+            <span><i class="swatch" style="background:#CF84CF"></i><code>#CF84CF</code></span>
+            <span><i class="swatch" style="background:#9A89FF"></i><code>#9A89FF</code></span>
+          </div>
+          <div class="tr">
+            <b>String（字符串字面量）</b>
+            <span><i class="swatch" style="background:#067D17"></i><code>#067D17</code></span>
+            <span><i class="swatch" style="background:#6AAB73"></i><code>#6AAB73</code></span>
+            <span><i class="swatch" style="background:#E881DB"></i><code>#E881DB</code></span>
+          </div>
+          <div class="tr">
+            <b>Metadata / Decorator（装饰器 <code>@Entry</code>）</b>
+            <span><i class="swatch" style="background:#9E880D"></i><code>#9E880D</code></span>
+            <span><i class="swatch" style="background:#B8B167"></i><code>#B8B167</code></span>
+            <span><i class="swatch" style="background:#F8CD75"></i><code>#F8CD75</code></span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= 04 双系统实时工作台 (#specimens) ================= -->
+      <section class="grp" id="specimens">
+        <div class="ghead"><h3>双系统实时工作台样张</h3><span class="cnt">04 · LIVE WORKBENCH SPECIMENS</span></div>
+        <p class="note">以下两张卡片分别展示「鸿蒙原生端 HDesign 2.0」与「PC / Mac 当代桌面端 NewUI」的完整组件组合与整窗工作台。每张卡片均可独立切换深色、浅色与系统形态，所有页签、树节点、开关、胶囊均可直接点击交互。</p>
+
+        <!-- 卡片 1：鸿蒙原生端工作台 -->
+        <article class="card spec-card" data-demo>
+          <div class="spec-top">
+            <div>
+              <div class="badge-row">
+                <span class="sys-badge">WORKBENCH A · HARMONYOS NEXT</span>
+                <code>data-system="harmony"</code>
+              </div>
+              <h4>鸿蒙原生端工作台<small>来自 鸿蒙IDE_v1.1.0_PC端组件库.pix &amp; 👉🔥【2.0】基础范式🔥👈.pix</small></h4>
+              <p style="margin-top:4px">16vp 字阶、44px 顶栏、34vp 主/次/告警按钮（r=8vp）、28vp 胶囊页签与工程树行（含矢量文件夹与文件徽标）、毛玻璃侧栏、#131416 代码编辑区与 32px 状态栏 LSP 胶囊。</p>
+            </div>
+            <div class="spec-controls" role="group" aria-label="鸿蒙工作台主题切换">
+              <button type="button" class="pill-btn" data-set-system="harmony">鸿蒙原生 (HDesign 2.0)</button>
+              <button type="button" class="pill-btn" data-set-system="pc-mac">切换 PC/Mac 对比</button>
+              <span class="pill-sep"></span>
+              <button type="button" class="pill-btn" data-set-theme="dark">深色 (Dark)</button>
+              <button type="button" class="pill-btn" data-set-theme="light">浅色 (Light)</button>
+            </div>
+          </div>
+
+          <div class="workbench-stage" data-live="" data-system="harmony" data-theme="dark" id="harmony-stage">
+            <div class="workbench-Ribbon">
+              <div class="de-row">
+                <button type="button" class="de-button de-button--primary de-button--m"><span class="de-button__label">Confirm (主按钮)</span></button>
+                <button type="button" class="de-button de-button--secondary de-button--m"><span class="de-button__label">Cancel (次按钮)</span></button>
+                <button type="button" class="de-button de-button--danger de-button--m"><span class="de-button__label">Alarm (告警按钮)</span></button>
+                <button type="button" class="de-button de-button--toolbar de-button--m"><span class="de-button__icon">＋</span><span class="de-button__label">Create Files</span></button>
+                <label class="de-search" style="width:210px">
+                  <span class="de-icon"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><circle cx="7" cy="7" r="4.2" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M10.2 10.2 13.5 13.5" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></span>
+                  <input type="search" placeholder="Search files..." aria-label="搜索">
+                </label>
+                <label class="de-choice"><input type="checkbox" role="switch" class="de-switch" checked><span>LSP 索引</span></label>
+              </div>
+              <div class="de-chip-row">
+                <button type="button" class="de-chip" aria-pressed="true">Info (全部)</button>
+                <button type="button" class="de-chip" aria-pressed="false">Errors (0)</button>
+                <button type="button" class="de-chip" aria-pressed="false">Warnings (2)</button>
+                <span class="de-tag">ArkTS 6.0</span>
+              </div>
+            </div>
+
+            <section class="de-window" style="min-height:420px">
+              <header class="de-titlebar">
+                <span class="de-titlebar__mark">A</span>
+                <div class="de-titlebar__group">
+                  <button type="button" class="de-titlebar__pill">Healthy_life ▾</button>
+                  <button type="button" class="de-titlebar__pill">⑂ Master ▾</button>
+                </div>
+                <span class="de-titlebar__spacer"></span>
+                <div class="de-titlebar__group">
+                  <button type="button" class="de-titlebar__pill">💻 MyPC (Designed for phone) ▾</button>
+                  <button type="button" class="de-titlebar__pill">⊞ Entry ▾</button>
+                </div>
+                <span class="de-titlebar__spacer"></span>
+                <div class="de-window__controls" aria-hidden="true">
+                  <button type="button" tabindex="-1">🔨</button>
+                  <button type="button" tabindex="-1" style="color:var(--color-success)">▶</button>
+                  <button type="button" tabindex="-1" style="color:var(--color-success)">🐞</button>
+                  <button type="button" tabindex="-1">–</button>
+                  <button type="button" tabindex="-1" data-close>×</button>
+                </div>
+              </header>
+              <div class="de-window__body">
+                <nav class="de-stripe" aria-label="侧边工具条">
+                  <button type="button" class="de-icon-button de-icon-button--m" aria-label="Project" aria-pressed="true"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M1.8 3.5A1.3 1.3 0 0 1 3.1 2.2h3.1c.4 0 .78.18 1.02.5l.86 1.1h4.82A1.3 1.3 0 0 1 14.2 5.1v7.4a1.3 1.3 0 0 1-1.3 1.3H3.1a1.3 1.3 0 0 1-1.3-1.3V3.5Z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg></button>
+                  <button type="button" class="de-icon-button de-icon-button--m" aria-label="Search"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><circle cx="7" cy="7" r="4.2" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M10.2 10.2 13.5 13.5" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></button>
+                  <button type="button" class="de-icon-button de-icon-button--m" aria-label="Git"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><circle cx="5" cy="4" r="1.6" fill="none" stroke="currentColor" stroke-width="1.3"/><circle cx="5" cy="12" r="1.6" fill="none" stroke="currentColor" stroke-width="1.3"/><circle cx="11.5" cy="6.5" r="1.6" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M5 5.6v4.8M5 8c2.5 0 6.5 0 6.5-1.5" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></button>
+                </nav>
+                <aside class="de-nav" aria-label="Project" style="width:220px">
+                  <div class="de-toolbar" style="padding:0 6px;min-height:36px;background:transparent">
+                    <span class="de-toolbar__title">Project ▾</span>
+                  </div>
+                  <ul class="de-tree">
+                    <li>
+                      <details class="de-tree__node" open>
+                        <summary class="de-tree__row">
+                          <span class="de-tree__chevron">›</span>
+                          <span class="de-tree__name"><strong>MyApplication</strong></span>
+                        </summary>
+                        <ul class="de-tree__children">
+                          <li><div class="de-tree__row"><span class="de-tree__chevron">›</span><span class="de-tree__name">cloudbuild</span></div></li>
+                          <li><div class="de-tree__row"><span class="de-tree__chevron">›</span><span class="de-tree__name">AppScope</span></div></li>
+                          <li>
+                            <details class="de-tree__node" open>
+                              <summary class="de-tree__row">
+                                <span class="de-tree__chevron">›</span>
+                                <span class="de-tree__name">module1 › ets</span>
+                              </summary>
+                              <ul class="de-tree__children">
+                                <li><div class="de-tree__row" data-selected="true"><span class="de-tree__badge">A</span><span class="de-tree__name">EntryAbility.ets</span></div></li>
+                                <li><div class="de-tree__row"><span class="de-tree__badge" data-ext="cpp">C</span><span class="de-tree__name">BadgeCardComponent.cpp</span></div></li>
+                                <li><div class="de-tree__row"><span class="de-tree__badge" data-ext="json">&#123;&#125;</span><span class="de-tree__name">module.json5</span></div></li>
+                              </ul>
+                            </details>
+                          </li>
+                        </ul>
+                      </details>
+                    </li>
+                  </ul>
+                </aside>
+                <div class="de-main">
+                  <div class="de-tabs" role="tablist" data-tabs>
+                    <div class="de-tab" data-selected="true">
+                      <button type="button" role="tab" class="de-tab__main" aria-selected="true"><span class="de-tree__badge">A</span> EntryAbility.ets</button>
+                      <button type="button" class="de-tab__close" aria-label="关闭">×</button>
+                    </div>
+                    <div class="de-tab">
+                      <button type="button" role="tab" class="de-tab__main" aria-selected="false"><span class="de-tree__badge" data-ext="cpp">C</span> BadgeCardComponent.cpp</button>
+                      <button type="button" class="de-tab__close" aria-label="关闭">×</button>
+                    </div>
+                    <div class="de-tab">
+                      <button type="button" role="tab" class="de-tab__main" aria-selected="false"><span class="de-tree__badge" data-ext="json">&#123;&#125;</span> module.json5</button>
+                      <button type="button" class="de-tab__close" aria-label="关闭">×</button>
+                    </div>
+                  </div>
+                  <div class="de-code-editor">
+                    <div class="de-code-alert-card"><span style="color:var(--color-success)">✓</span> 0 告警 · ArkTS Linter</div>
+                    <div class="de-code-line"><span class="de-code-gutter">1</span><span class="de-code-content"><span class="cm">/* Copyright (c) 2026 Huawei Device Co., Ltd. */</span></span></div>
+                    <div class="de-code-line"><span class="de-code-gutter">2</span><span class="de-code-content"><span class="kw">import</span> UIAbility <span class="kw">from</span> <span class="str">'@ohos.app.ability.UIAbility'</span>;</span></div>
+                    <div class="de-code-line" data-current="true"><span class="de-code-gutter">3</span><span class="de-code-content"><span class="kw">export default class</span> <span class="fn">EntryAbility</span> <span class="kw">extends</span> UIAbility &#123;</span></div>
+                    <div class="de-code-line"><span class="de-code-gutter">4</span><span class="de-code-content">  <span class="kw">private static</span> <span class="ct">TAG</span>: string = <span class="str">'EntryAbility'</span>;</span></div>
+                    <div class="de-code-line"><span class="de-code-gutter">5</span><span class="de-code-content">  <span class="kw">async</span> <span class="fn">onCreate</span>(want: Want) &#123; Logger.<span class="fn">info</span>(<span class="str">'dayInfo success'</span>); &#125;</span></div>
+                    <div class="de-code-line"><span class="de-code-gutter">6</span><span class="de-code-content">&#125;</span></div>
+                  </div>
+                  <footer class="de-statusbar">
+                    <span class="de-crumb">Healthy_life › entry › src › main › ets › <strong>EntryAbility.ets</strong></span>
+                    <span class="de-statusbar__group">
+                      <span class="de-lsp-pill"><span class="de-lsp-pill__dot">2</span> LSP Service</span>
+                      <span>134/2,275</span>
+                      <span>UTF-8</span>
+                    </span>
+                  </footer>
+                </div>
+              </div>
+            </section>
+          </div>
+        </article>
+
+        <!-- 卡片 2：PC / Mac 当代桌面端工作台 -->
+        <article class="card spec-card" data-demo>
+          <div class="spec-top">
+            <div>
+              <div class="badge-row">
+                <span class="sys-badge">WORKBENCH B · PC / MAC NEWUI</span>
+                <code>data-system="pc-mac"</code>
+              </div>
+              <h4>PC / Mac 当代桌面端工作台<small>来自 【NewUI】鸿蒙IDE-当代.pix + icon.pix + deveco-intui-kit</small></h4>
+              <p style="margin-top:4px">13px 字阶、40px 侧边图标条（32×32 r=6px 激活蓝底）、280px 工具菜单（#2E436E 选中态）、Customize Main Toolbar 模态框与右下角 Notification 通知卡。</p>
+            </div>
+            <div class="spec-controls" role="group" aria-label="PC/Mac 工作台主题切换">
+              <button type="button" class="pill-btn" data-set-system="pc-mac">PC / Mac (NewUI)</button>
+              <button type="button" class="pill-btn" data-set-system="harmony">切换鸿蒙 2.0 对比</button>
+              <span class="pill-sep"></span>
+              <button type="button" class="pill-btn" data-set-theme="dark">深色 (Dark)</button>
+              <button type="button" class="pill-btn" data-set-theme="light">浅色 (Light)</button>
+              <button type="button" class="pill-btn" data-set-theme="light-contrast">浅色高对比</button>
+            </div>
+          </div>
+
+          <div class="workbench-stage" data-live="" data-system="pc-mac" data-theme="dark" id="pc-stage">
+            <section class="de-window de-studio" style="min-height:400px">
+              <nav class="de-stripe" aria-label="工具">
+                <button type="button" class="de-icon-button de-icon-button--m" aria-label="构建">
+                  <svg viewBox="0 0 16 16" width="16" height="16"><path d="M9 7 4.2 11.8M6 4.5l2.2-2.2 3.5 3.5L9.5 8" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+                </button>
+                <button type="button" class="de-icon-button de-icon-button--m" aria-label="运行" aria-pressed="true">
+                  <svg viewBox="0 0 16 16" width="16" height="16"><path d="M5 3.5v9l7-4.5-7-4.5Z" fill="none" stroke="currentColor" stroke-width="1.4"/></svg>
+                </button>
+                <button type="button" class="de-icon-button de-icon-button--m" aria-label="调试">
+                  <svg viewBox="0 0 16 16" width="16" height="16"><circle cx="8" cy="8" r="3" fill="none" stroke="currentColor" stroke-width="1.4"/></svg>
+                </button>
+                <button type="button" class="de-icon-button de-icon-button--m" aria-label="终端">
+                  <svg viewBox="0 0 16 16" width="16" height="16"><path d="M4.5 6.5 7 8.2 4.5 10M8.2 10.2H11" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+                </button>
+              </nav>
+              <div class="de-pad" style="flex-direction:row;flex-wrap:wrap;align-items:flex-start;gap:20px;flex:1">
+                <ul class="de-menu de-tool-menu" role="menu">
+                  <li role="none"><button type="button" role="menuitem" class="de-menu__item" aria-current="true"><span class="de-menu__icon"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M2.5 8h5" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="10.2" cy="8" r="2.1" fill="none" stroke="currentColor" stroke-width="1.3"/></svg></span><span class="de-menu__label">提交</span><span class="de-menu__shortcut">⌘0</span></button></li>
+                  <li role="none"><button type="button" role="menuitem" class="de-menu__item"><span class="de-menu__icon"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M4.5 2.5h7v11L8 11.2 4.5 13.5Z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg></span><span class="de-menu__label">Bookmarks</span><span class="de-menu__shortcut">⌘2</span></button></li>
+                  <li role="none"><button type="button" role="menuitem" class="de-menu__item"><span class="de-menu__icon"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><circle cx="7" cy="7" r="3.2" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M9.4 9.4 12.2 12.2" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></span><span class="de-menu__label">查找</span><span class="de-menu__shortcut">⌘3</span></button></li>
+                  <li role="none"><button type="button" role="menuitem" class="de-menu__item"><span class="de-menu__icon"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M5.5 3.8v8.4l6.2-4.2-6.2-4.2Z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg></span><span class="de-menu__label">运行</span><span class="de-menu__shortcut">⌘4</span></button></li>
+                  <li role="none"><button type="button" role="menuitem" class="de-menu__item"><span class="de-menu__icon"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><circle cx="8" cy="8.2" r="2.6" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M8 5.6V3.4M5.6 6.2 4 4.8M10.4 6.2 12 4.8M5.2 10.2 3.6 11.6M10.8 10.2 12.4 11.6" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg></span><span class="de-menu__label">调试</span><span class="de-menu__shortcut">⌘5</span></button></li>
+                  <li role="none"><button type="button" role="menuitem" class="de-menu__item"><span class="de-menu__icon"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M11.2 6.2A3.6 3.6 0 1 0 12 9.6" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M11 4.2v2.4h2.4" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="de-menu__label">API Change Assistant</span></button></li>
+                </ul>
+
+                <div class="de-dialog" style="flex:1 1 300px;min-width:0;max-width:420px">
+                  <header class="de-dialog__header">
+                    <h3 class="de-dialog__title">Customize Main Toolbar</h3>
+                  </header>
+                  <div class="de-dialog__body">
+                    <label class="de-search">
+                      <span class="de-icon"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><circle cx="7" cy="7" r="4.2" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M10.2 10.2 13.5 13.5" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></span>
+                      <input type="search" placeholder="Search actions..." aria-label="Search actions">
+                    </label>
+                    <div class="de-field">
+                      <span class="de-field__label">Icon</span>
+                      <span class="de-select">
+                        <select aria-label="Icon"><option>Default icon (OpenRemoteDevelopment)</option></select>
+                      </span>
+                    </div>
+                    <div class="de-row">
+                      <label class="de-choice"><input type="checkbox" class="de-checkbox" checked> <span>开启 AI 辅助</span></label>
+                      <label class="de-choice"><input type="checkbox" role="switch" class="de-switch" checked> <span>自动同步索引</span></label>
+                    </div>
+                  </div>
+                  <footer class="de-dialog__footer">
+                    <button type="button" class="de-button de-button--secondary de-button--m">Cancel</button>
+                    <button type="button" class="de-button de-button--primary de-button--m">OK</button>
+                  </footer>
+                </div>
+
+                <article class="de-notification">
+                  <header class="de-notification__header">
+                    <span style="color:var(--color-success)">●</span> Build Completed (6.3 Notification)
+                  </header>
+                  <div class="de-notification__body">
+                    Hvigor 组装 HAP 成功（耗时 2.4s），已准备好推送到 MyPC 模拟器。
+                  </div>
+                  <footer class="de-notification__actions">
+                    <button type="button">Run EntryAbility</button>
+                    <button type="button">查看构建日志</button>
+                  </footer>
+                </article>
+              </div>
+            </section>
+          </div>
+        </article>
+      </section>
+
+      <!-- ================= 05 Pixso 设计稿对照 (#compare) ================= -->
+      <section class="grp" id="compare">
+        <div class="ghead"><h3>Pixso 原稿 vs 组件库并排对照</h3><span class="cnt">05 · PIXSO 1:1 COMPARISON</span></div>
+        <p class="note">左侧为从本地 <code>.pix</code> 提取的真实 DevEco IDE 画面帧，右侧为使用本库 Token 与真实 DOM 组件拼装的实测渲染结果。</p>
+
+        <div class="cmp-list">
+          <article class="card cmp-card" id="compare-file-window">
+            <h4>1. 鸿蒙 IDE 主工作台对照<small>👉🔥【2.0】基础范式🔥👈.pix · 1728×1152 深色整窗</small></h4>
+            <div class="cmp-pair">
+              <figure class="cmp-fig">
+                <img src="../compare/frames/file-window.jpg" alt="Pixso 鸿蒙 IDE 深色整窗">
+                <figcaption>Pixso 原稿：基础范式 2.0 · 鸿蒙 IDE 深色整窗（#202224 面板 + #131416 代码区）</figcaption>
+              </figure>
+              <div class="cmp-live">
+                <section class="de-window" data-system="harmony" data-theme="dark" style="width:100%">
+                  <header class="de-titlebar">
+                    <span class="de-titlebar__mark">A</span>
+                    <span class="de-titlebar__title">Healthy_life ▾ · ⑂ Master ▾</span>
+                    <span class="de-titlebar__spacer"></span>
+                    <span class="de-note">💻 MyPC ▾ · ⊞ Entry ▾</span>
+                  </header>
+                  <div class="de-window__body">
+                    <nav class="de-stripe"><button type="button" class="de-icon-button de-icon-button--m" aria-pressed="true" aria-label="Project"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M1.8 3.5A1.3 1.3 0 0 1 3.1 2.2h3.1c.4 0 .78.18 1.02.5l.86 1.1h4.82A1.3 1.3 0 0 1 14.2 5.1v7.4a1.3 1.3 0 0 1-1.3 1.3H3.1a1.3 1.3 0 0 1-1.3-1.3V3.5Z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg></button><button type="button" class="de-icon-button de-icon-button--m" aria-label="Search"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><circle cx="7" cy="7" r="4.2" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M10.2 10.2 13.5 13.5" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></button></nav>
+                    <aside class="de-nav" style="width:165px">
+                      <ul class="de-tree">
+                        <li><div class="de-tree__row"><span class="de-tree__chevron">›</span><span class="de-tree__name">MyApplication</span></div></li>
+                        <li><div class="de-tree__row" data-selected="true"><span class="de-tree__badge">A</span><span class="de-tree__name">EntryAbility.ets</span></div></li>
+                        <li><div class="de-tree__row"><span class="de-tree__badge" data-ext="cpp">C</span><span class="de-tree__name">BadgeCard.cpp</span></div></li>
+                      </ul>
+                    </aside>
+                    <div class="de-main">
+                      <div class="de-tabs"><div class="de-tab" data-selected="true"><button type="button" class="de-tab__main"><span class="de-tree__badge">A</span> EntryAbility.ets</button><button type="button" class="de-tab__close">×</button></div></div>
+                      <div class="de-code-editor">
+                        <div class="de-code-line"><span class="de-code-gutter">1</span><span class="de-code-content"><span class="kw">import</span> UIAbility <span class="kw">from</span> <span class="str">'@ohos.app.ability.UIAbility'</span>;</span></div>
+                        <div class="de-code-line" data-current="true"><span class="de-code-gutter">2</span><span class="de-code-content"><span class="kw">export default class</span> <span class="fn">EntryAbility</span> <span class="kw">extends</span> UIAbility &#123;&#125;</span></div>
+                      </div>
+                      <footer class="de-statusbar"><span class="de-crumb">Healthy_life › <strong>EntryAbility.ets</strong></span><span class="de-lsp-pill"><span class="de-lsp-pill__dot">2</span> LSP Service</span></footer>
+                    </div>
+                  </div>
+                </section>
+              </div>
+            </div>
+          </article>
+
+          <div class="g2">
+            <article class="card cmp-card" id="compare-menu">
+              <h4>2. 菜单与弹层对照<small>8vp 圆角 · 4px 内边距 · 双描边</small></h4>
+              <div class="cmp-pair">
+                <figure class="cmp-fig">
+                  <img src="../compare/frames/notes-menu.jpg" alt="Pixso 弹层菜单">
+                  <figcaption>Pixso 原稿：Customize Main Toolbar 弹层菜单</figcaption>
+                </figure>
+                <div class="cmp-live" data-system="pc-mac" data-theme="dark">
+                  <ul class="de-menu" role="menu" style="width:100%">
+                    <li role="none"><button type="button" role="menuitem" class="de-menu__item" aria-current="true"><span class="de-menu__label">Restore Last State</span></button></li>
+                    <li role="none"><button type="button" role="menuitem" class="de-menu__item"><span class="de-menu__label">Restore Defaults</span></button></li>
+                  </ul>
+                </div>
+              </div>
+            </article>
+
+            <article class="card cmp-card" id="compare-tool-menu">
+              <h4>3. Studio 工具菜单对照<small>icon.pix · 280px 宽 · #2E436E 选中</small></h4>
+              <div class="cmp-pair">
+                <figure class="cmp-fig">
+                  <img src="../compare/frames/tool-menu.jpg" alt="Pixso Studio 工具菜单">
+                  <figcaption>Pixso 原稿：Studio 工具菜单</figcaption>
+                </figure>
+                <div class="cmp-live" data-system="pc-mac" data-theme="dark">
+                  <ul class="de-menu de-tool-menu" role="menu" style="width:100%">
+                    <li role="none"><button type="button" role="menuitem" class="de-menu__item" aria-current="true"><span class="de-menu__label">提交</span><span class="de-menu__shortcut">⌘0</span></button></li>
+                    <li role="none"><button type="button" role="menuitem" class="de-menu__item"><span class="de-menu__label">Bookmarks</span><span class="de-menu__shortcut">⌘2</span></button></li>
+                    <li role="none"><button type="button" role="menuitem" class="de-menu__item"><span class="de-menu__label">查找</span><span class="de-menu__shortcut">⌘3</span></button></li>
+                  </ul>
+                </div>
+              </div>
+            </article>
+
+            <article class="card cmp-card" id="compare-tree">
+              <h4>4. Project 项目树对照<small>5.3 列表(树结构) · 28vp 行高 · 文件夹与徽标</small></h4>
+              <div class="cmp-pair">
+                <figure class="cmp-fig">
+                  <img src="../compare/frames/tree.jpg" alt="Pixso 鸿蒙 IDE Project 树">
+                  <figcaption>Pixso 原稿：鸿蒙 IDE 浅色 Project 树</figcaption>
+                </figure>
+                <div class="cmp-live" data-system="harmony" data-theme="light">
+                  <ul class="de-tree" style="width:100%">
+                    <li>
+                      <details class="de-tree__node" open>
+                        <summary class="de-tree__row"><span class="de-tree__chevron">›</span><span class="de-tree__name"><strong>My Application</strong></span></summary>
+                        <ul class="de-tree__children">
+                          <li><div class="de-tree__row" data-selected="true"><span class="de-tree__badge" data-ext="green">$_</span><span class="de-tree__name">004级文本</span></div></li>
+                          <li><div class="de-tree__row"><span class="de-tree__badge" data-ext="yml">YM</span><span class="de-tree__name">build.yml</span></div></li>
+                          <li><div class="de-tree__row"><span class="de-tree__badge" data-ext="json">&#123;&#125;</span><span class="de-tree__name">build_config.json</span></div></li>
+                        </ul>
+                      </details>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </article>
+
+            <article class="card cmp-card" id="compare-tabs">
+              <h4>5. 编辑器页签与代码高亮对照<small>7.代码区页签 · 28vp 胶囊 r=6vp</small></h4>
+              <div class="cmp-pair">
+                <figure class="cmp-fig">
+                  <img src="../compare/frames/tabs.jpg" alt="Pixso 编辑器页签">
+                  <figcaption>Pixso 原稿：代码页签栏与语法高亮</figcaption>
+                </figure>
+                <div class="cmp-live" data-system="harmony" data-theme="light">
+                  <div class="de-window" style="width:100%;min-height:140px">
+                    <div class="de-tabs" role="tablist">
+                      <div class="de-tab" data-selected="true"><button type="button" role="tab" class="de-tab__main"><span class="de-tree__badge">A</span> BadgeCardComponent.cpp</button><button type="button" class="de-tab__close">×</button></div>
+                      <div class="de-tab"><button type="button" role="tab" class="de-tab__main"><span class="de-tree__badge">A</span> EntryAbility.ets</button><button type="button" class="de-tab__close">×</button></div>
+                    </div>
+                    <div class="de-code-editor">
+                      <div class="de-code-line"><span class="de-code-gutter">1</span><span class="de-code-content"><span class="kw">export default class</span> <span class="fn">EntryAbility</span> &#123;&#125;</span></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </article>
+          </div>
+
+          <article class="card cmp-card" id="compare-tooltip">
+            <h4>6. Dialog 弹窗、按钮与报错校验对照<small>NewUI Preferences Dialog &amp; 鸿蒙 6.1 Dialog</small></h4>
+            <div class="cmp-pair">
+              <figure class="cmp-fig">
+                <img src="../compare/frames/tooltip.jpg" alt="Pixso Preferences Dialog">
+                <figcaption>Pixso 原稿：Preferences 弹窗与主次按钮</figcaption>
+              </figure>
+              <div class="cmp-live" data-system="pc-mac" data-theme="light">
+                <div class="de-dialog" style="max-width:100%">
+                  <header class="de-dialog__header"><h3 class="de-dialog__title">Language and Region</h3></header>
+                  <div class="de-dialog__body">
+                    <div class="de-field de-field--inline"><span class="de-field__label">Language:</span><span class="de-select" style="flex:1"><select aria-label="Language"><option>English / 简体中文</option></select></span></div>
+                  </div>
+                  <footer class="de-dialog__footer">
+                    <button type="button" class="de-button de-button--secondary de-button--m">Cancel</button>
+                    <button type="button" class="de-button de-button--primary de-button--m">OK</button>
+                  </footer>
+                </div>
+              </div>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <!-- ================= 06 全部组件文档 (#components) ================= -->
+      <section class="grp" id="components">
+        <div class="ghead"><h3>组件文档全集</h3><span class="cnt">06 · 21 COMPONENTS</span></div>
+        <p class="note">全部 21 个组件直接在本页渲染，支持在每张卡片右上角实时切换「鸿蒙 2.0 / PC-Mac」与「深色 / 浅色 / 高对比」主题，无需跳转页面。</p>
+        <div class="comp-grid">
+          
+        <article class="card comp-card" id="component-button" data-demo>
+          <div class="comp-head">
+            <div>
+              <span class="comp-no">01 · button</span>
+              <h4>Button<small>按钮 · 主按钮 / 次按钮 / 告警按钮 / 工具栏按钮</small></h4>
+            </div>
+            <div class="demo-pills" role="group" aria-label="Button 预览切换">
+              <button type="button" class="pill-btn" data-set-system="harmony">鸿蒙 2.0</button>
+              <button type="button" class="pill-btn" data-set-system="pc-mac">PC/Mac</button>
+              <span class="pill-sep"></span>
+              <button type="button" class="pill-btn" data-set-theme="dark">深色</button>
+              <button type="button" class="pill-btn" data-set-theme="light">浅色</button>
+              <button type="button" class="pill-btn" data-set-theme="light-contrast">高对比</button>
+            </div>
+          </div>
+          <p class="comp-desc">支持主按钮（Primary）、次按钮（Secondary）、告警按钮（Danger/Alarm）、工具栏按钮（Toolbar）与安静按钮（Quiet）。鸿蒙原生端高 34vp、圆角 8vp（次按钮为 10% 叠加底配品牌蓝字 #0A59F7/#5291FF，告警按钮为 10% 叠加底配红字 #E84026/#D94838）；PC/Mac 端高 28px（紧凑 24px）、圆角 4px。</p>
+          <div data-live="" class="stage comp-stage" data-system="harmony" data-theme="dark">
+            <div class="de-row">
       <button type="button" class="de-button de-button--primary de-button--m"><span class="de-button__label">Confirm (主按钮)</span></button>
       <button type="button" class="de-button de-button--secondary de-button--m"><span class="de-button__label">Cancel (次按钮)</span></button>
       <button type="button" class="de-button de-button--danger de-button--m"><span class="de-button__label">Alarm (告警按钮)</span></button>
@@ -65,80 +934,76 @@
       <button type="button" class="de-button de-button--primary de-button--s"><span class="de-button__label">Slim / S</span></button>
       <button type="button" class="de-button de-button--primary de-button--m" disabled><span class="de-button__label">Disabled</span></button>
     </div>
-      </div>
-      <h2>用法</h2>
-      <pre><code>import { Button } from &quot;./button&quot;;
+          </div>
+          <div class="comp-meta-grid">
+            <div class="codebox"><span class="file">React / TSX 调用示例</span>import { Button } from &quot;./button&quot;;
 
 &lt;Button variant=&quot;primary&quot;&gt;Confirm&lt;/Button&gt;
 &lt;Button variant=&quot;secondary&quot;&gt;Cancel&lt;/Button&gt;
 &lt;Button variant=&quot;danger&quot;&gt;Alarm&lt;/Button&gt;
-&lt;Button variant=&quot;toolbar&quot; icon={&lt;IconPlus /&gt;}&gt;Create Files&lt;/Button&gt;</code></pre>
-      <h2>API</h2>
-      <table>
-        <thead><tr><th>Prop / 组件</th><th>类型</th><th>默认</th><th>说明</th></tr></thead>
+&lt;Button variant=&quot;toolbar&quot; icon={&lt;IconPlus /&gt;}&gt;Create Files&lt;/Button&gt;</div>
+            <div class="comp-spec-wrap"><table class="comp-spec-table"><thead><tr><th>Prop / 组件</th><th>类型</th><th>默认</th><th>说明</th></tr></thead>
         <tbody>
           <tr><td><code>variant</code></td><td><code>&quot;primary&quot; | &quot;secondary&quot; | &quot;danger&quot; | &quot;toolbar&quot; | &quot;quiet&quot; | &quot;solid&quot;</code></td><td>&quot;secondary&quot;</td><td>对应 Pixso 1-主按钮 / 2-次按钮 / 3-告警按钮 / 4-图标文字按钮</td></tr><tr><td><code>size</code></td><td><code>&quot;s&quot; | &quot;m&quot;</code></td><td>&quot;m&quot;</td><td>鸿蒙端 28vp / 34vp；PC/Mac 端 24px / 28px</td></tr><tr><td><code>icon</code></td><td><code>ReactNode</code></td><td>—</td><td>可选前置图标</td></tr><tr><td><code>…button</code></td><td><code>ButtonHTMLAttributes</code></td><td>type=&quot;button&quot;</td><td>原生 button 属性</td></tr>
-        </tbody>
-      </table>
-      <h2>Pixso 源文件对齐说明</h2>
-      <ul>
-        <li>鸿蒙原生端（鸿蒙IDE_v1.1.0_PC端组件库.pix · 4.1按钮）：高 34vp，圆角 8vp，字号 16vp。1-主按钮浅色 #0A59F7（悬停 #236AF8）、深色 #317AF7（悬停 #2C6EDE）、置灰 40%；2-次按钮采用 10% 叠加底 + 品牌蓝文字；3-告警按钮采用 10% 叠加底 + 告警红文字（#E84026 / #D94838）。</li>
-        <li>PC/Mac 当代桌面端（【NewUI】鸿蒙IDE-当代.pix · Button 页）：Default 高 28px、Slim 高 24px，圆角 4px，字号 13px。Primary 为 #3574F0 实心蓝，Secondary 为 1px 描边（#C9CCD6 / #4E5157），Danger 为 #DB3B4B / #DB5C5C。</li>
-      </ul>
-    </article>
-<article class="content" id="component-icon-button" data-demo>
-      <p class="kicker">组件文档 · icon-button</p>
-      <h1>IconButton</h1>
-      <p class="desc">纯图标触发器。支持 M（32×32 r=6，用于侧边工具条 ToolStripe 与主工具栏）和 S（24×24 r=4，用于面板标题栏与内联操作）。</p>
-      <h2>示例</h2>
-      <div class="demo-bar">
-        <button type="button" data-set-system="harmony">鸿蒙原生 (HDesign 2.0)</button>
-        <button type="button" data-set-system="pc-mac">PC / Mac (NewUI)</button>
-        <button type="button" data-set-theme="dark">深色</button>
-        <button type="button" data-set-theme="light">浅色</button>
-        <button type="button" data-set-theme="light-contrast">浅色高对比</button>
-      </div>
-      <div data-live="" class="stage" data-system="harmony" data-theme="dark">
-        <div class="de-row">
+        </tbody></table></div>
+          </div>
+        </article>
+
+        <article class="card comp-card" id="component-icon-button" data-demo>
+          <div class="comp-head">
+            <div>
+              <span class="comp-no">02 · icon-button</span>
+              <h4>IconButton<small>图标按钮 · 32×32 (M) / 24×24 (S)</small></h4>
+            </div>
+            <div class="demo-pills" role="group" aria-label="IconButton 预览切换">
+              <button type="button" class="pill-btn" data-set-system="harmony">鸿蒙 2.0</button>
+              <button type="button" class="pill-btn" data-set-system="pc-mac">PC/Mac</button>
+              <span class="pill-sep"></span>
+              <button type="button" class="pill-btn" data-set-theme="dark">深色</button>
+              <button type="button" class="pill-btn" data-set-theme="light">浅色</button>
+              <button type="button" class="pill-btn" data-set-theme="light-contrast">高对比</button>
+            </div>
+          </div>
+          <p class="comp-desc">纯图标触发器。支持 M（32×32 r=6，用于侧边工具条 ToolStripe 与主工具栏）和 S（24×24 r=4，用于面板标题栏与内联操作）。</p>
+          <div data-live="" class="stage comp-stage" data-system="harmony" data-theme="dark">
+            <div class="de-row">
       <button type="button" class="de-icon-button de-icon-button--m" aria-label="构建">🔨</button>
       <button type="button" class="de-icon-button de-icon-button--m" aria-label="运行" aria-pressed="true">▶</button>
       <button type="button" class="de-icon-button de-icon-button--m" aria-label="调试">🐞</button>
       <button type="button" class="de-icon-button de-icon-button--s" aria-label="搜索"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><circle cx="7" cy="7" r="4.2" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M10.2 10.2 13.5 13.5" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></button>
       <button type="button" class="de-icon-button de-icon-button--s" aria-label="关闭" disabled>×</button>
     </div>
-      </div>
-      <h2>用法</h2>
-      <pre><code>import { IconButton } from &quot;./icon-button&quot;;
+          </div>
+          <div class="comp-meta-grid">
+            <div class="codebox"><span class="file">React / TSX 调用示例</span>import { IconButton } from &quot;./icon-button&quot;;
 
 &lt;IconButton label=&quot;运行&quot; icon={&lt;IconPlay /&gt;} pressed /&gt;
-&lt;IconButton size=&quot;s&quot; label=&quot;关闭&quot; icon={&lt;IconClose /&gt;} /&gt;</code></pre>
-      <h2>API</h2>
-      <table>
-        <thead><tr><th>Prop / 组件</th><th>类型</th><th>默认</th><th>说明</th></tr></thead>
+&lt;IconButton size=&quot;s&quot; label=&quot;关闭&quot; icon={&lt;IconClose /&gt;} /&gt;</div>
+            <div class="comp-spec-wrap"><table class="comp-spec-table"><thead><tr><th>Prop / 组件</th><th>类型</th><th>默认</th><th>说明</th></tr></thead>
         <tbody>
           <tr><td><code>label</code></td><td><code>string</code></td><td>必填</td><td>写入 aria-label</td></tr><tr><td><code>icon</code></td><td><code>ReactNode</code></td><td>必填</td><td>图标节点（鸿蒙端 20px/24px，PC/Mac 端 16px）</td></tr><tr><td><code>size</code></td><td><code>&quot;s&quot; | &quot;m&quot;</code></td><td>&quot;m&quot;</td><td>24×24 (r=4) 或 32×32 (r=6)</td></tr><tr><td><code>pressed</code></td><td><code>boolean</code></td><td>false</td><td>激活/当前项状态（aria-pressed）</td></tr>
-        </tbody>
-      </table>
-      <h2>Pixso 源文件对齐说明</h2>
-      <ul>
-        <li>鸿蒙原生端（4.2图标组 & 3.3侧边工具栏）：图标 20vp、热区 24×24 r=4vp（S），侧边工具栏 32×32 r=6vp（M）。悬停 10% 叠加底，按下 15% 叠加底，激活 40% 品牌蓝（#0A59F7 / #317AF7）。</li>
-        <li>PC/Mac 端：侧边工具条选中态填充 #3574F0 主蓝并反白图标。</li>
-      </ul>
-    </article>
-<article class="content" id="component-search-field" data-demo>
-      <p class="kicker">组件文档 · search-field</p>
-      <h1>SearchField</h1>
-      <p class="desc">搜索输入框（高 28px，圆角 4px）。支持默认、悬停、激活（聚焦描边）与置灰状态。</p>
-      <h2>示例</h2>
-      <div class="demo-bar">
-        <button type="button" data-set-system="harmony">鸿蒙原生 (HDesign 2.0)</button>
-        <button type="button" data-set-system="pc-mac">PC / Mac (NewUI)</button>
-        <button type="button" data-set-theme="dark">深色</button>
-        <button type="button" data-set-theme="light">浅色</button>
-        <button type="button" data-set-theme="light-contrast">浅色高对比</button>
-      </div>
-      <div data-live="" class="stage" data-system="harmony" data-theme="dark">
-        <div class="de-row">
+        </tbody></table></div>
+          </div>
+        </article>
+
+        <article class="card comp-card" id="component-search-field" data-demo>
+          <div class="comp-head">
+            <div>
+              <span class="comp-no">03 · search-field</span>
+              <h4>SearchField<small>搜索框 · 28px 高 / 5% 叠底或 1px 描边</small></h4>
+            </div>
+            <div class="demo-pills" role="group" aria-label="SearchField 预览切换">
+              <button type="button" class="pill-btn" data-set-system="harmony">鸿蒙 2.0</button>
+              <button type="button" class="pill-btn" data-set-system="pc-mac">PC/Mac</button>
+              <span class="pill-sep"></span>
+              <button type="button" class="pill-btn" data-set-theme="dark">深色</button>
+              <button type="button" class="pill-btn" data-set-theme="light">浅色</button>
+              <button type="button" class="pill-btn" data-set-theme="light-contrast">高对比</button>
+            </div>
+          </div>
+          <p class="comp-desc">搜索输入框（高 28px，圆角 4px）。支持默认、悬停、激活（聚焦描边）与置灰状态。</p>
+          <div data-live="" class="stage comp-stage" data-system="harmony" data-theme="dark">
+            <div class="de-row">
       <label class="de-search" style="width:240px">
         <span class="de-icon"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><circle cx="7" cy="7" r="4.2" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M10.2 10.2 13.5 13.5" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></span>
         <input type="search" placeholder="Search..." aria-label="默认搜索">
@@ -152,38 +1017,36 @@
         <input type="search" placeholder="禁用状态" disabled aria-label="禁用搜索">
       </label>
     </div>
-      </div>
-      <h2>用法</h2>
-      <pre><code>import { SearchField } from &quot;./search-field&quot;;
+          </div>
+          <div class="comp-meta-grid">
+            <div class="codebox"><span class="file">React / TSX 调用示例</span>import { SearchField } from &quot;./search-field&quot;;
 
-&lt;SearchField placeholder=&quot;Search...&quot; /&gt;</code></pre>
-      <h2>API</h2>
-      <table>
-        <thead><tr><th>Prop / 组件</th><th>类型</th><th>默认</th><th>说明</th></tr></thead>
+&lt;SearchField placeholder=&quot;Search...&quot; /&gt;</div>
+            <div class="comp-spec-wrap"><table class="comp-spec-table"><thead><tr><th>Prop / 组件</th><th>类型</th><th>默认</th><th>说明</th></tr></thead>
         <tbody>
           <tr><td><code>label</code></td><td><code>string</code></td><td>&quot;搜索&quot;</td><td>无障碍读屏标签</td></tr><tr><td><code>icon</code></td><td><code>ReactNode</code></td><td>搜索图标</td><td>前置图标</td></tr><tr><td><code>…input</code></td><td><code>InputHTMLAttributes</code></td><td>type=&quot;search&quot;</td><td>透传给原生 input</td></tr>
-        </tbody>
-      </table>
-      <h2>Pixso 源文件对齐说明</h2>
-      <ul>
-        <li>鸿蒙原生端（4.3搜索 400×28 r=4）：默认采用 5% 叠加底（浅色 #000 5%、深色 #FFF 5%）无描边；悬停为 15% 叠加底；激活/输入中增加 1px #0A59F7 / #317AF7 描边；置灰为 5% 底 + 10% 描边。</li>
-        <li>PC/Mac 端（NewUI Search）：白底 / #2B2D30 底 + 1px #C9CCD6 / #4E5157 描边。</li>
-      </ul>
-    </article>
-<article class="content" id="component-text-input" data-demo>
-      <p class="kicker">组件文档 · text-input</p>
-      <h1>TextInput</h1>
-      <p class="desc">单行文本输入与表单校验反馈。支持默认、激活、禁用与报错态（配 4.6报错tips 警示条）。</p>
-      <h2>示例</h2>
-      <div class="demo-bar">
-        <button type="button" data-set-system="harmony">鸿蒙原生 (HDesign 2.0)</button>
-        <button type="button" data-set-system="pc-mac">PC / Mac (NewUI)</button>
-        <button type="button" data-set-theme="dark">深色</button>
-        <button type="button" data-set-theme="light">浅色</button>
-        <button type="button" data-set-theme="light-contrast">浅色高对比</button>
-      </div>
-      <div data-live="" class="stage" data-system="harmony" data-theme="dark">
-        <div style="display:flex;flex-direction:column;gap:14px;max-width:420px">
+        </tbody></table></div>
+          </div>
+        </article>
+
+        <article class="card comp-card" id="component-text-input" data-demo>
+          <div class="comp-head">
+            <div>
+              <span class="comp-no">04 · text-input</span>
+              <h4>TextInput & ErrorTip<small>单行文本输入与 4.6 报错气泡</small></h4>
+            </div>
+            <div class="demo-pills" role="group" aria-label="TextInput & ErrorTip 预览切换">
+              <button type="button" class="pill-btn" data-set-system="harmony">鸿蒙 2.0</button>
+              <button type="button" class="pill-btn" data-set-system="pc-mac">PC/Mac</button>
+              <span class="pill-sep"></span>
+              <button type="button" class="pill-btn" data-set-theme="dark">深色</button>
+              <button type="button" class="pill-btn" data-set-theme="light">浅色</button>
+              <button type="button" class="pill-btn" data-set-theme="light-contrast">高对比</button>
+            </div>
+          </div>
+          <p class="comp-desc">单行文本输入与表单校验反馈。支持默认、激活、禁用与报错态（配 4.6报错tips 警示条）。</p>
+          <div data-live="" class="stage comp-stage" data-system="harmony" data-theme="dark">
+            <div style="display:flex;flex-direction:column;gap:14px;max-width:420px">
       <div class="de-field de-field--inline">
         <span class="de-field__label">set-01</span>
         <span class="de-input" style="flex:1"><input value="MyApplication" aria-label="工程名"></span>
@@ -196,9 +1059,9 @@
         </div>
       </div>
     </div>
-      </div>
-      <h2>用法</h2>
-      <pre><code>import { TextInput } from &quot;./text-input&quot;;
+          </div>
+          <div class="comp-meta-grid">
+            <div class="codebox"><span class="file">React / TSX 调用示例</span>import { TextInput } from &quot;./text-input&quot;;
 
 &lt;TextInput label=&quot;工程名&quot; defaultValue=&quot;MyApplication&quot; /&gt;
 &lt;TextInput
@@ -206,33 +1069,32 @@
   state=&quot;error&quot;
   defaultValue=&quot;entry@invalid&quot;
   errorTip=&quot;报错内容显示：模块名不能包含特殊字符&quot;
-/&gt;</code></pre>
-      <h2>API</h2>
-      <table>
-        <thead><tr><th>Prop / 组件</th><th>类型</th><th>默认</th><th>说明</th></tr></thead>
+/&gt;</div>
+            <div class="comp-spec-wrap"><table class="comp-spec-table"><thead><tr><th>Prop / 组件</th><th>类型</th><th>默认</th><th>说明</th></tr></thead>
         <tbody>
           <tr><td><code>label</code></td><td><code>ReactNode</code></td><td>—</td><td>字段标签</td></tr><tr><td><code>state</code></td><td><code>&quot;default&quot; | &quot;active&quot; | &quot;error&quot;</code></td><td>&quot;default&quot;</td><td>报错态使用 #CF3922 (浅) / #D94838 (深) 描边</td></tr><tr><td><code>errorTip</code></td><td><code>ReactNode</code></td><td>—</td><td>4.6报错tips（高 28vp，r=4vp，浅色 #FBE0DC / 深色 #4E3231）</td></tr><tr><td><code>inline</code></td><td><code>boolean</code></td><td>false</td><td>是否采用水平表单布局</td></tr>
-        </tbody>
-      </table>
-      <h2>Pixso 源文件对齐说明</h2>
-      <ul>
-        <li>直接对齐 鸿蒙IDE_v1.1.0_PC端组件库.pix 中的 10.规范/验证错误 与 4.4单行文本输入 + 4.6报错tips，不再留白缺口。</li>
-      </ul>
-    </article>
-<article class="content" id="component-selection" data-demo>
-      <p class="kicker">组件文档 · selection</p>
-      <h1>Select / Checkbox / Radio / Switch / Segmented</h1>
-      <p class="desc">完整涵盖下拉选择框（4.5）、数值微调器（4.8）、复选框与单选框（4.9）、开关（Switch 28×18）与分段控制器（页签/选择器）。</p>
-      <h2>示例</h2>
-      <div class="demo-bar">
-        <button type="button" data-set-system="harmony">鸿蒙原生 (HDesign 2.0)</button>
-        <button type="button" data-set-system="pc-mac">PC / Mac (NewUI)</button>
-        <button type="button" data-set-theme="dark">深色</button>
-        <button type="button" data-set-theme="light">浅色</button>
-        <button type="button" data-set-theme="light-contrast">浅色高对比</button>
-      </div>
-      <div data-live="" class="stage" data-system="harmony" data-theme="dark">
-        <div style="display:flex;flex-direction:column;gap:14px">
+        </tbody></table></div>
+          </div>
+        </article>
+
+        <article class="card comp-card wide" id="component-selection" data-demo>
+          <div class="comp-head">
+            <div>
+              <span class="comp-no">05 · selection</span>
+              <h4>Selection<small>复选框 / 单选框 / Switch 开关 / 下拉与分段选择</small></h4>
+            </div>
+            <div class="demo-pills" role="group" aria-label="Selection 预览切换">
+              <button type="button" class="pill-btn" data-set-system="harmony">鸿蒙 2.0</button>
+              <button type="button" class="pill-btn" data-set-system="pc-mac">PC/Mac</button>
+              <span class="pill-sep"></span>
+              <button type="button" class="pill-btn" data-set-theme="dark">深色</button>
+              <button type="button" class="pill-btn" data-set-theme="light">浅色</button>
+              <button type="button" class="pill-btn" data-set-theme="light-contrast">高对比</button>
+            </div>
+          </div>
+          <p class="comp-desc">完整涵盖下拉选择框（4.5）、数值微调器（4.8）、复选框与单选框（4.9）、开关（Switch 28×18）与分段控制器（页签/选择器）。</p>
+          <div data-live="" class="stage comp-stage" data-system="harmony" data-theme="dark">
+            <div style="display:flex;flex-direction:column;gap:14px">
       <div class="de-row">
         <span class="de-select" style="width:220px">
           <select aria-label="Target SDK"><option>HarmonyOS 6.0 (API 20)</option><option>HarmonyOS 5.0 (API 14)</option></select>
@@ -258,39 +1120,38 @@
         </div>
       </div>
     </div>
-      </div>
-      <h2>用法</h2>
-      <pre><code>import { SelectField, Checkbox, Radio, Switch, SegmentedControl, SpinnerField } from &quot;./selection&quot;;
+          </div>
+          <div class="comp-meta-grid">
+            <div class="codebox"><span class="file">React / TSX 调用示例</span>import { SelectField, Checkbox, Radio, Switch, SegmentedControl, SpinnerField } from &quot;./selection&quot;;
 
 &lt;SelectField&gt;&lt;option&gt;HarmonyOS 6.0&lt;/option&gt;&lt;/SelectField&gt;
 &lt;Checkbox label=&quot;开启 AI 代码补全&quot; defaultChecked /&gt;
-&lt;Switch label=&quot;LSP 实时检查&quot; defaultChecked /&gt;</code></pre>
-      <h2>API</h2>
-      <table>
-        <thead><tr><th>Prop / 组件</th><th>类型</th><th>默认</th><th>说明</th></tr></thead>
+&lt;Switch label=&quot;LSP 实时检查&quot; defaultChecked /&gt;</div>
+            <div class="comp-spec-wrap"><table class="comp-spec-table"><thead><tr><th>Prop / 组件</th><th>类型</th><th>默认</th><th>说明</th></tr></thead>
         <tbody>
           <tr><td><code>SelectField</code></td><td><code>label, disabled, children</code></td><td>—</td><td>4.5下拉选择（28px 高，r=4px）</td></tr><tr><td><code>Checkbox / Radio</code></td><td><code>label, checked, disabled</code></td><td>—</td><td>4.9选择项（鸿蒙端 20×20，PC/Mac 端 16×16）</td></tr><tr><td><code>Switch</code></td><td><code>label, checked, disabled</code></td><td>—</td><td>Switch（28×18 r=25，圆点 14×14，激活 #0A59F7/#317AF7）</td></tr><tr><td><code>SegmentedControl</code></td><td><code>options, value, onChange</code></td><td>—</td><td>页签/选择器（28px 高 r=6px，内嵌 24px r=4px 选中项）</td></tr>
-        </tbody>
-      </table>
-      <h2>Pixso 源文件对齐说明</h2>
-      <ul>
-        <li>Switch 直接取自 鸿蒙IDE_v1.1.0_PC端组件库.pix 的 1.图标 > Switch（8 个变体：深色模式 on/off × 开关 on/off × 可用 on/off，尺寸 28×18，滑块 14×14）。</li>
-      </ul>
-    </article>
-<article class="content" id="component-dialog" data-demo>
-      <p class="kicker">组件文档 · dialog</p>
-      <h1>Dialog / Notification / Banner</h1>
-      <p class="desc">模态弹窗（Dialog）、右下角通知气泡（Notification）与顶部状态横幅（Banner）。已完整合入 ohos_id_color_dialog_bg 与 Elevation 55 / 70 阴影公式。</p>
-      <h2>示例</h2>
-      <div class="demo-bar">
-        <button type="button" data-set-system="harmony">鸿蒙原生 (HDesign 2.0)</button>
-        <button type="button" data-set-system="pc-mac">PC / Mac (NewUI)</button>
-        <button type="button" data-set-theme="dark">深色</button>
-        <button type="button" data-set-theme="light">浅色</button>
-        <button type="button" data-set-theme="light-contrast">浅色高对比</button>
-      </div>
-      <div data-live="" class="stage" data-system="harmony" data-theme="dark">
-        <div style="display:flex;flex-direction:column;gap:16px">
+        </tbody></table></div>
+          </div>
+        </article>
+
+        <article class="card comp-card wide" id="component-dialog" data-demo>
+          <div class="comp-head">
+            <div>
+              <span class="comp-no">06 · dialog</span>
+              <h4>Dialog & Notification<small>模态弹窗 (r=16vp) / 通知卡 (r=12vp) / 横幅</small></h4>
+            </div>
+            <div class="demo-pills" role="group" aria-label="Dialog & Notification 预览切换">
+              <button type="button" class="pill-btn" data-set-system="harmony">鸿蒙 2.0</button>
+              <button type="button" class="pill-btn" data-set-system="pc-mac">PC/Mac</button>
+              <span class="pill-sep"></span>
+              <button type="button" class="pill-btn" data-set-theme="dark">深色</button>
+              <button type="button" class="pill-btn" data-set-theme="light">浅色</button>
+              <button type="button" class="pill-btn" data-set-theme="light-contrast">高对比</button>
+            </div>
+          </div>
+          <p class="comp-desc">模态弹窗（Dialog）、右下角通知气泡（Notification）与顶部状态横幅（Banner）。已完整合入 ohos_id_color_dialog_bg 与 Elevation 55 / 70 阴影公式。</p>
+          <div data-live="" class="stage comp-stage" data-system="harmony" data-theme="dark">
+            <div style="display:flex;flex-direction:column;gap:16px">
       <div class="de-banner" data-tone="info">
         <span><strong>Info 横幅 (6.6横幅/sync)：</strong>工程 Gradle/Hvigor 配置已更新，是否立即同步？</span>
         <button type="button" class="de-button de-button--primary de-button--s">Sync</button>
@@ -328,41 +1189,39 @@
         </article>
       </div>
     </div>
-      </div>
-      <h2>用法</h2>
-      <pre><code>import { Dialog, Notification, Banner } from &quot;./dialog&quot;;
+          </div>
+          <div class="comp-meta-grid">
+            <div class="codebox"><span class="file">React / TSX 调用示例</span>import { Dialog, Notification, Banner } from &quot;./dialog&quot;;
 
 &lt;Banner tone=&quot;info&quot;&gt;工程配置已更新&lt;/Banner&gt;
 &lt;Dialog title=&quot;删除模块确认&quot; footer={&lt;&gt;&lt;Button variant=&quot;secondary&quot;&gt;Cancel&lt;/Button&gt;&lt;Button variant=&quot;danger&quot;&gt;Delete&lt;/Button&gt;&lt;/&gt;}&gt;
   确定要移除模块吗？
-&lt;/Dialog&gt;</code></pre>
-      <h2>API</h2>
-      <table>
-        <thead><tr><th>Prop / 组件</th><th>类型</th><th>默认</th><th>说明</th></tr></thead>
+&lt;/Dialog&gt;</div>
+            <div class="comp-spec-wrap"><table class="comp-spec-table"><thead><tr><th>Prop / 组件</th><th>类型</th><th>默认</th><th>说明</th></tr></thead>
         <tbody>
           <tr><td><code>Dialog</code></td><td><code>title, footer, children</code></td><td>—</td><td>6.1 dailog/底版模板（402px/510px，鸿蒙 r=16vp + Elevation 55，PC/Mac r=8px）</td></tr><tr><td><code>Notification</code></td><td><code>title, actions, children</code></td><td>—</td><td>6.3 notification/气泡（344×118，r=12vp）</td></tr><tr><td><code>Banner</code></td><td><code>tone: &quot;info&quot; | &quot;success&quot; | &quot;warning&quot; | &quot;error&quot;</code></td><td>&quot;info&quot;</td><td>6.6 横幅/sync &amp; 报错（高 40vp/60vp，r=8vp）</td></tr>
-        </tbody>
-      </table>
-      <h2>Pixso 源文件对齐说明</h2>
-      <ul>
-        <li>ohos_id_color_dialog_bg 已从 PC端组件库 d82f0c5a...png 核实：浅色 #FFFFFF（面板 #F0F2F4/#F1F3F5）、深色 #202224（弹窗底 #2B2E30）、抬升深色 #3C3C3C。</li>
-        <li>Elevation 55（弹窗失焦 FloatShadowS）：0 10px 55px rgba(0,0,30,0.25)（浅）/ rgba(0,0,0,0.30)（深）；Elevation 70（弹窗聚焦 FloatShadowM）：0 10px 70px rgba(0,0,30,0.45)（浅）/ rgba(0,0,0,0.50)（深）。</li>
-      </ul>
-    </article>
-<article class="content" id="component-menu" data-demo>
-      <p class="kicker">组件文档 · menu</p>
-      <h1>Menu</h1>
-      <p class="desc">上下文右键菜单与下拉菜单面板（底板 r=8vp、双描边、defaultShadowS_PC 阴影，菜单项高 28vp r=4vp）。</p>
-      <h2>示例</h2>
-      <div class="demo-bar">
-        <button type="button" data-set-system="harmony">鸿蒙原生 (HDesign 2.0)</button>
-        <button type="button" data-set-system="pc-mac">PC / Mac (NewUI)</button>
-        <button type="button" data-set-theme="dark">深色</button>
-        <button type="button" data-set-theme="light">浅色</button>
-        <button type="button" data-set-theme="light-contrast">浅色高对比</button>
-      </div>
-      <div data-live="" class="stage" data-system="harmony" data-theme="dark">
-        <div class="de-row" style="align-items:flex-start;gap:24px">
+        </tbody></table></div>
+          </div>
+        </article>
+
+        <article class="card comp-card" id="component-menu" data-demo>
+          <div class="comp-head">
+            <div>
+              <span class="comp-no">07 · menu</span>
+              <h4>Menu<small>悬浮菜单 · 8vp 圆角 / 双描边 / defaultShadowS_PC</small></h4>
+            </div>
+            <div class="demo-pills" role="group" aria-label="Menu 预览切换">
+              <button type="button" class="pill-btn" data-set-system="harmony">鸿蒙 2.0</button>
+              <button type="button" class="pill-btn" data-set-system="pc-mac">PC/Mac</button>
+              <span class="pill-sep"></span>
+              <button type="button" class="pill-btn" data-set-theme="dark">深色</button>
+              <button type="button" class="pill-btn" data-set-theme="light">浅色</button>
+              <button type="button" class="pill-btn" data-set-theme="light-contrast">高对比</button>
+            </div>
+          </div>
+          <p class="comp-desc">上下文右键菜单与下拉菜单面板（底板 r=8vp、双描边、defaultShadowS_PC 阴影，菜单项高 28vp r=4vp）。</p>
+          <div data-live="" class="stage comp-stage" data-system="harmony" data-theme="dark">
+            <div class="de-row" style="align-items:flex-start;gap:24px">
       <ul class="de-menu" role="menu" style="width:240px">
         <li role="none"><button type="button" role="menuitem" class="de-menu__item" aria-current="true"><span class="de-menu__label">新建 ArkTS File</span><span class="de-menu__shortcut">⌘N</span></button></li>
         <li role="none"><button type="button" role="menuitem" class="de-menu__item"><span class="de-menu__label">重构 (Refactor)</span><span class="de-menu__shortcut">⌃T</span></button></li>
@@ -371,79 +1230,77 @@
         <li role="none"><button type="button" role="menuitem" class="de-menu__item"><span class="de-menu__label">在 Finder 中显示</span></button></li>
       </ul>
     </div>
-      </div>
-      <h2>用法</h2>
-      <pre><code>import { Menu, MenuItem, MenuSeparator } from &quot;./menu&quot;;
+          </div>
+          <div class="comp-meta-grid">
+            <div class="codebox"><span class="file">React / TSX 调用示例</span>import { Menu, MenuItem, MenuSeparator } from &quot;./menu&quot;;
 
 &lt;Menu&gt;
   &lt;MenuItem current shortcut=&quot;⌘N&quot;&gt;新建 ArkTS File&lt;/MenuItem&gt;
   &lt;MenuItem shortcut=&quot;⌃T&quot;&gt;重构 (Refactor)&lt;/MenuItem&gt;
   &lt;MenuSeparator /&gt;
   &lt;MenuItem disabled&gt;生成单元测试&lt;/MenuItem&gt;
-&lt;/Menu&gt;</code></pre>
-      <h2>API</h2>
-      <table>
-        <thead><tr><th>Prop / 组件</th><th>类型</th><th>默认</th><th>说明</th></tr></thead>
+&lt;/Menu&gt;</div>
+            <div class="comp-spec-wrap"><table class="comp-spec-table"><thead><tr><th>Prop / 组件</th><th>类型</th><th>默认</th><th>说明</th></tr></thead>
         <tbody>
           <tr><td><code>icon</code></td><td><code>ReactNode</code></td><td>—</td><td>左侧图标</td></tr><tr><td><code>shortcut</code></td><td><code>string</code></td><td>—</td><td>右侧快捷键说明</td></tr><tr><td><code>current</code></td><td><code>boolean</code></td><td>false</td><td>当前高亮项（鸿蒙 40% 品牌蓝，PC/Mac #D4E2FF / #2E436E）</td></tr><tr><td><code>disabled</code></td><td><code>boolean</code></td><td>false</td><td>禁用态（20% 透明度文本）</td></tr>
-        </tbody>
-      </table>
-      <h2>Pixso 源文件对齐说明</h2>
-      <ul>
-        <li>移除了旧版从「备忘录」截图采样的 48px 项高与 #F3F3F3 灰底，恢复为 Pixso 6.4/6.5 Menu 的 28vp 项高与 40% 品牌蓝选中态。</li>
-      </ul>
-    </article>
-<article class="content" id="component-tooltip" data-demo>
-      <p class="kicker">组件文档 · tooltip</p>
-      <h1>Tooltip</h1>
-      <p class="desc">悬停或聚焦控件时显示的轻量化气泡说明（高 28vp，圆角 4vp，浅色 #FFFFFF / 深色 #4D4D4D + 双描边 + y10 阴影）。</p>
-      <h2>示例</h2>
-      <div class="demo-bar">
-        <button type="button" data-set-system="harmony">鸿蒙原生 (HDesign 2.0)</button>
-        <button type="button" data-set-system="pc-mac">PC / Mac (NewUI)</button>
-        <button type="button" data-set-theme="dark">深色</button>
-        <button type="button" data-set-theme="light">浅色</button>
-        <button type="button" data-set-theme="light-contrast">浅色高对比</button>
-      </div>
-      <div data-live="" class="stage" data-system="harmony" data-theme="dark">
-        <div class="de-row" style="padding-bottom:36px">
+        </tbody></table></div>
+          </div>
+        </article>
+
+        <article class="card comp-card" id="component-tooltip" data-demo>
+          <div class="comp-head">
+            <div>
+              <span class="comp-no">08 · tooltip</span>
+              <h4>Tooltip<small>悬停提示气泡 · 28px 高 / 4vp 圆角</small></h4>
+            </div>
+            <div class="demo-pills" role="group" aria-label="Tooltip 预览切换">
+              <button type="button" class="pill-btn" data-set-system="harmony">鸿蒙 2.0</button>
+              <button type="button" class="pill-btn" data-set-system="pc-mac">PC/Mac</button>
+              <span class="pill-sep"></span>
+              <button type="button" class="pill-btn" data-set-theme="dark">深色</button>
+              <button type="button" class="pill-btn" data-set-theme="light">浅色</button>
+              <button type="button" class="pill-btn" data-set-theme="light-contrast">高对比</button>
+            </div>
+          </div>
+          <p class="comp-desc">悬停或聚焦控件时显示的轻量化气泡说明（高 28vp，圆角 4vp，浅色 #FFFFFF / 深色 #4D4D4D + 双描边 + y10 阴影）。</p>
+          <div data-live="" class="stage comp-stage" data-system="harmony" data-theme="dark">
+            <div class="de-row" style="padding-bottom:36px">
       <span class="de-tooltip" data-open="true" data-tooltip="构建并运行当前模块 (⇧F10)">
         <button type="button" class="de-button de-button--secondary de-button--m">▶ Run Entry</button>
       </span>
     </div>
-      </div>
-      <h2>用法</h2>
-      <pre><code>import { Tooltip } from &quot;./tooltip&quot;;
+          </div>
+          <div class="comp-meta-grid">
+            <div class="codebox"><span class="file">React / TSX 调用示例</span>import { Tooltip } from &quot;./tooltip&quot;;
 
 &lt;Tooltip content=&quot;构建并运行当前模块 (⇧F10)&quot;&gt;
   &lt;Button variant=&quot;secondary&quot;&gt;Run Entry&lt;/Button&gt;
-&lt;/Tooltip&gt;</code></pre>
-      <h2>API</h2>
-      <table>
-        <thead><tr><th>Prop / 组件</th><th>类型</th><th>默认</th><th>说明</th></tr></thead>
+&lt;/Tooltip&gt;</div>
+            <div class="comp-spec-wrap"><table class="comp-spec-table"><thead><tr><th>Prop / 组件</th><th>类型</th><th>默认</th><th>说明</th></tr></thead>
         <tbody>
           <tr><td><code>content</code></td><td><code>string</code></td><td>必填</td><td>提示文案</td></tr><tr><td><code>children</code></td><td><code>ReactNode</code></td><td>必填</td><td>触发器元素</td></tr>
-        </tbody>
-      </table>
-      <h2>Pixso 源文件对齐说明</h2>
-      <ul>
-        <li>鸿蒙原生端（6.2Tooltip 247×28 r=4）：浅色底 #FFFFFF（外描边 #000 10%、内描边 #FFF 20%），深色底 #4D4D4D（外描边 #000 40%、内描边 #FFF 20%）。</li>
-      </ul>
-    </article>
-<article class="content" id="component-tabs" data-demo>
-      <p class="kicker">组件文档 · tabs</p>
-      <h1>Tabs</h1>
-      <p class="desc">代码编辑器文件页签条。鸿蒙端高 28vp、圆角 6vp、选中铺 10% 叠加底；PC/Mac 端高 40px、底部 3px #3574F0 激活指示条。</p>
-      <h2>示例</h2>
-      <div class="demo-bar">
-        <button type="button" data-set-system="harmony">鸿蒙原生 (HDesign 2.0)</button>
-        <button type="button" data-set-system="pc-mac">PC / Mac (NewUI)</button>
-        <button type="button" data-set-theme="dark">深色</button>
-        <button type="button" data-set-theme="light">浅色</button>
-        <button type="button" data-set-theme="light-contrast">浅色高对比</button>
-      </div>
-      <div data-live="" class="stage" data-system="harmony" data-theme="dark">
-        <div class="de-tabs" role="tablist" data-tabs>
+        </tbody></table></div>
+          </div>
+        </article>
+
+        <article class="card comp-card wide" id="component-tabs" data-demo>
+          <div class="comp-head">
+            <div>
+              <span class="comp-no">09 · tabs</span>
+              <h4>Tabs<small>编辑器页签 · 鸿蒙 28vp 胶囊 vs NewUI 40px 底条</small></h4>
+            </div>
+            <div class="demo-pills" role="group" aria-label="Tabs 预览切换">
+              <button type="button" class="pill-btn" data-set-system="harmony">鸿蒙 2.0</button>
+              <button type="button" class="pill-btn" data-set-system="pc-mac">PC/Mac</button>
+              <span class="pill-sep"></span>
+              <button type="button" class="pill-btn" data-set-theme="dark">深色</button>
+              <button type="button" class="pill-btn" data-set-theme="light">浅色</button>
+              <button type="button" class="pill-btn" data-set-theme="light-contrast">高对比</button>
+            </div>
+          </div>
+          <p class="comp-desc">代码编辑器文件页签条。鸿蒙端高 28vp、圆角 6vp、选中铺 10% 叠加底；PC/Mac 端高 40px、底部 3px #3574F0 激活指示条。</p>
+          <div data-live="" class="stage comp-stage" data-system="harmony" data-theme="dark">
+            <div class="de-tabs" role="tablist" data-tabs>
       <div class="de-tab" data-selected="true">
         <button type="button" role="tab" class="de-tab__main" aria-selected="true"><span class="de-tree__badge">A</span> EntryAbility.ets</button>
         <button type="button" class="de-tab__close" aria-label="关闭">×</button>
@@ -457,40 +1314,39 @@
         <button type="button" class="de-tab__close" aria-label="关闭">×</button>
       </div>
     </div>
-      </div>
-      <h2>用法</h2>
-      <pre><code>import { Tabs, Tab } from &quot;./tabs&quot;;
+          </div>
+          <div class="comp-meta-grid">
+            <div class="codebox"><span class="file">React / TSX 调用示例</span>import { Tabs, Tab } from &quot;./tabs&quot;;
 
 &lt;Tabs&gt;
   &lt;Tab selected onClose={() =&gt; {}}&gt;EntryAbility.ets&lt;/Tab&gt;
   &lt;Tab onClose={() =&gt; {}}&gt;BadgeCardComponent.cpp&lt;/Tab&gt;
-&lt;/Tabs&gt;</code></pre>
-      <h2>API</h2>
-      <table>
-        <thead><tr><th>Prop / 组件</th><th>类型</th><th>默认</th><th>说明</th></tr></thead>
+&lt;/Tabs&gt;</div>
+            <div class="comp-spec-wrap"><table class="comp-spec-table"><thead><tr><th>Prop / 组件</th><th>类型</th><th>默认</th><th>说明</th></tr></thead>
         <tbody>
           <tr><td><code>selected</code></td><td><code>boolean</code></td><td>false</td><td>是否为当前打开页签</td></tr><tr><td><code>onClose</code></td><td><code>() =&gt; void</code></td><td>—</td><td>关闭按钮回调</td></tr><tr><td><code>closeLabel</code></td><td><code>string</code></td><td>&quot;关闭&quot;</td><td>无障碍标签</td></tr>
-        </tbody>
-      </table>
-      <h2>Pixso 源文件对齐说明</h2>
-      <ul>
-        <li>已从旧版「文本编辑器（文档 1 / 文档 2）」替换为真正的 DevEco IDE 代码页签（7.代码区相关 > 页签 172×28 r=6）。</li>
-      </ul>
-    </article>
-<article class="content" id="component-code-editor" data-demo>
-      <p class="kicker">组件文档 · code-editor</p>
-      <h1>CodeEditor</h1>
-      <p class="desc">带行号排水沟（Gutter）、当前行高亮、右上角语法告警卡片（告警卡片icon）与真实 Pixso 语法高亮色的代码编辑区。</p>
-      <h2>示例</h2>
-      <div class="demo-bar">
-        <button type="button" data-set-system="harmony">鸿蒙原生 (HDesign 2.0)</button>
-        <button type="button" data-set-system="pc-mac">PC / Mac (NewUI)</button>
-        <button type="button" data-set-theme="dark">深色</button>
-        <button type="button" data-set-theme="light">浅色</button>
-        <button type="button" data-set-theme="light-contrast">浅色高对比</button>
-      </div>
-      <div data-live="" class="stage" data-system="harmony" data-theme="dark">
-        <div class="de-window" style="min-height:220px">
+        </tbody></table></div>
+          </div>
+        </article>
+
+        <article class="card comp-card wide" id="component-code-editor" data-demo>
+          <div class="comp-head">
+            <div>
+              <span class="comp-no">10 · code-editor</span>
+              <h4>CodeEditor<small>代码编辑区 · ArkTS 语法高亮与行内告警卡</small></h4>
+            </div>
+            <div class="demo-pills" role="group" aria-label="CodeEditor 预览切换">
+              <button type="button" class="pill-btn" data-set-system="harmony">鸿蒙 2.0</button>
+              <button type="button" class="pill-btn" data-set-system="pc-mac">PC/Mac</button>
+              <span class="pill-sep"></span>
+              <button type="button" class="pill-btn" data-set-theme="dark">深色</button>
+              <button type="button" class="pill-btn" data-set-theme="light">浅色</button>
+              <button type="button" class="pill-btn" data-set-theme="light-contrast">高对比</button>
+            </div>
+          </div>
+          <p class="comp-desc">带行号排水沟（Gutter）、当前行高亮、右上角语法告警卡片（告警卡片icon）与真实 Pixso 语法高亮色的代码编辑区。</p>
+          <div data-live="" class="stage comp-stage" data-system="harmony" data-theme="dark">
+            <div class="de-window" style="min-height:220px">
       <div class="de-code-editor">
         <div class="de-code-alert-card"><span style="color:var(--color-success)">✓</span> 0 告警 · 2 提示</div>
         <div class="de-code-line"><span class="de-code-gutter">1</span><span class="de-code-content"><span class="kw">import</span> UIAbility <span class="kw">from</span> <span class="str">'@ohos.app.ability.UIAbility'</span>;</span></div>
@@ -500,39 +1356,38 @@
         <div class="de-code-line"><span class="de-code-gutter">5</span><span class="de-code-content">&#125;</span></div>
       </div>
     </div>
-      </div>
-      <h2>用法</h2>
-      <pre><code>import { CodeEditor, CodeLine } from &quot;./code-editor&quot;;
+          </div>
+          <div class="comp-meta-grid">
+            <div class="codebox"><span class="file">React / TSX 调用示例</span>import { CodeEditor, CodeLine } from &quot;./code-editor&quot;;
 
 &lt;CodeEditor alertBadge=&quot;✓ 0 告警&quot;&gt;
   &lt;CodeLine lineNumber={1}&gt;&lt;span className=&quot;kw&quot;&gt;import&lt;/span&gt; UIAbility...&lt;/CodeLine&gt;
-&lt;/CodeEditor&gt;</code></pre>
-      <h2>API</h2>
-      <table>
-        <thead><tr><th>Prop / 组件</th><th>类型</th><th>默认</th><th>说明</th></tr></thead>
+&lt;/CodeEditor&gt;</div>
+            <div class="comp-spec-wrap"><table class="comp-spec-table"><thead><tr><th>Prop / 组件</th><th>类型</th><th>默认</th><th>说明</th></tr></thead>
         <tbody>
           <tr><td><code>alertBadge</code></td><td><code>ReactNode</code></td><td>—</td><td>右上角告警状态卡（对应 7.代码区相关 &gt; 告警卡片icon）</td></tr><tr><td><code>lineNumber</code></td><td><code>number</code></td><td>必填</td><td>CodeLine 行号</td></tr><tr><td><code>current</code></td><td><code>boolean</code></td><td>false</td><td>当前光标所在行高亮</td></tr>
-        </tbody>
-      </table>
-      <h2>Pixso 源文件对齐说明</h2>
-      <ul>
-        <li>语法高亮色全部取自 Pixso 共享样式（Editor/Light/*、Editor/Dark/* 与 7.代码区相关：#67AFFF、#40C793、#9A89FF、#E881DB、#F8CD75）。</li>
-      </ul>
-    </article>
-<article class="content" id="component-tree" data-demo>
-      <p class="kicker">组件文档 · tree</p>
-      <h1>Tree</h1>
-      <p class="desc">IDE 工程文件树与结构树。鸿蒙端行高 28vp、圆角 4vp、选中铺 40% 品牌蓝；PC/Mac 端行高 24px、选中铺 #CFDEFC（浅）/ #2E436E（深）。</p>
-      <h2>示例</h2>
-      <div class="demo-bar">
-        <button type="button" data-set-system="harmony">鸿蒙原生 (HDesign 2.0)</button>
-        <button type="button" data-set-system="pc-mac">PC / Mac (NewUI)</button>
-        <button type="button" data-set-theme="dark">深色</button>
-        <button type="button" data-set-theme="light">浅色</button>
-        <button type="button" data-set-theme="light-contrast">浅色高对比</button>
-      </div>
-      <div data-live="" class="stage" data-system="harmony" data-theme="dark">
-        <ul class="de-tree" style="max-width:360px">
+        </tbody></table></div>
+          </div>
+        </article>
+
+        <article class="card comp-card" id="component-tree" data-demo>
+          <div class="comp-head">
+            <div>
+              <span class="comp-no">11 · tree</span>
+              <h4>Tree<small>工程文件树 · 28vp / 24px 行高 + 矢量文件夹与扩展名徽标</small></h4>
+            </div>
+            <div class="demo-pills" role="group" aria-label="Tree 预览切换">
+              <button type="button" class="pill-btn" data-set-system="harmony">鸿蒙 2.0</button>
+              <button type="button" class="pill-btn" data-set-system="pc-mac">PC/Mac</button>
+              <span class="pill-sep"></span>
+              <button type="button" class="pill-btn" data-set-theme="dark">深色</button>
+              <button type="button" class="pill-btn" data-set-theme="light">浅色</button>
+              <button type="button" class="pill-btn" data-set-theme="light-contrast">高对比</button>
+            </div>
+          </div>
+          <p class="comp-desc">IDE 工程文件树与结构树。鸿蒙端行高 28vp、圆角 4vp、选中铺 40% 品牌蓝；PC/Mac 端行高 24px、选中铺 #CFDEFC（浅）/ #2E436E（深）。</p>
+          <div data-live="" class="stage comp-stage" data-system="harmony" data-theme="dark">
+            <ul class="de-tree" style="max-width:360px">
       <li>
         <details class="de-tree__node" open>
           <summary class="de-tree__row">
@@ -558,41 +1413,40 @@
         </details>
       </li>
     </ul>
-      </div>
-      <h2>用法</h2>
-      <pre><code>import { Tree, TreeItem } from &quot;./tree&quot;;
+          </div>
+          <div class="comp-meta-grid">
+            <div class="codebox"><span class="file">React / TSX 调用示例</span>import { Tree, TreeItem } from &quot;./tree&quot;;
 
 &lt;Tree&gt;
   &lt;TreeItem label=&quot;MyApplication&quot; defaultOpen&gt;
     &lt;TreeItem label=&quot;EntryAbility.ets&quot; selected /&gt;
   &lt;/TreeItem&gt;
-&lt;/Tree&gt;</code></pre>
-      <h2>API</h2>
-      <table>
-        <thead><tr><th>Prop / 组件</th><th>类型</th><th>默认</th><th>说明</th></tr></thead>
+&lt;/Tree&gt;</div>
+            <div class="comp-spec-wrap"><table class="comp-spec-table"><thead><tr><th>Prop / 组件</th><th>类型</th><th>默认</th><th>说明</th></tr></thead>
         <tbody>
           <tr><td><code>label</code></td><td><code>ReactNode</code></td><td>必填</td><td>节点名称</td></tr><tr><td><code>selected</code></td><td><code>boolean</code></td><td>false</td><td>选中态</td></tr><tr><td><code>defaultOpen</code></td><td><code>boolean</code></td><td>false</td><td>默认展开目录</td></tr><tr><td><code>count</code></td><td><code>ReactNode</code></td><td>—</td><td>右侧补充说明（Descriptive）</td></tr>
-        </tbody>
-      </table>
-      <h2>Pixso 源文件对齐说明</h2>
-      <ul>
-        <li>移除了旧版误把设计稿目录截图「6、模块流程 > Search > 1.搜索视觉样式dark」当成文件树示例的问题，改为真实鸿蒙工程结构。</li>
-      </ul>
-    </article>
-<article class="content" id="component-toolbar" data-demo>
-      <p class="kicker">组件文档 · toolbar</p>
-      <h1>Toolbar</h1>
-      <p class="desc">工具窗口顶部栏与操作条（高 40px，底部分割线 1px）。</p>
-      <h2>示例</h2>
-      <div class="demo-bar">
-        <button type="button" data-set-system="harmony">鸿蒙原生 (HDesign 2.0)</button>
-        <button type="button" data-set-system="pc-mac">PC / Mac (NewUI)</button>
-        <button type="button" data-set-theme="dark">深色</button>
-        <button type="button" data-set-theme="light">浅色</button>
-        <button type="button" data-set-theme="light-contrast">浅色高对比</button>
-      </div>
-      <div data-live="" class="stage" data-system="harmony" data-theme="dark">
-        <div class="de-toolbar" role="toolbar" aria-label="构建工具栏">
+        </tbody></table></div>
+          </div>
+        </article>
+
+        <article class="card comp-card" id="component-toolbar" data-demo>
+          <div class="comp-head">
+            <div>
+              <span class="comp-no">12 · toolbar</span>
+              <h4>Toolbar<small>主工具栏与面板标题栏 · 40px 高</small></h4>
+            </div>
+            <div class="demo-pills" role="group" aria-label="Toolbar 预览切换">
+              <button type="button" class="pill-btn" data-set-system="harmony">鸿蒙 2.0</button>
+              <button type="button" class="pill-btn" data-set-system="pc-mac">PC/Mac</button>
+              <span class="pill-sep"></span>
+              <button type="button" class="pill-btn" data-set-theme="dark">深色</button>
+              <button type="button" class="pill-btn" data-set-theme="light">浅色</button>
+              <button type="button" class="pill-btn" data-set-theme="light-contrast">高对比</button>
+            </div>
+          </div>
+          <p class="comp-desc">工具窗口顶部栏与操作条（高 40px，底部分割线 1px）。</p>
+          <div data-live="" class="stage comp-stage" data-system="harmony" data-theme="dark">
+            <div class="de-toolbar" role="toolbar" aria-label="构建工具栏">
       <span class="de-toolbar__title">Project ▾</span>
       <span class="de-toolbar__sep"></span>
       <button type="button" class="de-button de-button--toolbar de-button--s"><span class="de-button__label">Sync Ohpm</span></button>
@@ -600,142 +1454,138 @@
       <button type="button" class="de-icon-button de-icon-button--s" aria-label="定位当前文件">◎</button>
       <button type="button" class="de-icon-button de-icon-button--s" aria-label="全部折叠">⊟</button>
     </div>
-      </div>
-      <h2>用法</h2>
-      <pre><code>import { Toolbar, ToolbarSeparator, ToolbarSpacer } from &quot;./toolbar&quot;;</code></pre>
-      <h2>API</h2>
-      <table>
-        <thead><tr><th>Prop / 组件</th><th>类型</th><th>默认</th><th>说明</th></tr></thead>
+          </div>
+          <div class="comp-meta-grid">
+            <div class="codebox"><span class="file">React / TSX 调用示例</span>import { Toolbar, ToolbarSeparator, ToolbarSpacer } from &quot;./toolbar&quot;;</div>
+            <div class="comp-spec-wrap"><table class="comp-spec-table"><thead><tr><th>Prop / 组件</th><th>类型</th><th>默认</th><th>说明</th></tr></thead>
         <tbody>
           <tr><td><code>label</code></td><td><code>string</code></td><td>—</td><td>写入 aria-label</td></tr><tr><td><code>children</code></td><td><code>ReactNode</code></td><td>—</td><td>工具栏按钮、标题与分隔线</td></tr>
-        </tbody>
-      </table>
-      <h2>Pixso 源文件对齐说明</h2>
-      <ul>
-        <li>对齐 3.6工具栏标题（304×40，1px 10% 分割线）。</li>
-      </ul>
-    </article>
-<article class="content" id="component-nav-list" data-demo>
-      <p class="kicker">组件文档 · nav-list</p>
-      <h1>NavList</h1>
-      <p class="desc">首选项设置左侧导航或面板侧栏（支持毛玻璃 backdrop-filter: blur(54.37px)）。</p>
-      <h2>示例</h2>
-      <div class="demo-bar">
-        <button type="button" data-set-system="harmony">鸿蒙原生 (HDesign 2.0)</button>
-        <button type="button" data-set-system="pc-mac">PC / Mac (NewUI)</button>
-        <button type="button" data-set-theme="dark">深色</button>
-        <button type="button" data-set-theme="light">浅色</button>
-        <button type="button" data-set-theme="light-contrast">浅色高对比</button>
-      </div>
-      <div data-live="" class="stage" data-system="harmony" data-theme="dark">
-        <nav class="de-nav" aria-label="首选项分类" style="height:200px">
+        </tbody></table></div>
+          </div>
+        </article>
+
+        <article class="card comp-card" id="component-nav-list" data-demo>
+          <div class="comp-head">
+            <div>
+              <span class="comp-no">13 · nav-list</span>
+              <h4>NavList<small>毛玻璃侧边导航栏 · blur(54.37px)</small></h4>
+            </div>
+            <div class="demo-pills" role="group" aria-label="NavList 预览切换">
+              <button type="button" class="pill-btn" data-set-system="harmony">鸿蒙 2.0</button>
+              <button type="button" class="pill-btn" data-set-system="pc-mac">PC/Mac</button>
+              <span class="pill-sep"></span>
+              <button type="button" class="pill-btn" data-set-theme="dark">深色</button>
+              <button type="button" class="pill-btn" data-set-theme="light">浅色</button>
+              <button type="button" class="pill-btn" data-set-theme="light-contrast">高对比</button>
+            </div>
+          </div>
+          <p class="comp-desc">首选项设置左侧导航或面板侧栏（支持毛玻璃 backdrop-filter: blur(54.37px)）。</p>
+          <div data-live="" class="stage comp-stage" data-system="harmony" data-theme="dark">
+            <nav class="de-nav" aria-label="首选项分类" style="height:200px">
       <div class="de-nav__label">Appearance &amp; Behavior</div>
       <button type="button" class="de-nav__item" aria-current="page">System Settings</button>
       <button type="button" class="de-nav__item">Language and Region</button>
       <button type="button" class="de-nav__item">Keymap &amp; Shortcuts</button>
       <button type="button" class="de-nav__item">DevEco Intelligence (AI)</button>
     </nav>
-      </div>
-      <h2>用法</h2>
-      <pre><code>import { NavList, NavItem, NavLabel } from &quot;./nav-list&quot;;</code></pre>
-      <h2>API</h2>
-      <table>
-        <thead><tr><th>Prop / 组件</th><th>类型</th><th>默认</th><th>说明</th></tr></thead>
+          </div>
+          <div class="comp-meta-grid">
+            <div class="codebox"><span class="file">React / TSX 调用示例</span>import { NavList, NavItem, NavLabel } from &quot;./nav-list&quot;;</div>
+            <div class="comp-spec-wrap"><table class="comp-spec-table"><thead><tr><th>Prop / 组件</th><th>类型</th><th>默认</th><th>说明</th></tr></thead>
         <tbody>
           <tr><td><code>current</code></td><td><code>boolean</code></td><td>false</td><td>当前页（aria-current='page'）</td></tr><tr><td><code>icon</code></td><td><code>ReactNode</code></td><td>—</td><td>可选图标</td></tr>
-        </tbody>
-      </table>
-      <h2>Pixso 源文件对齐说明</h2>
-      <ul>
-        <li>鸿蒙端侧栏默认启用 4.0面板背景/左侧毛玻璃（#F1F3F5 81% / #1A1A1A 81% + blur 54.37px）。</li>
-      </ul>
-    </article>
-<article class="content" id="component-chip" data-demo>
-      <p class="kicker">组件文档 · chip</p>
-      <h1>Chip</h1>
-      <p class="desc">筛选标签（高 28vp，鸿蒙端圆角 4vp、默认 5% 叠加底、选中 40% 品牌蓝；PC/Mac 端圆角 8px 描边胶囊）。</p>
-      <h2>示例</h2>
-      <div class="demo-bar">
-        <button type="button" data-set-system="harmony">鸿蒙原生 (HDesign 2.0)</button>
-        <button type="button" data-set-system="pc-mac">PC / Mac (NewUI)</button>
-        <button type="button" data-set-theme="dark">深色</button>
-        <button type="button" data-set-theme="light">浅色</button>
-        <button type="button" data-set-theme="light-contrast">浅色高对比</button>
-      </div>
-      <div data-live="" class="stage" data-system="harmony" data-theme="dark">
-        <div class="de-chip-row">
+        </tbody></table></div>
+          </div>
+        </article>
+
+        <article class="card comp-card" id="component-chip" data-demo>
+          <div class="comp-head">
+            <div>
+              <span class="comp-no">14 · chip</span>
+              <h4>Chip<small>筛选胶囊 · 28px 高 / 选中态 40% 品牌色</small></h4>
+            </div>
+            <div class="demo-pills" role="group" aria-label="Chip 预览切换">
+              <button type="button" class="pill-btn" data-set-system="harmony">鸿蒙 2.0</button>
+              <button type="button" class="pill-btn" data-set-system="pc-mac">PC/Mac</button>
+              <span class="pill-sep"></span>
+              <button type="button" class="pill-btn" data-set-theme="dark">深色</button>
+              <button type="button" class="pill-btn" data-set-theme="light">浅色</button>
+              <button type="button" class="pill-btn" data-set-theme="light-contrast">高对比</button>
+            </div>
+          </div>
+          <p class="comp-desc">筛选标签（高 28vp，鸿蒙端圆角 4vp、默认 5% 叠加底、选中 40% 品牌蓝；PC/Mac 端圆角 8px 描边胶囊）。</p>
+          <div data-live="" class="stage comp-stage" data-system="harmony" data-theme="dark">
+            <div class="de-chip-row">
       <button type="button" class="de-chip" aria-pressed="true">Info (全部)</button>
       <button type="button" class="de-chip" aria-pressed="false">Errors (2)</button>
       <button type="button" class="de-chip" aria-pressed="false">Warnings (5)</button>
       <button type="button" class="de-chip" aria-pressed="false" disabled>Disabled</button>
     </div>
-      </div>
-      <h2>用法</h2>
-      <pre><code>import { Chip } from &quot;./chip&quot;;
+          </div>
+          <div class="comp-meta-grid">
+            <div class="codebox"><span class="file">React / TSX 调用示例</span>import { Chip } from &quot;./chip&quot;;
 
 &lt;Chip pressed&gt;Info&lt;/Chip&gt;
-&lt;Chip&gt;Warnings&lt;/Chip&gt;</code></pre>
-      <h2>API</h2>
-      <table>
-        <thead><tr><th>Prop / 组件</th><th>类型</th><th>默认</th><th>说明</th></tr></thead>
+&lt;Chip&gt;Warnings&lt;/Chip&gt;</div>
+            <div class="comp-spec-wrap"><table class="comp-spec-table"><thead><tr><th>Prop / 组件</th><th>类型</th><th>默认</th><th>说明</th></tr></thead>
         <tbody>
           <tr><td><code>pressed</code></td><td><code>boolean</code></td><td>false</td><td>选中态（aria-pressed）</td></tr><tr><td><code>disabled</code></td><td><code>boolean</code></td><td>false</td><td>置灰态（5% 底 + 10% 描边）</td></tr>
-        </tbody>
-      </table>
-      <h2>Pixso 源文件对齐说明</h2>
-      <ul>
-        <li>修正了旧版误用文件管理器 999px 椭圆胶囊的问题，对齐 4.7筛选标签（70×28 r=4vp，单字母定宽 28×28 r=4vp）。</li>
-      </ul>
-    </article>
-<article class="content" id="component-tag" data-demo>
-      <p class="kicker">组件文档 · tag</p>
-      <h1>Tag</h1>
-      <p class="desc">树节点行尾计数与模块徽标（4.11标签 27×18~22 r=14px）。</p>
-      <h2>示例</h2>
-      <div class="demo-bar">
-        <button type="button" data-set-system="harmony">鸿蒙原生 (HDesign 2.0)</button>
-        <button type="button" data-set-system="pc-mac">PC / Mac (NewUI)</button>
-        <button type="button" data-set-theme="dark">深色</button>
-        <button type="button" data-set-theme="light">浅色</button>
-        <button type="button" data-set-theme="light-contrast">浅色高对比</button>
-      </div>
-      <div data-live="" class="stage" data-system="harmony" data-theme="dark">
-        <div class="de-row">
+        </tbody></table></div>
+          </div>
+        </article>
+
+        <article class="card comp-card" id="component-tag" data-demo>
+          <div class="comp-head">
+            <div>
+              <span class="comp-no">15 · tag</span>
+              <h4>Tag<small>状态标签 · 20px 高胶囊</small></h4>
+            </div>
+            <div class="demo-pills" role="group" aria-label="Tag 预览切换">
+              <button type="button" class="pill-btn" data-set-system="harmony">鸿蒙 2.0</button>
+              <button type="button" class="pill-btn" data-set-system="pc-mac">PC/Mac</button>
+              <span class="pill-sep"></span>
+              <button type="button" class="pill-btn" data-set-theme="dark">深色</button>
+              <button type="button" class="pill-btn" data-set-theme="light">浅色</button>
+              <button type="button" class="pill-btn" data-set-theme="light-contrast">高对比</button>
+            </div>
+          </div>
+          <p class="comp-desc">树节点行尾计数与模块徽标（4.11标签 27×18~22 r=14px）。</p>
+          <div data-live="" class="stage comp-stage" data-system="harmony" data-theme="dark">
+            <div class="de-row">
       <span class="de-tag">entry</span>
       <span class="de-tag">ArkTS 6.0</span>
       <span class="de-tag">HSP</span>
     </div>
-      </div>
-      <h2>用法</h2>
-      <pre><code>import { Tag } from &quot;./tag&quot;;
+          </div>
+          <div class="comp-meta-grid">
+            <div class="codebox"><span class="file">React / TSX 调用示例</span>import { Tag } from &quot;./tag&quot;;
 
-&lt;Tag&gt;ArkTS 6.0&lt;/Tag&gt;</code></pre>
-      <h2>API</h2>
-      <table>
-        <thead><tr><th>Prop / 组件</th><th>类型</th><th>默认</th><th>说明</th></tr></thead>
+&lt;Tag&gt;ArkTS 6.0&lt;/Tag&gt;</div>
+            <div class="comp-spec-wrap"><table class="comp-spec-table"><thead><tr><th>Prop / 组件</th><th>类型</th><th>默认</th><th>说明</th></tr></thead>
         <tbody>
           <tr><td><code>children</code></td><td><code>ReactNode</code></td><td>—</td><td>标签文本</td></tr>
-        </tbody>
-      </table>
-      <h2>Pixso 源文件对齐说明</h2>
-      <ul>
-        <li>对齐 5.4列表(树结构带行号) 中的 4.11标签（15% 叠加底，不再使用备忘录黄色 #D8B840）。</li>
-      </ul>
-    </article>
-<article class="content" id="component-window-frame" data-demo>
-      <p class="kicker">组件文档 · window-frame</p>
-      <h1>WindowFrame</h1>
-      <p class="desc">IDE 窗口外壳与顶部主工具栏（鸿蒙端高 44vp、外圆角 16vp；PC/Mac 端高 40px、外圆角 8px）。</p>
-      <h2>示例</h2>
-      <div class="demo-bar">
-        <button type="button" data-set-system="harmony">鸿蒙原生 (HDesign 2.0)</button>
-        <button type="button" data-set-system="pc-mac">PC / Mac (NewUI)</button>
-        <button type="button" data-set-theme="dark">深色</button>
-        <button type="button" data-set-theme="light">浅色</button>
-        <button type="button" data-set-theme="light-contrast">浅色高对比</button>
-      </div>
-      <div data-live="" class="stage" data-system="harmony" data-theme="dark">
-        <section class="de-window" style="min-height:160px">
+        </tbody></table></div>
+          </div>
+        </article>
+
+        <article class="card comp-card wide" id="component-window-frame" data-demo>
+          <div class="comp-head">
+            <div>
+              <span class="comp-no">16 · window-frame</span>
+              <h4>WindowFrame<small>IDE 整窗容器 · 44px/40px 顶栏 + 双描边</small></h4>
+            </div>
+            <div class="demo-pills" role="group" aria-label="WindowFrame 预览切换">
+              <button type="button" class="pill-btn" data-set-system="harmony">鸿蒙 2.0</button>
+              <button type="button" class="pill-btn" data-set-system="pc-mac">PC/Mac</button>
+              <span class="pill-sep"></span>
+              <button type="button" class="pill-btn" data-set-theme="dark">深色</button>
+              <button type="button" class="pill-btn" data-set-theme="light">浅色</button>
+              <button type="button" class="pill-btn" data-set-theme="light-contrast">高对比</button>
+            </div>
+          </div>
+          <p class="comp-desc">IDE 窗口外壳与顶部主工具栏（鸿蒙端高 44vp、外圆角 16vp；PC/Mac 端高 40px、外圆角 8px）。</p>
+          <div data-live="" class="stage comp-stage" data-system="harmony" data-theme="dark">
+            <section class="de-window" style="min-height:160px">
       <header class="de-titlebar">
         <span class="de-titlebar__mark">A</span>
         <span class="de-titlebar__title">Healthy_life — EntryAbility.ets</span>
@@ -748,35 +1598,34 @@
       </header>
       <div class="de-pad">窗口主体内容区（2.布局组件）</div>
     </section>
-      </div>
-      <h2>用法</h2>
-      <pre><code>import { WindowFrame, WindowBody } from &quot;./window-frame&quot;;</code></pre>
-      <h2>API</h2>
-      <table>
-        <thead><tr><th>Prop / 组件</th><th>类型</th><th>默认</th><th>说明</th></tr></thead>
+          </div>
+          <div class="comp-meta-grid">
+            <div class="codebox"><span class="file">React / TSX 调用示例</span>import { WindowFrame, WindowBody } from &quot;./window-frame&quot;;</div>
+            <div class="comp-spec-wrap"><table class="comp-spec-table"><thead><tr><th>Prop / 组件</th><th>类型</th><th>默认</th><th>说明</th></tr></thead>
         <tbody>
           <tr><td><code>title</code></td><td><code>ReactNode</code></td><td>必填</td><td>窗口标题</td></tr><tr><td><code>children</code></td><td><code>ReactNode</code></td><td>—</td><td>窗口内容</td></tr>
-        </tbody>
-      </table>
-      <h2>Pixso 源文件对齐说明</h2>
-      <ul>
-        <li>对齐 2.布局组件（1642×1094 r=16vp）与 3.1顶部栏（高 44vp）。</li>
-      </ul>
-    </article>
-<article class="content" id="component-status-bar" data-demo>
-      <p class="kicker">组件文档 · status-bar</p>
-      <h1>StatusBar</h1>
-      <p class="desc">IDE 底部状态栏（鸿蒙端高 32vp，PC/Mac 端高 24px），左侧放置面包屑（3.4面包屑），右侧放置 LSP 服务进度胶囊（3.5 LSP进度条）与编码信息。</p>
-      <h2>示例</h2>
-      <div class="demo-bar">
-        <button type="button" data-set-system="harmony">鸿蒙原生 (HDesign 2.0)</button>
-        <button type="button" data-set-system="pc-mac">PC / Mac (NewUI)</button>
-        <button type="button" data-set-theme="dark">深色</button>
-        <button type="button" data-set-theme="light">浅色</button>
-        <button type="button" data-set-theme="light-contrast">浅色高对比</button>
-      </div>
-      <div data-live="" class="stage" data-system="harmony" data-theme="dark">
-        <footer class="de-statusbar">
+        </tbody></table></div>
+          </div>
+        </article>
+
+        <article class="card comp-card wide" id="component-status-bar" data-demo>
+          <div class="comp-head">
+            <div>
+              <span class="comp-no">17 · status-bar</span>
+              <h4>StatusBar & LspPill<small>底部状态栏 (32px/24px) 与 3.5 LSP 进度条</small></h4>
+            </div>
+            <div class="demo-pills" role="group" aria-label="StatusBar & LspPill 预览切换">
+              <button type="button" class="pill-btn" data-set-system="harmony">鸿蒙 2.0</button>
+              <button type="button" class="pill-btn" data-set-system="pc-mac">PC/Mac</button>
+              <span class="pill-sep"></span>
+              <button type="button" class="pill-btn" data-set-theme="dark">深色</button>
+              <button type="button" class="pill-btn" data-set-theme="light">浅色</button>
+              <button type="button" class="pill-btn" data-set-theme="light-contrast">高对比</button>
+            </div>
+          </div>
+          <p class="comp-desc">IDE 底部状态栏（鸿蒙端高 32vp，PC/Mac 端高 24px），左侧放置面包屑（3.4面包屑），右侧放置 LSP 服务进度胶囊（3.5 LSP进度条）与编码信息。</p>
+          <div data-live="" class="stage comp-stage" data-system="harmony" data-theme="dark">
+            <footer class="de-statusbar">
       <span class="de-crumb">Healthy_life › entry › src › main › ets › <strong>EntryAbility.ets</strong></span>
       <span class="de-statusbar__group">
         <span class="de-lsp-pill"><span class="de-lsp-pill__dot">2</span> LSP Service</span>
@@ -785,73 +1634,71 @@
         <span>Clang-idle</span>
       </span>
     </footer>
-      </div>
-      <h2>用法</h2>
-      <pre><code>import { StatusBar } from &quot;./status-bar&quot;;
-import { LspPill } from &quot;./code-editor&quot;;</code></pre>
-      <h2>API</h2>
-      <table>
-        <thead><tr><th>Prop / 组件</th><th>类型</th><th>默认</th><th>说明</th></tr></thead>
+          </div>
+          <div class="comp-meta-grid">
+            <div class="codebox"><span class="file">React / TSX 调用示例</span>import { StatusBar } from &quot;./status-bar&quot;;
+import { LspPill } from &quot;./code-editor&quot;;</div>
+            <div class="comp-spec-wrap"><table class="comp-spec-table"><thead><tr><th>Prop / 组件</th><th>类型</th><th>默认</th><th>说明</th></tr></thead>
         <tbody>
           <tr><td><code>StatusBar</code></td><td><code>children</code></td><td>—</td><td>3.2底部栏（鸿蒙 32vp / PC-Mac 24px）</td></tr><tr><td><code>LspPill</code></td><td><code>count, children</code></td><td>2</td><td>3.5 LSP进度条（5% 叠加底 r=4vp）</td></tr>
-        </tbody>
-      </table>
-      <h2>Pixso 源文件对齐说明</h2>
-      <ul>
-        <li>对齐 3.2底部栏（1302×32）与 3.5Lsp进度条（单进程/多进程胶囊）。</li>
-      </ul>
-    </article>
-<article class="content" id="component-ai-status" data-demo>
-      <p class="kicker">组件文档 · ai-status</p>
-      <h1>AiStatus</h1>
-      <p class="desc">CodeGenie / Agent 进行态状态胶囊（理解中、生成中、在等你、完成、报错）与行内续写幽灵字。</p>
-      <h2>示例</h2>
-      <div class="demo-bar">
-        <button type="button" data-set-system="harmony">鸿蒙原生 (HDesign 2.0)</button>
-        <button type="button" data-set-system="pc-mac">PC / Mac (NewUI)</button>
-        <button type="button" data-set-theme="dark">深色</button>
-        <button type="button" data-set-theme="light">浅色</button>
-        <button type="button" data-set-theme="light-contrast">浅色高对比</button>
-      </div>
-      <div data-live="" class="stage" data-system="pc-mac" data-theme="dark">
-        <div class="de-row">
+        </tbody></table></div>
+          </div>
+        </article>
+
+        <article class="card comp-card" id="component-ai-status" data-demo>
+          <div class="comp-head">
+            <div>
+              <span class="comp-no">18 · ai-status</span>
+              <h4>AiStatus<small>智能进行态徽标 · 吸收自 deveco-intui-kit</small></h4>
+            </div>
+            <div class="demo-pills" role="group" aria-label="AiStatus 预览切换">
+              <button type="button" class="pill-btn" data-set-system="harmony">鸿蒙 2.0</button>
+              <button type="button" class="pill-btn" data-set-system="pc-mac">PC/Mac</button>
+              <span class="pill-sep"></span>
+              <button type="button" class="pill-btn" data-set-theme="dark">深色</button>
+              <button type="button" class="pill-btn" data-set-theme="light">浅色</button>
+              <button type="button" class="pill-btn" data-set-theme="light-contrast">高对比</button>
+            </div>
+          </div>
+          <p class="comp-desc">CodeGenie / Agent 进行态状态胶囊（理解中、生成中、在等你、完成、报错）与行内续写幽灵字。</p>
+          <div data-live="" class="stage comp-stage" data-system="pc-mac" data-theme="dark">
+            <div class="de-row">
       <span class="de-ai-status" data-state="thinking"><span class="de-ai-spark"></span>理解中</span>
       <span class="de-ai-status" data-state="generating"><span class="de-ai-spark"></span>生成中</span>
       <span class="de-ai-status" data-state="waiting"><span class="de-ai-spark"></span>在等你确认</span>
       <span class="de-ai-status" data-state="done"><span class="de-ai-spark"></span>已完成</span>
       <span class="de-ai-status" data-state="error"><span class="de-ai-spark"></span>已停止</span>
     </div>
-      </div>
-      <h2>用法</h2>
-      <pre><code>import { AiStatus } from &quot;./ai-status&quot;;
+          </div>
+          <div class="comp-meta-grid">
+            <div class="codebox"><span class="file">React / TSX 调用示例</span>import { AiStatus } from &quot;./ai-status&quot;;
 
-&lt;AiStatus state=&quot;waiting&quot;&gt;在等你确认&lt;/AiStatus&gt;</code></pre>
-      <h2>API</h2>
-      <table>
-        <thead><tr><th>Prop / 组件</th><th>类型</th><th>默认</th><th>说明</th></tr></thead>
+&lt;AiStatus state=&quot;waiting&quot;&gt;在等你确认&lt;/AiStatus&gt;</div>
+            <div class="comp-spec-wrap"><table class="comp-spec-table"><thead><tr><th>Prop / 组件</th><th>类型</th><th>默认</th><th>说明</th></tr></thead>
         <tbody>
           <tr><td><code>state</code></td><td><code>&quot;idle&quot; | &quot;thinking&quot; | &quot;generating&quot; | &quot;waiting&quot; | &quot;done&quot; | &quot;error&quot;</code></td><td>&quot;idle&quot;</td><td>AI 状态机</td></tr><tr><td><code>children</code></td><td><code>ReactNode</code></td><td>必填</td><td>状态文案</td></tr>
-        </tbody>
-      </table>
-      <h2>Pixso 源文件对齐说明</h2>
-      <ul>
-        <li>保留自 deveco-intui-kit 智能视觉规范（紫罗兰 → 兰紫 → 玫瑰，等待态使用琥珀色）。</li>
-      </ul>
-    </article>
-<article class="content" id="component-message-bar" data-demo>
-      <p class="kicker">组件文档 · message-bar</p>
-      <h1>MessageBar</h1>
-      <p class="desc">AI 对话消息操作栏：AI 回答底部常显「复制 · 重新回答 · 时间」；用户消息悬停显示「时间 · 编辑 · 复制」。</p>
-      <h2>示例</h2>
-      <div class="demo-bar">
-        <button type="button" data-set-system="harmony">鸿蒙原生 (HDesign 2.0)</button>
-        <button type="button" data-set-system="pc-mac">PC / Mac (NewUI)</button>
-        <button type="button" data-set-theme="dark">深色</button>
-        <button type="button" data-set-theme="light">浅色</button>
-        <button type="button" data-set-theme="light-contrast">浅色高对比</button>
-      </div>
-      <div data-live="" class="stage" data-system="pc-mac" data-theme="dark">
-        <div>
+        </tbody></table></div>
+          </div>
+        </article>
+
+        <article class="card comp-card" id="component-message-bar" data-demo>
+          <div class="comp-head">
+            <div>
+              <span class="comp-no">19 · message-bar</span>
+              <h4>MessageBar<small>对话消息操作栏 · 吸收自 deveco-intui-kit</small></h4>
+            </div>
+            <div class="demo-pills" role="group" aria-label="MessageBar 预览切换">
+              <button type="button" class="pill-btn" data-set-system="harmony">鸿蒙 2.0</button>
+              <button type="button" class="pill-btn" data-set-system="pc-mac">PC/Mac</button>
+              <span class="pill-sep"></span>
+              <button type="button" class="pill-btn" data-set-theme="dark">深色</button>
+              <button type="button" class="pill-btn" data-set-theme="light">浅色</button>
+              <button type="button" class="pill-btn" data-set-theme="light-contrast">高对比</button>
+            </div>
+          </div>
+          <p class="comp-desc">AI 对话消息操作栏：AI 回答底部常显「复制 · 重新回答 · 时间」；用户消息悬停显示「时间 · 编辑 · 复制」。</p>
+          <div data-live="" class="stage comp-stage" data-system="pc-mac" data-theme="dark">
+            <div>
       <p style="margin:0 0 8px">已为您生成堆排序算法的 ArkTS 实现，并更新了路由配置 <code>main_pages.json</code>。</p>
       <div class="de-ai-msgbar" data-de-source="intui-kit">
         <button type="button" class="de-ai-msgbar__btn">复制</button>
@@ -868,103 +1715,106 @@ import { LspPill } from &quot;./code-editor&quot;;</code></pre>
         </div>
       </div>
     </div>
-      </div>
-      <h2>用法</h2>
-      <pre><code>import { MessageBar, MessageBarButton } from &quot;./message-bar&quot;;</code></pre>
-      <h2>API</h2>
-      <table>
-        <thead><tr><th>Prop / 组件</th><th>类型</th><th>默认</th><th>说明</th></tr></thead>
+          </div>
+          <div class="comp-meta-grid">
+            <div class="codebox"><span class="file">React / TSX 调用示例</span>import { MessageBar, MessageBarButton } from &quot;./message-bar&quot;;</div>
+            <div class="comp-spec-wrap"><table class="comp-spec-table"><thead><tr><th>Prop / 组件</th><th>类型</th><th>默认</th><th>说明</th></tr></thead>
         <tbody>
           <tr><td><code>time</code></td><td><code>string</code></td><td>—</td><td>时间戳文案</td></tr><tr><td><code>edited</code></td><td><code>boolean</code></td><td>false</td><td>标记已编辑</td></tr><tr><td><code>done</code></td><td><code>boolean</code></td><td>false</td><td>已复制反馈（绿色 #208A3C / #57965C）</td></tr>
-        </tbody>
-      </table>
-      <h2>Pixso 源文件对齐说明</h2>
-      <ul>
-        <li>对齐 deveco-intui-kit 消息操作栏规范与 DevEco Studio（当代）chat.pix。</li>
-      </ul>
-    </article>
-<article class="content" id="component-tool-menu" data-demo>
-      <p class="kicker">组件文档 · tool-menu</p>
-      <h1>ToolMenu</h1>
-      <p class="desc">Studio 工具窗口快速切换菜单（提交 / Bookmarks / 查找 / 运行 / 调试 / API Change Assistant）。</p>
-      <h2>示例</h2>
-      <div class="demo-bar">
-        <button type="button" data-set-system="harmony">鸿蒙原生 (HDesign 2.0)</button>
-        <button type="button" data-set-system="pc-mac">PC / Mac (NewUI)</button>
-        <button type="button" data-set-theme="dark">深色</button>
-        <button type="button" data-set-theme="light">浅色</button>
-        <button type="button" data-set-theme="light-contrast">浅色高对比</button>
-      </div>
-      <div data-live="" class="stage" data-system="pc-mac" data-theme="dark">
-        <ul class="de-menu de-tool-menu" role="menu">
+        </tbody></table></div>
+          </div>
+        </article>
+
+        <article class="card comp-card" id="component-tool-menu" data-demo>
+          <div class="comp-head">
+            <div>
+              <span class="comp-no">20 · tool-menu</span>
+              <h4>ToolMenu<small>Studio 工具菜单 · 280px 宽带快捷键</small></h4>
+            </div>
+            <div class="demo-pills" role="group" aria-label="ToolMenu 预览切换">
+              <button type="button" class="pill-btn" data-set-system="harmony">鸿蒙 2.0</button>
+              <button type="button" class="pill-btn" data-set-system="pc-mac">PC/Mac</button>
+              <span class="pill-sep"></span>
+              <button type="button" class="pill-btn" data-set-theme="dark">深色</button>
+              <button type="button" class="pill-btn" data-set-theme="light">浅色</button>
+              <button type="button" class="pill-btn" data-set-theme="light-contrast">高对比</button>
+            </div>
+          </div>
+          <p class="comp-desc">Studio 工具窗口快速切换菜单（提交 / Bookmarks / 查找 / 运行 / 调试 / API Change Assistant）。</p>
+          <div data-live="" class="stage comp-stage" data-system="pc-mac" data-theme="dark">
+            <ul class="de-menu de-tool-menu" role="menu">
       <li role="none"><button type="button" role="menuitem" class="de-menu__item" aria-current="true"><span class="de-menu__icon">⑂</span><span class="de-menu__label">提交</span><span class="de-menu__shortcut">⌘0</span></button></li>
       <li role="none"><button type="button" role="menuitem" class="de-menu__item"><span class="de-menu__icon">🔖</span><span class="de-menu__label">Bookmarks</span><span class="de-menu__shortcut">⌘2</span></button></li>
       <li role="none"><button type="button" role="menuitem" class="de-menu__item"><span class="de-menu__icon">⌕</span><span class="de-menu__label">查找</span><span class="de-menu__shortcut">⌘3</span></button></li>
       <li role="none"><button type="button" role="menuitem" class="de-menu__item"><span class="de-menu__icon">▶</span><span class="de-menu__label">运行</span><span class="de-menu__shortcut">⌘4</span></button></li>
       <li role="none"><button type="button" role="menuitem" class="de-menu__item"><span class="de-menu__icon">🐞</span><span class="de-menu__label">调试</span><span class="de-menu__shortcut">⌘5</span></button></li>
     </ul>
-      </div>
-      <h2>用法</h2>
-      <pre><code>import { ToolMenu, ToolMenuItem } from &quot;./tool-menu&quot;;</code></pre>
-      <h2>API</h2>
-      <table>
-        <thead><tr><th>Prop / 组件</th><th>类型</th><th>默认</th><th>说明</th></tr></thead>
+          </div>
+          <div class="comp-meta-grid">
+            <div class="codebox"><span class="file">React / TSX 调用示例</span>import { ToolMenu, ToolMenuItem } from &quot;./tool-menu&quot;;</div>
+            <div class="comp-spec-wrap"><table class="comp-spec-table"><thead><tr><th>Prop / 组件</th><th>类型</th><th>默认</th><th>说明</th></tr></thead>
         <tbody>
           <tr><td><code>current</code></td><td><code>boolean</code></td><td>false</td><td>当前选中工具窗</td></tr><tr><td><code>shortcut</code></td><td><code>string</code></td><td>—</td><td>右侧快捷键</td></tr><tr><td><code>icon</code></td><td><code>ReactNode</code></td><td>—</td><td>16px 线性图标</td></tr>
-        </tbody>
-      </table>
-      <h2>Pixso 源文件对齐说明</h2>
-      <ul>
-        <li>对齐 icon.pix 中的 Studio 工具菜单帧。</li>
-      </ul>
-    </article>
-<article class="content" id="component-tool-stripe" data-demo>
-      <p class="kicker">组件文档 · tool-stripe</p>
-      <h1>ToolStripe</h1>
-      <p class="desc">IDE 左右两侧纵向图标栏（鸿蒙端宽 44vp、PC/Mac 端宽 40px，内含 32×32 r=6px IconButton）。</p>
-      <h2>示例</h2>
-      <div class="demo-bar">
-        <button type="button" data-set-system="harmony">鸿蒙原生 (HDesign 2.0)</button>
-        <button type="button" data-set-system="pc-mac">PC / Mac (NewUI)</button>
-        <button type="button" data-set-theme="dark">深色</button>
-        <button type="button" data-set-theme="light">浅色</button>
-        <button type="button" data-set-theme="light-contrast">浅色高对比</button>
-      </div>
-      <div data-live="" class="stage" data-system="harmony" data-theme="dark">
-        <nav class="de-stripe" aria-label="工具栏" style="height:200px">
+        </tbody></table></div>
+          </div>
+        </article>
+
+        <article class="card comp-card" id="component-tool-stripe" data-demo>
+          <div class="comp-head">
+            <div>
+              <span class="comp-no">21 · tool-stripe</span>
+              <h4>ToolStripe<small>侧边工具栏图标条 · 44px / 40px 宽</small></h4>
+            </div>
+            <div class="demo-pills" role="group" aria-label="ToolStripe 预览切换">
+              <button type="button" class="pill-btn" data-set-system="harmony">鸿蒙 2.0</button>
+              <button type="button" class="pill-btn" data-set-system="pc-mac">PC/Mac</button>
+              <span class="pill-sep"></span>
+              <button type="button" class="pill-btn" data-set-theme="dark">深色</button>
+              <button type="button" class="pill-btn" data-set-theme="light">浅色</button>
+              <button type="button" class="pill-btn" data-set-theme="light-contrast">高对比</button>
+            </div>
+          </div>
+          <p class="comp-desc">IDE 左右两侧纵向图标栏（鸿蒙端宽 44vp、PC/Mac 端宽 40px，内含 32×32 r=6px IconButton）。</p>
+          <div data-live="" class="stage comp-stage" data-system="harmony" data-theme="dark">
+            <nav class="de-stripe" aria-label="工具栏" style="height:200px">
       <button type="button" class="de-icon-button de-icon-button--m" aria-label="Project" aria-pressed="true"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M1.8 3.5A1.3 1.3 0 0 1 3.1 2.2h3.1c.4 0 .78.18 1.02.5l.86 1.1h4.82A1.3 1.3 0 0 1 14.2 5.1v7.4a1.3 1.3 0 0 1-1.3 1.3H3.1a1.3 1.3 0 0 1-1.3-1.3V3.5Z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg></button>
       <button type="button" class="de-icon-button de-icon-button--m" aria-label="Search"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><circle cx="7" cy="7" r="4.2" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M10.2 10.2 13.5 13.5" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></button>
       <button type="button" class="de-icon-button de-icon-button--m" aria-label="Run">▶</button>
       <button type="button" class="de-icon-button de-icon-button--m" aria-label="Terminal">&gt;_</button>
     </nav>
-      </div>
-      <h2>用法</h2>
-      <pre><code>import { ToolStripe } from &quot;./tool-stripe&quot;;</code></pre>
-      <h2>API</h2>
-      <table>
-        <thead><tr><th>Prop / 组件</th><th>类型</th><th>默认</th><th>说明</th></tr></thead>
+          </div>
+          <div class="comp-meta-grid">
+            <div class="codebox"><span class="file">React / TSX 调用示例</span>import { ToolStripe } from &quot;./tool-stripe&quot;;</div>
+            <div class="comp-spec-wrap"><table class="comp-spec-table"><thead><tr><th>Prop / 组件</th><th>类型</th><th>默认</th><th>说明</th></tr></thead>
         <tbody>
           <tr><td><code>label</code></td><td><code>string</code></td><td>&quot;工具&quot;</td><td>aria-label</td></tr><tr><td><code>children</code></td><td><code>ReactNode</code></td><td>—</td><td>IconButton 列表</td></tr>
-        </tbody>
-      </table>
-      <h2>Pixso 源文件对齐说明</h2>
-      <ul>
-        <li>对齐 3.3侧边工具栏(图标按钮)（32×32 r=6vp）。</li>
-      </ul>
-    </article>
-      <section id="file-window" class="content content--wide" data-demo>
-      <p class="kicker">工作流 C · 整窗示例</p>
-      <h1>HarmonyIdeWindow（原 FileWindow 路由）</h1>
-      <p class="desc">严格对齐 <code>👉🔥【2.0】基础范式🔥👈.pix</code> 与 <code>鸿蒙IDE_v1.1.0_PC端组件库.pix</code>（<code>2.布局组件</code>、<code>3.1顶部栏</code>、<code>3.2底部栏</code>、<code>3.5 LSP进度条</code>、<code>5.3列表(树结构)</code>、<code>7.代码区相关</code>、<code>6.1 Dialog</code>）。支持一键切换深色 / 浅色以及 PC/Mac NewUI 体系。</p>
-      <div class="demo-bar">
-        <button type="button" data-set-system="harmony">鸿蒙原生 (HDesign 2.0)</button>
-        <button type="button" data-set-system="pc-mac">PC / Mac (NewUI)</button>
-        <button type="button" data-set-theme="dark">深色</button>
-        <button type="button" data-set-theme="light">浅色</button>
-        <button type="button" data-set-theme="light-contrast">浅色高对比</button>
-      </div>
-      <div data-live="" class="stage" data-system="harmony" data-theme="dark">
-        <section class="de-window" style="min-height:540px">
+        </tbody></table></div>
+          </div>
+        </article>
+        </div>
+      </section>
+
+      <!-- ================= 07 HarmonyIdeWindow 整窗模式 (#file-window) ================= -->
+      <section class="grp" id="file-window">
+        <div class="ghead"><h3>HarmonyIdeWindow 整窗模式</h3><span class="cnt">07 · PATTERN A</span></div>
+        <p class="note">严格对齐 <code>👉🔥【2.0】基础范式🔥👈.pix</code> 与 <code>鸿蒙IDE_v1.1.0_PC端组件库.pix</code> 的鸿蒙原生 IDE 整窗 Pattern（含 Ohpm Sync 顶部横幅、工程目录树、多页签代码联动与底部 LSP 状态栏）。</p>
+        <article class="card spec-card" data-demo>
+          <div class="spec-top">
+            <div>
+              <span class="sys-badge">PATTERN · HARMONY IDE WINDOW</span>
+              <h4 style="margin-top:6px">HarmonyIdeWindow（原 FileWindow 路由）<small>patterns/file-window.tsx</small></h4>
+            </div>
+            <div class="spec-controls">
+              <button type="button" class="pill-btn" data-set-system="harmony">鸿蒙原生 (HDesign 2.0)</button>
+              <button type="button" class="pill-btn" data-set-system="pc-mac">PC / Mac (NewUI)</button>
+              <span class="pill-sep"></span>
+              <button type="button" class="pill-btn" data-set-theme="dark">深色</button>
+              <button type="button" class="pill-btn" data-set-theme="light">浅色</button>
+              <button type="button" class="pill-btn" data-set-theme="light-contrast">高对比</button>
+            </div>
+          </div>
+          <div data-live="" class="workbench-stage" data-system="harmony" data-theme="dark">
+            <section class="de-window" style="min-height:540px">
           <header class="de-titlebar">
             <span class="de-titlebar__mark" aria-hidden="true">A</span>
             <div class="de-titlebar__group">
@@ -1091,24 +1941,31 @@ import { LspPill } from &quot;./code-editor&quot;;</code></pre>
             </div>
           </div>
         </section>
-      </div>
-      <h2>复用了哪些组件</h2>
-      <p>WindowFrame、ToolStripe、IconButton、SearchField、Tree（带文件类型徽标）、Tabs、Banner（6.6横幅/sync）、Button（主按钮与次按钮）、CodeEditor（真实语法色与右上角告警卡）、StatusBar 与 LspPill（3.5 LSP进度条）。</p>
-      <p class="note">对应源码：<code>patterns/file-window.tsx</code>（同时导出 <code>HarmonyIdeWindow</code> 与兼容名 <code>FileWindow</code>）。</p>
-    </section>
-      <section id="studio-tool-window" class="content content--wide" data-demo>
-      <p class="kicker">工作流 C · 整窗示例</p>
-      <h1>StudioToolWindow</h1>
-      <p class="desc">严格对齐 <code>【NewUI】鸿蒙IDE-当代.pix</code> + <code>icon.pix</code> + <code>DevEco Studio（当代）chat.pix</code>：包含左侧图标条（ToolStripe）、工具菜单（ToolMenu）、Customize Main Toolbar 弹窗（Dialog）与 Notification 通知气泡。</p>
-      <div class="demo-bar">
-        <button type="button" data-set-system="pc-mac">PC / Mac (NewUI)</button>
-        <button type="button" data-set-system="harmony">鸿蒙原生 (HDesign 2.0)</button>
-        <button type="button" data-set-theme="dark">深色</button>
-        <button type="button" data-set-theme="light">浅色</button>
-        <button type="button" data-set-theme="light-contrast">浅色高对比</button>
-      </div>
-      <div data-live="" class="stage" data-system="pc-mac" data-theme="dark">
-        <section class="de-window de-studio" style="min-height:440px">
+          </div>
+        </article>
+      </section>
+
+      <!-- ================= 08 StudioToolWindow 整窗模式 (#studio-tool-window) ================= -->
+      <section class="grp" id="studio-tool-window">
+        <div class="ghead"><h3>StudioToolWindow 工具窗模式</h3><span class="cnt">08 · PATTERN B</span></div>
+        <p class="note">严格对齐 <code>【NewUI】鸿蒙IDE-当代.pix</code> + <code>icon.pix</code> 的 PC/Mac 当代工具窗、快捷键菜单、模态设置框与构建通知气泡。</p>
+        <article class="card spec-card" data-demo>
+          <div class="spec-top">
+            <div>
+              <span class="sys-badge">PATTERN · STUDIO TOOL WINDOW</span>
+              <h4 style="margin-top:6px">StudioToolWindow<small>patterns/studio-tool-window.tsx</small></h4>
+            </div>
+            <div class="spec-controls">
+              <button type="button" class="pill-btn" data-set-system="pc-mac">PC / Mac (NewUI)</button>
+              <button type="button" class="pill-btn" data-set-system="harmony">鸿蒙原生 (HDesign 2.0)</button>
+              <span class="pill-sep"></span>
+              <button type="button" class="pill-btn" data-set-theme="dark">深色</button>
+              <button type="button" class="pill-btn" data-set-theme="light">浅色</button>
+              <button type="button" class="pill-btn" data-set-theme="light-contrast">高对比</button>
+            </div>
+          </div>
+          <div data-live="" class="workbench-stage" data-system="pc-mac" data-theme="dark">
+            <section class="de-window de-studio" style="min-height:440px">
           <nav class="de-stripe" aria-label="工具">
             <button type="button" class="de-icon-button de-icon-button--m" aria-label="构建">
               <svg viewBox="0 0 16 16" width="16" height="16"><path d="M9 7 4.2 11.8M6 4.5l2.2-2.2 3.5 3.5L9.5 8" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
@@ -1179,13 +2036,100 @@ import { LspPill } from &quot;./code-editor&quot;;</code></pre>
             </div>
           </div>
         </section>
-      </div>
-      <h2>复用了哪些组件</h2>
-      <p>ToolStripe、IconButton、ToolMenu、Dialog、SearchField、SelectField、Checkbox、Switch、Button（Primary / Secondary）、Notification。全部使用从 <code>.pix</code> 提取的真实 Token。</p>
-      <p class="note">对应源码：<code>patterns/studio-tool-window.tsx</code>。</p>
-    </section>
+          </div>
+        </article>
+      </section>
+
+      <footer>
+        <span>DevEco Design System · Pixso Vector AST Fidelity</span>
+        <span>数据源：<code>鸿蒙IDE_v1.1.0_PC端组件库.pix</code> · <code>👉🔥【2.0】基础范式🔥👈.pix</code> · <code>【NewUI】鸿蒙IDE-当代.pix</code> · <code>icon.pix</code></span>
+        <span>保护区：<code>deveco-intui-kit/</code> 0 改动</span>
+      </footer>
     </main>
   </div>
-  <script src="docs.js"></script>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite">已复制</div>
+
+<script src="../preview/preview.js"></script>
+<script src="docs.js"></script>
+<script>
+(function () {
+  /* 页面壳自身的深浅色切换（与仓库其他规范卡片一致） */
+  var root = document.documentElement;
+  var themeBtn = document.getElementById("theme-btn");
+  var themeLabel = document.getElementById("theme-label");
+  function syncPageTheme(t) {
+    root.setAttribute("data-theme", t);
+    if (themeLabel) themeLabel.textContent = t === "dark" ? "浅色" : "深色";
+    var useEl = themeBtn && themeBtn.querySelector("use");
+    if (useEl) useEl.setAttribute("href", t === "dark" ? "#i-sun" : "#i-moon");
+  }
+  var saved = localStorage.getItem("deveco-docs-theme");
+  if (saved === "dark" || saved === "light") {
+    syncPageTheme(saved);
+  }
+  if (themeBtn) {
+    themeBtn.addEventListener("click", function () {
+      var cur = root.getAttribute("data-theme") === "dark" ? "light" : "dark";
+      localStorage.setItem("deveco-docs-theme", cur);
+      syncPageTheme(cur);
+    });
+  }
+
+  /* 点击色阶块复制 HEX */
+  var toast = document.getElementById("toast");
+  var toastTimer = null;
+  document.querySelectorAll(".sw[data-hex]").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var hex = btn.getAttribute("data-hex");
+      if (navigator.clipboard && hex) {
+        navigator.clipboard.writeText(hex);
+      }
+      if (toast) {
+        toast.textContent = "已复制 " + hex;
+        toast.classList.add("on");
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(function () {
+          toast.classList.remove("on");
+        }, 1400);
+      }
+    });
+  });
+
+  /* 左侧目录点击与滚动高亮 (.cat.on) */
+  var tocLinks = Array.from(document.querySelectorAll("#toc a.cat"));
+  tocLinks.forEach(function (link) {
+    link.addEventListener("click", function () {
+      tocLinks.forEach(function (a) { a.classList.remove("on"); });
+      link.classList.add("on");
+    });
+  });
+
+  var headings = tocLinks
+    .map(function (a) {
+      var id = (a.getAttribute("href") || "").slice(1);
+      return id ? document.getElementById(id) : null;
+    })
+    .filter(Boolean);
+
+  if ("IntersectionObserver" in window && headings.length) {
+    var io = new IntersectionObserver(
+      function (entries) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting) {
+            var id = "#" + entry.target.id;
+            tocLinks.forEach(function (a) {
+              a.classList.toggle("on", a.getAttribute("href") === id);
+            });
+          }
+        });
+      },
+      { rootMargin: "-15% 0px -75% 0px", threshold: 0 }
+    );
+    headings.forEach(function (h) { io.observe(h); });
+  }
+})();
+</script>
 </body>
 </html>

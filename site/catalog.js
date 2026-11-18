@@ -578,17 +578,18 @@ window.DEVECO_CATALOG = {
       items: [
         {
           title: 'DevEco 设计系统（Pixso）', subtitle: 'HarmonyOS NEXT HDesign 2.0 & PC/Mac NewUI · 21 Components & IDE Patterns',
-          desc: '直接从 7 份本地 Pixso 矢量源码（inner.pix 133,622 节点）提取的双系统设计体系：含完整 Light/Dark Gray 1–14、ohos_id_*、Elevation 55/70 与语法色 Token、21 个核心组件文档（支持双系统五主题实时切换）、6 组 Pixso 原稿帧 1:1 对照、鸿蒙原生 IDE 整窗（HarmonyIdeWindow）与 PC/Mac 当代工具窗口（StudioToolWindow）。',
-          view: 'ready', date: '2026-11-17', href: 'design-system/preview/index.html',
+          desc: '直接从 7 份本地 Pixso 矢量源码（inner.pix 133,622 节点）提取的双系统设计体系：含完整 Light/Dark Gray 1–14、ohos_id_*、Elevation 55/70 与语法色 Token、双系统实时工作台、21 个核心组件文档（支持页内五主题实时切换）、6 组 Pixso 原稿帧 1:1 对照、HarmonyIdeWindow 与 StudioToolWindow。',
+          view: 'ready', date: '2026-11-18', href: 'design-system/preview/index.html',
           links: [
-            { label: '组件文档深链', href: 'design-system/docs/index.html' },
-            { label: '对照深链', href: 'design-system/compare/index.html' },
-            { label: 'HarmonyIdeWindow', href: 'design-system/examples/file-window.html' },
-            { label: 'StudioToolWindow', href: 'design-system/examples/studio-tool-window.html' },
+            { label: '双系统工作台', href: 'design-system/preview/index.html#specimens' },
+            { label: '组件文档 (21)', href: 'design-system/preview/index.html#components' },
+            { label: 'Pixso 对照', href: 'design-system/preview/index.html#compare' },
+            { label: 'HarmonyIdeWindow', href: 'design-system/preview/index.html#file-window' },
+            { label: 'StudioToolWindow', href: 'design-system/preview/index.html#studio-tool-window' },
             { label: 'SKILL.md', href: 'design-system/SKILL.md' },
           ],
           tags: ['Pixso', 'HDesign 2.0', 'NewUI', '21 组件', '对照'],
-          thumb: { type: 'image', src: 'site/thumbs/ds-pixso-preview.jpg' },
+          thumb: { type: 'image', src: 'site/thumbs/ds-pixso-preview.jpg?v=20261118' },
         },
         {
           title: 'DevEco Studio Windows 主窗口', subtitle: 'DevEco Studio · Windows Main Window',
