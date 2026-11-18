@@ -349,7 +349,7 @@ window.DEVECO_CATALOG = {
       items: [
         {
           title: '输入框下的「钢琴键」：一排键帽该显示几个、什么时候变', subtitle: 'Composer Keycaps · Claude Code, Codex CLI, WorkBuddy, Cursor, Gemini CLI',
-          desc: '把输入框 / Composer 附近那排快捷键键帽（Enter 发送、Esc 停止）拆成六个显示维度，对照 Claude Code、Codex CLI、WorkBuddy、Cursor、Gemini CLI 的一手实现：五家常态都只说「? 看键」、生成中只说「esc 停」，只有 DevEco 现状整行常驻 5 键。归纳三类策略，落到 DevEco：空输入教探索（@ /）、有字教动作（Enter 发送）、生成中只留 Esc 停止，行高恒定、全量收进 ? 面板；附推荐状态映射表、页面内实时对照与六条验收条件。',
+          desc: '把输入框 / Composer 附近那排快捷键键帽（Enter 发送、Esc 停止）拆成六个显示维度，对照 Claude Code、Codex CLI、WorkBuddy、Cursor、Gemini CLI 的一手实现：五家常态都只说「? 看键」、生成中只说「esc 停」，只有 DevEco 现状整行常驻 5 键。归纳三类显示策略，再比三个披露大方向——全部上下文 / Hover 单个详细 / Hover 详细 + 邻居简要，各附优劣分点、可交互 mockup 与对照表。落到 DevEco：空输入教探索（@ /）、有字教动作（Enter 发送）、生成中只留 Esc 停止，方向三为默认、方向二兜底、方向一当教学态，行高恒定、全量收进 ? 面板；附推荐状态映射表、页面内实时对照与七条验收条件。',
           view: 'doc', date: '2026-11-18', href: 'analysis/composer-keycaps/index.html',
           links: [
             { label: '六个维度', href: 'analysis/composer-keycaps/index.html#what' },
