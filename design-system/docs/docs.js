@@ -157,8 +157,18 @@
       var stage = root.querySelector("[data-live]");
       if (stage) bind(root, stage);
     });
-    return;
   }
+
+  document.querySelectorAll(".sidenav, .ov-nav, .wrap > .nav").forEach(function (navEl) {
+    navEl.addEventListener("click", function (event) {
+      var link = event.target.closest("a[href^='#']");
+      if (!link) return;
+      navEl.querySelectorAll("a:not(.brand)").forEach(function (a) {
+        if (a === link) a.setAttribute("aria-current", "page");
+        else a.removeAttribute("aria-current");
+      });
+    });
+  });
 
   var stage = document.getElementById("stage");
   if (!stage) return;
