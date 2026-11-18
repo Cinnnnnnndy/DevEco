@@ -348,17 +348,18 @@ window.DEVECO_CATALOG = {
       note: '同类产品怎么做、行业往哪走：对照 Claude Code、Codex、Cursor、Xcode 等，落到 DevEco 的建议。',
       items: [
         {
-          title: '输入框下的「钢琴键」：一排键帽该显示几个、什么时候变', subtitle: 'Composer Keycaps · Claude Code, Codex CLI, WorkBuddy, Cursor, Gemini CLI',
-          desc: '把输入框 / Composer 附近那排快捷键键帽（Enter 发送、Esc 停止）拆成六个显示维度，对照 Claude Code、Codex CLI、WorkBuddy、Cursor、Gemini CLI 的一手实现：五家常态都只说「? 看键」、生成中只说「esc 停」，只有 DevEco 现状整行常驻 5 键。归纳三类显示策略，再比三个披露大方向——全部上下文 / Hover 单个详细 / Hover 详细 + 邻居简要，各附优劣分点、可交互 mockup 与对照表。落到 DevEco：空输入教探索（@ /）、有字教动作（Enter 发送）、生成中只留 Esc 停止，方向三为默认、方向二兜底、方向一当教学态，行高恒定、全量收进 ? 面板；附推荐状态映射表、页面内实时对照与七条验收条件。',
-          view: 'doc', date: '2026-11-18', href: 'analysis/composer-keycaps/index.html',
+          title: '对话历史「钢琴键」：每轮一键，hover 预览、点击跳转', subtitle: 'Conversation Piano Keys · OpenBitfun, Claude Code, Codex, Cursor, ChatGPT, Devin',
+          desc: 'OpenBitfun 对话左侧那排「钢琴键」——每一键对应一轮对话，hover 浮出「第 136 轮 · 首句」，点击跳到那一轮。把「查看历史对话 + 快速跳转」拆成六个显示维度（位置 / 粒度 / 形态 / 预览 / 跳转 / 密度），对照 Claude Code /rewind、Codex 面板、Cursor / ChatGPT / Devin 的会话列表与 OpenBitfun 的一手截图；横比三类策略——钢琴键竖条 / 目录大纲 / 滚动 + 回到最新——各附优 / 劣分点与十维对照表，「第 136 轮」点出密度是核心难题。落到 DevEco Code：竖条贴对话左缘、一轮一键、hover 浮卡、点击直达、密度自适应合并段、滚动联动高亮；附 8/24/136 轮密度图、8 轮可交互 demo（跳转误差实时测量）与七条验收条件。',
+          view: 'doc', date: '2026-11-18', href: 'analysis/conversation-piano-keys/index.html',
           links: [
-            { label: '六个维度', href: 'analysis/composer-keycaps/index.html#what' },
-            { label: '六家对照', href: 'analysis/composer-keycaps/index.html#matrix' },
-            { label: '逐家两帧', href: 'analysis/composer-keycaps/index.html#frames' },
-            { label: '落到 DevEco', href: 'analysis/composer-keycaps/index.html#ours' },
+            { label: '六个维度', href: 'analysis/conversation-piano-keys/index.html#what' },
+            { label: '谁给了历史 + 快跳', href: 'analysis/conversation-piano-keys/index.html#matrix' },
+            { label: 'OpenBitfun 两帧', href: 'analysis/conversation-piano-keys/index.html#frames' },
+            { label: '三类策略优劣', href: 'analysis/conversation-piano-keys/index.html#strategies' },
+            { label: '落到 DevEco', href: 'analysis/conversation-piano-keys/index.html#ours' },
           ],
-          tags: ['竞品分析', '钢琴键', '快捷键', '键帽', '输入框', '生成态', 'Claude Code', 'Codex', 'WorkBuddy', 'Cursor', 'Gemini CLI', 'DevEco Code'],
-          thumb: { type: 'image', src: 'site/thumbs/composer-keycaps.jpg' },
+          tags: ['竞品分析', '钢琴键', '对话历史', '轮次导航', '会话', '跳转', '预览', 'OpenBitfun', 'Claude Code', 'Codex', 'Cursor', 'ChatGPT', 'Devin', 'DevEco Code'],
+          thumb: { type: 'image', src: 'site/thumbs/conversation-piano-keys.jpg' },
         },
         {
           title: '触屏与触控笔：Agent / IDE 的输入变化', subtitle: 'Touch & Pen × Agents / IDEs · Keyboard / Mouse Baseline',
