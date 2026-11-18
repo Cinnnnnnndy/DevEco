@@ -33,7 +33,7 @@
    `python3 site/tools/thumb.py <slug>` 出缩略图；然后在这里把对应条目的 view 改成 'ready'、补 href 与 thumb。
    ===================================================================== */
 window.DEVECO_CATALOG = {
-  updated: '2026-11-16',
+  updated: '2026-11-18',
   title: '鸿蒙开发工具体验',
   lede: '围绕 DevEco Studio / DevEco Code / DevEco CLI 的体验设计：29 条创新点各一个可点的界面稿 demo（其中 9 条是新一轮规划重点），全部按鸿蒙电脑版蓝本与 AI Coding / 多 Agent 场景重做；加上设计系统、分析与汇报材料。全部是本地静态文件，双击即开。',
 
@@ -347,6 +347,19 @@ window.DEVECO_CATALOG = {
       icon: 'i-cat-chart',
       note: '同类产品怎么做、行业往哪走：对照 Claude Code、Codex、Cursor、Xcode 等，落到 DevEco 的建议。',
       items: [
+        {
+          title: '输入框下的「钢琴键」：一排键帽该显示几个、什么时候变', subtitle: 'Composer Keycaps · Claude Code, Codex CLI, WorkBuddy, Cursor, Gemini CLI',
+          desc: '把输入框 / Composer 附近那排快捷键键帽（Enter 发送、Esc 停止）拆成六个显示维度，对照 Claude Code、Codex CLI、WorkBuddy、Cursor、Gemini CLI 的一手实现：五家常态都只说「? 看键」、生成中只说「esc 停」，只有 DevEco 现状整行常驻 5 键。归纳三类策略，落到 DevEco：空输入教探索（@ /）、有字教动作（Enter 发送）、生成中只留 Esc 停止，行高恒定、全量收进 ? 面板；附推荐状态映射表、页面内实时对照与六条验收条件。',
+          view: 'doc', date: '2026-11-18', href: 'analysis/composer-keycaps/index.html',
+          links: [
+            { label: '六个维度', href: 'analysis/composer-keycaps/index.html#what' },
+            { label: '六家对照', href: 'analysis/composer-keycaps/index.html#matrix' },
+            { label: '逐家两帧', href: 'analysis/composer-keycaps/index.html#frames' },
+            { label: '落到 DevEco', href: 'analysis/composer-keycaps/index.html#ours' },
+          ],
+          tags: ['竞品分析', '钢琴键', '快捷键', '键帽', '输入框', '生成态', 'Claude Code', 'Codex', 'WorkBuddy', 'Cursor', 'Gemini CLI', 'DevEco Code'],
+          thumb: { type: 'image', src: 'site/thumbs/composer-keycaps.jpg' },
+        },
         {
           title: '触屏与触控笔：Agent / IDE 的输入变化', subtitle: 'Touch & Pen × Agents / IDEs · Keyboard / Mouse Baseline',
           desc: '以键鼠为对照，区分手指命中、多触点、主动笔笔迹与手掌取消、悬停与笔键的实际变化；点选委派、审阅和设备接管归回通用基线。对照 Codex、Claude Code、Cursor、Android Studio、Xcode 与 DevEco Studio，含 27 项来源、12 幅界面图、6 张示意，收敛为鸿蒙版 DevEco Studio 设计机会与验证方案；Fold 单列为形态因素。',
