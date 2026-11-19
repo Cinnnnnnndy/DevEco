@@ -349,7 +349,7 @@ window.DEVECO_CATALOG = {
       items: [
         {
           title: '消息锚点导航（对话「钢琴键」）：六家做法对照', subtitle: 'Message Anchor Navigation · Codex / OpenBitfun / Antigravity / WorkBuddy / CodeBuddy / Claude Code',
-          desc: '对话左侧那排「钢琴键」的专业名称是消息锚点导航：每根刻度锚定一条用户提问，当前位置加长加深、滚动联动，悬停预览，点击跳转。Antigravity 官方 2.28.1 上线 conversation navigator，长对话按日期分章节、2.29.0 起章节有 AI 短标题；WorkBuddy 官方文档写明对话右侧刻度导航，悬停展开成提问列表，附两张官方截图；Codex 截图有刻度 + 书签，但各端不一致、GitHub 上用户一直在要；Claude Code /rewind 是回退不是浏览。拆出六个设计决策，更正上一版误读；评估 DevEco Code「刻度 + 三段卡片」方案（五个理由逐条核对），给出热区（整列 32px + 8px 桥接、纵向无缝、±3px 滞后、长对话局部放大）与悬停时间（首次 300ms、打开后 0ms 切换、离开 300ms、800ms 热态），附可交互 demo 与十条验收条件。',
+          desc: '对话左侧那排「钢琴键」的专业名称是消息锚点导航：每根刻度锚定一条用户提问，当前位置加长加深、滚动联动，悬停预览，点击跳转。Antigravity 官方 2.28.1 上线 conversation navigator，长对话按日期分章节、2.29.0 起章节有 AI 短标题；WorkBuddy 官方文档写明对话右侧刻度导航，悬停展开成提问列表，附两张官方截图；Codex 截图有刻度 + 书签，但各端不一致、GitHub 上用户一直在要；Claude Code /rewind 是回退不是浏览。拆出六个设计决策，更正上一版误读；评估 DevEco Code「刻度 + 三段卡片」方案（五个理由逐条核对），给出热区（整列 32px + 8px 桥接、纵向无缝、±3px 滞后、长对话三段映射：1:1 增长、局部放大、合并绘制，轨道长度表达对话长度、不做 token 度量）与悬停时间（首次 300ms、打开后 0ms 切换、离开 300ms、800ms 热态），附可交互 demo 与十条验收条件。',
           view: 'doc', date: '2026-11-18', href: 'analysis/conversation-piano-keys/index.html',
           links: [
             { label: '结论', href: 'analysis/conversation-piano-keys/index.html#keys' },
