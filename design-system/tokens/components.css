@@ -454,17 +454,43 @@
   box-shadow: none;
 }
 
+/* IntelliJ NewUI (DarculaTextBorderNew): 聚焦时为 2px 实心内聚焦点环 (#3574F0) */
+[data-system="pc-mac"] .de-search:focus-within,
+[data-system="pc-mac"] .de-input:focus-within,
+[data-system="pc-mac"] .de-select:focus-within,
+[data-system="pc-mac"] .de-search[data-state="active"],
+[data-system="pc-mac"] .de-input[data-state="active"],
+[data-system="pc-mac"] .de-select[data-state="active"] {
+  border-color: var(--border-focus);
+  box-shadow: inset 0 0 0 1px var(--border-focus);
+}
+
 .de-input[data-state="error"],
 .de-search[data-state="error"],
-.de-select[data-state="error"] {
+.de-select[data-state="error"],
+.de-input[data-invalid="true"],
+.de-search[data-invalid="true"],
+.de-select[data-invalid="true"] {
   border-color: var(--border-error);
+}
+
+/* IntelliJ NewUI: 失焦报错框为柔和红描边 (Component.inactiveErrorFocusColor)，聚焦时为 2px errorFocusColor */
+[data-system="pc-mac"] .de-input[data-state="error"]:not(:focus-within),
+[data-system="pc-mac"] .de-input[data-invalid="true"]:not(:focus-within) {
+  border-color: var(--border-error-inactive, var(--border-error));
+}
+
+[data-system="pc-mac"] .de-input[data-state="error"]:focus-within,
+[data-system="pc-mac"] .de-input[data-invalid="true"]:focus-within {
+  border-color: var(--border-error);
+  box-shadow: inset 0 0 0 1px var(--border-error);
 }
 
 .de-input[data-disabled="true"],
 .de-search[data-disabled="true"],
 .de-select[data-disabled="true"] {
-  opacity: 0.5;
-  border-color: var(--line);
+  opacity: 0.55;
+  border-color: var(--border-control-disabled, var(--line));
   cursor: not-allowed;
 }
 
@@ -509,7 +535,7 @@
   min-width: 64px;
 }
 
-/* 4.6 报错 tips (高 28vp, r=4vp, 浅色 #FBE0DC / 深色 #4E3231, 距离输入框左侧缩进) */
+/* 4.6 报错 tips & IntelliJ NewUI ValidationTooltip (errorBackground + 1px errorBorderColor) */
 .de-error-tip {
   display: inline-flex;
   align-items: center;
@@ -523,7 +549,9 @@
 }
 
 [data-system="pc-mac"] .de-error-tip {
-  color: var(--color-error);
+  background: var(--surface-validation-error, var(--surface-danger-subtle));
+  border: 1px solid var(--border-validation-error, var(--border-error));
+  color: var(--text-validation-error, var(--text-primary));
 }
 
 /* 4.8 微调器 (Spinner 140x28 r=4) */
@@ -926,7 +954,7 @@
   color: var(--text-primary);
 }
 
-/* 分段选择器 (页签/选择器 428x28 r=6 10% 底, 选中项 140x24 r=4) */
+/* 分段选择器 (鸿蒙 10% 灰底胶囊 vs IntelliJ NewUI SegmentedButton 1px 描边槽 + 选中项独立描边) */
 .de-segmented {
   display: inline-flex;
   align-items: center;
@@ -955,6 +983,26 @@
   color: var(--text-primary);
   font-weight: 500;
   box-shadow: 0 1px 3px rgb(0 0 0 / 12%);
+}
+
+[data-system="pc-mac"] .de-segmented {
+  background: transparent;
+  border: 1px solid var(--border-control);
+  padding: 0;
+  gap: 0;
+}
+
+[data-system="pc-mac"] .de-segmented__item {
+  height: 26px;
+  border-radius: 5px;
+}
+
+[data-system="pc-mac"] .de-segmented__item[aria-selected="true"],
+[data-system="pc-mac"] .de-segmented__item[aria-pressed="true"] {
+  background: var(--surface-segmented-selected, var(--surface-editor));
+  box-shadow: inset 0 0 0 1px var(--border-segmented-selected, var(--border-control-hover));
+  margin: -1px;
+  height: 28px;
 }
 
 /* ── 9. 项目树与列表 (5.3列表(树结构) 438x28 r=4 / 5.4带行号树 / NewUI Tree 200x24 r=4) ── */
@@ -1247,17 +1295,17 @@
   margin-top: 4px;
 }
 
-/* 6.3 Notification 气泡 (344x118 r=12) */
+/* 6.3 Notification 气泡 (344x118 r=12; NewUI Notification.ToolWindow / Balloon) */
 .de-notification {
   width: 100%;
   max-width: 344px;
   min-height: 96px;
-  background: var(--surface-dialog);
+  background: var(--surface-notification, var(--surface-dialog));
   color: var(--text-primary);
   border-radius: var(--radius-card);
   box-shadow:
     inset 0 0 0 var(--stroke-width) var(--stroke-inner),
-    0 0 0 var(--stroke-width) var(--stroke-outer),
+    0 0 0 var(--stroke-width) var(--border-notification, var(--stroke-outer)),
     var(--shadow-float);
   padding: 12px 16px;
   display: flex;
@@ -1576,4 +1624,137 @@
 .de-note {
   font-size: 12px;
   color: var(--text-tertiary);
+}
+
+/* ── 17. 开源 JetBrains NewUI (ExpUI / Jewel) 深化组件：GotItTooltip / RunWidget / ProgressBar / Counter ── */
+.de-gotit {
+  max-width: 320px;
+  padding: 14px 16px;
+  border-radius: 8px;
+  background: var(--surface-gotit, #27282e);
+  border: 1px solid var(--border-gotit, #27282e);
+  color: var(--text-gotit, #ffffff);
+  box-shadow: var(--shadow-float);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: var(--font-size-ui);
+}
+
+.de-gotit__step {
+  font-size: 11px;
+  opacity: 0.72;
+  font-family: var(--font-mono);
+}
+
+.de-gotit__title {
+  font-weight: 600;
+  font-size: 13px;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.de-gotit__kbd {
+  display: inline-flex;
+  align-items: center;
+  height: 18px;
+  padding: 0 6px;
+  border-radius: 4px;
+  background: rgb(255 255 255 / 16%);
+  color: #ffffff;
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+.de-gotit__body {
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: rgb(255 255 255 / 86%);
+}
+
+.de-gotit__actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.de-gotit__btn {
+  height: 26px;
+  padding: 0 12px;
+  border-radius: 4px;
+  border: 1px solid rgb(255 255 255 / 45%);
+  background: transparent;
+  color: #ffffff;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.de-gotit__btn:hover {
+  background: rgb(255 255 255 / 12%);
+}
+
+.de-run-widget {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  height: 30px;
+  padding: 0 4px;
+  border-radius: 6px;
+  background: var(--surface-hover);
+}
+
+.de-run-widget__btn {
+  width: 26px;
+  height: 26px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--text-primary);
+  display: inline-grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.de-run-widget__btn--run {
+  background: rgb(87 150 92 / 22%);
+  color: var(--color-success);
+}
+
+.de-run-widget__btn--stop {
+  background: rgb(219 92 92 / 22%);
+  color: var(--color-error);
+}
+
+.de-progress {
+  width: 100%;
+  height: 4px;
+  border-radius: 99px;
+  background: var(--surface-progress-track, rgb(128 128 128 / 22%));
+  overflow: hidden;
+}
+
+.de-progress__bar {
+  height: 100%;
+  border-radius: 99px;
+  background: var(--surface-progress-fill, var(--surface-primary));
+}
+
+.de-counter {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 18px;
+  min-width: 18px;
+  padding: 0 6px;
+  border-radius: 99px;
+  background: var(--surface-tag);
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
 }
