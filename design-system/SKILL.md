@@ -153,7 +153,13 @@ description: 使用 DevEco 双设计系统（鸿蒙原生端 HarmonyOS NEXT HDes
 </div>
 ```
 
-### 3. 保护区与字体约束（MUST NOT）
+### 3. 图标库规范（MUST USE Pixso SVG + Token，严禁重新绘制）
+- 所有 IDE 图标已从本地 `icon.pix` 矢量 AST 无损提取为 995 个官方 SVG（354 个鸿蒙 NEXT + 641 个 PC/Mac NewUI），并自动将单色/语义色绑定至 `currentColor`（`var(--icon)`）与 `var(--color-info / success / warning / error)`：
+  - 雪碧图：`design-system/icons/sprite.svg`
+  - 检索清单：`design-system/icons/manifest.json`
+- **禁止模型手写或重绘 `<svg><path .../></svg>`**；必须通过 `<svg class="de-svg-icon"><use href="../icons/sprite.svg#<id>"/></svg>` 引用，或直接拷贝 `manifest.json` 中对应图标的 Token 化 `<svg>`。
+
+### 4. 保护区与字体约束（MUST NOT）
 - **严禁修改 `deveco-intui-kit/` 目录下的任何文件**。
 - **严禁再用操作系统自带的「文件管理器」「备忘录」「记事本」充当 DevEco IDE 窗口**。
 - **严禁使用 `Inter` 或 `Helvetica` 字体**；UI 字体必须走 `--font-ui`（HarmonyOS Sans SC），代码字体走 `--font-mono`（JetBrains Mono）。
