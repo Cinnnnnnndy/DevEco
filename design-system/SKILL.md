@@ -180,11 +180,15 @@ description: 使用 DevEco 双设计系统（鸿蒙原生端 HarmonyOS NEXT HDes
 ```bash
 node design-system/scripts/verify-fidelity.js <你的页面路径.html>
 ```
-该脚本会自动拦截：
+该脚本会自动拦截（12 项硬门禁）：
 1. 未引入 `tokens/index.css` 或缺失 `data-system` / `data-theme` 声明；
 2. 误用 `Inter` 字体或引用了不存在的 `--*` CSS 变量；
-3. `.de-*` 组件上硬编码了私有 HEX 颜色；
-4. 页面存在断链或缺失图片资源。
+3. `.de-*` 组件上硬编码了私有 HEX 颜色，或误把鸿蒙 8 位 `AARRGGBB` 当 CSS 颜色；
+4. 页面存在断链或缺失图片/静态资源；
+5. 手绘 `<svg>` 或使用 Emoji/Unicode 伪图标（`🔨 ▶ 🐞 💻 ⊞ ⑂ ✦ ⚠ 🔖 ⌕ ■`）；
+6. 编造不存在的 `sprite.svg#<id>` 图标 ID（实时核对 `icons/manifest.json` 995 个真实 ID）；
+7. 系统切换按钮顺序颠倒（必须左鸿蒙、右 PC/Mac）；
+8. `<style>` 中出现未限域的裸 `footer`/`header`/`hr` 穿透规则，或 `inline-grid` 缺少 `line-height: 1` 导致小徽标下溢错位。
 
 ### 第二步：浏览器实测与深浅双主题走查
 1. 在浏览器中打开页面，分别切换 `data-theme="dark"` 与 `data-theme="light"`（以及 `data-system="harmony"` 与 `data-system="pc-mac"`）。

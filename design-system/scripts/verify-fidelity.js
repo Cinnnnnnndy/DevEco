@@ -36,6 +36,14 @@ for (const tf of ["tokens/foundation.css", "tokens/semantic.css", "tokens/compon
   while ((m = re.exec(txt)) !== null) definedVars.add(m[1]);
 }
 
+// Collect all valid Pixso icon IDs from icons/manifest.json
+const validIconIds = new Set();
+const manifestPath = path.join(dsRoot, "icons/manifest.json");
+if (fs.existsSync(manifestPath)) {
+  const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
+  for (const ic of manifest.icons || []) validIconIds.add(ic.id);
+}
+
 const args = process.argv.slice(2);
 const targetHtmlFiles = args.length
   ? args.map((a) => path.resolve(process.cwd(), a))
@@ -131,6 +139,54 @@ for (const file of targetHtmlFiles) {
     if (sysSeq[i] === "pc-mac" && sysSeq[i + 1] === "harmony") {
       errors.push(`[${rel}] 系统切换按钮顺序颠倒（PC/Mac 在前、鸿蒙在后），必须统一为左鸿蒙、右 PC/Mac`);
       break;
+    }
+  }
+
+  // 9. Validate every sprite.svg#<id> reference exists in icons/manifest.json (prevent hallucinated icon IDs)
+  if (validIconIds.size > 0) {
+    const useIconRe = /sprite\.svg#([^"'<\s]+)/g;
+    while ((m = useIconRe.exec(noPre)) !== null) {
+      if (!validIconIds.has(m[1])) {
+        errors.push(`[${rel}] 引用了不存在的 Pixso 图标 ID: sprite.svg#${m[1]}（请从 icons/manifest.json 选取）`);
+      }
+    }
+  }
+
+  // 10. Check <style> blocks for bare host selectors that bleed into [data-system], and inline-grid missing line-height
+  const inlineCssBlocks = [...txt.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/gi)].map((x) => x[1]);
+  for (const css of inlineCssBlocks) {
+    const cleanCss = css.replace(/\/\*[\s\S]*?\*\//g, "");
+    // Bare footer/header/hr rules without scoping (can bleed into .de-notification__actions / .de-dialog__footer)
+    const bareBleed = cleanCss.match(/(?:^|[}\n])\s*(footer|header|hr)\s*\{[^}]*(border|margin|padding)/gi);
+    if (bareBleed) {
+      errors.push(`[${rel}] <style> 存在未限定作用域的裸标签规则 (${bareBleed[0].trim().slice(0, 40)}...)，会穿透污染 [data-system] 组件`);
+    }
+    // inline-grid without line-height causes downward glyph overflow in small badges/buttons
+    for (const blk of cleanCss.split("}")) {
+      if (/display\s*:\s*inline-grid\b/.test(blk) && !/line-height\s*:/.test(blk)) {
+        const sel = (blk.split("{")[0] || "").trim().split("\n").pop();
+        errors.push(`[${rel}] 样式 ${sel} 使用了 inline-grid 但未设置 line-height: 1，小尺寸图标/徽标会下溢错位`);
+      }
+    }
+  }
+
+  // 11. Check hardcoded AARRGGBB 8-digit hex trap in inline styles or <style>
+  const aarrggbbRe = /#(E5000000|99000000|66000000|33000000|E5FFFFFF|99FFFFFF|66FFFFFF)\b/i;
+  if (aarrggbbRe.test(noPre)) {
+    errors.push(`[${rel}] 检测到鸿蒙 AARRGGBB 8位色值直接用于 CSS，请改用语义 Token 或标准 rgba()`);
+  }
+}
+
+// 12. Also audit tokens/components.css for inline-grid missing line-height
+const compCssPath = path.join(dsRoot, "tokens/components.css");
+if (fs.existsSync(compCssPath)) {
+  const compCss = fs.readFileSync(compCssPath, "utf8");
+  for (const blk of compCss.split("}")) {
+    if (/display\s*:\s*inline-grid\b/.test(blk) && !/line-height\s*:/.test(blk)) {
+      const sel = (blk.split("{")[0] || "").trim().split("\n").pop();
+      if (sel !== ".de-radio") {
+        errors.push(`[tokens/components.css] ${sel} 使用了 inline-grid 但未设置 line-height: 1`);
+      }
     }
   }
 }
