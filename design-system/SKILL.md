@@ -159,11 +159,16 @@ description: 使用 DevEco 双设计系统（鸿蒙原生端 HarmonyOS NEXT HDes
   - 检索清单：`design-system/icons/manifest.json`
 - **禁止模型手写或重绘 `<svg><path .../></svg>`**；必须通过 `<svg class="de-svg-icon"><use href="../icons/sprite.svg#<id>"/></svg>` 引用，或直接拷贝 `manifest.json` 中对应图标的 Token 化 `<svg>`。
 
-### 4. 保护区与字体约束（MUST NOT）
+### 4. 保护区、样式隔离与高频防坑硬规则（MUST FOLLOW）
 - **严禁修改 `deveco-intui-kit/` 目录下的任何文件**。
 - **严禁再用操作系统自带的「文件管理器」「备忘录」「记事本」充当 DevEco IDE 窗口**。
 - **严禁使用 `Inter` 或 `Helvetica` 字体**；UI 字体必须走 `--font-ui`（HarmonyOS Sans SC），代码字体走 `--font-mono`（JetBrains Mono）。
 - **严禁把鸿蒙 AARRGGBB（如 `#E5000000`）当成 CSS `#RRGGBBAA` 直接写进样式**。
+- **宿主样式穿透隔离**：任何文档页/外层壳禁止写裸标签样式（如 `footer`、`p`、`code`、`hr`）去影响 `[data-system]` 内部；组件预览画布（`.stage` / `.comp-stage` / `.workbench-stage`）必须始终使用自身 `[data-theme]` 对应的 `var(--surface-window)`，绝不继承外层页面的浅/深背景，杜绝反色（白底白字或黑底黑字）。
+- **小尺寸徽标与图标居中**：任何高度 ≤ 24px 的徽标/图标按钮（如 `.de-tree__badge`、`.de-titlebar__mark`、`.de-menu__icon`）必须使用 `display: inline-flex; align-items: center; justify-content: center; line-height: 1;`，严禁省略 `line-height: 1` 导致继承行高下溢贴底。
+- **严禁 Emoji / Unicode 伪图标与手绘 `<svg>`**：不得使用 `🔨 ▶ 🐞 💻 ⊞ ⑂ ✦ ⚠ 🔖 ⌕ ■` 等符号替代图标，也不得手写 `<svg><path .../></svg>`；一律引用 `design-system/icons/sprite.svg#<pixso-id>`。
+- **交互切换控件顺序固定**：所有双系统切换栏统一为 **左 `harmony`（鸿蒙 2.0）、右 `pc-mac`（PC/Mac NewUI）**，主题顺序统一为 **深色 → 浅色 → 高对比**，禁止随默认卡片翻转位置。
+- **色卡与 Token 必须全量直出**：展示色板时直接从源 JSON（`pc_lib-styles.json`、`tokens.json`）全量生成，避免只做局部摘要导致缺失色阶。
 
 ---
 

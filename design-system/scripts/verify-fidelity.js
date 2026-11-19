@@ -108,6 +108,31 @@ for (const file of targetHtmlFiles) {
       warnings.push(`[${rel}] .de-* 组件存在内联硬编码 HEX 颜色 (${st})，建议改用语义 Token`);
     }
   }
+
+  // 6. Check hand-drawn inline SVGs (must use Pixso sprite.svg#<id> instead of drawing paths manually)
+  const noPre = txt.replace(/<pre[\s\S]*?<\/pre>/g, "");
+  const handSvgs = (noPre.match(/<svg[\s\S]*?<\/svg>/g) || []).filter(
+    (s) => !s.includes("sprite.svg#") && !s.includes("#i-") && !s.includes("<defs>")
+  );
+  if (handSvgs.length) {
+    errors.push(`[${rel}] 发现 ${handSvgs.length} 处手绘 <svg>，必须改为引用 ../icons/sprite.svg#<pixso-id>`);
+  }
+
+  // 7. Check emoji / unicode pseudo-icons outside <pre>
+  const noSourceName = noPre.replace(/👉🔥【2\.0】基础范式🔥👈/g, "");
+  const badEmojis = noSourceName.match(/[🔨▶🐞💻📱⊞⑂✦⚠⚡🔍📁⚙🔖⌕■]/g) || [];
+  if (badEmojis.length) {
+    errors.push(`[${rel}] 发现 Emoji/Unicode 伪图标 [${[...new Set(badEmojis)].join(" ")}]，必须改用 Pixso sprite.svg 图标`);
+  }
+
+  // 8. Check system toggle button order (always harmony on left, pc-mac on right)
+  const sysSeq = [...noPre.matchAll(/data-set-system="(harmony|pc-mac)"/g)].map((x) => x[1]);
+  for (let i = 0; i + 1 < sysSeq.length; i += 2) {
+    if (sysSeq[i] === "pc-mac" && sysSeq[i + 1] === "harmony") {
+      errors.push(`[${rel}] 系统切换按钮顺序颠倒（PC/Mac 在前、鸿蒙在后），必须统一为左鸿蒙、右 PC/Mac`);
+      break;
+    }
+  }
 }
 
 console.log(`=== DevEco 设计系统还原度门禁 (Checked ${targetHtmlFiles.length} files) ===`);
