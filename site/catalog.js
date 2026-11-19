@@ -349,14 +349,15 @@ window.DEVECO_CATALOG = {
       items: [
         {
           title: '消息锚点导航（对话「钢琴键」）：六家做法对照', subtitle: 'Message Anchor Navigation · Codex / OpenBitfun / Antigravity / WorkBuddy / CodeBuddy / Claude Code',
-          desc: '对话左侧那排「钢琴键」的专业名称是消息锚点导航：每根刻度锚定一条用户提问，当前位置加长加深、滚动联动，悬停预览，点击跳转。Antigravity 官方 2.28.1 上线 conversation navigator，长对话按日期分章节、2.29.0 起章节有 AI 短标题；WorkBuddy 官方文档写明对话右侧刻度导航，悬停展开成提问列表，附两张官方截图；Codex 截图有刻度 + 书签，但各端不一致、GitHub 上用户一直在要；Claude Code /rewind 是回退不是浏览。拆出六个设计决策，更正上一版三处误读，落到 DevEco Code 七条建议、可交互 demo 与七条验收条件。',
+          desc: '对话左侧那排「钢琴键」的专业名称是消息锚点导航：每根刻度锚定一条用户提问，当前位置加长加深、滚动联动，悬停预览，点击跳转。Antigravity 官方 2.28.1 上线 conversation navigator，长对话按日期分章节、2.29.0 起章节有 AI 短标题；WorkBuddy 官方文档写明对话右侧刻度导航，悬停展开成提问列表，附两张官方截图；Codex 截图有刻度 + 书签，但各端不一致、GitHub 上用户一直在要；Claude Code /rewind 是回退不是浏览。拆出六个设计决策，更正上一版误读；评估 DevEco Code「刻度 + 三段卡片」方案（五个理由逐条核对），给出热区（整列 32px + 8px 桥接、纵向无缝、±3px 滞后、长对话局部放大）与悬停时间（首次 300ms、打开后 0ms 切换、离开 300ms、800ms 热态），附可交互 demo 与十条验收条件。',
           view: 'doc', date: '2026-11-18', href: 'analysis/conversation-piano-keys/index.html',
           links: [
             { label: '结论', href: 'analysis/conversation-piano-keys/index.html#keys' },
             { label: '总表', href: 'analysis/conversation-piano-keys/index.html#matrix' },
             { label: '各产品', href: 'analysis/conversation-piano-keys/index.html#products' },
             { label: '六个设计决策', href: 'analysis/conversation-piano-keys/index.html#decisions' },
-            { label: '对 DevEco 的建议', href: 'analysis/conversation-piano-keys/index.html#deveco' },
+            { label: '方案评估', href: 'analysis/conversation-piano-keys/index.html#plan' },
+            { label: '热区与悬停时间', href: 'analysis/conversation-piano-keys/index.html#hotzone' },
           ],
           tags: ['竞品分析', '消息锚点导航', '钢琴键', '对话时间线', '消息定位器', '对话历史', '跳转', '预览', '书签', '一手截图', 'Codex', 'OpenBitfun', 'Antigravity', 'WorkBuddy', 'CodeBuddy', 'Claude Code', 'DevEco Code'],
           thumb: { type: 'image', src: 'site/thumbs/conversation-piano-keys.jpg' },

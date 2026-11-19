@@ -9,5 +9,7 @@
 | `codex-navigation-rail.jpg` | Codex 长会话左缘导航轨 | OpenAI Developers X 帖（2026-06-27）所附视频封面帧，2026-11-19 下载 |
 | `openbitfun-session.jpg` | OpenBitFun 会话界面，左缘一根刻度 | OpenBitFun GitHub README `png/openbitfun-desktop-session.png`，转 JPG |
 | `antigravity-navigator.png` | Antigravity 左缘导航 + 悬停卡 | 待放入：官方文档、更新日志均无导航截图，需实机截图 |
+| `codex-anchor.png` | Codex 悬停卡（未清洗 Markdown + 书签） | 用户截图 2026-11-18 |
+| `deveco-proposal.jpg` | DevEco Code 方案稿：刻度 + 三段卡片 | 用户提供 2026-11-19，转 JPG |
 
 只放真实产品界面截图。
