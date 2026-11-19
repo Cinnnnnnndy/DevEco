@@ -175,6 +175,18 @@ for (const file of targetHtmlFiles) {
   if (aarrggbbRe.test(noPre)) {
     errors.push(`[${rel}] 检测到鸿蒙 AARRGGBB 8位色值直接用于 CSS，请改用语义 Token 或标准 rgba()`);
   }
+
+  // 13. Prevent misusing .de-studio on a standard window that contains .de-titlebar
+  const studioWithTitlebarRe = /<[^>]+class="[^"]*\bde-studio\b[^"]*"[^>]*>\s*<[^>]+class="[^"]*\bde-titlebar\b/i;
+  if (studioWithTitlebarRe.test(noPre)) {
+    errors.push(`[${rel}] 带 .de-titlebar 的标准窗口禁止叠加 .de-studio（.de-studio 会改为横向排列导致顶栏被挤到左侧，仅用于无顶栏横向工具窗）`);
+  }
+
+  // 14. Prevent misusing .de-nav__label (group heading) inside interactive items (.de-nav__item / button / a)
+  const navLabelInItemRe = /<(button|a)[^>]*class="[^"]*\bde-nav__item\b[^"]*"[^>]*>[\s\S]*?class="[^"]*\bde-nav__label\b/i;
+  if (navLabelInItemRe.test(noPre) || /<(button|a)[^>]*class="[^"]*\bde-nav__label\b/i.test(noPre)) {
+    errors.push(`[${rel}] .de-nav__label 仅用于侧栏分组标题（如 Today / 2026/8/30），禁止用于或嵌套在可点击会话条目内（条目请用 .de-nav__item + .de-nav__text）`);
+  }
 }
 
 // 12. Also audit tokens/components.css for inline-grid missing line-height & .de-svg-icon breaking color inheritance

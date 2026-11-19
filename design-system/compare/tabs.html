@@ -6,9 +6,9 @@
 <title>DevEco 设计系统 · Pixso 矢量 AST 双系统规范与组件库</title>
 <meta name="description" content="从 7 份本地 Pixso 源文件（inner.pix 133,622 矢量节点）提取构建的 DevEco 双设计系统：鸿蒙原生端（HarmonyOS NEXT HDesign 2.0）与 PC/Mac 当代桌面端（IntelliJ NewUI），含 Token、双系统实时工作台、21 个组件文档、6 组原稿对照与 2 套整窗 Pattern。">
 <link rel="icon" type="image/svg+xml" href="../../deveco-intui-kit/icons/deveco-code-logo.svg">
-<link rel="stylesheet" href="../../deveco-intui-kit/src/tokens.css?v=20261119h">
-<link rel="stylesheet" href="../../site/launcher.css?v=20261119h">
-<link rel="stylesheet" href="../tokens/index.css?v=20261119h">
+<link rel="stylesheet" href="../../deveco-intui-kit/src/tokens.css?v=20261119i">
+<link rel="stylesheet" href="../../site/launcher.css?v=20261119i">
+<link rel="stylesheet" href="../tokens/index.css?v=20261119i">
 <style>
 /* ---------- 框架：对齐仓库内其他规范卡片（复用 site/launcher.css 的 .page / .mast / .tbtn / .layout / .sidebar / .cat / section.grp / .card）。
    页面自身支持浅色 / 深色切换；样张画布（[data-system]）内的组件样式 100% 来自 ../tokens/index.css。 ---------- */
@@ -2898,6 +2898,9 @@ description: 使用 DevEco 双设计系统（鸿蒙原生端 HarmonyOS NEXT HDes
 - **严禁 Emoji / Unicode 伪图标与手绘 `&lt;svg&gt;`**：不得使用 `🔨 ▶ 🐞 💻 ⊞ ⑂ ✦ ⚠ 🔖 ⌕ ■` 等符号替代图标，也不得手写 `&lt;svg&gt;&lt;path .../&gt;&lt;/svg&gt;`；一律引用 `design-system/icons/sprite.svg#&lt;pixso-id&gt;`。
 - **交互切换控件顺序固定**：所有双系统切换栏统一为 **左 `harmony`（鸿蒙 2.0）、右 `pc-mac`（PC/Mac NewUI）**，主题顺序统一为 **深色 → 浅色 → 高对比**，禁止随默认卡片翻转位置。
 - **色卡与 Token 必须全量直出**：展示色板时直接从源 JSON（`pc_lib-styles.json`、`tokens.json`）全量生成，避免只做局部摘要导致缺失色阶。
+- **`.de-window` 与 `.de-studio` 严格互斥**：只要窗口包含顶栏 `.de-titlebar`，就**只能使用 `.de-window` + `.de-window__body`**（顶栏在上，下方图标条/侧栏/主区横向排列），**严禁再叠加 `.de-studio`**；`.de-studio` 仅用于无顶栏的纯横向工具窗（`StudioToolWindow`）。
+- **侧栏分组标题与会话条目严格区分**：日期/分类分组标题（如 `Today`、`2026/8/30`）用 `&lt;div class="de-nav__label"&gt;`，可点击会话/导航条目必须用 `&lt;button class="de-nav__item"&gt;&lt;span class="de-nav__text"&gt;...&lt;/span&gt;&lt;/button&gt;`（自动单行省略号截断），**严禁把 `.de-nav__label` 用在或嵌套在可点击条目里**。
+- **图标颜色继承铁律**：`.de-svg-icon` 必须保持 `color: inherit`（禁止在图标类本身写死 `color: var(--icon)`），保证蓝色激活态、主按钮、深色顶栏内图标自动反白。
 
 ---
 
@@ -2909,7 +2912,7 @@ description: 使用 DevEco 双设计系统（鸿蒙原生端 HarmonyOS NEXT HDes
 ```bash
 node design-system/scripts/verify-fidelity.js &lt;你的页面路径.html&gt;
 ```
-该脚本会自动拦截（12 项硬门禁）：
+该脚本会自动拦截（14 项硬门禁）：
 1. 未引入 `tokens/index.css` 或缺失 `data-system` / `data-theme` 声明；
 2. 误用 `Inter` 字体或引用了不存在的 `--*` CSS 变量；
 3. `.de-*` 组件上硬编码了私有 HEX 颜色，或误把鸿蒙 8 位 `AARRGGBB` 当 CSS 颜色；
@@ -2917,7 +2920,9 @@ node design-system/scripts/verify-fidelity.js &lt;你的页面路径.html&gt;
 5. 手绘 `&lt;svg&gt;` 或使用 Emoji/Unicode 伪图标（`🔨 ▶ 🐞 💻 ⊞ ⑂ ✦ ⚠ 🔖 ⌕ ■`）；
 6. 编造不存在的 `sprite.svg#&lt;id&gt;` 图标 ID（实时核对 `icons/manifest.json` 995 个真实 ID）；
 7. 系统切换按钮顺序颠倒（必须左鸿蒙、右 PC/Mac）；
-8. `&lt;style&gt;` 中出现未限域的裸 `footer`/`header`/`hr` 穿透规则，或 `inline-grid` 缺少 `line-height: 1` 导致小徽标下溢错位。
+8. `&lt;style&gt;` 中出现未限域的裸 `footer`/`header`/`hr` 穿透规则，或 `inline-grid` 缺少 `line-height: 1` 导致小徽标下溢错位；
+9. `.de-svg-icon` 写死 `color: var(--icon)` 导致反色按钮内图标变灰；
+10. 带 `.de-titlebar` 的标准窗口误加 `.de-studio` 导致顶栏被挤到左侧，或将 `.de-nav__label` 错用于会话条目内。
 
 ### 第二步：浏览器实测与深浅双主题走查
 1. 在浏览器中打开页面，分别切换 `data-theme="dark"` 与 `data-theme="light"`（以及 `data-system="harmony"` 与 `data-system="pc-mac"`）。
