@@ -129,6 +129,10 @@ figure.shot figcaption{font-size:12px;color:var(--ink3);margin-top:8px}
 .showhz .hzband{display:block}
 .pcard{position:absolute;left:40px;z-index:8;display:none;width:312px;padding:6px;border-radius:12px;background:#2b2d30;color:#dfe1e5;box-shadow:0 8px 24px rgba(0,0,0,.28);font-size:12.5px;line-height:18px}
 .pcard.show{display:block}
+.pcard .pc-meta{font:10.5px/16px var(--mono);color:#868a91;text-align:right;padding:0 8px 2px}
+.demo-rail.fade-top{-webkit-mask-image:linear-gradient(180deg,transparent 0,#000 38px);mask-image:linear-gradient(180deg,transparent 0,#000 38px)}
+.demo-rail.fade-bot{-webkit-mask-image:linear-gradient(0deg,transparent 0,#000 38px);mask-image:linear-gradient(0deg,transparent 0,#000 38px)}
+.demo-rail.fade-top.fade-bot{-webkit-mask-image:linear-gradient(180deg,transparent 0,#000 38px,#000 calc(100% - 38px),transparent 100%);mask-image:linear-gradient(180deg,transparent 0,#000 38px,#000 calc(100% - 38px),transparent 100%)}
 .pcard .row{display:grid;grid-template-columns:34px minmax(0,1fr);align-items:start;border-radius:8px;cursor:pointer;padding:4px 8px 4px 0}
 .pcard .row:hover{background:rgba(255,255,255,.06)}
 .pcard .gut{display:flex;align-items:center;gap:5px;justify-content:flex-end;padding-right:8px;height:18px;font:10.5px/18px var(--mono);color:#6f737a}
@@ -195,7 +199,7 @@ figure.shot figcaption{font-size:12px;color:var(--ink3);margin-top:8px}
     <li><span><b>Codex 有官方的导航轨，但各端不一致。</b>2026-06-27 OpenAI 官方宣布长线程新增 navigation rail：悬停预览附近轮次、点击跳转。我们的截图里还有带书签的悬停卡；但 GitHub 上同时有人说新版统一桌面端里「时间线不见了」（#35071）、标记在某些侧栏宽度下消失（#32015）、VS Code 插件里没有（#31104）。截图只代表截图那个版本。</span></li>
     <li><span><b>WorkBuddy 也是刻度导航，而且官方文档写得最完整。</b>对话右侧一条竖向刻度，每条刻度对应一条提问，当前提问刻度更长更深；鼠标移上去会把整条刻度展开成提问列表（只列提问、过长截断），点列表项或刻度都能定位，滚动时同步。它把「刻度省空间」和「列表能扫读」合在了一个控件里。CodeBuddy JetBrains 插件写的是「历史提问分段懒加载与跳转定位」，形态待确认。</span></li>
     <li><span><b>Claude Code 的 /rewind 不是同类。</b>它解决「退回到某一步」（代码、对话或两者），不是「浏览并跳到某条提问」。放在表里只作对照。</span></li>
-    <li><span><b>DevEco Code 计划采用「刻度 + 三段卡片」方案，方向成立，要补三处。</b>卡片显示上一条 / 当前条加回复摘要 / 下一条，信息量介于 Codex（一行）和 WorkBuddy（整列表）之间，默认态和悬停态一体。要补的是：长对话下刻度间距会压到 3px 左右，需要局部放大和滚轮逐条切换；只靠悬停对触控、键盘不友好；「上下文长度变化」和蓝色刻度的含义要先定清楚。热区和悬停时间的具体数值见 08 节。</span></li>
+    <li><span><b>DevEco Code 计划采用「刻度 + 三段卡片」，长对话用 Codex 式「窗口跟随」。</b>卡片显示上一条 / 当前条加回复摘要 / 下一条，信息量介于 Codex（一行）和 WorkBuddy（整列表）之间，默认态和悬停态一体。长对话时刻度间距固定 10px 不压缩，轨道超出可视区就只显示视口附近一段，随对话滚动，上下端淡出，卡片写「第 87 / 136 条」补足总数。热区和悬停时间的数值与依据见 08 节。</span></li>
   </ol>
 
   <h2 id="what"><span class="no">02</span>它是什么</h2>
@@ -326,7 +330,7 @@ figure.shot figcaption{font-size:12px;color:var(--ink3);margin-top:8px}
     <div class="w"><h3>② 刻度长短表示什么</h3><p>消息长度、重要程度，还是离当前多远？</p><div class="ob"><b>各家：</b>Codex、OpenBitfun 都是离当前多远：当前最长，向两侧递减。<b>倾向：</b>同样；不要用长度表示消息长短，否则会被读成滚动条。</div></div>
     <div class="w"><h3>③ 预览给什么</h3><p>逐根悬停看一条，还是一次展开全部提问？</p><div class="ob"><b>各家：</b>Codex 一行原文；OpenBitfun 序号 + 首句；Antigravity prompt + 回复预览 + 时间；WorkBuddy 悬停一次就把刻度展开成全部提问列表。<b>倾向（DevEco 方案）：</b>上一条 / 当前条 + 回复摘要 / 下一条三段，介于两者之间；全部去掉 Markdown。</div></div>
     <div class="w"><h3>④ 放左边还是右边，什么时候出现</h3><p>贴对话左缘还是右缘？短对话要不要显示？</p><div class="ob"><b>各家：</b>Antigravity、Codex、OpenBitfun 在左；WorkBuddy 在右，达到一定轮数才出现，窄屏自动隐藏。<b>倾向（DevEco 方案）：</b>放在对话内容左侧的留白里，不贴面板边缘，左侧会话列表不受影响；设提问数阈值与留白不足时隐藏。点击跳到提问顶部，离开底部后出现「回到最新」。</div></div>
-    <div class="w"><h3>⑤ 长对话怎么放</h3><p>压扁间距、轨道自己滚动，还是分章节折叠？</p><div class="ob"><b>各家：</b>Antigravity 按日期分章节、AI 起标题。<b>倾向（DevEco 方案）：</b>不出滚动条，鼠标附近局部放大、其余压缩，并支持在轨道上滚滚轮逐条切换（见 08 节）。</div></div>
+    <div class="w"><h3>⑤ 长对话怎么放</h3><p>压扁间距、轨道跟随滚动，还是分章节折叠？</p><div class="ob"><b>各家：</b>Codex、OpenBitfun 固定间距、轨道只显示一段（推断）；Antigravity 按日期分章节；WorkBuddy 展开成列表。<b>倾向（DevEco 方案）：</b>参照 Codex 窗口跟随：间距固定 10px 不压缩，上下端淡出，卡片写总数（见 08-b）。</div></div>
     <div class="w"><h3>⑥ 除了跳转还能做什么</h3><p>书签、复制、从这里重来？</p><div class="ob"><b>各家：</b>Codex 书签；WorkBuddy 和 Claude Code 的回退都走另一个入口（WorkBuddy 在消息悬停操作里，Claude Code 是 /rewind）。<b>倾向：</b>先只做跳转，书签列为候选；回退不挂在导航上。</div></div>
   </div>
 
@@ -347,8 +351,8 @@ figure.shot figcaption{font-size:12px;color:var(--ink3);margin-top:8px}
     <tbody>
       <tr><th>① 只用悬停，控制热区后改善悬停难</th><td><span class="f b">成立</span><small style="display:block;color:var(--ink3)">有条件</small></td><td>热区放宽（横向整列、纵向无缝）确实是改善的关键，具体数值见 08 节。但「只靠悬停」有两个缺口：鸿蒙电脑和平板有触控、手写笔，没有悬停；键盘用户也用不了。需要补「轻点刻度 = 悬停」「聚焦刻度 = 悬停」两种等价方式。</td></tr>
       <tr><th>② 信息聚焦：正文 + 上下文各一条</th><td><span class="f b">成立</span></td><td>三条比 WorkBuddy 的整列表更聚焦，比 Codex 的一行更有判断依据。要补的是回复摘要的取法：截图里这一轮回复前面是 Deep Thinking 和 4 个 subagent，直接截回复开头会截到「思考中」「subagent 运行中」之类的过程文字。摘要应取回复里第一段正文，并去掉 Markdown。上一条、下一条也应可点击直接跳转，否则它们只是装饰。</td></tr>
-      <tr><th>③ 无滚动条，不需要滚动加二次悬停</th><td><span class="f b">成立</span><small style="display:block;color:var(--ink3)">按 08 节分三段</small></td><td>短对话直接成立。长对话是最大风险：截图里 11 条、间距约 9px；136 条如果仍按 1:1 塞进约 400px 的轨道，间距只剩约 2.6px，手停不住。08 节给出三段映射：放得下时 1:1 增长；放不下时局部放大 + 两档速度；超长时压缩区合并。全程不出现滚动条。</td></tr>
-      <tr><th>④ 可以显示上下文长度变化</th><td><span class="f b">成立</span><small style="display:block;color:var(--ink3)">已定义</small></td><td>定义为：<b>刻度数量和轨道长度随对话增长，看得出对话有多长；不做 token 度量</b>。这样刻度长短只有一个含义——离当前位置多远，不和「内容多少」抢视觉通道。轨道长到上限后，长度不再增加，改由压缩区变密来表达「更长了」，卡片里写「第 87 / 136 条」补足精确数字。另外截图底部的蓝色刻度需要定义含义（建议：最新一条 / 正在生成），并和白色的「悬停 / 当前」区分开。</td></tr>
+      <tr><th>③ 无滚动条，不需要滚动加二次悬停</th><td><span class="f b">成立</span><small style="display:block;color:var(--ink3)">按 08-b 窗口跟随</small></td><td>短对话直接成立。长对话如果把全部刻度塞进一屏，136 条时间距只剩约 2.6px，手停不住。改用窗口跟随：间距永远 10px，轨道超出可视区时只显示视口附近一段、随对话滚动，所以在可见范围内仍然「无滚动、一次悬停」。要看窗口外的提问，滚动对话本身即可，或在轨道上用滚轮 / ↑↓ 逐条移动；不需要轨道自己的滚动条。</td></tr>
+      <tr><th>④ 可以显示上下文长度变化</th><td><span class="f c">部分成立</span><small style="display:block;color:var(--ink3)">已定义</small></td><td>定义为：<b>刻度数量和轨道长度随对话增长，看得出对话有多长；不做 token 度量</b>，刻度长短只表达「离当前多远」。在轨道放得下之前（H = 400px 时约 41 条以内）完全成立；超过后轨道长度停在上限，看不到全长——这是窗口跟随的代价。用两样补：轨道上下端淡出，表示「那边还有」；卡片里写「第 87 / 136 条」。截图底部的蓝色刻度需要定义含义（建议：最新一条 / 正在生成）。</td></tr>
       <tr><th>⑤ 默认态与悬停态是一套体系</th><td><span class="f b">成立</span></td><td>刻度在悬停前后不变形、不换布局，卡片只是在旁边长出来，这一点比 WorkBuddy「刻度整列变列表」更连贯。要注意卡片垂直居中跟随悬停刻度：上下扫动时卡片每次跳 9px，同时内容也在变，眼睛很难读。建议卡片打开后位置固定，只在悬停的刻度超出卡片上下范围时才平移。</td></tr>
     </tbody>
   </table></div>
@@ -411,7 +415,7 @@ figure.shot figcaption{font-size:12px;color:var(--ink3);margin-top:8px}
   <ol class="items">
     <li><span><b>横向：整列 32px 都算热区，再向卡片方向延伸 8px 作桥接。</b>鼠标从刻度滑向卡片（去点上一条 / 下一条）时，经过的空隙仍算在热区内，卡片不会关。</span></li>
     <li><span><b>纵向：每格高度 = 刻度间距，边界在相邻两根刻度的中点；切换加 ±3px 滞后</b>（间距小于 10px 时取间距的 30%）。轨道最上和最下各多留半格，第一条和最后一条和中间一样好停。</span></li>
-    <li><span><b>长对话：按 08-b 的三段映射，间距不小于 10px，轨道不出现滚动条。</b>同时支持在轨道上滚动滚轮，每格一条，不用瞄准也能逐条看。</span></li>
+    <li><span><b>长对话：按 08-b 的窗口跟随，间距固定 10px，不压缩。</b>悬停期间轨道不动；在轨道上滚动滚轮，每格一条，到窗口边缘时轨道跟着移一格。</span></li>
     <li><span><b>卡片位置：打开时对齐悬停的刻度，之后固定。</b>只有当悬停的刻度超出卡片上下边缘时才整体平移，扫动时眼睛不用追着卡片跑。</span></li>
   </ol>
 
@@ -468,31 +472,32 @@ figure.shot figcaption{font-size:12px;color:var(--ink3);margin-top:8px}
       <tr><th>固定间距 + 轨道只显示一段</th><td>Codex、OpenBitfun（推断）</td><td><span class="f n">否</span></td><td><span class="f b">是</span></td><td><span class="f c">轨道跟滚动走</span></td></tr>
       <tr><th>阈值出现 + 悬停展开列表</th><td>WorkBuddy</td><td><span class="f n">否</span></td><td><span class="f b">是（列表行）</span></td><td><span class="f c">列表长了要滚</span></td></tr>
       <tr><th>按日期分章节、折叠</th><td>Antigravity</td><td><span class="f c">部分</span></td><td><span class="f b">是</span></td><td><span class="f c">展开章节要点一下</span></td></tr>
-      <tr><th>本方案：1:1 增长 → 局部放大 → 合并</th><td>DevEco Code（计划）</td><td><span class="f b">是</span></td><td><span class="f b">窗口内是</span></td><td><span class="f b">是</span></td></tr>
+      <tr><th>本方案：固定间距 + 窗口跟随 + 淡出边缘 + 卡片总数</th><td>DevEco Code（计划）</td><td><span class="f c">靠淡出和「N / 总数」</span></td><td><span class="f b">是</span></td><td><span class="f b">可见范围内是</span></td></tr>
     </tbody>
   </table></div>
-  <p class="tnote">读法：本方案是四种里唯一同时保住「看得出总长」和「无滚动」的，代价是阶段二的压缩区观感和粗调时窗口会跳——所以阈值应设在大多数线程碰不到的位置，并在原型里重点测这两点。</p>
+  <p class="tnote">读法：本方案采用和 Codex 相同的窗口跟随，好处是永远不糊、手感在任何长度下都一样；它比 Codex 多做两件事来补「看不到全长」：上下端淡出、卡片写「第 N / 总数」。</p>
 
-  <h3 id="long" style="margin:18px 0 8px">08-b 长对话：三段映射</h3>
-  <p class="sub">前提：轨道长度表达对话长度，不表达 token；刻度间距下限 10px；全程不出现滚动条。设对话区可视高度上下各留 48px 后为轨道上限 <code>H</code>，能 1:1 放下的条数 <code>C = H ÷ 10 + 1</code>（H = 400px 时 C = 41；H = 700px 时 C = 71）。</p>
+  <h3 id="long" style="margin:18px 0 8px">08-b 长对话：窗口跟随</h3>
+  <p class="sub">参照 Codex：刻度间距永远固定 10px，不压缩、不合并。设轨道上限 <code>H</code> = 对话视口高度 − 上下各 48px，能完整放下的条数 <code>C = ⌊H ÷ 10⌋ + 1</code>（H = 400px 时 C = 41；H = 700px 时 C = 71）。</p>
   <div class="tw"><table style="min-width:0">
-    <thead><tr><th style="width:130px">阶段</th><th style="width:150px">条件</th><th>轨道与刻度</th><th style="width:230px">怎么看出「对话有多长」</th></tr></thead>
+    <thead><tr><th style="width:130px">情况</th><th>轨道与刻度</th><th style="width:34%">怎么看出「对话有多长、我在哪」</th></tr></thead>
     <tbody>
-      <tr><th>一 · 1:1 增长</th><td>n ≤ C</td><td>每条一根，间距固定 10px，轨道长度 = (n − 1) × 10px，顶端固定，随条数向下延伸（不做垂直居中：居中会让每发一条消息，所有刻度整体移动 5px，正在悬停的手下会跑）。热区、滞后按 08 节前两条。</td><td>轨道越长，对话越长；刻度一根一根数得出来。</td></tr>
-      <tr><th>二 · 局部放大</th><td>n &gt; C，且压缩间距 ≥ 2px</td><td>轨道停在上限 H 不再变长。鼠标附近 7 条保持 10px（放大窗口），其余均匀压缩：<code>s = (H − 60) ÷ (n − 7)</code>。<b>两档速度</b>：在窗口里移动是细调，10px 一条；移到压缩区是粗调，窗口直接跳过去，并把被悬停的那根刻度放在鼠标正下方，手下的刻度不跑。键盘 ↑↓ 和滚轮始终一格一条。</td><td>轨道到顶后，压缩区越来越密；卡片写「第 87 / 136 条」给出精确数字。</td></tr>
-      <tr><th>三 · 压缩区合并</th><td>压缩间距 &lt; 2px</td><td>窗口外每 k 条只画一根（k = ⌈2 ÷ s⌉），刻度不再糊成一片；窗口内仍一条一根。命中规则不变：粗调落点仍精确到条，落下后在窗口里细调。</td><td>压缩区呈均匀细纹，密度不再增加；靠卡片里的「第 N / 总数」。</td></tr>
+      <tr><th>n ≤ C · 全部可见</th><td>每条一根，轨道长度 = (n − 1) × 10px，顶端固定、随条数向下延伸（不垂直居中：居中会让每发一条消息全部刻度移动 5px）。</td><td>轨道越长，对话越长。</td></tr>
+      <tr><th>n &gt; C · 窗口跟随</th><td>轨道长度停在 H，只显示其中 C 条。窗口位置跟随对话滚动：<code>偏移 = 滚动进度 × ((n − 1) × 10 − H)</code>，即对话滚到顶看到第一批、滚到底看到最后一批；再加一条约束，视口所在那条始终落在窗口内、距上下边缘不少于 24px。</td><td>窗口外还有提问的一端，24px 淡出；卡片写「第 87 / 136 条」。</td></tr>
+      <tr><th>悬停中</th><td>轨道冻结，不随任何东西移动，手下的刻度不会跑。滚轮在轨道上每格移一条；悬停条到窗口边缘时，窗口跟着移一格。</td><td>同上。</td></tr>
+      <tr><th>悬停结束</th><td>窗口回到「跟随对话滚动」的位置；如果刚才点了跳转，对话滚过去，窗口自然跟过去。</td><td>—</td></tr>
     </tbody>
   </table></div>
   <div class="tw" style="margin-top:10px"><table style="min-width:0">
     <thead><tr><th>H = 400px 时</th><th>11 条</th><th>41 条</th><th>136 条</th><th>300 条</th></tr></thead>
     <tbody>
-      <tr><th>阶段</th><td>一</td><td>一（刚好放满）</td><td>二</td><td>三</td></tr>
       <tr><th>轨道长度</th><td>100px</td><td>400px</td><td>400px</td><td>400px</td></tr>
-      <tr><th>窗口内间距</th><td>10px</td><td>10px</td><td>10px</td><td>10px</td></tr>
-      <tr><th>压缩区间距</th><td>—</td><td>—</td><td>约 2.6px</td><td>约 1.2px → 每 2 条画一根</td></tr>
+      <tr><th>间距</th><td>10px</td><td>10px</td><td>10px</td><td>10px</td></tr>
+      <tr><th>可见条数</th><td>全部</td><td>全部</td><td>41（约 30%）</td><td>41（约 14%）</td></tr>
+      <tr><th>淡出边缘</th><td>无</td><td>无</td><td>窗口外有内容的一端</td><td>同左</td></tr>
     </tbody>
   </table></div>
-  <div class="note"><b>为什么不用「轨道自己滚动」：</b>那样又回到了滚动条和二次悬停，也看不到全长。<b>为什么不按章节折叠（Antigravity 的做法）：</b>折叠后刻度数量不再反映对话长度，和 ④ 的定义冲突；章节可以留作 500 条以上的兜底。<b>局部放大的已知代价：</b>粗调那一下窗口会跳，所以要把被悬停的刻度锚在鼠标下面，并在原型里重点测「想停停不住」的次数。</div>
+  <div class="note"><b>为什么不再压缩：</b>上一版的「局部放大」能看到全长，但压缩区在截图里糊成一整块，粗调时窗口还会跳；三家竞品都没有这么做。窗口跟随放弃了「一眼看全长」，换来任何长度下手感都一样。<b>补偿全长感的两样东西：</b>淡出边缘（有内容才显示）和卡片总数。如果后续发现用户确实需要全长，可以在淡出边缘外侧加一个很小的数字（如 ↑ 42 / ↓ 53），不改刻度本身。</div>
 
   <h3 style="margin:18px 0 8px">悬停时间</h3>
   <div class="tw"><table style="min-width:0">
@@ -522,15 +527,15 @@ figure.shot figcaption{font-size:12px;color:var(--ink3);margin-top:8px}
   <div class="tw"><table class="basis">
     <thead><tr><th style="width:118px">参数</th><th style="width:70px">取值</th><th style="width:22%">精确定义</th><th>依据与推导</th><th style="width:20%">怎么验证 / 可调范围</th></tr></thead>
     <tbody>
-      <tr><th>刻度间距 p</th><td>10px</td><td>相邻两根刻度中心的竖直距离（CSS px）。阶段一和放大窗口内固定为 p。</td><td><span class="ev m">实测</span>Codex 截图：2 倍屏 20 像素 = 10px；方案稿约 9px。<br><span class="ev q">推导</span>p = 2h + 4：交界两侧各需滞后 h = 3px，中间再留 4px「无争议区」，手停在格中央时不会碰到任何一侧的切换线。<br><span class="ev s">研究</span>按 Fitts 定律，相邻切换难度 log₂(10/10 + 1) = 1 bit，很容易；从轨道一端到另一端（41 条、400px）为 log₂(400/10 + 1) ≈ 5.4 bit，比普通菜单项（24px 行、200px 距离约 3.3 bit）难，所以必须有 ↑↓、滚轮等不靠瞄准的方式。<br><span class="ev o">规范</span>WCAG 2.2 · 2.5.8 要求指针目标 ≥ 24×24px，10px 达不到，靠「等效控件」例外合规：同一功能必须有键盘、滚轮、搜索入口。<br>物理尺寸：Windows 100% 缩放的 24 寸 1080p 屏约 2.8mm，14 寸 MacBook 默认缩放约 2.0mm。</td><td>原型测「想停停不住」次数；可调 9–12px。低于 9px 时 2h + 4 无法成立。</td></tr>
+      <tr><th>刻度间距 p</th><td>10px</td><td>相邻两根刻度中心的竖直距离（CSS px），任何对话长度下都固定为 p，不压缩。</td><td><span class="ev m">实测</span>Codex 截图：2 倍屏 20 像素 = 10px；方案稿约 9px。<br><span class="ev q">推导</span>p = 2h + 4：交界两侧各需滞后 h = 3px，中间再留 4px「无争议区」，手停在格中央时不会碰到任何一侧的切换线。<br><span class="ev s">研究</span>按 Fitts 定律，相邻切换难度 log₂(10/10 + 1) = 1 bit，很容易；从轨道一端到另一端（41 条、400px）为 log₂(400/10 + 1) ≈ 5.4 bit，比普通菜单项（24px 行、200px 距离约 3.3 bit）难，所以必须有 ↑↓、滚轮等不靠瞄准的方式。<br><span class="ev o">规范</span>WCAG 2.2 · 2.5.8 要求指针目标 ≥ 24×24px，10px 达不到，靠「等效控件」例外合规：同一功能必须有键盘、滚轮、搜索入口。<br>物理尺寸：Windows 100% 缩放的 24 寸 1080p 屏约 2.8mm，14 寸 MacBook 默认缩放约 2.0mm。</td><td>原型测「想停停不住」次数；可调 9–12px。低于 9px 时 2h + 4 无法成立。</td></tr>
       <tr><th>切换滞后 h</th><td>min(3px, 0.3p)</td><td>当前条的判定区上下各外扩 h；光标越过两格中线再多 h，才切到相邻条。</td><td><span class="ev q">推导</span>两个约束：下限——h 要大于手「停住」时光标的抖动幅度（手部微颤 + 鼠标量化，估计 1–2px，<span class="ev i">判断</span>）；上限——h 必须小于 p/2，否则永远切不到邻格。取 0.3p，留 0.4p 余量；p = 10 时 h = 3。</td><td>原型记录停留 300ms 期间光标 y 的标准差 σ，要求 h ≥ 2σ。</td></tr>
       <tr><th>横向热区宽 W</th><td>32px</td><td>从对话内容区左缘起的整列；列内任意 x，都只按 y 判定是哪一条。</td><td><span class="ev s">研究</span>上下扫动是在一条竖直「通道」里移动，适用 Accot–Zhai 转向定律：T = a + b·A/W，通道越窄越慢、越容易滑出。若只把刻度本身（约 8px）当 W，扫 400px 时 A/W = 50；W = 32 时为 12.5，难度降到 1/4。<br><span class="ev q">推导</span>上限由内容左侧留白决定：W + 桥接 ≤ 留白。</td><td>原型测扫动中「滑出热区导致卡片关闭」的次数；可调 24–40px。</td></tr>
       <tr><th>桥接 B</th><td>8px</td><td>热区右缘到卡片左缘之间的空隙，整段算入热区。</td><td><span class="ev m">实测</span>方案稿卡片左缘距当前刻度约 8px。<br><span class="ev q">推导</span>B 不是独立设计的数，它<b>等于实际空隙</b>：卡片位置改了，B 跟着改，保证「轨道 → 卡片」路径上没有断点。</td><td>断言：从任一刻度水平移入卡片，卡片不关闭。</td></tr>
       <tr><th>斜向移入卡片</th><td>三角形规则</td><td>卡片打开时，若新光标点落在「上一光标点、卡片左缘上角、卡片左缘下角」组成的三角形内，视为正在移向卡片，不切换当前条。</td><td><span class="ev s">研究</span>来自 Amazon 大菜单的「瞄准三角形」（Ben Kamens 2013 年拆解）。斜着去点卡片里的上一条 / 下一条时，光标会划过别的刻度；没有这条规则，卡片内容会在半路被换掉。</td><td>断言：从刻度斜向点卡片的上一条、下一条，命中率 ≥ 95%。</td></tr>
       <tr><th>隐藏阈值</th><td>40px</td><td>对话内容左侧留白小于该值时不显示轨道。</td><td><span class="ev q">推导</span>= W + B = 32 + 8。留白不够放下热区和桥接时，宁可不显示，也不压到正文上（WorkBuddy、Antigravity 同样在窄时隐藏）。</td><td>随 W、B 联动。</td></tr>
-      <tr><th>轨道上限 H、1:1 容量 C</th><td>C = ⌊H / p⌋ + 1</td><td>H = 对话视口高度 − 上下各 48px 留白；条数 ≤ C 走阶段一。</td><td><span class="ev q">推导</span>由 H 和 p 直接算出；H = 400 时 C = 41，H = 700 时 C = 71。<br><span class="ev i">判断</span>上下 48px 是为了避开标题区和输入框附近的误触，按 DevEco Code 的实际布局再调。</td><td>随窗口高度实时重算。</td></tr>
-      <tr><th>放大窗口</th><td>7 条（60px）</td><td>阶段二中，以悬停条为中心，前后各 3 条保持间距 p。</td><td><span class="ev q">推导</span>卡片显示 3 条（当前 ±1），窗口在此基础上两侧各再留 2 条余量，连按两次 ↑↓ 或小幅移动都还在细调区内，不触发跳窗。<br><span class="ev i">判断</span>余量 2 条是起始值。</td><td>原型统计跳窗次数；可调 5–9 条。</td></tr>
-      <tr><th>合并阈值</th><td>2px</td><td>压缩区间距 s &lt; 2px 时，窗口外每 k = ⌈2 / s⌉ 条只画一根。</td><td><span class="ev q">推导</span>刻度线粗 1px（方案稿实测）。在 1 倍屏上要看得出是两根，至少需要 1px 线 + 1px 缝 = 2 个物理像素。2 倍屏可以到 1px，但按最差的 1 倍屏定。（上一版写的 1.5px 在 1 倍屏上会糊成一片，已改为 2px。）</td><td>H = 400 时约 177 条以上进入阶段三。</td></tr>
+      <tr><th>轨道上限 H、容量 C</th><td>C = ⌊H / p⌋ + 1</td><td>H = 对话视口高度 − 上下各 48px 留白；条数 ≤ C 时全部可见，超过后窗口跟随。</td><td><span class="ev q">推导</span>由 H 和 p 直接算出；H = 400 时 C = 41，H = 700 时 C = 71。<br><span class="ev i">判断</span>上下 48px 是为了避开标题区和输入框附近的误触，按 DevEco Code 的实际布局再调。</td><td>随窗口高度实时重算。</td></tr>
+      <tr><th>窗口跟随偏移</th><td>按滚动进度</td><td>偏移 = 滚动进度 × ((n − 1) × p − H)，并保证视口所在条距窗口上下边缘 ≥ 24px。</td><td><span class="ev m">实测</span>Codex 截图：间距固定、刻度排到可视区外。<span class="ev i">推断</span>其窗口随对话滚动。<br><span class="ev q">推导</span>按进度映射，滚到顶 / 底时窗口正好在两端，不会出现「对话到底了、轨道还没到底」；24px 约束防止当前条贴在淡出区里看不清。</td><td>断言：任意滚动位置，视口所在条都可见且不在淡出区内。</td></tr>
+      <tr><th>淡出边缘</th><td>24px</td><td>窗口外还有提问的一端，轨道末端 24px 透明度从 1 渐变到 0；没有更多内容的一端不淡出。</td><td><span class="ev q">推导</span>约等于 2 格多一点：足够看出「在变淡」，又不会把当前条附近的刻度淡掉（与上一行的 24px 约束一致）。<br><span class="ev i">判断</span>具体长度看视觉稿。</td><td>断言：只有窗口外有内容时才出现。</td></tr>
       <tr><th>即时反馈</th><td>≤ 100ms</td><td>光标进入热区到悬停那根刻度变亮。</td><td><span class="ev s">研究</span>0.1 秒是「感觉是即时」的上限；NN/g：进入目标区后 0.1 秒内给视觉反馈。</td><td>性能断言。</td></tr>
       <tr><th>首次停留 T<sub>dwell</sub></th><td>300ms</td><td>光标在热区内、合速度持续低于 v<sub>0</sub> 达 300ms 后弹出卡片。</td><td><span class="ev s">研究</span>NN/g：光标停住 0.3–0.5 秒再展开悬停内容；内容会盖住页面时应取偏长。<br><span class="ev o">规范</span>Windows 工具提示默认 InitialDelay = 500ms，可作为上限参照。<br><span class="ev q">推导</span>这条轨道是用户主动来用的区域，且有速度门限过滤路过，所以取下限 300ms，不取 500。</td><td>原型测路过误弹率；可调 250–500ms。</td></tr>
       <tr><th>速度门限 v<sub>0</sub></th><td>0.3px/ms</td><td>光标合速度（水平 + 竖直）高于此值时，停留计时清零重来。</td><td><span class="ev i">判断</span>0.3px/ms = 300px/s，按 10px 间距约每 33ms 划过一格，明显不是在看某一条。路过时光标通常更快。</td><td>原型分别记录「路过」和「有意停留」两类轨迹的速度分布，取两者之间的分界替换此值。</td></tr>
@@ -589,6 +594,7 @@ figure.shot figcaption{font-size:12px;color:var(--ink3);margin-top:8px}
     <div class="demo-stage" id="d-stage">
       <div class="demo-rail" id="d-rail" tabindex="0" aria-label="消息锚点，按上下方向键切换，回车跳转"><div class="hzband" id="d-band"></div></div>
       <div class="pcard" id="d-card" role="tooltip">
+        <div class="pc-meta" id="d-meta"></div>
         <div class="row ctx prev" id="d-prev"><span class="gut"><span class="n"></span><i></i></span><span class="tx"></span></div>
         <div class="row cur pc-cur"><span class="gut"><span class="n"></span><i></i></span><span><span class="pc-q" id="d-q"></span><span class="pc-a" id="d-a"></span></span></div>
         <div class="row ctx next" id="d-next"><span class="gut"><span class="n"></span><i></i></span><span class="tx"></span></div>
@@ -596,7 +602,7 @@ figure.shot figcaption{font-size:12px;color:var(--ink3);margin-top:8px}
       <div class="demo-chat" id="d-chat"></div>
       <button class="demo-latest" id="d-latest" type="button">回到最新</button>
     </div>
-    <p class="demo-note">切换 12 / 30 / 136 / 300 条看三个阶段：12、30 条轨道随条数变长（阶段一）；136 条轨道到顶，鼠标附近 7 条保持 10px，其余压缩（阶段二）；300 条压缩区每 2 条画一根（阶段三）。首次悬停需停 300ms（快速划过不会触发），打开后上下切换不再等待；离开 300ms 后关闭，800ms 内回来直接打开。整列 32px 加 8px 桥接都算热区，切换有 ±3px 滞后。在轨道上滚滚轮逐条切换。键盘：Tab 聚焦轨道，↑↓ 切换，Enter 跳转，Esc 关闭。</p>
+    <p class="demo-note">切换 12 / 30 / 136 / 300 条：12、30 条全部可见，轨道随条数变长；136、300 条间距仍是 10px，只显示视口附近一段，滚动右侧对话时轨道跟着走，窗口外有内容的一端淡出，卡片里写「第 N / 总数」。悬停期间轨道不动；在轨道上滚滚轮逐条移动，到边缘时窗口跟一格。首次悬停需停 300ms（快速划过不会触发），打开后上下切换不再等待；离开 300ms 后关闭，800ms 内回来直接打开。键盘：Tab 聚焦轨道，↑↓ 切换，Enter 跳转，Esc 关闭。</p>
   </div>
 
   <h2 id="ac"><span class="no">10</span>验收条件</h2>
@@ -605,7 +611,7 @@ figure.shot figcaption{font-size:12px;color:var(--ink3);margin-top:8px}
     <li><span><b>热区：整列 32px + 桥接 8px，纵向无缝。</b>断言：在轨道列内任意 x 位置上下移动，每个 y 都对应且只对应一条；从刻度水平移入卡片，卡片不关闭。</span></li>
     <li><span><b>切换不抖。</b>断言：鼠标停在两格交界 ±2px 内抖动，当前条不变化（滞后 ±3px）。</span></li>
     <li><span><b>悬停时间。</b>断言：以 &gt; 0.3px/ms 的速度划过轨道不弹卡片；停留 300ms 弹出；打开后切换 ≤ 1 帧；离开 300ms 后关闭；关闭后 800ms 内再进入立即弹出。</span></li>
-    <li><span><b>轨道长度随对话增长，长对话可停。</b>断言：条数 ≤ C 时轨道长度 = (n − 1) × 10px；条数 &gt; C 时轨道长度 = 上限 H、鼠标附近间距仍 = 10px；压缩间距 &lt; 2px 时窗口外按步长合并绘制；全程无滚动条；滚轮一格切换一条。刻度长度、颜色不随 token 变化。</span></li>
+    <li><span><b>轨道长度随对话增长，长对话间距不变。</b>断言：条数 ≤ C 时轨道长度 = (n − 1) × 10px、全部可见；条数 &gt; C 时轨道长度 = H、间距仍 = 10px、视口所在条始终可见；窗口外有内容的一端出现淡出；卡片显示「第 N / 总数」；悬停期间轨道位置不变；刻度长度、颜色不随 token 变化。</span></li>
     <li><span><b>点击跳到提问顶部，误差不超过 2px。</b>断言：点刻度、当前条、上一条、下一条都能跳；下一帧 <code>scrollTop</code> 与目标之差 ≤ 2px。</span></li>
     <li><span><b>滚动时当前锚点与视口顶部的提问一致。</b>断言：偏差 ≤ 1 条；对话末尾也不错位。</span></li>
     <li><span><b>卡片内容为纯文本，回复摘要取第一段正文。</b>断言：不含 <code>**</code> <code>#</code> <code>`</code>；回复前有思考、工具调用、subagent 时，摘要不出现这些过程文字。</span></li>
@@ -705,44 +711,42 @@ document.querySelectorAll('figure.shot img').forEach(function (img) {
     chat.scrollTop = 0; layout(); paint();
   }
 
-  var off = 0, stageNo = 1, stride = 1;
-  function layout(anchorY) {
+  var off = 0, C = 0, TOTAL = 0, EDGE = 24;
+  /* 窗口跟随：间距固定 PITCH，不压缩；轨道超出 H 时只显示一段，偏移按对话滚动进度 */
+  function layout() {
     H = (rail.clientHeight || 360) - PAD * 2;
-    var C = Math.floor(H / PITCH) + 1, k = 2 * WIN + 1;
-    ys = []; gaps = []; stride = 1;
-    if (N <= C) {
-      /* 阶段一：1:1 增长，轨道长度随条数变长，垂直居中 */
-      fish = false; stageNo = 1;
-      off = 0;
-      for (var i = 0; i < N; i++) { ys.push(off + i * PITCH); gaps.push(PITCH); }
-      pitchEl.textContent = '阶段一 · 轨道 ' + Math.round((N - 1) * PITCH) + 'px · 间距 ' + PITCH + 'px';
-    } else {
-      /* 阶段二 / 三：轨道停在上限，鼠标附近 7 条 10px，其余压缩 */
-      fish = true;
-      compressed = (H - (k - 1) * PITCH) / (N - k);
-      lo = Math.max(0, Math.min(N - k, center - WIN));
-      /* 粗调跳窗：在能包含 hov 的窗口位置里，选让 hov 落点最接近鼠标的那个，手下的刻度尽量不跑 */
-      if (anchorY != null && hov >= 0) {
-        var best = lo, bd = Infinity;
-        for (var L = Math.max(0, hov - k + 1); L <= Math.min(hov, N - k); L++) {
-          var yy = (hov <= L ? hov * compressed : L * compressed + (hov - L) * PITCH);
-          var dd = Math.abs(yy - anchorY); if (dd < bd) { bd = dd; best = L; }
-        }
-        lo = best;
-      }
-      hi = lo + k - 1;
-      stageNo = compressed >= MERGE ? 2 : 3;
-      stride = stageNo === 3 ? Math.ceil(MERGE / compressed) : 1;
-      var y = 0;
-      for (var j = 0; j < N; j++) { ys.push(y); var g = (j >= lo && j < hi) ? PITCH : compressed; gaps.push(g); y += g; }
-      off = 0;
-      pitchEl.textContent = (stageNo === 2 ? '阶段二' : '阶段三') + ' · 附近 ' + PITCH + 'px · 其余 ' + compressed.toFixed(1) + 'px' + (stride > 1 ? '（每 ' + stride + ' 条画一根）' : '');
+    C = Math.floor(H / PITCH) + 1; TOTAL = (N - 1) * PITCH;
+    if (N <= C) off = 0;
+    else if (hov < 0) {
+      var range = Math.max(1, chat.scrollHeight - chat.clientHeight);
+      off = (chat.scrollTop / range) * (TOTAL - H);
+      var ya = active * PITCH - off;
+      if (ya < EDGE) off = active * PITCH - EDGE;
+      if (ya > H - EDGE) off = active * PITCH - (H - EDGE);
+      off = Math.max(0, Math.min(TOTAL - H, off));
     }
+    place2();
+  }
+  function ensureVisible(i) {
+    if (N <= C) return;
+    var y = i * PITCH - off;
+    if (y < EDGE) off = i * PITCH - EDGE;
+    if (y > H - EDGE) off = i * PITCH - (H - EDGE);
+    off = Math.max(0, Math.min(TOTAL - H, off));
+    place2();
+  }
+  function place2() {
+    ys = []; gaps = [];
+    for (var i = 0; i < N; i++) { ys.push(i * PITCH - off); gaps.push(PITCH); }
     ticks.forEach(function (t, i) {
       t.style.top = (PAD + ys[i] - 6) + 'px';
-      var hide = stride > 1 && (i < lo || i > hi) && i % stride !== 0 && i !== N - 1;
-      t.style.visibility = hide ? 'hidden' : '';
+      t.style.visibility = (ys[i] < -4 || ys[i] > H + 4) ? 'hidden' : '';
     });
+    var win = N > C;
+    rail.classList.toggle('fade-top', win && off > 0.5);
+    rail.classList.toggle('fade-bot', win && off < TOTAL - H - 0.5);
+    pitchEl.textContent = win ? ('窗口跟随 · 间距 ' + PITCH + 'px · 可见 ' + C + ' / ' + N + ' 条')
+                              : ('全部可见 · 轨道 ' + Math.round(TOTAL) + 'px · 间距 ' + PITCH + 'px');
   }
 
   function bandOf(i) {
@@ -751,8 +755,10 @@ document.querySelectorAll('figure.shot img').forEach(function (img) {
     return [top, bot];
   }
   function indexAt(y) {
-    if (N && (y < ys[0] - PITCH / 2)) return 0;
-    if (N && (y > ys[N - 1] + PITCH / 2)) return N - 1;
+    var first = Math.max(0, Math.ceil((off - 4) / PITCH)), lastV = Math.min(N - 1, Math.floor((off + H + 4) / PITCH));
+    var r = indexAt0(y); return Math.max(first, Math.min(lastV, r));
+  }
+  function indexAt0(y) {
     if (hov >= 0) {
       var b = bandOf(hov), h = Math.min(HYST, 0.3 * Math.min(gaps[Math.max(0, hov - 1)], gaps[hov]));
       if (y >= b[0] - h && y <= b[1] + h) return hov;
@@ -785,6 +791,7 @@ document.querySelectorAll('figure.shot img').forEach(function (img) {
     ctx(cPrev, hov - 1, '已是第一条');
     ctx(cNext, hov + 1, '已是最新一条');
     cCur.querySelector('.n').textContent = hov + 1;
+    document.getElementById('d-meta').textContent = '第 ' + (hov + 1) + ' / ' + N + ' 条';
     cQ.textContent = clean(msgs[hov].u);
     cA.textContent = clean(msgs[hov].a);
     cPrev.dataset.i = hov - 1; cCur.dataset.i = hov; cNext.dataset.i = hov + 1;
@@ -805,14 +812,13 @@ document.querySelectorAll('figure.shot img').forEach(function (img) {
   function close(silent) {
     clearTimeout(dwellT); clearTimeout(closeT);
     if (!silent && card.classList.contains('show')) lastClose = performance.now();
-    card.classList.remove('show'); setState('closed'); hov = -1; overCard = false; paint();
+    card.classList.remove('show'); setState('closed'); hov = -1; overCard = false; layout(); paint();
   }
 
-  function setHov(i, py) {
+  function setHov(i) {
     if (i === hov) return;
-    var prevY = hov >= 0 ? ys[i] : null;
     hov = i;
-    if (fish && (hov <= lo || hov >= hi)) { center = hov; layout(py != null ? py : prevY); }
+    ensureVisible(hov);
     paint();
     if (state === 'open' || state === 'closing') { fill(); place(false); }
   }
@@ -840,7 +846,7 @@ document.querySelectorAll('figure.shot img').forEach(function (img) {
 
     if (inZone) {
       if (state === 'closing') { clearTimeout(closeT); setState('open'); }
-      if (!aiming) setHov(indexAt(y - PAD), y - PAD);
+      if (!aiming) setHov(indexAt(y - PAD));
       if (state === 'closed') {
         if (now - lastClose < WARM) open();
         else { setState('pending'); dwellT = setTimeout(open, DWELL); }
@@ -901,7 +907,8 @@ document.querySelectorAll('figure.shot img').forEach(function (img) {
     var top = chat.getBoundingClientRect().top, best = 0, bd = Infinity;
     blocks.forEach(function (b, i) { var d = Math.abs(b.getBoundingClientRect().top - top - 8); if (d < bd) { bd = d; best = i; } });
     if (chat.scrollTop + chat.clientHeight >= chat.scrollHeight - 2) best = N - 1;
-    if (best !== active) { active = best; if (hov < 0 && fish) { center = active; layout(); } paint(); }
+    if (best !== active) { active = best; paint(); }
+    if (hov < 0) layout();
     latest.classList.toggle('show', chat.scrollTop + chat.clientHeight < chat.scrollHeight - 40);
   });
   latest.addEventListener('click', function () { chat.scrollTop = chat.scrollHeight; });
