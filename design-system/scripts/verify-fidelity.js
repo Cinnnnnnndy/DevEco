@@ -27,7 +27,7 @@ function walk(dir, ext) {
 
 // Collect all defined CSS variables from tokens/
 const definedVars = new Set();
-for (const tf of ["tokens/foundation.css", "tokens/semantic.css", "tokens/components.css", "chrome.css"]) {
+for (const tf of ["tokens/foundation.css", "tokens/semantic.css", "tokens/components.css", "tokens/ai.css", "chrome.css"]) {
   const p = path.join(dsRoot, tf);
   if (!fs.existsSync(p)) continue;
   const txt = fs.readFileSync(p, "utf8");
