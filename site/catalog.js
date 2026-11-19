@@ -348,17 +348,17 @@ window.DEVECO_CATALOG = {
       note: '同类产品怎么做、行业往哪走：对照 Claude Code、Codex、Cursor、Xcode 等，落到 DevEco 的建议。',
       items: [
         {
-          title: '对话历史「钢琴键」：四家一手截图实测', subtitle: 'Conversation Piano Keys · OpenBitfun / Codex / Antigravity / WorkBuddy · OCR + 像素测量',
-          desc: '对话左侧「钢琴键」式轮次导航。证据为 OpenBitfun / Codex / Antigravity / WorkBuddy 四张一手截图，形态全部来自 OCR + 像素测量，凡不能核对的语义一律标「待确认」：OpenBitfun 轨道 86 根短条（18px 间距、当前区段加宽变深）却浮卡标「第 136 轮」——一键一轮不成立；Codex 62 根、Antigravity 12 根（hover「6 of 12」）、WorkBuddy 右侧列表 + hover 全文卡。把「查看历史对话 + 快速跳转」拆成六个显示维度，横比三类策略——钢琴键竖条 / 目录大纲 / 滚动 + 回到最新——各附优 / 劣分点与十维对照表。落到 DevEco Code：竖条贴对话左缘、hover 浮卡、点击直达、密度自适应合并段、滚动联动高亮；附 8/24/136 轮密度图、8 轮可交互 demo（跳转误差实时测量）与七条验收条件。',
+          title: '消息锚点导航（对话「钢琴键」）：六家做法对照', subtitle: 'Message Anchor Navigation · Codex / OpenBitfun / Antigravity / WorkBuddy / CodeBuddy / Claude Code',
+          desc: '对话左侧那排「钢琴键」的专业名称是消息锚点导航：每根刻度锚定一条用户提问，当前位置加长加深、滚动联动，悬停预览，点击跳转。Antigravity 官方 2.28.1 上线 conversation navigator，长对话按日期分章节、2.29.0 起章节有 AI 短标题；Codex 截图有刻度 + 书签，但各端不一致、GitHub 上用户一直在要；WorkBuddy、CodeBuddy 用列表做同一件事，Claude Code /rewind 是回退不是浏览。拆出六个设计决策，更正上一版三处误读，落到 DevEco Code 七条建议、可交互 demo 与七条验收条件。',
           view: 'doc', date: '2026-11-18', href: 'analysis/conversation-piano-keys/index.html',
           links: [
-            { label: '六个维度', href: 'analysis/conversation-piano-keys/index.html#what' },
-            { label: '谁给了历史 + 快跳', href: 'analysis/conversation-piano-keys/index.html#matrix' },
-            { label: '四家截图 · 实测', href: 'analysis/conversation-piano-keys/index.html#frames' },
-            { label: '三类策略优劣', href: 'analysis/conversation-piano-keys/index.html#strategies' },
-            { label: '落到 DevEco', href: 'analysis/conversation-piano-keys/index.html#ours' },
+            { label: '结论', href: 'analysis/conversation-piano-keys/index.html#keys' },
+            { label: '总表', href: 'analysis/conversation-piano-keys/index.html#matrix' },
+            { label: '各产品', href: 'analysis/conversation-piano-keys/index.html#products' },
+            { label: '六个设计决策', href: 'analysis/conversation-piano-keys/index.html#decisions' },
+            { label: '对 DevEco 的建议', href: 'analysis/conversation-piano-keys/index.html#deveco' },
           ],
-          tags: ['竞品分析', '钢琴键', '对话历史', '轮次导航', '会话', '跳转', '预览', '一手截图', '像素测量', 'OpenBitfun', 'Codex', 'Antigravity', 'WorkBuddy', 'Claude Code', 'DevEco Code'],
+          tags: ['竞品分析', '消息锚点导航', '钢琴键', '对话时间线', '消息定位器', '对话历史', '跳转', '预览', '书签', '一手截图', 'Codex', 'OpenBitfun', 'Antigravity', 'WorkBuddy', 'CodeBuddy', 'Claude Code', 'DevEco Code'],
           thumb: { type: 'image', src: 'site/thumbs/conversation-piano-keys.jpg' },
         },
         {

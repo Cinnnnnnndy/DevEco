@@ -2,894 +2,460 @@
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
+<title>消息锚点导航（对话「钢琴键」）竞品分析</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>对话历史「钢琴键」· Conversation Piano Keys</title>
-<meta name="description" content="对话左侧「钢琴键」式轮次导航：OpenBitfun / Codex / Antigravity / WorkBuddy 四张一手截图，配 OCR 与像素测量——只写可核对事实，其余标「待确认」。六个显示维度、谁给了「历史 + 快跳」、三类策略的优劣分点，落到 DevEco Code 的规则、密度图、可交互 demo 与验收条件。">
-<link rel="stylesheet" href="../../deveco-intui-kit/src/tokens.css">
-<link rel="stylesheet" href="../../site/launcher.css">
-<link rel="stylesheet" href="../../deveco-intui-kit/src/ai.css">
+<meta name="description" content="对话左侧那排「钢琴键」的专业名称是消息锚点导航：每根刻度锚定一条用户消息，当前位置高亮，悬停预览，点击跳转。对照 Codex、Antigravity、OpenBitfun、WorkBuddy、CodeBuddy、Claude Code，落到 DevEco Code 的规则、可交互 demo 与验收条件。">
 <style>
-/* 壳来自 launcher.css（.page / .mast / .lede / .layout / .sidebar / section.grp），
-   下面是这一页自己的排版。 */
-.keys{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:22px 0 0}
-.key{padding:16px 18px;border-radius:16px;background:var(--ui-editor-bg)}
-.key b{display:block;font-size:var(--fs-h2);line-height:22px;margin-bottom:6px}
-.key>span{color:var(--ui-fg-info);display:block}
-.key code{font-family:var(--font-code);font-size:.92em}
-
-.grp>p.lede2{color:var(--ui-fg-info);margin:-14px 0 18px;max-width:74ch}
-
-.tw{overflow-x:auto;border-radius:16px;background:var(--ui-editor-bg)}
-table{width:100%;border-collapse:collapse;font-size:var(--fs);line-height:20px;min-width:680px}
-th,td{text-align:left;vertical-align:top;padding:10px 14px}
-th{font-weight:600;color:var(--ui-fg-info);font-size:var(--fs-sm);white-space:nowrap}
-tbody tr+tr td{border-top:1px solid color-mix(in srgb,var(--ui-fg) 6%,transparent)}
-td.k{white-space:nowrap;font-weight:600}
-code{font-family:var(--font-code);font-size:.92em;background:var(--ui-code-bg);padding:1px 5px;border-radius:4px;overflow-wrap:anywhere}
-.tagk{display:inline-block;font-family:var(--font-code);font-size:11px;line-height:18px;padding:0 7px;border-radius:9px;
-  background:var(--ui-tag-bg);color:var(--ui-tag-fg);white-space:nowrap}
-.tagk.ok{color:var(--ui-success)}
-.tagk.warn{color:var(--ui-warning)}
-.tagk.no{color:var(--ui-error)}
-.tagk.own{color:var(--ai-ink)}
-
-.block{padding:16px 18px;border-radius:16px;background:var(--ui-editor-bg);margin:0}
-.block+.block{margin-top:12px}
-.block h4{margin:0 0 8px;font-size:var(--fs-h2);line-height:22px}
-.block p{margin:0;color:var(--ui-fg-info)}
-.block p+p{margin-top:6px}
-.quote{margin:10px 0 0;padding:10px 14px;border-left:3px solid var(--ui-progress-track);color:var(--ui-fg-info);
-  font-size:var(--fs-sm);line-height:19px}
-.quote b{color:var(--ui-fg);font-weight:600}
-.src{font-size:var(--fs-sm);color:var(--ui-fg-info)}
-.src a{color:var(--ui-link)}
-ol.steps,ul.plain{margin:0;padding-left:20px;color:var(--ui-fg-info);line-height:22px}
-ol.steps li+li,ul.plain li+li{margin-top:6px}
-ol.steps b,ul.plain b{color:var(--ui-fg);font-weight:600}
-
-/* ── 01 六个显示维度 ── */
-.dims{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:18px}
-.dim{padding:13px 15px;border-radius:14px;background:var(--ui-editor-bg)}
-.dim b{display:block;font-size:var(--fs-h2);line-height:21px;margin-bottom:5px}
-.dim .q{display:block;color:var(--ui-fg-info);font-size:var(--fs-sm);line-height:19px;margin-bottom:7px}
-.dim .ans{display:block;font-size:var(--fs-sm);line-height:19px;color:var(--ui-fg)}
-.dim .ans .tagk{vertical-align:1px}
-
-/* ── 03 OpenBitfun 两帧 ── */
-.frames{display:grid;gap:12px}
-.pv{padding:14px;border-radius:16px;background:var(--ui-editor-bg)}
-.pv-hd{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:10px}
-.pv-hd b{font-size:var(--fs-h2);line-height:22px}
-.pv-hd .pv-note{color:var(--ui-fg-info);font-size:var(--fs-sm);min-width:0;flex:1}
-.pv-pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
-.pair{display:flex;flex-direction:column;gap:6px}
-.pair .cap{font-size:11px;line-height:16px;font-weight:600;color:var(--ui-fg-info);letter-spacing:.03em}
-.pair .cap b{color:var(--ui-success)}
-
-/* OpenBitfun 对话 mock：左侧钢琴键竖条 + 右侧对话流（常态键 9×4、当前区段加宽变深，按实测） */
-.ofm{height:196px;border-radius:10px;background:var(--ui-bg);box-shadow:inset 0 0 0 1px var(--ui-border);display:flex;overflow:hidden;position:relative}
-.ofm .rail{width:52px;flex:none;background:var(--ui-editor-bg);border-right:1px solid color-mix(in srgb,var(--ui-fg) 8%,transparent);padding:12px 7px;display:flex;flex-direction:column;gap:4px}
-.ofm .ok{flex:none;height:10px;width:9px;margin:0 auto;border-radius:3px;background:var(--ui-progress-track);position:relative}
-.ofm .ok.wide{width:15px}
-.ofm .ok.w2{width:19px}
-.ofm .ok.on{background:var(--ai-ink)}
-.ofm .ok.hover{background:color-mix(in srgb,var(--ai-ink) 55%,transparent)}
-.ofm .ok.cur{width:20px;background:#5c5c5c}
-.ofm .body{flex:1;padding:12px;display:flex;flex-direction:column;gap:8px;overflow:hidden}
-.ofm .bub{max-width:80%;padding:7px 10px;border-radius:9px;background:var(--ui-editor-bg);box-shadow:inset 0 0 0 1px var(--ui-border);font-size:11px;line-height:16px;color:var(--ui-fg-info)}
-.ofm .bub.usr{align-self:flex-end;background:var(--ai-tint-2);color:var(--ai-ink);box-shadow:none}
-.ofm .bub.mid{align-self:center;opacity:.55}
-.pk-prev{position:absolute;left:60px;top:50%;transform:translateY(-50%);z-index:6;min-width:158px;padding:7px 11px;border-radius:9px;
-  background:var(--ui-editor-bg);box-shadow:0 8px 24px rgba(0,0,0,.22),inset 0 0 0 1px var(--ui-border);
-  font-size:11px;line-height:16px;white-space:nowrap;color:var(--ui-fg)}
-.pk-prev b{color:var(--ai-ink);font-weight:700}
-.pk-prev .pk-t{color:var(--ui-fg-info);margin-left:7px}
-.pk-prev .pk-s{display:block;color:var(--ui-fg);font-weight:600;margin-top:2px}
-
-/* ── 04 三类策略 ── */
-.strat{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
-.strat-c{padding:16px 18px;border-radius:16px;background:var(--ui-editor-bg)}
-.strat-c>h4{margin:0 0 10px;font-size:var(--fs-h2);line-height:22px}
-.strat-c .who{margin-top:10px;font-size:var(--fs-sm);color:var(--ui-fg-info);border-top:1px solid color-mix(in srgb,var(--ui-fg) 6%,transparent);padding-top:8px}
-.strat-c .who b{color:var(--ui-fg)}
-.strat-v{height:118px;border-radius:10px;background:var(--ui-bg);box-shadow:inset 0 0 0 1px var(--ui-border);position:relative;overflow:hidden;margin-bottom:10px;display:flex}
-.strat-v .sv-rail{width:34px;flex:none;background:var(--ui-editor-bg);border-right:1px solid color-mix(in srgb,var(--ui-fg) 8%,transparent);padding:10px 7px;display:flex;flex-direction:column;gap:3px}
-.strat-v .sv-rail .ok{height:8px;border-radius:3px;background:var(--ui-progress-track);position:relative}
-.strat-v .sv-rail .ok.on{background:var(--ai-ink)}
-.strat-v .sv-rail .ok.hover{background:color-mix(in srgb,var(--ai-ink) 55%,transparent)}
-.strat-v .sv-prev{position:absolute;left:44px;top:24px;z-index:6;min-width:148px;padding:6px 10px;border-radius:8px;background:var(--ui-editor-bg);
-  box-shadow:0 8px 22px rgba(0,0,0,.2),inset 0 0 0 1px var(--ui-border);font-size:10.5px;line-height:15px;color:var(--ui-fg);white-space:nowrap}
-.strat-v .sv-prev b{color:var(--ai-ink)}
-.strat-v .sv-prev .pk-t{color:var(--ui-fg-info);margin-left:6px}
-.strat-v .sv-body{flex:1;padding:10px;display:flex;flex-direction:column;gap:6px;overflow:hidden}
-.strat-v .sv-bub{max-width:76%;padding:6px 8px;border-radius:8px;background:var(--ui-editor-bg);box-shadow:inset 0 0 0 1px var(--ui-border);font-size:10.5px;line-height:15px;color:var(--ui-fg-info)}
-.strat-v .sv-bub.usr{align-self:flex-end;background:var(--ai-tint-2);color:var(--ai-ink);box-shadow:none}
-/* 方向二：目录大纲 mock */
-.sv-list{flex:1;padding:10px;display:flex;flex-direction:column;gap:4px;overflow:hidden}
-.sv-it{display:flex;align-items:center;gap:6px;padding:5px 8px;border-radius:7px;font-size:10.5px;line-height:14px;color:var(--ui-fg-info);background:var(--ui-editor-bg);box-shadow:inset 0 0 0 1px var(--ui-border)}
-.sv-it .no{font-family:var(--font-code);color:var(--ui-fg-info);font-size:9.5px}
-.sv-it.hl{background:color-mix(in srgb,var(--ai-ink) 10%,transparent);box-shadow:inset 2px 0 0 var(--ai-ink),inset 0 0 0 1px color-mix(in srgb,var(--ai-ink) 20%,transparent);color:var(--ui-fg)}
-.sv-it .grow{flex:1}
-.sv-it .t{color:var(--ui-fg-info);font-size:9.5px}
-/* 方向三：滚动 + 回到最新 mock */
-.sv-chat{flex:1;padding:10px;display:flex;flex-direction:column;gap:6px;overflow:hidden;position:relative}
-.sv-to-top{position:absolute;right:8px;bottom:8px;padding:4px 9px;border-radius:10px;background:var(--ai-ink);color:var(--ui-bg);
-  font-size:10px;font-weight:600;box-shadow:0 4px 12px rgba(0,0,0,.18);white-space:nowrap}
-.sv-scroll{position:absolute;right:2px;top:8px;bottom:8px;width:3px;border-radius:2px;background:var(--ui-progress-track);opacity:.8}
-.sv-scroll .thumb{position:absolute;top:26%;height:38%;width:100%;border-radius:2px;background:var(--ai-ink);opacity:.55}
-
-.dform-pc{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px}
-.pc-col{padding:10px 12px;border-radius:10px;background:var(--ui-bg);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--ui-fg) 6%,transparent)}
-.pc-col h5{margin:0 0 6px;font-size:11px;line-height:16px;font-weight:700;letter-spacing:.05em}
-.pc-col.pros h5{color:var(--ui-success)}
-.pc-col.cons h5{color:var(--ui-error)}
-.pc-col ul{margin:0;padding-left:15px;color:var(--ui-fg-info);font-size:var(--fs-sm);line-height:19px}
-.pc-col li+li{margin-top:4px}
-.pc-col b{color:var(--ui-fg);font-weight:600}
-
-/* ── 05 密度图 ── */
-.density{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:6px}
-.dcol{padding:14px;border-radius:16px;background:var(--ui-editor-bg)}
-.dcol h4{margin:0 0 10px;font-size:var(--fs-h2);line-height:22px}
-.dcol h4 .tagk{font-size:10px;line-height:16px;vertical-align:1px}
-.drail{height:280px;border-radius:8px;background:var(--ui-bg);box-shadow:inset 0 0 0 1px var(--ui-border);display:flex;flex-direction:column;gap:1px;padding:5px;overflow:hidden}
-.drail .db{flex:1 1 0;min-height:1px;border-radius:2px;background:var(--ui-progress-track)}
-.dcol .dnote{margin-top:8px;font-size:var(--fs-sm);line-height:18px;color:var(--ui-fg-info)}
-.dcol .dnote b{color:var(--ui-fg);font-variant-numeric:tabular-nums}
-.dcol .dnote .tagk{vertical-align:1px}
-
-/* ── 05 可交互 demo ── */
-.demo{margin-top:16px;padding:16px;border-radius:16px;background:var(--ui-editor-bg)}
-.demo-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
-.demo-bar .tbtn.on{background:var(--ui-fg);color:var(--ui-editor-bg);border-color:var(--ui-fg)}
-.demo-meas{margin:0;margin-left:auto;font-size:var(--fs-sm);color:var(--ui-fg-info);text-align:right}
-.demo-meas b{font-family:var(--font-code);font-variant-numeric:tabular-nums;color:var(--ui-fg)}
-.demo-stage{display:flex;gap:0;border-radius:10px;overflow:hidden;background:var(--ui-bg);box-shadow:inset 0 0 0 1px var(--ui-border)}
-.demo-rail{width:46px;flex:none;border-right:1px solid color-mix(in srgb,var(--ui-fg) 8%,transparent);padding:10px 7px;display:flex;flex-direction:column;gap:4px;background:var(--ui-editor-bg)}
-.demo-rail .ok{flex:none;height:9px;border-radius:3px;background:var(--ui-progress-track);cursor:pointer;position:relative;transition:height .15s,background .15s}
-.demo-rail .ok.on{background:var(--ai-ink)}
-.demo-rail .ok.hover{background:color-mix(in srgb,var(--ai-ink) 55%,transparent)}
-.demo-rail .ok .pk-prev{left:46px;min-width:176px}
-.demo-chat{flex:1;height:340px;overflow-y:auto;padding:12px 14px;display:flex;flex-direction:column;gap:10px}
-.dr{display:flex;flex-direction:column;gap:5px;padding:8px 10px;border-radius:10px;background:var(--ui-editor-bg);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--ui-fg) 5%,transparent);scroll-margin-top:8px}
-.dr .dno{font-family:var(--font-code);font-size:10px;line-height:14px;color:var(--ui-fg-info)}
-.dr .dno b{color:var(--ui-fg)}
-.dr .dt{max-width:88%;padding:6px 9px;border-radius:8px;background:var(--ui-bg);box-shadow:inset 0 0 0 1px var(--ui-border);font-size:12px;line-height:17px;color:var(--ui-fg)}
-.dr .dt.usr{align-self:flex-end;background:var(--ai-tint-2);color:var(--ai-ink);box-shadow:none}
-.demo-note{margin:12px 0 0;font-size:var(--fs-sm);line-height:19px;color:var(--ui-fg-info)}
-.demo-note b{color:var(--ui-fg)}
-
-.acks{margin:0;padding:0;list-style:none;display:grid;gap:8px}
-.acks li{display:grid;grid-template-columns:64px minmax(0,1fr);gap:10px;padding:11px 14px;border-radius:12px;background:var(--ui-editor-bg)}
-.acks .id{font-family:var(--font-code);font-size:11px;line-height:18px;color:var(--ui-fg-info)}
-.acks .tx{color:var(--ui-fg)}
-.acks .tx small{display:block;margin-top:3px;color:var(--ui-fg-info);font-size:var(--fs-sm)}
-.acks .tx code{white-space:nowrap}
-
-.todo{margin:0;padding-left:20px;color:var(--ui-fg-info)}
-.todo li+li{margin-top:6px}
-.todo b{color:var(--ui-fg)}
-
-@media (max-width:1240px){.keys{grid-template-columns:1fr}.strat{grid-template-columns:1fr}.density{grid-template-columns:1fr}.dims{grid-template-columns:1fr}}
-@media (max-width:900px){
-  .frames .pv-pair{grid-template-columns:1fr}
-  table{min-width:0}
-  .acks li{grid-template-columns:1fr;gap:2px}
-  .demo-meas{margin-left:0;width:100%;text-align:left}
-  .dform-pc{grid-template-columns:1fr}
+:root{
+  --bg:#f5f6f8; --paper:#ffffff; --ink:#15171a; --ink2:#4a4f57; --ink3:#7a808a; --line:#e3e5e9; --line2:#eef0f3;
+  --accent:#3574f0; --accent-bg:#edf3ff;
+  --ok:#1f8a4c; --ok-bg:#e6f5ec; --warn:#b76e00; --warn-bg:#fdf1e3; --bad:#c7000b; --bad-bg:#fdecec; --mute-bg:#eef0f3;
+  --shadow:0 1px 2px rgba(16,24,40,.06),0 4px 16px rgba(16,24,40,.06);
+  --mono:ui-monospace,"JetBrains Mono",Menlo,Consolas,monospace;
 }
+@media (prefers-color-scheme:dark){
+  :root{
+    --bg:#16171a; --paper:#1e2024; --ink:#e6e8eb; --ink2:#b3b8c0; --ink3:#868b94; --line:#30333a; --line2:#272a30;
+    --accent:#6b9bfa; --accent-bg:#233150;
+    --ok:#5fc48a; --ok-bg:#1d3326; --warn:#f0a052; --warn-bg:#3a2d1e; --bad:#ff6b6b; --bad-bg:#3a2224; --mute-bg:#272a30;
+    --shadow:none;
+  }
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.75 -apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}
+a{color:var(--accent);text-decoration:none} a:hover{text-decoration:underline}
+code{font-family:var(--mono);font-size:.9em;background:var(--line2);padding:1px 5px;border-radius:4px}
+.wrap{max-width:980px;margin:0 auto;padding:40px 32px 80px}
+.back{font-size:13px}
+.eyebrow{font-size:12px;letter-spacing:.08em;color:var(--ink3);margin-top:18px}
+h1{font-size:28px;line-height:1.35;margin:6px 0 12px}
+.lede{color:var(--ink2);margin:0}
+h2{font-size:20px;margin:52px 0 6px;scroll-margin-top:16px;display:flex;align-items:baseline;gap:10px}
+h2 .no{font-size:13px;font-weight:600;color:var(--accent);font-family:var(--mono)}
+h3{font-size:15.5px;margin:0}
+.sub{color:var(--ink2);margin:0 0 14px}
+nav.toc{display:flex;flex-wrap:wrap;gap:6px;margin:18px 0 0}
+nav.toc a{font-size:13px;border:1px solid var(--line);background:var(--paper);border-radius:999px;padding:2px 12px;color:var(--ink2)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12.5px;color:var(--ink2);margin:14px 0 0}
+
+/* 证据标签 */
+.ev{display:inline-block;font-size:11px;font-weight:600;border-radius:4px;padding:0 5px;line-height:17px;margin-left:4px;vertical-align:1px;white-space:nowrap}
+.ev.o{background:var(--ok-bg);color:var(--ok)} .ev.s{background:var(--accent-bg);color:var(--accent)} .ev.m{background:var(--mute-bg);color:var(--ink2)} .ev.i{background:var(--warn-bg);color:var(--warn)} .ev.q{background:var(--mute-bg);color:var(--ink3)}
+.f{display:inline-block;font-size:11.5px;font-weight:700;border-radius:5px;padding:0 6px;line-height:19px;white-space:nowrap;margin-right:3px}
+.f.a{background:var(--accent-bg);color:var(--accent)} .f.b{background:var(--ok-bg);color:var(--ok)} .f.c{background:var(--warn-bg);color:var(--warn)} .f.n{background:var(--mute-bg);color:var(--ink3)}
+
+/* 列表 */
+ol.items,ul.items{list-style:none;margin:0;padding:0;background:var(--paper);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);counter-reset:it}
+.items>li{display:flex;gap:12px;padding:11px 16px;border-bottom:1px solid var(--line2);color:var(--ink2)}
+.items>li:last-child{border-bottom:none}
+ol.items>li::before{counter-increment:it;content:counter(it);flex:none;width:20px;height:20px;border-radius:50%;background:var(--accent-bg);color:var(--accent);font-size:11.5px;font-weight:700;display:flex;align-items:center;justify-content:center;margin-top:3px}
+ul.items>li::before{content:"";flex:none;width:6px;height:6px;border-radius:50%;background:var(--ink3);margin-top:10px}
+.items b{color:var(--ink);font-weight:600}
+
+/* 表 */
+.tw{background:var(--paper);border:1px solid var(--line);border-radius:12px;overflow:auto;box-shadow:var(--shadow)}
+table{border-collapse:collapse;width:100%;font-size:13px;min-width:820px}
+th,td{text-align:left;vertical-align:top;padding:9px 11px;border-bottom:1px solid var(--line2)}
+thead th{font-size:12px;color:var(--ink3);background:var(--line2);font-weight:600}
+tbody th{font-weight:600;white-space:nowrap}
+tbody th small{display:block;font-weight:400;color:var(--ink3);font-size:11.5px}
+td.na{color:var(--ink3)}
+tr:last-child td,tr:last-child th{border-bottom:none}
+.tnote{font-size:12.5px;color:var(--ink3);margin:8px 2px 0}
+
+/* 解剖 */
+.anat{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:12px}
+.pane{background:var(--paper);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);overflow:hidden;display:flex;flex-direction:column;min-width:0}
+.pane .cap{font-size:12.5px;font-weight:700;padding:8px 12px;border-bottom:1px solid var(--line2)}
+.pane .cap small{display:block;font-weight:400;color:var(--ink3);font-size:12px}
+.am{height:300px;display:flex;position:relative;background:var(--bg)}
+.am .rail{width:60px;flex:none;padding:14px 0 14px 14px;display:flex;flex-direction:column;gap:6px;border-right:1px solid var(--line2);background:var(--paper)}
+.am .tk{height:2px;width:10px;border-radius:1px;background:var(--line);flex:none}
+.am .tk.m{width:16px;background:#c9ccd3} .am .tk.l{width:22px;background:#a8adb8}
+.am .tk.cur{width:32px;height:3px;background:var(--ink)}
+.am .card{position:absolute;left:64px;top:92px;display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:12px;background:var(--paper);
+  border:1px solid var(--line);box-shadow:0 8px 24px rgba(0,0,0,.12);font-size:12px;line-height:17px;white-space:nowrap;max-width:300px}
+.am .card .tx{overflow:hidden;text-overflow:ellipsis}
+.am .card .bm{flex:none;font-size:13px;color:var(--ink3)}
+.am .body{flex:1;padding:16px 18px;display:flex;flex-direction:column;gap:10px;overflow:hidden}
+.am .ln{height:8px;border-radius:4px;background:var(--line)}
+.am .usr{align-self:flex-end;width:46%;height:26px;border-radius:9px;background:var(--accent-bg)}
+.am .pin{position:absolute;font:700 11px/16px var(--mono);color:#fff;background:var(--accent);width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+dl.cl{display:grid;grid-template-columns:96px 1fr;margin:0}
+dl.cl dt,dl.cl dd{padding:8px 0;border-bottom:1px solid var(--line2);margin:0;font-size:13.5px}
+dl.cl dt{padding-left:16px;color:var(--ink3);font-size:12.5px;padding-top:9px}
+dl.cl dd{padding-right:16px;color:var(--ink2)}
+dl.cl dt:last-of-type,dl.cl dd:last-of-type{border-bottom:none}
+dl.cl dt .n{display:inline-flex;width:16px;height:16px;border-radius:50%;background:var(--accent);color:#fff;font:700 10.5px/16px var(--mono);align-items:center;justify-content:center;margin-right:6px}
+
+/* 产品卡 */
+.prod{background:var(--paper);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);margin-bottom:12px;overflow:hidden;scroll-margin-top:16px}
+.prod-h{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px;padding:12px 16px 10px;border-bottom:1px solid var(--line2)}
+.prod-h .surf{font-size:12.5px;color:var(--ink3)}
+.prod .take{padding:9px 16px;background:var(--accent-bg);font-size:13.5px;color:var(--ink2)}
+.prod .take b{color:var(--ink)}
+figure.shot{margin:0;padding:12px 16px;border-bottom:1px solid var(--line2);background:var(--bg)}
+figure.shot img{display:block;max-width:100%;max-height:360px;margin:0 auto;border-radius:8px;border:1px solid var(--line)}
+figure.shot .ph{display:none;border:1.5px dashed var(--line);border-radius:8px;padding:18px;text-align:center;color:var(--ink3);font-size:12.5px}
+figure.shot.miss img{display:none} figure.shot.miss .ph{display:block}
+figure.shot figcaption{font-size:12px;color:var(--ink3);margin-top:8px}
+
+/* 决策 */
+.why{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.why .w{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:14px 16px;box-shadow:var(--shadow)}
+.why .w p{margin:6px 0 0;font-size:13.5px;color:var(--ink2)}
+.why .w .ob{font-size:12.5px;color:var(--ink3);margin-top:8px;padding-top:8px;border-top:1px solid var(--line2)}
+.why .w .ob b{color:var(--ink2)}
+.note{background:var(--accent-bg);border-radius:10px;padding:10px 14px;color:var(--ink2);margin:12px 0 0}
+.note b{color:var(--ink)}
+
+/* demo */
+.demo{background:var(--paper);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);margin-top:12px;overflow:hidden}
+.demo-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:8px 12px;border-bottom:1px solid var(--line2);font-size:12.5px}
+.demo-bar b{font-weight:700}
+.demo-meas{margin:0 0 0 auto;color:var(--ink3)}
+.demo-meas b{font-family:var(--mono);color:var(--ink);font-weight:600}
+.demo-stage{display:flex;position:relative;background:var(--bg)}
+.demo-rail{width:56px;flex:none;padding:14px 0 14px 12px;display:flex;flex-direction:column;gap:9px;border-right:1px solid var(--line2);background:var(--paper)}
+.demo-rail .tk{height:12px;display:flex;align-items:center;cursor:pointer;outline:none}
+.demo-rail .tk i{display:block;height:2px;border-radius:1px;background:#c9ccd3;transition:width .15s,background .15s}
+.demo-rail .tk.bm i{background:var(--warn)}
+.demo-rail .tk:hover i,.demo-rail .tk:focus-visible i{background:var(--ink3)}
+.demo-rail .tk.on i{height:3px;background:var(--ink)}
+.dcard{position:absolute;left:62px;z-index:8;display:none;align-items:center;gap:10px;padding:7px 8px 7px 12px;border-radius:12px;background:var(--paper);
+  border:1px solid var(--line);box-shadow:0 8px 24px rgba(0,0,0,.14);font-size:12.5px;line-height:18px;white-space:nowrap;max-width:340px}
+.dcard.show{display:flex}
+.dcard .tx{overflow:hidden;text-overflow:ellipsis}
+.dcard .no{font-family:var(--mono);font-size:11px;color:var(--ink3);flex:none}
+.dcard button{flex:none;border:1px solid var(--line);background:var(--paper);cursor:pointer;padding:0 8px;border-radius:6px;color:var(--ink2);font:inherit;font-size:11.5px;line-height:20px}
+.dcard button.on{border-color:var(--warn);color:var(--warn);font-weight:700}
+.demo-chat{flex:1;height:360px;overflow-y:auto;padding:12px 16px;display:flex;flex-direction:column;gap:12px}
+.dm{display:flex;flex-direction:column;gap:6px}
+.dm .u{align-self:flex-end;max-width:82%;padding:6px 10px;border-radius:10px;background:var(--accent-bg);color:var(--ink);font-size:13px;line-height:19px}
+.dm .a{max-width:92%;font-size:13px;line-height:20px;color:var(--ink2)}
+.demo-latest{position:absolute;right:14px;bottom:12px;display:none;padding:3px 12px;border-radius:999px;border:0;background:var(--ink);color:var(--paper);font:inherit;font-size:12px;font-weight:600;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,.18)}
+.demo-latest.show{display:block}
+.demo-note{font-size:12.5px;color:var(--ink3);padding:8px 12px;border-top:1px solid var(--line2);margin:0}
+
+.src{font-size:12.5px;color:var(--ink2);padding-left:18px;margin:0}
+.src li{margin:3px 0}
+
+@media (max-width:820px){ .anat,.why{grid-template-columns:1fr} }
+@media (max-width:560px){ .wrap{padding:24px 16px 60px} h1{font-size:22px} dl.cl{grid-template-columns:72px 1fr} }
 </style>
 </head>
 <body>
-<div class="page">
-  <header class="mast">
-    <h1>对话历史「钢琴键」</h1>
-    <span class="grow"></span>
-    <a class="tbtn" href="../../index.html#analysis">返回研究分类</a>
-    <a class="tbtn" href="../../index.html">启动页</a>
-  </header>
+<div class="wrap">
+  <a class="back" href="../../index.html#analysis">← 返回分析与研究</a>
+  <div class="eyebrow">分析与研究 · 2026-11-18 · 作者：王欣迪</div>
+  <h1>消息锚点导航：对话左侧那排「钢琴键」，各家怎么做</h1>
+  <p class="lede">对话区左侧那排短横线，口头叫「钢琴键」，专业名称是<b>消息锚点导航</b>（message anchor navigation），各家文档里也叫 conversation navigator、conversation timeline、message locator。它是一份以用户消息为锚点的目录：每根刻度对应一条提问，当前位置高亮，悬停浮出这条提问，点击跳过去。本页对照 Codex、Antigravity、OpenBitfun、WorkBuddy、CodeBuddy 和 Claude Code，更正上一版「把刻度当成轮次计数」的误读，再落到 DevEco Code。</p>
+  <div class="legend">
+    <span><span class="ev o">官方</span> 文档、更新日志</span>
+    <span><span class="ev s">截图</span> 用户提供的一手截图</span>
+    <span><span class="ev m">社区</span> GitHub issue、第三方</span>
+    <span><span class="ev i">推断</span> 未找到文字出处</span>
+    <span><span class="ev q">待确认</span> 需实机操作</span>
+  </div>
+  <nav class="toc">
+    <a href="#keys">结论</a><a href="#what">它是什么</a><a href="#matrix">总表</a><a href="#products">各产品</a><a href="#decisions">六个设计决策</a><a href="#fix">上一版更正</a><a href="#deveco">对 DevEco 的建议</a><a href="#ac">验收条件</a><a href="#verify">待验证</a><a href="#sources">来源</a>
+  </nav>
 
-  <p class="lede">
-    OpenBitfun 对话左侧那排「钢琴键」：hover 浮出「<b>第 136 轮 · 为什么只有直板机调整？</b>」，点击跳到那一轮（行为由用户确认）。
-    它干的事是<b>查看历史对话内容 + 快速跳转</b>，不是输入框的快捷键键帽。这一页的证据是 <b>OpenBitfun / Codex / Antigravity / WorkBuddy 四张一手截图</b>，全部结论只来自 OCR + 像素测量，不能确认的一律标「待确认」——包括「一键是否等于一轮」这种基本映射。
-  </p>
+  <h2 id="keys"><span class="no">01</span>结论</h2>
+  <ol class="items">
+    <li><span><b>锚点是用户的提问，不是「轮」，也不是内容长度。</b>Codex 的悬停卡显示的就是那条提问的原文开头；Antigravity 官方说明是「每个 turn 一个点，悬停看这一轮的 prompt、回复预览和发送时间」。AI 回复、工具调用都挂在提问下面，不单独占刻度。</span></li>
+    <li><span><b>Antigravity 是目前唯一有官方说明、并且还在迭代的。</b>2.28.1（2026-10-28）上线 conversation navigator；2.29.0 给长对话的「章节」加了 AI 生成的短标题；2.30.0 修了「对话末尾高亮错位」和「对话宽度设为 Fill 时消失」。长对话按日期分章节、章节可折叠——这正是上一版纠结的「刻度放不下怎么办」的官方答案。</span></li>
+    <li><span><b>Codex 有刻度，但各端不一致，用户一直在要。</b>我们的截图里左侧有刻度和带书签的悬停卡；GitHub 上同时有人说新版桌面端里「时间线不见了」（#35071）、右侧标记在某些侧栏宽度下消失（#32015）、VS Code 插件里没有（#31104）。截图只代表截图那个版本。</span></li>
+    <li><span><b>WorkBuddy、CodeBuddy 用列表做同一件事。</b>WorkBuddy 的「历史提问」列表支持点击跳转，悬停出全文卡；CodeBuddy JetBrains 插件写的是「历史提问分段懒加载与跳转定位」。列表能扫读，刻度省空间，是同一个目录的两种呈现。</span></li>
+    <li><span><b>Claude Code 的 /rewind 不是同类。</b>它解决「退回到某一步」（代码、对话或两者），不是「浏览并跳到某条提问」。放在表里只作对照。</span></li>
+    <li><span><b>DevEco Code 建议：一条提问一根刻度，长对话按任务或时间分章节，预览先去掉 Markdown。</b>Codex 的预览直接截原文，<code>\ **01.【单选题】…</code> 这种符号都露出来了，这是可以直接避开的坑。</span></li>
+  </ol>
 
-  <div class="keys">
-    <div class="key">
-      <b>它有两个能力：看历史 + 快跳</b>
-      <span>常态是一排几乎隐形的短键；hover 浮出「第 N 轮 · 首句」预览，点击直达那一轮。预览在 hover，跳转在点击。</span>
+  <h2 id="what"><span class="no">02</span>它是什么</h2>
+  <p class="sub">按 Codex 截图重画的示意（不是像素复刻）。它和三个相近概念容易混：Minimap 展示内容本身的形状，滚动条按内容长度映射位置，scroll-spy 只是「滚动时高亮当前目录项」这一个行为。消息锚点导航是「目录 + scroll-spy + 悬停预览 + 点击跳转」的组合。</p>
+  <div class="anat">
+    <div class="pane">
+      <div class="cap">解剖示意<small>参照 Codex 截图重画</small></div>
+      <div class="am" aria-label="消息锚点导航示意">
+        <div class="rail">
+          <span class="tk"></span><span class="tk"></span><span class="tk"></span><span class="tk"></span>
+          <span class="tk"></span><span class="tk m"></span><span class="tk l"></span><span class="tk l"></span>
+          <span class="tk cur"></span><span class="tk l"></span><span class="tk m"></span><span class="tk"></span>
+          <span class="tk"></span><span class="tk"></span><span class="tk"></span><span class="tk"></span>
+          <span class="tk"></span><span class="tk"></span><span class="tk"></span><span class="tk"></span>
+          <span class="tk"></span><span class="tk"></span><span class="tk"></span><span class="tk"></span>
+          <span class="tk"></span><span class="tk"></span><span class="tk"></span><span class="tk"></span>
+          <span class="tk"></span><span class="tk"></span>
+        </div>
+        <div class="card"><span class="tx">\ **01.【单选题】 您的行业领域是？** - 政务/…</span><svg class="bm" aria-hidden="true" width="11" height="14" viewBox="0 0 11 14" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M1 1h9v12L5.5 9.5 1 13z"/></svg></div>
+        <div class="body">
+          <span class="usr"></span>
+          <span class="ln" style="width:92%"></span><span class="ln" style="width:84%"></span><span class="ln" style="width:70%"></span>
+          <span class="ln" style="width:88%;margin-top:30px"></span><span class="ln" style="width:76%"></span>
+          <span class="usr" style="margin-top:12px"></span>
+          <span class="ln" style="width:90%"></span><span class="ln" style="width:60%"></span>
+        </div>
+        <span class="pin" style="left:4px;top:4px">1</span>
+        <span class="pin" style="left:46px;top:70px">2</span>
+        <span class="pin" style="left:24px;top:130px">3</span>
+        <span class="pin" style="left:200px;top:70px">4</span>
+        <span class="pin" style="left:340px;top:70px">5</span>
+      </div>
     </div>
-    <div class="key">
-      <b>核心难题是密度</b>
-      <span>同一张 OpenBitfun 截图里：轨道可见 <b>86 根短条</b>，浮卡却标着「第 136 轮」——<b>产品自己都不是 1:1</b>：压缩、滚动、段聚合，三者至少居其一。<b>必须合并 / 缩放</b>，这是整份分析的立论支点。</span>
-    </div>
-    <div class="key">
-      <b>常态尽量隐形，需要时才出现</b>
-      <span>竖条只占几像素、预览用浮层不推挤内容、跳走后有「回到最新」兜底——它服务于「你回头翻的时候」，不服务「你正写的时候」。</span>
+    <div class="pane">
+      <div class="cap">五个组成部分</div>
+      <dl class="cl">
+        <dt><span class="n">1</span>刻度轨</dt><dd>贴对话区左缘，每条提问一根短横线，等距排列。常态很淡，只表达「有多少条、分布在哪」。</dd>
+        <dt><span class="n">2</span>当前锚点</dt><dd>视口所在的那条最长最深，相邻几根逐级加长，在细轨上形成一个「鼓包」。</dd>
+        <dt><span class="n">3</span>滚动联动</dt><dd>滚动对话时当前锚点跟着走，不操作也能回答「我在哪」。</dd>
+        <dt><span class="n">4</span>悬停预览</dt><dd>浮层卡片显示提问开头一行，超长截断；不推挤对话内容。</dd>
+        <dt><span class="n">5</span>附加动作</dt><dd>Codex 在卡片右侧放书签。点击刻度或卡片本体则跳转。</dd>
+      </dl>
     </div>
   </div>
 
-  <div class="layout">
-    <aside class="sidebar" aria-label="目录">
-      <div class="sd-title">目录</div>
-      <nav>
-        <a class="cat" href="#what"><span class="lbl">01 六个显示维度</span></a>
-        <a class="cat" href="#matrix"><span class="lbl">02 谁给了「历史 + 快跳」</span></a>
-        <a class="cat" href="#frames"><span class="lbl">03 四家截图 · 实测形态</span></a>
-        <a class="cat" href="#strategies"><span class="lbl">04 三类策略 · 优劣分点</span></a>
-        <a class="cat" href="#ours"><span class="lbl">05 落到 DevEco Code</span></a>
-        <a class="cat" href="#dodont"><span class="lbl">06 可抄与别抄</span></a>
-        <a class="cat" href="#ac"><span class="lbl">07 验收条件</span></a>
-        <a class="cat" href="#src"><span class="lbl">08 来源与局限</span></a>
-      </nav>
-    </aside>
+  <h2 id="matrix"><span class="no">03</span>总表</h2>
+  <p class="sub">形态一列用三个字母：<span class="f a">刻度</span>左缘刻度轨，<span class="f b">列表</span>提问列表，<span class="f c">回退</span>检查点回退。</p>
+  <div class="tw"><table>
+    <thead><tr><th>产品</th><th>形态</th><th>锚点单位</th><th>悬停预览</th><th>跳转与其他动作</th><th>长对话</th></tr></thead>
+    <tbody>
+      <tr><th>Antigravity<small>2.28.1 起</small></th><td><span class="f a">刻度</span>左缘，一 turn 一个点<span class="ev o">官方</span></td><td>turn</td><td>prompt + 回复预览 + 发送时间<span class="ev o">官方</span></td><td>点选跳转<span class="ev o">官方</span></td><td>按日期分章节、可折叠，章节有 AI 短标题<span class="ev o">官方</span></td></tr>
+      <tr><th>Codex<small>桌面 App</small></th><td><span class="f a">刻度</span>左缘细刻度，当前最长<span class="ev s">截图</span></td><td>用户提问</td><td>提问原文一行，Markdown 未清洗<span class="ev s">截图</span></td><td>书签<span class="ev s">截图</span>；点击<span class="ev q">待确认</span></td><td class="na">待确认</td></tr>
+      <tr><th>OpenBitfun</th><td><span class="f a">刻度</span>左缘，当前区段加宽变深<span class="ev s">截图</span></td><td>浮卡写「第 N 轮」<span class="ev q">待确认</span></td><td>「第 136 轮」+ 提问首句<span class="ev s">截图</span></td><td>点击跳转（用户确认）</td><td class="na">待确认</td></tr>
+      <tr><th>WorkBuddy</th><td><span class="f b">列表</span>右侧历史提问<span class="ev s">截图</span></td><td>用户提问</td><td>悬停弹出全文卡<span class="ev s">截图</span></td><td>点击跳转<span class="ev o">官方</span></td><td>列表滚动</td></tr>
+      <tr><th>CodeBuddy<small>JetBrains 插件</small></th><td><span class="f b">列表</span><span class="ev q">形态待确认</span></td><td>用户提问</td><td class="na">待确认</td><td>跳转定位<span class="ev o">官方</span></td><td>分段懒加载<span class="ev o">官方</span></td></tr>
+      <tr><th>Claude Code</th><td><span class="f c">回退</span><code>/rewind</code> 或连按 Esc<span class="ev o">官方</span></td><td>每次发送一个检查点</td><td>检查点列表</td><td>回退代码、对话或两者</td><td>保留最近检查点</td></tr>
+    </tbody>
+  </table></div>
+  <p class="tnote">读法：真正做了刻度式锚点导航的是 Antigravity、Codex、OpenBitfun；有官方文字说明的只有 Antigravity。</p>
 
-    <main>
+  <h2 id="products"><span class="no">04</span>各产品</h2>
+  <p class="sub">每张卡列出做法和依据，截图放在卡片顶部，底部一行是值得借鉴的地方。</p>
 
-      <!-- ══════════════ 01 ══════════════ -->
-      <section class="grp" id="what">
-        <div class="ghead"><h3>01 它是什么 · 六个显示维度</h3><span class="cnt">六个独立决定</span></div>
-        <p class="lede2">钢琴键要定的事可以拆成六个维度，每个都是独立决策。OpenBitfun 的截图给出一套形态参考（数字全部实测）；真正麻烦的只有第六个——密度。</p>
-
-        <div class="dims">
-          <div class="dim">
-            <b>① 位置</b>
-            <span class="q">竖条贴对话流左缘，还是侧栏、底部、或干脆不给？</span>
-            <span class="ans">OpenBitfun：<span class="tagk own">对话流左缘一条细轨</span>，贴着内容走，不占侧栏。</span>
-          </div>
-          <div class="dim">
-            <b>② 粒度</b>
-            <span class="q">一个键代表一轮、一段、还是不用键？</span>
-            <span class="ans">OpenBitfun：<span class="tagk warn">待确认</span>——浮卡标「第 136 轮」，轨道却只见 86 根；「一键 = 一轮」在这张截图上不成立。轮是计数单位（可能是用户消息 + 回复）。</span>
-          </div>
-          <div class="dim">
-            <b>③ 形态</b>
-            <span class="q">短键堆叠、文字列表、还是时间线？</span>
-            <span class="ans">OpenBitfun：<span class="tagk own">横向短键纵向堆叠</span>，键身只承载轮次，不放文字。</span>
-          </div>
-          <div class="dim">
-            <b>④ 预览</b>
-            <span class="q">hover 才给首句，还是文字常驻？</span>
-            <span class="ans">OpenBitfun：<span class="tagk own">hover 浮卡</span>——轮次号 + 首句 + 时间，常态保持隐形。</span>
-          </div>
-          <div class="dim">
-            <b>⑤ 跳转</b>
-            <span class="q">点击直达，还是 rewind / 滚动回找？</span>
-            <span class="ans">OpenBitfun：<span class="tagk own">点击直达</span>；Claude Code 用 /rewind 回放，属于另一套。</span>
-          </div>
-          <div class="dim">
-            <b>⑥ 密度</b>
-            <span class="q">轮数增长时怎么处理？</span>
-            <span class="ans"><span class="tagk warn">核心难题</span>：136 轮时 1:1 的键只有约 2px 高，必须合并为「段」或缩放——第 05 节专门处理。</span>
-          </div>
-        </div>
-      </section>
-
-      <!-- ══════════════ 02 ══════════════ -->
-      <section class="grp" id="matrix">
-        <div class="ghead"><h3>02 谁给了「历史 + 快跳」</h3><span class="cnt">八家对照 · 证据分级</span></div>
-        <p class="lede2">「回头翻历史 + 快速定位某一点」各家都在做。四张一手截图给出三种真实现状：左缘短横线轨道（OpenBitfun / Codex / Antigravity）、右侧消息列表 + hover 全文卡（WorkBuddy）、文档式回放（Claude Code）。表中「形式 / 预览」列来自像素测量；「跳转」列只有 OpenBitfun 的行为由用户确认过，其余标「待确认」。</p>
-
-        <div class="tw">
-          <table style="min-width:920px">
-            <thead><tr><th>产品</th><th>形式</th><th>预览</th><th>跳转</th><th>证据</th></tr></thead>
-            <tbody>
-              <tr>
-                <td class="k">OpenBitfun</td>
-                <td><b>钢琴键竖条</b>：对话左缘短横键，可见 86 根、18px 间距、常态 9×4px <code>#d6d6d6</code>；当前区段 7 根加宽至 15–20px，中心一根 <code>#5c5c5c</code></td>
-                <td>浮卡「第 136 轮」+ 首句「为什么只有直板机调整？」；连接线从当前键指向浮卡</td>
-                <td>点击直达该轮（用户确认）</td>
-                <td><span class="tagk ok">一手截图</span></td>
-              </tr>
-              <tr>
-                <td class="k">Codex</td>
-                <td>左缘短横键轨道，可见 62 根、20px 间距、常态 12×4px <code>#d2d3d3</code>；当前区段 7 根加宽至 20–31px，中心一根 <code>#1a1c1f</code></td>
-                <td>加宽区段旁浮层文字「还可以问有过几个鸿蒙项目」（左缘 x≈103）；是轮次预览还是建议，<span class="tagk warn">待确认</span></td>
-                <td><span class="tagk warn">待确认</span></td>
-                <td><span class="tagk ok">一手截图</span></td>
-              </tr>
-              <tr>
-                <td class="k">Antigravity</td>
-                <td>左缘短横键轨道，共 12 根、22px 间距、常态 9×12px <code>#c6c6ca</code>；第 6 根加高至 16px、变深 <code>#545455</code>，最底一根 <code>#0a0a0b</code></td>
-                <td>hover 卡「6 of 12」+「2026年11月17日 19:13」+ 消息全文</td>
-                <td><span class="tagk warn">待确认</span></td>
-                <td><span class="tagk ok">一手截图</span></td>
-              </tr>
-              <tr>
-                <td class="k">WorkBuddy</td>
-                <td>无轨道（右缘 0 个纵向标记）；右侧消息列表，行距 60px、文本以 <code>…</code> 截断</td>
-                <td>hover 时左侧深色卡（y≈368–563）显示该行全文；当前行蓝色高亮（y≈573–597）</td>
-                <td><span class="tagk warn">待确认</span></td>
-                <td><span class="tagk ok">一手截图</span></td>
-              </tr>
-              <tr>
-                <td class="k">Claude Code</td>
-                <td>无独立竖条；transcript 全文记录 + <code>/rewind</code> 回到会话某点</td>
-                <td>rewind 出的历史点列表</td>
-                <td>rewind 回放到该点</td>
-                <td>官方文档 · 未截图</td>
-              </tr>
-              <tr>
-                <td class="k">Cursor</td>
-                <td>会话历史侧栏，一条对话一条标题</td>
-                <td>标题 + 首条内容摘要</td>
-                <td>切换整个会话</td>
-                <td>公开界面 · 待确认</td>
-              </tr>
-              <tr>
-                <td class="k">ChatGPT</td>
-                <td>左侧会话列表</td>
-                <td>标题 + 首条摘要</td>
-                <td>切换整个会话</td>
-                <td>公开界面 · 待确认</td>
-              </tr>
-              <tr>
-                <td class="k">Devin</td>
-                <td>会话记录 / 时间线</td>
-                <td>列表项</td>
-                <td>切会话</td>
-                <td>公开界面 · 待确认</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <div class="block" style="margin-top:14px">
-          <h4>三种能力层级</h4>
-          <p><b>切会话（Cursor / ChatGPT / Devin）</b>是粗粒度：一个会话是一个整体，翻历史 = 换一个会话开。<b>回放（Claude Code /rewind）</b>是时间维度：可以退到某个工具调用点，但不是「挑某一轮去看」。</p>
-          <p><b>「轮 / 条级」预览出现在 OpenBitfun 与 Antigravity</b>——浮卡能指到具体一轮（「第 136 轮」）或一条（「6 of 12」）；Codex 的轨道是否轮级<b>待确认</b>。三家短轨道的共同点：常态近隐形、当前区段变宽变深、预览用浮层。代价就是第六个维度——轮数一多，键就挤不下。</p>
-        </div>
-      </section>
-
-      <!-- ══════════════ 03 ══════════════ -->
-      <section class="grp" id="frames">
-        <div class="ghead"><h3>03 四家截图 · 实测形态</h3><span class="cnt">OpenBitfun 两帧 + 实测规格表</span></div>
-        <p class="lede2">先看 OpenBitfun 的常态与 hover 两帧（按截图重画，数字全部实测）：常态是一排 9×4px 短键，当前区段 7 根加宽、中心一根变深；hover 时连接线指向当前键，浮卡给出「第 136 轮」与首句。点击即跳（用户确认）。</p>
-
-        <div class="frames">
-          <div class="pv">
-            <div class="pv-hd">
-              <b>帧 A · 常态</b>
-              <span class="pv-note">对话左缘一条窄轨：常态键 9×4px、间距 18px；当前区段 7 根加宽至 15–20px，中心一根变深 <code>#5c5c5c</code>。不占内容、不推布局。</span>
-            </div>
-            <div class="ofm">
-              <div class="rail">
-                <span class="ok"></span>
-                <span class="ok"></span>
-                <span class="ok wide"></span>
-                <span class="ok w2"></span>
-                <span class="ok cur"></span>
-                <span class="ok w2"></span>
-                <span class="ok wide"></span>
-                <span class="ok"></span>
-                <span class="ok"></span>
-              </div>
-              <div class="body">
-                <span class="bub usr" style="align-self:flex-end">为什么只有直板机调整？</span>
-                <span class="bub">直板机窗口是固定 1000×800，字号随缩放溢出……</span>
-                <span class="bub usr" style="align-self:flex-end">折叠屏那台不用管吗？</span>
-                <span class="bub mid">折叠屏走另一条基线……</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="pv">
-            <div class="pv-hd">
-              <b>帧 B · hover 预览</b>
-              <span class="pv-note">连接线从当前键指向浮卡：上「第 136 轮」、下首句。浮层，不推挤对话；实测浮卡左缘在轨道右侧约 50px（x≈115）。</span>
-            </div>
-            <div class="ofm">
-              <div class="rail">
-                <span class="ok"></span>
-                <span class="ok wide"></span>
-                <span class="ok w2"></span>
-                <span class="ok hover cur">
-                  <span class="pk-prev"><b>第 136 轮</b><span class="pk-s">为什么只有直板机调整？</span></span>
-                </span>
-                <span class="ok w2"></span>
-                <span class="ok wide"></span>
-                <span class="ok"></span>
-              </div>
-              <div class="body">
-                <span class="bub usr" style="align-self:flex-end">为什么只有直板机调整？</span>
-                <span class="bub">直板机窗口是固定 1000×800，字号随缩放溢出……</span>
-                <span class="bub usr" style="align-self:flex-end">折叠屏那台不用管吗？</span>
-                <span class="bub mid">折叠屏走另一条基线……</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="quote">
-          <b>两帧合起来就是完整行为：</b>常态只给你「对话有多长 + 我在哪」，hover 给「当前这一格讲了什么」，点击给「直接到那一格」。三个问题分三次交出来，谁也不抢谁的注意力。注意：浮卡里的「第 136 轮」不等于轨道的第 136 根键——映射规则见下方实测表。
-        </div>
-
-        <div class="block" style="margin-top:14px">
-          <h4>同一张截图里的矛盾：86 根键 vs「第 136 轮」</h4>
-          <p>OpenBitfun 截图里轨道全程可见 <b>86 根</b>短条，而浮卡标着「第 136 轮」：若每根键对应一轮，第 52 根键上不该出现「第 136 轮」。可能的原因：轨道是可滚动的窗口、短条是压缩后的「段」、或截图处于缩放态。<b>这几点都无法从静态截图判定</b>——能确定的只有一句：<span class="tagk warn">轨道与轮次不是简单 1:1，长对话必然要压缩 / 合并</span>。</p>
-        </div>
-
-        <div class="tw" style="margin-top:14px">
-          <table style="min-width:900px">
-            <thead><tr><th>产品（截图尺寸）</th><th>轨道 · 像素测量</th><th>当前区段 · 像素测量</th><th>预览 / 浮层 · OCR</th><th>与轮次的关系</th></tr></thead>
-            <tbody>
-              <tr>
-                <td class="k">OpenBitfun<br>532×1680</td>
-                <td>短横键 9×4px、<code>#d6d6d6</code>、x≈47–55，间距 18px，可见 86 根</td>
-                <td>7 根加宽至 15→19→20→19→15px（y≈613–724），中心一根 <code>#5c5c5c</code>（y≈667）</td>
-                <td>「第 136 轮」+「为什么只有直板机调整？」；连接线从当前键指向浮卡（左缘 x≈115）</td>
-                <td><span class="tagk warn">待确认</span>：86 根 vs 136 轮，非 1:1</td>
-              </tr>
-              <tr>
-                <td class="k">Codex<br>830×1328</td>
-                <td>短横键 12×4px、<code>#d2d3d3</code>、x≈33–44，间距 20px，可见 62 根</td>
-                <td>7 根加宽至 20–31px（y≈255–378），中心一根 <code>#1a1c1f</code>（y≈315）</td>
-                <td>加宽区段旁浮层「还可以问有过几个鸿蒙项目」（左缘 x≈103）；是预览还是建议 <span class="tagk warn">待确认</span></td>
-                <td><span class="tagk warn">待确认</span></td>
-              </tr>
-              <tr>
-                <td class="k">Antigravity<br>750×664</td>
-                <td>短横键 9×12px、<code>#c6c6ca</code>、x≈69–77，间距 22px，共 12 根</td>
-                <td>第 6 根加高至 16px、加宽至 11px、变深 <code>#545455</code>（y≈293–308）；最底一根 <code>#0a0a0b</code>（y≈427–438）</td>
-                <td>「6 of 12」+「2026年11月17日 19:13」+ 消息全文</td>
-                <td>计数与轨道一致（第 6 根 ↔ 「6 of 12」）；计数单位未在截图命名，<span class="tagk warn">待确认</span></td>
-              </tr>
-              <tr>
-                <td class="k">WorkBuddy<br>1144×892</td>
-                <td>无轨道：右缘 x≥1095 检测到 0 个纵向标记</td>
-                <td>—</td>
-                <td>右侧消息列表行距 60px、文本以 … 截断；hover 时左侧深色卡（y≈368–563）显示全文；蓝色高亮行（y≈573–597）</td>
-                <td>列表式，非轨道</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <!-- ══════════════ 04 ══════════════ -->
-      <section class="grp" id="strategies">
-        <div class="ghead"><h3>04 三类策略 · 优劣分点</h3><span class="cnt">三个大方向，各自分点列优劣</span></div>
-        <p class="lede2">
-          给「历史 + 快跳」只有三个大方向：<b>方向一 · 钢琴键竖条</b>（短横键纵向堆叠）、<b>方向二 · 目录大纲</b>（每条一行首句，可分组）、<b>方向三 · 滚动 + 回到最新</b>（不建索引，线性回滚）。
-          下面各配一个示意和优 / 劣分点。方向一有 OpenBitfun / Codex / Antigravity 三张一手截图支撑，方向二有 WorkBuddy 一张；<b>优劣分点是推演，不是用户测试</b>。
-        </p>
-
-        <div class="strat">
-          <div class="strat-c">
-            <h4>方向一 · 钢琴键竖条</h4>
-            <div class="strat-v">
-              <div class="sv-rail">
-                <span class="ok"></span>
-                <span class="ok"></span>
-                <span class="ok hover"></span>
-                <span class="ok on"></span>
-                <span class="ok"></span>
-                <span class="ok"></span>
-              </div>
-              <span class="sv-prev"><b>第 3 轮</b><span class="pk-t">10:42</span><span class="pk-s">折叠屏那台不用管吗？</span></span>
-              <div class="sv-body">
-                <span class="sv-bub usr">为什么只有直板机调整？</span>
-                <span class="sv-bub">直板机窗口是固定 1000×800……</span>
-                <span class="sv-bub usr">折叠屏那台不用管吗？</span>
-              </div>
-            </div>
-            <div class="dform-pc">
-              <div class="pc-col pros"><h5>优</h5><ul>
-                <li><b>粒度最细</b>：每一轮都可达，不丢信息</li>
-                <li><b>相对位置 = 时间先后</b>：上下扫一眼就懂对话多长、进展到哪</li>
-                <li><b>常态最隐形</b>：只占 6–12px 细轨，不抢内容</li>
-                <li><b>hover 预览免打开</b>：翻历史不打断当前阅读</li>
-                <li><b>点击即跳</b>：定位一轮只要一下</li>
-              </ul></div>
-              <div class="pc-col cons"><h5>劣</h5><ul>
-                <li><b>密度是死穴</b>：136 轮 1:1 时每键约 2px，不可点</li>
-                <li><b>键上没文字</b>：不 hover 就不知道每轮讲了什么</li>
-                <li><b>相邻轮难分辨</b>：键长得一样，只能靠 hover 逐个看</li>
-                <li><b>轮数多必须合并段</b>：合并后粒度优势打了折，还得多一层「段内再选」</li>
-                <li><b>新概念成本</b>：用户要先理解「键 = 轮」</li>
-              </ul></div>
-            </div>
-            <p class="who">谁在用：<b>OpenBitfun / Codex / Antigravity</b>（三张用户截图，一手；三家的点击行为只有 OpenBitfun 被用户确认）。</p>
-          </div>
-
-          <div class="strat-c">
-            <h4>方向二 · 目录大纲</h4>
-            <div class="strat-v">
-              <div class="sv-list">
-                <span class="sv-it"><span class="no">#1</span>为什么只有直板机调整？<span class="grow"></span><span class="t">10:38</span></span>
-                <span class="sv-it"><span class="no">#2</span>直板机三档尺寸都过了一遍<span class="grow"></span><span class="t">10:40</span></span>
-                <span class="sv-it hl"><span class="no">#3</span>折叠屏那台不用管吗？<span class="grow"></span><span class="t">10:42</span></span>
-                <span class="sv-it"><span class="no">#4</span>改完怎么验证？<span class="grow"></span><span class="t">10:45</span></span>
-                <span class="sv-it"><span class="no">#5</span>帧率截图发我<span class="grow"></span><span class="t">10:47</span></span>
-              </div>
-            </div>
-            <div class="dform-pc">
-              <div class="pc-col pros"><h5>优</h5><ul>
-                <li><b>首句常驻</b>：不用 hover 就能扫读「发生过什么」</li>
-                <li><b>可分组 / 可搜索</b>：按任务、阶段折叠，长对话也能管</li>
-                <li><b>零学习成本</b>：列表是通用心智模型</li>
-                <li><b>点击定位明确</b>：文字即索引，点了不会跳错</li>
-                <li><b>触控 / 窄屏天然适配</b>：不存在 hover 问题</li>
-              </ul></div>
-              <div class="pc-col cons"><h5>劣</h5><ul>
-                <li><b>占空间</b>：常态要开侧栏 / 抽屉，而不是 6px 细轨</li>
-                <li><b>首句质量决定一切</b>：首句没信息量，列表等于白给</li>
-                <li><b>列表长了也要翻</b>：136 行标题一样难扫，还得靠分组 / 搜索</li>
-                <li><b>索引与内容分离</b>：列表在侧栏，对话在中间，眼睛来回跳</li>
-                <li><b>要生成标题 / 摘要</b>：实现成本偏高，还得维护一致性</li>
-              </ul></div>
-            </div>
-            <p class="who">谁在用：<b>WorkBuddy</b>（右侧消息列表 + hover 左侧全文卡，一手截图）；Claude Code <code>/rewind</code> 是点开式回放；Cursor / ChatGPT 会话列表是粗粒度版（公开界面，待确认）。</p>
-          </div>
-
-          <div class="strat-c">
-            <h4>方向三 · 滚动 + 回到最新</h4>
-            <div class="strat-v">
-              <div class="sv-chat">
-                <span class="sv-bub usr">为什么只有直板机调整？</span>
-                <span class="sv-bub">直板机窗口是固定 1000×800……</span>
-                <span class="sv-bub usr">折叠屏那台不用管吗？</span>
-                <span class="sv-bub">折叠屏走另一条基线……</span>
-                <span class="sv-bub usr">改完怎么验证？</span>
-                <span class="sv-to-top">回到最新</span>
-                <span class="sv-scroll"><span class="thumb"></span></span>
-              </div>
-            </div>
-            <div class="dform-pc">
-              <div class="pc-col pros"><h5>优</h5><ul>
-                <li><b>实现成本最低</b>：就是带滚动条的对话，加一个锚点按钮</li>
-                <li><b>零新概念</b>：内容即索引，没有「键 = 轮」要学</li>
-                <li><b>连续上下文</b>：滚到哪读到哪，中间过程不丢</li>
-                <li><b>窄屏 / 触控天然适配</b>：手机就是这么翻的</li>
-                <li><b>永远有兜底</b>：「回到最新」一行解决迷路</li>
-              </ul></div>
-              <div class="pc-col cons"><h5>劣</h5><ul>
-                <li><b>回找旧轮很慢</b>：长对话手动滚回去，靠记忆找位置</li>
-                <li><b>没有「轮」的概念</b>：说不清「第 136 轮发生了什么」</li>
-                <li><b>跳转精度差</b>：只能滚到大致区域，落点不可控</li>
-                <li><b>对话越长越难用</b>：136 轮的内容滚动条比什么都长</li>
-                <li><b>无法概览</b>：不滚完就不知道对话总在聊什么</li>
-              </ul></div>
-            </div>
-            <p class="who">谁在用：<b>绝大多数聊天工具</b>的默认形态（ChatGPT / Claude 网页等）。</p>
-          </div>
-        </div>
-
-        <div class="tw" style="margin-top:14px">
-          <table style="min-width:880px">
-            <thead><tr><th>维度</th><th>方向一 · 钢琴键竖条</th><th>方向二 · 目录大纲</th><th>方向三 · 滚动 + 回到最新</th></tr></thead>
-            <tbody>
-              <tr><td class="k">常态占用</td><td>6–12px 细轨</td><td>侧栏 / 抽屉，或常驻一列</td><td>0</td></tr>
-              <tr><td class="k">每轮信息</td><td>仅轮次号，hover 才给首句</td><td>首句常驻</td><td>内容即索引</td></tr>
-              <tr><td class="k">扫读「发生过什么」</td><td>逐键 hover，慢</td><td><span class="tagk ok">列表扫读，最快</span></td><td>靠滚动回忆</td></tr>
-              <tr><td class="k">定位「某一轮」</td><td><span class="tagk ok">点击直达，最快</span></td><td>列表点选，快</td><td>手动滚，慢</td></tr>
-              <tr><td class="k">136 轮长对话</td><td>必须合并段，否则 2px 死键</td><td>列表也长，需分组 / 搜索</td><td><span class="tagk ok">无压力，但回找慢</span></td></tr>
-              <tr><td class="k">新概念成本</td><td>中（键 = 轮）</td><td><span class="tagk ok">低（列表天然）</span></td><td><span class="tagk ok">零</span></td></tr>
-              <tr><td class="k">窄屏 / 触控</td><td>竖条要退化</td><td>天然适配</td><td>天然适配</td></tr>
-              <tr><td class="k">实现成本</td><td>中（轨 + 浮卡 + 跳转）</td><td>中高（标题 + 分组 + 一致性）</td><td><span class="tagk ok">低</span></td></tr>
-              <tr><td class="k">谁在用</td><td>OpenBitfun / Codex / Antigravity（一手截图）</td><td>WorkBuddy（一手截图）、Claude <code>/rewind</code>（点开式）</td><td>绝大多数聊天工具</td></tr>
-            </tbody>
-          </table>
-        </div>
-
-        <div class="block" style="margin-top:14px">
-          <h4>选型：方向一为默认，密度自适应；方向二做长对话补充；方向三永远兜底</h4>
-          <p><b>方向一值得抄。</b>它是把「轮 / 条级」预览做得最彻底的形态——常态隐形、浮卡给内容、当前区段变宽变深。前提是把密度问题解决：轮数少时 1:1，轮数多时自动合并成「段」——OpenBitfun 自己 86 根键 vs「第 136 轮」就是证据。</p>
-          <p><b>方向二不冲突，是补充。</b>到 100+ 轮，竖条只能概览，这时候大纲（分组 + 搜索）才是定位的主力；WorkBuddy 已经用「列表 + hover 全文卡」走了这条路。</p>
-          <p><b>方向三不是选择题，是底线。</b>无论哪种索引，「回到最新」都必须永远在——跳走之后得能一键回来，否则用户不敢跳。</p>
-        </div>
-      </section>
-
-      <!-- ══════════════ 05 ══════════════ -->
-      <section class="grp" id="ours">
-        <div class="ghead"><h3>05 落到 DevEco Code</h3><span class="cnt">八条规则 + 密度状态表 + 密度图 + 可交互 demo</span></div>
-        <p class="lede2">DevEco Code 的对话流目前只有线性滚动。钢琴键要落地，先把八条规则定下来，再回答「轮数多了怎么办」——这是第 136 轮教我们的那一课（实测：OpenBitfun 截图可见 86 根键，浮卡却标「第 136 轮」）。</p>
-
-        <ol class="steps">
-          <li><b>位置：竖条贴对话流左缘，常态只占 6–12px。</b>不占侧栏、不遮内容；对话右移的代价远小于一个常驻侧栏。</li>
-          <li><b>粒度：一轮一键。</b>「轮」定义为一次用户消息 + 相应回复；Agent 长回复里的思考 / 工具调用不进键，那是另一份分析（会话单元）的事。</li>
-          <li><b>形态：横向短键纵向堆叠，当前轮高亮。</b>键身只承载轮次位置；文字全部进预览。</li>
-          <li><b>预览：hover / 焦点浮卡。</b>内容 = 轮次号 + 首句 + 时间；浮层贴着键旁长出来，不推挤对话内容。</li>
-          <li><b>跳转：点击直达该轮。</b>键盘 <span class="ai-kbd">↑</span> <span class="ai-kbd">↓</span> 相邻轮、<span class="ai-kbd">Esc</span> 收起；跳走之后「回到最新」永远可点。</li>
-          <li><b>密度自适应：轮数少 1:1，多了合并段。</b>按下方状态表分级；到 140+ 轮给大纲 / 搜索入口，竖条退成概览。参照实测：OpenBitfun 在长对话下轨道不是 1:1（86 根键 vs「第 136 轮」）。</li>
-          <li><b>滚动联动：滚对话时高亮跟着当前可见轮走。</b>scroll spy 让「我在哪」永远有答案。</li>
-          <li><b>退化：窄屏收起为侧栏图标；触控点按代替 hover 预览。</b>预览在触控上做成「点住展开」，不靠悬停。</li>
-        </ol>
-
-        <h4 style="margin:26px 0 8px;font-size:var(--fs-h2)">密度状态表（280px 高竖条的按键预算）</h4>
-        <div class="tw">
-          <table style="min-width:0">
-            <thead><tr><th>轮数</th><th>键形态</th><th>键高</th><th>行为</th></tr></thead>
-            <tbody>
-              <tr><td class="k">≤ 20</td><td>每轮一键（1:1）</td><td>≥ 12px</td><td>点击即跳，无需合并</td></tr>
-              <tr><td class="k">21–60</td><td>每轮一键，当前轮加宽</td><td>8–11px</td><td>hover 预览首句</td></tr>
-              <tr><td class="k">61–140</td><td>合并为「对话段」（每 5–8 轮一键）</td><td>8–10px</td><td>点击展开段内，再选具体轮</td></tr>
-              <tr><td class="k">&gt; 140</td><td>段 + 大纲 / 搜索入口</td><td>—</td><td>搜索定位优先，竖条只做概览</td></tr>
-            </tbody>
-          </table>
-        </div>
-
-        <h4 style="margin:26px 0 8px;font-size:var(--fs-h2)">密度图：8 / 24 / 136 轮，同样的 280px</h4>
-        <p class="lede2" style="margin:0 0 4px">同一根竖条放 8、24、136 轮。数字由页面实时算：键高会从 33px 掉到 10px，再到 1px——136 轮那根已经是一整块实心，1:1 在这里物理上不可行。OpenBitfun 实测：截图可见 86 根键、浮卡却标「第 136 轮」，说明真实产品也在压缩——密度不是理论问题，是已经发生的事。</p>
-        <div class="density" id="density">
-          <div class="dcol"><h4>8 轮 <span class="tagk ok">1:1</span></h4><div class="drail" data-n="8"></div><p class="dnote">每键约 <b>—</b>px，点按毫无压力。短对话不需要任何合并逻辑。</p></div>
-          <div class="dcol"><h4>24 轮 <span class="tagk ok">1:1</span></h4><div class="drail" data-n="24"></div><p class="dnote">每键约 <b>—</b>px，勉强可点；hover 预览开始变得必要。</p></div>
-          <div class="dcol"><h4>136 轮 <span class="tagk no">必须合并</span></h4><div class="drail" data-n="136"></div><p class="dnote">每键约 <b>—</b>px，已是死键——<b>1:1 在这里物理上不可行</b>，OpenBitfun 的真实长对话就在这。</p></div>
-        </div>
-
-        <h4 style="margin:26px 0 8px;font-size:var(--fs-h2)">可交互 demo：8 轮对话的钢琴键</h4>
-        <p class="lede2" style="margin:0 0 4px">鼠标放到左边短键上浮出预览，点一下跳到那一轮；滚动右侧对话，高亮跟着当前可见轮走。「当前轮」与「跳转误差」由页面实时测量，不是写死的。</p>
-        <div class="demo" id="demo">
-          <div class="demo-bar">
-            <button class="tbtn" type="button" id="d-top">回到最新</button>
-            <p class="demo-meas">当前轮 <b id="d-cur">—</b> · 跳转误差 <b id="d-err">—</b>px</p>
-          </div>
-          <div class="demo-stage">
-            <div class="demo-rail" id="d-rail"></div>
-            <div class="demo-chat" id="d-chat"></div>
-          </div>
-          <p class="demo-note">读数逻辑与验收 AC-3 相同：点击键后记目标 <code>scrollTop</code>，下一帧量实际 <code>scrollTop</code>，差值为跳转误差；滚动对话时找「最接近视口顶的那一轮」作当前轮（AC-4）。</p>
-        </div>
-      </section>
-
-      <!-- ══════════════ 06 ══════════════ -->
-      <section class="grp" id="dodont">
-        <div class="ghead"><h3>06 可抄与别抄</h3><span class="cnt">从哪家抄什么</span></div>
-
-        <div class="block">
-          <h4>可抄 <span class="tagk ok">五条</span></h4>
-          <ul class="plain" style="margin-top:10px">
-            <li><b>竖条 + hover 预览</b>——抄 OpenBitfun：常态几乎隐形，预览用浮层不推内容，信息按需给。</li>
-            <li><b>轮次号 + 首句</b>——抄 OpenBitfun：首句是零成本摘要，比标题稳定、比全文省事。</li>
-            <li><b>滚动联动高亮</b>——抄主流聊天工具：滚到哪，高亮跟到哪，「我在哪」永远有答案。</li>
-            <li><b>密度自适应合并段</b>——长对话的刚需：136 轮不变成 2px 死键，这是 OpenBitfun 自己都没完全解决的题。</li>
-            <li><b>「回到某点」的能力</b>——抄 Claude Code <code>/rewind</code> 的意图：除了跳到第 N 轮，还要能回放到某一步的状态。</li>
-          </ul>
-        </div>
-
-        <div class="block">
-          <h4>别抄 <span class="tagk no">四条</span></h4>
-          <ul class="plain" style="margin-top:10px">
-            <li><b>别做成纯装饰条。</b>键有视觉、点了没反应，等于给每轮都加了噪音——钢琴键的全部价值在「可跳」。</li>
-            <li><b>别让预览推挤对话。</b>预览卡一旦插入文档流，对话就会上下跳；必须浮层，和状态锚点那条结论同源。</li>
-            <li><b>别在窄屏硬塞竖条。</b>手机宽度放不下 6px 轨 + 浮卡；收成侧栏图标，触控点按代替 hover。</li>
-            <li><b>别丢「回到最新」。</b>跳走之后回不来，用户就不敢跳——方向三那句话是所有索引的底线。</li>
-          </ul>
-        </div>
-      </section>
-
-      <!-- ══════════════ 07 ══════════════ -->
-      <section class="grp" id="ac">
-        <div class="ghead"><h3>07 验收条件</h3><span class="cnt">七条，可勾</span></div>
-        <p class="lede2">写成能被测的句子。AC-2 / AC-3 / AC-4 可以直接变成自动化断言，第 05 节的 demo 就是最小实现。</p>
-
-        <ul class="acks">
-          <li>
-            <span class="id">AC-1</span>
-            <span class="tx">常态下钢琴键竖条宽度 ≤ 12px，且不遮挡对话内容
-              <small>覆盖位置。断言：竖条与对话区的 bounding rect 不相交；窄屏（&lt; 720px）自动收起为侧栏图标。</small></span>
-          </li>
-          <li>
-            <span class="id">AC-2</span>
-            <span class="tx">hover / 焦点浮出预览卡（轮次号 + 首句 + 时间），且对话区位置不变
-              <small>覆盖预览。断言：预览出现前后，对话流首个可见块的 rect.top 不变；触控为点按等价展开。</small></span>
-          </li>
-          <li>
-            <span class="id">AC-3</span>
-            <span class="tx">点击键跳转到对应轮，跳转误差 ≤ 2px
-              <small>覆盖跳转。断言：点击后下一帧 <code>scrollTop</code> 与目标偏移之差 ≤ 2px；demo 里实时可测。</small></span>
-          </li>
-          <li>
-            <span class="id">AC-4</span>
-            <span class="tx">滚动对话时高亮同步到当前可见轮，偏差 ≤ 1 轮
-              <small>覆盖滚动联动。断言：视口顶最近的一轮与高亮键编号一致。</small></span>
-          </li>
-          <li>
-            <span class="id">AC-5</span>
-            <span class="tx">136 轮长对话不出现 1:1 的 2px 死键；自动合并为段，段可展开
-              <small>覆盖密度。断言：键高低于 8px 时必触发合并；合并后每个可点目标 ≥ 8px。</small></span>
-          </li>
-          <li>
-            <span class="id">AC-6</span>
-            <span class="tx">键盘可达：<code>Tab</code> / focus 等价 hover，<span class="ai-kbd">↑</span> <span class="ai-kbd">↓</span> 相邻轮，<span class="ai-kbd">Esc</span> 收起
-              <small>覆盖可达性。断言：不靠 hover 也能展开预览、移动到任意一轮。</small></span>
-          </li>
-          <li>
-            <span class="id">AC-7</span>
-            <span class="tx">跳转后「回到最新」一键返回底部；未跳转时该入口不抢注意力
-              <small>覆盖兜底。断言：回到最新后当前轮 = 最后一轮；常态下入口只在跳转后强调。</small></span>
-          </li>
-        </ul>
-      </section>
-
-      <!-- ══════════════ 08 ══════════════ -->
-      <section class="grp" id="src">
-        <div class="ghead"><h3>08 来源与局限</h3><span class="cnt">哪些可核 · 哪些待补</span></div>
-
-        <div class="tw">
-          <table>
-            <thead><tr><th>来源</th><th>用在这一页的哪一条</th></tr></thead>
-            <tbody>
-              <tr><td class="k">OpenBitfun 用户截图（一手）<br>532×1680</td><td>轨道 86 根、间距 18px、常态 9×4px <code>#d6d6d6</code>；当前区段 7 根加宽 15–20px、中心 <code>#5c5c5c</code>；浮卡「第 136 轮」+「为什么只有直板机调整？」；点击跳转（用户确认）。</td></tr>
-              <tr><td class="k">Codex 用户截图（一手）<br>830×1328</td><td>轨道 62 根、间距 20px、常态 12×4px <code>#d2d3d3</code>；当前区段 7 根加宽 20–31px、中心 <code>#1a1c1f</code>；浮层文字「还可以问有过几个鸿蒙项目」。</td></tr>
-              <tr><td class="k">Antigravity 用户截图（一手）<br>750×664</td><td>轨道 12 根、间距 22px、常态 9×12px <code>#c6c6ca</code>；第 6 根加高加宽变深、最底一根 <code>#0a0a0b</code>；hover 卡「6 of 12」+ 时间 + 消息全文。</td></tr>
-              <tr><td class="k">WorkBuddy 用户截图（一手）<br>1144×892</td><td>无轨道；右侧消息列表行距 60px、文本以 … 截断；hover 左侧深色卡（y≈368–563）显示全文；蓝色高亮行 y≈573–597。</td></tr>
-              <tr><td class="k">Claude Code 官方文档（transcript / <code>/rewind</code>）</td><td>「回放 / 回到某点」是另一套形态，第 02 / 04 节的对照依据。</td></tr>
-              <tr><td class="k">ChatGPT / Cursor / Devin 公开界面</td><td>会话列表 = 粗粒度切换，方向三的普遍性证据（未截图核对）。</td></tr>
-            </tbody>
-          </table>
-        </div>
-
-        <div class="block" style="margin-top:14px">
-          <h4>局限：四张一手截图，但只能证明「这一帧长什么样」</h4>
-          <p>本页的立论基于 <b>OpenBitfun / Codex / Antigravity / WorkBuddy 四张一手截图</b>，全部形态数据来自 OCR + 像素测量，未做肉眼推测。但静态截图证明不了交互：<b>点击行为只有 OpenBitfun 被用户确认</b>；Codex / Antigravity 的轨道是否可点、点到哪，WorkBuddy 蓝行与全文卡的对应关系，一律标「待确认」。</p>
-          <p><b>第 04 节三类策略的优劣分点是推演，不是用户测试。</b>「钢琴键」的 hover 手感、136 轮的段合并阈值（每 5–8 轮）、首句摘要的质量，都要一次原型验证才知道。</p>
-          <p>缺一份<b>产品内现场证据</b>：DevEco Code 对话流的实际渲染（现状、轮的定义、滚动行为），落地前需要一次产品内截图确认落点。</p>
-        </div>
-
-        <div class="block">
-          <h4>待确认（八条）</h4>
-          <ul class="todo">
-            <li><b>OpenBitfun 的轨道 ↔ 轮次映射</b>：可见 86 根键 vs 浮卡「第 136 轮」——是滚动窗口、压缩还是段聚合？静态截图无法判定。</li>
-            <li><b>Codex 轨道是否轮级、浮层语义</b>：浮层「还可以问有过几个鸿蒙项目」是轮次预览还是输入建议？点击行为？</li>
-            <li><b>Antigravity 的粒度与点击</b>：12 根的计数单位（轮 / 条 / 段）未在截图命名；点击是否跳转？</li>
-            <li><b>WorkBuddy 的对应关系</b>：蓝色高亮行与左侧全文卡分别对应什么；hover 还是选中触发？</li>
-            <li><b>「轮」的定义</b>：一次用户消息 + 一次回复，还是按内容切段？OpenBitfun 的「第 136 轮」在长任务下更像后者——需要确认它的计数规则。</li>
-            <li><b>段合并的阈值与分组依据</b>：按时间断点、按任务、还是按文件？决定 61–140 轮时「一段」是什么。</li>
-            <li><b>预览卡的内容</b>：首句 vs 首句 + 时间 vs AI 生成的一句话摘要；首句无信息量时（如「继续」）要不要替换。</li>
-            <li><b>触控形态</b>：点住展开是否够用；要不要在触控下直接显示「第 N 轮」数字代替短键。</li>
-          </ul>
-        </div>
-      </section>
-
-    </main>
+  <div class="prod" id="p-antigravity">
+    <div class="prod-h"><h3>Antigravity</h3><span class="surf">Antigravity App 2.x · conversation navigator</span></div>
+    <figure class="shot"><img src="materials/screenshots/antigravity-navigator.png" alt="Antigravity 对话左缘的 conversation navigator 与悬停卡" loading="lazy"><div class="ph">截图待放入 <code>materials/screenshots/antigravity-navigator.png</code></div><figcaption>用户提供截图：12 根刻度，悬停卡「6 of 12」+ 时间 + 消息全文。</figcaption></figure>
+    <dl class="cl">
+      <dt>形态</dt><dd>对话左缘一条轨，每个 turn 一个点；悬停看该轮 prompt、回复预览和发送时间，点选跳转。2.28.1（2026-10-28）上线。<span class="ev o">官方</span></dd>
+      <dt>长对话</dt><dd>按日期分章节、章节可折叠；2.29.0（2026-11-03）起折叠的章节卡显示 AI 生成的短标题，而不只是日期。<span class="ev o">官方</span></dd>
+      <dt>修复</dt><dd>2.30.0（2026-11-09）修复「对话末尾高亮了错误的 turn」和「对话宽度设为 Fill 时导航消失」。<span class="ev o">官方</span></dd>
+      <dt>截图</dt><dd>12 根刻度，第 6 根加高变深，悬停卡「6 of 12」+ 2026年11月17日 19:13 + 消息全文。<span class="ev s">截图</span>官方更新日志没有提「N of M」计数，CLI 仓库的 #1283 是用户提议，可能是后加的。<span class="ev i">推断</span></dd>
+    </dl>
+    <div class="take"><b>看点：</b>长对话不压扁刻度，而是分章节、折叠、给章节起名——密度问题交给信息结构，不交给像素。</div>
   </div>
 
-  <footer style="margin-top:56px;color:var(--ui-fg-info);font-size:var(--fs-sm);line-height:20px">
-    <p style="margin:0">
-      DevEco · 分析与研究 · 对话历史「钢琴键」（OpenBitfun 式轮次导航）。证据为 OpenBitfun / Codex / Antigravity / WorkBuddy 四张一手截图（OCR + 像素测量）；凡无法核对的交互语义一律标「待确认」。第 05 节密度图与 demo 的数字由页面实时计算 / 测量。
-    </p>
-  </footer>
+  <div class="prod" id="p-codex">
+    <div class="prod-h"><h3>Codex</h3><span class="surf">桌面 App · VS Code 插件</span></div>
+    <figure class="shot"><img src="materials/screenshots/codex-anchor.png" alt="Codex 对话左缘刻度与带书签的悬停卡" loading="lazy"><div class="ph">截图待放入 <code>materials/screenshots/codex-anchor.png</code></div><figcaption>用户提供截图（2026-11-18）：左缘细刻度，悬停卡显示提问原文开头，右侧书签图标。</figcaption></figure>
+    <dl class="cl">
+      <dt>截图</dt><dd>左缘等距短横线，当前锚点最长最深、前后逐级变短；悬停卡一行，内容是那条提问的原文开头，<code>\ **01.【单选题】…</code> 的 Markdown 符号没有去掉；卡片右侧有书签图标。<span class="ev s">截图</span></dd>
+      <dt>各端差异</dt><dd>#35071：Windows 新版统一桌面端里「时间线不见了」；#32015：macOS ChatGPT App 26.707 右侧白色小标记在侧栏拖到某些宽度时消失；#31104：桌面端「部分界面」有左侧标记和预览，VS Code 插件没有。<span class="ev m">社区</span></dd>
+      <dt>用户在要</dt><dd>轮次导航器（#20651）、上一条 / 下一条（#44864）、导航轨（#37243）、可导航的开发历史（#55775）。2026-03 的 26.323 加的是跨会话搜索，不是会话内定位。<span class="ev m">社区</span></dd>
+    </dl>
+    <div class="take"><b>看点：</b>书签是本页唯一见到的第二动作；预览不清洗 Markdown 是反例。</div>
+  </div>
+
+  <div class="prod" id="p-openbitfun">
+    <div class="prod-h"><h3>OpenBitfun</h3><span class="surf">桌面端</span></div>
+    <figure class="shot"><img src="materials/screenshots/openbitfun-anchor.png" alt="OpenBitfun 对话左缘刻度与第 136 轮悬停卡" loading="lazy"><div class="ph">截图待放入 <code>materials/screenshots/openbitfun-anchor.png</code></div><figcaption>用户提供截图：可见约 86 根刻度，浮卡「第 136 轮 · 为什么只有直板机调整？」。</figcaption></figure>
+    <dl class="cl">
+      <dt>截图</dt><dd>常态刻度约 9×4px、间距 18px，可见约 86 根；当前区段 7 根加宽到 15–20px，中心一根变深；连接线指向浮卡，浮卡写「第 136 轮」和提问首句。<span class="ev s">截图</span></dd>
+      <dt>跳转</dt><dd>点击跳到该条。（用户确认）</dd>
+      <dt>数量差</dt><dd>可见 86 根而浮卡写到 136：更可能是轨道只显示了一部分（可滚动或只显示附近），而不是「合并成段」。静态截图无法判定。<span class="ev q">待确认</span></dd>
+    </dl>
+    <div class="take"><b>看点：</b>浮卡里写序号，长对话里「第几条」本身就是信息。</div>
+  </div>
+
+  <div class="prod" id="p-buddy">
+    <div class="prod-h"><h3>WorkBuddy 与 CodeBuddy</h3><span class="surf">腾讯 · 桌面端 · IDE 插件</span></div>
+    <figure class="shot"><img src="materials/screenshots/workbuddy-history.png" alt="WorkBuddy 右侧历史提问列表与悬停全文卡" loading="lazy"><div class="ph">截图待放入 <code>materials/screenshots/workbuddy-history.png</code></div><figcaption>用户提供截图：右侧消息列表，悬停左侧深色卡显示全文。</figcaption></figure>
+    <dl class="cl">
+      <dt>WorkBuddy</dt><dd>任务对话里有「历史提问」，查看任务内历史对话记录，支持点击跳转。<span class="ev o">官方</span>截图：右侧列表行距固定、超长截断，悬停时左侧弹出深色全文卡，当前行蓝色高亮。<span class="ev s">截图</span></dd>
+      <dt>CodeBuddy</dt><dd>IDE 侧栏 History 列出历史会话，可回到会话继续、导出、编辑、删除。<span class="ev o">官方</span>JetBrains 插件更新日志：「历史提问分段懒加载与跳转定位」。<span class="ev o">官方</span>具体形态<span class="ev q">待确认</span></dd>
+    </dl>
+    <div class="take"><b>看点：</b>列表比刻度多一样东西——不用悬停就能读到每条提问在问什么。</div>
+  </div>
+
+  <div class="prod" id="p-claude">
+    <div class="prod-h"><h3>Claude Code</h3><span class="surf">终端 · IDE · 桌面</span></div>
+    <dl class="cl">
+      <dt>做法</dt><dd>没有会话内目录。<code>/rewind</code>（或空输入框连按两次 Esc）打开检查点列表，可回退代码、对话或两者；每次发送提示建立一个检查点，随会话保存，恢复会话后仍可回退。<span class="ev o">官方</span></dd>
+      <dt>为什么不同类</dt><dd>回退改变状态，导航只改变视口。把两者放在同一个入口，用户会担心「点一下会不会把后面的都丢了」。<span class="ev i">推断</span></dd>
+    </dl>
+    <div class="take"><b>看点：</b>如果 DevEco Code 将来在锚点上加「从这里重来」，要和跳转明显分开，并二次确认。</div>
+  </div>
+
+  <h2 id="decisions"><span class="no">05</span>六个设计决策</h2>
+  <p class="sub">做一个消息锚点导航要定六件事。每张卡写问题、各家的选择和我们的倾向。</p>
+  <div class="why">
+    <div class="w"><h3>① 锚什么</h3><p>一根刻度对应一条提问、一轮问答，还是一段内容？</p><div class="ob"><b>各家：</b>Codex、Antigravity 都是一条提问（turn 以提问开头）。<b>倾向：</b>一条提问一根，AI 回复不占刻度。</div></div>
+    <div class="w"><h3>② 刻度长短表示什么</h3><p>消息长度、重要程度，还是离当前多远？</p><div class="ob"><b>各家：</b>Codex、OpenBitfun 都是离当前多远：当前最长，向两侧递减。<b>倾向：</b>同样；不要用长度表示消息长短，否则会被读成滚动条。</div></div>
+    <div class="w"><h3>③ 预览给什么</h3><p>提问一行、全文，还是加回复预览、时间、序号？</p><div class="ob"><b>各家：</b>Codex 一行原文；OpenBitfun 序号 + 首句；Antigravity prompt + 回复预览 + 时间。<b>倾向：</b>序号 + 去掉 Markdown 的提问一行，时间可选。</div></div>
+    <div class="w"><h3>④ 点击之后</h3><p>跳到提问顶部？跳走以后怎么回来？</p><div class="ob"><b>各家：</b>OpenBitfun、Antigravity 跳转已确认。<b>倾向：</b>跳到提问顶部；离开底部后出现「回到最新」。</div></div>
+    <div class="w"><h3>⑤ 长对话怎么放</h3><p>压扁间距、轨道自己滚动，还是分章节折叠？</p><div class="ob"><b>各家：</b>Antigravity 按日期分章节、AI 起标题。<b>倾向：</b>刻度间距有下限，放不下时分章节；DevEco 的章节按任务切比按日期更有意义。</div></div>
+    <div class="w"><h3>⑥ 除了跳转还能做什么</h3><p>书签、复制、从这里重来？</p><div class="ob"><b>各家：</b>Codex 书签；Claude Code 的回退走另一个入口。<b>倾向：</b>先只做跳转，书签列为候选；回退不挂在导航上。</div></div>
+  </div>
+
+  <h2 id="fix"><span class="no">06</span>上一版更正</h2>
+  <ul class="items">
+    <li><span><b>把刻度当成了「轮次计数器」。</b>上一版以「86 根键对不上第 136 轮」立论，推出「必须按轮合并成段」。实际各家锚的是用户提问；数量对不上更可能是轨道只显示了一部分。长对话的正解参照 Antigravity：分章节，而不是合并刻度。</span></li>
+    <li><span><b>把「回到最新」「目录大纲」当成了并列方案。</b>刻度和列表是同一个目录的两种呈现，「回到最新」是所有跳转方案都要带的兜底；Claude Code 的回退不在这个比较里。</span></li>
+    <li><span><b>漏看了 Codex 的预览内容和书签。</b>上一版把 Codex 刻度旁的浮层当成输入建议。新截图清楚显示悬停卡就是那条提问的原文，右侧有书签。</span></li>
+  </ul>
+
+  <h2 id="deveco"><span class="no">07</span>对 DevEco 的建议</h2>
+  <ol class="items">
+    <li><span><b>一条提问一根刻度。</b>AI 回复、思考、工具调用都归在提问下面。预览里写「第 N 条提问」，不用「轮」这种要解释的词。</span></li>
+    <li><span><b>刻度等距，长度只表达离当前多远。</b>当前最长最深，相邻两三根递减，其余统一最短最淡。</span></li>
+    <li><span><b>滚动联动。</b>视口顶部所在的提问就是当前锚点。</span></li>
+    <li><span><b>悬停 / 聚焦预览一行纯文本。</b>先去掉 Markdown 符号再截断，附序号；浮层不推挤对话。</span></li>
+    <li><span><b>点击跳到提问顶部，离开底部后出现「回到最新」。</b>键盘 ↑ ↓ 移动、Enter 跳转、Esc 收起。</span></li>
+    <li><span><b>长对话分章节。</b>刻度命中区域不小于 8px，放不下时按任务（或时间）分章节、可折叠，章节名可由 AI 生成——参照 Antigravity 2.29.0。</span></li>
+    <li><span><b>书签作为候选。</b>参照 Codex；被标记的刻度常显强调色。回退类动作不挂在导航上。</span></li>
+  </ol>
+
+  <div class="demo" id="demo">
+    <div class="demo-bar"><b>可交互 demo</b><span style="color:var(--ink3)">12 条提问 · 悬停预览，点击跳转，卡片里可加书签</span>
+      <p class="demo-meas">当前 <b id="d-cur">—</b> · 书签 <b id="d-bm">0</b> · 跳转误差 <b id="d-err">0.0</b>px</p></div>
+    <div class="demo-stage">
+      <div class="demo-rail" id="d-rail" aria-label="消息锚点"></div>
+      <div class="dcard" id="d-card" role="tooltip"><span class="no" id="d-no"></span><span class="tx" id="d-tx"></span><button type="button" id="d-bmb">书签</button></div>
+      <div class="demo-chat" id="d-chat"></div>
+      <button class="demo-latest" id="d-latest" type="button">回到最新</button>
+    </div>
+    <p class="demo-note">预览文本由原文去掉 <code>**</code>、<code>#</code>、<code>\</code>、反引号后截断；跳转误差 = 点击后实际 <code>scrollTop</code> 与目标值之差（对应 AC-3）。</p>
+  </div>
+
+  <h2 id="ac"><span class="no">08</span>验收条件</h2>
+  <ol class="items">
+    <li><span><b>每条用户提问对应且仅对应一根刻度。</b>断言：刻度数 = 用户消息数；AI 回复不产生刻度。</span></li>
+    <li><span><b>常态轨道宽度不超过 32px，不遮挡对话。</b>断言：轨道与对话区不相交；窄屏（&lt; 720px）收起为按钮。</span></li>
+    <li><span><b>点击跳到提问顶部，误差不超过 2px。</b>断言：下一帧 <code>scrollTop</code> 与目标之差 ≤ 2px。</span></li>
+    <li><span><b>滚动时当前锚点与视口顶部的提问一致。</b>断言：偏差 ≤ 1 条；对话末尾也不错位（Antigravity 2.30.0 修过的就是这个）。</span></li>
+    <li><span><b>预览为一行纯文本，不改变对话布局。</b>断言：不含 <code>**</code> <code>#</code> <code>`</code>；预览出现前后对话首个可见块位置不变。</span></li>
+    <li><span><b>键盘可达。</b>断言：不用鼠标也能预览并跳到任意一条。</span></li>
+    <li><span><b>离开底部后出现「回到最新」。</b>断言：点击后当前锚点 = 最后一条；在底部时按钮不显示。</span></li>
+  </ol>
+
+  <h2 id="verify"><span class="no">09</span>待验证</h2>
+  <ul class="items">
+    <li><span><b>Codex：</b>点击刻度 / 卡片是否跳转；书签标记后在哪里看；截图版本与 #35071 说「缺失」的是否同一客户端。</span></li>
+    <li><span><b>Antigravity：</b>「6 of 12」计数是哪个版本加的；章节切分规则除了日期还有没有别的。</span></li>
+    <li><span><b>OpenBitfun：</b>「第 136 轮」的计数单位；可见 86 根是否因为轨道可滚动。</span></li>
+    <li><span><b>CodeBuddy：</b>「跳转定位」在 IDE 里具体长什么样，需实机截图。</span></li>
+    <li><span><b>DevEco Code：</b>对话流实际渲染与「一条提问」的边界（追问、补充附件算不算新提问）。</span></li>
+  </ul>
+
+  <h2 id="sources"><span class="no">10</span>来源</h2>
+  <ul class="src">
+    <li><a href="https://antigravity.google/docs/changelog">Antigravity 更新日志</a>（2.28.1 conversation navigator、2.29.0 章节 AI 标题、2.30.0 修复，2026-10-28 至 11-09）</li>
+    <li><a href="https://github.com/google-antigravity/antigravity-cli/issues/1283">google-antigravity/antigravity-cli#1283</a> 轮次导航与「Turn N of M」提议</li>
+    <li><a href="https://github.com/openai/codex/issues/35071">openai/codex#35071</a> 恢复会话时间线 / 消息定位器</li>
+    <li><a href="https://github.com/openai/codex/issues/32015">openai/codex#32015</a> 导航标记在某些侧栏宽度下消失</li>
+    <li><a href="https://github.com/openai/codex/issues/31104">openai/codex#31104</a> 对话内轮次缩略导航（VS Code 缺失）</li>
+    <li><a href="https://github.com/openai/codex/issues/37243">openai/codex#37243</a> 消息导航轨</li>
+    <li><a href="https://github.com/openai/codex/issues/20651">openai/codex#20651</a> 轮次导航器 · <a href="https://github.com/openai/codex/issues/44864">#44864</a> 上一条 / 下一条 · <a href="https://github.com/openai/codex/issues/55775">#55775</a> 可导航的开发历史</li>
+    <li><a href="https://www.yet-another-changelog.ai/changelog/codex-app-thread-search-sidebar-keyboard-navigation">Codex App 26.323：跨会话搜索与键盘导航</a></li>
+    <li><a href="https://code.claude.com/docs/en/checkpointing">Claude Code 文档：Checkpointing</a></li>
+    <li><a href="https://www.codebuddy.ai/docs/zh/workbuddy/Conversation">WorkBuddy 文档：任务对话</a> · <a href="https://www.codebuddy.ai/docs/zh/ide/User-guide/History">CodeBuddy 文档：History</a> · <a href="https://plugins.jetbrains.com/plugin/24379-tencent-cloud-codebuddy">CodeBuddy JetBrains 插件更新日志</a></li>
+    <li>Codex（2026-11-18）、OpenBitfun、Antigravity、WorkBuddy 截图：用户提供</li>
+    <li><a href="../agent-conversation-units/REPORT-会话单元显示竞品分析.html">会话单元显示竞品分析</a></li>
+  </ul>
 </div>
 
 <script>
-/* ── 05 密度图：同一根 280px 竖条放 8 / 24 / 136 轮 ── */
+document.querySelectorAll('figure.shot img').forEach(function (img) {
+  function miss() { img.closest('figure').classList.add('miss'); }
+  if (img.complete && img.naturalWidth === 0) miss();
+  img.addEventListener('error', miss);
+});
 (function () {
-  var cols = document.querySelectorAll('.dcol');
-  Array.prototype.forEach.call(cols, function (col) {
-    var rail = col.querySelector('.drail');
-    var n = parseInt(rail.getAttribute('data-n'), 10);
-    var frag = document.createDocumentFragment();
-    for (var i = 0; i < n; i++) {
-      var b = document.createElement('span');
-      b.className = 'db';
-      if (n > 80) b.style.background = 'var(--ui-progress-track)';
-      frag.appendChild(b);
-    }
-    rail.appendChild(frag);
-    // 键高：容器内高 280 - 上下 padding 10 = 270，间隙 n-1 × 1px
-    var h = (270 - (n - 1)) / n;
-    var note = col.querySelector('.dnote b');
-    if (note) note.textContent = h.toFixed(1) + 'px';
-  });
-})();
-</script>
-<script>
-/* ── 05 可交互 demo：8 轮钢琴键 ──
-   hover 浮预览、点击跳转、滚动高亮同步、跳转误差实时测量。 */
-(function () {
-  var rounds = [
-    { usr: '直板机只有这一台要调吗？', ai: '先看一遍布局约束，跑三档尺寸定位溢出点。', t: '10:38' },
-    { usr: '为什么只有直板机调整？', ai: '直板机窗口是固定 1000×800，字号随缩放溢出；折叠屏宽高比不同，不触发。', t: '10:40' },
-    { usr: '折叠屏那台不用管吗？', ai: '折叠屏走另一条基线，宽高比不同，不会溢出；等下单独对。', t: '10:42' },
-    { usr: '那改动会影响折叠屏吗？', ai: '只改直板机断点，折叠屏侧不受影响，已按边界验证过。', t: '10:45' },
-    { usr: '改完怎么验证？', ai: '三档尺寸各跑 5 次，掉帧从 8 次降到 2 次。', t: '10:47' },
-    { usr: '帧率截图发我。', ai: '截图在证据页签，改前改后各一张，可直接对比。', t: '10:49' },
-    { usr: '直板机还有别的问题吗？', ai: '还有一处状态栏重叠，已列进待办，明早给你补丁。', t: '10:52' },
-    { usr: '好，继续查折叠屏。', ai: '收到，切到折叠屏任务，先做基线再跑旅程。', t: '10:55' }
+  var msgs = [
+    { u: '\\ **01.【单选题】 您的行业领域是？** - 政务/金融/…', a: '已按行业拆分筛选条件，政务与金融单独成组。' },
+    { u: '把 Q05–Q07 锁定为整场访谈的主线', a: '已调整题序，Q05–Q07 放到第二段，主持人提示同步更新。' },
+    { u: '## Q08 要不要做跨平台对照？', a: 'Q08 决定是否追问跨平台经验，分两条分支。' },
+    { u: '新增一张「访谈带入卡」', a: '已新增，主持人开场用，包含背景与匿名说明。' },
+    { u: '筛选规则里 `常规样本` 的条件再写清楚', a: '常规样本必须同时满足：外部开发者、近半年有上架记录。' },
+    { u: '研究计划同步更新一下', a: '研究计划、筛选规则和访谈提纲已一起更新。' },
+    { u: '为什么只有直板机调整？', a: '直板机窗口固定 1000×800，字号随缩放溢出；折叠屏不触发。' },
+    { u: '折叠屏那台不用管吗？', a: '折叠屏走另一条基线，等下单独核对。' },
+    { u: '改完怎么验证？', a: '三档尺寸各跑 5 次，掉帧从 8 次降到 2 次。' },
+    { u: '帧率截图发我', a: '截图在证据页签，改前改后各一张。' },
+    { u: '**还有别的问题吗？**', a: '还有一处状态栏重叠，已列进待办。' },
+    { u: '好，继续查折叠屏', a: '收到，切到折叠屏任务，先做基线。' }
   ];
+  function clean(s) { return s.replace(/\\/g, '').replace(/[*_`#>]+/g, '').replace(/\s+/g, ' ').trim(); }
+  var rail = document.getElementById('d-rail'), chat = document.getElementById('d-chat');
+  var card = document.getElementById('d-card'), cNo = document.getElementById('d-no'), cTx = document.getElementById('d-tx'), cBm = document.getElementById('d-bmb');
+  var curEl = document.getElementById('d-cur'), bmEl = document.getElementById('d-bm'), errEl = document.getElementById('d-err');
+  var latest = document.getElementById('d-latest'), stage = rail.parentNode;
+  var ticks = [], blocks = [], marked = {}, active = 0, cardIdx = -1, hideT = 0;
 
-  var rail = document.getElementById('d-rail');
-  var chat = document.getElementById('d-chat');
-  var curEl = document.getElementById('d-cur');
-  var errEl = document.getElementById('d-err');
-  var keys = [];
-
-  // 构建对话轮
-  rounds.forEach(function (r, i) {
-    var dr = document.createElement('div');
-    dr.className = 'dr';
-    dr.setAttribute('data-i', i);
-    var dno = document.createElement('span');
-    dno.className = 'dno';
-    dno.innerHTML = '<b>第 ' + (i + 1) + ' 轮</b> · ' + r.t;
-    dr.appendChild(dno);
-    var u = document.createElement('span');
-    u.className = 'dt usr';
-    u.textContent = r.usr;
-    dr.appendChild(u);
-    var a = document.createElement('span');
-    a.className = 'dt';
-    a.textContent = r.ai;
-    dr.appendChild(a);
-    chat.appendChild(dr);
-  });
-
-  // 构建钢琴键
-  rounds.forEach(function (r, i) {
-    var k = document.createElement('span');
-    k.className = 'ok';
-    k.tabIndex = 0;
-    k.setAttribute('data-i', i);
-    var prev = document.createElement('span');
-    prev.className = 'pk-prev';
-    prev.innerHTML = '<b>第 ' + (i + 1) + ' 轮</b><span class="pk-t">' + r.t + '</span><span class="pk-s">' + r.usr + '</span>';
-    k.appendChild(prev);
-    rail.appendChild(k);
-    keys.push(k);
-  });
-
-  var turns = Array.prototype.slice.call(chat.querySelectorAll('.dr'));
-  var active = 0;
-
-  function setActive(i) {
-    keys.forEach(function (k, ki) { k.classList.toggle('on', ki === i); });
-    active = i;
-    curEl.textContent = '第 ' + (i + 1) + ' 轮';
-  }
-
-  function targetTop(i) {
-    var turn = turns[i];
-    var cTop = chat.getBoundingClientRect().top;
-    var tTop = turn.getBoundingClientRect().top;
-    return chat.scrollTop + (tTop - cTop) - 8;
-  }
-
-  function jump(i) {
-    var target = targetTop(i);
-    var targetClamped = Math.max(0, Math.min(chat.scrollHeight - chat.clientHeight, target));
-    chat.scrollTop = targetClamped;
-    setActive(i);
-    requestAnimationFrame(function () {
-      var err = Math.abs(chat.scrollTop - targetClamped);
-      errEl.textContent = err.toFixed(1);
-      requestAnimationFrame(function () {
-        err = Math.abs(chat.scrollTop - targetClamped);
-        errEl.textContent = err.toFixed(1);
-      });
-    });
-  }
-
-  // 点击 / 键盘跳转
-  keys.forEach(function (k, i) {
-    k.addEventListener('click', function () { jump(i); });
-    k.addEventListener('keydown', function (e) {
+  msgs.forEach(function (m, i) {
+    var b = document.createElement('div'); b.className = 'dm';
+    var u = document.createElement('div'); u.className = 'u'; u.textContent = m.u;
+    var a = document.createElement('div'); a.className = 'a'; a.textContent = m.a + ' ' + m.a;
+    b.appendChild(u); b.appendChild(a); chat.appendChild(b); blocks.push(b);
+    var t = document.createElement('span'); t.className = 'tk'; t.tabIndex = 0;
+    t.setAttribute('role', 'button'); t.setAttribute('aria-label', '第 ' + (i + 1) + ' 条提问：' + clean(m.u));
+    t.appendChild(document.createElement('i')); rail.appendChild(t); ticks.push(t);
+    t.addEventListener('mouseenter', function () { show(i); });
+    t.addEventListener('focus', function () { show(i); });
+    t.addEventListener('mouseleave', schedHide);
+    t.addEventListener('click', function () { jump(i); });
+    t.addEventListener('keydown', function (e) {
       if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); jump(i); }
-      if (e.key === 'ArrowDown') { e.preventDefault(); jump(Math.min(keys.length - 1, i + 1)); keys[i + 1] && keys[i + 1].focus(); }
-      if (e.key === 'ArrowUp') { e.preventDefault(); jump(Math.max(0, i - 1)); keys[i - 1] && keys[i - 1].focus(); }
+      if (e.key === 'ArrowDown' && ticks[i + 1]) { e.preventDefault(); ticks[i + 1].focus(); }
+      if (e.key === 'ArrowUp' && ticks[i - 1]) { e.preventDefault(); ticks[i - 1].focus(); }
+      if (e.key === 'Escape') { card.classList.remove('show'); }
     });
   });
 
-  // 滚动联动：高亮最接近视口顶的那一轮
+  function paint() {
+    ticks.forEach(function (t, i) {
+      var d = Math.abs(i - active), w = d === 0 ? 30 : d === 1 ? 21 : d === 2 ? 15 : 10;
+      t.firstChild.style.width = w + 'px';
+      t.classList.toggle('on', d === 0);
+      t.classList.toggle('bm', !!marked[i] && d !== 0);
+    });
+    curEl.textContent = '第 ' + (active + 1) + ' 条';
+    bmEl.textContent = Object.keys(marked).length;
+  }
+  function show(i) {
+    clearTimeout(hideT); cardIdx = i;
+    cNo.textContent = '#' + (i + 1);
+    cTx.textContent = clean(msgs[i].u);
+    cBm.classList.toggle('on', !!marked[i]);
+    cBm.textContent = marked[i] ? '已加书签' : '书签';
+    var r = ticks[i].getBoundingClientRect(), s = stage.getBoundingClientRect();
+    card.style.top = (r.top - s.top + r.height / 2 - 17) + 'px';
+    card.classList.add('show');
+  }
+  function schedHide() { hideT = setTimeout(function () { card.classList.remove('show'); }, 160); }
+  card.addEventListener('mouseenter', function () { clearTimeout(hideT); });
+  card.addEventListener('mouseleave', schedHide);
+  card.addEventListener('click', function (e) { if (e.target !== cBm && cardIdx >= 0) jump(cardIdx); });
+  cBm.addEventListener('click', function () {
+    if (cardIdx < 0) return;
+    if (marked[cardIdx]) delete marked[cardIdx]; else marked[cardIdx] = 1;
+    show(cardIdx); paint();
+  });
+  function jump(i) {
+    var target = chat.scrollTop + (blocks[i].getBoundingClientRect().top - chat.getBoundingClientRect().top) - 8;
+    target = Math.max(0, Math.min(chat.scrollHeight - chat.clientHeight, target));
+    chat.scrollTop = target; active = i; paint();
+    requestAnimationFrame(function () { errEl.textContent = Math.abs(chat.scrollTop - target).toFixed(1); });
+  }
   chat.addEventListener('scroll', function () {
-    var best = 0, bestDist = Infinity;
-    var cTop = chat.getBoundingClientRect().top;
-    turns.forEach(function (t, i) {
-      var dist = Math.abs(t.getBoundingClientRect().top - cTop - 8);
-      if (dist < bestDist) { bestDist = dist; best = i; }
-    });
-    if (best !== active) setActive(best);
+    var top = chat.getBoundingClientRect().top, best = 0, bd = Infinity;
+    blocks.forEach(function (b, i) { var d = Math.abs(b.getBoundingClientRect().top - top - 8); if (d < bd) { bd = d; best = i; } });
+    if (chat.scrollTop + chat.clientHeight >= chat.scrollHeight - 2) best = blocks.length - 1;
+    if (best !== active) { active = best; paint(); }
+    latest.classList.toggle('show', chat.scrollTop + chat.clientHeight < chat.scrollHeight - 40);
   });
-
-  // 回到最新
-  document.getElementById('d-top').addEventListener('click', function () {
-    chat.scrollTop = chat.scrollHeight;
-    setActive(rounds.length - 1);
-    errEl.textContent = '0.0';
-  });
-
-  setActive(0);
-  errEl.textContent = '0.0';
+  latest.addEventListener('click', function () { chat.scrollTop = chat.scrollHeight; active = msgs.length - 1; paint(); latest.classList.remove('show'); });
+  paint();
 })();
 </script>
 </body>
