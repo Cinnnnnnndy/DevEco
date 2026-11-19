@@ -183,7 +183,7 @@ for (const file of targetHtmlFiles) {
   }
 
   // 14. Prevent misusing .de-nav__label (group heading) inside interactive items (.de-nav__item / button / a)
-  const navLabelInItemRe = /<(button|a)[^>]*class="[^"]*\bde-nav__item\b[^"]*"[^>]*>[\s\S]*?class="[^"]*\bde-nav__label\b/i;
+  const navLabelInItemRe = /<(button|a)[^>]*class="[^"]*\bde-nav__item\b[^"]*"[^>]*>(?:(?!<\/\1>)[\s\S])*?class="[^"]*\bde-nav__label\b/i; // 只在同一个条目闭合标签之内查找，避免误伤后面的分组标题
   if (navLabelInItemRe.test(noPre) || /<(button|a)[^>]*class="[^"]*\bde-nav__label\b/i.test(noPre)) {
     errors.push(`[${rel}] .de-nav__label 仅用于侧栏分组标题（如 Today / 2026/8/30），禁止用于或嵌套在可点击会话条目内（条目请用 .de-nav__item + .de-nav__text）`);
   }
