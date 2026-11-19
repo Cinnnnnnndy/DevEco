@@ -177,16 +177,19 @@ for (const file of targetHtmlFiles) {
   }
 }
 
-// 12. Also audit tokens/components.css for inline-grid missing line-height
+// 12. Also audit tokens/components.css for inline-grid missing line-height & .de-svg-icon breaking color inheritance
 const compCssPath = path.join(dsRoot, "tokens/components.css");
 if (fs.existsSync(compCssPath)) {
-  const compCss = fs.readFileSync(compCssPath, "utf8");
+  const compCss = fs.readFileSync(compCssPath, "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
   for (const blk of compCss.split("}")) {
     if (/display\s*:\s*inline-grid\b/.test(blk) && !/line-height\s*:/.test(blk)) {
       const sel = (blk.split("{")[0] || "").trim().split("\n").pop();
       if (sel !== ".de-radio") {
         errors.push(`[tokens/components.css] ${sel} 使用了 inline-grid 但未设置 line-height: 1`);
       }
+    }
+    if (/\.de-svg-icon\s*\{/.test(blk) && /color\s*:\s*var\(--icon\)/.test(blk)) {
+      errors.push(`[tokens/components.css] .de-svg-icon 禁止写死 color: var(--icon)，必须使用 color: inherit 以保留反色按钮继承`);
     }
   }
 }
