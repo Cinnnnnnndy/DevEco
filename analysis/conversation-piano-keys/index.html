@@ -482,7 +482,7 @@ figure.shot figcaption{font-size:12px;color:var(--ink3);margin-top:8px}
   <div class="tw"><table style="min-width:0">
     <thead><tr><th style="width:130px">情况</th><th>轨道与刻度</th><th style="width:34%">怎么看出「对话有多长、我在哪」</th></tr></thead>
     <tbody>
-      <tr><th>n ≤ C · 全部可见</th><td>每条一根，轨道长度 = (n − 1) × 10px，顶端固定、随条数向下延伸（不垂直居中：居中会让每发一条消息全部刻度移动 5px）。</td><td>轨道越长，对话越长。</td></tr>
+      <tr><th>n ≤ C · 全部可见</th><td>每条一根，轨道长度 = (n − 1) × 10px，在对话区内垂直居中，随条数向上下两侧延伸。新消息到来时如果正在悬停或卡片打开，冻结布局，关闭后再重排（150ms 过渡），避免手下的刻度跑。</td><td>轨道越长，对话越长。</td></tr>
       <tr><th>n &gt; C · 窗口跟随</th><td>轨道长度停在 H，只显示其中 C 条。窗口位置跟随对话滚动：<code>偏移 = 滚动进度 × ((n − 1) × 10 − H)</code>，即对话滚到顶看到第一批、滚到底看到最后一批；再加一条约束，视口所在那条始终落在窗口内、距上下边缘不少于 24px。</td><td>窗口外还有提问的一端，24px 淡出；卡片写「第 87 / 136 条」。</td></tr>
       <tr><th>悬停中</th><td>轨道冻结，不随任何东西移动，手下的刻度不会跑。滚轮在轨道上每格移一条；悬停条到窗口边缘时，窗口跟着移一格。</td><td>同上。</td></tr>
       <tr><th>悬停结束</th><td>窗口回到「跟随对话滚动」的位置；如果刚才点了跳转，对话滚过去，窗口自然跟过去。</td><td>—</td></tr>
@@ -573,7 +573,7 @@ figure.shot figcaption{font-size:12px;color:var(--ink3);margin-top:8px}
   <div class="tw"><table style="min-width:0">
     <thead><tr><th style="width:120px">类别</th><th>场景</th><th style="width:36%">建议</th></tr></thead>
     <tbody>
-      <tr><th>对话在变</th><td>正在生成时，最新一条的回复摘要还没有；新发一条消息，刻度数增加，如果正在悬停，手下的刻度会动。</td><td>生成中的那条摘要写「生成中…」，刻度用蓝色；卡片打开期间冻结布局，关闭后再重排。轨道顶端固定、向下增长（08-b 已改）。</td></tr>
+      <tr><th>对话在变</th><td>正在生成时，最新一条的回复摘要还没有；新发一条消息，刻度数增加，如果正在悬停，手下的刻度会动。</td><td>生成中的那条摘要写「生成中…」，刻度用蓝色；卡片打开期间冻结布局，关闭后再重排。轨道垂直居中，悬停期间冻结布局、关闭后再重排（08-b）。</td></tr>
       <tr><th>对话被改</th><td>回退会删掉后面的提问；编辑会替换某条提问；重新生成不新增提问。</td><td>回退、编辑后刻度立即重算；重新生成不加刻度、只更新摘要。验收时把这三种都测一遍。</td></tr>
       <tr><th>特殊提问</th><td>只发了图片或文件、斜杠命令（/review）、Goal 模式、超长粘贴的代码或日志、排队还没发出的消息。</td><td>摘要兜底：<code>[图片] 文件名</code>、命令名、Goal 标题；粘贴内容取第一行非代码文本；排队中的消息不生成刻度，发出后才有。</td></tr>
       <tr><th>跳转之后</th><td>跳过去以后不知道落在哪一条；看完想回到刚才的位置。</td><td>落点那条提问闪一下高亮（约 1 秒）；跳转后在「回到最新」旁加「回到原处」，记最近一次跳转前的位置。</td></tr>
@@ -586,6 +586,7 @@ figure.shot figcaption{font-size:12px;color:var(--ink3);margin-top:8px}
     </tbody>
   </table></div>
 
+  <div class="note" style="margin:12px 0 0"><b>设计系统样张：</b><a href="deveco-demo.html">DevEco Code 消息锚点导航 · 方案样式 demo</a>——按 design-system 的 .de-* 组件搭建，可切换鸿蒙 / PC·Mac、深 / 浅色。</div>
   <div class="demo" id="demo">
     <div class="demo-bar"><b>可交互 demo</b><span style="color:var(--ink3)">按上面的热区和时间实现，可以直接感受</span>
       <span class="seg" role="group" aria-label="提问数"><button type="button" data-n="12" class="on">12 条</button><button type="button" data-n="30">30 条</button><button type="button" data-n="136">136 条</button><button type="button" data-n="300">300 条</button></span>
@@ -716,7 +717,7 @@ document.querySelectorAll('figure.shot img').forEach(function (img) {
   function layout() {
     H = (rail.clientHeight || 360) - PAD * 2;
     C = Math.floor(H / PITCH) + 1; TOTAL = (N - 1) * PITCH;
-    if (N <= C) off = 0;
+    if (N <= C) off = -(H - TOTAL) / 2;
     else if (hov < 0) {
       var range = Math.max(1, chat.scrollHeight - chat.clientHeight);
       off = (chat.scrollTop / range) * (TOTAL - H);

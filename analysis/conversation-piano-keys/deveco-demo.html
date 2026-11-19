@@ -1,0 +1,356 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DevEco Code 消息锚点导航 · 方案样式 demo</title>
+<link rel="stylesheet" href="../../deveco-intui-kit/src/tokens.css">
+<link rel="stylesheet" href="../../site/launcher.css">
+<link rel="stylesheet" href="../../design-system/tokens/index.css">
+<style>
+/* 外框只用 launcher.css。舞台内全部组件来自 design-system/tokens/index.css 的 .de-*；
+   消息锚点导航（刻度轨）不在 21 个组件里，下面 .pk-* 只写布局，颜色、圆角、字号全部取语义 Token。 */
+.pk-stage{border-radius:var(--radius-window);overflow:hidden;background:var(--surface-window);color:var(--text-primary);font-family:var(--font-ui)}
+.pk-stage .de-toolbar{gap:var(--space-2);flex-wrap:wrap}
+.pk-stage .de-window{min-height:600px}
+.pk-thread{position:relative;flex:1;display:flex;min-height:0;background:var(--surface-editor)}
+.pk-rail{position:relative;width:40px;flex:none;outline:none;cursor:pointer}
+.pk-rail:focus-visible{box-shadow:inset 0 0 0 2px var(--border-focus)}
+.pk-rail.is-fade-top{-webkit-mask-image:linear-gradient(180deg,transparent 0,black 38px);mask-image:linear-gradient(180deg,transparent 0,black 38px)}
+.pk-rail.is-fade-bot{-webkit-mask-image:linear-gradient(0deg,transparent 0,black 38px);mask-image:linear-gradient(0deg,transparent 0,black 38px)}
+.pk-rail.is-fade-top.is-fade-bot{-webkit-mask-image:linear-gradient(180deg,transparent 0,black 38px,black calc(100% - 38px),transparent 100%);mask-image:linear-gradient(180deg,transparent 0,black 38px,black calc(100% - 38px),transparent 100%)}
+.pk-tick{position:absolute;left:12px;height:12px;display:flex;align-items:center;pointer-events:none}
+.pk-tick i{display:block;height:1px;background:var(--text-tertiary);transition:width .12s}
+.pk-tick.is-current i{height:2px;background:var(--text-secondary)}
+.pk-tick.is-latest i{background:var(--color-info)}
+.pk-tick.is-hover i{height:2px;background:var(--text-primary)}
+.pk-band{position:absolute;left:0;width:40px;display:none;background:var(--surface-selected);opacity:.55;pointer-events:none}
+.pk-stage.show-hz .pk-rail{background:var(--surface-hover)}
+.pk-stage.show-hz .pk-band{display:block}
+.pk-card{position:absolute;left:40px;z-index:20;width:320px;display:none}
+.pk-card.is-open{display:block}
+.pk-card .de-section-label{text-align:right;padding:0 var(--space-2) 2px}
+.pk-card .de-menu__item{white-space:nowrap}
+.pk-card .de-menu__label{min-width:0;overflow:hidden;text-overflow:ellipsis;flex:1}
+.pk-card .pk-ctx .de-menu__label{color:var(--text-tertiary)}
+.pk-card .pk-cur{align-items:flex-start;flex-direction:column;gap:2px;padding-block:var(--space-2);white-space:normal}
+.pk-card .pk-cur .pk-q{font-weight:600;width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pk-card .pk-cur .pk-a{opacity:.8;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.pk-card .pk-ctx.is-edge{cursor:default;font-style:italic}
+.pk-row-head{display:flex;align-items:center;gap:var(--space-2);width:100%}
+.pk-no{flex:none;min-width:26px;text-align:right;font-family:var(--font-mono);font-size:var(--font-size-sm)}
+.pk-mini{flex:none;display:block;height:1px;width:6px;background:currentColor;opacity:.6}
+.pk-cur .pk-mini{width:12px;height:2px;opacity:1}
+.pk-chat{flex:1;overflow-y:auto;padding:var(--space-4) var(--space-6) var(--space-4) var(--space-2);display:flex;flex-direction:column;gap:var(--space-4);height:420px}
+.pk-turn{display:flex;flex-direction:column;gap:var(--space-2)}
+.pk-turn .de-ai-umsg{align-self:flex-end}
+.pk-answer{font-size:var(--font-size-ui);line-height:20px;color:var(--text-primary);max-width:92%}
+.pk-composer{padding:var(--space-2) var(--space-6) var(--space-4) 48px;background:var(--surface-editor)}
+.pk-latest{position:absolute;right:var(--space-6);bottom:var(--space-3);display:none}
+.pk-latest.is-shown{display:inline-flex}
+.pk-meas{font-family:var(--font-mono);font-size:var(--font-size-sm);color:var(--text-secondary);white-space:nowrap}
+.pk-meas b{color:var(--text-primary);font-weight:600}
+.pk-ellipsis{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pk-stage .de-nav__item{min-height:var(--size-menu-item-h)}
+.grp-note{color:var(--ui-fg-info);max-width:78ch}
+</style>
+</head>
+<body>
+<div class="page">
+  <header class="mast">
+    <h1>DevEco Code 消息锚点导航 · 方案样式 demo</h1>
+    <span class="grow"></span>
+    <a class="tbtn" href="index.html#plan">返回分析</a>
+  </header>
+  <p class="lede">按 DevEco 设计系统（design-system）搭建的方案样张：对话左侧刻度轨 + 三段卡片，长对话窗口跟随。窗口、侧栏、消息、输入框、卡片全部复用 <code>.de-*</code> 组件；刻度轨是新组件，只写了布局。热区与时间参数见分析页 08 节。</p>
+
+  <div class="pk-stage" id="stage" data-system="pc-mac" data-theme="dark" style="margin-top:20px">
+    <div class="de-toolbar">
+      <span class="de-segmented" role="tablist" aria-label="设计系统">
+        <button type="button" class="de-segmented__item" data-set-system="harmony" aria-selected="false">鸿蒙原生 HDesign 2.0</button>
+        <button type="button" class="de-segmented__item" data-set-system="pc-mac" aria-selected="true">PC / Mac NewUI</button>
+      </span>
+      <span class="de-segmented" role="tablist" aria-label="主题">
+        <button type="button" class="de-segmented__item" data-set-theme="dark" aria-selected="true">深色</button>
+        <button type="button" class="de-segmented__item" data-set-theme="light" aria-selected="false">浅色</button>
+      </span>
+      <span class="de-toolbar__sep"></span>
+      <span class="de-segmented" role="tablist" aria-label="提问数">
+        <button type="button" class="de-segmented__item" data-n="12" aria-selected="true">12 条</button>
+        <button type="button" class="de-segmented__item" data-n="40" aria-selected="false">40 条</button>
+        <button type="button" class="de-segmented__item" data-n="136" aria-selected="false">136 条</button>
+      </span>
+      <label class="de-choice"><input type="checkbox" class="de-checkbox" id="hz"> <span>显示热区</span></label>
+      <span class="de-toolbar__spacer"></span>
+      <span class="pk-meas">状态 <b id="m-state">关闭</b> · <b id="m-mode">—</b></span>
+    </div>
+
+    <section class="de-window" aria-label="DevEco Code">
+      <header class="de-titlebar">
+        <span class="de-titlebar__mark">De</span>
+        <div class="de-titlebar__group">
+          <button type="button" class="de-titlebar__pill">Deveco <svg class="de-svg-icon de-svg-icon--s" aria-hidden="true"><use href="../../design-system/icons/sprite.svg#nu-general-chevrondown"/></svg></button>
+          <button type="button" class="de-titlebar__pill">main <svg class="de-svg-icon de-svg-icon--s" aria-hidden="true"><use href="../../design-system/icons/sprite.svg#nu-general-chevrondown"/></svg></button>
+        </div>
+        <span class="de-titlebar__spacer"></span>
+      </header>
+      <div class="de-window__body">
+        <nav class="de-stripe" aria-label="侧边工具条">
+          <button type="button" class="de-icon-button de-icon-button--m" aria-label="DevEco Code" aria-pressed="true"><svg class="de-svg-icon" aria-hidden="true"><use href="../../design-system/icons/sprite.svg#hm-ic-ide-chat"/></svg></button>
+          <button type="button" class="de-icon-button de-icon-button--m" aria-label="历史"><svg class="de-svg-icon" aria-hidden="true"><use href="../../design-system/icons/sprite.svg#nu-general-history"/></svg></button>
+          <button type="button" class="de-icon-button de-icon-button--m" aria-label="书签"><svg class="de-svg-icon" aria-hidden="true"><use href="../../design-system/icons/sprite.svg#nu-toolwindow-bookmarks"/></svg></button>
+          <button type="button" class="de-icon-button de-icon-button--m" aria-label="更多"><svg class="de-svg-icon" aria-hidden="true"><use href="../../design-system/icons/sprite.svg#nu-general-morehorizontal"/></svg></button>
+        </nav>
+        <aside class="de-nav" aria-label="会话" style="width:240px">
+          <div class="de-pad" style="padding-inline:0">
+            <button type="button" class="de-button de-button--secondary de-button--m"><svg class="de-svg-icon de-svg-icon--s" aria-hidden="true"><use href="../../design-system/icons/sprite.svg#nu-general-add"/></svg> New Conversation</button>
+          </div>
+          <div class="de-nav__label">Today</div>
+          <button type="button" class="de-nav__item" aria-current="page"><span class="pk-ellipsis">实现完整的堆排序算法项目</span></button>
+          <button type="button" class="de-nav__item"><span class="pk-ellipsis">Designing a homepage for a travel…</span></button>
+          <button type="button" class="de-nav__item"><span class="pk-ellipsis">Explain this code</span></button>
+          <div class="de-nav__label">2026/8/30</div>
+          <button type="button" class="de-nav__item"><span class="pk-ellipsis">Basic example of swiper</span></button>
+          <button type="button" class="de-nav__item"><span class="pk-ellipsis">Detect problems in current projects…</span></button>
+        </aside>
+        <div class="de-main">
+          <div class="de-tabs" role="tablist">
+            <div class="de-tab" data-selected="true"><button type="button" role="tab" class="de-tab__main" aria-selected="true">DevEco Code</button><button type="button" class="de-tab__close" aria-label="关闭"><svg class="de-svg-icon de-svg-icon--s" aria-hidden="true"><use href="../../design-system/icons/sprite.svg#nu-general-closesmall"/></svg></button></div>
+          </div>
+          <div class="pk-thread" id="thread">
+            <div class="pk-rail" id="rail" tabindex="0" aria-label="消息锚点：上下方向键切换，回车跳转"><div class="pk-band" id="band"></div></div>
+            <div class="pk-card" id="card" role="tooltip">
+              <ul class="de-menu" role="listbox" aria-label="提问预览">
+                <li class="de-section-label" id="c-meta"></li>
+                <li role="none"><button type="button" class="de-menu__item pk-ctx" id="c-prev"><span class="pk-no"></span><span class="pk-mini"></span><span class="de-menu__label"></span></button></li>
+                <li role="none"><button type="button" class="de-menu__item pk-cur" id="c-cur" aria-current="true"><span class="pk-row-head"><span class="pk-no"></span><span class="pk-mini"></span><span class="pk-q"></span></span><span class="pk-a"></span></button></li>
+                <li role="none"><button type="button" class="de-menu__item pk-ctx" id="c-next"><span class="pk-no"></span><span class="pk-mini"></span><span class="de-menu__label"></span></button></li>
+              </ul>
+            </div>
+            <div class="pk-chat" id="chat"></div>
+            <button type="button" class="de-button de-button--primary de-button--s pk-latest" id="latest">回到最新</button>
+          </div>
+          <div class="pk-composer">
+            <div class="de-ai-field">
+              <textarea rows="2" placeholder="输入 @ 添加上下文，/ 快速切换功能指令" aria-label="输入"></textarea>
+              <div class="de-ai-field__bar">
+                <button type="button" class="de-ai-msgbar__btn" aria-label="添加"><svg class="de-svg-icon de-svg-icon--s" aria-hidden="true"><use href="../../design-system/icons/sprite.svg#nu-general-add"/></svg></button>
+                <span>Goal</span><span>GLM 5.1</span><span>权限配置</span>
+                <span class="de-grow"></span>
+                <button type="button" class="de-ai-msgbar__btn" aria-label="发送"><svg class="de-svg-icon de-svg-icon--s" aria-hidden="true"><use href="../../design-system/icons/sprite.svg#hm-ic-ide-send"/></svg></button>
+              </div>
+            </div>
+          </div>
+          <footer class="de-statusbar">
+            <span class="de-crumb">accurate-math-core › src › main › <strong>AccurateMath</strong></span>
+            <span class="de-statusbar__group"><span>39:34</span><span>LF</span><span>UTF-8</span></span>
+          </footer>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <p class="grp-note" style="margin-top:14px">用法：在刻度轨上停 300ms 弹出卡片，之后上下移动立即切换；斜向移入卡片可点上一条 / 下一条；离开 300ms 后关闭。136 条时间距仍是 10px，只显示视口附近一段，滚动对话时轨道跟着走，窗口外有内容的一端淡出，卡片写「第 N / 总数」。键盘：Tab 聚焦轨道，↑↓ 切换，Enter 跳转，Esc 关闭。</p>
+</div>
+
+<script>
+(function () {
+  var PITCH = 10, PAD = 14, RAIL_W = 32, BRIDGE = 8, HYST = 3, EDGE = 24,
+      DWELL = 300, CLOSE = 300, WARM = 800, FAST = 0.3;
+  var base = [
+    ['\\ **01.【单选题】 您的行业领域是？** - 政务/金融/…', '已按行业拆分筛选条件，政务与金融单独成组，其余归入「其他」。'],
+    ['把 Q05–Q07 锁定为整场访谈的主线', '已调整题序，Q05–Q07 放到第二段，主持人提示同步更新。'],
+    ['写一个鸿蒙的防抖函数（ArkTS 实现）。', '给出 debounce 的 ArkTS 实现，支持 leading / trailing 两种模式，并附调用示例。'],
+    ['写一个仿微信的聊天输入框，要求：带表情面板、键盘自适应、图文并排', '这是一个基于 HarmonyOS（ArkUI / ArkTS）实现的仿微信聊天输入框组件，包含表情面板、键盘自适应、图文并排三大功能，可以直接作为自定义组件使用。'],
+    ['在鸿蒙中进行性能优化，避免长列表渲染卡顿的策略有哪些？', '优先用 LazyForEach 配合 cachedCount，列表项用 @Reusable 复用，图片按需解码。'],
+    ['筛选规则里 `常规样本` 的条件再写清楚', '常规样本必须同时满足：外部开发者、近半年有上架记录。'],
+    ['为什么只有直板机调整？', '直板机窗口固定 1000×800，字号随缩放溢出；折叠屏宽高比不同，不触发。'],
+    ['改完怎么验证？', '三档尺寸各跑 5 次，掉帧从 8 次降到 2 次。'],
+    ['帮我实现一个完整的堆排序算法项目', '已实现堆排序核心（HeapSort.ets）、可视化页面（HeapSortPage.ets）和单元测试，时间复杂度 O(n log n)。'],
+    ['## 还有别的问题吗？', '还有一处状态栏重叠，已列进待办。'],
+    ['把网络请求封装成 Hook', '已封装 useRequest，支持取消、重试与缓存。'],
+    ['好，继续查折叠屏', '收到，切到折叠屏任务，先做基线再跑旅程。']
+  ];
+  var more = ['页面跳转时白屏怎么排查', '给 Index.ets 补单元测试', '状态管理用 @Observed 还是 AppStorage', 'hdc 装机失败提示签名不匹配', '一多适配的断点怎么定', '把这段代码迁移到 API 20'];
+  function clean(s) { return s.replace(/\\/g, '').replace(/[*_`#>]+/g, '').replace(/\s+/g, ' ').trim(); }
+  function $(id) { return document.getElementById(id); }
+  var stage = $('stage'), thread = $('thread'), rail = $('rail'), chat = $('chat'), card = $('card'), band = $('band'), latest = $('latest');
+  var cPrev = $('c-prev'), cCur = $('c-cur'), cNext = $('c-next'), cMeta = $('c-meta');
+  var N = 0, msgs = [], ticks = [], blocks = [], ys = [], off = 0, H = 0, C = 0, TOTAL = 0;
+  var active = 0, hov = -1, state = 'closed', dwellT = 0, closeT = 0, lastClose = -1e9, last = null, cardTop = 0;
+  var TXT = { closed: '关闭', pending: '等待 300ms', open: '打开', closing: '离开宽限' };
+  function setState(s) { state = s; $('m-state').textContent = TXT[s]; }
+
+  function build(n) {
+    N = n; msgs = [];
+    for (var i = 0; i < n; i++) {
+      if (i < base.length) msgs.push(base[i]);
+      else { var t = more[(i - base.length) % more.length]; msgs.push([t + '（第 ' + (i + 1) + ' 条）', '已处理：' + t + '。给出原因、改法和验证步骤。']); }
+    }
+    chat.innerHTML = ''; blocks = [];
+    msgs.forEach(function (m, i) {
+      var b = document.createElement('div'); b.className = 'pk-turn';
+      b.innerHTML = '<div class="de-ai-umsg"><div class="de-ai-umsg__bubble"></div><div class="de-ai-msgbar"><button type="button" class="de-ai-msgbar__btn" aria-label="复制"><svg class="de-svg-icon de-svg-icon--s" aria-hidden="true"><use href="../../design-system/icons/sprite.svg#nu-general-copy"/></svg></button><button type="button" class="de-ai-msgbar__btn" aria-label="回退"><svg class="de-svg-icon de-svg-icon--s" aria-hidden="true"><use href="../../design-system/icons/sprite.svg#nu-general-undo"/></svg></button><button type="button" class="de-ai-msgbar__btn" aria-label="编辑"><svg class="de-svg-icon de-svg-icon--s" aria-hidden="true"><use href="../../design-system/icons/sprite.svg#nu-general-edit"/></svg></button><span class="de-ai-msgbar__time">15:' + String(10 + i % 50).padStart(2, '0') + '</span></div></div>' +
+        '<span class="de-ai-status"><span class="de-ai-spark" aria-hidden="true"></span>已思考 ' + (8 + i % 20) + ' 秒 · ' + (i % 3 + 1) + ' 个 subagent 已完成</span><div class="pk-answer"></div>';
+      b.querySelector('.de-ai-umsg__bubble').textContent = m[0];
+      b.querySelector('.pk-answer').textContent = m[1] + ' ' + m[1];
+      chat.appendChild(b); blocks.push(b);
+    });
+    ticks.forEach(function (t) { t.remove(); }); ticks = [];
+    for (var j = 0; j < n; j++) { var t = document.createElement('span'); t.className = 'pk-tick'; t.appendChild(document.createElement('i')); rail.appendChild(t); ticks.push(t); }
+    active = 0; hov = -1; close(true); chat.scrollTop = 0; layout(); paint();
+  }
+
+  /* 窗口跟随：间距固定 PITCH；超出时只显示一段，按对话滚动进度偏移，并保证当前条离上下边缘 ≥ EDGE */
+  function layout() {
+    H = rail.clientHeight - PAD * 2; C = Math.floor(H / PITCH) + 1; TOTAL = (N - 1) * PITCH;
+    if (N <= C) off = -(H - TOTAL) / 2;
+    else if (hov < 0) {
+      var range = Math.max(1, chat.scrollHeight - chat.clientHeight);
+      off = chat.scrollTop / range * (TOTAL - H);
+      var ya = active * PITCH - off;
+      if (ya < EDGE) off = active * PITCH - EDGE;
+      if (ya > H - EDGE) off = active * PITCH - (H - EDGE);
+      off = Math.max(0, Math.min(TOTAL - H, off));
+    }
+    position();
+  }
+  function ensureVisible(i) {
+    if (N <= C) return;
+    var y = i * PITCH - off;
+    if (y < EDGE) off = i * PITCH - EDGE;
+    if (y > H - EDGE) off = i * PITCH - (H - EDGE);
+    off = Math.max(0, Math.min(TOTAL - H, off)); position();
+  }
+  function position() {
+    ys = [];
+    for (var i = 0; i < N; i++) ys.push(i * PITCH - off);
+    ticks.forEach(function (t, i) { t.style.top = (PAD + ys[i] - 6) + 'px'; t.style.visibility = (ys[i] < -4 || ys[i] > H + 4) ? 'hidden' : ''; });
+    var win = N > C;
+    rail.classList.toggle('is-fade-top', win && off > 0.5);
+    rail.classList.toggle('is-fade-bot', win && off < TOTAL - H - 0.5);
+    $('m-mode').textContent = win ? ('窗口跟随 · 可见 ' + C + ' / ' + N) : ('全部可见 · ' + N + ' 条');
+  }
+  function bandOf(i) {
+    var top = i === 0 ? ys[0] - PITCH / 2 : (ys[i - 1] + ys[i]) / 2;
+    var bot = i === N - 1 ? ys[i] + PITCH / 2 : (ys[i] + ys[i + 1]) / 2;
+    return [top, bot];
+  }
+  function indexAt(y) {
+    var r = -1;
+    if (hov >= 0) { var b = bandOf(hov), h = Math.min(HYST, 0.3 * PITCH); if (y >= b[0] - h && y <= b[1] + h) r = hov; }
+    if (r < 0) r = Math.round((y + off) / PITCH);
+    var first = Math.max(0, Math.ceil((off - 4) / PITCH)), lastV = Math.min(N - 1, Math.floor((off + H + 4) / PITCH));
+    return Math.max(first, Math.min(lastV, r));
+  }
+  function paint() {
+    ticks.forEach(function (t, i) {
+      var d = Math.abs(i - active);
+      t.firstChild.style.width = (d === 0 ? 21 : d === 1 ? 15 : d === 2 ? 11 : 8) + 'px';
+      t.classList.toggle('is-current', d === 0);
+      t.classList.toggle('is-hover', i === hov);
+      t.classList.toggle('is-latest', i === N - 1 && d !== 0);
+    });
+    if (hov >= 0) { var b = bandOf(hov); band.style.top = (PAD + b[0]) + 'px'; band.style.height = (b[1] - b[0]) + 'px'; } else band.style.height = '0';
+  }
+  function row(el, i, edge) {
+    var ok = i >= 0 && i < N;
+    el.classList.toggle('is-edge', !ok); el.dataset.i = i;
+    el.querySelector('.pk-no').textContent = ok ? i + 1 : '';
+    el.querySelector('.pk-mini').style.visibility = ok ? '' : 'hidden';
+    el.querySelector('.de-menu__label').textContent = ok ? clean(msgs[i][0]) : edge;
+  }
+  function fill() {
+    cMeta.textContent = '第 ' + (hov + 1) + ' / ' + N + ' 条';
+    row(cPrev, hov - 1, '已是第一条'); row(cNext, hov + 1, '已是最新一条');
+    cCur.dataset.i = hov;
+    cCur.querySelector('.pk-no').textContent = hov + 1;
+    cCur.querySelector('.pk-q').textContent = clean(msgs[hov][0]);
+    cCur.querySelector('.pk-a').textContent = clean(msgs[hov][1]);
+  }
+  function place(force) {
+    var ty = PAD + ys[hov], ch = card.offsetHeight, sh = thread.clientHeight;
+    if (force || ty < cardTop + 14 || ty > cardTop + ch - 14) { cardTop = Math.max(4, Math.min(sh - ch - 4, ty - ch / 2)); card.style.top = cardTop + 'px'; }
+  }
+  function open() {
+    clearTimeout(dwellT); clearTimeout(closeT); if (hov < 0) return;
+    var was = state === 'open' || state === 'closing';
+    fill(); card.classList.add('is-open'); place(!was); setState('open');
+  }
+  function close(silent) {
+    clearTimeout(dwellT); clearTimeout(closeT);
+    if (!silent && card.classList.contains('is-open')) lastClose = performance.now();
+    card.classList.remove('is-open'); setState('closed'); hov = -1; layout(); paint();
+  }
+  function setHov(i) { if (i === hov) return; hov = i; ensureVisible(i); paint(); if (state === 'open' || state === 'closing') { fill(); place(false); } }
+  function inTri(px, py, ax, ay, bx, by, cx, cy) {
+    function sg(x1, y1, x2, y2, x3, y3) { return (x1 - x3) * (y2 - y3) - (x2 - x3) * (y1 - y3); }
+    var d1 = sg(px, py, ax, ay, bx, by), d2 = sg(px, py, bx, by, cx, cy), d3 = sg(px, py, cx, cy, ax, ay);
+    return !((d1 < 0 || d2 < 0 || d3 < 0) && (d1 > 0 || d2 > 0 || d3 > 0));
+  }
+  thread.addEventListener('pointermove', function (e) {
+    if (e.pointerType === 'touch') return;
+    var r = thread.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top, cr = card.getBoundingClientRect();
+    var onCard = card.classList.contains('is-open') && e.clientX >= cr.left && e.clientX <= cr.right && e.clientY >= cr.top && e.clientY <= cr.bottom;
+    var now = performance.now(), v = 0, aiming = false;
+    if (last) {
+      var dt = now - last.t; if (dt > 0) v = Math.hypot(e.clientX - last.x, e.clientY - last.y) / dt;
+      if (state === 'open' && e.clientX > last.x) aiming = inTri(e.clientX, e.clientY, last.x, last.y, cr.left, cr.top - 4, cr.left, cr.bottom + 4);
+    }
+    last = { t: now, x: e.clientX, y: e.clientY };
+    if (x <= RAIL_W + BRIDGE) {
+      if (state === 'closing') { clearTimeout(closeT); setState('open'); }
+      if (!aiming) setHov(indexAt(y - PAD));
+      if (state === 'closed') { if (now - lastClose < WARM) open(); else { setState('pending'); dwellT = setTimeout(open, DWELL); } }
+      else if (state === 'pending' && v > FAST) { clearTimeout(dwellT); dwellT = setTimeout(open, DWELL); }
+    } else if (onCard) { if (state === 'closing') { clearTimeout(closeT); setState('open'); } }
+    else leave();
+  });
+  thread.addEventListener('pointerleave', leave);
+  function leave() {
+    if (state === 'pending') close(true);
+    else if (state === 'open') { setState('closing'); closeT = setTimeout(function () { close(false); }, CLOSE); }
+  }
+  rail.addEventListener('pointerdown', function (e) {
+    if (e.pointerType !== 'touch') return;
+    e.preventDefault(); var r = rail.getBoundingClientRect(), i = indexAt(e.clientY - r.top - PAD);
+    if (state === 'open' && i === hov) jump(i); else { setHov(i); open(); }
+  });
+  rail.addEventListener('click', function (e) { var r = rail.getBoundingClientRect(); jump(indexAt(e.clientY - r.top - PAD)); });
+  card.addEventListener('click', function (e) { var el = e.target.closest('[data-i]'); if (!el) return; var i = +el.dataset.i; if (i >= 0 && i < N) jump(i); });
+  rail.addEventListener('wheel', function (e) { e.preventDefault(); setHov(Math.max(0, Math.min(N - 1, (hov < 0 ? active : hov) + (e.deltaY > 0 ? 1 : -1)))); open(); }, { passive: false });
+  rail.addEventListener('focus', function () { if (hov < 0) setHov(active); open(); });
+  rail.addEventListener('blur', function () { close(false); });
+  rail.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); setHov(Math.max(0, Math.min(N - 1, (hov < 0 ? active : hov) + (e.key === 'ArrowDown' ? 1 : -1)))); open(); }
+    else if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (hov >= 0) jump(hov); }
+    else if (e.key === 'Escape') close(false);
+  });
+  function jump(i) {
+    var target = chat.scrollTop + (blocks[i].getBoundingClientRect().top - chat.getBoundingClientRect().top) - 8;
+    chat.scrollTop = Math.max(0, Math.min(chat.scrollHeight - chat.clientHeight, target));
+    active = i; close(false);
+  }
+  chat.addEventListener('wheel', function () { if (state !== 'closed') close(false); }, { passive: true });
+  chat.addEventListener('scroll', function () {
+    var top = chat.getBoundingClientRect().top, best = 0, bd = Infinity;
+    blocks.forEach(function (b, i) { var d = Math.abs(b.getBoundingClientRect().top - top - 8); if (d < bd) { bd = d; best = i; } });
+    if (chat.scrollTop + chat.clientHeight >= chat.scrollHeight - 2) best = N - 1;
+    active = best; if (hov < 0) layout(); paint();
+    latest.classList.toggle('is-shown', chat.scrollTop + chat.clientHeight < chat.scrollHeight - 40);
+  });
+  latest.addEventListener('click', function () { chat.scrollTop = chat.scrollHeight; });
+
+  function pick(attr, val) {
+    stage.querySelectorAll('[' + attr + ']').forEach(function (b) { b.setAttribute('aria-selected', String(b.getAttribute(attr) === val)); });
+  }
+  stage.querySelectorAll('[data-set-system]').forEach(function (b) { b.addEventListener('click', function () { stage.setAttribute('data-system', b.dataset.setSystem); pick('data-set-system', b.dataset.setSystem); layout(); paint(); }); });
+  stage.querySelectorAll('[data-set-theme]').forEach(function (b) { b.addEventListener('click', function () { stage.setAttribute('data-theme', b.dataset.setTheme); pick('data-set-theme', b.dataset.setTheme); }); });
+  stage.querySelectorAll('[data-n]').forEach(function (b) { b.addEventListener('click', function () { pick('data-n', b.dataset.n); build(+b.dataset.n); }); });
+  $('hz').addEventListener('change', function (e) { stage.classList.toggle('show-hz', e.target.checked); });
+  window.addEventListener('resize', function () { layout(); paint(); });
+  build(12);
+})();
+</script>
+</body>
+</html>
