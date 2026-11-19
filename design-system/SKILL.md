@@ -9,11 +9,11 @@ description: 使用 DevEco 双设计系统（鸿蒙原生端 HarmonyOS NEXT HDes
 
 ## 必读顺序（AI 建模前必须先读）
 
-1. **本文件 (`design-system/SKILL.md`)**：两套系统归属、铁律、标准 DOM 骨架模板与自动化门禁脚本。
-2. **[references/quick-reference.md](references/quick-reference.md)**：`data-system`、`data-theme`、21 个核心组件 `.de-*` class 与 Token 速查。
-3. **[llms.txt](llms.txt)** & **[registry.json](registry.json)**：机器可读的组件清单与样式路径。
-4. **[DESIGN.md](DESIGN.md)**：从本地 7 份 `.pix` 矢量 AST（133,622 节点）提取的完整色板、字阶、阴影与组件几何尺寸表。
-5. **[preview/index.html](preview/index.html)**：一页总览（含双系统实时工作台 `#specimens`、21 个组件文档 `#components`、6 组 Pixso 原稿对照 `#compare` 与 2 套整窗 Pattern）。
+1. **本文件 (`design-system/SKILL.md`)**：两套系统归属、铁律、标准页面脚手架与自动化门禁脚本。
+2. **[scaffolds/scaffolds.json](scaffolds/scaffolds.json)**：5 套源自 Pixso 原稿的页面级脚手架（`S1` IDE 主工作台 / `S2` AI Agent 会话工作台 / `S3` 双栏设置弹窗 / `S4` 无顶栏纯工具窗 / `S5` 欢迎页）——**写任何页面前必须先选脚手架，严禁从零手拼布局**。
+3. **[icons/manifest.json](icons/manifest.json)** & **[icons/sprite.svg](icons/sprite.svg)**：995 个 `icon.pix` 原生 SVG 图标（零重绘 + CSS Token 绑定）。
+4. **[references/quick-reference.md](references/quick-reference.md)**：`data-system`、`data-theme`、22 个核心组件 `.de-*` class 与 Token 速查。
+5. **[preview/index.html](preview/index.html)**：一页总览（含全量色卡、995 图标库 `#icons`、5 套页面脚手架 `#scaffolds`、双系统工作台 `#specimens`、组件文档 `#components` 与 6 组 Pixso 原稿对照 `#compare`）。
 
 ---
 
