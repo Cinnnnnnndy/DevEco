@@ -33,7 +33,7 @@
    `python3 site/tools/thumb.py <slug>` 出缩略图；然后在这里把对应条目的 view 改成 'ready'、补 href 与 thumb。
    ===================================================================== */
 window.DEVECO_CATALOG = {
-  updated: '2026-11-18',
+  updated: '2026-11-20',
   title: '鸿蒙开发工具体验',
   lede: '围绕 DevEco Studio / DevEco Code / DevEco CLI 的体验设计：29 条创新点各一个可点的界面稿 demo（其中 9 条是新一轮规划重点），全部按鸿蒙电脑版蓝本与 AI Coding / 多 Agent 场景重做；加上设计系统、分析与汇报材料。全部是本地静态文件，双击即开。',
 
@@ -461,6 +461,20 @@ window.DEVECO_CATALOG = {
       icon: 'i-cat-people',
       note: '鸿蒙开发者是谁、要什么：用户研究、AI 开发准备、生态位与舆情、三端差异。',
       items: [
+        {
+          title: 'AI 软件开发人机交互：意图对齐、信任交付与系统交互（总体学习笔记）', subtitle: 'Research Notes · Verification, Attention & Trust · Intent Alignment',
+          desc: '一份分章节的总体学习笔记，按 research-notes 规范整理：总结论、基准记号、用语约定、常见误解，再依次是三个瓶颈（验证效率、注意力、信任）、意图表达（五个字段，含可交互演示）、课题会 11-19 的三个研究缺口与多设备 / 个人应用方向、外部研究核实，最后是概念关系、成本收益、边界与待深化。关键论断标五档证据，更正了会上「中途介入 62% 被关闭」一条的转述；附 /loop 要点与核对记录。',
+          view: 'doc', date: '2026-11-20', href: 'analysis/ai-hci-research/index.html',
+          links: [
+            { label: '三个瓶颈', href: 'analysis/ai-hci-research/index.html#pa' },
+            { label: '意图表达', href: 'analysis/ai-hci-research/index.html#pb' },
+            { label: '课题会要点', href: 'analysis/ai-hci-research/index.html#pc' },
+            { label: '外部研究核实', href: 'analysis/ai-hci-research/index.html#pd' },
+            { label: '待深化', href: 'analysis/ai-hci-research/index.html#todo' },
+          ],
+          tags: ['学习笔记', '意图对齐', '信任校准', '注意力', '验证', '主动介入', '意图形式化', '生成式 UI', '多设备', '课题会', '/loop'],
+          thumb: { type: 'doc', kind: 'HTML' },
+        },
         {
           title: '鸿蒙开发者用户研究与竞品趋势分析计划', subtitle: 'HarmonyOS Developer Research Plan · Rolling Research',
           desc: '面向不同规模团队访谈鸿蒙开发者，研究鸿蒙与通用开发的差异、给 AI 的输入，以及让 AI 产出符合需求的 Spec 与协作规范。结合前期访谈和竞品对照，配套14题外部问卷、筛选规则、分阶段提纲及四轮时间线。',

@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width,initial-scale=1" name="viewport"/>
+<title>AI 软件开发人机交互 · 总体学习笔记</title>
+<link href="notes.css" rel="stylesheet"/>
+<style>
+/* 本篇专用：意图表达演示 */
+.demo{background:var(--paper);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);overflow:hidden}
+.demo-head{padding:16px 20px 0}
+.demo-head .said{font-size:17px;font-weight:600;margin:0}
+.demo-head small{color:var(--ink3)}
+.tabs{display:flex;gap:4px;padding:12px 20px 0;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.tabs button{font:inherit;font-size:13px;border:0;background:none;padding:8px 12px;color:var(--ink2);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px}
+.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent);font-weight:600}
+.stage{display:grid;grid-template-columns:250px 1fr;gap:28px;padding:22px 20px}
+.panel[hidden]{display:none}
+.panel h3{margin:0 0 6px}
+.take{margin-top:14px;padding-top:10px;border-top:1px solid var(--line2);font-size:13px;color:var(--ink2)}
+.phone{width:230px;height:400px;border:1px solid var(--line);border-radius:26px;background:#fff;padding:42px 20px 20px;position:relative;margin:0 auto;color:#15171a}
+.phone::before{content:"";position:absolute;top:14px;left:50%;width:52px;height:6px;border-radius:3px;background:#e3e5e9;transform:translateX(-50%)}
+.phone .logo{width:38px;height:38px;border-radius:10px;background:#eef0f3;margin-bottom:14px}
+.phone .ttl{font-weight:600;font-size:17px;margin-bottom:16px}
+.phone .field{height:36px;border:1px solid #e3e5e9;border-radius:8px;margin-bottom:10px;font-size:12.5px;color:#7a808a;padding:7px 10px}
+.phone .link{font-size:12px;color:#7a808a;text-align:right;margin:-2px 0 16px}
+.slot{position:relative;display:flex;flex-direction:column}
+.cta{height:40px;border-radius:8px;border:0;background:#eef0f3;color:#4a4f57;font:inherit;font-size:14px;transition:all .3s ease;width:100%;cursor:default}
+.phone .foot{position:absolute;left:20px;right:20px;bottom:18px;font-size:12px;color:#7a808a;text-align:center}
+.cta.big{height:52px;font-size:16px;font-weight:600}
+.cta.color{background:#3574f0;color:#fff}
+.cta.shadow{box-shadow:0 8px 20px rgba(53,116,240,.35);transform:translateY(-2px)}
+.slot.moved{order:-1;margin-bottom:12px}
+.pointable .phone [data-pick]{cursor:crosshair}
+.picked{outline:2px solid var(--warn);outline-offset:3px}
+.pin{position:absolute;right:-10px;top:-28px;background:var(--warn);color:#fff;font-size:11.5px;padding:1px 8px;border-radius:10px;white-space:nowrap}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.chips button{font:inherit;font-size:13px;border:1px solid var(--line);background:var(--paper);color:var(--ink2);border-radius:999px;padding:3px 12px;cursor:pointer}
+.chips button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-bg);color:var(--accent)}
+.ai-say{background:var(--accent-bg);color:var(--accent);border-radius:8px;padding:8px 12px;font-size:13px;margin-top:8px}
+.variants{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:8px}
+.variants button{font:inherit;font-size:12.5px;border:1px solid var(--line);background:var(--paper);color:var(--ink2);border-radius:10px;padding:12px 8px 8px;cursor:pointer}
+.variants button[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent);color:var(--ink)}
+.variants .mini{height:28px;border-radius:6px;margin-bottom:6px}
+.range{display:flex;align-items:center;gap:12px;margin:10px 0}
+.range input{flex:1;accent-color:var(--accent)}
+.range output{min-width:5em;font-weight:600}
+.d{display:inline-block;width:12px;height:12px;border-radius:50%;border:1.5px solid var(--accent);vertical-align:middle}
+.d.f{background:var(--accent)} .d.h{background:linear-gradient(90deg,var(--accent) 50%,transparent 50%)} .d.n{border-color:var(--line)}
+@media (max-width:760px){.stage{grid-template-columns:1fr}}
+</style><style>
+.forms{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin-top:10px}
+.forms .card{padding:12px 14px;font-size:13px}
+.spec{height:6px;border-radius:3px;background:linear-gradient(90deg,var(--line),var(--accent));margin-top:14px}
+.spec-ends{display:flex;justify-content:space-between;font-size:12px;color:var(--ink3);margin-top:4px}
+.chain{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px;margin-top:10px;counter-reset:s}
+.chain div{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:10px;font-size:12.5px;line-height:1.55;counter-increment:s}
+.chain div::before{content:counter(s);display:block;font-size:11px;color:var(--ink3)}
+.chain b{display:block;font-size:13.5px;color:var(--pur)}
+.chain div:last-child{background:var(--pur-bg);border-color:transparent}
+.rg{display:grid;grid-template-columns:96px repeat(3,minmax(0,1fr));gap:6px;font-size:13px;margin-top:10px}
+.rg .h{font-size:12px;color:var(--ink3);align-self:end}
+.rg .r{font-size:12px;color:var(--ink3);align-self:center}
+.rg .c{border-radius:8px;padding:9px 11px;background:var(--paper);border:1px solid var(--line)}
+.rg .lo{background:var(--ok-bg);border-color:transparent}.rg .mid{background:var(--warn-bg);border-color:transparent}.rg .hi{background:var(--bad-bg);border-color:transparent}
+.rg .src{font-size:11px;color:var(--ink3);display:block}
+.nums{display:flex;gap:12px;flex-wrap:wrap;margin:10px 0}
+.nums div{flex:1;min-width:150px;background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.nums b{font-size:22px;display:block;line-height:1.25}
+.nums span{font-size:12px;color:var(--ink3)}
+@media (max-width:1000px){.forms{grid-template-columns:repeat(2,1fr)}.chain{grid-template-columns:repeat(2,1fr)}}
+</style>
+<style>
+.part{border-top:2px solid var(--ink);padding-top:14px;margin-top:64px}
+.part>h2{margin-top:0}
+.part .k{font-size:12px;color:var(--ink3)}
+.sub{margin-top:28px}
+.sub>h3{font-size:17px;margin:0 0 10px}
+.sub.neck{margin-top:28px}
+
+nav.toc a.toc-sub{min-height:28px;padding:4px 12px 4px 30px;font-size:12.5px;color:var(--ink3)}
+nav.toc a.toc-sub[aria-current="location"]{background:var(--line2);color:var(--ink)}
+.sub>h3,.sub h3{scroll-margin-top:16px}</style>
+</head>
+<body>
+<div class="wrap">
+<header class="report-header">
+<div class="crumb"><a href="../../index.html">启动页</a> / AI 软件开发人机交互 · 总体学习笔记</div>
+<div class="eyebrow">总体学习笔记 · 13 章 + 附录 · 最近更新 2026-11-20</div>
+<h1>AI 软件开发人机交互：意图对齐、信任交付与系统交互</h1>
+<p class="lede">一份笔记从头读到尾：先立框架（三个瓶颈），再展开意图怎么表达，接着放进课题会的三个研究缺口，最后用一手研究逐条核对。每条关键论断标了证据强度，末尾留待深化。</p>
+<div class="status"><span class="pill p-blue">总体笔记</span><span class="pill p-bad">更正 1 处会议引用</span><span class="pill p-mute">含可交互演示</span><span class="pill p-warn">多设备方向未调研</span></div>
+</header>
+<div class="report-layout">
+<aside aria-label="阅读导航" class="sidebar">
+<div class="sd-title">阅读导航</div>
+<nav class="toc"><a href="#s0"><span class="toc-num">01</span><span>总结论</span></a><a href="#s1"><span class="toc-num">02</span><span>基准记号</span></a><a href="#s2"><span class="toc-num">03</span><span>用语约定</span></a><a href="#s3"><span class="toc-num">04</span><span>常见误解</span></a><a href="#pa"><span class="toc-num">05</span><span>三个瓶颈</span></a><a class="toc-sub" href="#a-s4"><span class="toc-num">5.1</span><span>验证效率瓶颈</span></a><a class="toc-sub" href="#a-s5"><span class="toc-num">5.2</span><span>注意力瓶颈</span></a><a class="toc-sub" href="#a-s6"><span class="toc-num">5.3</span><span>信任瓶颈</span></a><a class="toc-sub" href="#a-s7"><span class="toc-num">5.4</span><span>三者的关系</span></a><a class="toc-sub" href="#a-s9"><span class="toc-num">5.5</span><span>手算示例</span></a><a href="#pb"><span class="toc-num">06</span><span>意图表达</span></a><a class="toc-sub" href="#b-s4"><span class="toc-num">6.1</span><span>同一句需求，四种表达方式</span></a><a class="toc-sub" href="#b-s5"><span class="toc-num">6.2</span><span>手算示例</span></a><a class="toc-sub" href="#b-s6"><span class="toc-num">6.3</span><span>媒介 × 字段</span></a><a class="toc-sub" href="#b-s7"><span class="toc-num">6.4</span><span>AI 怎么让人看懂它的意图</span></a><a class="toc-sub" href="#b-s8"><span class="toc-num">6.5</span><span>对齐的三个时刻</span></a><a href="#pc"><span class="toc-num">07</span><span>课题会要点</span></a><a class="toc-sub" href="#c-rec"><span class="toc-num">7.1</span><span>会议要点</span></a><a class="toc-sub" href="#c-gaps"><span class="toc-num">7.2</span><span>三个研究缺口</span></a><a class="toc-sub" href="#c-sys"><span class="toc-num">7.3</span><span>系统交互</span></a><a href="#pd"><span class="toc-num">08</span><span>外部研究核实</span></a><a class="toc-sub" href="#c8-1"><span class="toc-num">8.1</span><span>介入时机</span></a><a class="toc-sub" href="#c8-2"><span class="toc-num">8.2</span><span>意图形式化</span></a><a class="toc-sub" href="#c8-3"><span class="toc-num">8.3</span><span>信任校准</span></a><a class="toc-sub" href="#c8-4"><span class="toc-num">8.4</span><span>生成式 UI</span></a><a href="#pe"><span class="toc-num">09</span><span>概念间关系</span></a><a href="#pf"><span class="toc-num">10</span><span>成本与收益</span></a><a href="#pg"><span class="toc-num">11</span><span>例外与边界</span></a><a href="#todo"><span class="toc-num">12</span><span>待深化与问题清单</span></a><a href="#facts"><span class="toc-num">13</span><span>已核实事实与更正</span></a><a href="#appx"><span class="toc-num">附</span><span>附录：/loop 与核对记录</span></a><a href="#ref"><span class="toc-num">参</span><span>参考</span></a></nav>
+<p class="sidebar-note">证据标注：<span class="ev o">✅ 原文</span><span class="ev t">📄 标题级</span><span class="ev m">🔍 多源</span><span class="ev s">⚠️ 单一来源</span><span class="ev i">🔸 推断</span></p>
+</aside>
+<main class="report-body">
+<section>
+<h2 id="s0">一、总结论</h2>
+<p class="conclusion"><span class="k">读者只读这一句</span>AI 让“写”几乎免费，代价转到人身上：验证要时间、盯着要注意力、信与不信要校准，三者成循环；打破循环要让验证变便宜，而验证的前提是意图清楚，所以意图要拆成字段、用合适的媒介表达、并作为有版本的对象被管理；交互方式由“意图有多明确 × 风险有多高”决定，信任用行为而不是问卷来测。</p>
+<div class="grid3" style="margin-top:14px">
+<div class="card" style="border-top:3px solid var(--c-verify)"><div class="k">第五章 三个瓶颈</div>生成变便宜后，人的判断力最稀缺；杠杆在验证。<span class="ev i">🔸</span></div>
+<div class="card" style="border-top:3px solid var(--accent)"><div class="k">第六章 意图表达</div>文字擅长“为什么、不能做什么”；“哪个、什么样、多少”交给指点、挑选、调节。<span class="ev i">🔸</span></div>
+<div class="card" style="border-top:3px solid var(--c-trust)"><div class="k">第七、八章 课题会与核实</div>意图要有版本；介入锚定在任务边界；62% 的会议转述有误。<span class="ev o">✅</span></div>
+</div>
+<dl class="meta-table">
+<dt>资料来源</dt><dd>对话中的分析（2026-11-19）；课题会纪要（2026-11-19，员工助手自动摘要，已去重）</dd>
+<dt>核实来源</dt><dd>arXiv 2601.10253、2603.17150、2502.18658、2410.04596、2208.05950、2508.19227 摘要原文；Claude Code 官方文档；其余只读到检索摘要，逐条标注</dd>
+<dt>读法</dt><dd>第五至八章是从框架到证据的顺序；第九章集中画各部分之间的关系，适合读完一遍后回看</dd>
+</dl>
+</section>
+<section>
+<h2 id="s1">二、基准记号</h2>
+<p>全篇用三组记号描述“人付出了什么”和“意图处在什么状态”，后面每个机制都写成它让这些量怎么变。记号是本笔记自定的分析工具。<span class="ev i">🔸</span></p>
+<pre>一次 AI 交付，人要付出的时间
+  T人 = T读懂 + T验证 + T切换                 ← 第五章：验证瓶颈压在前两项，注意力瓶颈压在 T切换
+
+信任校准偏差
+  Δ = 采纳率 − 实际正确率                      ← Δ&gt;0 过度信任；Δ&lt;0 信任不足；目标 Δ≈0
+
+意图对象与版本
+  I(v) = ⟨ 对象, 方向, 程度, 边界, 理由 ⟩ 的第 v 版   ← 第六章拆字段，第七章加版本
+  E(t) = Agent 在时刻 t 实际执行所依据的意图
+    用户改主意：I(v) → I(v+1)，E 应跟上        ← 意图变更，记版本
+    Agent 跑偏：I(v) 不变，E(t) ≠ I(v)          ← 意图漂移，要告警
+
+交互策略 = f( I 已确认的字段数 , 任务风险 )   ← 第七章“自适应交互”</pre>
+</section>
+<section>
+<h2 id="s2">三、用语约定</h2>
+<div class="tw"><table>
+<thead><tr><th>本笔记用语</th><th>指什么</th><th>别名 / 易混点</th></tr></thead>
+<tbody>
+<tr><th>验证</th><td>人判断 AI 产出是否满足意图的全部动作：读、跑、测、比对</td><td>不等于代码评审，看运行结果也算</td></tr>
+<tr><th>注意力</th><td>一次任务中被占用、无法用于思考的时间和次数</td><td>不是工作时长，等着、盯着也算</td></tr>
+<tr><th>信任 / 信任校准</th><td>信任是不经检查就接受的程度；校准是让它对齐实际可靠度</td><td>目标是 Δ≈0，不是信任越高越好</td></tr>
+<tr><th>意图字段</th><td>对象（哪个）、方向（什么样）、程度（多少）、边界（不能动什么）、理由（为什么）</td><td>为 UI 类需求设计，架构类决策需调整</td></tr>
+<tr><th>意图变更</th><td>用户主动修改目标或约束</td><td>纪要里与“漂移”混用，本笔记严格区分</td></tr>
+<tr><th>意图漂移</th><td>Agent 的执行偏离当前有效版本的意图</td><td>INTENTFLUX 的定义更窄：已撤回的意图仍影响结果</td></tr>
+<tr><th>介入 / 被动建议</th><td>介入：AI 未被调用时主动给建议；被动建议：用户发起请求后得到的建议</td><td>文献的 proactive / reactive。纪要把后者写成“响应式建议”</td></tr>
+<tr><th>Background / Personal Agent</th><td>后台常驻、长期记忆的 Agent / 个人助理型 Agent</td><td>纪要写作“Good Agent”“Person Agent”，推测是转写误差 <span class="ev i">🔸</span></td></tr>
+<tr><th>循环任务</th><td>Claude Code 里用 /loop 建立、按间隔重复执行的提示词</td><td>与桌面端定时任务、云端 Routines 不同</td></tr>
+</tbody>
+</table></div>
+</section>
+<section>
+<h2 id="s3">四、常见误解</h2>
+<div class="myth"><div class="x"><b>❌ 测试都通过了，说明 AI 写对了</b><br/>测试和代码出自同一个 AI 时，同一种误解会同时进入两边。</div><div class="y"><b>✅ 测试只能证明“和测试一致”</b><br/>测试要有独立来源：人写的验收标准、真机运行记录，或另一路生成后由人确认。<span class="ev i">🔸 推断</span></div></div><div class="myth"><div class="x"><b>❌ 信任问题就是用户不够信任 AI</b><br/>于是设计目标变成“提升信任”。</div><div class="y"><b>✅ 问题是信任没校准</b><br/>过度信任和信任不足都有害，目标是 Δ≈0。经典定义：合适的信任即信任等于系统的实际可信度。<span class="ev m">🔍 多源</span></div></div><div class="myth"><div class="x"><b>❌ 给出解释和置信度，就能让人合理依赖</b></div><div class="y"><b>✅ 不一定</b><br/>有研究指出解释或置信度不能稳定带来合适的依赖，有时反而加重过度依赖。详见第八章。<span class="ev s">⚠️ 单一来源，仅读到检索摘要</span></div></div><div class="myth"><div class="x"><b>❌ AI 理解偏了，是因为提示词写得不够详细</b><br/>于是不断加字。</div><div class="y"><b>✅ 有些字段文字天生填不准</b><br/>“这个按钮”“醒目一点”分别缺对象和程度，加字只能描述，不能指认，也没有刻度。<span class="ev i">🔸 推断</span></div></div><div class="myth"><div class="x"><b>❌ 有了截图和参考图，就不需要文字了</b></div><div class="y"><b>✅ 图填不了“理由”</b><br/>AI 知道要什么样，却不知道为什么，遇到图里没覆盖的情况就会走偏。<span class="ev i">🔸 推断</span></div></div><div class="myth"><div class="x"><b>❌ AI 问得越多，对得越齐</b></div><div class="y"><b>✅ 每次提问都是一次打断</b><br/>值得问的是“答错代价大、又无法自己推断”的字段。<span class="ev i">🔸 推断</span></div></div><div class="myth">
+<div class="x"><b>❌ 纪要的说法</b><br/>“中途介入 62% 被关闭，任务结束后的响应式建议虽耗时更长但接受度更高。”</div>
+<div class="y"><b>✅ 原文的说法</b><br/>在工作流边界（如提交后）的介入参与率 52%；任务中途的介入 62% 被关闭。时机合适的<b>主动</b>建议理解只需 45.4 秒，用户自己发起的<b>被动</b>建议要 101.4 秒。耗时更长的是被动建议，不是任务结束后的建议。<span class="ev o">✅ arXiv 2601.10253 摘要</span></div>
+</div><div class="myth">
+<div class="x"><b>❌ 先发问卷，就能了解用户对 AI 的信任</b></div>
+<div class="y"><b>✅ 自评信任和实际依赖常常脱节</b><br/>有研究用设陷阱的编程任务测量实际依赖，发现问卷报告与编码行为不一致。信任要用行为指标测。<span class="ev s">⚠️ 单一来源（TU/e 硕士论文，读到检索摘要）</span></div>
+</div><div class="myth">
+<div class="x"><b>❌ 展开证据一定能提升信任校准</b></div>
+<div class="y"><b>✅ 要同时测过度依赖</b><br/>解释或置信度可能反而加重过度依赖。“证据展开”这个实验条件需要同时测 Δ 的正负两侧。<span class="ev s">⚠️ 单一来源（“When Help Hurts”检索摘要）</span></div>
+</div>
+</section>
+<section class="part" id="pa-wrap">
+<h2 id="pa">五、三个瓶颈：验证效率、注意力、信任</h2>
+<p>生成变便宜之后，人的判断力成了流程里最稀缺的资源。开发者从写代码的人变成审查和监督的人，三个瓶颈是这个新角色的三种消耗。</p>
+<div class="neck v sub">
+<h3 id="a-s4">5.1　验证效率瓶颈：生成很快，验证跟不上</h3>
+<p><b>发生在哪里：</b>每一次接收 AI 产出时。<b>效果持续到哪里：</b>不验证就合入的错误会一直留在代码里，到运行或线上才暴露。</p>
+<p><b>机制：</b>代码不是自己写的，人没有它的心智模型，<code>T读懂</code> 从近似 0 变成必须付出的成本。生成越快，待读的量越大。<span class="ev i">🔸 推断</span></p>
+<h4>常见表现</h4>
+<ul><li>diff 太大没法认真看，“看起来没问题”就合进去了。</li><li>测试也是同一个 AI 写的，等于自己验证自己。</li><li>能编译、能跑，但边界条件或业务逻辑里藏着隐蔽错误。</li></ul>
+<h4>方向：让产出本身容易验证</h4>
+<ul><li>小步改动，每步附可执行的证据：测试结果、预览截图、真机运行记录。</li><li>在 diff 里标出高风险的几处。</li><li>编译、类型检查、lint 前置自动跑完，人只判断机器判断不了的部分。</li></ul>
+<p class="note">怎么衡量：从生成到被接受或拒绝的时长；被接受后又返工的比例。</p>
+</div><div class="neck a sub">
+<h3 id="a-s5">5.2　注意力瓶颈：人变成了 Agent 的“保姆”</h3>
+<p><b>发生在哪里：</b>Agent 执行期间。<b>效果持续到哪里：</b>每次打断之后，人回到原任务还要重建上下文，消耗不止打断那一刻。</p>
+<ul><li>等结果时不知道该不该切去做别的。</li><li>频繁的权限确认打断思路。</li><li>同时开几个 Agent，来回切换上下文。</li><li>要读大段 AI 输出和推理过程。</li></ul>
+<h4>方向：给注意力做预算</h4>
+<ul><li>只把真正需要人判断的决策交给人，低风险操作批量授权。</li><li>在任务边界通知，而不是每一步都通知。外部研究支持这一点：任务中途的主动介入有 62% 被关闭，详见第八章。<span class="ev o">✅ 原文摘要</span></li><li>摘要分层，先结论再细节；任务能随时中断、随时接上。</li></ul>
+<p class="note">怎么衡量：一次任务被打断的次数；等待和切换上下文的时间。</p>
+</div><div class="neck t sub">
+<h3 id="a-s6">5.3　信任瓶颈：信任没有校准</h3>
+<p><b>发生在哪里：</b>人决定“检查多细”的那一刻。<b>效果持续到哪里：</b>信任是跨任务累积的。一次严重翻车，可能让一个开发者长时间不再用某个功能。<span class="ev i">🔸 推断</span></p>
+<ul><li>过度信任：接受 AI 编出来的 API 或过时写法。HarmonyOS 这类训练数据少的生态里尤其明显。<span class="ev i">🔸 推断，待用户研究验证</span></li><li>信任不足：把 AI 的产出全部重写，或干脆不用。</li></ul>
+<h4>方向：让信任有依据，出错能挽回</h4>
+<ul><li>说明结论来自哪份官方文档、哪个 API 版本。</li><li>提供检查点和一键回滚，划清权限边界。</li><li>让开发者看到 AI 在自己项目里的历史表现。</li><li>给出把握程度要谨慎，见上面的常见误解。</li></ul>
+<p class="note">怎么衡量：Δ = 采纳率 − 实际正确率；一次失败后的弃用行为。</p>
+</div><div class="sub">
+<h3 id="a-s7">5.4　三者的关系</h3>
+<figure class="fig">
+<svg aria-labelledby="lt ld" role="img" viewbox="0 0 720 360">
+<title id="a-lt">三个瓶颈的循环</title>
+<desc id="a-ld">信任失准导致验证成本上升，验证成本上升耗光注意力，注意力耗光导致草率接受，让信任更失准。</desc>
+<defs><marker id="a-ah" markerheight="7" markerwidth="7" orient="auto-start-reverse" refx="8" refy="5" viewbox="0 0 10 10"><path d="M0,0 L10,5 L0,10 z" fill="#7a808a"></path></marker></defs>
+<circle cx="360" cy="185" fill="none" r="130" stroke="#e3e5e9" stroke-dasharray="3 6"></circle>
+<path d="M 422 70 A 130 130 0 0 1 484 228" fill="none" marker-end="url(#ah)" stroke="#7a808a" stroke-width="1.6"></path>
+<path d="M 455 280 A 130 130 0 0 1 265 280" fill="none" marker-end="url(#ah)" stroke="#7a808a" stroke-width="1.6"></path>
+<path d="M 236 228 A 130 130 0 0 1 298 70" fill="none" marker-end="url(#ah)" stroke="#7a808a" stroke-width="1.6"></path>
+<g font-family="PingFang SC, Microsoft YaHei, sans-serif" text-anchor="middle">
+<rect fill="#7a4fd6" height="46" rx="23" width="130" x="295" y="28"></rect><text fill="#fff" font-size="16" font-weight="600" x="360" y="57">信任失准</text>
+<rect fill="#1f8a4c" height="46" rx="23" width="160" x="470" y="228"></rect><text fill="#fff" font-size="16" font-weight="600" x="550" y="257">验证成本上升</text>
+<rect fill="#b76e00" height="46" rx="23" width="160" x="90" y="228"></rect><text fill="#fff" font-size="16" font-weight="600" x="170" y="257">注意力被耗光</text>
+<text fill="#4a4f57" font-size="13" x="560" y="140">不敢信，就得多看</text>
+<text fill="#4a4f57" font-size="13" x="360" y="336">看得多，人就累</text>
+<text fill="#4a4f57" font-size="13" x="160" y="140">累了就草率接受</text>
+<text fill="#15171a" font-size="19" font-weight="700" x="360" y="180">杠杆点在验证</text>
+<text fill="#7a808a" font-size="12.5" x="360" y="206">验证便宜了，信任才有证据，注意力才被释放</text>
+</g>
+</svg>
+<figcaption>三个瓶颈不是并列，而是会自我强化的循环。<span class="ev i">🔸 推断</span>：循环结构是本系列的判断，尚无研究直接验证；第七、八章里的“信任冲击”研究与之方向一致。</figcaption>
+</figure>
+<h4>一项措施同时作用在哪几个瓶颈上</h4>
+<div class="tw"><table>
+<thead><tr><th>措施</th><th>验证</th><th>注意力</th><th>信任</th><th>关系</th></tr></thead>
+<tbody>
+<tr><th>附可执行证据</th><td>↓ T验证</td><td>—</td><td>Δ 有依据</td><td>叠加：一处投入，两处收益</td></tr>
+<tr><th>批量授权低风险操作</th><td>—</td><td>↓ T切换</td><td>依赖 Δ≈0</td><td>有依赖：信任没校准时批量授权会放大过度信任</td></tr>
+<tr><th>任务边界才通知</th><td>—</td><td>↓ T切换</td><td>—</td><td>独立</td></tr>
+<tr><th>标注来源与版本</th><td>↓ T验证</td><td>—</td><td>Δ 有依据</td><td>叠加</td></tr>
+<tr><th>给置信度</th><td>可能 ↓</td><td>—</td><td>可能使 Δ 变大</td><td>互斥风险：省了验证，换来过度信任</td></tr>
+</tbody>
+</table></div>
+</div><div class="sub">
+<h3 id="a-s9">5.5　手算示例</h3>
+<p>假设一个 300 行的改动，用基准记号比较两种交付方式。数字是演示用的假设值，不是实测。<span class="ev i">🔸 假设值</span></p>
+<pre>方式 A：一次交付 300 行，只附一句“已完成”
+  T读懂 = 300 行 × 6 秒/行 = 1800 秒 = 30 分钟
+  T验证 = 自己跑一遍、查边界 ≈ 15 分钟
+  T人   ≈ 45 分钟
+
+方式 B：拆成 3 步，每步 100 行，附测试结果与截图，标出 2 处高风险
+  每步只细读高风险处：2 处 × 20 行 × 6 秒 = 240 秒 = 4 分钟
+  其余略读：80 行 × 1.5 秒 = 120 秒 = 2 分钟
+  看证据：1 分钟
+  每步 7 分钟 × 3 步 = 21 分钟；确认打断 3 次 × 1 分钟 = 3 分钟
+  T人   ≈ 24 分钟
+
+复核：45 − 24 = 21 分钟，约省 47%；
+另一条路径：B 中细读行数 = 3 × 40 = 120 行，A 为 300 行，细读量降为 40%，与时间降幅同一量级 ✓</pre>
+<p>这个算例要说明的不是具体数字，而是省下的时间来自哪里：来自“只细读高风险处”和“有证据可看”，而不是来自拆步本身。拆步还额外带来了 3 次打断。</p>
+</div>
+</section>
+<section class="part">
+<h2 id="pb">六、意图表达：文字装不下的部分</h2>
+<p>第五章说验证要变便宜，但意图说不清就没有验证标准。本部分把意图拆成五个字段，看每种媒介能填哪几个，以及 AI 反过来怎么让人看懂它的意图。</p>
+<div class="sub">
+<h3 id="b-s4">6.1　演示：同一句需求，四种表达方式</h3>
+<p>设计师说：“把这个按钮弄得醒目一点。”下面四个页签分别对应四种方式。每种方式的结论都写在页签下方的正文里，不点也能读到。</p>
+<div class="demo" id="demo">
+<div class="demo-head"><p class="said">“把这个按钮弄得醒目一点。”</p><small>切换页签，看哪个字段在哪一步被填上。</small></div>
+<div class="tabs" role="tablist">
+<button aria-controls="p-text" aria-selected="true" id="t-text" role="tab">只用文字</button>
+<button aria-controls="p-point" aria-selected="false" id="t-point" role="tab" tabindex="-1">指出来</button>
+<button aria-controls="p-pick" aria-selected="false" id="t-pick" role="tab" tabindex="-1">从选项里挑</button>
+<button aria-controls="p-tune" aria-selected="false" id="t-tune" role="tab" tabindex="-1">拖动调程度</button>
+</div>
+<div class="stage">
+<div aria-label="登录页示意" class="phone" id="phone">
+<div class="logo"></div>
+<div class="ttl" data-pick="标题">欢迎回来</div>
+<div class="field" data-pick="账号输入框">手机号或邮箱</div>
+<div class="field" data-pick="密码输入框">密码</div>
+<div class="link" data-pick="忘记密码链接">忘记密码</div>
+<div class="slot" id="slot"><button class="cta" data-pick="登录按钮" id="cta" tabindex="-1">登录</button></div>
+<div class="foot" data-pick="注册入口">还没有账号？注册</div>
+</div>
+<div>
+<div aria-labelledby="t-text" class="panel" id="p-text" role="tabpanel">
+<h4>一句话，至少四种合理理解</h4>
+<p>点一下，看每种理解长什么样。</p>
+<div class="chips" id="interp">
+<button aria-pressed="false" data-k="big">变大</button>
+<button aria-pressed="false" data-k="color">换成高饱和颜色</button>
+<button aria-pressed="false" data-k="moved">挪到更显眼的位置</button>
+<button aria-pressed="false" data-k="shadow">加投影和浮起感</button>
+</div>
+</div>
+<div aria-labelledby="t-point" class="panel" hidden="" id="p-point" role="tabpanel">
+<h4>点左边的界面，指给 AI 看</h4>
+<div class="ai-say" id="pointSay">还没有选中任何元素。</div>
+</div>
+<div aria-labelledby="t-pick" class="panel" hidden="" id="p-pick" role="tabpanel">
+<h4>AI 先给方向，人来挑</h4>
+<div class="variants" id="variants">
+<button aria-pressed="false" data-v="big"><div class="mini" style="background:#eef0f3;height:34px"></div>更大</button>
+<button aria-pressed="false" data-v="color"><div class="mini" style="background:#3574f0"></div>更亮的颜色</button>
+<button aria-pressed="false" data-v="color shadow"><div class="mini" style="background:#3574f0;box-shadow:0 6px 14px rgba(53,116,240,.4)"></div>颜色加浮起</button>
+</div>
+</div>
+<div aria-labelledby="t-tune" class="panel" hidden="" id="p-tune" role="tabpanel">
+<h4>“一点”到底是多少？</h4>
+<div class="range"><label for="lvl">醒目程度</label><input id="lvl" max="100" min="0" type="range" value="0"/><output for="lvl" id="lvlOut">原样</output></div>
+</div>
+</div>
+</div>
+</div>
+<div class="tw" style="margin-top:14px"><table>
+<thead><tr><th>方式</th><th>填上的字段</th><th>还缺什么</th></tr></thead>
+<tbody>
+<tr><th>只用文字</th><td>边界、理由（如果写了）</td><td>“这个”指哪个、“醒目”是哪种、“一点”是多少都要猜</td></tr>
+<tr><th>指出来</th><td>对象</td><td>方向和程度；指只能回答“哪里”</td></tr>
+<tr><th>从选项里挑</th><td>方向</td><td>程度只能在几个离散档里选。挑选利用了“识别比回忆容易”<span class="ev m">🔍 经典可用性原则</span></td></tr>
+<tr><th>拖动调程度</th><td>程度</td><td>方向要先定下来；滑杆让人边看边停，停下的位置就是意图</td></tr>
+</tbody>
+</table></div>
+<p class="note">实际使用时几种方式组合：先指对象，再挑方向，再调程度，最后用一句话写理由，比如“新用户找不到登录入口”。</p>
+</div><div class="sub">
+<h3 id="b-s5">6.2　手算示例：候选理解还剩多少</h3>
+<p>用演示里的登录页算一遍，看每种方式把“AI 要猜的空间”缩小了多少。</p>
+<pre>页面上可被“这个”指代的元素：标题、账号框、密码框、忘记密码、登录按钮、注册入口 = 6 个
+“醒目”的方向：变大 / 换色 / 挪位置 / 加浮起 = 4 种
+“一点”的程度：设为 3 档（一点点 / 明显 / 非常）
+
+只用文字：  6 × 4 × 3 = 72 种组合，AI 只能押一种
+指出来：    1 × 4 × 3 = 12 种
+再挑方向：  1 × 1 × 3 =  3 种
+再调程度：  1 × 1 × 1 =  1 种
+
+复核：72 ÷ 6 = 12 ✓；12 ÷ 4 = 3 ✓；3 ÷ 3 = 1 ✓</pre>
+<p>“指出来”这一步一次就砍掉了 5/6 的猜测空间，是性价比最高的一步。元素数和档数是演示设定，真实页面元素更多，指点的收益只会更大。<span class="ev i">🔸 演示设定</span></p>
+</div><div class="sub">
+<h3 id="b-s6">6.3　媒介 × 字段：每种媒介擅长哪几格</h3>
+<div class="tw"><table aria-label="意图媒介与意图字段的匹配">
+<thead><tr><th>人用什么表达</th><th class="c">对象</th><th class="c">方向</th><th class="c">程度</th><th class="c">边界</th><th class="c">理由</th></tr></thead>
+<tbody>
+<tr><th>文字</th><td class="c"><i class="d h"></i></td><td class="c"><i class="d h"></i></td><td class="c"><i class="d n"></i></td><td class="c"><i class="d f"></i></td><td class="c"><i class="d f"></i></td></tr>
+<tr><th>指点、选中、圈出</th><td class="c"><i class="d f"></i></td><td class="c"><i class="d n"></i></td><td class="c"><i class="d n"></i></td><td class="c"><i class="d h"></i></td><td class="c"><i class="d n"></i></td></tr>
+<tr><th>草图、截图、参考图</th><td class="c"><i class="d h"></i></td><td class="c"><i class="d f"></i></td><td class="c"><i class="d h"></i></td><td class="c"><i class="d n"></i></td><td class="c"><i class="d n"></i></td></tr>
+<tr><th>例子和反例</th><td class="c"><i class="d n"></i></td><td class="c"><i class="d f"></i></td><td class="c"><i class="d h"></i></td><td class="c"><i class="d h"></i></td><td class="c"><i class="d n"></i></td></tr>
+<tr><th>从 AI 给的选项里挑</th><td class="c"><i class="d n"></i></td><td class="c"><i class="d f"></i></td><td class="c"><i class="d h"></i></td><td class="c"><i class="d n"></i></td><td class="c"><i class="d n"></i></td></tr>
+<tr><th>滑杆、参数</th><td class="c"><i class="d n"></i></td><td class="c"><i class="d n"></i></td><td class="c"><i class="d f"></i></td><td class="c"><i class="d n"></i></td><td class="c"><i class="d n"></i></td></tr>
+<tr><th>直接动手改结果</th><td class="c"><i class="d f"></i></td><td class="c"><i class="d f"></i></td><td class="c"><i class="d f"></i></td><td class="c"><i class="d n"></i></td><td class="c"><i class="d n"></i></td></tr>
+<tr><th>语音</th><td class="c"><i class="d h"></i></td><td class="c"><i class="d h"></i></td><td class="c"><i class="d n"></i></td><td class="c"><i class="d f"></i></td><td class="c"><i class="d f"></i></td></tr>
+<tr><th>权限、规则文件</th><td class="c"><i class="d n"></i></td><td class="c"><i class="d n"></i></td><td class="c"><i class="d n"></i></td><td class="c"><i class="d f"></i></td><td class="c"><i class="d h"></i></td></tr>
+</tbody>
+</table></div>
+<p class="legend"><span><i class="d f"></i> 擅长</span><span><i class="d h"></i> 部分</span><span><i class="d n"></i> 基本不行</span><span>整张表 <span class="ev i">🔸 推断</span>，适合拿到访谈里验证</span></p>
+<p>语音这一行是 第七、八章会议提出“语音、截图降低门槛”后补的：语音降低的是输入成本，但它和文字一样是语言，字段覆盖和文字基本相同。真正补上“对象、方向、程度”的是截图和指点。<span class="ev i">🔸 推断</span></p>
+</div><div class="sub">
+<h3 id="b-s7">6.4　反过来：AI 怎么让人看懂它的意图</h3>
+<p>AI 用大段文字解释自己，正好撞上 第五章注意力瓶颈。每类要表达的内容，都有更省注意力的形态。</p>
+<div class="tw"><table>
+<thead><tr><th>AI 要让人知道</th><th>只用文字</th><th>更好的形态</th></tr></thead>
+<tbody>
+<tr><th>我理解成了什么</th><td>“好的，我将修改登录页的主按钮样式……”</td><td>把理解的对象在界面或代码里高亮回显</td></tr>
+<tr><th>我打算怎么做</th><td>描述步骤的长文字</td><td>可勾选、可编辑的计划清单</td></tr>
+<tr><th>会改动什么</th><td>“我将修改以下 6 个文件……”</td><td>改动前后对比预览，标出高风险的几处</td></tr>
+<tr><th>我有多大把握</th><td>“这应该可以解决问题”</td><td>对不确定的 API 注明来源文档和版本（直接给置信度有风险，见 第五章常见误解）</td></tr>
+<tr><th>进行到哪一步了</th><td>滚动不停的日志</td><td>状态时间线，只在需要人决策的节点亮起</td></tr>
+<tr><th>做完了，对不对</th><td>“已完成，所有功能正常”</td><td>能运行的证据：测试结果、截图、真机录屏</td></tr>
+</tbody>
+</table></div>
+<p>外部证据：Chen 等人（2025）让大模型针对问题生成交互界面，与对话式回答相比，人类偏好最多高出 72%。<span class="ev o">✅ arXiv 2508.19227 摘要</span> 偏好随领域变化：数据分析类约 93.8%，偏理论、数学解释的问题约 50%。<span class="ev s">⚠️ 单一来源（二手综述页），待读原文 Table</span> 这提示“推理和论证”类内容不一定适合转成界面。</p>
+</div><div class="sub">
+<h3 id="b-s8">6.5　对齐的三个时刻</h3>
+<pre>动手前 ── 对齐理解：复述、计划、提问          ← 改一句计划，比改五百行便宜
+  └ 进行中 ── 发现偏离时纠正：漂移检测、就地说明   ← 第七、八章“意图状态管理”
+       └ 完成后 ── 对照验收标准核对：证据、预览       ← 回到 第五章验证</pre>
+<p>操作代价越高、越难回滚，越应该把对齐放在动手前。<span class="ev i">🔸 推断</span></p>
+</div>
+</section>
+<section class="part">
+<h2 id="pc">七、课题会要点（2026-11-19）</h2>
+<p>课题全称“AI 时代软件开发以及软件新形态下人机交互的意图对齐、信任交付以及系统交互”。会议把 第六章的意图推进到“有版本的对象”，并把信任放在全链条的主线位置。</p>
+<div class="sub">
+<h3 id="c-rec">7.1　会议要点</h3>
+<div class="card"><ul style="margin:0">
+<li><b>核心判断：</b>软件开发的竞争焦点从“谁写得更快”转向“谁更懂任务、更可控、结果更可信”，正好对应课题名里的意图对齐、系统交互和信任交付，也对应 第五章三个瓶颈。</li>
+<li><b>角色变化：</b>开发者从执行转向规划与验证；软件工程与开发者体验合成一套人机协同系统，要从人和 AI 两个主体建理论框架。架构师和泛开发者的交互需求不同。</li>
+<li><b>人因工程：</b>把注意力瓶颈、认知状态、信任依赖这类人因机制，转成 AI 可执行的交互策略，优化单次和长期回报。</li>
+<li><b>可视化：</b>用户不愿读长文字，要用架构图、交互预览快速对齐意图、展示结果。</li>
+</ul></div>
+<h4>Agent 形态谱系</h4>
+<p>交互形态沿“代码建议 → 连续任务执行 → AI 自主驱动的自动工单”演进，形态每进一步，人机协作关系就变一次。当前主流是 Code Agent，其余形态在探索中。</p>
+<div class="spec"></div><div class="spec-ends"><span>人在每一步都在场</span><span>AI 长时间自主运行</span></div>
+<div class="forms">
+<div class="card"><b>会话式</b><br/>一问一答，主流</div>
+<div class="card"><b>Human-in-the-loop</b><br/>关键点人工介入</div>
+<div class="card"><b>Agent for Team</b><br/>白板协作、团队共享</div>
+<div class="card"><b>多 Agent 协同</b><br/>自动分工、回归测试</div>
+<div class="card"><b>Background Agent</b><br/>长期记忆、后台执行、自动 Loop</div>
+</div>
+<h4>项目计划</h4>
+<p>模型机制设计与信任、意图澄清研究同步启动。近期发问卷做前期调研；中期原型开发与集成；后期整体评估、专家评审、用户实验。目标高于任务书：明确六类场景指标，完成核心用例通过率测试和有效样本用户实验。</p>
+</div><div class="sub">
+<h3 id="c-gaps">7.2　三个研究缺口</h3>
+<h4>缺口 1：意图识别与状态管理</h4>
+<p>目标：把自然语言变成可检查的意图对象，在多轮任务中持续维护目标版本和约束。</p>
+<pre>① 分类澄清   交付行为（创建 / 修改 …）+ 任务语义（目标 / 范围 / 约束 …）
+② 结构化     大模型 + 多模态（图文、OCR）抽取关键意图字段 → 执行中检测漂移
+               例：做游戏时游戏类型被悄悄改掉
+③ 辅助决策   上下文补全 + 领域知识悬浮提示（如背单词应用的记忆曲线）+ 歧义冲突检查
+               → 与华为专家对齐，优化澄清与变更检测</pre>
+<p>难点：多轮任务中区分“用户变更”和“Agent 偏离”；长链路复杂系统开发中的记忆与漂移检测。</p>
+<h4>缺口 2：自适应交互与交付</h4>
+<ul>
+<li><b>介入时机：</b>按任务风险和用户状态，在低打扰和高打扰策略之间切换；利用运行结果和代码评审归纳判断最佳介入点。</li>
+<li><b>可视化交付：</b>把方案、代码、总结转成 HTML 页面、思维导图、性能对比图；建场景化组件库，让 AI 像搭积木一样选控件生成 UI。</li>
+<li><b>多模态输入：</b>语音、截图降低表达门槛，补充细节。</li>
+<li><b>自适应界面：</b>用前端结构化窗口维护意图版本状态，按澄清状态和风险调整界面（弹确认、展示证据）。</li>
+</ul>
+<div aria-label="意图明确度 × 任务风险 → 交互方式" class="rg" role="table">
+<div class="h"></div><div class="h">低风险</div><div class="h">中风险</div><div class="h">高风险</div>
+<div class="r">意图明确</div>
+<div class="c lo">直接执行，事后汇报<span class="src">会议原话</span></div>
+<div class="c lo">执行，同时展示证据<span class="src">🔸 补全</span></div>
+<div class="c mid">先给计划，确认后执行<span class="src">🔸 补全</span></div>
+<div class="r">意图模糊</div>
+<div class="c mid">给几个选项让人挑<span class="src">🔸 补全，对应 第六章“挑”</span></div>
+<div class="c mid">先澄清关键字段<span class="src">🔸 补全</span></div>
+<div class="c hi">暂停，交由人接管<span class="src">会议原话</span></div>
+</div>
+<p class="note">会上只明确了两端。中间四格是按同一思路补全的示意，供讨论。</p>
+<h4>缺口 3：动态信任校准</h4>
+<p>会议以信任为主线，串起全链条控制：</p>
+<div class="chain">
+<div><b>用户目标</b>与项目规则</div>
+<div><b>意图状态</b>判定</div>
+<div><b>交互决策</b>问不问、何时问</div>
+<div><b>能力证据</b>获取</div>
+<div><b>任务风险</b>展示</div>
+<div><b>行为控制</b>权限与边界</div>
+<div><b>信任校准</b>回到下一轮</div>
+</div>
+<p style="margin-top:12px">信任标准随情境变：医保类和背单词类软件出错代价不同。估计信任的依据有用户行为（委派频率、人工干预次数）、独立验证证据（模块测试）、历史能力测试。计划用用户实验检验“证据展开”“请求人工审核”等策略的效果，最终形成行业规范。</p>
+</div><div class="sub">
+<h3 id="c-sys">7.3　系统交互：多设备与个人应用</h3>
+<div class="grid2">
+<div class="card"><h4>多设备协同</h4><div class="k">现状</div>基于 OpenHarmony 分布式能力，手机、电脑（Windows / Mac / Linux）、服务端已打通资源，可分发任务。<div class="k" style="margin-top:8px">方向</div><ul><li>设备组网：跨平台、跨系统版本验证</li><li>场景流转：合上电脑出差，任务接到手机</li><li>新终端：手表、AI 眼镜，探索尚浅。眼镜的价值在反馈实体世界状态（如调试机器人时拍照回传），不只是屏幕镜像</li></ul></div>
+<div class="card"><h4>个人专属应用</h4><div class="k">问题</div>国内应用接口开放度低，AI 难以通过接口操作。<div class="k" style="margin-top:8px">思路</div>让 Agent 为个人生成专属软件（定制邮件管理、羽毛球计分器）。软件由 AI 生成，它能直接感知运行状态和上下文，比截图后模拟点击可靠；目标是桌面到手机端都能生成和使用。</div>
+</div>
+<p class="note">这一部分本轮未做外部调研。值得注意的连接点：任务流转时，意图状态 I(v) 和信任状态也要跟着走，否则换设备就丢了已澄清的约束。<span class="ev i">🔸 推断</span></p>
+</div>
+</section>
+<section class="part">
+<h2 id="pd">八、外部研究核实</h2>
+<p>逐条核对会上引用的结论，并检验 第五、六章的判断。</p>
+<div class="sub">
+<h4 id="c8-1">8.1　介入时机：62% 的出处</h4>
+<p>Kuo、Sergeyuk、Chen、Izadi，IUI 2026。15 位开发者在生产级 IDE 中使用主动式 AI 助手五天，分析了 229 次 AI 介入、5,732 个交互点。<span class="ev o">✅ arXiv 2601.10253 摘要</span></p>
+<div class="nums">
+<div><b>52%</b><span>工作流边界（如提交后）介入的参与率</span></div>
+<div><b>62%</b><span>任务中途（如刚拒绝一次编辑后）介入被关闭</span></div>
+<div><b>45.4s / 101.4s</b><span>时机合适的主动建议 / 被动建议的理解耗时</span></div>
+</div>
+<pre>理解耗时之比：101.4 ÷ 45.4 = 2.23，即主动建议约快 2.2 倍
+差值：101.4 − 45.4 = 56.0 秒；56.0 ÷ 101.4 = 55%，即节省约 55% ✓ 两种算法一致
+（W = 109.00，r = 0.533，p = 0.0016，摘要原文给出）</pre>
+<p>同方向：Pu 等人（CHI 2025）的 Codellaborator 做了被试内研究（N=18），发现主动 Agent 比只靠提示更高效，但带来工作流打断；“在场提示”和交互上下文能缓解打断。<span class="ev o">✅ arXiv 2502.18658 摘要</span> 检索摘要另给出 398 次主动介入中 212 次（53.3%）带来有效互动。<span class="ev s">⚠️ 单一来源</span></p>
+<pre>复核：212 ÷ 398 = 0.5327 ≈ 53.3% ✓ 数字自洽，但未读到原文 Table 1</pre>
+<p>Chen 等人（CHI 2025）的随机实验发现主动式编程助手对效率和体验有显著好处，并指出影响其使用效果的若干细节。<span class="ev o">✅ arXiv 2410.04596 摘要</span></p>
+<p><b>对课题：</b>三项研究一致指向“把介入锚定在任务边界上”。会议的“风险 × 用户状态”可以作为边界之上的第二层判断。</p>
+<h4 id="c8-2">8.2　意图形式化：会议缺口 1 的同名研究</h4>
+<p>微软研究院 Lahiri（2026-03）把“意图形式化”——把非形式化意图翻译成可检查的形式化规约——称为 AI 编程时代决定软件“更可靠还是只是更多”的关键挑战。核心瓶颈是验证规约本身：除了用户，没有判定规约正确的“神谕”，需要轻量交互和测试这类代理产物。文章给出一个按可靠性需求递进的谱系：用轻量测试排除误解 → 完整功能规约与形式验证 → 用领域专用语言直接合成正确代码。<span class="ev o">✅ arXiv 2603.17150 摘要</span></p>
+<p>早期实现 TiCoder：AI 生成测试让用户确认意图，用 1 到 5 次模拟用户查询，pass@1 准确率在 MBPP 上绝对提升 22.49%–37.71%，在 HumanEval 上提升 24.79%–53.98%。<span class="ev o">✅ arXiv 2208.05950 摘要（当前版本）</span> 早前检索摘要中“平均 1.5–1.7 次交互即可找到符合意图的测试”的说法来自旧版本，本轮未核到，不再引用。</p>
+<p>意图漂移评测：INTENTFLUX 把漂移定义为“已被取代的意图仍影响最终答案或工具调用”，报告代码类任务表现明显下降；Drift-Bench++ 评测意图变化与误沟通下的交互对齐。<span class="ev s">⚠️ 单一来源，只读到检索摘要</span></p>
+<p><b>对课题：</b>缺口 1 的“结构化意图字段”可借用 Lahiri 的谱系，按风险选形式化的重量；“与华为专家对齐”本质上是在做规约验证。</p>
+<h4 id="c8-3">8.3　信任校准</h4>
+<ul>
+<li>经典定义（Lee 和 See）：合适的信任即信任等于系统的实际可信度。<span class="ev m">🔍 多篇论文引用一致</span></li>
+<li>“When Help Hurts”（ACM）：解释或置信度不能稳定带来合适依赖，有时加重过度依赖；“信任冲击”后可能出现过度或不足依赖。<span class="ev s">⚠️</span></li>
+<li>TU/e 研究：问卷报告的信任与实际编码行为脱节，经验水平影响信任。<span class="ev s">⚠️</span></li>
+<li>KTH 研究：把验证行为当作信任校准的可观察机制。<span class="ev s">⚠️</span></li>
+<li>多篇研究提到信任随任务复杂度和风险变化，支持“按情境定信任标准”。<span class="ev m">🔍</span></li>
+</ul>
+<p><b>对课题：</b>问卷适合测态度和场景偏好；信任本身用会议自己提到的委派频率、干预次数、验证行为来测更可靠。</p>
+<h4 id="c8-4">8.4　生成式 UI</h4>
+<ul>
+<li>Chen 等人（2025）：生成式界面相对对话式界面，人类偏好最多高出 72%。<span class="ev o">✅ arXiv 2508.19227 摘要</span> 分领域差异（数据分析约 93.8%，理论解释约 50%）<span class="ev s">⚠️ 二手综述页</span></li>
+<li>Google Research（2026）：生成式 UI 相对 markdown 和纯文本被压倒性偏好，并把“从固定组件库选控件填内容”单独称为 Templated UI。<span class="ev s">⚠️ 检索摘要</span></li>
+<li>GenerativeGUI（CHI 2025 EA）：生成界面相对纯文本对话降低认知负荷。<span class="ev s">⚠️ 检索摘要</span></li>
+</ul>
+<p><b>对课题：</b>会议的“场景化组件库”就是 Templated UI 路线，取舍见下面的成本与收益。</p>
+</div>
+</section>
+<section class="part">
+<h2 id="pe">九、概念间关系</h2>
+<p>先看会议观点和 第五、六章的框架哪里一致、哪里补充、哪里有张力，再看意图表达和三个瓶颈怎么互相作用。第五章“三者的关系”一节画了瓶颈之间的循环和措施矩阵。</p>
+<div class="sub">
+<div class="tw"><table>
+<thead><tr><th>会议观点</th><th>关系</th><th>说明</th></tr></thead>
+<tbody>
+<tr><td>竞争焦点转向懂任务、可控、可信</td><td><span class="pill p-green">一致</span></td><td>第五章三个瓶颈的另一种说法</td></tr>
+<tr><td>意图固化为可检查对象</td><td><span class="pill p-green">一致</span><span class="pill p-blue">补充</span></td><td>第六章只讲了某一时刻的 I；会议加了版本维度 I(v)</td></tr>
+<tr><td>多模态输入、可视化交付</td><td><span class="pill p-green">一致</span></td><td>第六章“指出来”与“AI 向人表达”两侧</td></tr>
+<tr><td>场景化组件库</td><td><span class="pill p-blue">补充</span></td><td>用约束换可预期，第六章未涉及</td></tr>
+<tr><td>风险 × 明确度切换打扰程度</td><td><span class="pill p-green">一致</span><span class="pill p-blue">补充</span></td><td>第五章“给注意力做预算”的可操作化</td></tr>
+<tr><td>以信任为主线</td><td><span class="pill p-bad">张力</span></td><td>第五章认为验证杠杆最大、信任是结果；会议把信任放主线。实验设计要分清信任是因变量还是调节交互的输入</td></tr>
+<tr><td>先发问卷</td><td><span class="pill p-bad">张力</span></td><td>与“信任看行为”冲突，见常见误解</td></tr>
+<tr><td>架构师 vs 泛开发者</td><td><span class="pill p-blue">补充</span></td><td>01、第六章默认了均质的开发者，可作为实验分组变量</td></tr>
+<tr><td>多设备、AI 眼镜、个人应用</td><td><span class="pill p-blue">补充</span></td><td>系列首次覆盖“系统交互”</td></tr>
+</tbody>
+</table></div>
+</div><div class="sub">
+<div class="grid3">
+<div class="card" style="border-top:3px solid var(--c-verify)"><div class="k">验证</div>意图说不清，验证就没有标准。“指”和“挑”把对齐提前到动手前，这是最便宜的验证。</div>
+<div class="card" style="border-top:3px solid var(--c-attn)"><div class="k">注意力</div>回显、预览、清单做成扫一眼就懂的形态，就是给注意力减负。</div>
+<div class="card" style="border-top:3px solid var(--c-trust)"><div class="k">信任</div>AI 先用人看得懂的形态亮出意图，再照着做，人就能预测它。说一套做一套，比做错一件事更伤信任。</div>
+</div>
+</div>
+</section>
+<section class="part">
+<h2 id="pf">十、成本与收益</h2>
+<div class="tw"><table>
+<thead><tr><th>机制 / 选择</th><th>代价</th><th>收益</th><th>净效果</th></tr></thead>
+<tbody><tr><th>小步改动</th><td>总步数和确认次数变多</td><td>每步 T读懂 小，出错好定位</td><td>有条件值得：确认频率要低于“人忍耐打断”的阈值，否则反过来伤注意力</td></tr><tr><th>机械检查前置</th><td>工具链接入成本，一次性</td><td>人不再看格式、类型这类问题</td><td>几乎总是值得，代价一次付清、收益每次都有</td></tr><tr><th>批量授权</th><td>放出去的权限可能被误用</td><td>T切换 显著下降</td><td>只在 Δ≈0 且操作可回滚时值得；不可逆操作不要批量授权</td></tr><tr><th>检查点与回滚</th><td>存储和实现成本</td><td>犯错代价变小，人敢放手</td><td>几乎总是值得，是批量授权的前提</td></tr><tr><th>组件库搭 UI（Templated）</th><td>灵活性差；组件库本身要维护</td><td>输出可预期、风格一致、可复用、易验证</td><td>交付类、需要被信任的场景值得；探索性、一次性的问题用完全生成更合适</td></tr><tr><th>完全生成 UI</th><td>每次结果不同，难验证</td><td>覆盖任意问题</td><td>适合低风险探索；需要最新一代模型</td></tr><tr><th>意图形式化（重）</th><td>写规约、验证规约的成本高</td><td>结果可证明正确</td><td>只在高风险任务值得，break-even 取决于出错代价</td></tr><tr><th>轻量测试确认意图</th><td>每轮多一次确认</td><td>TiCoder 显示 1–5 次查询即可显著提升准确率</td><td>多数任务值得</td></tr><tr><th>问卷测信任</th><td>低</td><td>可大样本、快</td><td>测态度可以；测信任本身不可靠，需行为数据补</td></tr></tbody>
+</table></div>
+<p class="note">净效果为分析判断 <span class="ev i">🔸</span>；TiCoder 数字 <span class="ev o">✅</span>。</p>
+</section>
+<section class="part">
+<h2 id="pg">十一、例外与边界</h2>
+<ul><li>小改动（几行）里 T读懂 本来就小，三个瓶颈都不明显。框架适用于 Agent 一次产出较多代码或长时间自主执行的场景。</li><li>“验证杠杆最大”在高风险领域可能不成立：医保、金融这类任务，即使验证很便宜，也可能出于合规必须人工逐项审，信任和权限边界才是主约束。第七、八章会议讨论的“按情境定信任标准”正好对应这个例外。</li><li>资深开发者和新手的 T读懂 差距很大，同一项措施的净效果可能相反。</li><li>纯后端逻辑、脚本、配置没有可指点的界面，“指出来”退化成选中代码行，“挑”和“调”的收益也小。这类任务还是要靠文字和测试用例表达意图。</li><li>资深开发者可能更愿意自己写清楚，不想从选项里挑；挑选更适合方向不明确的探索阶段。</li><li>五个字段是为 UI 类需求设计的。对架构类决策，“理由”和“边界”的权重会远大于前三个。</li><li>Kuo 等人的研究对象是“代码质量建议”这一种主动功能，15 人、5 天。结论能否推到 Agent 长任务中的打断，需要验证。</li><li>“意图明确度 × 风险”的矩阵假设两个维度独立；实际上高风险任务往往意图也更难说清，两者可能相关。</li><li>“行业规范”的目标与“动态信任”有张力：规范要稳定，动态信任要随人随情境变。</li></ul>
+</section>
+<section class="part">
+<h2 id="todo">十二、待深化与问题清单</h2>
+<ul class="todo"><li><input aria-label="待办" type="checkbox"/>用 DevEco 访谈数据给 T读懂、T验证、T切换 填真实量级，替换手算示例里的假设值。</li><li><input aria-label="待办" type="checkbox"/>读 “When Help Hurts” 全文，确认“置信度加重过度依赖”的具体实验条件。</li><li><input aria-label="待办" type="checkbox"/>找直接检验“三者循环”的研究；没有的话，设计一个能检验因果方向的小实验。</li><li><input aria-label="待办" type="checkbox"/>HarmonyOS 生态里“过度信任过时 API”的频率：从访谈和日志里取证。</li><li><input aria-label="待办" type="checkbox"/>访谈时请开发者描述一个真实需求，记录 AI 第一版偏在哪个字段，统计五个字段的偏离分布。</li><li><input aria-label="待办" type="checkbox"/>读 2508.19227 原文，核实分领域偏好数字（93.8%、50%）出自哪张表。</li><li><input aria-label="待办" type="checkbox"/>AI 回复里哪些部分会被跳过不读：用眼动或滚动日志取证。</li><li><input aria-label="待办" type="checkbox"/>非 UI 任务的意图字段怎么定义，是否需要另一套记号。</li><li><input aria-label="待办" type="checkbox"/>把任务书和汇报材料里的 62% 改为原文表述并注明 Kuo et al., IUI 2026。</li><li><input aria-label="待办" type="checkbox"/>确认“Good Agent”“Person Agent”的确切叫法。</li><li><input aria-label="待办" type="checkbox"/>“六类场景指标”具体是哪六类？医保、网购、背单词是否就是风险分级的情境样本？</li><li><input aria-label="待办" type="checkbox"/>信任在模型里是因变量还是调节变量？两者都要的话实验如何分开测。</li><li><input aria-label="待办" type="checkbox"/>漂移检测需要“谁发起了变更”字段：用户变更升版本，Agent 偏离告警。</li><li><input aria-label="待办" type="checkbox"/>多设备流转时 I(v) 和信任状态是否随任务迁移。</li><li><input aria-label="待办" type="checkbox"/>读 INTENTFLUX、Drift-Bench++、When Help Hurts 全文，升级证据档位。</li><li><input aria-label="待办" type="checkbox"/>对多设备流转、AI 眼镜、个人应用生成做一轮外部调研。</li></ul>
+<h3>和 DevEco 开发者研究的衔接</h3>
+<ul><li>问卷问场景和偏好：什么任务愿意交给 AI、什么时候被打断最烦、更想自己描述还是从选项里挑。</li><li>信任和介入时机用行为数据或观察：被关闭的建议出现在什么时机，委派和干预的频次。</li><li>访谈加一个小任务：开发者描述一个需求，看 AI 第一版偏在 I 的哪个字段（第六章）。</li></ul>
+</section>
+<section class="part">
+<h2 id="facts">十三、已核实事实与更正记录</h2>
+<p>后续补充可直接引用，不必重查。</p>
+<div class="tw"><table>
+<thead><tr><th>事实</th><th>出处</th><th>档位</th></tr></thead>
+<tbody>
+<tr><td>主动式 AI 在工作流边界介入参与率 52%，任务中途介入 62% 被关闭；时机合适的主动建议理解耗时 45.4s，被动建议 101.4s</td><td>Kuo et al., IUI 2026, arXiv 2601.10253</td><td><span class="ev o">✅ 摘要</span></td></tr>
+<tr><td>主动 Agent 比只靠提示更高效，但带来打断；在场提示可缓解（N=18）</td><td>Pu et al., CHI 2025, arXiv 2502.18658</td><td><span class="ev o">✅ 摘要</span></td></tr>
+<tr><td>意图形式化：非形式化意图 → 可检查规约；瓶颈是验证规约本身</td><td>Lahiri, arXiv 2603.17150</td><td><span class="ev o">✅ 摘要</span></td></tr>
+<tr><td>TiCoder 用 1–5 次模拟查询，pass@1 在 MBPP 提升 22.49–37.71 个百分点，HumanEval 提升 24.79–53.98</td><td>arXiv 2208.05950</td><td><span class="ev o">✅ 摘要</span></td></tr>
+<tr><td>生成式界面相对对话式，人类偏好最多高 72%</td><td>Chen et al., arXiv 2508.19227</td><td><span class="ev o">✅ 摘要</span></td></tr>
+<tr><td>Claude Code /loop：循环任务 7 天过期；固定间隔循环需让 Claude 取消，Esc 停不了</td><td>code.claude.com/docs/en/scheduled-tasks</td><td><span class="ev o">✅ 官方文档</span></td></tr>
+</tbody>
+</table></div>
+<h3>更正记录</h3>
+<ul>
+<li><b>2026-11-20</b>　课题会纪要“任务结束后的响应式建议虽耗时更长但接受度更高”与原文不符，见常见误解与附录 B。</li>
+<li><b>2026-11-20</b>　TiCoder“平均 1.5–1.7 次交互”来自旧版检索摘要，当前版摘要未见，改用当前摘要数字。</li>
+<li><b>2026-11-20</b>　/loop 过期时间以官方 7 天为准，第三方文章的 3 天已过时。</li>
+</ul>
+</section>
+<section class="part">
+<h2 id="appx">附录</h2>
+<h3>附录 A　Claude Code 的 /loop</h3>
+<div class="sub">
+<p>/loop 是 Claude Code 内置的 skill，让同一条提示词在会话开着时按间隔重复执行，把“人隔几分钟切回来看一眼”交给 Agent。它是“给注意力做预算”的一个现成实现。</p>
+<div class="tw"><table>
+<thead><tr><th>写法</th><th>行为</th><th>证据</th></tr></thead>
+<tbody>
+<tr><td><code>/loop 5m check the deploy</code></td><td>固定间隔，每 5 分钟跑一次；单位 m / h / d</td><td><span class="ev m">🔍 官方文档经检索摘要</span></td></tr>
+<tr><td><code>/loop check the deploy</code></td><td>不写间隔，由 Claude 每轮决定下次何时再看</td><td><span class="ev m">🔍</span></td></tr>
+<tr><td><code>/loop</code></td><td>运行内置维护提示词；有 loop.md 时运行它（项目级 <code>.claude/loop.md</code> 优先，其次 <code>~/.claude/loop.md</code>）</td><td><span class="ev m">🔍</span></td></tr>
+<tr><td><code>/loop 20m /review-pr 1234</code></td><td>提示词可以是另一个命令</td><td><span class="ev m">🔍</span></td></tr>
+</tbody>
+</table></div>
+<h4>运行规则</h4>
+<ul>
+<li><b>只在会话开着且空闲时触发</b>，到点时正忙则空闲后只补跑一次。<span class="ev m">🔍</span></li>
+<li><b>7 天过期</b>：循环任务创建 7 天后最后跑一次，然后删除自己。较早的第三方文章写 3 天，已过时。<span class="ev o">✅ 官方文档“seven-day expiry”段</span></li>
+<li><b>停止方式分两种</b>：Claude 自定间隔的循环，在空输入框按 Esc 即停；固定间隔的循环（如 <code>/loop 5m</code>），Esc 和 Ctrl+C 停不了，要让 Claude 取消。<span class="ev o">✅ 官方文档“Stop a loop”段</span></li>
+<li><b>有抖动</b>：最多为周期的 10%，上限 15 分钟。<span class="ev m">🔍</span></li>
+<li><b>要跨重启长期运行就换工具</b>：桌面端定时任务（macOS、Windows），或云端 Routines（<code>/schedule</code>）。<span class="ev m">🔍</span></li>
+</ul>
+<h4>放进三个瓶颈看</h4>
+<p>注意力：轮询交给 Agent，“空闲才触发、错过只补一次”是在避免它反过来打断人。验证：人不盯着，每轮产出就更需要“结论 + 依据”的形态。信任：无人值守本身是一种授权，7 天过期和固定间隔需显式取消，都是在给放手划边界。开发者敢不敢开 /loop、开多久，可以当作信任程度的行为信号。<span class="ev i">🔸 推断</span></p>
+</div>
+<h3 style="margin-top:36px">附录 B　会议引用与原文的核对记录</h3>
+<div class="sub">
+<div class="tw"><table>
+<thead><tr><th>纪要说法</th><th>原文能印证什么</th><th>核对结果</th></tr></thead>
+<tbody>
+<tr><td>中途介入 62% 被关闭</td><td>mid-task interventions were dismissed 62% of the time</td><td><span class="pill p-green">对得上</span></td></tr>
+<tr><td>任务结束后的响应式建议耗时更长但接受度更高</td><td>边界介入参与率 52%；时机合适的主动建议 45.4s，被动建议 101.4s</td><td><span class="pill p-bad">对不上</span>纪要把“被动建议耗时长”与“边界介入接受度高”两件事合并成了一句</td></tr>
+<tr><td>将自然语言转化为可检查的意图对象</td><td>Lahiri：translation of informal user intent into checkable formal specifications</td><td><span class="pill p-green">一致</span>可作为课题的外部依据引用</td></tr>
+<tr><td>可视化交付能让用户秒级获取核心信息</td><td>生成式界面偏好最多高 72%；未见“秒级”的测量</td><td><span class="pill p-warn">部分</span>偏好有依据，“秒级”是会议目标而非已有结论</td></tr>
+</tbody>
+</table></div>
+<p class="note">可能的调和解释：纪要由自动摘要生成，原始发言可能分别提到了两个数字，摘要时被合并。建议向发言人确认原话。</p>
+</div>
+</section>
+<section class="refs part">
+<h2 id="ref">参考</h2>
+<ol><li><a href="https://arxiv.org/abs/2601.10253">Kuo, Sergeyuk, Chen, Izadi. Developer Interaction Patterns with Proactive AI: A Five-Day Field Study. IUI 2026. arXiv 2601.10253</a>（摘要 ✅）</li><li><a href="https://arxiv.org/abs/2502.18658">Pu et al. Assistance or Disruption? Codellaborator. CHI 2025. arXiv 2502.18658</a>（摘要 ✅；Table 1 数字 ⚠️）</li><li><a href="https://arxiv.org/abs/2410.04596">Chen et al. Need Help? Designing Proactive AI Assistants for Programming. CHI 2025. arXiv 2410.04596</a>（摘要 ✅）</li><li><a href="https://arxiv.org/abs/2603.17150">Lahiri. Intent Formalization: A Grand Challenge for Reliable Coding in the Age of AI Agents. arXiv 2603.17150</a>（摘要 ✅）</li><li><a href="https://arxiv.org/abs/2208.05950">Lahiri et al. Interactive Code Generation via Test-Driven User-Intent Formalization (TiCoder). arXiv 2208.05950</a>（摘要 ✅）</li><li><a href="https://arxiv.org/pdf/2609.32520">INTENTFLUX: When Users Change Their Minds. arXiv 2609.32520</a>（⚠️）</li><li><a href="https://arxiv.org/pdf/2609.38604">Drift-Bench++: Beyond Oracle Communication. arXiv 2609.38604</a>（⚠️）</li><li><a href="https://dl.acm.org/doi/10.1145/3772318.3791176">When Help Hurts: Verification Load and Fatigue with AI Coding Assistants</a>（⚠️）</li><li><a href="https://research.tue.nl/files/417625112/David_van_Willigen_MTP_1530453.pdf">van Willigen. TU/e 硕士论文：开发者信任与实际依赖</a>（⚠️）</li><li><a href="https://kth.diva-portal.org/smash/get/diva2:2107622/FULLTEXT01.pdf">Calibrating Trust in AI-Generated Code. KTH</a>（⚠️）</li><li><a href="https://arxiv.org/abs/2508.19227">Chen et al. Generative Interfaces for Language Models. arXiv 2508.19227</a>（摘要 ✅）</li><li><a href="https://arxiv.org/abs/2604.09577">Generative UI: LLMs are Effective UI Generators. Google Research. arXiv 2604.09577</a>（⚠️）</li><li><a href="https://dl.acm.org/doi/10.1145/3706599.3719743">GenerativeGUI. CHI 2025 Extended Abstracts</a>（⚠️）</li><li>课题会纪要，2026-11-19，员工助手自动摘要（内部）</li><li><a href="https://www.emergentmind.com/topics/generative-interfaces-for-language-models">Emergent Mind · Generative Interfaces 综述页</a>（分领域偏好数字的来源，二手）</li><li><a href="https://code.claude.com/docs/en/scheduled-tasks">Claude Code Docs · Run prompts on a schedule</a>（“Stop a loop”“Seven-day expiry”段已逐段检索）</li><li><a href="https://betterstack.com/community/guides/ai/claude-code-loop/">Better Stack · Recurring Tasks in Claude Code</a>（二手，仅作交叉参考）</li></ol>
+</section>
+</main>
+</div>
+</div>
+<script src="toc.js"></script>
+<script>
+(function(){
+  const cta=document.getElementById('cta'), slot=document.getElementById('slot'), phone=document.getElementById('phone');
+  const tabs=[...document.querySelectorAll('[role=tab]')]; let mode='text';
+  function reset(){
+    cta.className='cta'; cta.removeAttribute('style'); slot.className='slot';
+    phone.querySelectorAll('.picked').forEach(e=>e.classList.remove('picked'));
+    phone.querySelectorAll('.pin').forEach(e=>e.remove());
+    document.querySelectorAll('#demo [aria-pressed]').forEach(b=>b.setAttribute('aria-pressed','false'));
+    document.getElementById('lvl').value=0; document.getElementById('lvlOut').textContent='原样';
+    document.getElementById('pointSay').textContent='还没有选中任何元素。';
+  }
+  function apply(keys){ cta.className='cta'; slot.className='slot';
+    keys.split(' ').forEach(k=>{ if(k==='moved') slot.classList.add('moved'); else if(k) cta.classList.add(k); }); }
+  function select(tab){
+    tabs.forEach(t=>{const on=t===tab;t.setAttribute('aria-selected',on);t.tabIndex=on?0:-1;document.getElementById(t.getAttribute('aria-controls')).hidden=!on;});
+    mode=tab.id.slice(2); reset(); document.querySelector('.stage').classList.toggle('pointable',mode==='point');
+  }
+  tabs.forEach((t,i)=>{ t.addEventListener('click',()=>select(t));
+    t.addEventListener('keydown',e=>{ if(e.key==='ArrowRight'||e.key==='ArrowLeft'){const n=tabs[(i+(e.key==='ArrowRight'?1:tabs.length-1))%tabs.length];select(n);n.focus();} }); });
+  document.querySelectorAll('#interp button').forEach(b=>b.addEventListener('click',()=>{
+    document.querySelectorAll('#interp button').forEach(x=>x.setAttribute('aria-pressed',x===b)); apply(b.dataset.k); }));
+  phone.addEventListener('click',e=>{
+    if(mode!=='point') return; const el=e.target.closest('[data-pick]'); if(!el) return;
+    phone.querySelectorAll('.picked').forEach(x=>x.classList.remove('picked')); phone.querySelectorAll('.pin').forEach(x=>x.remove());
+    el.classList.add('picked'); const holder=el.id==='cta'?slot:el; holder.style.position='relative';
+    const pin=document.createElement('span'); pin.className='pin'; pin.textContent='就是这个'; holder.appendChild(pin);
+    document.getElementById('pointSay').textContent='我理解你指的是「'+el.dataset.pick+'」。要改成什么样？';
+  });
+  document.querySelectorAll('#variants button').forEach(b=>b.addEventListener('click',()=>{
+    document.querySelectorAll('#variants button').forEach(x=>x.setAttribute('aria-pressed',x===b)); apply(b.dataset.v); }));
+  const lvl=document.getElementById('lvl'), out=document.getElementById('lvlOut');
+  lvl.addEventListener('input',()=>{
+    const v=+lvl.value/100, lerp=(a,b)=>Math.round(a+(b-a)*v);
+    cta.className='cta';
+    cta.style.background=`rgb(${lerp(238,53)},${lerp(240,116)},${lerp(243,240)})`;
+    cta.style.color=v>.35?'#fff':'#4a4f57';
+    cta.style.height=(40+v*12)+'px'; cta.style.fontWeight=v>.5?600:400;
+    cta.style.boxShadow=v>.6?`0 ${Math.round(v*10)}px ${Math.round(v*22)}px rgba(53,116,240,${(v-.5).toFixed(2)})`:'none';
+    out.textContent=v===0?'原样':v<.34?'一点点':v<.67?'明显':'非常醒目';
+  });
+})();
+</script>
+</body>
+</html>
