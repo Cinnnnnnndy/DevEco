@@ -179,6 +179,9 @@ description: 使用 DevEco 双设计系统（鸿蒙原生端 HarmonyOS NEXT HDes
 - **`.de-window` 与 `.de-studio` 严格互斥**：只要窗口包含顶栏 `.de-titlebar`，就**只能使用 `.de-window` + `.de-window__body`**（顶栏在上，下方图标条/侧栏/主区横向排列），**严禁再叠加 `.de-studio`**；`.de-studio` 仅用于无顶栏的纯横向工具窗（`StudioToolWindow`）。
 - **侧栏分组标题与会话条目严格区分**：日期/分类分组标题（如 `Today`、`2026/8/30`）用 `<div class="de-nav__label">`，可点击会话/导航条目必须用 `<button class="de-nav__item"><span class="de-nav__text">...</span></button>`（自动单行省略号截断），**严禁把 `.de-nav__label` 用在或嵌套在可点击条目里**。
 - **图标颜色继承铁律**：`.de-svg-icon` 必须保持 `color: inherit`（禁止在图标类本身写死 `color: var(--icon)`），保证蓝色激活态、主按钮、深色顶栏内图标自动反白。
+- **AI Agent IDE 实战组件与工程细节（吸收自 `gitcode.com/openharmony-sig/deveco-code`）**：
+  - 工具调用折叠卡用 `.de-tool-call`（`<details>` + `.de-tool-call__trigger`），工具报错重试用 `.de-tool-error`，Diff 增删统计用 `.de-diff-changes`（配 5 格红绿条），快捷键键帽统一用 `<kbd class="de-kbd">`，会话 Token 占用用 `.de-context-pill`，AI 思考流光用 `.de-shimmer`，轻提示用 `.de-toast-inline`。
+  - 所有耗时、Token 计数、Diff 行数必须声明 `font-variant-numeric: tabular-nums` 防止数字跳动；动效必须提供 `@media (prefers-reduced-motion: reduce)` 降级。
 
 ---
 
