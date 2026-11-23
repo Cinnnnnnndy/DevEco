@@ -75,6 +75,11 @@
         <button type="button" class="de-segmented__item" data-n="40" aria-selected="false">40 条</button>
         <button type="button" class="de-segmented__item" data-n="136" aria-selected="false">136 条</button>
       </span>
+      <span class="de-segmented" role="tablist" aria-label="刻度间距">
+        <button type="button" class="de-segmented__item" data-pitch="10" aria-selected="false">10px</button>
+        <button type="button" class="de-segmented__item" data-pitch="14" aria-selected="false">14px</button>
+        <button type="button" class="de-segmented__item" data-pitch="18" aria-selected="true">18px</button>
+      </span>
       <label class="de-choice"><input type="checkbox" class="de-checkbox" id="hz"> <span>显示热区</span></label>
       <span class="de-toolbar__spacer"></span>
       <span class="pk-meas">状态 <b id="m-state">关闭</b> · <b id="m-mode">—</b></span>
@@ -144,12 +149,12 @@
     </section>
   </div>
 
-  <p class="grp-note" style="margin-top:14px">用法：在刻度轨上停 300ms 弹出卡片，之后上下移动立即切换；斜向移入卡片可点上一条 / 下一条；离开 300ms 后关闭。136 条时间距仍是 10px，只显示视口附近一段，滚动对话时轨道跟着走，窗口外有内容的一端淡出。键盘：Tab 聚焦轨道，↑↓ 切换，Enter 跳转，Esc 关闭。</p>
+  <p class="grp-note" style="margin-top:14px">用法：在刻度轨上停 300ms 弹出卡片，之后上下移动立即切换；斜向移入卡片可点上一条 / 下一条；离开 300ms 后关闭。默认间距 18px，可切到 10 / 14px 对比手感（滞后随间距取 30%）；136 条时间距不变，只显示视口附近一段，滚动对话时轨道跟着走，窗口外有内容的一端淡出。键盘：Tab 聚焦轨道，↑↓ 切换，Enter 跳转，Esc 关闭。</p>
 </div>
 
 <script>
 (function () {
-  var PITCH = 10, PAD = 12, RAIL_W = 32, BRIDGE = 8, HYST = 3, EDGE = 24,
+  var PITCH = 18, PAD = 12, RAIL_W = 32, BRIDGE = 8, HYST = 5, EDGE = 24,
       DWELL = 300, CLOSE = 300, WARM = 800, FAST = 0.3;
   var base = [
     ['\\ **01.【单选题】 您的行业领域是？** - 政务/金融/…', '已按行业拆分筛选条件，政务与金融单独成组，其余归入「其他」。'],
@@ -223,7 +228,7 @@
     var win = N > C;
     rail.classList.toggle('is-fade-top', win && off > 0.5);
     rail.classList.toggle('is-fade-bot', win && off < TOTAL - H - 0.5);
-    $('m-mode').textContent = win ? ('窗口跟随 · 可见 ' + C + ' / ' + N) : ('全部可见 · ' + N + ' 条');
+    $('m-mode').textContent = win ? ('间距 ' + PITCH + 'px · 窗口跟随 · 可见 ' + C + ' / ' + N) : ('间距 ' + PITCH + 'px · 全部可见 · ' + N + ' 条');
   }
   function bandOf(i) {
     var top = i === 0 ? ys[0] - PITCH / 2 : (ys[i - 1] + ys[i]) / 2;
@@ -337,6 +342,7 @@
   stage.querySelectorAll('[data-set-system]').forEach(function (b) { b.addEventListener('click', function () { stage.setAttribute('data-system', b.dataset.setSystem); pick('data-set-system', b.dataset.setSystem); layout(); paint(); }); });
   stage.querySelectorAll('[data-set-theme]').forEach(function (b) { b.addEventListener('click', function () { stage.setAttribute('data-theme', b.dataset.setTheme); pick('data-set-theme', b.dataset.setTheme); }); });
   stage.querySelectorAll('[data-n]').forEach(function (b) { b.addEventListener('click', function () { pick('data-n', b.dataset.n); build(+b.dataset.n); }); });
+  stage.querySelectorAll('[data-pitch]').forEach(function (b) { b.addEventListener('click', function () { pick('data-pitch', b.dataset.pitch); PITCH = +b.dataset.pitch; HYST = Math.round(0.3 * PITCH); close(true); layout(); paint(); }); });
   $('hz').addEventListener('change', function (e) { stage.classList.toggle('show-hz', e.target.checked); });
   window.addEventListener('resize', function () { layout(); paint(); });
   build(12);
