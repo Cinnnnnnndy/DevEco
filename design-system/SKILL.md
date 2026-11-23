@@ -35,8 +35,15 @@ description: 使用 DevEco 双设计系统（鸿蒙原生端 HarmonyOS NEXT HDes
 - 若页面是分析报告或规范卡片页，外框统一引入 `deveco-intui-kit/src/tokens.css` + `site/launcher.css`（复用 `.page`、`.mast`、`.sidebar .cat`、`.card` 岛屿卡片），内部样张舞台挂载 `<div data-system="..." data-theme="...">`。
 - **禁止**在页面的 `<style>` 或内联 `style` 中硬编码 `#xxx` 十六进制颜色、私有圆角或私有阴影。所有表面色走 `var(--surface-*)`，文字走 `var(--text-*)`，描边走 `var(--line)` / `var(--border-control)`。
 
-### 2. 直接复制标准 DOM 骨架（Copy-Paste Skeletons）
-其他模型在搭建新页面时，**不要自己发明 DOM 层级**，直接从以下标准骨架复制并填充业务文案：
+### 2. 直接复制标准页面脚手架（12 套 Pixso 原稿核准骨架，严禁从零手拼）
+其他模型搭建任何页面、分屏、弹窗或抽屉前，**必须先从 `design-system/scaffolds/scaffolds.json` 中选取对应骨架直接复制**，并严格遵守下表经 Pixso 矢量 AST 实测核准的像素基准：
+
+| 分类 | 脚手架 ID | Pixso 原稿实测像素基准（不得随意缩放） |
+| :--- | :--- | :--- |
+| **整窗工作台** | `S1 · ide-workbench`<br>`S2 · ai-chat-workbench`<br>`S5 · welcome-screen` | • `Main Window (1536×960)`：窗口 `r=10px`，NewUI 顶栏 `40px` / 状态栏 `28–29px` / 左右 Stripe `40–41px`（鸿蒙顶栏 `44px` / 状态栏 `32px` / Stripe `44px`）<br>• `TUI / Chat (1440×800)`：顶部 `40px` + 侧栏日期分组 `.de-nav__label` + 单行截断 `.de-nav__item`，**严禁叠加 `.de-studio`**<br>• `Welcome Screen (797×649)`：左侧导航宽 `220px`（原稿 `221px`） |
+| **分屏场景** | `S10 · editor-preview-split`<br>`S11 · diff-review-split`<br>`S12 · top-bottom-split` | • 左右分屏 `.de-split-pane` + 垂直分割柄 `.de-splitter (4px)`；上下分屏 `.de-split-pane--vertical` + 横向分割柄 `.de-splitter--h (4px)`<br>• Diff 对比严格走 Pixso `replaceRed` (`.de-diff-line--del`) 与 `replaceGreen` (`.de-diff-line--add`) |
+| **设置与弹窗** | `S3 · split-settings-dialog`<br>`S6 · standard-form-dialog`<br>`S7 · alert-confirm-dialog` | • `Settings (883×606)`：左侧树含搜索框、宽 `240–283px`，有纵向分栏时**必须保留**顶栏 (`36px`) 与底栏 (`54px`) 1px 分割线<br>• `Modal Form (507×259)` / `鸿蒙 6.1.1`：无纵向分栏时**不加**顶/底分割线；NewUI `r=8px`、鸿蒙 `r=16px` `pad=16/20px`、按钮 `gap=12px`<br>• `Alert (420×172)`：内边距 `20px`，左图标 `28×28` + `12px` 间距，**「不再提示」复选框在正文下方**（不与底栏按钮同行） |
+| **抽屉与面板** | `S4 · studio-tool-panel`<br>`S8 · side-drawer`<br>`S9 · command-palette` | • `S4` 是**唯一**合法使用 `.de-window.de-studio` 的无顶栏纯工具窗（严禁放 `.de-titlebar`）<br>• `Side Drawer`：宽 `340px`，固定头/滚动体/固定底 + 左 1px 描边<br>• `Search Everywhere (650×320)`：宽 `650px`，Tab 栏 `40px`，搜索栏 `37px`，**结果行高 `24px`**，底栏 `34–36px` |
 
 #### 骨架 A：鸿蒙原生 IDE 整窗 (`HarmonyIdeWindow`)
 ```html
