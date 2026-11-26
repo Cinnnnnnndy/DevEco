@@ -33,7 +33,7 @@
    `python3 site/tools/thumb.py <slug>` 出缩略图；然后在这里把对应条目的 view 改成 'ready'、补 href 与 thumb。
    ===================================================================== */
 window.DEVECO_CATALOG = {
-  updated: '2026-11-23',
+  updated: '2026-11-26',
   title: '鸿蒙开发工具体验',
   lede: '围绕 DevEco Studio / DevEco Code / DevEco CLI 的体验设计：29 条创新点各一个可点的界面稿 demo（其中 9 条是新一轮规划重点），全部按鸿蒙电脑版蓝本与 AI Coding / 多 Agent 场景重做；加上设计系统、分析与汇报材料。全部是本地静态文件，双击即开。',
 
@@ -572,6 +572,23 @@ window.DEVECO_CATALOG = {
       ],
     },
     /* ================= 支撑 ================= */
+    {
+      id: 'bitfun', section: 'support', title: '毕方形象', icon: 'i-cat-bitfun',
+      note: 'OpenBitFun 吉祥物“毕方”：方块形象、14 个工作状态与配色体系，颜色取自 OpenBitFun 设计系统 token。',
+      items: [{
+        title: '毕方形象 · 多状态设计与配色', subtitle: 'BitFun Mascot · States & Color System',
+        desc: '等距方块形象，天线球颜色表示 Agent 当前在做什么。三个章节：自己搭配（选身体与天线球颜色，实时预览 3D / 平面 / 6 个状态，自动检查可读性，可导出 SVG）；配色方案（主推方案与 2026 趋势备选）；形象与状态（14 个状态的舞台卡片，浅色 / 深色可切）。单文件，双击即开。',
+        view: 'ready', date: '2026-11-26', href: 'design/bitfun-mascot/index.html',
+        links: [
+          { label: '自己搭配', href: 'design/bitfun-mascot/index.html#customize' },
+          { label: '配色方案', href: 'design/bitfun-mascot/index.html#palettes' },
+          { label: '形象与状态', href: 'design/bitfun-mascot/index.html#states' },
+          { label: '源码（OpenBitFun）', href: 'https://github.com/Cinnnnnnndy/OpenBitFun/tree/feat/bitfun-mascot/BitFun/mascot-states' },
+        ],
+        tags: ['吉祥物', '14 状态', '配色', '3D / 平面', 'OpenBitFun'],
+        thumb: { type: 'image', src: 'site/thumbs/bitfun-mascot.jpg' },
+      }],
+    },
     {
       id: 'collaboration', section: 'support', title: '设计协作流程', icon: 'i-cat-check',
       note: '先评估设计投入，按需求类型协作，从 OCT 登记到研发实现后的交互与视觉联合走查。',
