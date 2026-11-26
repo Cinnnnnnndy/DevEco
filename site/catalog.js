@@ -2,7 +2,7 @@
    启动页目录数据 —— 新增 demo / 分析 / 材料，只改这个文件。
 
    顶层是「分类」（也是左侧导航栏的分组），每个分类下是一组条目（卡片）。
-   分类再归进 sections 里的「大类」：创新方向 / 版本 / 分析与研究 / 设计与材料，
+   分类再归进 sections 里的「大类」：创新方向 / 版本 / 分析与研究 / 设计与材料 / 毕方，
    左侧导航按大类分段，点大类标题看它下面的全部分类（#analysis 等旧链接照样能用）。
    创新方向下的分类就是《鸿蒙开发工具 · 创新方向》deck 里的方向，创新点一条一张卡。
 
@@ -52,6 +52,7 @@ window.DEVECO_CATALOG = {
     { id: 'release',    title: '版本' },
     { id: 'analysis',   title: '分析与研究' },
     { id: 'support',    title: '设计与材料' },
+    { id: 'bifang',     title: '毕方' },
   ],
 
   groups: [
@@ -573,7 +574,7 @@ window.DEVECO_CATALOG = {
     },
     /* ================= 支撑 ================= */
     {
-      id: 'bitfun', section: 'support', title: '毕方形象', icon: 'i-cat-bitfun',
+      id: 'bitfun', section: 'bifang', title: '毕方形象', icon: 'i-cat-bitfun',
       note: 'OpenBitFun 吉祥物“毕方”：方块形象、14 个工作状态与配色体系，颜色取自 OpenBitFun 设计系统 token。',
       items: [{
         title: '毕方形象 · 多状态设计与配色', subtitle: 'BitFun Mascot · States & Color System',
@@ -590,7 +591,7 @@ window.DEVECO_CATALOG = {
       }],
     },
     {
-      id: 'bifang-system', section: 'support', title: '毕方设计系统', icon: 'i-cat-bitfun',
+      id: 'bifang-system', section: 'bifang', title: '毕方设计系统', icon: 'i-cat-bitfun',
       note: 'OpenBitFun 设计系统的交付物：Design Lab 组件库与对照页，以及约束 AI 生成界面的 Skill。',
       items: [
         {
