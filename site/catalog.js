@@ -590,6 +590,34 @@ window.DEVECO_CATALOG = {
       }],
     },
     {
+      id: 'bifang-system', section: 'support', title: '毕方设计系统', icon: 'i-cat-bitfun',
+      note: 'OpenBitFun 设计系统的交付物：Design Lab 组件库与对照页，以及约束 AI 生成界面的 Skill。',
+      items: [
+        {
+          title: '毕方设计系统 · Design Lab', subtitle: 'OpenBitFun Design Lab · Web & Mobile',
+          desc: '组件目录（Web 109 个、移动端 41 个）、移动端 demo 对照（首页、小应用、侧栏逐坐标比对，偏差标在表里）、图标库与色卡（按平台标注）、Token 与组件详情。组件和 token 都取自 @openbitfun/ui 与 design-tokens 包。',
+          view: 'ready', date: '2026-11-26', href: 'design/bifang-system/lab/index.html',
+          links: [
+            { label: 'Demo 对照', href: 'design/bifang-system/lab/index.html#demo-compare' },
+            { label: '图标库', href: 'design/bifang-system/lab/index.html#icons' },
+            { label: '色卡', href: 'design/bifang-system/lab/index.html#colors' },
+            { label: '移动端场景', href: 'design/bifang-system/lab/index.html#mobile-patterns' },
+          ],
+          tags: ['组件库', 'Web', '移动端', 'Token', 'Demo 对照'],
+          note: '静态站，需经启动页或 GitHub Pages 打开，直接双击不能加载',
+          thumb: { type: 'doc', kind: 'HTML' },
+        },
+        {
+          title: '毕方设计系统 · Skill', subtitle: 'SKILL.md · AI generation limited to the library',
+          desc: '让 AI 只按本组件库生成界面的 SKILL.md：列出全部组件与 token，写明硬规则（只用库内组件和已发布 token、不写原始颜色）和工作流。可放进 .openbitfun、.agents、.claude 或 .codex 的 skills 目录；由组件注册表生成，过期会被测试拦下。',
+          view: 'doc', date: '2026-11-26', href: 'design/bifang-system/skill/SKILL.md',
+          links: [{ label: '安装说明', href: 'design/bifang-system/README.md' }],
+          tags: ['Skill', 'AI 生成', '150 组件', '974 token'],
+          thumb: { type: 'doc', kind: 'MD' },
+        },
+      ],
+    },
+    {
       id: 'collaboration', section: 'support', title: '设计协作流程', icon: 'i-cat-check',
       note: '先评估设计投入，按需求类型协作，从 OCT 登记到研发实现后的交互与视觉联合走查。',
       items: [{
