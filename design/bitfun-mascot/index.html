@@ -638,6 +638,28 @@ fieldset+fieldset{margin-top:var(--openbitfun-space-3)}
       let w = 0; for (const [cx2, cy2] of CHEEK) { const dx = (lx - cx2) / 4, dy = (ly - cy2) / 2.6; w = Math.max(w, Math.exp(-(dx * dx + dy * dy) * 1.4)); }
       return w < .18 ? 0 : Math.min(1, (w - .18) / .5);
     };
+    // 底绒（第 4 组，不摆动）：先铺一层短而密的绒毛盖住整个身体（含圆角外沿），长毛之间不会露出光滑的底色
+    {
+      const UL = Math.max(L0, .65), hexP = [[60, 38], [87, 53.6], [87, 77.6], [60, 93.2], [33, 77.6], [33, 53.6]];
+      for (const [fi, f] of faces.entries()) {
+        const m = Math.round(f.n * 1.1 * UL), gs = Math.ceil(Math.sqrt(m));
+        for (let i = 0; i < m; i++) {
+          const su = ((i % gs) + r()) / gs, sv = Math.min(1, (Math.floor(i / gs) + r()) / Math.ceil(m / gs)), p = at(f.q, su, sv);
+          const ang = f.top ? Math.atan2(p[1] - 53.6, p[0] - 60) + (r() - .5) * .5 : f.d + (r() - .5) * .4;
+          clump(p[0], p[1], ang, 3 + r() * 2.2, .7, light(p[0], p[1], f.base) - .08, grp(), 3);
+        }
+      }
+      for (let k = 0; k < 6; k++) {
+        const a = hexP[k], b = hexP[(k + 1) % 6], seg = Math.hypot(b[0] - a[0], b[1] - a[1]), nx = (b[1] - a[1]) / seg, ny = -(b[0] - a[0]) / seg;
+        const base = ny < -.3 ? 1.0 : nx < -.5 ? .74 : nx > .5 ? .58 : .46;
+        for (let i = 0, m = Math.round(seg * 4 * UL); i < m; i++) {
+          const p = lerp(a, b, r()), off = r() * 9, sx = p[0] + nx * off, sy = p[1] + ny * off;
+          clump(sx, sy, Math.atan2(ny, nx) + (r() - .5) * .8, 3 + r() * 2.5, .7, light(sx, sy, base) - .08, grp(), 3);
+        }
+        const cx0 = 60, cy0 = 65.6, vx = b[0] - cx0, vy = b[1] - cy0, vl = Math.hypot(vx, vy);
+        for (let i = 0; i < 34; i++) { const o = r() * 10, sx = b[0] + vx / vl * o + (r() - .5) * 7, sy = b[1] + vy / vl * o + (r() - .5) * 7; clump(sx, sy, Math.atan2(vy, vx) + (r() - .5) * 1, 3 + r() * 2.5, .7, light(sx, sy, base) - .08, grp(), 3); }
+      }
+    }
     for (const [fi, f] of faces.entries()) {
       // 分层抖动采样：每个格子放一簇，分布均匀，不会一块密一块稀
       const m = Math.round(f.n * L0 * (fi === 2 ? 1.15 : 1)), gs = Math.ceil(Math.sqrt(m));
@@ -656,12 +678,12 @@ fieldset+fieldset{margin-top:var(--openbitfun-space-3)}
       const a = poly[k], b = poly[(k + 1) % 6], seg = Math.hypot(b[0] - a[0], b[1] - a[1]), nx = (b[1] - a[1]) / seg, ny = -(b[0] - a[0]) / seg;
       const base = ny < -.3 ? 1.0 : nx < -.5 ? .74 : nx > .5 ? .58 : .46;
       for (let i = 0, m = Math.round(seg * 2.6 * L0); i < m; i++) {
-        const p = lerp(a, b, r()), off = r() * 6, sx = p[0] + nx * off, sy = p[1] + ny * off;
+        const p = lerp(a, b, r()), off = r() * 8, sx = p[0] + nx * off, sy = p[1] + ny * off;
         clump(sx, sy, Math.atan2(ny, nx) * .5 + Math.PI / 4 + (r() - .5) * .5, 5 + r() * 3.5, .5 + r() * .3, light(sx, sy, base), grp());
       }
       // 外缘长毛：轮廓上蓬出去的那一圈最能看出“毛”，也是摆动最明显的部分
       for (let i = 0, m = Math.round(seg * 3 * L0); i < m; i++) {
-        const p = lerp(a, b, r()), off = 3.5 + r() * 3, sx = p[0] + nx * off, sy = p[1] + ny * off;
+        const p = lerp(a, b, r()), off = 5 + r() * 4, sx = p[0] + nx * off, sy = p[1] + ny * off;
         clump(sx, sy, Math.atan2(ny, nx) + (r() - .5) * .7, 5.5 + r() * 5.5, .45 + r() * .3, light(sx, sy, base - .04), grp(), 3);
       }
       const vx = b[0] - cx, vy = b[1] - cy, vl = Math.hypot(vx, vy);
@@ -672,10 +694,10 @@ fieldset+fieldset{margin-top:var(--openbitfun-space-3)}
     }
     // 输出：每组一层 <g>，各自按不同节奏轻摆；同组内按 根 → 中 → 尖 的顺序叠
     let out = '';
-    for (const B of buf) for (let sg = 0; sg < SEG; sg++) for (let g = 0; g < G; g++) {
+    for (const B of buf) for (let sg = 0; sg < SEG; sg++) for (let g = 0; g <= G; g++) {
       let t = '';
       for (const k in B) { const [gg, ss, col] = k.split('|'); if (+gg === g &amp;&amp; +ss === sg) t += `<path d=&quot;${B[k]}&quot; stroke=&quot;${col}&quot; stroke-width=&quot;${W[sg]}&quot;/>`; }
-      if (t) out += `<g class=&quot;fw fw${g}&quot;>${t}</g>`;
+      if (t) out += g === G ? `<g class=&quot;fwu&quot;>${t}</g>` : `<g class=&quot;fw fw${g}&quot;>${t}</g>`;
     }
     return `<g class=&quot;fur&quot; fill=&quot;none&quot; stroke-linecap=&quot;round&quot;>${out}</g>`;
   }
@@ -1563,6 +1585,28 @@ a{color:var(--openbitfun-color-link-default)}
       let w = 0; for (const [cx2, cy2] of CHEEK) { const dx = (lx - cx2) / 4, dy = (ly - cy2) / 2.6; w = Math.max(w, Math.exp(-(dx * dx + dy * dy) * 1.4)); }
       return w < .18 ? 0 : Math.min(1, (w - .18) / .5);
     };
+    // 底绒（第 4 组，不摆动）：先铺一层短而密的绒毛盖住整个身体（含圆角外沿），长毛之间不会露出光滑的底色
+    {
+      const UL = Math.max(L0, .65), hexP = [[60, 38], [87, 53.6], [87, 77.6], [60, 93.2], [33, 77.6], [33, 53.6]];
+      for (const [fi, f] of faces.entries()) {
+        const m = Math.round(f.n * 1.1 * UL), gs = Math.ceil(Math.sqrt(m));
+        for (let i = 0; i < m; i++) {
+          const su = ((i % gs) + r()) / gs, sv = Math.min(1, (Math.floor(i / gs) + r()) / Math.ceil(m / gs)), p = at(f.q, su, sv);
+          const ang = f.top ? Math.atan2(p[1] - 53.6, p[0] - 60) + (r() - .5) * .5 : f.d + (r() - .5) * .4;
+          clump(p[0], p[1], ang, 3 + r() * 2.2, .7, light(p[0], p[1], f.base) - .08, grp(), 3);
+        }
+      }
+      for (let k = 0; k < 6; k++) {
+        const a = hexP[k], b = hexP[(k + 1) % 6], seg = Math.hypot(b[0] - a[0], b[1] - a[1]), nx = (b[1] - a[1]) / seg, ny = -(b[0] - a[0]) / seg;
+        const base = ny < -.3 ? 1.0 : nx < -.5 ? .74 : nx > .5 ? .58 : .46;
+        for (let i = 0, m = Math.round(seg * 4 * UL); i < m; i++) {
+          const p = lerp(a, b, r()), off = r() * 9, sx = p[0] + nx * off, sy = p[1] + ny * off;
+          clump(sx, sy, Math.atan2(ny, nx) + (r() - .5) * .8, 3 + r() * 2.5, .7, light(sx, sy, base) - .08, grp(), 3);
+        }
+        const cx0 = 60, cy0 = 65.6, vx = b[0] - cx0, vy = b[1] - cy0, vl = Math.hypot(vx, vy);
+        for (let i = 0; i < 34; i++) { const o = r() * 10, sx = b[0] + vx / vl * o + (r() - .5) * 7, sy = b[1] + vy / vl * o + (r() - .5) * 7; clump(sx, sy, Math.atan2(vy, vx) + (r() - .5) * 1, 3 + r() * 2.5, .7, light(sx, sy, base) - .08, grp(), 3); }
+      }
+    }
     for (const [fi, f] of faces.entries()) {
       // 分层抖动采样：每个格子放一簇，分布均匀，不会一块密一块稀
       const m = Math.round(f.n * L0 * (fi === 2 ? 1.15 : 1)), gs = Math.ceil(Math.sqrt(m));
@@ -1581,12 +1625,12 @@ a{color:var(--openbitfun-color-link-default)}
       const a = poly[k], b = poly[(k + 1) % 6], seg = Math.hypot(b[0] - a[0], b[1] - a[1]), nx = (b[1] - a[1]) / seg, ny = -(b[0] - a[0]) / seg;
       const base = ny < -.3 ? 1.0 : nx < -.5 ? .74 : nx > .5 ? .58 : .46;
       for (let i = 0, m = Math.round(seg * 2.6 * L0); i < m; i++) {
-        const p = lerp(a, b, r()), off = r() * 6, sx = p[0] + nx * off, sy = p[1] + ny * off;
+        const p = lerp(a, b, r()), off = r() * 8, sx = p[0] + nx * off, sy = p[1] + ny * off;
         clump(sx, sy, Math.atan2(ny, nx) * .5 + Math.PI / 4 + (r() - .5) * .5, 5 + r() * 3.5, .5 + r() * .3, light(sx, sy, base), grp());
       }
       // 外缘长毛：轮廓上蓬出去的那一圈最能看出“毛”，也是摆动最明显的部分
       for (let i = 0, m = Math.round(seg * 3 * L0); i < m; i++) {
-        const p = lerp(a, b, r()), off = 3.5 + r() * 3, sx = p[0] + nx * off, sy = p[1] + ny * off;
+        const p = lerp(a, b, r()), off = 5 + r() * 4, sx = p[0] + nx * off, sy = p[1] + ny * off;
         clump(sx, sy, Math.atan2(ny, nx) + (r() - .5) * .7, 5.5 + r() * 5.5, .45 + r() * .3, light(sx, sy, base - .04), grp(), 3);
       }
       const vx = b[0] - cx, vy = b[1] - cy, vl = Math.hypot(vx, vy);
@@ -1597,10 +1641,10 @@ a{color:var(--openbitfun-color-link-default)}
     }
     // 输出：每组一层 <g>，各自按不同节奏轻摆；同组内按 根 → 中 → 尖 的顺序叠
     let out = '';
-    for (const B of buf) for (let sg = 0; sg < SEG; sg++) for (let g = 0; g < G; g++) {
+    for (const B of buf) for (let sg = 0; sg < SEG; sg++) for (let g = 0; g <= G; g++) {
       let t = '';
       for (const k in B) { const [gg, ss, col] = k.split('|'); if (+gg === g &amp;&amp; +ss === sg) t += `<path d=&quot;${B[k]}&quot; stroke=&quot;${col}&quot; stroke-width=&quot;${W[sg]}&quot;/>`; }
-      if (t) out += `<g class=&quot;fw fw${g}&quot;>${t}</g>`;
+      if (t) out += g === G ? `<g class=&quot;fwu&quot;>${t}</g>` : `<g class=&quot;fw fw${g}&quot;>${t}</g>`;
     }
     return `<g class=&quot;fur&quot; fill=&quot;none&quot; stroke-linecap=&quot;round&quot;>${out}</g>`;
   }
@@ -2110,8 +2154,11 @@ section{margin-top:64px}
 .group-title small{font-weight:400;color:var(--mute)}
 .stagebar{display:flex;align-items:center;gap:10px;margin:0 0 14px;font-size:13px;color:var(--mute)}
 .stagebar .seg2{display:inline-flex;gap:2px;background:var(--openbitfun-color-surface-workbench);border-radius:999px;padding:3px}
+.live .seg2{display:inline-flex;gap:2px;background:var(--openbitfun-color-surface-workbench);border-radius:999px;padding:3px}
 .stagebar button{font:inherit;font-size:13px;border:0;background:none;color:var(--sub);padding:5px 14px;border-radius:999px;cursor:pointer}
 .stagebar button[aria-pressed=true]{background:var(--card);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.live .seg2 button{font:inherit;font-size:13px;border:0;background:none;color:var(--sub);padding:5px 14px;border-radius:999px;cursor:pointer}
+.live .seg2 button[aria-pressed=true]{background:var(--card);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
 .sgrid{--frame:#f3f3f5;--tile:#fbfbfc;--tink:#171717;--tsub:#6a6a6a;--tmute:#8f8f92;--tline:rgba(16,26,39,.08);--top:rgba(255,255,255,.95);--bloom:16%;--hi:rgba(255,255,255,.9);--edge:rgba(16,26,39,.06);
   display:grid;grid-template-columns:repeat(4,1fr);gap:10px;background:var(--frame);padding:10px;border-radius:28px;transition:background .25s}
 .sgrid[data-t=dark]{--frame:#0a0a0b;--tile:#141416;--tink:#ededed;--tsub:#9a9a9f;--tmute:#77777c;--tline:rgba(255,255,255,.1);--top:rgba(255,255,255,.07);--bloom:26%;--hi:rgba(255,255,255,.06);--edge:rgba(255,255,255,.06)}
@@ -2176,6 +2223,14 @@ button.sel{border-color:var(--ink)}
 .rules{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
 .rules div{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px;font-size:13.5px;color:var(--sub)}
 .rules b{display:block;color:var(--ink);font-size:15px;margin-bottom:4px}
+.live{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(240px,1fr);gap:var(--openbitfun-space-6,24px);align-items:center;background:var(--openbitfun-color-surface-subtle,#f6f6f4);border-radius:24px;padding:24px}
+.live-stage{position:relative;border-radius:20px;background:radial-gradient(70% 60% at 50% 35%,#fff,transparent 75%),var(--openbitfun-color-surface-default,#fff);aspect-ratio:1/1;max-height:520px;display:flex;align-items:center;justify-content:center;overflow:hidden;cursor:grab}
+.live-fig{position:relative;width:78%;transform-origin:50% 88%;will-change:transform}.live-fig svg{display:block;width:100%;overflow:visible}
+.live-hint{position:absolute;left:0;right:0;bottom:14px;text-align:center;font-size:12px;color:var(--sub)}
+.live-ctrl{display:flex;flex-direction:column;gap:16px}.live-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.live-row .lab{font-size:13px;color:var(--sub);width:36px}
+.live-sw{display:flex;gap:8px;flex-wrap:wrap}.live-sw button{width:26px;height:26px;border-radius:50%;border:1px solid rgba(0,0,0,.12);cursor:pointer;padding:0}.live-sw button[aria-pressed=true]{outline:2px solid var(--ink);outline-offset:2px}
+.live-btn{font:inherit;font-size:13px;padding:8px 18px;border-radius:999px;border:1px solid rgba(0,0,0,.14);background:#fff;cursor:pointer}.live-btn:hover{background:#f3f3f1}
+@media (max-width:760px){.live{grid-template-columns:1fr}}
 .matrix{display:block}
 .mboard{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
 .mchip{display:inline-flex;align-items:center;gap:6px;font:inherit;font-size:12.5px;border:1px solid var(--line);background:var(--card);border-radius:999px;padding:4px 12px 4px 5px;cursor:pointer;color:var(--ink)}
@@ -2268,13 +2323,27 @@ button.sel{border-color:var(--ink)}
       <div><b>为黄帝驾车</b>《韩非子·十过》讲黄帝在泰山会合鬼神，“驾象车而六蛟龙，毕方并辖”，毕方在车旁随行护卫。</div>
       <div><b>木之精</b>《淮南子·氾论训》有“木生毕方”，汉代高诱注为“木之精也”；木能生火，正好和它与火的关系对上。</div>
     </div>
-    <p class=&quot;sec-desc&quot; style=&quot;margin-top:16px&quot;><b>和形象的对应：</b>方块上那根天线，像毕方用一只脚站着；天线球随状态变色，也合“一出现就预示着什么”的意象。统一色板里的“毕方”特别版按原文取色——青色身体（青质）、侧面几道红色羽纹（赤文）、眼睛下方一只白色的喙（白喙）。</p>
+    <p class=&quot;sec-desc&quot; style=&quot;margin-top:16px&quot;><b>和形象的对应：</b>方块上那根天线，像毕方用一只脚站着；天线球随状态变色，也合“一出现就预示着什么”的意象。统一色板里的“毕方”特别版按原文取色——青色身体（青质）、两颊一对珊瑚色腮红（赤文）、眼睛下方一只白色的小喙（白喙）。</p>
   </section>
 
   <section>
     <h2>视图 × 质感 × 统一色板</h2>
     <p class=&quot;sec-desc&quot;>同一个方块，两种视图：<b>3D</b> 等距视角用于主视觉、启动页、空状态；<b>平面</b>正视图只有一种：纯色、无质感、无阴影，用于图标、头像、状态胶囊、表情包这类小尺寸或扁平界面。三种质感只用在 3D 上，颜色来自统一色板：<b>光滑</b>还原视频里的软胶质感，适合产品内的图标与状态；<b>金属</b>是带清晰环境反射带的亮面金属外壳，适合发布会、硬件和高规格场景；<b>毛绒</b>参考华为鸿蒙“憨憨”的长毛绒质感，绒毛成簇、根暗尖亮，平时随身体轻轻起伏，鼠标划过时像被摸了一下（撸毛），更适合周边、贴纸、运营物料和 IP 传播。上排点选身体色，下排点选做法，整页一起切换。</p>
     <div class=&quot;matrix&quot; id=&quot;matrix&quot;></div>
+  </section>
+
+  <section>
+    <h2>毛绒动态版</h2>
+    <p class=&quot;sec-desc&quot;>毛绒全部由代码生成（每根毛是一条 SVG 路径），所以能实时驱动：绒毛分 4 组，每组是一个带阻尼的弹簧，平时随风轻摆；鼠标划过时毛会被拨开、松手后弹回；点一下或按“抖一抖”，身体像小动物甩水一样左右甩，毛比身体慢半拍、甩得更远。下面可以切状态、颜色和风力。</p>
+    <div class=&quot;live&quot; id=&quot;live&quot;>
+      <div class=&quot;live-stage&quot;><div class=&quot;live-fig&quot;></div><div class=&quot;live-hint&quot;>鼠标划过撸毛 · 点击抖一抖</div></div>
+      <div class=&quot;live-ctrl&quot;>
+        <div class=&quot;live-row&quot;><span class=&quot;lab&quot;>状态</span><span class=&quot;seg2&quot; id=&quot;liveState&quot;></span></div>
+        <div class=&quot;live-row&quot;><span class=&quot;lab&quot;>颜色</span><span class=&quot;live-sw&quot; id=&quot;livePal&quot;></span></div>
+        <div class=&quot;live-row&quot;><span class=&quot;lab&quot;>风力</span><span class=&quot;seg2&quot; id=&quot;liveWind&quot;><button data-v=&quot;0&quot;>无风</button><button data-v=&quot;1&quot; aria-pressed=&quot;true&quot;>微风</button><button data-v=&quot;2.6&quot;>大风</button></span></div>
+        <div class=&quot;live-row&quot;><button class=&quot;live-btn&quot; id=&quot;liveShake&quot;>抖一抖</button></div>
+      </div>
+    </div>
   </section>
 
   <div class=&quot;bar&quot; id=&quot;bar&quot;></div>
@@ -2646,6 +2715,28 @@ button.sel{border-color:var(--ink)}
       let w = 0; for (const [cx2, cy2] of CHEEK) { const dx = (lx - cx2) / 4, dy = (ly - cy2) / 2.6; w = Math.max(w, Math.exp(-(dx * dx + dy * dy) * 1.4)); }
       return w < .18 ? 0 : Math.min(1, (w - .18) / .5);
     };
+    // 底绒（第 4 组，不摆动）：先铺一层短而密的绒毛盖住整个身体（含圆角外沿），长毛之间不会露出光滑的底色
+    {
+      const UL = Math.max(L0, .65), hexP = [[60, 38], [87, 53.6], [87, 77.6], [60, 93.2], [33, 77.6], [33, 53.6]];
+      for (const [fi, f] of faces.entries()) {
+        const m = Math.round(f.n * 1.1 * UL), gs = Math.ceil(Math.sqrt(m));
+        for (let i = 0; i < m; i++) {
+          const su = ((i % gs) + r()) / gs, sv = Math.min(1, (Math.floor(i / gs) + r()) / Math.ceil(m / gs)), p = at(f.q, su, sv);
+          const ang = f.top ? Math.atan2(p[1] - 53.6, p[0] - 60) + (r() - .5) * .5 : f.d + (r() - .5) * .4;
+          clump(p[0], p[1], ang, 3 + r() * 2.2, .7, light(p[0], p[1], f.base) - .08, grp(), 3);
+        }
+      }
+      for (let k = 0; k < 6; k++) {
+        const a = hexP[k], b = hexP[(k + 1) % 6], seg = Math.hypot(b[0] - a[0], b[1] - a[1]), nx = (b[1] - a[1]) / seg, ny = -(b[0] - a[0]) / seg;
+        const base = ny < -.3 ? 1.0 : nx < -.5 ? .74 : nx > .5 ? .58 : .46;
+        for (let i = 0, m = Math.round(seg * 4 * UL); i < m; i++) {
+          const p = lerp(a, b, r()), off = r() * 9, sx = p[0] + nx * off, sy = p[1] + ny * off;
+          clump(sx, sy, Math.atan2(ny, nx) + (r() - .5) * .8, 3 + r() * 2.5, .7, light(sx, sy, base) - .08, grp(), 3);
+        }
+        const cx0 = 60, cy0 = 65.6, vx = b[0] - cx0, vy = b[1] - cy0, vl = Math.hypot(vx, vy);
+        for (let i = 0; i < 34; i++) { const o = r() * 10, sx = b[0] + vx / vl * o + (r() - .5) * 7, sy = b[1] + vy / vl * o + (r() - .5) * 7; clump(sx, sy, Math.atan2(vy, vx) + (r() - .5) * 1, 3 + r() * 2.5, .7, light(sx, sy, base) - .08, grp(), 3); }
+      }
+    }
     for (const [fi, f] of faces.entries()) {
       // 分层抖动采样：每个格子放一簇，分布均匀，不会一块密一块稀
       const m = Math.round(f.n * L0 * (fi === 2 ? 1.15 : 1)), gs = Math.ceil(Math.sqrt(m));
@@ -2664,12 +2755,12 @@ button.sel{border-color:var(--ink)}
       const a = poly[k], b = poly[(k + 1) % 6], seg = Math.hypot(b[0] - a[0], b[1] - a[1]), nx = (b[1] - a[1]) / seg, ny = -(b[0] - a[0]) / seg;
       const base = ny < -.3 ? 1.0 : nx < -.5 ? .74 : nx > .5 ? .58 : .46;
       for (let i = 0, m = Math.round(seg * 2.6 * L0); i < m; i++) {
-        const p = lerp(a, b, r()), off = r() * 6, sx = p[0] + nx * off, sy = p[1] + ny * off;
+        const p = lerp(a, b, r()), off = r() * 8, sx = p[0] + nx * off, sy = p[1] + ny * off;
         clump(sx, sy, Math.atan2(ny, nx) * .5 + Math.PI / 4 + (r() - .5) * .5, 5 + r() * 3.5, .5 + r() * .3, light(sx, sy, base), grp());
       }
       // 外缘长毛：轮廓上蓬出去的那一圈最能看出“毛”，也是摆动最明显的部分
       for (let i = 0, m = Math.round(seg * 3 * L0); i < m; i++) {
-        const p = lerp(a, b, r()), off = 3.5 + r() * 3, sx = p[0] + nx * off, sy = p[1] + ny * off;
+        const p = lerp(a, b, r()), off = 5 + r() * 4, sx = p[0] + nx * off, sy = p[1] + ny * off;
         clump(sx, sy, Math.atan2(ny, nx) + (r() - .5) * .7, 5.5 + r() * 5.5, .45 + r() * .3, light(sx, sy, base - .04), grp(), 3);
       }
       const vx = b[0] - cx, vy = b[1] - cy, vl = Math.hypot(vx, vy);
@@ -2680,10 +2771,10 @@ button.sel{border-color:var(--ink)}
     }
     // 输出：每组一层 <g>，各自按不同节奏轻摆；同组内按 根 → 中 → 尖 的顺序叠
     let out = '';
-    for (const B of buf) for (let sg = 0; sg < SEG; sg++) for (let g = 0; g < G; g++) {
+    for (const B of buf) for (let sg = 0; sg < SEG; sg++) for (let g = 0; g <= G; g++) {
       let t = '';
       for (const k in B) { const [gg, ss, col] = k.split('|'); if (+gg === g &amp;&amp; +ss === sg) t += `<path d=&quot;${B[k]}&quot; stroke=&quot;${col}&quot; stroke-width=&quot;${W[sg]}&quot;/>`; }
-      if (t) out += `<g class=&quot;fw fw${g}&quot;>${t}</g>`;
+      if (t) out += g === G ? `<g class=&quot;fwu&quot;>${t}</g>` : `<g class=&quot;fw fw${g}&quot;>${t}</g>`;
     }
     return `<g class=&quot;fur&quot; fill=&quot;none&quot; stroke-linecap=&quot;round&quot;>${out}</g>`;
   }
@@ -3001,7 +3092,7 @@ button.sel{border-color:var(--ink)}
   const VIEW = {iso:'3D', flat:'平面'};
   const FACE = {refined:'克制', cute:'萌'};
   const FIN = {smooth:'光滑', metal:'金属', plush:'毛绒'};
-  const R = (id, c, o) => render(id, Object.assign({noStyle:true, compact:!!c, finish:S.finish, palette:S.palette, face:S.face, view:S.view}, o||{}));
+  const R = (id, c, o) => render(id, Object.assign({noStyle:true, compact:!!c, finish:S.finish, palette:S.palette, face:S.face, view:S.view, lod:.6}, o||{})); // 毛绒在卡片尺寸下用 .6 的密度，切换更快
   const byId = id => STATES.find(s => s.id === id);
   const colorOf = id => statusColor(byId(id).cat, S.palette);
   const pill = (id, text) => `<span class=&quot;pill&quot;><span class=&quot;av&quot;>${R(id,1,{tiny:true})}</span><span>${text || byId(id).pill}</span><span class=&quot;lv&quot; style=&quot;background:${colorOf(id)}&quot;></span></span>`;
@@ -3094,6 +3185,88 @@ button.sel{border-color:var(--ink)}
   document.getElementById('pick').innerHTML = STATES.map(s => `<button data-id=&quot;${s.id}&quot;>${s.name}</button>`).join('');
   document.getElementById('pick').onclick = e => { const id = e.target.dataset &amp;&amp; e.target.dataset.id; if(!id) return; clearTimeout(timer); [...tl.children].forEach(li=>li.classList.remove('cur')); steps=[]; show({id}, -1); };
   drawAll(); clearTimeout(timer); i = 0; steps = []; step();
+})();
+</script>
+<script>
+// 毛绒动态版：4 组绒毛各是一个阻尼弹簧，身体也是一个弹簧；毛受身体运动的惯性影响，所以总比身体慢半拍
+(function(){
+  const root = document.getElementById('live'); if (!root) return;
+  const fig = root.querySelector('.live-fig'), stage = root.querySelector('.live-stage');
+  const STATES = [['idle','待命'],['thinking','思考'],['done','完成'],['sleeping','休眠']];
+  const PALS = ['bifang','black','white','lavender','hotpink','cyan','lime'];
+  const L = {sid:'idle', pal:'bifang', wind:1};
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let groups = [], body = {a:0, v:0, s:0, sv:0}, shakeT = -1, ptr = null, visible = true;
+  const seg = (el, items, key, cb) => { el.innerHTML = items.map(([v,t]) => `<button data-v=&quot;${v}&quot; aria-pressed=&quot;${L[key]===v}&quot;>${t}</button>`).join(''); el.onclick = e => { const b = e.target.closest('button'); if (!b) return; L[key] = b.dataset.v; [...el.children].forEach(x => x.setAttribute('aria-pressed', x === b)); cb(); }; };
+  seg(document.getElementById('liveState'), STATES, 'sid', mount);
+  const pe = document.getElementById('livePal');
+  pe.innerHTML = PALS.map(k => `<button data-v=&quot;${k}&quot; title=&quot;${BF.PALETTES[k].name}&quot; style=&quot;background:${BF.PALETTES[k].side}&quot; aria-pressed=&quot;${k===L.pal}&quot;></button>`).join('');
+  pe.onclick = e => { const b = e.target.closest('button'); if (!b) return; L.pal = b.dataset.v; [...pe.children].forEach(x => x.setAttribute('aria-pressed', x === b)); mount(); };
+  const we = document.getElementById('liveWind');
+  we.onclick = e => { const b = e.target.closest('button'); if (!b) return; L.wind = +b.dataset.v; [...we.children].forEach(x => x.setAttribute('aria-pressed', x === b)); };
+  // 性能：整只毛绒是一个很大的 SVG，每帧改 transform 会让浏览器把上千条路径重画一遍。
+  // 这里把它拆成多层叠放的 SVG（身体 / 每组每段绒毛 / 眼睛和天线），每层只用 CSS transform 旋转，交给 GPU 合成，不再重画路径。
+  function split(svg){
+    const fur = svg.querySelector('.fur'); if (!fur) return [svg];
+    const fws = [...fur.querySelectorAll('.fw')];
+    const keepDefs = n => n.nodeName === 'defs' || n.nodeName === 'style';
+    const prune = (clone, dir) => { // dir: -1 去掉前面的，1 去掉后面的，0 两边都去
+      let n = clone.querySelector('.fur');
+      while (n &amp;&amp; n.nodeName !== 'svg') {
+        if (dir <= 0) { let q = n.previousSibling; while (q) { const pq = q.previousSibling; if (!keepDefs(q)) q.remove(); q = pq; } }
+        if (dir >= 0) { let q = n.nextSibling; while (q) { const nq = q.nextSibling; if (!keepDefs(q)) q.remove(); q = nq; } }
+        n = n.parentNode;
+      }
+    };
+    const out = [];
+    const bottom = svg.cloneNode(true); prune(bottom, 1); bottom.querySelectorAll('.fur .fw').forEach(e => e.remove()); bottom.querySelector('.fur').style.animation = 'none'; out.push(bottom);  // 底绒留在最下层、不动，摆动时不会露底
+    fws.forEach((_, i) => { const c = svg.cloneNode(true); prune(c, 0); c.querySelectorAll('.fur .fwu').forEach(e => e.remove()); [...c.querySelectorAll('.fur .fw')].forEach((e, j) => { if (j !== i) e.remove(); }); const fw = c.querySelector('.fw'); fw.style.animation = 'none'; c.querySelector('.fur').style.animation = 'none'; c._g = +(fw.getAttribute('class').match(/fw(\d)/) || [0,0])[1]; out.push(c); });
+    const top = svg.cloneNode(true); prune(top, -1); top.querySelector('.fur').remove(); out.push(top);
+    return out;
+  }
+  function mount(){
+    const tmp = document.createElement('div');
+    tmp.innerHTML = BF.render(L.sid, {palette:L.pal, finish:'plush', compact:true, noStyle:true, lod:.85});
+    const svg = tmp.querySelector('svg'), vb = svg.viewBox.baseVal;
+    const origin = `${((60 - vb.x) / vb.width * 100).toFixed(2)}% ${((66 - vb.y) / vb.height * 100).toFixed(2)}%`;
+    fig.innerHTML = '';
+    const layers = split(svg);
+    layers.forEach((l, i) => { l.style.position = i ? 'absolute' : 'relative'; l.style.left = l.style.top = '0'; l.style.transformOrigin = origin; if (l._g !== undefined) l.style.willChange = 'transform'; fig.appendChild(l); });
+    // 同一组的几层（根 / 中 / 尖）共用一个弹簧
+    const S4 = [0,1,2,3].map(g => ({a:0, v:0, ph:g * 1.7, sp:.8 + g * .13, k:.05 + g * .008}));
+    groups = layers.filter(l => l._g !== undefined).map(el => ({el, s:S4[el._g]})); groups.S4 = S4;
+  }
+  function shake(){ shakeT = performance.now(); }
+  document.getElementById('liveShake').onclick = shake;
+  stage.addEventListener('click', shake);
+  stage.addEventListener('pointermove', e => { const r = stage.getBoundingClientRect(), x = (e.clientX - r.left) / r.width - .5, y = (e.clientY - r.top) / r.height - .5;
+    ptr = ptr ? {x, y, vx:x - ptr.x, vy:y - ptr.y} : {x, y, vx:0, vy:0}; });
+  stage.addEventListener('pointerleave', () => ptr = null);
+  new IntersectionObserver(es => visible = es[0].isIntersecting).observe(stage);
+  let last = performance.now();
+  function tick(now){
+    requestAnimationFrame(tick);
+    if (!visible || reduce || !groups.S4) return;
+    const dt = Math.min(2.5, (now - last) / 16.7); last = now; const t = now / 1000;
+    // 身体：抖一抖时左右甩 3–4 下，逐渐收住；平时轻微呼吸
+    let bt = 0;
+    if (shakeT > 0) { const e = (now - shakeT) / 1000; if (e < 1.1) bt = Math.sin(e * 26) * 9 * Math.exp(-e * 2.6); else shakeT = -1; }
+    const bPrev = body.a; body.v += ((bt - body.a) * .35 - body.v * .45) * dt; body.a += body.v * dt;
+    const breathe = Math.sin(t * 1.5) * .008; body.sv += ((Math.abs(bt) * .004 + breathe - body.s) * .2 - body.sv * .4) * dt; body.s += body.sv * dt;
+    fig.style.transform = `rotate(${body.a.toFixed(2)}deg) scale(${(1 + body.s).toFixed(4)},${(1 - body.s).toFixed(4)})`;
+    const bodyVel = (body.a - bPrev) / dt;
+    for (const s of groups.S4) {
+      // 风：几条不同频率的正弦叠加，偶尔来一阵
+      const gust = L.wind * (Math.sin(t * s.sp + s.ph) * .9 + Math.sin(t * s.sp * 2.3 + s.ph * 1.3) * .35 + Math.max(0, Math.sin(t * .37)) ** 6 * 1.8);
+      let target = gust;
+      if (ptr) target += -ptr.x * 5 + (ptr.vx * 260 + ptr.vy * 120) * (1 + s.ph * .15);   // 被手拨开
+      s.v += ((target - s.a) * s.k - s.v * .12 - bodyVel * .55) * dt;                       // 惯性：身体往右甩，毛往左落后
+      s.a += s.v * dt; s.a = Math.max(-8, Math.min(8, s.a));
+    }
+    if (ptr) { ptr.vx *= .6; ptr.vy *= .6; }
+    for (const o of groups) o.el.style.transform = `rotate(${o.s.a.toFixed(2)}deg)`;
+  }
+  mount(); requestAnimationFrame(tick);
 })();
 </script>
 <style>.bf-embedded .page{min-height:0}.bf-embedded .wrap>h1,.bf-embedded .wrap>.eyebrow,.bf-embedded .wrap>.lead:first-of-type{display:none}.bf-embedded .wrap{padding-top:var(--openbitfun-space-6)}</style>
