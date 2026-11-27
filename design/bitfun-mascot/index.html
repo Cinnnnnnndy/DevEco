@@ -616,9 +616,9 @@ fieldset+fieldset{margin-top:var(--openbitfun-space-3)}
         const sh = shade + (r() - .5) * .06;
         // 赤文：羽根仍是身体色，越往毛尖越偏珊瑚色；coral 是 0–1 的浓度，斑块边缘自然变淡
         const cw = coral ? Math.round(coral * 4) / 4 : 0;
-        add(g, 0, cw ? mixc(bin(sh - .2), cbin(sh - .35), cw * .35) : bin(sh - .2), Q(a, c, e, 0, .45));
-        add(g, 1, cw ? mixc(bin(sh), cbin(sh - .05), cw * .85) : bin(sh), Q(a, c, e, .38, .74));
-        add(g, 2, cw ? mixc(bin(sh + .22), cbin(sh + .1), cw) : bin(sh + .22), Q(a, c, e, .68, 1));
+        add(g, 0, cw ? mixc(bin(sh - .2), cbin(sh), cw * .25) : bin(sh - .2), Q(a, c, e, 0, .45));
+        add(g, 1, cw ? mixc(bin(sh), cbin(sh + .25), cw * .7) : bin(sh), Q(a, c, e, .38, .74));
+        add(g, 2, cw ? mixc(bin(sh + .22), cbin(sh + .45), cw) : bin(sh + .22), Q(a, c, e, .68, 1));
       }
     }
     const grp = () => Math.floor(r() * G);
@@ -630,13 +630,13 @@ fieldset+fieldset{margin-top:var(--openbitfun-space-3)}
     // 脸：右侧面两只眼睛之间。脸上的毛短一些、顺着从脸中心向外梳，表情才看得清
     const EYE = [[69.5, 76.2], [84.5, 67.6]], FC = [77, 72];
     const faceK = (px, py) => { const d = Math.min(...EYE.map(e => Math.hypot(px - e[0], py - e[1]))); return Math.max(0, Math.min(1, (d - 3) / 9)); };
-    // 赤文斑块：几团不规则、拉长的斑，叠一层低频噪声——像羽色自然晕开，而不是整齐排列
-    const rr = rng(23), BLOB = P.bifang ? [[.3, .55, 1], [.62, .42, .85], [.5, .82, .9], [.12, .3, .6]].map(([su, sv, k]) => ({ p: at(faces[1].q, su + (rr() - .5) * .08, sv + (rr() - .5) * .08), k, s: 5.5 + rr() * 2.5 })) : [];
+    // 毕方的“赤文”做成一对腮红：落在两颊（右侧面、眼睛外下方）的毛，毛尖渐变成珊瑚色
+    const CHEEK = [[4.5, 18.8], [27.5, 18.8]];
     const warmAt = (px, py) => {
-      let w = 0;
-      for (const b of BLOB) { const dx = px - b.p[0], dy = py - b.p[1], u = dx * .82 - dy * .57, v = dx * .57 + dy * .82; w = Math.max(w, b.k * Math.exp(-(u * u / (b.s * b.s * 2.2) + v * v / (b.s * b.s * .7)))); }
-      w *= .75 + .35 * Math.sin(px * .7 + py * .37) * Math.sin(py * .53 - px * .21);
-      return w < .2 ? 0 : Math.min(1, (w - .2) / .4);
+      if (!P.bifang) return 0;
+      const lx = px - 60, ly = py - 69.2 + .577 * lx;
+      let w = 0; for (const [cx2, cy2] of CHEEK) { const dx = (lx - cx2) / 4, dy = (ly - cy2) / 2.6; w = Math.max(w, Math.exp(-(dx * dx + dy * dy) * 1.4)); }
+      return w < .18 ? 0 : Math.min(1, (w - .18) / .5);
     };
     for (const [fi, f] of faces.entries()) {
       // 分层抖动采样：每个格子放一簇，分布均匀，不会一块密一块稀
@@ -647,8 +647,8 @@ fieldset+fieldset{margin-top:var(--openbitfun-space-3)}
         if (f.top) { ang = Math.atan2(p[1] - 53.6, p[0] - 60) + (r() - .5) * .3; sh -= Math.hypot((p[0] - 60) / 27, (p[1] - 53.6) / 15.6) * .12; }
         else ang = f.d + (r() - .5) * .25;
         if (fi === 2) { const k = faceK(p[0], p[1]); L *= .5 + .5 * k; const ox = p[0] - FC[0], oy = p[1] - FC[1], ol = Math.hypot(ox, oy) || 1, mk = .6 * (1 - k); ang = Math.atan2(Math.sin(ang) * (1 - mk) + oy / ol * mk, Math.cos(ang) * (1 - mk) + ox / ol * mk); sh += (1 - k) * .06; }
-        const w = fi === 1 || (fi === 0 &amp;&amp; su < .5 &amp;&amp; sv > .55) ? warmAt(p[0], p[1]) : 0;
-        clump(p[0], p[1], ang, L * (w ? 1.1 : 1), .6 + r() * .5, sh, grp(), 5, w > 0 &amp;&amp; r() < .55 + w ? w : 0);
+        const w = fi === 2 ? warmAt(p[0], p[1]) : 0;
+        clump(p[0], p[1], ang, L * (1 - .45 * w), .6 + r() * .5, sh + w * .08, grp(), 5, w * .25);
       }
     }
     const poly = [[60, 38], [87, 53.6], [87, 77.6], [60, 93.2], [33, 77.6], [33, 53.6]], cx = 60, cy = 65.6;
@@ -680,20 +680,15 @@ fieldset+fieldset{margin-top:var(--openbitfun-space-3)}
     return `<g class=&quot;fur&quot; fill=&quot;none&quot; stroke-linecap=&quot;round&quot;>${out}</g>`;
   }
 
-  // 毕方特别版：《山海经》“其状如鹤，一足，赤文青质而白喙”——青色身体上的赤文、眼下一只小白喙；方块上的天线就是那“一足”。
-  // 毛绒版的赤文长在毛里（见 down）；光滑 / 金属 / 平面不画具体的羽毛，只用三笔长短不一的弧形色带抽象地表示“赤文”，
-  // 从身体色里渐显出来（起笔透明 → 收笔珊瑚色）
+  // 毕方特别版：《山海经》“其状如鹤，一足，赤文青质而白喙”——青色身体、眼下一只小白喙，方块上的天线就是那“一足”。
+  // “赤文”收成一对珊瑚色腮红：形状清楚、和表情结合；毛绒版另外让两颊的毛尖也泛红（见 down）
   function bifangMarks(x) {
-    const beak = '#F4F1EA', u = x.u;
-    const grad = `<linearGradient id=&quot;bfg${u}&quot; x1=&quot;1&quot; y1=&quot;0&quot; x2=&quot;0&quot; y2=&quot;0&quot;><stop offset=&quot;0&quot; stop-color=&quot;#d98466&quot; stop-opacity=&quot;0&quot;/><stop offset=&quot;.55&quot; stop-color=&quot;#df8b6c&quot; stop-opacity=&quot;.7&quot;/><stop offset=&quot;1&quot; stop-color=&quot;#efa385&quot;/></linearGradient>`;
-    const strokes = `<path d=&quot;M25 2 Q12 4 4.5 16.5 Q14.5 10.8 25 9Z&quot;/><path d=&quot;M25.5 11 Q16.5 12.6 9.5 21.5 Q18 17.2 25.5 16.2Z&quot; opacity=&quot;.85&quot;/><path d=&quot;M22 18.6 Q16.5 19.6 12.6 23.6 Q18 21.8 22.4 22Z&quot; opacity=&quot;.7&quot;/>`;
-    if (x.flat) {
-      const t = x.tiny;
-      return `<defs>${grad}</defs><g fill=&quot;url(#bfg${u})&quot; transform=&quot;translate(31 80) scale(.55)&quot;>${strokes}</g><g fill=&quot;url(#bfg${u})&quot; transform=&quot;translate(89 80) scale(-.55 .55)&quot;>${strokes}</g>
-        <path d=&quot;M58.6 ${t ? 72 : 70.2} L61.4 ${t ? 72 : 70.2} L60 ${t ? 75.6 : 73}Z&quot; fill=&quot;${beak}&quot; stroke=&quot;${beak}&quot; stroke-width=&quot;.9&quot; stroke-linejoin=&quot;round&quot;/>`;
-    }
-    const fur = x.plush ? '' : `<defs>${grad}</defs><g transform=&quot;matrix(1 .577 0 1 33 53.6)&quot; fill=&quot;url(#bfg${u})&quot;>${strokes}</g>`;
-    return `${fur}<g transform=&quot;${FACE}&quot;><path d=&quot;M15.2 15.7 Q17.1 15.2 19 15.7 L17.3 19Z&quot; fill=&quot;${beak}&quot; stroke=&quot;${beak}&quot; stroke-width=&quot;.8&quot; stroke-linejoin=&quot;round&quot;/></g>`;
+    const beak = '#F4F1EA', u = x.u, flat = x.flat;
+    const C = flat ? [[4, 20.2], [30, 20.2]] : [[4.5, 18.8], [27.5, 18.8]], rx = flat ? 3.4 : x.plush ? 5 : 3.8, ry = flat ? 2 : x.plush ? 3.1 : 2.3;
+    const blush = `<defs><radialGradient id=&quot;bfb${u}&quot;><stop offset=&quot;0&quot; stop-color=&quot;#ef8d70&quot; stop-opacity=&quot;${x.plush ? .92 : .85}&quot;/><stop offset=&quot;.6&quot; stop-color=&quot;#ef9878&quot; stop-opacity=&quot;${x.plush ? .62 : .55}&quot;/><stop offset=&quot;1&quot; stop-color=&quot;#f2a588&quot; stop-opacity=&quot;0&quot;/></radialGradient></defs>
+      <g transform=&quot;${face(x)}&quot; fill=&quot;url(#bfb${u})&quot;>${C.map(([cx, cy]) => `<ellipse cx=&quot;${cx}&quot; cy=&quot;${cy}&quot; rx=&quot;${rx}&quot; ry=&quot;${ry}&quot;/>`).join('')}</g>`;
+    if (flat) { const t = x.tiny; return `${blush}<path d=&quot;M58.6 ${t ? 72 : 70.2} L61.4 ${t ? 72 : 70.2} L60 ${t ? 75.6 : 73}Z&quot; fill=&quot;${beak}&quot; stroke=&quot;${beak}&quot; stroke-width=&quot;.9&quot; stroke-linejoin=&quot;round&quot;/>`; }
+    return `${blush}<g transform=&quot;${FACE}&quot;><path d=&quot;M15.2 15.7 Q17.1 15.2 19 15.7 L17.3 19Z&quot; fill=&quot;${beak}&quot; stroke=&quot;${beak}&quot; stroke-width=&quot;.8&quot; stroke-linejoin=&quot;round&quot;/></g>`;
   }
 
   function body(x) {
@@ -750,7 +745,7 @@ fieldset+fieldset{margin-top:var(--openbitfun-space-3)}
     return `<g transform=&quot;${face(x)}&quot;><g transform=&quot;translate(${dx} ${dy})&quot;><g${cls}>${s}</g></g></g>`;
   }
 
-  const blush = (x, op = .75) => !x.cute ? '' : `<g transform=&quot;${face(x)}&quot; fill=&quot;${x.P.blush}&quot; opacity=&quot;${op}&quot;><ellipse cx=&quot;4&quot; cy=&quot;20.2&quot; rx=&quot;3&quot; ry=&quot;1.7&quot;/><ellipse cx=&quot;30&quot; cy=&quot;20.2&quot; rx=&quot;3&quot; ry=&quot;1.7&quot;/></g>`;
+  const blush = (x, op = .75) => !x.cute || x.P.bifang ? '' : `<g transform=&quot;${face(x)}&quot; fill=&quot;${x.P.blush}&quot; opacity=&quot;${op}&quot;><ellipse cx=&quot;4&quot; cy=&quot;20.2&quot; rx=&quot;3&quot; ry=&quot;1.7&quot;/><ellipse cx=&quot;30&quot; cy=&quot;20.2&quot; rx=&quot;3&quot; ry=&quot;1.7&quot;/></g>`;
   const soft = x => blush(x, x.P.softOp || .45);
   function mouth(x, type) {
     if (!x.cute) return '';
@@ -1546,9 +1541,9 @@ a{color:var(--openbitfun-color-link-default)}
         const sh = shade + (r() - .5) * .06;
         // 赤文：羽根仍是身体色，越往毛尖越偏珊瑚色；coral 是 0–1 的浓度，斑块边缘自然变淡
         const cw = coral ? Math.round(coral * 4) / 4 : 0;
-        add(g, 0, cw ? mixc(bin(sh - .2), cbin(sh - .35), cw * .35) : bin(sh - .2), Q(a, c, e, 0, .45));
-        add(g, 1, cw ? mixc(bin(sh), cbin(sh - .05), cw * .85) : bin(sh), Q(a, c, e, .38, .74));
-        add(g, 2, cw ? mixc(bin(sh + .22), cbin(sh + .1), cw) : bin(sh + .22), Q(a, c, e, .68, 1));
+        add(g, 0, cw ? mixc(bin(sh - .2), cbin(sh), cw * .25) : bin(sh - .2), Q(a, c, e, 0, .45));
+        add(g, 1, cw ? mixc(bin(sh), cbin(sh + .25), cw * .7) : bin(sh), Q(a, c, e, .38, .74));
+        add(g, 2, cw ? mixc(bin(sh + .22), cbin(sh + .45), cw) : bin(sh + .22), Q(a, c, e, .68, 1));
       }
     }
     const grp = () => Math.floor(r() * G);
@@ -1560,13 +1555,13 @@ a{color:var(--openbitfun-color-link-default)}
     // 脸：右侧面两只眼睛之间。脸上的毛短一些、顺着从脸中心向外梳，表情才看得清
     const EYE = [[69.5, 76.2], [84.5, 67.6]], FC = [77, 72];
     const faceK = (px, py) => { const d = Math.min(...EYE.map(e => Math.hypot(px - e[0], py - e[1]))); return Math.max(0, Math.min(1, (d - 3) / 9)); };
-    // 赤文斑块：几团不规则、拉长的斑，叠一层低频噪声——像羽色自然晕开，而不是整齐排列
-    const rr = rng(23), BLOB = P.bifang ? [[.3, .55, 1], [.62, .42, .85], [.5, .82, .9], [.12, .3, .6]].map(([su, sv, k]) => ({ p: at(faces[1].q, su + (rr() - .5) * .08, sv + (rr() - .5) * .08), k, s: 5.5 + rr() * 2.5 })) : [];
+    // 毕方的“赤文”做成一对腮红：落在两颊（右侧面、眼睛外下方）的毛，毛尖渐变成珊瑚色
+    const CHEEK = [[4.5, 18.8], [27.5, 18.8]];
     const warmAt = (px, py) => {
-      let w = 0;
-      for (const b of BLOB) { const dx = px - b.p[0], dy = py - b.p[1], u = dx * .82 - dy * .57, v = dx * .57 + dy * .82; w = Math.max(w, b.k * Math.exp(-(u * u / (b.s * b.s * 2.2) + v * v / (b.s * b.s * .7)))); }
-      w *= .75 + .35 * Math.sin(px * .7 + py * .37) * Math.sin(py * .53 - px * .21);
-      return w < .2 ? 0 : Math.min(1, (w - .2) / .4);
+      if (!P.bifang) return 0;
+      const lx = px - 60, ly = py - 69.2 + .577 * lx;
+      let w = 0; for (const [cx2, cy2] of CHEEK) { const dx = (lx - cx2) / 4, dy = (ly - cy2) / 2.6; w = Math.max(w, Math.exp(-(dx * dx + dy * dy) * 1.4)); }
+      return w < .18 ? 0 : Math.min(1, (w - .18) / .5);
     };
     for (const [fi, f] of faces.entries()) {
       // 分层抖动采样：每个格子放一簇，分布均匀，不会一块密一块稀
@@ -1577,8 +1572,8 @@ a{color:var(--openbitfun-color-link-default)}
         if (f.top) { ang = Math.atan2(p[1] - 53.6, p[0] - 60) + (r() - .5) * .3; sh -= Math.hypot((p[0] - 60) / 27, (p[1] - 53.6) / 15.6) * .12; }
         else ang = f.d + (r() - .5) * .25;
         if (fi === 2) { const k = faceK(p[0], p[1]); L *= .5 + .5 * k; const ox = p[0] - FC[0], oy = p[1] - FC[1], ol = Math.hypot(ox, oy) || 1, mk = .6 * (1 - k); ang = Math.atan2(Math.sin(ang) * (1 - mk) + oy / ol * mk, Math.cos(ang) * (1 - mk) + ox / ol * mk); sh += (1 - k) * .06; }
-        const w = fi === 1 || (fi === 0 &amp;&amp; su < .5 &amp;&amp; sv > .55) ? warmAt(p[0], p[1]) : 0;
-        clump(p[0], p[1], ang, L * (w ? 1.1 : 1), .6 + r() * .5, sh, grp(), 5, w > 0 &amp;&amp; r() < .55 + w ? w : 0);
+        const w = fi === 2 ? warmAt(p[0], p[1]) : 0;
+        clump(p[0], p[1], ang, L * (1 - .45 * w), .6 + r() * .5, sh + w * .08, grp(), 5, w * .25);
       }
     }
     const poly = [[60, 38], [87, 53.6], [87, 77.6], [60, 93.2], [33, 77.6], [33, 53.6]], cx = 60, cy = 65.6;
@@ -1610,20 +1605,15 @@ a{color:var(--openbitfun-color-link-default)}
     return `<g class=&quot;fur&quot; fill=&quot;none&quot; stroke-linecap=&quot;round&quot;>${out}</g>`;
   }
 
-  // 毕方特别版：《山海经》“其状如鹤，一足，赤文青质而白喙”——青色身体上的赤文、眼下一只小白喙；方块上的天线就是那“一足”。
-  // 毛绒版的赤文长在毛里（见 down）；光滑 / 金属 / 平面不画具体的羽毛，只用三笔长短不一的弧形色带抽象地表示“赤文”，
-  // 从身体色里渐显出来（起笔透明 → 收笔珊瑚色）
+  // 毕方特别版：《山海经》“其状如鹤，一足，赤文青质而白喙”——青色身体、眼下一只小白喙，方块上的天线就是那“一足”。
+  // “赤文”收成一对珊瑚色腮红：形状清楚、和表情结合；毛绒版另外让两颊的毛尖也泛红（见 down）
   function bifangMarks(x) {
-    const beak = '#F4F1EA', u = x.u;
-    const grad = `<linearGradient id=&quot;bfg${u}&quot; x1=&quot;1&quot; y1=&quot;0&quot; x2=&quot;0&quot; y2=&quot;0&quot;><stop offset=&quot;0&quot; stop-color=&quot;#d98466&quot; stop-opacity=&quot;0&quot;/><stop offset=&quot;.55&quot; stop-color=&quot;#df8b6c&quot; stop-opacity=&quot;.7&quot;/><stop offset=&quot;1&quot; stop-color=&quot;#efa385&quot;/></linearGradient>`;
-    const strokes = `<path d=&quot;M25 2 Q12 4 4.5 16.5 Q14.5 10.8 25 9Z&quot;/><path d=&quot;M25.5 11 Q16.5 12.6 9.5 21.5 Q18 17.2 25.5 16.2Z&quot; opacity=&quot;.85&quot;/><path d=&quot;M22 18.6 Q16.5 19.6 12.6 23.6 Q18 21.8 22.4 22Z&quot; opacity=&quot;.7&quot;/>`;
-    if (x.flat) {
-      const t = x.tiny;
-      return `<defs>${grad}</defs><g fill=&quot;url(#bfg${u})&quot; transform=&quot;translate(31 80) scale(.55)&quot;>${strokes}</g><g fill=&quot;url(#bfg${u})&quot; transform=&quot;translate(89 80) scale(-.55 .55)&quot;>${strokes}</g>
-        <path d=&quot;M58.6 ${t ? 72 : 70.2} L61.4 ${t ? 72 : 70.2} L60 ${t ? 75.6 : 73}Z&quot; fill=&quot;${beak}&quot; stroke=&quot;${beak}&quot; stroke-width=&quot;.9&quot; stroke-linejoin=&quot;round&quot;/>`;
-    }
-    const fur = x.plush ? '' : `<defs>${grad}</defs><g transform=&quot;matrix(1 .577 0 1 33 53.6)&quot; fill=&quot;url(#bfg${u})&quot;>${strokes}</g>`;
-    return `${fur}<g transform=&quot;${FACE}&quot;><path d=&quot;M15.2 15.7 Q17.1 15.2 19 15.7 L17.3 19Z&quot; fill=&quot;${beak}&quot; stroke=&quot;${beak}&quot; stroke-width=&quot;.8&quot; stroke-linejoin=&quot;round&quot;/></g>`;
+    const beak = '#F4F1EA', u = x.u, flat = x.flat;
+    const C = flat ? [[4, 20.2], [30, 20.2]] : [[4.5, 18.8], [27.5, 18.8]], rx = flat ? 3.4 : x.plush ? 5 : 3.8, ry = flat ? 2 : x.plush ? 3.1 : 2.3;
+    const blush = `<defs><radialGradient id=&quot;bfb${u}&quot;><stop offset=&quot;0&quot; stop-color=&quot;#ef8d70&quot; stop-opacity=&quot;${x.plush ? .92 : .85}&quot;/><stop offset=&quot;.6&quot; stop-color=&quot;#ef9878&quot; stop-opacity=&quot;${x.plush ? .62 : .55}&quot;/><stop offset=&quot;1&quot; stop-color=&quot;#f2a588&quot; stop-opacity=&quot;0&quot;/></radialGradient></defs>
+      <g transform=&quot;${face(x)}&quot; fill=&quot;url(#bfb${u})&quot;>${C.map(([cx, cy]) => `<ellipse cx=&quot;${cx}&quot; cy=&quot;${cy}&quot; rx=&quot;${rx}&quot; ry=&quot;${ry}&quot;/>`).join('')}</g>`;
+    if (flat) { const t = x.tiny; return `${blush}<path d=&quot;M58.6 ${t ? 72 : 70.2} L61.4 ${t ? 72 : 70.2} L60 ${t ? 75.6 : 73}Z&quot; fill=&quot;${beak}&quot; stroke=&quot;${beak}&quot; stroke-width=&quot;.9&quot; stroke-linejoin=&quot;round&quot;/>`; }
+    return `${blush}<g transform=&quot;${FACE}&quot;><path d=&quot;M15.2 15.7 Q17.1 15.2 19 15.7 L17.3 19Z&quot; fill=&quot;${beak}&quot; stroke=&quot;${beak}&quot; stroke-width=&quot;.8&quot; stroke-linejoin=&quot;round&quot;/></g>`;
   }
 
   function body(x) {
@@ -1680,7 +1670,7 @@ a{color:var(--openbitfun-color-link-default)}
     return `<g transform=&quot;${face(x)}&quot;><g transform=&quot;translate(${dx} ${dy})&quot;><g${cls}>${s}</g></g></g>`;
   }
 
-  const blush = (x, op = .75) => !x.cute ? '' : `<g transform=&quot;${face(x)}&quot; fill=&quot;${x.P.blush}&quot; opacity=&quot;${op}&quot;><ellipse cx=&quot;4&quot; cy=&quot;20.2&quot; rx=&quot;3&quot; ry=&quot;1.7&quot;/><ellipse cx=&quot;30&quot; cy=&quot;20.2&quot; rx=&quot;3&quot; ry=&quot;1.7&quot;/></g>`;
+  const blush = (x, op = .75) => !x.cute || x.P.bifang ? '' : `<g transform=&quot;${face(x)}&quot; fill=&quot;${x.P.blush}&quot; opacity=&quot;${op}&quot;><ellipse cx=&quot;4&quot; cy=&quot;20.2&quot; rx=&quot;3&quot; ry=&quot;1.7&quot;/><ellipse cx=&quot;30&quot; cy=&quot;20.2&quot; rx=&quot;3&quot; ry=&quot;1.7&quot;/></g>`;
   const soft = x => blush(x, x.P.softOp || .45);
   function mouth(x, type) {
     if (!x.cute) return '';
@@ -2634,9 +2624,9 @@ button.sel{border-color:var(--ink)}
         const sh = shade + (r() - .5) * .06;
         // 赤文：羽根仍是身体色，越往毛尖越偏珊瑚色；coral 是 0–1 的浓度，斑块边缘自然变淡
         const cw = coral ? Math.round(coral * 4) / 4 : 0;
-        add(g, 0, cw ? mixc(bin(sh - .2), cbin(sh - .35), cw * .35) : bin(sh - .2), Q(a, c, e, 0, .45));
-        add(g, 1, cw ? mixc(bin(sh), cbin(sh - .05), cw * .85) : bin(sh), Q(a, c, e, .38, .74));
-        add(g, 2, cw ? mixc(bin(sh + .22), cbin(sh + .1), cw) : bin(sh + .22), Q(a, c, e, .68, 1));
+        add(g, 0, cw ? mixc(bin(sh - .2), cbin(sh), cw * .25) : bin(sh - .2), Q(a, c, e, 0, .45));
+        add(g, 1, cw ? mixc(bin(sh), cbin(sh + .25), cw * .7) : bin(sh), Q(a, c, e, .38, .74));
+        add(g, 2, cw ? mixc(bin(sh + .22), cbin(sh + .45), cw) : bin(sh + .22), Q(a, c, e, .68, 1));
       }
     }
     const grp = () => Math.floor(r() * G);
@@ -2648,13 +2638,13 @@ button.sel{border-color:var(--ink)}
     // 脸：右侧面两只眼睛之间。脸上的毛短一些、顺着从脸中心向外梳，表情才看得清
     const EYE = [[69.5, 76.2], [84.5, 67.6]], FC = [77, 72];
     const faceK = (px, py) => { const d = Math.min(...EYE.map(e => Math.hypot(px - e[0], py - e[1]))); return Math.max(0, Math.min(1, (d - 3) / 9)); };
-    // 赤文斑块：几团不规则、拉长的斑，叠一层低频噪声——像羽色自然晕开，而不是整齐排列
-    const rr = rng(23), BLOB = P.bifang ? [[.3, .55, 1], [.62, .42, .85], [.5, .82, .9], [.12, .3, .6]].map(([su, sv, k]) => ({ p: at(faces[1].q, su + (rr() - .5) * .08, sv + (rr() - .5) * .08), k, s: 5.5 + rr() * 2.5 })) : [];
+    // 毕方的“赤文”做成一对腮红：落在两颊（右侧面、眼睛外下方）的毛，毛尖渐变成珊瑚色
+    const CHEEK = [[4.5, 18.8], [27.5, 18.8]];
     const warmAt = (px, py) => {
-      let w = 0;
-      for (const b of BLOB) { const dx = px - b.p[0], dy = py - b.p[1], u = dx * .82 - dy * .57, v = dx * .57 + dy * .82; w = Math.max(w, b.k * Math.exp(-(u * u / (b.s * b.s * 2.2) + v * v / (b.s * b.s * .7)))); }
-      w *= .75 + .35 * Math.sin(px * .7 + py * .37) * Math.sin(py * .53 - px * .21);
-      return w < .2 ? 0 : Math.min(1, (w - .2) / .4);
+      if (!P.bifang) return 0;
+      const lx = px - 60, ly = py - 69.2 + .577 * lx;
+      let w = 0; for (const [cx2, cy2] of CHEEK) { const dx = (lx - cx2) / 4, dy = (ly - cy2) / 2.6; w = Math.max(w, Math.exp(-(dx * dx + dy * dy) * 1.4)); }
+      return w < .18 ? 0 : Math.min(1, (w - .18) / .5);
     };
     for (const [fi, f] of faces.entries()) {
       // 分层抖动采样：每个格子放一簇，分布均匀，不会一块密一块稀
@@ -2665,8 +2655,8 @@ button.sel{border-color:var(--ink)}
         if (f.top) { ang = Math.atan2(p[1] - 53.6, p[0] - 60) + (r() - .5) * .3; sh -= Math.hypot((p[0] - 60) / 27, (p[1] - 53.6) / 15.6) * .12; }
         else ang = f.d + (r() - .5) * .25;
         if (fi === 2) { const k = faceK(p[0], p[1]); L *= .5 + .5 * k; const ox = p[0] - FC[0], oy = p[1] - FC[1], ol = Math.hypot(ox, oy) || 1, mk = .6 * (1 - k); ang = Math.atan2(Math.sin(ang) * (1 - mk) + oy / ol * mk, Math.cos(ang) * (1 - mk) + ox / ol * mk); sh += (1 - k) * .06; }
-        const w = fi === 1 || (fi === 0 &amp;&amp; su < .5 &amp;&amp; sv > .55) ? warmAt(p[0], p[1]) : 0;
-        clump(p[0], p[1], ang, L * (w ? 1.1 : 1), .6 + r() * .5, sh, grp(), 5, w > 0 &amp;&amp; r() < .55 + w ? w : 0);
+        const w = fi === 2 ? warmAt(p[0], p[1]) : 0;
+        clump(p[0], p[1], ang, L * (1 - .45 * w), .6 + r() * .5, sh + w * .08, grp(), 5, w * .25);
       }
     }
     const poly = [[60, 38], [87, 53.6], [87, 77.6], [60, 93.2], [33, 77.6], [33, 53.6]], cx = 60, cy = 65.6;
@@ -2698,20 +2688,15 @@ button.sel{border-color:var(--ink)}
     return `<g class=&quot;fur&quot; fill=&quot;none&quot; stroke-linecap=&quot;round&quot;>${out}</g>`;
   }
 
-  // 毕方特别版：《山海经》“其状如鹤，一足，赤文青质而白喙”——青色身体上的赤文、眼下一只小白喙；方块上的天线就是那“一足”。
-  // 毛绒版的赤文长在毛里（见 down）；光滑 / 金属 / 平面不画具体的羽毛，只用三笔长短不一的弧形色带抽象地表示“赤文”，
-  // 从身体色里渐显出来（起笔透明 → 收笔珊瑚色）
+  // 毕方特别版：《山海经》“其状如鹤，一足，赤文青质而白喙”——青色身体、眼下一只小白喙，方块上的天线就是那“一足”。
+  // “赤文”收成一对珊瑚色腮红：形状清楚、和表情结合；毛绒版另外让两颊的毛尖也泛红（见 down）
   function bifangMarks(x) {
-    const beak = '#F4F1EA', u = x.u;
-    const grad = `<linearGradient id=&quot;bfg${u}&quot; x1=&quot;1&quot; y1=&quot;0&quot; x2=&quot;0&quot; y2=&quot;0&quot;><stop offset=&quot;0&quot; stop-color=&quot;#d98466&quot; stop-opacity=&quot;0&quot;/><stop offset=&quot;.55&quot; stop-color=&quot;#df8b6c&quot; stop-opacity=&quot;.7&quot;/><stop offset=&quot;1&quot; stop-color=&quot;#efa385&quot;/></linearGradient>`;
-    const strokes = `<path d=&quot;M25 2 Q12 4 4.5 16.5 Q14.5 10.8 25 9Z&quot;/><path d=&quot;M25.5 11 Q16.5 12.6 9.5 21.5 Q18 17.2 25.5 16.2Z&quot; opacity=&quot;.85&quot;/><path d=&quot;M22 18.6 Q16.5 19.6 12.6 23.6 Q18 21.8 22.4 22Z&quot; opacity=&quot;.7&quot;/>`;
-    if (x.flat) {
-      const t = x.tiny;
-      return `<defs>${grad}</defs><g fill=&quot;url(#bfg${u})&quot; transform=&quot;translate(31 80) scale(.55)&quot;>${strokes}</g><g fill=&quot;url(#bfg${u})&quot; transform=&quot;translate(89 80) scale(-.55 .55)&quot;>${strokes}</g>
-        <path d=&quot;M58.6 ${t ? 72 : 70.2} L61.4 ${t ? 72 : 70.2} L60 ${t ? 75.6 : 73}Z&quot; fill=&quot;${beak}&quot; stroke=&quot;${beak}&quot; stroke-width=&quot;.9&quot; stroke-linejoin=&quot;round&quot;/>`;
-    }
-    const fur = x.plush ? '' : `<defs>${grad}</defs><g transform=&quot;matrix(1 .577 0 1 33 53.6)&quot; fill=&quot;url(#bfg${u})&quot;>${strokes}</g>`;
-    return `${fur}<g transform=&quot;${FACE}&quot;><path d=&quot;M15.2 15.7 Q17.1 15.2 19 15.7 L17.3 19Z&quot; fill=&quot;${beak}&quot; stroke=&quot;${beak}&quot; stroke-width=&quot;.8&quot; stroke-linejoin=&quot;round&quot;/></g>`;
+    const beak = '#F4F1EA', u = x.u, flat = x.flat;
+    const C = flat ? [[4, 20.2], [30, 20.2]] : [[4.5, 18.8], [27.5, 18.8]], rx = flat ? 3.4 : x.plush ? 5 : 3.8, ry = flat ? 2 : x.plush ? 3.1 : 2.3;
+    const blush = `<defs><radialGradient id=&quot;bfb${u}&quot;><stop offset=&quot;0&quot; stop-color=&quot;#ef8d70&quot; stop-opacity=&quot;${x.plush ? .92 : .85}&quot;/><stop offset=&quot;.6&quot; stop-color=&quot;#ef9878&quot; stop-opacity=&quot;${x.plush ? .62 : .55}&quot;/><stop offset=&quot;1&quot; stop-color=&quot;#f2a588&quot; stop-opacity=&quot;0&quot;/></radialGradient></defs>
+      <g transform=&quot;${face(x)}&quot; fill=&quot;url(#bfb${u})&quot;>${C.map(([cx, cy]) => `<ellipse cx=&quot;${cx}&quot; cy=&quot;${cy}&quot; rx=&quot;${rx}&quot; ry=&quot;${ry}&quot;/>`).join('')}</g>`;
+    if (flat) { const t = x.tiny; return `${blush}<path d=&quot;M58.6 ${t ? 72 : 70.2} L61.4 ${t ? 72 : 70.2} L60 ${t ? 75.6 : 73}Z&quot; fill=&quot;${beak}&quot; stroke=&quot;${beak}&quot; stroke-width=&quot;.9&quot; stroke-linejoin=&quot;round&quot;/>`; }
+    return `${blush}<g transform=&quot;${FACE}&quot;><path d=&quot;M15.2 15.7 Q17.1 15.2 19 15.7 L17.3 19Z&quot; fill=&quot;${beak}&quot; stroke=&quot;${beak}&quot; stroke-width=&quot;.8&quot; stroke-linejoin=&quot;round&quot;/></g>`;
   }
 
   function body(x) {
@@ -2768,7 +2753,7 @@ button.sel{border-color:var(--ink)}
     return `<g transform=&quot;${face(x)}&quot;><g transform=&quot;translate(${dx} ${dy})&quot;><g${cls}>${s}</g></g></g>`;
   }
 
-  const blush = (x, op = .75) => !x.cute ? '' : `<g transform=&quot;${face(x)}&quot; fill=&quot;${x.P.blush}&quot; opacity=&quot;${op}&quot;><ellipse cx=&quot;4&quot; cy=&quot;20.2&quot; rx=&quot;3&quot; ry=&quot;1.7&quot;/><ellipse cx=&quot;30&quot; cy=&quot;20.2&quot; rx=&quot;3&quot; ry=&quot;1.7&quot;/></g>`;
+  const blush = (x, op = .75) => !x.cute || x.P.bifang ? '' : `<g transform=&quot;${face(x)}&quot; fill=&quot;${x.P.blush}&quot; opacity=&quot;${op}&quot;><ellipse cx=&quot;4&quot; cy=&quot;20.2&quot; rx=&quot;3&quot; ry=&quot;1.7&quot;/><ellipse cx=&quot;30&quot; cy=&quot;20.2&quot; rx=&quot;3&quot; ry=&quot;1.7&quot;/></g>`;
   const soft = x => blush(x, x.P.softOp || .45);
   function mouth(x, type) {
     if (!x.cute) return '';
