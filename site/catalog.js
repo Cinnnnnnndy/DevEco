@@ -33,7 +33,7 @@
    `python3 site/tools/thumb.py <slug>` 出缩略图；然后在这里把对应条目的 view 改成 'ready'、补 href 与 thumb。
    ===================================================================== */
 window.DEVECO_CATALOG = {
-  updated: '2026-11-26',
+  updated: '2026-11-28',
   title: '鸿蒙开发工具体验',
   lede: '围绕 DevEco Studio / DevEco Code / DevEco CLI 的体验设计：29 条创新点各一个可点的界面稿 demo（其中 9 条是新一轮规划重点），全部按鸿蒙电脑版蓝本与 AI Coding / 多 Agent 场景重做；加上设计系统、分析与汇报材料。全部是本地静态文件，双击即开。',
 
@@ -462,6 +462,26 @@ window.DEVECO_CATALOG = {
       icon: 'i-cat-people',
       note: '鸿蒙开发者是谁、要什么：用户研究、AI 开发准备、生态位与舆情、三端差异。',
       items: [
+        {
+          title: '鸿蒙开发者用户旅程图（总）', subtitle: 'HarmonyOS Developer Journey Map · R1–R4 Personas & Swimlanes',
+          desc: '覆盖已访 4 类角色（R1 系统底层 I01、R2 三端 AI 托管 I02、R3 个人独立开发者 I04、R4 兴趣新手 I03 低价值）的全流程用户旅程画布：包含角色画像卡与行为倾向轴、通用步骤、做法／想法／工具／原话／卡点五层泳道、情绪起伏曲线、鸿蒙差异与机会点及证据覆盖度，支持拖拽缩放与阶段跳转。',
+          view: 'doc', date: '2026-11-28', href: 'analysis/user-research-2026/journey-map.html',
+          links: [
+            { label: '用户分析与原声汇总', href: 'analysis/user-research-2026/user-analysis.html' },
+          ],
+          tags: ['用户旅程', '用户研究', '角色画像', 'R1–R4', 'I01–I04', '情绪曲线', '机会点'],
+          thumb: { type: 'doc', kind: 'HTML' },
+        },
+        {
+          title: '鸿蒙开发者深度访谈：单用户分析与原声汇总（I01–I04）', subtitle: 'User Interview Analysis & Transcripts · I01 / I02 / I04 / I03',
+          desc: '将 4 位受访者（I01 施景翊、I02 鱼非、I04 桂党楼、I03 尧志波）的单用户分析、横向对比、跨用户 P0–P2 产品机会、19 项访后待办及 918 轮完整访谈原声合为一体。每个用户支持一键切换「单用户分析」与「访谈原声记录」，支持跨人全文检索高亮、原声章节跳转与深浅色切换。',
+          view: 'doc', date: '2026-11-28', href: 'analysis/user-research-2026/user-analysis.html',
+          links: [
+            { label: '总用户旅程图', href: 'analysis/user-research-2026/journey-map.html' },
+          ],
+          tags: ['用户分析', '访谈纪要', '访谈原声', 'I01 施景翊', 'I02 鱼非', 'I04 桂党楼', 'I03 尧志波', '全文检索'],
+          thumb: { type: 'doc', kind: 'HTML' },
+        },
         {
           title: 'AI 软件开发人机交互：意图对齐、信任交付与系统交互（总体学习笔记）', subtitle: 'Research Notes · Verification, Attention & Trust · Intent Alignment',
           desc: '分两部分：先单独记录 2026-11-19 课题会上的说法（开发者角色、Agent 形态、三个研究缺口、多设备与个人应用、计划）；再是衍生的学习笔记，包括三个瓶颈（验证效率、注意力、信任）、意图表达（五个字段，含可交互演示）、外部研究核实、与会议观点的对照、成本收益和待深化。衍生部分标五档证据，更正了会上「中途介入 62% 被关闭」一条的转述。',
