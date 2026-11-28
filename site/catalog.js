@@ -463,23 +463,23 @@ window.DEVECO_CATALOG = {
       note: '鸿蒙开发者是谁、要什么：用户研究、AI 开发准备、生态位与舆情、三端差异。',
       items: [
         {
-          title: '鸿蒙开发者用户旅程图（总）', subtitle: 'HarmonyOS Developer Journey Map · R1–R4 Personas & Swimlanes',
-          desc: '覆盖已访 4 类角色（R1 系统底层 I01、R2 三端 AI 托管 I02、R3 个人独立开发者 I04、R4 兴趣新手 I03 低价值）的全流程用户旅程画布：包含角色画像卡与行为倾向轴、通用步骤、做法／想法／工具／原话／卡点五层泳道、情绪起伏曲线、鸿蒙差异与机会点及证据覆盖度，支持拖拽缩放与阶段跳转。',
+          title: '鸿蒙开发者用户旅程图（总）', subtitle: 'HarmonyOS Developer Journey Map · R1–R4 Personas & Swimlanes (I01–I05)',
+          desc: '覆盖已访 5 位受访者、4 类角色（R1 系统底层 I01/I05、R2 三端 AI 托管 I02、R3 个人独立开发者 I04、R4 兴趣新手 I03 低价值）的全流程用户旅程画布：包含角色画像卡与行为倾向轴、通用步骤、做法／想法／工具／原话／卡点五层泳道（118 条证据）、情绪起伏曲线、鸿蒙差异与机会点及证据覆盖度，支持拖拽缩放与阶段跳转。',
           view: 'doc', date: '2026-11-28', href: 'analysis/user-research-2026/journey-map.html',
           links: [
             { label: '用户分析与原声汇总', href: 'analysis/user-research-2026/user-analysis.html' },
           ],
-          tags: ['用户旅程', '用户研究', '角色画像', 'R1–R4', 'I01–I04', '情绪曲线', '机会点'],
+          tags: ['用户旅程', '用户研究', '角色画像', 'R1–R4', 'I01–I05', '情绪曲线', '机会点'],
           thumb: { type: 'doc', kind: 'HTML' },
         },
         {
-          title: '鸿蒙开发者深度访谈：单用户分析与原声汇总（I01–I04）', subtitle: 'User Interview Analysis & Transcripts · I01 / I02 / I04 / I03',
-          desc: '将 4 位受访者（I01 施景翊、I02 鱼非、I04 桂党楼、I03 尧志波）的单用户分析、横向对比、跨用户 P0–P2 产品机会、19 项访后待办及 918 轮完整访谈原声合为一体。每个用户支持一键切换「单用户分析」与「访谈原声记录」，支持跨人全文检索高亮、原声章节跳转与深浅色切换。',
+          title: '鸿蒙开发者深度访谈：单用户分析与原声汇总（I01–I05）', subtitle: 'User Interview Analysis & Transcripts · I01 / I05 / I02 / I04 / I03',
+          desc: '将 5 位受访者（I01 施景翊、I05 王起旭、I02 鱼非、I04 桂党楼、I03 尧志波）的单用户分析、横向对比、跨用户 P0–P2 产品机会、24 项访后待办及 1,316 轮完整访谈原声合为一体。每个用户支持一键切换「单用户分析」与「访谈原声记录」，支持跨人全文检索高亮、原声章节跳转与深浅色切换。',
           view: 'doc', date: '2026-11-28', href: 'analysis/user-research-2026/user-analysis.html',
           links: [
             { label: '总用户旅程图', href: 'analysis/user-research-2026/journey-map.html' },
           ],
-          tags: ['用户分析', '访谈纪要', '访谈原声', 'I01 施景翊', 'I02 鱼非', 'I04 桂党楼', 'I03 尧志波', '全文检索'],
+          tags: ['用户分析', '访谈纪要', '访谈原声', 'I01 施景翊', 'I05 王起旭', 'I02 鱼非', 'I04 桂党楼', 'I03 尧志波', '全文检索'],
           thumb: { type: 'doc', kind: 'HTML' },
         },
         {
