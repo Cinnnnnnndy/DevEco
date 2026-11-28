@@ -640,6 +640,7 @@ i.bl{display:inline-block;width:10px;height:10px;border-radius:50%;box-shadow:0 
       { q: [[33, 53.6], [60, 69.2], [60, 93.2], [33, 77.6]], n: 300, d: 1.4, base: .7 },
       { q: [[60, 69.2], [87, 53.6], [87, 77.6], [60, 93.2]], n: 300, d: 1.74, base: .64 }
     ];
+    if (!x.front) {
     // 脸：右侧面两只眼睛之间。脸上的毛短一些、顺着从脸中心向外梳，表情才看得清
     const EYE = [[69.5, 76.2], [84.5, 67.6]], FC = [77, 72];
     const faceK = (px, py) => { const d = Math.min(...EYE.map(e => Math.hypot(px - e[0], py - e[1]))); return Math.max(0, Math.min(1, (d - 3) / 9)); };
@@ -714,6 +715,29 @@ i.bl{display:inline-block;width:10px;height:10px;border-radius:50%;box-shadow:0 
       }
     }
     NOFLOW = false;
+    } else {
+      // 正面毛绒：圆角矩形（与平面视图同形），毛从头顶向四周、向下梳；两眼周围毛短、向外梳
+      const X0 = 26, X1 = 94, Y0 = 46, Y1 = 100, RR = 20, CX = 60, CY = 73;
+      const inside = (px, py) => { const qx = Math.min(Math.max(px, X0 + RR), X1 - RR), qy = Math.min(Math.max(py, Y0 + RR), Y1 - RR); return Math.hypot(px - qx, py - qy) <= RR; };
+      const fl = (px, py) => Math.max(0, Math.min(1, .62 + (.8 - (py - 46) * .006 - (px - 60) * .002 - .62) * .42 + (r() - .5) * .05));
+      const EYF = [[49.9, 73], [70.1, 73]];
+      const fk = (px, py) => { const d = Math.min(...EYF.map(e => Math.hypot((px - e[0]) * 1.4, py - e[1]))); return Math.max(0, Math.min(1, (d - 6) / 10)); };
+      const flowAng = (px, py) => { const a = Math.atan2(py - 34, (px - 60) * 1.3); return a; };
+      const UL = Math.max(L0, .65);
+      const fill = (m, fn) => { const gs = Math.ceil(Math.sqrt(m)); for (let i = 0; i < m; i++) { const px = X0 + ((i % gs) + r()) / gs * (X1 - X0), py = Y0 + (Math.floor(i / gs) + r()) / Math.ceil(m / gs) * (Y1 - Y0); if (inside(px, py)) fn(px, py); } };
+      fill(Math.round(1100 * UL), (px, py) => clump(px, py, flowAng(px, py) + (r() - .5) * .4, 3.5 + r() * 2.8, .7, fl(px, py) - .04, 4, 3));
+      fill(Math.round(1150 * L0), (px, py) => {
+        const k = fk(px, py); let ang = flowAng(px, py) + (r() - .5) * .3;
+        if (k < 1) { const e = EYF[px < 60 ? 0 : 1], oa = Math.atan2(py - e[1], px - e[0]); ang = ang * k + oa * (1 - k); }
+        clump(px, py, ang, (7.5 + r() * 4.5) * (.45 + .55 * k), .6 + r() * .5, fl(px, py) + (1 - k) * .05, grp(), 5);
+      });
+      // 外缘：沿轮廓一圈向外蓬的长毛
+      for (let i = 0, m = Math.round(520 * Math.max(L0, .6)); i < m; i++) {
+        const th = r() * Math.PI * 2, dx = Math.cos(th), dy = Math.sin(th); let t = 0; while (inside(CX + dx * (t + .5), CY + dy * (t + .5)) &amp;&amp; t < 60) t += .5;
+        const off = -3 + r() * 9, px = CX + dx * (t + off), py = CY + dy * (t + off);
+        clump(px, py, Math.atan2(dy * 1.15 + .25, dx) + (r() - .5) * .6, 5 + r() * 5.5, .5 + r() * .3, fl(px, py) - .03, off < 2 ? 4 : grp(), off < 2 ? 3 : 4);
+      }
+    }
     // 输出：每组一层 <g>，各自按不同节奏轻摆；同组内按 根 → 中 → 尖 的顺序叠
     let out = '';
     for (const B of buf.slice(0, 2)) for (let sg = 0; sg < SEG; sg++) for (let g = 0; g <= G; g++) {
@@ -743,6 +767,7 @@ i.bl{display:inline-block;width:10px;height:10px;border-radius:50%;box-shadow:0 
 
   function body(x) {
     const { P, u, plush } = x, sw = plush ? 20 : 18;
+    if (x.front) return `<rect x=&quot;26&quot; y=&quot;46&quot; width=&quot;68&quot; height=&quot;54&quot; rx=&quot;20&quot; fill=&quot;${P.side}&quot;/>${down(x)}`;
     if (x.flat) {
       const e = edgeOf(P.side);
       let f = `<rect x=&quot;26&quot; y=&quot;46&quot; width=&quot;68&quot; height=&quot;54&quot; rx=&quot;20&quot; fill=&quot;${P.side}&quot;${e ? ` stroke=&quot;${e}&quot; stroke-width=&quot;${x.tiny ? 2.4 : 1.4}&quot;` : ''}/>`;
@@ -830,9 +855,9 @@ ${plush ? '' : `<path d=&quot;${LEFT}&quot; fill=&quot;url(#lf${u})&quot; filter
     if (fx.includes('orbit')) over += `<g><circle cx=&quot;60&quot; cy=&quot;29&quot; r=&quot;17&quot; fill=&quot;none&quot; stroke=&quot;${color}&quot; stroke-opacity=&quot;.28&quot; stroke-width=&quot;1&quot; stroke-dasharray=&quot;1.5 3&quot;/><circle cx=&quot;77&quot; cy=&quot;29&quot; r=&quot;2.6&quot; fill=&quot;${color}&quot;><animateTransform attributeName=&quot;transform&quot; type=&quot;rotate&quot; from=&quot;0 60 29&quot; to=&quot;360 60 29&quot; dur=&quot;1.8s&quot; repeatCount=&quot;indefinite&quot;/></circle></g>`;
     if (fx.includes('smoke')) over += `<circle class=&quot;puff&quot; cx=&quot;67&quot; cy=&quot;14&quot; r=&quot;3.2&quot; fill=&quot;#B9BEC7&quot;/><circle class=&quot;puff p2&quot; cx=&quot;71&quot; cy=&quot;12&quot; r=&quot;2.4&quot; fill=&quot;#B9BEC7&quot;/>`;
     const be = edgeOf(color), bs = be ? ` stroke=&quot;${be}&quot; stroke-width=&quot;${x.tiny ? 2 : 1.1}&quot;` : '';
-    const ball = x.tiny ? `<circle cx=&quot;60&quot; cy=&quot;27&quot; r=&quot;12.5&quot; fill=&quot;${color}&quot;${bs}/>` : x.flat ? `<circle cx=&quot;60&quot; cy=&quot;28&quot; r=&quot;9.6&quot; fill=&quot;${color}&quot;${bs}/>` : `<circle cx=&quot;60&quot; cy=&quot;29&quot; r=&quot;11.5&quot; fill=&quot;${color}&quot;${bs}/>${plush ? `<circle cx=&quot;60&quot; cy=&quot;29&quot; r=&quot;11.5&quot; fill=&quot;url(#bm${u})&quot;/>` : `<circle cx=&quot;60&quot; cy=&quot;29&quot; r=&quot;11.5&quot; fill=&quot;url(#bs${u})&quot;/>`}${plush ? '' : `<ellipse cx=&quot;55.6&quot; cy=&quot;23.8&quot; rx=&quot;4&quot; ry=&quot;2.6&quot; transform=&quot;rotate(-30 55.6 23.8)&quot; fill=&quot;#fff&quot; opacity=&quot;.6&quot; filter=&quot;url(#hb${u})&quot;/><circle cx=&quot;60&quot; cy=&quot;29&quot; r=&quot;11.1&quot; fill=&quot;none&quot; stroke=&quot;#000&quot; stroke-opacity=&quot;.1&quot; stroke-width=&quot;.8&quot;/>`}`;
+    const ball = x.tiny ? `<circle cx=&quot;60&quot; cy=&quot;27&quot; r=&quot;12.5&quot; fill=&quot;${color}&quot;${bs}/>` : x.flat ? `<circle cx=&quot;60&quot; cy=&quot;28&quot; r=&quot;9.6&quot; fill=&quot;${color}&quot;${bs}/>${x.front ? `<circle cx=&quot;60&quot; cy=&quot;28&quot; r=&quot;9.6&quot; fill=&quot;url(#bm${u})&quot;/>` : ''}` : `<circle cx=&quot;60&quot; cy=&quot;29&quot; r=&quot;11.5&quot; fill=&quot;${color}&quot;${bs}/>${plush ? `<circle cx=&quot;60&quot; cy=&quot;29&quot; r=&quot;11.5&quot; fill=&quot;url(#bm${u})&quot;/>` : `<circle cx=&quot;60&quot; cy=&quot;29&quot; r=&quot;11.5&quot; fill=&quot;url(#bs${u})&quot;/>`}${plush ? '' : `<ellipse cx=&quot;55.6&quot; cy=&quot;23.8&quot; rx=&quot;4&quot; ry=&quot;2.6&quot; transform=&quot;rotate(-30 55.6 23.8)&quot; fill=&quot;#fff&quot; opacity=&quot;.6&quot; filter=&quot;url(#hb${u})&quot;/><circle cx=&quot;60&quot; cy=&quot;29&quot; r=&quot;11.1&quot; fill=&quot;none&quot; stroke=&quot;#000&quot; stroke-opacity=&quot;.1&quot; stroke-width=&quot;.8&quot;/>`}`;
     return `<g class=&quot;${cls}&quot;>
-      ${x.flat ? `<rect x=&quot;58.3&quot; y=&quot;36&quot; width=&quot;3.4&quot; height=&quot;10.2&quot; fill=&quot;${edgeOf(P.side) || P.side}&quot;/>`
+      ${x.front ? `<ellipse cx=&quot;60&quot; cy=&quot;49&quot; rx=&quot;4.4&quot; ry=&quot;1.8&quot; fill=&quot;#000&quot; opacity=&quot;.2&quot; filter=&quot;url(#hb${u})&quot;/><rect x=&quot;58.2&quot; y=&quot;35&quot; width=&quot;3.6&quot; height=&quot;14.5&quot; rx=&quot;1.8&quot; fill=&quot;url(#cr${u})&quot;/>` : x.flat ? `<rect x=&quot;58.3&quot; y=&quot;36&quot; width=&quot;3.4&quot; height=&quot;10.2&quot; fill=&quot;${edgeOf(P.side) || P.side}&quot;/>`
         : `${plush ? `<ellipse cx=&quot;60&quot; cy=&quot;54.4&quot; rx=&quot;5.2&quot; ry=&quot;2.4&quot; fill=&quot;#000&quot; opacity=&quot;.22&quot; filter=&quot;url(#hb${u})&quot;/><rect x=&quot;57.4&quot; y=&quot;30&quot; width=&quot;5.2&quot; height=&quot;24&quot; rx=&quot;2.6&quot; fill=&quot;url(#cr${u})&quot;/>` : `<rect x=&quot;57.4&quot; y=&quot;30&quot; width=&quot;5.2&quot; height=&quot;23.5&quot; rx=&quot;2.6&quot; fill=&quot;url(#cr${u})&quot;/><ellipse cx=&quot;60&quot; cy=&quot;53.8&quot; rx=&quot;7&quot; ry=&quot;3.6&quot; fill=&quot;url(#cc${u})&quot;/><ellipse cx=&quot;60&quot; cy=&quot;53.1&quot; rx=&quot;4&quot; ry=&quot;1.7&quot; fill=&quot;#fff&quot; opacity=&quot;.55&quot;/>`}`}
       <g transform=&quot;${x.flat ? '' : 'translate(0 -10) translate(60 29) scale(1.14) translate(-60 -29)'}&quot;>
       ${under}
@@ -1025,13 +1050,14 @@ ${plush ? '' : `<path d=&quot;${LEFT}&quot; fill=&quot;url(#lf${u})&quot; filter
     const P = typeof opt.palette === 'object' ? opt.palette : PALETTES[opt.palette || 'obsidian'];
     const x = { P, u: 'b' + (++UID), plush: opt.finish === 'plush', metal: opt.finish === 'metal', cute: opt.face === 'cute', lod: opt.lod || 1, flat: opt.view === 'flat' || !!opt.tiny, tiny: !!opt.tiny, mouthPick: opt.mouth, blushPick: opt.blush === 'none' ? null : opt.blush };
     if (opt.blush === 'none') x.blushPick = '';
-    if (x.flat) { x.plush = false; x.metal = false; } // 平面只有一种：纯平、简化
+    x.front = opt.view === 'front' &amp;&amp; x.plush; if (opt.view === 'front') x.flat = true; // 正面毛绒：平面的正面构图 + 毛绒
+    if (x.flat &amp;&amp; !x.front) { x.plush = false; x.metal = false; } // 平面只有一种：纯平、简化
     const color = statusColor(st.cat, opt.palette);
     const compact = !!opt.compact || !!opt.tiny, ac = !!opt.accent &amp;&amp; !x.tiny;
     const list = parts(id, x, color, compact || ac).filter(Boolean).join('') + (x.plush &amp;&amp; x.furOver ? x.furOver : (x.tiny ? '' : bifangBlush(x))) + (x.mouthPick === 'beak' ? beakOf(x) : x.mouthPick &amp;&amp; x.mouthPick !== 'state' &amp;&amp; x.mouthPick !== 'none' &amp;&amp; !x.tiny ? mouth(x, x.mouthPick, true) : '');
     const wrap = st.wrap === 'hop' &amp;&amp; (compact || ac) ? 'f' : st.wrap;
     const vb = x.tiny ? '20 13 80 90' : ac ? '34 6 122 120' : compact ? '9 1 102 107' : '0 0 160 136';
-    const shadow = x.flat ? '' : false ? `<ellipse cx=&quot;60&quot; cy=&quot;104&quot; rx=&quot;27&quot; ry=&quot;2.6&quot; fill=&quot;#000&quot; opacity=&quot;.07&quot;/>` : `<ellipse cx=&quot;60&quot; cy=&quot;103.5&quot; rx=&quot;30&quot; ry=&quot;4.2&quot; fill=&quot;url(#sh${x.u})&quot;/>`;
+    const shadow = x.flat &amp;&amp; !x.front ? '' : false ? `<ellipse cx=&quot;60&quot; cy=&quot;104&quot; rx=&quot;27&quot; ry=&quot;2.6&quot; fill=&quot;#000&quot; opacity=&quot;.07&quot;/>` : `<ellipse cx=&quot;60&quot; cy=&quot;103.5&quot; rx=&quot;30&quot; ry=&quot;4.2&quot; fill=&quot;url(#sh${x.u})&quot;/>`;
     const inner = compact &amp;&amp; !ac ? `${shadow}<g class=&quot;${wrap}&quot;>${list}</g>` : `<g transform=&quot;translate(20 12)&quot;>${shadow}<g class=&quot;${wrap}&quot;>${list}</g>${ac ? accent(id, color) : ''}</g>`;
     const style = opt.noStyle ? '' : `<style>${STYLE}</style>`;
     return `<svg class=&quot;bf&quot; xmlns=&quot;http://www.w3.org/2000/svg&quot; viewBox=&quot;${vb}&quot; role=&quot;img&quot; aria-label=&quot;毕方 · ${st.name}&quot;>${style}${defs(x)}${inner}</svg>`;
@@ -1117,7 +1143,7 @@ ${plush ? '' : `<path d=&quot;${LEFT}&quot; fill=&quot;url(#lf${u})&quot; filter
     document.getElementById('balls').innerHTML = BALLS.map(o => sw(o,'ball')).join('');
     const P = palette();
     syncCustom('body', P.side, S.body._i === -1); syncCustom('ball', P.accent, S.ball._i === -1);
-    document.getElementById('big').innerHTML = render('idle', opt(P,{compact:1})) + render('idle', opt(P,{compact:1, view:'flat'}));
+    document.getElementById('big').innerHTML = render('idle', opt(P,{compact:1})) + render('idle', opt(P,{compact:1, view: S.finish === 'plush' ? 'front' : 'flat'}));
     document.getElementById('states').innerHTML = [['thinking','思考'],['coding','执行'],['awaiting','需要你'],['done','完成'],['error','异常'],['sleeping','离线']]
       .map(([id,n]) => `<div>${render(id, opt(P,{compact:1}))}${n}</div>`).join('');
     document.getElementById('tiny').innerHTML = '小尺寸 ' + [32,22,18].map(px => `<span><span style=&quot;display:block;width:${px}px;height:${px}px&quot;>${render('idle', opt(P,{tiny:true}))}</span>${px}px</span>`).join('');
@@ -1150,7 +1176,7 @@ ${plush ? '' : `<path d=&quot;${LEFT}&quot; fill=&quot;url(#lf${u})&quot; filter
   const save = (name, text, type) => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], {type})); a.download = name; a.click(); URL.revokeObjectURL(a.href); };
   const fileName = v => `bitfun-${v}-${window.__P.side.slice(1)}-${window.__P.accent.slice(1)}.svg`;
   document.getElementById('dl3d').onclick = () => save(fileName('3d'), render('idle', Object.assign({ palette: window.__P, finish: S.finish }, pick())), 'image/svg+xml');
-  document.getElementById('dlFlat').onclick = () => save(fileName('flat'), render('idle', Object.assign({ palette: window.__P, view:'flat' }, pick())), 'image/svg+xml');
+  document.getElementById('dlFlat').onclick = () => save(fileName('flat'), render('idle', Object.assign({ palette: window.__P, view: S.finish === 'plush' ? 'front' : 'flat', finish: S.finish }, pick())), 'image/svg+xml');
   document.getElementById('copy').onclick = async e => {
     const P = window.__P, json = JSON.stringify({ body: S.body.tok || P.side, ball: S.ball.tok || P.accent, eye: P.eye, finish: S.finish, scheme: S.scheme }, null, 2);
     try { await navigator.clipboard.writeText(json); e.target.textContent = '已复制'; } catch { save('bitfun-colors.json', json, 'application/json'); e.target.textContent = '已下载 JSON'; }
@@ -1395,7 +1421,8 @@ button.sel{border-color:var(--ink)}
 .rules b{display:block;color:var(--ink);font-size:15px;margin-bottom:4px}
 .live{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(240px,1fr);gap:var(--openbitfun-space-6,24px);align-items:center;background:var(--openbitfun-color-surface-subtle,#f6f6f4);border-radius:24px;padding:24px}
 .live-stage{position:relative;border-radius:20px;background:radial-gradient(70% 60% at 50% 35%,#fff,transparent 75%),var(--openbitfun-color-surface-default,#fff);aspect-ratio:1/1;max-height:520px;display:flex;align-items:center;justify-content:center;overflow:hidden;cursor:grab}
-.live-fig{position:relative;width:78%;transform-origin:50% 88%;will-change:transform}.live-fig svg{display:block;width:100%;overflow:visible}
+.live-turn{width:78%;transition:transform .22s ease-in}.live-turn.out{transform:perspective(600px) rotateY(88deg) scale(.96)}
+.live-fig{position:relative;width:100%;transform-origin:50% 88%;will-change:transform}.live-fig svg{display:block;width:100%;overflow:visible}
 .live-hint{position:absolute;left:0;right:0;bottom:14px;text-align:center;font-size:12px;color:var(--sub)}
 .live-ctrl{display:flex;flex-direction:column;gap:16px}.live-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.live-row .lab{font-size:13px;color:var(--sub);width:36px}
 .live-sw{display:flex;gap:8px;flex-wrap:wrap}.live-sw button{width:26px;height:26px;border-radius:50%;border:1px solid rgba(0,0,0,.12);cursor:pointer;padding:0}.live-sw button[aria-pressed=true]{outline:2px solid var(--ink);outline-offset:2px}
@@ -1490,8 +1517,9 @@ button.sel{border-color:var(--ink)}
     <h2>毛绒动态版</h2>
     <p class=&quot;sec-desc&quot;>划过撸毛，点击抖一抖。</p>
     <div class=&quot;live&quot; id=&quot;live&quot;>
-      <div class=&quot;live-stage&quot;><div class=&quot;live-fig&quot;></div></div>
+      <div class=&quot;live-stage&quot;><div class=&quot;live-turn&quot;><div class=&quot;live-fig&quot;></div></div></div>
       <div class=&quot;live-ctrl&quot;>
+        <div class=&quot;live-row&quot;><span class=&quot;lab&quot;>角度</span><span class=&quot;seg2&quot; id=&quot;liveView&quot;><button data-v=&quot;iso&quot; aria-pressed=&quot;true&quot;>侧面</button><button data-v=&quot;front&quot;>正面</button></span></div>
         <div class=&quot;live-row&quot;><span class=&quot;lab&quot;>状态</span><span class=&quot;seg2&quot; id=&quot;liveState&quot;></span></div>
         <div class=&quot;live-row&quot;><span class=&quot;lab&quot;>颜色</span><span class=&quot;live-sw&quot; id=&quot;livePal&quot;></span></div>
         <div class=&quot;live-row&quot;><span class=&quot;lab&quot;>风力</span><span class=&quot;seg2&quot; id=&quot;liveWind&quot;><button data-v=&quot;0&quot;>无风</button><button data-v=&quot;1&quot; aria-pressed=&quot;true&quot;>微风</button><button data-v=&quot;2.2&quot;>大风</button></span></div>
@@ -1877,6 +1905,7 @@ button.sel{border-color:var(--ink)}
       { q: [[33, 53.6], [60, 69.2], [60, 93.2], [33, 77.6]], n: 300, d: 1.4, base: .7 },
       { q: [[60, 69.2], [87, 53.6], [87, 77.6], [60, 93.2]], n: 300, d: 1.74, base: .64 }
     ];
+    if (!x.front) {
     // 脸：右侧面两只眼睛之间。脸上的毛短一些、顺着从脸中心向外梳，表情才看得清
     const EYE = [[69.5, 76.2], [84.5, 67.6]], FC = [77, 72];
     const faceK = (px, py) => { const d = Math.min(...EYE.map(e => Math.hypot(px - e[0], py - e[1]))); return Math.max(0, Math.min(1, (d - 3) / 9)); };
@@ -1951,6 +1980,29 @@ button.sel{border-color:var(--ink)}
       }
     }
     NOFLOW = false;
+    } else {
+      // 正面毛绒：圆角矩形（与平面视图同形），毛从头顶向四周、向下梳；两眼周围毛短、向外梳
+      const X0 = 26, X1 = 94, Y0 = 46, Y1 = 100, RR = 20, CX = 60, CY = 73;
+      const inside = (px, py) => { const qx = Math.min(Math.max(px, X0 + RR), X1 - RR), qy = Math.min(Math.max(py, Y0 + RR), Y1 - RR); return Math.hypot(px - qx, py - qy) <= RR; };
+      const fl = (px, py) => Math.max(0, Math.min(1, .62 + (.8 - (py - 46) * .006 - (px - 60) * .002 - .62) * .42 + (r() - .5) * .05));
+      const EYF = [[49.9, 73], [70.1, 73]];
+      const fk = (px, py) => { const d = Math.min(...EYF.map(e => Math.hypot((px - e[0]) * 1.4, py - e[1]))); return Math.max(0, Math.min(1, (d - 6) / 10)); };
+      const flowAng = (px, py) => { const a = Math.atan2(py - 34, (px - 60) * 1.3); return a; };
+      const UL = Math.max(L0, .65);
+      const fill = (m, fn) => { const gs = Math.ceil(Math.sqrt(m)); for (let i = 0; i < m; i++) { const px = X0 + ((i % gs) + r()) / gs * (X1 - X0), py = Y0 + (Math.floor(i / gs) + r()) / Math.ceil(m / gs) * (Y1 - Y0); if (inside(px, py)) fn(px, py); } };
+      fill(Math.round(1100 * UL), (px, py) => clump(px, py, flowAng(px, py) + (r() - .5) * .4, 3.5 + r() * 2.8, .7, fl(px, py) - .04, 4, 3));
+      fill(Math.round(1150 * L0), (px, py) => {
+        const k = fk(px, py); let ang = flowAng(px, py) + (r() - .5) * .3;
+        if (k < 1) { const e = EYF[px < 60 ? 0 : 1], oa = Math.atan2(py - e[1], px - e[0]); ang = ang * k + oa * (1 - k); }
+        clump(px, py, ang, (7.5 + r() * 4.5) * (.45 + .55 * k), .6 + r() * .5, fl(px, py) + (1 - k) * .05, grp(), 5);
+      });
+      // 外缘：沿轮廓一圈向外蓬的长毛
+      for (let i = 0, m = Math.round(520 * Math.max(L0, .6)); i < m; i++) {
+        const th = r() * Math.PI * 2, dx = Math.cos(th), dy = Math.sin(th); let t = 0; while (inside(CX + dx * (t + .5), CY + dy * (t + .5)) &amp;&amp; t < 60) t += .5;
+        const off = -3 + r() * 9, px = CX + dx * (t + off), py = CY + dy * (t + off);
+        clump(px, py, Math.atan2(dy * 1.15 + .25, dx) + (r() - .5) * .6, 5 + r() * 5.5, .5 + r() * .3, fl(px, py) - .03, off < 2 ? 4 : grp(), off < 2 ? 3 : 4);
+      }
+    }
     // 输出：每组一层 <g>，各自按不同节奏轻摆；同组内按 根 → 中 → 尖 的顺序叠
     let out = '';
     for (const B of buf.slice(0, 2)) for (let sg = 0; sg < SEG; sg++) for (let g = 0; g <= G; g++) {
@@ -1980,6 +2032,7 @@ button.sel{border-color:var(--ink)}
 
   function body(x) {
     const { P, u, plush } = x, sw = plush ? 20 : 18;
+    if (x.front) return `<rect x=&quot;26&quot; y=&quot;46&quot; width=&quot;68&quot; height=&quot;54&quot; rx=&quot;20&quot; fill=&quot;${P.side}&quot;/>${down(x)}`;
     if (x.flat) {
       const e = edgeOf(P.side);
       let f = `<rect x=&quot;26&quot; y=&quot;46&quot; width=&quot;68&quot; height=&quot;54&quot; rx=&quot;20&quot; fill=&quot;${P.side}&quot;${e ? ` stroke=&quot;${e}&quot; stroke-width=&quot;${x.tiny ? 2.4 : 1.4}&quot;` : ''}/>`;
@@ -2067,9 +2120,9 @@ ${plush ? '' : `<path d=&quot;${LEFT}&quot; fill=&quot;url(#lf${u})&quot; filter
     if (fx.includes('orbit')) over += `<g><circle cx=&quot;60&quot; cy=&quot;29&quot; r=&quot;17&quot; fill=&quot;none&quot; stroke=&quot;${color}&quot; stroke-opacity=&quot;.28&quot; stroke-width=&quot;1&quot; stroke-dasharray=&quot;1.5 3&quot;/><circle cx=&quot;77&quot; cy=&quot;29&quot; r=&quot;2.6&quot; fill=&quot;${color}&quot;><animateTransform attributeName=&quot;transform&quot; type=&quot;rotate&quot; from=&quot;0 60 29&quot; to=&quot;360 60 29&quot; dur=&quot;1.8s&quot; repeatCount=&quot;indefinite&quot;/></circle></g>`;
     if (fx.includes('smoke')) over += `<circle class=&quot;puff&quot; cx=&quot;67&quot; cy=&quot;14&quot; r=&quot;3.2&quot; fill=&quot;#B9BEC7&quot;/><circle class=&quot;puff p2&quot; cx=&quot;71&quot; cy=&quot;12&quot; r=&quot;2.4&quot; fill=&quot;#B9BEC7&quot;/>`;
     const be = edgeOf(color), bs = be ? ` stroke=&quot;${be}&quot; stroke-width=&quot;${x.tiny ? 2 : 1.1}&quot;` : '';
-    const ball = x.tiny ? `<circle cx=&quot;60&quot; cy=&quot;27&quot; r=&quot;12.5&quot; fill=&quot;${color}&quot;${bs}/>` : x.flat ? `<circle cx=&quot;60&quot; cy=&quot;28&quot; r=&quot;9.6&quot; fill=&quot;${color}&quot;${bs}/>` : `<circle cx=&quot;60&quot; cy=&quot;29&quot; r=&quot;11.5&quot; fill=&quot;${color}&quot;${bs}/>${plush ? `<circle cx=&quot;60&quot; cy=&quot;29&quot; r=&quot;11.5&quot; fill=&quot;url(#bm${u})&quot;/>` : `<circle cx=&quot;60&quot; cy=&quot;29&quot; r=&quot;11.5&quot; fill=&quot;url(#bs${u})&quot;/>`}${plush ? '' : `<ellipse cx=&quot;55.6&quot; cy=&quot;23.8&quot; rx=&quot;4&quot; ry=&quot;2.6&quot; transform=&quot;rotate(-30 55.6 23.8)&quot; fill=&quot;#fff&quot; opacity=&quot;.6&quot; filter=&quot;url(#hb${u})&quot;/><circle cx=&quot;60&quot; cy=&quot;29&quot; r=&quot;11.1&quot; fill=&quot;none&quot; stroke=&quot;#000&quot; stroke-opacity=&quot;.1&quot; stroke-width=&quot;.8&quot;/>`}`;
+    const ball = x.tiny ? `<circle cx=&quot;60&quot; cy=&quot;27&quot; r=&quot;12.5&quot; fill=&quot;${color}&quot;${bs}/>` : x.flat ? `<circle cx=&quot;60&quot; cy=&quot;28&quot; r=&quot;9.6&quot; fill=&quot;${color}&quot;${bs}/>${x.front ? `<circle cx=&quot;60&quot; cy=&quot;28&quot; r=&quot;9.6&quot; fill=&quot;url(#bm${u})&quot;/>` : ''}` : `<circle cx=&quot;60&quot; cy=&quot;29&quot; r=&quot;11.5&quot; fill=&quot;${color}&quot;${bs}/>${plush ? `<circle cx=&quot;60&quot; cy=&quot;29&quot; r=&quot;11.5&quot; fill=&quot;url(#bm${u})&quot;/>` : `<circle cx=&quot;60&quot; cy=&quot;29&quot; r=&quot;11.5&quot; fill=&quot;url(#bs${u})&quot;/>`}${plush ? '' : `<ellipse cx=&quot;55.6&quot; cy=&quot;23.8&quot; rx=&quot;4&quot; ry=&quot;2.6&quot; transform=&quot;rotate(-30 55.6 23.8)&quot; fill=&quot;#fff&quot; opacity=&quot;.6&quot; filter=&quot;url(#hb${u})&quot;/><circle cx=&quot;60&quot; cy=&quot;29&quot; r=&quot;11.1&quot; fill=&quot;none&quot; stroke=&quot;#000&quot; stroke-opacity=&quot;.1&quot; stroke-width=&quot;.8&quot;/>`}`;
     return `<g class=&quot;${cls}&quot;>
-      ${x.flat ? `<rect x=&quot;58.3&quot; y=&quot;36&quot; width=&quot;3.4&quot; height=&quot;10.2&quot; fill=&quot;${edgeOf(P.side) || P.side}&quot;/>`
+      ${x.front ? `<ellipse cx=&quot;60&quot; cy=&quot;49&quot; rx=&quot;4.4&quot; ry=&quot;1.8&quot; fill=&quot;#000&quot; opacity=&quot;.2&quot; filter=&quot;url(#hb${u})&quot;/><rect x=&quot;58.2&quot; y=&quot;35&quot; width=&quot;3.6&quot; height=&quot;14.5&quot; rx=&quot;1.8&quot; fill=&quot;url(#cr${u})&quot;/>` : x.flat ? `<rect x=&quot;58.3&quot; y=&quot;36&quot; width=&quot;3.4&quot; height=&quot;10.2&quot; fill=&quot;${edgeOf(P.side) || P.side}&quot;/>`
         : `${plush ? `<ellipse cx=&quot;60&quot; cy=&quot;54.4&quot; rx=&quot;5.2&quot; ry=&quot;2.4&quot; fill=&quot;#000&quot; opacity=&quot;.22&quot; filter=&quot;url(#hb${u})&quot;/><rect x=&quot;57.4&quot; y=&quot;30&quot; width=&quot;5.2&quot; height=&quot;24&quot; rx=&quot;2.6&quot; fill=&quot;url(#cr${u})&quot;/>` : `<rect x=&quot;57.4&quot; y=&quot;30&quot; width=&quot;5.2&quot; height=&quot;23.5&quot; rx=&quot;2.6&quot; fill=&quot;url(#cr${u})&quot;/><ellipse cx=&quot;60&quot; cy=&quot;53.8&quot; rx=&quot;7&quot; ry=&quot;3.6&quot; fill=&quot;url(#cc${u})&quot;/><ellipse cx=&quot;60&quot; cy=&quot;53.1&quot; rx=&quot;4&quot; ry=&quot;1.7&quot; fill=&quot;#fff&quot; opacity=&quot;.55&quot;/>`}`}
       <g transform=&quot;${x.flat ? '' : 'translate(0 -10) translate(60 29) scale(1.14) translate(-60 -29)'}&quot;>
       ${under}
@@ -2262,13 +2315,14 @@ ${plush ? '' : `<path d=&quot;${LEFT}&quot; fill=&quot;url(#lf${u})&quot; filter
     const P = typeof opt.palette === 'object' ? opt.palette : PALETTES[opt.palette || 'obsidian'];
     const x = { P, u: 'b' + (++UID), plush: opt.finish === 'plush', metal: opt.finish === 'metal', cute: opt.face === 'cute', lod: opt.lod || 1, flat: opt.view === 'flat' || !!opt.tiny, tiny: !!opt.tiny, mouthPick: opt.mouth, blushPick: opt.blush === 'none' ? null : opt.blush };
     if (opt.blush === 'none') x.blushPick = '';
-    if (x.flat) { x.plush = false; x.metal = false; } // 平面只有一种：纯平、简化
+    x.front = opt.view === 'front' &amp;&amp; x.plush; if (opt.view === 'front') x.flat = true; // 正面毛绒：平面的正面构图 + 毛绒
+    if (x.flat &amp;&amp; !x.front) { x.plush = false; x.metal = false; } // 平面只有一种：纯平、简化
     const color = statusColor(st.cat, opt.palette);
     const compact = !!opt.compact || !!opt.tiny, ac = !!opt.accent &amp;&amp; !x.tiny;
     const list = parts(id, x, color, compact || ac).filter(Boolean).join('') + (x.plush &amp;&amp; x.furOver ? x.furOver : (x.tiny ? '' : bifangBlush(x))) + (x.mouthPick === 'beak' ? beakOf(x) : x.mouthPick &amp;&amp; x.mouthPick !== 'state' &amp;&amp; x.mouthPick !== 'none' &amp;&amp; !x.tiny ? mouth(x, x.mouthPick, true) : '');
     const wrap = st.wrap === 'hop' &amp;&amp; (compact || ac) ? 'f' : st.wrap;
     const vb = x.tiny ? '20 13 80 90' : ac ? '34 6 122 120' : compact ? '9 1 102 107' : '0 0 160 136';
-    const shadow = x.flat ? '' : false ? `<ellipse cx=&quot;60&quot; cy=&quot;104&quot; rx=&quot;27&quot; ry=&quot;2.6&quot; fill=&quot;#000&quot; opacity=&quot;.07&quot;/>` : `<ellipse cx=&quot;60&quot; cy=&quot;103.5&quot; rx=&quot;30&quot; ry=&quot;4.2&quot; fill=&quot;url(#sh${x.u})&quot;/>`;
+    const shadow = x.flat &amp;&amp; !x.front ? '' : false ? `<ellipse cx=&quot;60&quot; cy=&quot;104&quot; rx=&quot;27&quot; ry=&quot;2.6&quot; fill=&quot;#000&quot; opacity=&quot;.07&quot;/>` : `<ellipse cx=&quot;60&quot; cy=&quot;103.5&quot; rx=&quot;30&quot; ry=&quot;4.2&quot; fill=&quot;url(#sh${x.u})&quot;/>`;
     const inner = compact &amp;&amp; !ac ? `${shadow}<g class=&quot;${wrap}&quot;>${list}</g>` : `<g transform=&quot;translate(20 12)&quot;>${shadow}<g class=&quot;${wrap}&quot;>${list}</g>${ac ? accent(id, color) : ''}</g>`;
     const style = opt.noStyle ? '' : `<style>${STYLE}</style>`;
     return `<svg class=&quot;bf&quot; xmlns=&quot;http://www.w3.org/2000/svg&quot; viewBox=&quot;${vb}&quot; role=&quot;img&quot; aria-label=&quot;毕方 · ${st.name}&quot;>${style}${defs(x)}${inner}</svg>`;
@@ -2389,7 +2443,7 @@ ${plush ? '' : `<path d=&quot;${LEFT}&quot; fill=&quot;url(#lf${u})&quot; filter
   const fig = root.querySelector('.live-fig'), stage = root.querySelector('.live-stage');
   const STATES = [['idle','待命'],['thinking','思考'],['done','完成'],['sleeping','休眠']];
   const PALS = ['bifang','black','white','lavender','hotpink','cyan','lime'];
-  const L = {sid:'idle', pal:'bifang', wind:1};
+  const L = {sid:'idle', pal:'bifang', wind:1, view:'iso'};
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
   let groups = [], body = {a:0, v:0, s:0, sv:0}, shakeT = -1, ptr = null, visible = true;
   const seg = (el, items, key, cb) => { el.innerHTML = items.map(([v,t]) => `<button data-v=&quot;${v}&quot; aria-pressed=&quot;${L[key]===v}&quot;>${t}</button>`).join(''); el.onclick = e => { const b = e.target.closest('button'); if (!b) return; L[key] = b.dataset.v; [...el.children].forEach(x => x.setAttribute('aria-pressed', x === b)); cb(); }; };
@@ -2397,6 +2451,11 @@ ${plush ? '' : `<path d=&quot;${LEFT}&quot; fill=&quot;url(#lf${u})&quot; filter
   const pe = document.getElementById('livePal');
   pe.innerHTML = PALS.map(k => `<button data-v=&quot;${k}&quot; title=&quot;${BF.PALETTES[k].name}&quot; style=&quot;background:${BF.PALETTES[k].side}&quot; aria-pressed=&quot;${k===L.pal}&quot;></button>`).join('');
   pe.onclick = e => { const b = e.target.closest('button'); if (!b) return; L.pal = b.dataset.v; [...pe.children].forEach(x => x.setAttribute('aria-pressed', x === b)); mount(); };
+  // 转身：先转到侧边（看不见），换成另一个角度，再转回来
+  const turn = root.querySelector('.live-turn'), ve = document.getElementById('liveView');
+  ve.onclick = e => { const b = e.target.closest('button'); if (!b || b.dataset.v === L.view) return; [...ve.children].forEach(x => x.setAttribute('aria-pressed', x === b));
+    turn.classList.add('out'); setTimeout(() => { L.view = b.dataset.v; mount(); turn.style.transition = 'none'; turn.style.transform = 'perspective(600px) rotateY(-88deg) scale(.96)'; turn.classList.remove('out');
+      requestAnimationFrame(() => requestAnimationFrame(() => { turn.style.transition = 'transform .26s ease-out'; turn.style.transform = ''; setTimeout(() => turn.style.transition = '', 300); })); }, 220); };
   const we = document.getElementById('liveWind');
   we.onclick = e => { const b = e.target.closest('button'); if (!b) return; L.wind = +b.dataset.v; [...we.children].forEach(x => x.setAttribute('aria-pressed', x === b)); };
   // 性能：整只毛绒是一个很大的 SVG，每帧改 transform 会让浏览器把上千条路径重画一遍。
@@ -2421,9 +2480,9 @@ ${plush ? '' : `<path d=&quot;${LEFT}&quot; fill=&quot;url(#lf${u})&quot; filter
   }
   function mount(){
     const tmp = document.createElement('div');
-    tmp.innerHTML = BF.render(L.sid, {palette:L.pal, finish:'plush', compact:true, noStyle:true, lod:.85});
+    tmp.innerHTML = BF.render(L.sid, {palette:L.pal, finish:'plush', view:L.view, compact:true, noStyle:true, lod:.85});
     const svg = tmp.querySelector('svg'), vb = svg.viewBox.baseVal;
-    const origin = `${((60 - vb.x) / vb.width * 100).toFixed(2)}% ${((66 - vb.y) / vb.height * 100).toFixed(2)}%`;
+    const oy = L.view === 'front' ? 73 : 66, origin = `${((60 - vb.x) / vb.width * 100).toFixed(2)}% ${((oy - vb.y) / vb.height * 100).toFixed(2)}%`;
     fig.innerHTML = '';
     const layers = split(svg);
     layers.forEach((l, i) => { l.style.position = i ? 'absolute' : 'relative'; l.style.left = l.style.top = '0'; l.style.transformOrigin = origin; if (l._g !== undefined) l.style.willChange = 'transform'; fig.appendChild(l); });
@@ -2919,6 +2978,7 @@ a{color:var(--openbitfun-color-link-default)}
       { q: [[33, 53.6], [60, 69.2], [60, 93.2], [33, 77.6]], n: 300, d: 1.4, base: .7 },
       { q: [[60, 69.2], [87, 53.6], [87, 77.6], [60, 93.2]], n: 300, d: 1.74, base: .64 }
     ];
+    if (!x.front) {
     // 脸：右侧面两只眼睛之间。脸上的毛短一些、顺着从脸中心向外梳，表情才看得清
     const EYE = [[69.5, 76.2], [84.5, 67.6]], FC = [77, 72];
     const faceK = (px, py) => { const d = Math.min(...EYE.map(e => Math.hypot(px - e[0], py - e[1]))); return Math.max(0, Math.min(1, (d - 3) / 9)); };
@@ -2993,6 +3053,29 @@ a{color:var(--openbitfun-color-link-default)}
       }
     }
     NOFLOW = false;
+    } else {
+      // 正面毛绒：圆角矩形（与平面视图同形），毛从头顶向四周、向下梳；两眼周围毛短、向外梳
+      const X0 = 26, X1 = 94, Y0 = 46, Y1 = 100, RR = 20, CX = 60, CY = 73;
+      const inside = (px, py) => { const qx = Math.min(Math.max(px, X0 + RR), X1 - RR), qy = Math.min(Math.max(py, Y0 + RR), Y1 - RR); return Math.hypot(px - qx, py - qy) <= RR; };
+      const fl = (px, py) => Math.max(0, Math.min(1, .62 + (.8 - (py - 46) * .006 - (px - 60) * .002 - .62) * .42 + (r() - .5) * .05));
+      const EYF = [[49.9, 73], [70.1, 73]];
+      const fk = (px, py) => { const d = Math.min(...EYF.map(e => Math.hypot((px - e[0]) * 1.4, py - e[1]))); return Math.max(0, Math.min(1, (d - 6) / 10)); };
+      const flowAng = (px, py) => { const a = Math.atan2(py - 34, (px - 60) * 1.3); return a; };
+      const UL = Math.max(L0, .65);
+      const fill = (m, fn) => { const gs = Math.ceil(Math.sqrt(m)); for (let i = 0; i < m; i++) { const px = X0 + ((i % gs) + r()) / gs * (X1 - X0), py = Y0 + (Math.floor(i / gs) + r()) / Math.ceil(m / gs) * (Y1 - Y0); if (inside(px, py)) fn(px, py); } };
+      fill(Math.round(1100 * UL), (px, py) => clump(px, py, flowAng(px, py) + (r() - .5) * .4, 3.5 + r() * 2.8, .7, fl(px, py) - .04, 4, 3));
+      fill(Math.round(1150 * L0), (px, py) => {
+        const k = fk(px, py); let ang = flowAng(px, py) + (r() - .5) * .3;
+        if (k < 1) { const e = EYF[px < 60 ? 0 : 1], oa = Math.atan2(py - e[1], px - e[0]); ang = ang * k + oa * (1 - k); }
+        clump(px, py, ang, (7.5 + r() * 4.5) * (.45 + .55 * k), .6 + r() * .5, fl(px, py) + (1 - k) * .05, grp(), 5);
+      });
+      // 外缘：沿轮廓一圈向外蓬的长毛
+      for (let i = 0, m = Math.round(520 * Math.max(L0, .6)); i < m; i++) {
+        const th = r() * Math.PI * 2, dx = Math.cos(th), dy = Math.sin(th); let t = 0; while (inside(CX + dx * (t + .5), CY + dy * (t + .5)) &amp;&amp; t < 60) t += .5;
+        const off = -3 + r() * 9, px = CX + dx * (t + off), py = CY + dy * (t + off);
+        clump(px, py, Math.atan2(dy * 1.15 + .25, dx) + (r() - .5) * .6, 5 + r() * 5.5, .5 + r() * .3, fl(px, py) - .03, off < 2 ? 4 : grp(), off < 2 ? 3 : 4);
+      }
+    }
     // 输出：每组一层 <g>，各自按不同节奏轻摆；同组内按 根 → 中 → 尖 的顺序叠
     let out = '';
     for (const B of buf.slice(0, 2)) for (let sg = 0; sg < SEG; sg++) for (let g = 0; g <= G; g++) {
@@ -3022,6 +3105,7 @@ a{color:var(--openbitfun-color-link-default)}
 
   function body(x) {
     const { P, u, plush } = x, sw = plush ? 20 : 18;
+    if (x.front) return `<rect x=&quot;26&quot; y=&quot;46&quot; width=&quot;68&quot; height=&quot;54&quot; rx=&quot;20&quot; fill=&quot;${P.side}&quot;/>${down(x)}`;
     if (x.flat) {
       const e = edgeOf(P.side);
       let f = `<rect x=&quot;26&quot; y=&quot;46&quot; width=&quot;68&quot; height=&quot;54&quot; rx=&quot;20&quot; fill=&quot;${P.side}&quot;${e ? ` stroke=&quot;${e}&quot; stroke-width=&quot;${x.tiny ? 2.4 : 1.4}&quot;` : ''}/>`;
@@ -3109,9 +3193,9 @@ ${plush ? '' : `<path d=&quot;${LEFT}&quot; fill=&quot;url(#lf${u})&quot; filter
     if (fx.includes('orbit')) over += `<g><circle cx=&quot;60&quot; cy=&quot;29&quot; r=&quot;17&quot; fill=&quot;none&quot; stroke=&quot;${color}&quot; stroke-opacity=&quot;.28&quot; stroke-width=&quot;1&quot; stroke-dasharray=&quot;1.5 3&quot;/><circle cx=&quot;77&quot; cy=&quot;29&quot; r=&quot;2.6&quot; fill=&quot;${color}&quot;><animateTransform attributeName=&quot;transform&quot; type=&quot;rotate&quot; from=&quot;0 60 29&quot; to=&quot;360 60 29&quot; dur=&quot;1.8s&quot; repeatCount=&quot;indefinite&quot;/></circle></g>`;
     if (fx.includes('smoke')) over += `<circle class=&quot;puff&quot; cx=&quot;67&quot; cy=&quot;14&quot; r=&quot;3.2&quot; fill=&quot;#B9BEC7&quot;/><circle class=&quot;puff p2&quot; cx=&quot;71&quot; cy=&quot;12&quot; r=&quot;2.4&quot; fill=&quot;#B9BEC7&quot;/>`;
     const be = edgeOf(color), bs = be ? ` stroke=&quot;${be}&quot; stroke-width=&quot;${x.tiny ? 2 : 1.1}&quot;` : '';
-    const ball = x.tiny ? `<circle cx=&quot;60&quot; cy=&quot;27&quot; r=&quot;12.5&quot; fill=&quot;${color}&quot;${bs}/>` : x.flat ? `<circle cx=&quot;60&quot; cy=&quot;28&quot; r=&quot;9.6&quot; fill=&quot;${color}&quot;${bs}/>` : `<circle cx=&quot;60&quot; cy=&quot;29&quot; r=&quot;11.5&quot; fill=&quot;${color}&quot;${bs}/>${plush ? `<circle cx=&quot;60&quot; cy=&quot;29&quot; r=&quot;11.5&quot; fill=&quot;url(#bm${u})&quot;/>` : `<circle cx=&quot;60&quot; cy=&quot;29&quot; r=&quot;11.5&quot; fill=&quot;url(#bs${u})&quot;/>`}${plush ? '' : `<ellipse cx=&quot;55.6&quot; cy=&quot;23.8&quot; rx=&quot;4&quot; ry=&quot;2.6&quot; transform=&quot;rotate(-30 55.6 23.8)&quot; fill=&quot;#fff&quot; opacity=&quot;.6&quot; filter=&quot;url(#hb${u})&quot;/><circle cx=&quot;60&quot; cy=&quot;29&quot; r=&quot;11.1&quot; fill=&quot;none&quot; stroke=&quot;#000&quot; stroke-opacity=&quot;.1&quot; stroke-width=&quot;.8&quot;/>`}`;
+    const ball = x.tiny ? `<circle cx=&quot;60&quot; cy=&quot;27&quot; r=&quot;12.5&quot; fill=&quot;${color}&quot;${bs}/>` : x.flat ? `<circle cx=&quot;60&quot; cy=&quot;28&quot; r=&quot;9.6&quot; fill=&quot;${color}&quot;${bs}/>${x.front ? `<circle cx=&quot;60&quot; cy=&quot;28&quot; r=&quot;9.6&quot; fill=&quot;url(#bm${u})&quot;/>` : ''}` : `<circle cx=&quot;60&quot; cy=&quot;29&quot; r=&quot;11.5&quot; fill=&quot;${color}&quot;${bs}/>${plush ? `<circle cx=&quot;60&quot; cy=&quot;29&quot; r=&quot;11.5&quot; fill=&quot;url(#bm${u})&quot;/>` : `<circle cx=&quot;60&quot; cy=&quot;29&quot; r=&quot;11.5&quot; fill=&quot;url(#bs${u})&quot;/>`}${plush ? '' : `<ellipse cx=&quot;55.6&quot; cy=&quot;23.8&quot; rx=&quot;4&quot; ry=&quot;2.6&quot; transform=&quot;rotate(-30 55.6 23.8)&quot; fill=&quot;#fff&quot; opacity=&quot;.6&quot; filter=&quot;url(#hb${u})&quot;/><circle cx=&quot;60&quot; cy=&quot;29&quot; r=&quot;11.1&quot; fill=&quot;none&quot; stroke=&quot;#000&quot; stroke-opacity=&quot;.1&quot; stroke-width=&quot;.8&quot;/>`}`;
     return `<g class=&quot;${cls}&quot;>
-      ${x.flat ? `<rect x=&quot;58.3&quot; y=&quot;36&quot; width=&quot;3.4&quot; height=&quot;10.2&quot; fill=&quot;${edgeOf(P.side) || P.side}&quot;/>`
+      ${x.front ? `<ellipse cx=&quot;60&quot; cy=&quot;49&quot; rx=&quot;4.4&quot; ry=&quot;1.8&quot; fill=&quot;#000&quot; opacity=&quot;.2&quot; filter=&quot;url(#hb${u})&quot;/><rect x=&quot;58.2&quot; y=&quot;35&quot; width=&quot;3.6&quot; height=&quot;14.5&quot; rx=&quot;1.8&quot; fill=&quot;url(#cr${u})&quot;/>` : x.flat ? `<rect x=&quot;58.3&quot; y=&quot;36&quot; width=&quot;3.4&quot; height=&quot;10.2&quot; fill=&quot;${edgeOf(P.side) || P.side}&quot;/>`
         : `${plush ? `<ellipse cx=&quot;60&quot; cy=&quot;54.4&quot; rx=&quot;5.2&quot; ry=&quot;2.4&quot; fill=&quot;#000&quot; opacity=&quot;.22&quot; filter=&quot;url(#hb${u})&quot;/><rect x=&quot;57.4&quot; y=&quot;30&quot; width=&quot;5.2&quot; height=&quot;24&quot; rx=&quot;2.6&quot; fill=&quot;url(#cr${u})&quot;/>` : `<rect x=&quot;57.4&quot; y=&quot;30&quot; width=&quot;5.2&quot; height=&quot;23.5&quot; rx=&quot;2.6&quot; fill=&quot;url(#cr${u})&quot;/><ellipse cx=&quot;60&quot; cy=&quot;53.8&quot; rx=&quot;7&quot; ry=&quot;3.6&quot; fill=&quot;url(#cc${u})&quot;/><ellipse cx=&quot;60&quot; cy=&quot;53.1&quot; rx=&quot;4&quot; ry=&quot;1.7&quot; fill=&quot;#fff&quot; opacity=&quot;.55&quot;/>`}`}
       <g transform=&quot;${x.flat ? '' : 'translate(0 -10) translate(60 29) scale(1.14) translate(-60 -29)'}&quot;>
       ${under}
@@ -3304,13 +3388,14 @@ ${plush ? '' : `<path d=&quot;${LEFT}&quot; fill=&quot;url(#lf${u})&quot; filter
     const P = typeof opt.palette === 'object' ? opt.palette : PALETTES[opt.palette || 'obsidian'];
     const x = { P, u: 'b' + (++UID), plush: opt.finish === 'plush', metal: opt.finish === 'metal', cute: opt.face === 'cute', lod: opt.lod || 1, flat: opt.view === 'flat' || !!opt.tiny, tiny: !!opt.tiny, mouthPick: opt.mouth, blushPick: opt.blush === 'none' ? null : opt.blush };
     if (opt.blush === 'none') x.blushPick = '';
-    if (x.flat) { x.plush = false; x.metal = false; } // 平面只有一种：纯平、简化
+    x.front = opt.view === 'front' &amp;&amp; x.plush; if (opt.view === 'front') x.flat = true; // 正面毛绒：平面的正面构图 + 毛绒
+    if (x.flat &amp;&amp; !x.front) { x.plush = false; x.metal = false; } // 平面只有一种：纯平、简化
     const color = statusColor(st.cat, opt.palette);
     const compact = !!opt.compact || !!opt.tiny, ac = !!opt.accent &amp;&amp; !x.tiny;
     const list = parts(id, x, color, compact || ac).filter(Boolean).join('') + (x.plush &amp;&amp; x.furOver ? x.furOver : (x.tiny ? '' : bifangBlush(x))) + (x.mouthPick === 'beak' ? beakOf(x) : x.mouthPick &amp;&amp; x.mouthPick !== 'state' &amp;&amp; x.mouthPick !== 'none' &amp;&amp; !x.tiny ? mouth(x, x.mouthPick, true) : '');
     const wrap = st.wrap === 'hop' &amp;&amp; (compact || ac) ? 'f' : st.wrap;
     const vb = x.tiny ? '20 13 80 90' : ac ? '34 6 122 120' : compact ? '9 1 102 107' : '0 0 160 136';
-    const shadow = x.flat ? '' : false ? `<ellipse cx=&quot;60&quot; cy=&quot;104&quot; rx=&quot;27&quot; ry=&quot;2.6&quot; fill=&quot;#000&quot; opacity=&quot;.07&quot;/>` : `<ellipse cx=&quot;60&quot; cy=&quot;103.5&quot; rx=&quot;30&quot; ry=&quot;4.2&quot; fill=&quot;url(#sh${x.u})&quot;/>`;
+    const shadow = x.flat &amp;&amp; !x.front ? '' : false ? `<ellipse cx=&quot;60&quot; cy=&quot;104&quot; rx=&quot;27&quot; ry=&quot;2.6&quot; fill=&quot;#000&quot; opacity=&quot;.07&quot;/>` : `<ellipse cx=&quot;60&quot; cy=&quot;103.5&quot; rx=&quot;30&quot; ry=&quot;4.2&quot; fill=&quot;url(#sh${x.u})&quot;/>`;
     const inner = compact &amp;&amp; !ac ? `${shadow}<g class=&quot;${wrap}&quot;>${list}</g>` : `<g transform=&quot;translate(20 12)&quot;>${shadow}<g class=&quot;${wrap}&quot;>${list}</g>${ac ? accent(id, color) : ''}</g>`;
     const style = opt.noStyle ? '' : `<style>${STYLE}</style>`;
     return `<svg class=&quot;bf&quot; xmlns=&quot;http://www.w3.org/2000/svg&quot; viewBox=&quot;${vb}&quot; role=&quot;img&quot; aria-label=&quot;毕方 · ${st.name}&quot;>${style}${defs(x)}${inner}</svg>`;

@@ -595,18 +595,18 @@ window.DEVECO_CATALOG = {
     /* ================= 支撑 ================= */
     {
       id: 'bitfun', section: 'bifang', title: '毕方形象', icon: 'i-cat-bitfun',
-      note: 'OpenBitFun 吉祥物“毕方”：方块形象、14 个工作状态与配色体系，颜色取自 OpenBitFun 设计系统 token。',
+      note: 'OpenBitFun 吉祥物“毕方”：方块形象、14 个工作状态、统一色板与毛绒版。',
       items: [{
         title: '毕方形象 · 多状态设计与配色', subtitle: 'BitFun Mascot · States & Color System',
-        desc: '等距方块形象，天线球颜色表示 Agent 当前在做什么。三个章节：自己搭配（选身体与天线球颜色，实时预览 3D / 平面 / 6 个状态，自动检查可读性，可导出 SVG）；配色方案（主推方案与 2026 趋势备选）；形象与状态（14 个状态的舞台卡片，浅色 / 深色可切）。单文件，双击即开。',
-        view: 'ready', date: '2026-11-26', href: 'design/bitfun-mascot/index.html',
+        desc: '天线球表示 Agent 状态，眼睛表示情绪。自己搭配（颜色、嘴型、腮红）、《山海经》典故与毛绒动态版、14 个状态、统一色板。单文件，双击即开。',
+        view: 'ready', date: '2026-11-28', href: 'design/bitfun-mascot/index.html',
         links: [
           { label: '自己搭配', href: 'design/bitfun-mascot/index.html#customize' },
-          { label: '配色方案', href: 'design/bitfun-mascot/index.html#palettes' },
           { label: '形象与状态', href: 'design/bitfun-mascot/index.html#states' },
+          { label: '配色方案', href: 'design/bitfun-mascot/index.html#palettes' },
           { label: '源码（OpenBitFun）', href: 'https://github.com/Cinnnnnnndy/OpenBitFun/tree/feat/bitfun-mascot/BitFun/mascot-states' },
         ],
-        tags: ['吉祥物', '14 状态', '配色', '3D / 平面', 'OpenBitFun'],
+        tags: ['吉祥物', '14 状态', '毛绒', '统一色板', 'OpenBitFun'],
         thumb: { type: 'image', src: 'site/thumbs/bitfun-mascot.jpg' },
       }],
     },
